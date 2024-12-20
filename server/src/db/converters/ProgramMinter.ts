@@ -11,10 +11,13 @@ import type {
 } from '@tunarr/types/plex';
 import type { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { find, first, isError } from 'lodash-es';
+import { find, isError } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import type { NewProgramDao as NewRawProgram } from '../schema/Program.ts';
+import type {
+  NewProgramDao,
+  NewProgramDao as NewRawProgram,
+} from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
 
 /**
@@ -51,7 +54,7 @@ class ProgramDaoMinter {
   mint(
     serverName: string,
     program: ContentProgramOriginalProgram,
-  ): NewRawProgram {
+  ): NewProgramDao {
     const ret = match(program)
       .with(
         { sourceType: 'plex', program: { type: 'movie' } },
@@ -92,18 +95,17 @@ class ProgramDaoMinter {
   private mintProgramForPlexMovie(
     serverName: string,
     plexMovie: PlexMovie,
-  ): NewRawProgram {
-    const file = first(first(plexMovie.Media)?.Part ?? []);
+  ): NewProgramDao {
     return {
       uuid: v4(),
       sourceType: ProgramSourceType.PLEX,
       originalAirDate: plexMovie.originallyAvailableAt ?? null,
       duration: plexMovie.duration ?? 0,
-      filePath: file?.file ?? null,
+      // filePath: file?.file ?? null,
       externalSourceId: serverName,
       externalKey: plexMovie.ratingKey,
-      plexRatingKey: plexMovie.ratingKey,
-      plexFilePath: file?.key ?? null,
+      // plexRatingKey: plexMovie.ratingKey,
+      // plexFilePath: file?.key ?? null,
       rating: plexMovie.contentRating ?? null,
       summary: plexMovie.summary ?? null,
       title: plexMovie.title,
@@ -119,7 +121,7 @@ class ProgramDaoMinter {
     item: Omit<JellyfinItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
     },
-  ): NewRawProgram {
+  ): NewProgramDao {
     return {
       uuid: v4(),
       createdAt: +dayjs(),
@@ -155,8 +157,7 @@ class ProgramDaoMinter {
   private mintProgramForPlexEpisode(
     serverName: string,
     plexEpisode: PlexEpisode,
-  ): NewRawProgram {
-    const file = first(first(plexEpisode.Media)?.Part ?? []);
+  ): NewProgramDao {
     return {
       uuid: v4(),
       createdAt: +dayjs(),
@@ -164,11 +165,11 @@ class ProgramDaoMinter {
       sourceType: ProgramSourceType.PLEX,
       originalAirDate: plexEpisode.originallyAvailableAt,
       duration: plexEpisode.duration ?? 0,
-      filePath: file?.file,
+      // filePath: file?.file,
       externalSourceId: serverName,
       externalKey: plexEpisode.ratingKey,
-      plexRatingKey: plexEpisode.ratingKey,
-      plexFilePath: file?.key,
+      // plexRatingKey: plexEpisode.ratingKey,
+      // plexFilePath: file?.key,
       rating: plexEpisode.contentRating,
       summary: plexEpisode.summary,
       title: plexEpisode.title,
@@ -186,19 +187,18 @@ class ProgramDaoMinter {
   private mintProgramForPlexTrack(
     serverName: string,
     plexTrack: PlexMusicTrack,
-  ): NewRawProgram {
-    const file = first(first(plexTrack.Media)?.Part ?? []);
+  ): NewProgramDao {
     return {
       uuid: v4(),
       createdAt: +dayjs(),
       updatedAt: +dayjs(),
       sourceType: ProgramSourceType.PLEX,
       duration: plexTrack.duration ?? 0,
-      filePath: file?.file,
+      // filePath: file?.file,
       externalSourceId: serverName,
       externalKey: plexTrack.ratingKey,
-      plexRatingKey: plexTrack.ratingKey,
-      plexFilePath: file?.key,
+      // plexRatingKey: plexTrack.ratingKey,
+      // plexFilePath: file?.key,
       summary: plexTrack.summary,
       title: plexTrack.title,
       type: ProgramType.Track,

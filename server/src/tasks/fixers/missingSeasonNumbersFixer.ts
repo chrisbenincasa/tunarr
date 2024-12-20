@@ -19,6 +19,7 @@ import {
   first,
   forEach,
   groupBy,
+  isEmpty,
   isNil,
   isNull,
   isUndefined,
@@ -67,6 +68,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         .$if(!isNull(lastId), (eb) => eb.where('uuid', '>', lastId!))
         .where('seasonNumber', 'is', null)
         .where('type', '=', ProgramType.Episode)
+        .where('sourceType', '=', ProgramSourceType.PLEX)
         .orderBy('uuid asc')
         .limit(100)
         .execute();
@@ -95,7 +97,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
           if (parentId === 'unset') {
             for (const program of programs) {
-              if (!program.plexRatingKey) {
+              if (isEmpty(program.externalKey)) {
                 this.logger.debug(
                   `Uh-oh, we're missing a plex rating key for %s`,
                   program.uuid,
@@ -104,7 +106,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
               }
 
               const seasonNum = await this.findSeasonNumberUsingEpisode(
-                program.plexRatingKey,
+                program.externalKey,
                 plexByName[server],
               );
 
@@ -130,7 +132,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
               });
             } else {
               for (const program of programs) {
-                if (!program.plexRatingKey) {
+                if (isEmpty(program.externalKey)) {
                   this.logger.warn(
                     `Uh-oh, we're missing a plex rating key for %s`,
                     program.uuid,
@@ -139,7 +141,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
                 }
 
                 const seasonNum = await this.findSeasonNumberUsingEpisode(
-                  program.plexRatingKey,
+                  program.externalKey,
                   plexByName[server],
                 );
 

@@ -49,7 +49,7 @@ import {
 // TODO: See if we need separate types for JF and Plex and what is really necessary here
 type JellyfinItemStreamDetailsQuery = Pick<
   ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
+  'programType' | 'externalKey' | 'serverPath' | 'serverFilePath' | 'programId'
 >;
 
 @injectable()
@@ -166,7 +166,7 @@ export class JellyfinStreamDetails {
         path: filePath,
       };
     } else {
-      const path = details.serverPath ?? item.plexFilePath;
+      const path = details.serverPath ?? item.serverPath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
           `${trimEnd(server.uri, '/')}/Videos/${trimStart(

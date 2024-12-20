@@ -144,6 +144,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
       .where('type', '=', ProgramType.Episode)
+      .select(withProgramExternalIds)
       .limit(1)
       .selectAll()
       .executeTakeFirstOrThrow();
@@ -276,7 +277,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   async function initStream(
-    program: ProgramDao,
+    program: ProgramWithExternalIds,
     channel: Channel,
     transcodeConfig: TranscodeConfig,
     startTime: number = 0,

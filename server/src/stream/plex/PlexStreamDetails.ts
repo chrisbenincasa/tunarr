@@ -50,7 +50,7 @@ import {
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
   ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
+  'programType' | 'externalKey' | 'programId' | 'serverPath' | 'serverFilePath'
 >;
 
 /**
@@ -179,7 +179,7 @@ export class PlexStreamDetails {
 
     if (
       isNonEmptyString(details.serverPath) &&
-      details.serverPath !== item.plexFilePath
+      details.serverPath !== item.serverPath
     ) {
       this.programDB
         .updateProgramPlexRatingKey(item.programId, server.name, {
@@ -229,7 +229,7 @@ export class PlexStreamDetails {
           path: filePath,
         };
       } else {
-        let path = details.serverPath ?? item.plexFilePath;
+        let path = details.serverPath ?? item.serverPath;
         this.logger.debug(
           'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
           path,
@@ -299,8 +299,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-              ? 'progressive'
-              : 'unknown',
+            ? 'progressive'
+            : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,
