@@ -56,8 +56,6 @@ export class PlexProgramStream extends ProgramStream {
       );
     }
 
-    const ffmpegSettings = this.settingsDB.ffmpegSettings();
-    const channel = this.context.channel;
     const server = await this.mediaSourceDB.findByType(
       MediaSourceType.Plex,
       lineupItem.externalSourceId,
@@ -79,8 +77,9 @@ export class PlexProgramStream extends ProgramStream {
 
     const watermark = await this.getWatermark();
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      ffmpegSettings,
-      channel,
+      this.settingsDB.ffmpegSettings(),
+      this.context.transcodeConfig,
+      this.context.channel,
     );
 
     const stream = await plexStreamDetails.getStream(lineupItem);
@@ -127,7 +126,7 @@ export class PlexProgramStream extends ProgramStream {
       this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
         server,
         {
-          channelNumber: channel.number,
+          channelNumber: this.context.channel.number,
           duration: lineupItem.duration,
           ratingKey: lineupItem.externalKey,
           startTime: lineupItem.start ?? 0,

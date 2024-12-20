@@ -1,5 +1,5 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.ts';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import dayjs from '@/util/dayjs.ts';
@@ -30,7 +30,7 @@ export class LocalFileStreamDetails {
       return null;
     }
 
-    const ffmpegInfo = new FFMPEGInfo(this.settingsDB.ffmpegSettings());
+    const ffmpegInfo = new FfmpegInfo(this.settingsDB.ffmpegSettings());
 
     const probeResult = await ffmpegInfo.probeFile(this.path);
 

@@ -1,3 +1,4 @@
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
 import { MarkNonNullable } from '@/types/util.ts';
 import type { DeepNullable, MarkRequired } from 'ts-essentials';
 import { Channel, ChannelFillerShow } from './Channel.ts';
@@ -16,24 +17,17 @@ export type ProgramDaoWithRelations = ProgramDao & {
   externalIds?: MinimalProgramExternalId[];
 };
 
-// export type Channel = Omit<
-//   Channel,
-//   'icon' | 'offline' | 'watermark' | 'transcoding' | 'streamMode'
-// > & {
-//   icon?: ChannelIcon;
-//   offline?: ChannelOfflineSettings;
-//   watermark?: ChannelWatermark;
-//   transcoding?: ChannelTranscodingSettings;
-//   streamMode: ChannelStreamMode;
-// } & {
-//   programs?: Program[];
-// };
-
 export type ChannelWithRelations = Channel & {
   programs?: ProgramDaoWithRelations[];
   fillerContent?: ProgramDaoWithRelations[];
   fillerShows?: ChannelFillerShow[];
+  transcodeConfig?: TranscodeConfig;
 };
+
+export type ChannelWithTranscodeConfig = MarkRequired<
+  ChannelWithRelations,
+  'transcodeConfig'
+>;
 
 export type ChannelWithRequiredJoins<Joins extends keyof Channel> =
   MarkRequired<ChannelWithRelations, Joins>;

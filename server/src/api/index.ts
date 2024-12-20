@@ -1,6 +1,6 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.js';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -81,7 +81,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-        const v = await new FFMPEGInfo(ffmpegSettings).getVersion();
+        const v = await new FfmpegInfo(ffmpegSettings).getVersion();
         let tunarrVersion: string = getTunarrVersion();
         if (!isProduction) {
           tunarrVersion += `-dev`;
@@ -101,7 +101,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get('/ffmpeg-info', async (req, res) => {
-    const info = new FFMPEGInfo(req.serverCtx.settings.ffmpegSettings());
+    const info = new FfmpegInfo(req.serverCtx.settings.ffmpegSettings());
     const [audioEncoders, videoEncoders] = await Promise.all([
       run(async () => {
         const res = await info.getAvailableAudioEncoders();

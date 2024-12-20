@@ -38,9 +38,14 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       const channel = await req.serverCtx.channelDB.getChannel(
         req.query.channel,
       );
+
       if (!channel) {
         return res.status(404).send();
       }
+
+      const transcodeConfig =
+        await req.serverCtx.transcodeConfigDB.getChannelConfig(channel.uuid);
+
       const details = new LocalFileStreamDetails(req.query.path);
       const streamDetails = await details.getStream();
 
@@ -50,6 +55,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
 
       const ffmpeg = new FfmpegStreamFactory(
         req.serverCtx.settings.ffmpegSettings(),
+        transcodeConfig,
         channel,
       );
 

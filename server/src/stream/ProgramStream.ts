@@ -136,6 +136,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   private getErrorStream(context: PlayerContext) {
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
+      context.transcodeConfig,
       context.channel,
     );
 
@@ -155,7 +156,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   protected async getWatermark(): Promise<Maybe<Watermark>> {
     const channel = this.context.channel;
 
-    if (this.settingsDB.ffmpegSettings().disableChannelOverlay) {
+    if (this.context.transcodeConfig.disableChannelOverlay) {
       return;
     }
 

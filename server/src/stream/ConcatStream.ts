@@ -1,5 +1,5 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
@@ -12,16 +12,17 @@ export class ConcatStream {
   #ffmpegSettings: FfmpegSettings;
 
   constructor(
-    private channel: Channel,
+    private channel: ChannelWithTranscodeConfig,
     private streamMode: ConcatSessionType,
     settings: SettingsDB = getSettings(),
   ) {
     this.#ffmpegSettings = settings.ffmpegSettings();
   }
 
-  createSession(): Promise<FfmpegTranscodeSession> {
+  async createSession(): Promise<FfmpegTranscodeSession> {
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.#ffmpegSettings,
+      this.channel.transcodeConfig,
       this.channel,
     );
 

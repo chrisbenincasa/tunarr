@@ -28,7 +28,7 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { getSettings } from './db/SettingsDB.ts';
-import { FFMPEGInfo } from './ffmpeg/ffmpegInfo.js';
+import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
 import {
   ServerOptions,
   initializeSingletons,
@@ -121,7 +121,7 @@ export async function initServer(opts: ServerOptions) {
   }
 
   if (await fileExists(settingsDb.ffmpegSettings().ffmpegExecutablePath)) {
-    new FFMPEGInfo(settingsDb.ffmpegSettings()).seed().catch(() => {});
+    new FfmpegInfo(settingsDb.ffmpegSettings()).seed().catch(() => {});
   }
 
   scheduleJobs(ctx);

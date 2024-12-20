@@ -54,8 +54,6 @@ export class JellyfinProgramStream extends ProgramStream {
       );
     }
 
-    const ffmpegSettings = this.settingsDB.ffmpegSettings();
-    const channel = this.context.channel;
     const server = await this.mediaSourceDB.findByType(
       MediaSourceType.Jellyfin,
       lineupItem.externalSourceId,
@@ -77,8 +75,9 @@ export class JellyfinProgramStream extends ProgramStream {
 
     const watermark = await this.getWatermark();
     this.ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      ffmpegSettings,
-      channel,
+      this.settingsDB.ffmpegSettings(),
+      this.context.transcodeConfig,
+      this.context.channel,
     );
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);

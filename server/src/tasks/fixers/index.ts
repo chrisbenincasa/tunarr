@@ -1,3 +1,4 @@
+import { EnsureTranscodeConfigIds } from '@/tasks/fixers/EnsureTranscodeConfigIds.ts';
 import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { round, values } from 'lodash-es';
@@ -23,6 +24,7 @@ export const FixersByName: Record<string, Fixer> = groupByUniq(
     new AddPlexServerIdsFixer(),
     new BackfillProgramGroupings(),
     new BackfillProgramExternalIds(),
+    new EnsureTranscodeConfigIds(),
   ],
   (f) => f.constructor.name,
 );

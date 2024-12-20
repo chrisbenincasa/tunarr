@@ -1,4 +1,5 @@
 import { Channel } from '@/db/schema/Channel.ts';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.ts';
@@ -44,18 +45,19 @@ import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
 import { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
 import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
-import { FFMPEGInfo } from './ffmpegInfo.ts';
+import { FfmpegInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
-  private ffmpegInfo: FFMPEGInfo;
+  private ffmpegInfo: FfmpegInfo;
   private pipelineBuilderFactory: PipelineBuilderFactory;
 
   constructor(
     private ffmpegSettings: DeepReadonly<FfmpegSettings>,
+    private transcodeConfig: TranscodeConfig,
     private channel: Channel,
   ) {
     super();
-    this.ffmpegInfo = new FFMPEGInfo(ffmpegSettings);
+    this.ffmpegInfo = new FfmpegInfo(ffmpegSettings);
     this.pipelineBuilderFactory = new PipelineBuilderFactory();
   }
 
@@ -73,8 +75,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const concatInput = new ConcatInputSource(
       new HttpStreamSource(streamUrl),
       FrameSize.create({
-        height: this.ffmpegSettings.targetResolution.heightPx,
-        width: this.ffmpegSettings.targetResolution.widthPx,
+        height: this.transcodeConfig.resolution.heightPx,
+        width: this.transcodeConfig.resolution.widthPx,
       }),
     );
 
@@ -86,7 +88,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.ffmpegSettings)
+      .builder(this.transcodeConfig)
       .setConcatInputSource(concatInput)
       .build();
 
@@ -123,7 +125,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     );
 
     const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.ffmpegSettings)
+      .builder(this.transcodeConfig)
       .setConcatInputSource(concatInput)
       .build();
 
@@ -152,7 +154,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     concatInput: ConcatInputSource,
     opts: HlsWrapperOptions,
   ): Promise<FfmpegTranscodeSession> {
-    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
+    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
     const playbackParams = calculator.calculateForHlsConcat();
 
     const videoStream = VideoStream.create({
@@ -186,13 +188,15 @@ export class FfmpegStreamFactory extends IFFMPEG {
         audioDuration: null,
         audioEncoder: playbackParams.audioFormat,
         audioSampleRate: playbackParams.audioSampleRate,
-        audioVolume: this.ffmpegSettings.audioVolumePercent,
+        audioVolume: this.transcodeConfig.audioVolumePercent,
       }),
     );
 
     const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.ffmpegSettings)
-      .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
+      .builder(this.transcodeConfig)
+      .setHardwareAccelerationMode(
+        this.transcodeConfig.hardwareAccelerationMode,
+      )
       .setVideoInputSource(videoInputSource)
       .setAudioInputSource(audioInputSource)
       .setConcatInputSource(concatInput)
@@ -206,18 +210,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
         metadataServiceName: this.channel.name,
         ptsOffset: 0,
         vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.ffmpegSettings.vaapiDriver,
+        vaapiDriver: this.getVaapiDriver(),
         mapMetadata: true,
-        threadCount: this.ffmpegSettings.numThreads,
+        threadCount: this.transcodeConfig.threadCount,
       }),
       new FrameState({
         realtime: playbackParams.realtime,
-        scaledSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
-        paddedSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
+        scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
+        paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         isAnamorphic: false,
         deinterlaced: false,
         pixelFormat: new PixelFormatYuv420P(),
@@ -267,7 +267,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       throw new Error('');
     }
 
-    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
+    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
     const playbackParams = calculator.calculateForStream(streamDetails);
 
     // Get inputs
@@ -379,7 +379,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     const builder = await new PipelineBuilderFactory()
-      .builder()
+      .builder(this.transcodeConfig)
       .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
       .setVideoInputSource(videoInput)
       .setAudioInputSource(audioInput)
@@ -405,7 +405,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.ffmpegSettings.vaapiDriver,
+        vaapiDriver: this.getVaapiDriver(),
       }),
       new FrameState({
         isAnamorphic: false,
@@ -444,7 +444,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     realtime: boolean,
     ptsOffset?: number,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
-    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
+    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
     const playbackParams = calculator.calculateForErrorStream(
       outputFormat,
       realtime,
@@ -517,7 +517,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     const builder = await new PipelineBuilderFactory()
-      .builder()
+      .builder(this.transcodeConfig)
       .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
       .setVideoInputSource(errorInput)
       .setAudioInputSource(audioInput)
@@ -533,7 +533,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.ffmpegSettings.vaapiDriver,
+        vaapiDriver: this.getVaapiDriver(),
       }),
       new FrameState({
         isAnamorphic: false,
@@ -590,7 +590,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
     );
 
-    const calculator = new FfmpegPlaybackParamsCalculator(this.ffmpegSettings);
+    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
     const playbackParams = calculator.calculateForErrorStream(
       outputFormat,
       true,
@@ -621,7 +621,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     const builder = await new PipelineBuilderFactory()
-      .builder()
+      .builder(this.transcodeConfig)
       .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
       .setVideoInputSource(offlineInput)
       .setAudioInputSource(audioInput)
@@ -637,7 +637,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
-        vaapiDriver: this.ffmpegSettings.vaapiDriver,
+        vaapiDriver: this.getVaapiDriver(),
       }),
       new FrameState({
         isAnamorphic: false,
@@ -677,5 +677,11 @@ export class FfmpegStreamFactory extends IFFMPEG {
       : isLinux()
       ? '/dev/dri/renderD128'
       : undefined;
+  }
+
+  private getVaapiDriver() {
+    return this.transcodeConfig.vaapiDriver !== 'system'
+      ? this.transcodeConfig.vaapiDriver
+      : null;
   }
 }

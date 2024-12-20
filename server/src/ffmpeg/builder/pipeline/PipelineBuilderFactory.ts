@@ -1,14 +1,15 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.ts';
 import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
 import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
 import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
 import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
-import { FFMPEGInfo } from '@/ffmpeg/ffmpegInfo.ts';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { Nullable } from '@/types/util.ts';
 import { FfmpegSettings } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
-import { DeepReadonly } from 'ts-essentials';
 import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
@@ -19,10 +20,11 @@ import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 export class PipelineBuilderFactory {
   constructor(private settingsDB: SettingsDB = getSettings()) {}
 
-  builder(
-    settings: DeepReadonly<FfmpegSettings> = this.settingsDB.ffmpegSettings(),
-  ): PipelineBuilderFactory$Builder {
-    return new PipelineBuilderFactory$Builder(settings);
+  builder(transcodeConfig: TranscodeConfig): PipelineBuilderFactory$Builder {
+    return new PipelineBuilderFactory$Builder(
+      this.settingsDB.ffmpegSettings(),
+      transcodeConfig,
+    );
   }
 }
 
@@ -33,7 +35,10 @@ class PipelineBuilderFactory$Builder {
   private watermarkInputSource: Nullable<WatermarkInputSource> = null;
   private hardwareAccelerationMode: HardwareAccelerationMode = 'none';
 
-  constructor(private ffmpegSettings: FfmpegSettings) {}
+  constructor(
+    private ffmpegSettings: FfmpegSettings,
+    private transcodeConfig: TranscodeConfig,
+  ) {}
 
   setVideoInputSource(
     videoInputSource: Nullable<VideoInputSource>,
@@ -73,12 +78,14 @@ class PipelineBuilderFactory$Builder {
       throw new Error();
     }
 
-    const info = new FFMPEGInfo(this.ffmpegSettings);
-    const hardwareCapabilities = await info.getHardwareCapabilities(
-      this.hardwareAccelerationMode,
-    );
-    const binaryCapabilities = await info.getCapabilities();
-
+    const info = new FfmpegInfo(this.ffmpegSettings);
+    const [hardwareCapabilities, binaryCapabilities] = await Promise.all([
+      new HardwareCapabilitiesFactory(
+        this.ffmpegSettings,
+        this.transcodeConfig,
+      ).getCapabilities(),
+      info.getCapabilities(),
+    ]);
     switch (this.hardwareAccelerationMode) {
       case 'cuda':
         return new NvidiaPipelineBuilder(

@@ -1,5 +1,4 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -26,6 +25,7 @@ import {
   HlsSlowerSessionOptions,
 } from './hls/HlsSlowerSession.js';
 
+import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { ifDefined } from '@/util/index.js';
 import { ChannelStreamMode } from '@tunarr/types';
@@ -217,7 +217,7 @@ export class SessionManager {
     token: string,
     connection: StreamConnectionDetails,
     sessionType: SessionType,
-    sessionFactory: (channel: Channel) => TSession,
+    sessionFactory: (channel: ChannelWithTranscodeConfig) => TSession,
   ): Promise<Result<TSession, TypedError>> {
     const lock = await this.#sessionLocker.getOrCreateLock(channelId);
     try {
@@ -228,7 +228,11 @@ export class SessionManager {
         ) as Maybe<TSession>;
 
         if (isNil(session)) {
-          const channel = await this.channelDB.getChannel(channelId);
+          const channel = await this.channelDB
+            .getChannelBuilder(channelId)
+            .withTranscodeConfig()
+            .executeTakeFirst();
+
           if (isNil(channel)) {
             throw new ChannelNotFoundError(channelId);
           }

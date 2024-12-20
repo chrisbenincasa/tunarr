@@ -1,4 +1,4 @@
-import { TrannscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.ts';
+import { TranscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.ts';
 import { serverOptions } from '@/globals.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
 import { firstDefined } from '@/util/index.js';

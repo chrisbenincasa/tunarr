@@ -64,7 +64,10 @@ export class VideoStream {
     const serverCtx = getServerContext();
     const outStream = new PassThrough();
 
-    const channel = await serverCtx.channelDB.getChannel(reqChannel);
+    const channel = await serverCtx.channelDB
+      .getChannelBuilder(reqChannel)
+      .withTranscodeConfig()
+      .executeTakeFirst();
 
     if (isNil(channel)) {
       return {
@@ -123,6 +126,8 @@ export class VideoStream {
             audioOnly,
             result.lineupItem.type === 'loading',
             true,
+            ffmpegSettings.useNewFfmpegPipeline,
+            channel.transcodeConfig,
           );
           const programStream = ProgramStreamFactory.create(
             playerContext,

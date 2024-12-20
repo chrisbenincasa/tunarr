@@ -61,6 +61,40 @@ export type ErrorScreenType = TupleToUnion<typeof ErrorScreenTypes>;
 export const ErrorScreenAudioTypes = ['silent', 'sine', 'whitenoise'] as const;
 export type ErrorScreenAudioType = TupleToUnion<typeof ErrorScreenAudioTypes>;
 
+export const TranscodeConfigColumns: (keyof TrannscodeConfigTable)[] = [
+  'audioBitRate',
+  'audioBufferSize',
+  'audioChannels',
+  'audioFormat',
+  'audioSampleRate',
+  'audioVolumePercent',
+  'deinterlaceVideo',
+  'disableChannelOverlay',
+  'errorScreen',
+  'errorScreenAudio',
+  'hardwareAccelerationMode',
+  'isDefault',
+  'name',
+  'normalizeFrameRate',
+  'resolution',
+  'threadCount',
+  'uuid',
+  'vaapiDevice',
+  'vaapiDriver',
+  'videoBitDepth',
+  'videoBitRate',
+  'videoBufferSize',
+  'videoFormat',
+  'videoPreset',
+  'videoProfile',
+] as const;
+
+type TranscodeConfigFields<Alias extends string = 'transcodeConfig'> =
+  readonly `${Alias}.${keyof TrannscodeConfigTable}`[];
+
+export const AllTranscodeConfigColumns: TranscodeConfigFields =
+  TranscodeConfigColumns.map((key) => `transcodeConfig.${key}` as const);
+
 export interface TrannscodeConfigTable extends WithUuid {
   name: string;
   threadCount: number;
@@ -93,6 +127,6 @@ export interface TrannscodeConfigTable extends WithUuid {
   isDefault: Generated<number>; // boolean,
 }
 
-export type TrannscodeConfig = Selectable<TrannscodeConfigTable>;
+export type TranscodeConfig = Selectable<TrannscodeConfigTable>;
 export type NewTranscodeConfig = Insertable<TrannscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TrannscodeConfigTable>;

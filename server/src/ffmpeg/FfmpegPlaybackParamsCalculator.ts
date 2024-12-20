@@ -1,8 +1,8 @@
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
 import { StreamDetails, VideoStreamDetails } from '@/stream/types.ts';
 import { gcd } from '@/util/index.ts';
-import { FfmpegSettings, Resolution } from '@tunarr/types';
-import { isNil, round } from 'lodash-es';
-import { DeepReadonly } from 'ts-essentials';
+import { numberToBoolean } from '@/util/sqliteUtil.ts';
+import { Resolution } from '@tunarr/types';
 import { OutputFormat } from './builder/constants.ts';
 import {
   PixelFormat,
@@ -11,29 +11,32 @@ import {
 import { FrameSize, HardwareAccelerationMode } from './builder/types.ts';
 
 export class FfmpegPlaybackParamsCalculator {
-  constructor(private ffmpegOptions: DeepReadonly<FfmpegSettings>) {}
+  constructor(private transcodeConfig: TranscodeConfig) {}
 
   calculateForStream(streamDetails: StreamDetails): FfmpegPlaybackParams {
     // TODO: Check channel mode;
     const params: FfmpegPlaybackParams = {
-      audioFormat: this.ffmpegOptions.audioEncoder,
-      audioBitrate: this.ffmpegOptions.audioBitrate,
-      audioBufferSize: this.ffmpegOptions.audioBufferSize,
-      audioChannels: this.ffmpegOptions.audioChannels,
-      audioSampleRate: this.ffmpegOptions.audioSampleRate,
-      hwAccel: this.ffmpegOptions.hardwareAccelerationMode,
-      videoFormat: this.ffmpegOptions.videoFormat,
-      videoBitrate: this.ffmpegOptions.videoBitrate,
-      videoBufferSize: this.ffmpegOptions.videoBufferSize,
+      audioFormat: this.transcodeConfig.audioFormat,
+      audioBitrate: this.transcodeConfig.audioBitRate,
+      audioBufferSize: this.transcodeConfig.audioBufferSize,
+      audioChannels: this.transcodeConfig.audioChannels,
+      audioSampleRate: this.transcodeConfig.audioSampleRate,
+      hwAccel: this.transcodeConfig.hardwareAccelerationMode,
+      videoFormat: this.transcodeConfig.videoFormat,
+      videoBitrate: this.transcodeConfig.videoBitRate,
+      videoBufferSize: this.transcodeConfig.videoBufferSize,
     };
 
     if (streamDetails.videoDetails) {
       const [videoStream] = streamDetails.videoDetails;
       if (
-        needsToScale(this.ffmpegOptions, videoStream) &&
+        needsToScale(this.transcodeConfig, videoStream) &&
         videoStream.sampleAspectRatio !== '0:0'
       ) {
-        const scaledSize = calculateScaledSize(this.ffmpegOptions, videoStream);
+        const scaledSize = calculateScaledSize(
+          this.transcodeConfig,
+          videoStream,
+        );
         if (
           scaledSize.widthPx !== videoStream.width ||
           scaledSize.heightPx !== videoStream.height
@@ -49,20 +52,19 @@ export class FfmpegPlaybackParamsCalculator {
           height: videoStream.height,
         });
       if (
-        sizeAfterScaling.width !==
-          this.ffmpegOptions.targetResolution.widthPx ||
-        sizeAfterScaling.height !== this.ffmpegOptions.targetResolution.heightPx
+        sizeAfterScaling.width !== this.transcodeConfig.resolution.widthPx ||
+        sizeAfterScaling.height !== this.transcodeConfig.resolution.heightPx
       ) {
         params.needsPad = true;
       }
 
       // We only have an option for maxFPS right now...
-      if (
-        isNil(videoStream.framerate) ||
-        round(videoStream.framerate, 3) > this.ffmpegOptions.maxFPS
-      ) {
-        params.frameRate = this.ffmpegOptions.maxFPS;
-      }
+      // if (
+      //   isNil(videoStream.framerate) ||
+      //   round(videoStream.framerate, 3) > this.ffmpegOptions.maxFPS
+      // ) {
+      //   params.frameRate = this.ffmpegOptions.maxFPS;
+      // }
 
       params.videoTrackTimeScale = 90000;
 
@@ -74,7 +76,7 @@ export class FfmpegPlaybackParamsCalculator {
       params.pixelFormat = new PixelFormatYuv420P();
 
       params.deinterlace =
-        this.ffmpegOptions.deinterlaceFilter !== 'none' &&
+        numberToBoolean(this.transcodeConfig.deinterlaceVideo) &&
         videoStream.scanType === 'interlaced';
     }
 
@@ -86,15 +88,15 @@ export class FfmpegPlaybackParamsCalculator {
     hlsRealtime: boolean,
   ): FfmpegPlaybackParams {
     return {
-      audioFormat: this.ffmpegOptions.audioEncoder,
-      audioBitrate: this.ffmpegOptions.audioBitrate,
-      audioBufferSize: this.ffmpegOptions.audioBufferSize,
-      audioChannels: this.ffmpegOptions.audioChannels,
-      audioSampleRate: this.ffmpegOptions.audioSampleRate,
-      hwAccel: this.ffmpegOptions.hardwareAccelerationMode,
-      videoFormat: this.ffmpegOptions.videoFormat,
-      videoBitrate: this.ffmpegOptions.videoBitrate,
-      videoBufferSize: this.ffmpegOptions.videoBufferSize,
+      audioFormat: this.transcodeConfig.audioFormat,
+      audioBitrate: this.transcodeConfig.audioBitRate,
+      audioBufferSize: this.transcodeConfig.audioBufferSize,
+      audioChannels: this.transcodeConfig.audioChannels,
+      audioSampleRate: this.transcodeConfig.audioSampleRate,
+      hwAccel: this.transcodeConfig.hardwareAccelerationMode,
+      videoFormat: this.transcodeConfig.videoFormat,
+      videoBitrate: this.transcodeConfig.videoBitRate,
+      videoBufferSize: this.transcodeConfig.videoBufferSize,
       videoTrackTimeScale: 90_000,
       frameRate: 24,
       realtime: outputFormat.type === 'hls' ? hlsRealtime : true,
@@ -103,15 +105,15 @@ export class FfmpegPlaybackParamsCalculator {
 
   calculateForHlsConcat() {
     return {
-      audioFormat: this.ffmpegOptions.audioEncoder,
-      audioBitrate: this.ffmpegOptions.audioBitrate,
-      audioBufferSize: this.ffmpegOptions.audioBufferSize,
-      audioChannels: this.ffmpegOptions.audioChannels,
-      audioSampleRate: this.ffmpegOptions.audioSampleRate,
-      hwAccel: this.ffmpegOptions.hardwareAccelerationMode,
-      videoFormat: this.ffmpegOptions.videoFormat,
-      videoBitrate: this.ffmpegOptions.videoBitrate,
-      videoBufferSize: this.ffmpegOptions.videoBufferSize,
+      audioFormat: this.transcodeConfig.audioFormat,
+      audioBitrate: this.transcodeConfig.audioBitRate,
+      audioBufferSize: this.transcodeConfig.audioBufferSize,
+      audioChannels: this.transcodeConfig.audioChannels,
+      audioSampleRate: this.transcodeConfig.audioSampleRate,
+      hwAccel: this.transcodeConfig.hardwareAccelerationMode,
+      videoFormat: this.transcodeConfig.videoFormat,
+      videoBitrate: this.transcodeConfig.videoBitRate,
+      videoBufferSize: this.transcodeConfig.videoBufferSize,
       videoTrackTimeScale: 90_000,
       frameRate: 24,
       realtime: false,
@@ -144,14 +146,14 @@ export type FfmpegPlaybackParams = {
 };
 
 function needsToScale(
-  ffmpegOptions: DeepReadonly<FfmpegSettings>,
+  transcodeConfig: TranscodeConfig,
   videoStreamDetails: VideoStreamDetails,
 ) {
   return (
     isAnamorphic(videoStreamDetails) ||
     actualSizeDiffersFromDesired(
       videoStreamDetails,
-      ffmpegOptions.targetResolution,
+      transcodeConfig.resolution,
     ) ||
     videoStreamDetails.width % 2 == 1 ||
     videoStreamDetails.height % 2 == 1
@@ -192,11 +194,10 @@ function isAnamorphic(videoStreamDetails: VideoStreamDetails) {
 }
 
 function calculateScaledSize(
-  ffmpegOptions: DeepReadonly<FfmpegSettings>,
+  config: TranscodeConfig,
   videoStream: VideoStreamDetails,
 ) {
-  const { widthPx: targetW, heightPx: targetH } =
-    ffmpegOptions.targetResolution;
+  const { widthPx: targetW, heightPx: targetH } = config.resolution;
   const [width, height] = videoStream.sampleAspectRatio
     .split(':')
     .map((i) => parseInt(i));
