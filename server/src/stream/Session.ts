@@ -292,6 +292,6 @@ export abstract class Session<
   }
 
   isStale(): boolean {
-    return isEmpty(this.removeStaleConnections());
+    return this.state !== 'starting' && isEmpty(this.removeStaleConnections());
   }
 }
