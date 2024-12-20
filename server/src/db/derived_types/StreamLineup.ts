@@ -67,9 +67,11 @@ const BaseContentBackedStreamLineupItemSchema =
     // ID in the program DB table
     programId: z.string().uuid(),
     // These are taken from the Program DB entity
-    plexFilePath: z.string().optional(),
     externalSourceId: z.string(),
-    filePath: z.string().optional(),
+    // Path to fetch the raw stream from the server
+    serverPath: z.string().optional(),
+    // The file path of the underlying media as seen from the media server
+    serverFilePath: z.string().optional(),
     externalKey: z.string(),
     programType: ProgramTypeEnum,
     externalSource: z.nativeEnum(MediaSourceType),

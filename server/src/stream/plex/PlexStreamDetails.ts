@@ -48,7 +48,7 @@ import {
 // The minimum fields we need to get stream details about an item
 type PlexItemStreamDetailsQuery = Pick<
   ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
+  'programType' | 'externalKey' | 'programId' | 'serverPath' | 'serverFilePath'
 >;
 
 /**
@@ -181,7 +181,7 @@ export class PlexStreamDetails {
 
     if (
       isNonEmptyString(details.serverPath) &&
-      details.serverPath !== item.plexFilePath
+      details.serverPath !== item.serverPath
     ) {
       this.programDB
         .updateProgramPlexRatingKey(item.programId, this.server.name, {
@@ -218,7 +218,7 @@ export class PlexStreamDetails {
         path: filePath,
       };
     } else {
-      let path = details.serverPath ?? item.plexFilePath;
+      let path = details.serverPath ?? item.serverPath;
 
       if (isNonEmptyString(path)) {
         path = path.startsWith('/') ? path : `/${path}`;
@@ -228,9 +228,6 @@ export class PlexStreamDetails {
             this.server.accessToken
           }`,
         );
-        // streamUrl = this.getPlexTranscodeStreamUrl(
-        //   `/library/metadata/${item.externalKey}`,
-        // );
       } else {
         throw new Error('Could not resolve stream URL');
       }

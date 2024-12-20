@@ -4,35 +4,43 @@ import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { Channel } from '@/db/schema/Channel.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { ProgramDao as RawProgram } from '@/db/schema/Program.ts';
-import type { ProgramDaoWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
+import type {
+  ProgramWithExternalIds,
+  ProgramDaoWithRelations as RawProgramEntity,
+} from '@/db/schema/derivedTypes.js';
 import { FillerPicker } from '@/services/FillerPicker.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
+import { nullToUndefined } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
-import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
+import {
+  find,
+  first,
+  isEmpty,
+  isNil,
+  isNull,
+  isUndefined,
+  nth,
+} from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
-import { z } from 'zod';
 import {
   Lineup,
   isContentItem,
   isOfflineItem,
 } from '../db/derived_types/Lineup.ts';
 import {
+  CommercialStreamLineupItem,
   EnrichedLineupItem,
+  OfflineStreamLineupItem,
   ProgramStreamLineupItem,
   RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
-import {
-  isNonEmptyString,
-  nullToUndefined,
-  zipWithIndex,
-} from '../util/index.js';
+import { isNonEmptyString, zipWithIndex } from '../util/index.js';
 import { ChannelCache } from './ChannelCache.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
@@ -396,16 +404,16 @@ export class StreamProgramCalculator {
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
                 ? MediaSourceType.Jellyfin
                 : MediaSourceType.Plex,
-            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             externalKey: externalInfo.externalKey,
-            filePath: nullToUndefined(externalInfo.directFilePath),
+            serverPath: nullToUndefined(externalInfo.externalFilePath),
+            serverFilePath: nullToUndefined(externalInfo.directFilePath),
             externalSourceId: externalInfo.externalSourceId,
             duration: backingItem.duration,
             programId: backingItem.uuid,
             title: backingItem.title,
             id: backingItem.uuid,
             programType: backingItem.type,
-          };
+          } satisfies ProgramStreamLineupItem;
         }
       }
     } else if (isOfflineItem(lineupItem)) {
@@ -518,7 +526,6 @@ export class StreamProgramCalculator {
             // just add the video, starting at 0, playing the entire duration
             type: 'commercial',
             title: filler.title,
-            filePath: nullToUndefined(externalInfo.directFilePath),
             externalKey: externalInfo.externalKey,
             externalSource:
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
@@ -533,9 +540,10 @@ export class StreamProgramCalculator {
             programId: filler.uuid,
             beginningOffset: beginningOffset,
             externalSourceId: externalInfo.externalSourceId!,
-            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
+            serverFilePath: nullToUndefined(externalInfo.directFilePath),
+            serverPath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
-          };
+          } satisfies CommercialStreamLineupItem;
         }
       }
 
@@ -551,7 +559,7 @@ export class StreamProgramCalculator {
         beginningOffset: beginningOffset,
         duration: remaining,
         start: 0,
-      };
+      } satisfies OfflineStreamLineupItem;
     }
 
     const originalTimeElapsed = timeElapsed;
@@ -567,10 +575,12 @@ export class StreamProgramCalculator {
       streamDuration: activeProgram.duration - timeElapsed,
       beginningOffset: beginningOffset,
       id: activeProgram.id,
-    };
+    } satisfies ProgramStreamLineupItem;
   }
 
-  createStreamItemFromProgram(program: RawProgram): ProgramStreamLineupItem {
+  createStreamItemFromProgram(
+    program: ProgramWithExternalIds,
+  ): ProgramStreamLineupItem {
     return {
       ...program,
       type: 'program',
@@ -578,9 +588,13 @@ export class StreamProgramCalculator {
       programId: program.uuid,
       id: program.uuid,
       // HACK
-      externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
-      plexFilePath: program.plexFilePath ?? undefined,
-      filePath: program.filePath ?? undefined,
+      externalSource: program.sourceType,
+      serverPath: nullToUndefined(
+        find(program.externalIds, { sourceType: 'plex' })?.externalFilePath,
+      ),
+      serverFilePath: nullToUndefined(
+        find(program.externalIds, { sourceType: 'plex' })?.directFilePath,
+      ),
     };
   }
 }

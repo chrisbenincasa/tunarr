@@ -22,12 +22,15 @@ export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   episodeIcon: string | null;
   externalKey: string;
   externalSourceId: string;
+  // Deprecated, use program_external_id.direct_file_path
   filePath: string | null;
   grandparentExternalKey: string | null;
   icon: string | null;
   originalAirDate: string | null;
   parentExternalKey: string | null;
+  // Deprecated, use program_external_id.external_file_path
   plexFilePath: string | null;
+  // Deprecated, use external_key
   plexRatingKey: string | null;
   rating: string | null;
   seasonIcon: string | null;

@@ -1,11 +1,13 @@
 import { getDatabase } from '@/db/DBAccess.ts';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
+import { withProgramExternalIds } from '@/db/programQueryHelpers.ts';
 import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.ts';
-import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
+import { ProgramType } from '@/db/schema/Program.ts';
 import {
   AllTranscodeConfigColumns,
   TranscodeConfig,
 } from '@/db/schema/TranscodeConfig.ts';
+import { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { serverContext } from '@/serverContext.ts';
 import { OfflineProgramStream } from '@/stream/OfflinePlayer.ts';
@@ -130,6 +132,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
       .where('type', '=', ProgramType.Episode)
+      .select(withProgramExternalIds)
       .limit(1)
       .selectAll()
       .executeTakeFirstOrThrow();
@@ -261,7 +264,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   async function initStream(
-    program: ProgramDao,
+    program: ProgramWithExternalIds,
     channel: Channel,
     transcodeConfig: TranscodeConfig,
     startTime: number = 0,
