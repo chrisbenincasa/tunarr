@@ -1,5 +1,6 @@
 import { Channel } from '@/db/schema/Channel.ts';
 import { BaseHlsSession } from '@/stream/hls/BaseHlsSession.ts';
+import { HlsPlaylistCreator } from '@/stream/hls/HlsPlaylistCreator.ts';
 import { Result } from '@/types/result.ts';
 import { TruthyQueryParam } from '@/types/schemas.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
@@ -23,6 +24,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
     className: 'StreamApi',
+  });
+
+  fastify.addHook('onError', (req, _, error, done) => {
+    logger.error(error, '%s %s', req.routeOptions.method, req.routeOptions.url);
+    done();
   });
 
   await fastify.register(fastifyStatic, {
@@ -117,7 +123,8 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           },
           {
             audioOnly: req.query.audioOnly,
-            sessionType: `${mode}_concat` as const,
+            sessionType:
+              mode === 'hls_direct' ? 'hls_concat' : `${mode}_concat`,
           },
         );
 
@@ -337,6 +344,17 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
               }),
             );
           break;
+        case 'hls_direct': {
+          const playlist = await new HlsPlaylistCreator(
+            req.serverCtx.streamProgramCalculator(),
+          ).createPlaylist(channelId, dayjs(), {
+            protocol: req.protocol,
+            host: req.host,
+            channelIdOrNumber: channelId,
+            streamMode: mode,
+          });
+          return res.type('application/vnd.apple.mpegurl').send(playlist);
+        }
         case 'mpegts':
           return res.status(400).send();
       }

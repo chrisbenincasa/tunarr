@@ -76,12 +76,14 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
       const context = new PlayerContext(
         result.lineupItem,
         result.channelContext,
+        result.sourceChannel,
         request.audioOnly,
         lineupItem.type === 'loading',
         this.#realtimeTranscode,
         this.sessionOptions.useNewPipeline ??
           this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
         this.channel.transcodeConfig,
+        this.sessionType,
       );
 
       let programStream = ProgramStreamFactory.create(
@@ -103,10 +105,12 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
             result.lineupItem.streamDuration ?? result.lineupItem.duration,
             transcodeSessionResult.error,
             result.channelContext,
+            this.channel,
             /*realtime=*/ true,
             this.sessionOptions.useNewPipeline ??
               this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
             this.channel.transcodeConfig,
+            this.sessionType,
           ),
           NutOutputFormat,
         );
@@ -156,6 +160,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
       this.settingsDB.ffmpegSettings(),
       this.channel.transcodeConfig,
       this.channel,
+      this.sessionType,
     );
 
     this.#concatSession = await ffmpeg.createConcatSession(streamUrl, {

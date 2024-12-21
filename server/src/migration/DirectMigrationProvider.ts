@@ -1,3 +1,4 @@
+import Migration1735044379_AddHlsDirect from '@/migration/db/Migration1735044379_AddHlsDirect.ts';
 import { CompiledQuery, Migration, MigrationProvider } from 'kysely';
 import { mapValues } from 'lodash-es';
 import LegacyMigration0 from './db/LegacyMigration0.ts';
@@ -85,6 +86,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1730806741: Migration1730806741,
           migration1731982492: Migration1731982492,
           migration1732969335: Migration1732969335_AddTranscodeConfig,
+          migration1735044379: Migration1735044379_AddHlsDirect,
         },
         wrapWithTransaction,
       ),

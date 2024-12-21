@@ -11,7 +11,7 @@ import { gcd } from '@/util/index.ts';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
-import { FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
+import { ChannelStreamMode, FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
 
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import dayjs from 'dayjs';
@@ -150,6 +150,7 @@ export type StreamOptions = {
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;
   ptsOffset?: number;
+  streamMode?: ChannelStreamMode
 };
 
 export type StreamSessionOptions = StreamOptions & {

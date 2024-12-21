@@ -77,7 +77,8 @@ export class JellyfinProgramStream extends ProgramStream {
     this.ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
       this.context.transcodeConfig,
-      this.context.channel,
+      this.context.sourceChannel,
+      this.context.streamMode,
     );
 
     const stream = await jellyfinStreamDetails.getStream(lineupItem);
@@ -98,7 +99,7 @@ export class JellyfinProgramStream extends ProgramStream {
         : undefined;
     }
 
-    const start = dayjs.duration(lineupItem.start ?? 0);
+    const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
     const ffmpegOutStream = await this.ffmpeg.createStreamSession({
       streamSource: stream.streamSource,

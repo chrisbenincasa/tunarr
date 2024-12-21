@@ -24,6 +24,7 @@ export class ConcatStream {
       this.#ffmpegSettings,
       this.channel.transcodeConfig,
       this.channel,
+      ConcatStreamModeToChildMode[this.streamMode],
     );
 
     switch (this.streamMode) {

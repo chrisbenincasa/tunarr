@@ -120,11 +120,5 @@
     "typescript-eslint": "^7.5.0",
     "unzip-stream": "^0.3.4",
     "vitest": "^2.1.8"
-  },
-  "mikro-orm": {
-    "configPaths": [
-      "./mikro-orm.config.ts",
-      "./build/mikro-orm.config.js"
-    ]
   }
 }

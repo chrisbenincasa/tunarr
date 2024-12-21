@@ -253,11 +253,10 @@ export default function FfmpegSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateFfmpegSettings)}>
-      <Stack spacing={2} useFlexGap>
-        <Typography variant="h5" sx={{ mb: 2 }}>
-          Global Options
-        </Typography>
-
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Global Options
+      </Typography>
+      <Stack spacing={3} useFlexGap>
         {!systemSettings.data.adminMode && (
           <Alert severity="info">
             Tunarr must be run in admin mode in order to update the FFmpeg and
@@ -390,28 +389,53 @@ export default function FfmpegSettingsPage() {
             </FormHelperText>
           </FormControl>
         </Stack>
-      </Stack>
-      <Stack spacing={2} direction="row" justifyContent="right">
-        {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (
+        <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
+          <InputLabel id="hls-direct-output-format-label">
+            HLS Direct Output Format
+          </InputLabel>
+          <Controller
+            control={control}
+            name="hlsDirectOutputFormat"
+            render={({ field }) => (
+              <Select
+                id="hls-direct-output-format"
+                label="HLS Direct Output Format"
+                labelId="hls-direct-output-format-label"
+                {...field}
+              >
+                <MenuItem value="mkv">MKV</MenuItem>
+                <MenuItem value="mp4">MP4</MenuItem>
+                <MenuItem value="mpegts">MPEG-TS</MenuItem>
+              </Select>
+            )}
+          />
+          <FormHelperText>
+            Channels configured to use the HLS Direct stream mode will output in
+            the selected container format.
+          </FormHelperText>
+        </FormControl>
+        <Stack spacing={2} direction="row" justifyContent="right">
+          {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                reset(data);
+                setRestoreTunarrDefaults(false);
+              }}
+            >
+              Reset Changes
+            </Button>
+          )}
           <Button
-            variant="outlined"
-            onClick={() => {
-              reset(data);
-              setRestoreTunarrDefaults(false);
-            }}
+            variant="contained"
+            disabled={
+              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
+            }
+            type="submit"
           >
-            Reset Changes
+            Save
           </Button>
-        )}
-        <Button
-          variant="contained"
-          disabled={
-            !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
-          }
-          type="submit"
-        >
-          Save
-        </Button>
+        </Stack>
       </Stack>
       <Divider sx={{ mt: 2 }} />
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>

@@ -137,7 +137,8 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
       context.transcodeConfig,
-      context.channel,
+      context.sourceChannel,
+      context.streamMode,
     );
 
     const duration = dayjs.duration(
@@ -154,7 +155,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   }
 
   protected async getWatermark(): Promise<Maybe<Watermark>> {
-    const channel = this.context.channel;
+    const channel = this.context.targetChannel;
 
     if (this.context.transcodeConfig.disableChannelOverlay) {
       return;
@@ -162,7 +163,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
 
     if (
       this.context.lineupItem.type === 'commercial' &&
-      this.context.channel.disableFillerOverlay
+      this.context.targetChannel.disableFillerOverlay
     ) {
       return;
     }

@@ -131,6 +131,7 @@ export const FfmpegSettingsSchema = z.object({
   vaapiDevice: z.string().optional(),
   vaapiDriver: z.string().optional(),
   useNewFfmpegPipeline: z.boolean().default(false),
+  hlsDirectOutputFormat: z.enum(['mkv', 'mpegts', 'mp4']).default('mpegts'),
 });
 
 const mediaSourceId = z.custom<MediaSourceId>((val) => {

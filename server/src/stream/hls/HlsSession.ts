@@ -150,12 +150,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         const context = new PlayerContext(
           result.lineupItem,
           result.channelContext,
+          result.sourceChannel,
           false,
           result.lineupItem.type === 'loading',
           realtime,
           this.sessionOptions.useNewPipeline ??
             this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
           this.channel.transcodeConfig,
+          this.sessionType,
         );
 
         let programStream = this.getProgramStream(context);
@@ -183,10 +185,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               result.lineupItem.streamDuration ?? result.lineupItem.duration,
               transcodeSessionResult.error,
               result.channelContext,
+              this.channel,
               realtime,
               this.sessionOptions.useNewPipeline ??
                 this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
               this.channel.transcodeConfig,
+              this.sessionType,
             ),
           );
 

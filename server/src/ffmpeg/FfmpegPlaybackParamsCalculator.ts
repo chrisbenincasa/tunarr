@@ -1,8 +1,12 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import {
+  TranscodeAudioOutputFormat,
+  TranscodeConfig,
+} from '@/db/schema/TranscodeConfig.ts';
+import { ChannelStreamMode } from '@/db/schema/base.ts';
 import { StreamDetails, VideoStreamDetails } from '@/stream/types.ts';
 import { gcd } from '@/util/index.ts';
 import { numberToBoolean } from '@/util/sqliteUtil.ts';
-import { Resolution } from '@tunarr/types';
+import { ChannelStreamModes, Resolution } from '@tunarr/types';
 import { OutputFormat } from './builder/constants.ts';
 import {
   PixelFormat,
@@ -11,9 +15,21 @@ import {
 import { FrameSize, HardwareAccelerationMode } from './builder/types.ts';
 
 export class FfmpegPlaybackParamsCalculator {
-  constructor(private transcodeConfig: TranscodeConfig) {}
+  constructor(
+    private transcodeConfig: TranscodeConfig,
+    private streamMode: ChannelStreamMode,
+  ) {}
 
   calculateForStream(streamDetails: StreamDetails): FfmpegPlaybackParams {
+    if (this.streamMode === ChannelStreamModes.HlsDirect) {
+      return {
+        hwAccel: HardwareAccelerationMode.None,
+        audioFormat: TranscodeAudioOutputFormat.Copy,
+        videoFormat: 'copy', // Should be included in DB options
+        deinterlace: false,
+      } satisfies FfmpegPlaybackParams;
+    }
+
     // TODO: Check channel mode;
     const params: FfmpegPlaybackParams = {
       audioFormat: this.transcodeConfig.audioFormat,
@@ -131,17 +147,17 @@ export type FfmpegPlaybackParams = {
 
   // video details
   videoFormat: string;
-  videoBitrate: number;
-  videoBufferSize: number;
+  videoBitrate?: number;
+  videoBufferSize?: number;
   pixelFormat?: PixelFormat;
   deinterlace?: boolean;
 
   // audio details
   audioFormat: string;
-  audioBitrate: number;
-  audioBufferSize: number;
-  audioChannels: number;
-  audioSampleRate: number;
+  audioBitrate?: number;
+  audioBufferSize?: number;
+  audioChannels?: number;
+  audioSampleRate?: number;
   audioDuration?: number;
 };
 

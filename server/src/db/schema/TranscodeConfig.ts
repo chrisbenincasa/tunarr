@@ -34,9 +34,16 @@ export const TranscodeVideoOutputFormats = [
   'hevc',
   'mpeg2video',
 ] as const;
+
 export type TranscodeVideoOutputFormat = TupleToUnion<
   typeof TranscodeVideoOutputFormats
 >;
+
+export const TranscodeVideoOutputFormat = {
+  H264: 'h264' as const,
+  Hevc: 'hevc' as const,
+  Mpeg2Video: 'mpeg2video' as const,
+} as const;
 
 export const TranscodeAudioOutputFormats = [
   'aac',
@@ -44,9 +51,17 @@ export const TranscodeAudioOutputFormats = [
   'copy',
   'mp3',
 ] as const;
+
 export type TranscodeAudioOutputFormat = TupleToUnion<
   typeof TranscodeAudioOutputFormats
 >;
+
+export const TranscodeAudioOutputFormat = {
+  Aac: 'aac' as const,
+  Ac3: 'ac3' as const,
+  Copy: 'copy' as const,
+  Mp3: 'mp3' as const,
+} as const;
 
 export const ErrorScreenTypes = [
   'static',

@@ -69,6 +69,9 @@ importers:
       lint-staged:
         specifier: ^15.2.2
         version: 15.2.2
+      prettier:
+        specifier: ^3.0.3
+        version: 3.3.2
       turbo:
         specifier: ^2.2.3
         version: 2.3.0

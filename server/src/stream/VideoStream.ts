@@ -1,4 +1,9 @@
-import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
+import {
+  MkvOutputFormat,
+  Mp4OutputFormat,
+  MpegTsOutputFormat,
+  OutputFormat,
+} from '@/ffmpeg/builder/constants.ts';
 import { getServerContext, serverContext } from '@/serverContext.ts';
 import { Result } from '@/types/result.ts';
 import { fileExists } from '@/util/fsUtil.js';
@@ -32,7 +37,7 @@ type VideoStreamResult = VideoStreamSuccessResult | VideoStreamErrorResult;
 type StartVideoStreamRequest = {
   channel: string | number;
   audioOnly: boolean;
-  sessionType: ChannelStreamMode;
+  streamMode: ChannelStreamMode;
   sessionToken?: string;
 };
 
@@ -52,9 +57,9 @@ export class VideoStream {
 
   async startStream(
     {
-      channel: reqChannel,
+      channel: channelIdOrNumber,
       audioOnly,
-      sessionType,
+      streamMode,
       sessionToken,
     }: StartVideoStreamRequest,
     startTimestamp: number,
@@ -65,7 +70,7 @@ export class VideoStream {
     const outStream = new PassThrough();
 
     const channel = await serverCtx.channelDB
-      .getChannelBuilder(reqChannel)
+      .getChannelBuilder(channelIdOrNumber)
       .withTranscodeConfig()
       .executeTakeFirst();
 
@@ -73,7 +78,7 @@ export class VideoStream {
       return {
         type: 'error',
         httpStatus: 404,
-        message: `Channel ${reqChannel} doesn't exist`,
+        message: `Channel ${channelIdOrNumber} doesn't exist`,
       };
     }
 
@@ -93,7 +98,7 @@ export class VideoStream {
     }
 
     let programStreamResult: Result<ProgramStream>;
-    switch (sessionType) {
+    switch (streamMode) {
       case 'hls_slower': {
         const hlsSession = serverContext().sessionManager.getHlsSlowerSession(
           channel.uuid,
@@ -123,16 +128,34 @@ export class VideoStream {
           const playerContext = new PlayerContext(
             result.lineupItem,
             result.channelContext,
+            result.sourceChannel,
             audioOnly,
             result.lineupItem.type === 'loading',
             true,
             ffmpegSettings.useNewFfmpegPipeline,
             channel.transcodeConfig,
+            streamMode,
           );
+
+          let outputFormat: OutputFormat = MpegTsOutputFormat;
+          if (streamMode === 'hls_direct') {
+            switch (ffmpegSettings.hlsDirectOutputFormat) {
+              case 'mkv':
+                outputFormat = MkvOutputFormat;
+                break;
+              case 'mp4':
+                outputFormat = Mp4OutputFormat;
+                break;
+              case 'mpegts':
+                break;
+            }
+          }
+
           const programStream = ProgramStreamFactory.create(
             playerContext,
-            MpegTsOutputFormat,
+            outputFormat,
           );
+
           programStream.on('error', () => {
             this.logger.error(
               `Unrecoverable error in underlying FFMPEG process`,

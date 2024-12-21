@@ -79,7 +79,8 @@ export class PlexProgramStream extends ProgramStream {
     const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
       this.settingsDB.ffmpegSettings(),
       this.context.transcodeConfig,
-      this.context.channel,
+      this.context.sourceChannel,
+      this.context.streamMode,
     );
 
     const stream = await plexStreamDetails.getStream(lineupItem);
@@ -101,7 +102,7 @@ export class PlexProgramStream extends ProgramStream {
         : undefined;
     }
 
-    const start = dayjs.duration(lineupItem.start ?? 0);
+    const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
     const transcodeSession = await ffmpeg.createStreamSession({
       streamSource: stream.streamSource,
@@ -115,6 +116,7 @@ export class PlexProgramStream extends ProgramStream {
       watermark,
       realtime: this.context.realtime,
       outputFormat: this.outputFormat,
+      streamMode: this.context.streamMode,
       ...(opts ?? {}),
     });
 
@@ -126,10 +128,10 @@ export class PlexProgramStream extends ProgramStream {
       this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
         server,
         {
-          channelNumber: this.context.channel.number,
+          channelNumber: this.context.sourceChannel.number,
           duration: lineupItem.duration,
           ratingKey: lineupItem.externalKey,
-          startTime: lineupItem.start ?? 0,
+          startTime: lineupItem.startOffset ?? 0,
         },
       );
 

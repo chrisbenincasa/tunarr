@@ -492,13 +492,15 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
     this.pipelineSteps.push(encoder);
 
-    this.pipelineSteps.push(
-      AudioChannelsOutputOption(
-        this.context.audioStream.codec,
-        this.context.audioStream.channels,
-        this.context.desiredAudioState.audioChannels,
-      ),
-    );
+    if (!isNull(this.context.desiredAudioState.audioChannels)) {
+      this.pipelineSteps.push(
+        AudioChannelsOutputOption(
+          this.context.audioStream.codec,
+          this.context.audioStream.channels,
+          this.context.desiredAudioState.audioChannels,
+        ),
+      );
+    }
 
     if (this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut) {
       this.pushSettingIfDefined(

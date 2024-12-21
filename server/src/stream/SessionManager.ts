@@ -149,7 +149,7 @@ export class SessionManager {
         options.sessionType,
       );
       if (isUndefined(this.getSession(channelId, underlyingSessionType))) {
-        this.#logger.warn(
+        this.#logger.debug(
           'No underlying session of type %s found for existing concat session (channel id = %s). Removing dangling session and recreating',
           underlyingSessionType,
           channelId,
