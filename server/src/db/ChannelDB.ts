@@ -196,7 +196,7 @@ function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
     stealth: saveReq.stealth ? 1 : 0,
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
     guideFlexTitle: saveReq.guideFlexTitle,
-    streamMode: 'hls', // TODO: Let users choose
+    streamMode: saveReq.streamMode,
     transcodeConfigId: saveReq.transcodeConfigId,
   } satisfies NewChannel;
 }

@@ -25,7 +25,7 @@ export type ProgramExternalIdSourceType =
   | 'tvdb'
   | 'jellyfin';
 
-export type ChannelStreamMode = 'hls' | 'hls_slower';
+export type ChannelStreamMode = 'hls' | 'hls_slower' | 'mpegts';
 
 // export const DefaultChannelIcon = ChannelIconSchema.parse({});
 
