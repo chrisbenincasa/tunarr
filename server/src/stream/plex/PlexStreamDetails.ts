@@ -309,7 +309,10 @@ export class PlexStreamDetails {
         filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
           return stream.streamType === 2;
         }),
-        (stream) => [stream.index, stream.selected ?? stream.default ?? false],
+        (stream) => [
+          stream.index,
+          !(stream.selected ?? stream.default ?? false),
+        ],
       ),
       (audioStream) => {
         return {

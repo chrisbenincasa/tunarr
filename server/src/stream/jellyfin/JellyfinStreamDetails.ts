@@ -260,7 +260,7 @@ export class JellyfinStreamDetails {
           firstMediaSource?.MediaStreams,
           (stream) => stream.Type === 'Audio',
         ),
-        (stream) => [stream.Index ?? 0, !!stream.IsDefault],
+        (stream) => [stream.Index ?? 0, !stream.IsDefault],
       ),
       (audioStream) => {
         return {
