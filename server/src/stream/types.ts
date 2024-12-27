@@ -50,6 +50,7 @@ export type AudioStreamDetails = {
   bitrate?: number;
   profile?: string;
   default?: boolean;
+  selected?: boolean;
   title?: string;
   language?: string;
   forced?: boolean;

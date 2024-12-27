@@ -303,15 +303,27 @@ export class PlexStreamDetails {
         streamIndex: videoStream.index?.toString() ?? '0',
       } satisfies VideoStreamDetails;
     }
-
+    console.log(
+      sortBy(
+        filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
+          return stream.streamType === 2;
+        }),
+        (stream) => [
+          stream.selected ? -1 : 0,
+          stream.default ? 0 : 1,
+          stream.index,
+        ],
+      ),
+    );
     const audioStreamDetails = map(
       sortBy(
         filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
           return stream.streamType === 2;
         }),
         (stream) => [
+          stream.selected ? -1 : 0,
+          stream.default ? 0 : 1,
           stream.index,
-          !(stream.selected ?? stream.default ?? false),
         ],
       ),
       (audioStream) => {
@@ -325,7 +337,8 @@ export class PlexStreamDetails {
           // this stream over others, even if it is not the default
           // This is temporary until we have language preferences within Tunarr
           // to pick these streams.
-          default: audioStream.selected ?? audioStream.default,
+          selected: audioStream.selected,
+          default: audioStream.default,
           language: audioStream.languageCode,
           title: audioStream.displayTitle,
         } satisfies AudioStreamDetails;

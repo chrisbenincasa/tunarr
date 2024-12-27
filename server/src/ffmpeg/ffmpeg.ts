@@ -16,7 +16,15 @@ import { FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
-import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
+import {
+  find,
+  first,
+  isEmpty,
+  isNil,
+  isUndefined,
+  merge,
+  round,
+} from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import {
@@ -437,7 +445,10 @@ export class FFMPEG implements IFFMPEG {
     ];
 
     const videoStream = first(streamStats?.videoDetails);
-    const audioStream = first(streamStats?.audioDetails);
+    const audioStream =
+      find(streamStats?.audioDetails, { selected: true }) ??
+      find(streamStats?.audioDetails, { default: true }) ??
+      first(streamStats?.audioDetails);
 
     // Initialize like this because we're not checking whether or not
     // the input is hardware decodeable, yet.

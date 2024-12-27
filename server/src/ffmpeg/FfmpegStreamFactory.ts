@@ -333,13 +333,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     let audioInput: AudioInputSource;
     if (isDefined(streamDetails.audioDetails)) {
-      // Just pick the first one for now..
-      const defaultAudioStream = find(
-        streamDetails.audioDetails,
-        (stream) => !!stream.default,
-      );
       const audioStream =
-        defaultAudioStream ?? first(streamDetails.audioDetails);
+        find(streamDetails.audioDetails, { selected: true }) ??
+        find(streamDetails.audioDetails, { default: true }) ??
+        first(streamDetails.audioDetails);
       const audioStreamIndex = isNonEmptyString(audioStream.index)
         ? parseInt(audioStream.index)
         : 1;
