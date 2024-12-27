@@ -320,7 +320,12 @@ export class PlexStreamDetails {
           channels: audioStream.channels,
           codec: audioStream.codec,
           index: audioStream.index?.toString() ?? 'a', // Fallback for legacy pipeline
-          default: audioStream.default,
+          // Use the "selected" bit over the "default" if it exists
+          // In plex, selected signifies that the user's preferences would choose
+          // this stream over others, even if it is not the default
+          // This is temporary until we have language preferences within Tunarr
+          // to pick these streams.
+          default: audioStream.selected ?? audioStream.default,
           language: audioStream.languageCode,
           title: audioStream.displayTitle,
         } satisfies AudioStreamDetails;
