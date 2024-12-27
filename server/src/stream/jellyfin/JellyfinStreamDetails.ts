@@ -24,6 +24,7 @@ import {
   isUndefined,
   map,
   replace,
+  sortBy,
   takeWhile,
   trimEnd,
   trimStart,
@@ -254,9 +255,12 @@ export class JellyfinStreamDetails {
     }
 
     const audioStreamDetails = map(
-      filter(
-        firstMediaSource?.MediaStreams,
-        (stream) => stream.Type === 'Audio',
+      sortBy(
+        filter(
+          firstMediaSource?.MediaStreams,
+          (stream) => stream.Type === 'Audio',
+        ),
+        (stream) => [stream.Index ?? 0, !!stream.IsDefault],
       ),
       (audioStream) => {
         return {

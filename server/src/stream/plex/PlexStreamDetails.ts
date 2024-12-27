@@ -33,6 +33,7 @@ import {
   maxBy,
   replace,
   round,
+  sortBy,
   trimEnd,
 } from 'lodash-es';
 import { NonEmptyArray } from 'ts-essentials';
@@ -304,9 +305,12 @@ export class PlexStreamDetails {
     }
 
     const audioStreamDetails = map(
-      filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
-        return stream.streamType === 2;
-      }),
+      sortBy(
+        filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
+          return stream.streamType === 2;
+        }),
+        (stream) => [stream.index, stream.selected ?? stream.default ?? false],
+      ),
       (audioStream) => {
         return {
           bitrate: audioStream.bitrate,
