@@ -26,6 +26,7 @@ import {
   difference,
   filter,
   find,
+  first,
   flatMap,
   forEach,
   groupBy,
@@ -42,6 +43,7 @@ import {
   some,
   uniq,
   uniqBy,
+  values,
 } from 'lodash-es';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
@@ -222,6 +224,20 @@ export class ProgramDB {
     }
 
     return;
+  }
+
+  async lookupByExternalId(eid: {
+    sourceType: ProgramSourceType;
+    externalSourceId: string;
+    externalKey: string;
+  }) {
+    return first(
+      values(
+        await this.lookupByExternalIds(
+          new Set([[eid.sourceType, eid.externalSourceId, eid.externalKey]]),
+        ),
+      ),
+    );
   }
 
   async lookupByExternalIds(ids: Set<[string, string, string]>) {
