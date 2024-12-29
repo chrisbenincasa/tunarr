@@ -1,9 +1,13 @@
-import { isContentProgram } from '@tunarr/types';
-import _ from 'lodash-es';
+import { removeDuplicatePrograms } from '@/hooks/programming_controls/useRemoveDuplicates.ts';
+import { chain, keys, sample, some, sortBy } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import { UIChannelProgram } from '../../types/index.ts';
+import {
+  UIChannelProgram,
+  UIContentProgram,
+  UICustomProgram,
+} from '../../types/index.ts';
 
 export function useCyclicShuffle() {
   const programs = useStore(materializedProgramListSelector);
@@ -12,33 +16,52 @@ export function useCyclicShuffle() {
     // sort each chunk by show, season, & episode number
     // chunk by show in new obkect
     // randomly grab from each chunk until nothing remains
+    const groupedContent = chain(programs)
+      .thru(removeDuplicatePrograms)
+      .filter(
+        (program) => program.type === 'content' || program.type === 'custom',
+      )
+      .groupBy((program) => {
+        if (program.type === 'content') {
+          switch (program.subtype) {
+            case 'movie':
+              // Group all movies together, this way they are more evenly distributed throughout the timeline
+              // since they have less chance of being randomly selected
+              return 'movie';
+            case 'episode':
+              return program.showId; //Groups unique shows
+            case 'track':
+              // Group unique albums
+              return program.albumId;
+          }
+        } else if (program.type === 'custom') {
+          return program.customShowId;
+        }
+      })
+      .mapValues((programs) => {
+        const firstProgram = programs[0];
+        if (firstProgram.type === 'content') {
+          return sortBy(programs as UIContentProgram[], (program) => [
+            program.parentIndex,
+            program.index,
+          ]);
+        } else if (firstProgram.type === 'custom') {
+          return sortBy(
+            programs as UICustomProgram[],
+            (program) => program.index,
+          );
+        }
 
-    // Group shows by showId
-    const sortedPrograms = _.chain(programs)
-      .filter(isContentProgram)
-      .orderBy(['showId', 'seasonNumber', 'episodeNumber'])
+        return programs;
+      })
       .value();
-
-    const groupedContent = _.groupBy(sortedPrograms, (program) => {
-      if (program.type === 'content' && program.subtype === 'episode') {
-        return program.showId; //Groups unique shows
-      } else if (program.type === 'content' && program.subtype === 'movie') {
-        return 'movie'; // Group all movies together, this way they are more evenly distributed throughout the timeline since they have less chance of being randomly selected
-      } else if (program.type === 'content' && program.subtype === 'track') {
-        return program.albumId; // Group unique albums
-      } else if (program.type === 'content') {
-        return program.id; // group everything else by program.id
-      } else {
-        // to do: handle non content programming, for now we can ignore since we are filtering it out above
-      }
-    });
 
     const cycledShows: UIChannelProgram[] = [];
 
     // Loop until all chunks are empty
-    while (_.some(groupedContent, (chunk) => chunk.length > 0)) {
+    while (some(groupedContent, (chunk) => chunk.length > 0)) {
       // Get a random chunk of shows based on showId
-      const randomChunkKey = _.sample(_.keys(groupedContent));
+      const randomChunkKey = sample(keys(groupedContent));
 
       if (randomChunkKey) {
         const randomChunk = groupedContent[randomChunkKey];

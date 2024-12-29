@@ -35,12 +35,19 @@ export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
       return true;
     }
 
-    if (isRedirectProgram(p) || isCustomProgram(p)) {
-      const setToCheck = isRedirectProgram(p) ? seenRedirects : seenCustom;
-      const idToCheck = isRedirectProgram(p) ? p.channel : p.customShowId;
-      const seen = setToCheck.has(idToCheck);
+    if (isRedirectProgram(p)) {
+      const seen = seenRedirects.has(p.channel);
       if (!seen) {
-        setToCheck.add(idToCheck);
+        seenRedirects.add(p.channel);
+      }
+      return seen;
+    }
+
+    if (isCustomProgram(p)) {
+      const key = `${p.customShowId}_${p.id}`;
+      const seen = seenCustom.has(key);
+      if (!seen) {
+        seenCustom.add(key);
       }
       return seen;
     }
