@@ -523,12 +523,12 @@ export class FFMPEG implements IFFMPEG {
     let overlayFile = -1;
     if (streamSrc.type === 'http' || streamSrc.type === 'file') {
       if (streamSrc.type === 'http') {
-        ffmpegArgs.push(`-i`, streamSrc.path);
         if (!isEmpty(streamSrc.extraHeaders)) {
           for (const [key, value] of Object.entries(streamSrc.extraHeaders)) {
             ffmpegArgs.push('-headers', `'${key}: ${value}'`);
           }
         }
+        ffmpegArgs.push(`-i`, streamSrc.path);
       } else if (streamSrc.type === 'file') {
         ffmpegArgs.push(`-i`, streamSrc.path);
       }
