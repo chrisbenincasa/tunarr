@@ -1,8 +1,4 @@
-import {
-  QueryResult,
-  isQueryError,
-  isQuerySuccess,
-} from '@/external/BaseApiClient.js';
+import { QueryResult } from '@/external/BaseApiClient.js';
 import { isDefined } from '@/util/index.js';
 import NodeCache from 'node-cache';
 
@@ -47,7 +43,7 @@ export class PlexQueryCache {
     }
 
     const value = await getter();
-    if (isQuerySuccess(value) || (isQueryError(value) && opts?.setOnError)) {
+    if (value.isSuccess() || (value.isFailure() && opts?.setOnError)) {
       this.#cache.set(key, value);
     }
 

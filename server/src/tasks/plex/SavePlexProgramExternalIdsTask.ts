@@ -2,7 +2,6 @@ import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
 import { ProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Task } from '@/tasks/Task.ts';
@@ -60,7 +59,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const metadataResult = await api.getItemMetadata(chosenId.externalKey);
 
-    if (isQueryError(metadataResult)) {
+    if (metadataResult.isFailure()) {
       this.logger.error(
         'Error querying Plex for item %s',
         chosenId.externalKey,
@@ -68,7 +67,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       return;
     }
 
-    const metadata = metadataResult.data as PlexTerminalMedia;
+    const metadata = metadataResult.get() as PlexTerminalMedia;
 
     const eids = compact(
       map(metadata.Guid, (guid) => {

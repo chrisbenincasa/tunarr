@@ -32,8 +32,8 @@ export class VaapiHardwareCapabilitiesFactory
     const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
+        ? '/dev/dri/renderD128'
+        : undefined;
 
     if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
       this.logger.error('Cannot detect VAAPI capabilities without a device');

@@ -18,11 +18,11 @@ If you've double-checked these things and still are experiencing issues, please 
 
 ## Channel mappings being reset in Plex
 
-If you notice your channel guide is blank, open Plex > Settings > Live TV & DVR > Select "Channels (X) X enabled". If you see something similar to the below screenshot where the dropdowns are blank, your channels have lost their mappings. 
+If you notice your channel guide is blank, open Plex > Settings > Live TV & DVR > Select "Channels (X) X enabled". If you see something similar to the below screenshot where the dropdowns are blank, your channels have lost their mappings.
 
 ![Channel mappings](/assets/misc-commonissues-channelmappings.png)
 
-You can quickly resolve this by selecting the dropdown on the right and manually re-mapping your channels, but this will not resolve the underlying issue. 
+You can quickly resolve this by selecting the dropdown on the right and manually re-mapping your channels, but this will not resolve the underlying issue.
 
 Head over to Tunarr > Settings > SOURCES > Select the pencil icon next to your server > Verify Auto-Update Channels is unchecked.
 
@@ -30,4 +30,4 @@ Head over to Tunarr > Settings > SOURCES > Select the pencil icon next to your s
 
 ![Auto-update channels disabled](/assets/serversettings-autoupdatechannels.png)
 
-If this is already unchecked, see [Issue #818](https://github.com/chrisbenincasa/tunarr/issues/818) to track this issue. 
+If this is already unchecked, see [Issue #818](https://github.com/chrisbenincasa/tunarr/issues/818) to track this issue.

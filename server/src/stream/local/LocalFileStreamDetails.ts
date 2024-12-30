@@ -53,8 +53,8 @@ export class LocalFileStreamDetails {
           videoStream.field_order === 'interlaced'
             ? 'interlaced'
             : videoStream.field_order === 'progressive'
-            ? 'progressive'
-            : 'unknown',
+              ? 'progressive'
+              : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.r_frame_rate ?? undefined,

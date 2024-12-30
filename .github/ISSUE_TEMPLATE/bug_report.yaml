@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug report
-title: "[Bug]: "
-labels: ["user-issue", "triage"]
+title: '[Bug]: '
+labels: ['user-issue', 'triage']
 assignees:
   - chrisbenincasa
 body:
@@ -30,7 +30,7 @@ body:
     attributes:
       label: Version
       description: What version of our Tunarr are you running?
-      placeholder: "1.0.0"
+      placeholder: '1.0.0'
     validations:
       required: true
   - type: dropdown
@@ -49,12 +49,12 @@ body:
     id: browser
     attributes:
       label: What browser did you experience the the problem on?
-      placeholder: "ex: Chrome 122.0.6261.128"
+      placeholder: 'ex: Chrome 122.0.6261.128'
   - type: input
     id: os
     attributes:
       label: What operating system are you using?
-      placeholder: "ex: Windows 8.1"
+      placeholder: 'ex: Windows 8.1'
   - type: textarea
     id: logs
     attributes:

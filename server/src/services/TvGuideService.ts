@@ -954,8 +954,8 @@ export class TVGuideService {
     const icon = isNonEmptyString(materializedItem.icon)
       ? materializedItem.icon
       : isNonEmptyString(channel.icon?.path)
-      ? channel.icon.path
-      : makeLocalUrl('/images/tunarr.png');
+        ? channel.icon.path
+        : makeLocalUrl('/images/tunarr.png');
 
     return match(materializedItem)
       .returnType<TvGuideProgram>()

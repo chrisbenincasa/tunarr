@@ -10,6 +10,7 @@ import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 
+import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.ts';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
@@ -37,6 +38,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       prefix: '/debug',
     })
     .register(debugFfmpegApiRouter, {
+      prefix: '/debug',
+    })
+    .register(DebugPlexApiRouter, {
       prefix: '/debug',
     });
 

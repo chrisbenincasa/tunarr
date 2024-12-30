@@ -3,7 +3,6 @@ import { SettingsDB } from '@/db/SettingsDB.ts';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
 import { MediaSourceTable } from '@/db/schema/MediaSource.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
@@ -90,10 +89,10 @@ export class JellyfinStreamDetails {
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);
 
-    if (isQueryError(itemMetadataResult)) {
+    if (itemMetadataResult.isFailure()) {
       this.logger.error(itemMetadataResult, 'Error getting Jellyfin stream');
       return null;
-    } else if (isUndefined(itemMetadataResult.data)) {
+    } else if (isUndefined(itemMetadataResult.get())) {
       this.logger.error(
         'Jellyfin item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
         item.externalKey,
@@ -114,7 +113,7 @@ export class JellyfinStreamDetails {
       return null;
     }
 
-    const itemMetadata = itemMetadataResult.data;
+    const itemMetadata = itemMetadataResult.get()!;
 
     if (expectedItemType !== jellyfinItemTypeToProgramType(itemMetadata)) {
       this.logger.warn(

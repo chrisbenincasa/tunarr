@@ -4,15 +4,15 @@ repo_url: https://github.com/chrisbenincasa/tunarr
 site_url: https://tunarr.com/
 theme:
   name: material
-  palette: 
-  # Palette toggle for automatic mode
-    - media: "(prefers-color-scheme)"
+  palette:
+    # Palette toggle for automatic mode
+    - media: '(prefers-color-scheme)'
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
 
     # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)"
+    - media: '(prefers-color-scheme: light)'
       scheme: default
       primary: custom
       toggle:
@@ -20,7 +20,7 @@ theme:
         name: Switch to dark mode
 
     # Palette toggle for dark mode
-    - media: "(prefers-color-scheme: dark)"
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
       primary: custom
       toggle:
@@ -38,41 +38,41 @@ theme:
 nav:
   - Home: index.md
   - Getting Started:
-    - Install: getting-started/installation.md
-    - Run: getting-started/run.md
-    - Setup: getting-started/setup.md
+      - Install: getting-started/installation.md
+      - Run: getting-started/run.md
+      - Setup: getting-started/setup.md
   - Configure:
-    - Channels:
-      - configure/channels/index.md
-      - Properties: configure/channels/properties.md
-      - Flex: configure/channels/flex.md
-      - EPG: configure/channels/epg.md
-      - Transcoding: configure/channels/transcoding.md
-    - Programming: configure/programming.md
-    - Scheduling Tools: 
-      - configure/scheduling-tools/index.md
-      - Time Slots: configure/scheduling-tools/time-slots.md
-      - Random Slots: configure/scheduling-tools/random-slots.md
-      - Balance: configure/scheduling-tools/balance.md
-      - Replicate: configure/scheduling-tools/replicate.md
-      - Consolidate: configure/scheduling-tools/consolidate.md
-    - Library:
-      - configure/library/index.md
-      - Filler: configure/library/filler.md
-      - Custom Shows: configure/library/custom-shows.md
-    - System:
-      - configure/system/index.md
-      - Security: configure/system/security.md
-      - FFmpeg: configure/system/ffmpeg.md
-    - Clients:
-      - configure/clients/index.md
-      - Plex: configure/clients/plex.md
-      - Jellyfin: configure/clients/jellyfin.md
+      - Channels:
+          - configure/channels/index.md
+          - Properties: configure/channels/properties.md
+          - Flex: configure/channels/flex.md
+          - EPG: configure/channels/epg.md
+          - Transcoding: configure/channels/transcoding.md
+      - Programming: configure/programming.md
+      - Scheduling Tools:
+          - configure/scheduling-tools/index.md
+          - Time Slots: configure/scheduling-tools/time-slots.md
+          - Random Slots: configure/scheduling-tools/random-slots.md
+          - Balance: configure/scheduling-tools/balance.md
+          - Replicate: configure/scheduling-tools/replicate.md
+          - Consolidate: configure/scheduling-tools/consolidate.md
+      - Library:
+          - configure/library/index.md
+          - Filler: configure/library/filler.md
+          - Custom Shows: configure/library/custom-shows.md
+      - System:
+          - configure/system/index.md
+          - Security: configure/system/security.md
+          - FFmpeg: configure/system/ffmpeg.md
+      - Clients:
+          - configure/clients/index.md
+          - Plex: configure/clients/plex.md
+          - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
-    - Common Issues: misc/common-issues.md
-    - Troubleshooting: misc/troubleshooting.md
+      - Common Issues: misc/common-issues.md
+      - Troubleshooting: misc/troubleshooting.md
   - Development:
-    - Contributing: dev/contributing.md
+      - Contributing: dev/contributing.md
 
 markdown_extensions:
   - admonition

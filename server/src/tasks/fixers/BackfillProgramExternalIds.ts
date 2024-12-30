@@ -5,7 +5,6 @@ import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.ts';
 import { ProgramDao } from '@/db/schema/Program.ts';
 import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Maybe } from '@/types/util.js';
@@ -143,13 +142,13 @@ export class BackfillProgramExternalIds extends Fixer {
 
     const metadataResult = await plex.getItemMetadata(program.externalKey);
 
-    if (isQueryError(metadataResult)) {
+    if (metadataResult.isFailure()) {
       throw new Error(
         `Could not retrieve metadata for program ID ${program.uuid}, rating key = ${program.externalKey}`,
       );
     }
 
-    const metadata = metadataResult.data as PlexTerminalMedia;
+    const metadata = metadataResult.get() as PlexTerminalMedia;
 
     // We're here, might as well use the real thing.
     const firstPart = first(first(metadata.Media)?.Part);

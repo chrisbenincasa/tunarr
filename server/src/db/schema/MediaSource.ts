@@ -14,6 +14,7 @@ export const MediaSourceType: MediaSourceMap = {
   Plex: 'plex',
   Jellyfin: 'jellyfin',
 } as const;
+
 export interface MediaSourceTable
   extends WithUpdatedAt,
     WithUuid,
@@ -30,3 +31,7 @@ export interface MediaSourceTable
 
 export type MediaSource = Selectable<MediaSourceTable>;
 export type NewMediaSource = Insertable<MediaSourceTable>;
+
+type PlexMediaSource = Omit<MediaSource, 'type'> & {
+  type: MediaSourceMap['Plex'];
+};

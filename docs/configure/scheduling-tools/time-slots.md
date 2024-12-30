@@ -1,6 +1,6 @@
 # Time Slots
 
-Time Slots allow you to schedule specific shows to run at specific time slots each day or week. 
+Time Slots allow you to schedule specific shows to run at specific time slots each day or week.
 
 To schedule Time Slots for your channel programming, select "TOOLS", then "Time Slots".
 
@@ -18,6 +18,6 @@ If we instead wanted to air these two episodes, then have the channel play Flex 
 
 ![Time Slots example with flex](/assets/scheduling-tools-time_slots_exampleflex.png)
 
-See below for an example of our schedule now that we have Flex after our two episodes air. Now it will alternate Show 1 Day 1, Show 2 Day 1, Show 1 Day 2, Show 2 Day 2, etc. 
+See below for an example of our schedule now that we have Flex after our two episodes air. Now it will alternate Show 1 Day 1, Show 2 Day 1, Show 1 Day 2, Show 2 Day 2, etc.
 
 ![Time Slots preview with flex](/assets/scheduling-tools-time_slots_previewflex.png)

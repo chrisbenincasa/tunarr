@@ -202,8 +202,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         (isNumber(req.query.start) && req.query.start <= 0)
           ? 0
           : req.query.start === 'random'
-          ? random(program.duration / 1000, true)
-          : req.query.start;
+            ? random(program.duration / 1000, true)
+            : req.query.start;
 
       const channels = await getDatabase()
         .selectFrom('channelPrograms')

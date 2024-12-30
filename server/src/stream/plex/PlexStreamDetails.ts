@@ -3,7 +3,6 @@ import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
 import type { MediaSourceTable } from '@/db/schema/MediaSource.ts';
-import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
@@ -92,8 +91,8 @@ export class PlexStreamDetails {
       item.externalKey,
     );
 
-    if (isQueryError(itemMetadataResult)) {
-      if (itemMetadataResult.code === 'not_found') {
+    if (itemMetadataResult.isFailure()) {
+      if (itemMetadataResult.error.name === 'not_found') {
         this.logger.debug(
           'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
           item.externalKey,
@@ -116,15 +115,14 @@ export class PlexStreamDetails {
             },
           );
 
-          if (isQuerySuccess(byGuidResult)) {
-            if (byGuidResult.data.MediaContainer.size > 0) {
+          if (byGuidResult.isSuccess()) {
+            const byGuid = byGuidResult.get();
+            if (byGuid.MediaContainer.size > 0) {
               this.logger.debug(
                 'Found %d matching items in library. Using the first',
-                byGuidResult.data.MediaContainer.size,
+                byGuid.MediaContainer.size,
               );
-              const metadata = first(
-                byGuidResult.data.MediaContainer.Metadata,
-              )!;
+              const metadata = first(byGuid.MediaContainer.Metadata)!;
               const newRatingKey = metadata.ratingKey;
               this.logger.debug(
                 'Updating program %s with new Plex rating key %s',
@@ -161,7 +159,7 @@ export class PlexStreamDetails {
       return null;
     }
 
-    const itemMetadata = itemMetadataResult.data;
+    const itemMetadata = itemMetadataResult.get();
 
     if (expectedItemType !== itemMetadata.type) {
       this.logger.warn(
@@ -280,8 +278,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-            ? 'progressive'
-            : 'unknown',
+              ? 'progressive'
+              : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,

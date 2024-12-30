@@ -1,3 +1,4 @@
+import { Maybe } from '@/types/util.ts';
 import { isError } from 'lodash-es';
 
 export abstract class Result<T, E extends Error = Error> {
@@ -42,15 +43,15 @@ export abstract class Result<T, E extends Error = Error> {
     }
   }
 
-  map<U>(f: (t: T) => U): Result<U> {
+  map<U, E2 extends Error = E>(f: (t: T) => U): Result<U, E2> {
     if (this.isFailure()) {
-      return this as unknown as Failure<U>;
+      return this as unknown as Failure<U, E2>;
     }
     try {
       const u = f(this._data!);
       return Result.success(u);
     } catch (e) {
-      return Result.failure(isError(e) ? e : new Error(JSON.stringify(e)));
+      return Result.failure(e);
     }
   }
 
@@ -63,6 +64,18 @@ export abstract class Result<T, E extends Error = Error> {
       .catch((e) => Result.failure(e));
   }
 
+  flatMap<U, E2 extends E = E>(f: (t: T) => Result<U, E2>): Result<U, E2> {
+    if (this.isFailure()) {
+      return this as unknown as Failure<U, E2>;
+    }
+
+    try {
+      return f(this._data!);
+    } catch (e) {
+      return Result.failure(e);
+    }
+  }
+
   async flatMapAsync<U, E2 extends E = E>(
     f: (t: T) => Promise<Result<U, E2>>,
   ): Promise<Result<U, E2>> {
@@ -70,7 +83,15 @@ export abstract class Result<T, E extends Error = Error> {
       return this as unknown as Failure<U, E2>;
     }
 
-    return f(this._data!);
+    try {
+      return f(this._data!);
+    } catch (e) {
+      return Result.failure(e);
+    }
+  }
+
+  orElse<U, Out = T extends U ? U : never>(v: Out) {
+    return this.isSuccess() ? (this._data! as Out) : v;
   }
 
   getOrElse<U, Out = T extends U ? U : never>(f: () => Out): Out {
@@ -79,6 +100,17 @@ export abstract class Result<T, E extends Error = Error> {
     } else {
       return f();
     }
+  }
+
+  getOrThrow(): T {
+    if (this.isFailure()) {
+      throw this.error;
+    }
+    return this._data!;
+  }
+
+  orUndefined(): Maybe<T> {
+    return this.orElse(undefined);
   }
 }
 

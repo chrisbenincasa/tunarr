@@ -7,6 +7,8 @@ import {
   PlexDvr,
   PlexDvrsResponse,
   PlexGenericMediaContainerResponseSchema,
+  PlexLibraryMetadata,
+  PlexLibraryMovies,
   PlexMedia,
   PlexMediaContainerResponseSchema,
   PlexResource,
@@ -33,13 +35,7 @@ import {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../../types/plexApiTypes.js';
-import {
-  BaseApiClient,
-  QueryErrorResult,
-  QueryResult,
-  isQueryError,
-  isQuerySuccess,
-} from '../BaseApiClient.js';
+import { BaseApiClient, QueryResult } from '../BaseApiClient.js';
 import { PlexQueryCache } from './PlexQueryCache.js';
 
 export type PlexApiOptions = {
@@ -89,14 +85,14 @@ export class PlexApiClient extends BaseApiClient {
   // TODO: make all callers use this
   private async doGetResult<T>(
     path: string,
-    optionalHeaders: RawAxiosRequestHeaders = {},
+    config: Partial<Omit<AxiosRequestConfig, 'method' | 'url'>> = {},
     skipCache: boolean = false,
   ): Promise<QueryResult<PlexMediaContainer<T>>> {
-    const getter = async () => {
+    const getter = async (): Promise<QueryResult<PlexMediaContainer<T>>> => {
       const req: AxiosRequestConfig = {
         method: 'get',
         url: path,
-        headers: optionalHeaders,
+        headers: config.headers,
       };
 
       if (this.accessToken === '') {
@@ -123,7 +119,7 @@ export class PlexApiClient extends BaseApiClient {
     };
 
     return this.opts.enableRequestCache && !skipCache
-      ? await PlexCache.getOrSetPlexResult(this.opts.name, path, getter)
+      ? await PlexCache.getOrSetPlexResult<T>(this.opts.name, path, getter)
       : await getter();
   }
 
@@ -135,24 +131,65 @@ export class PlexApiClient extends BaseApiClient {
   ): Promise<Maybe<PlexMediaContainer<T>>> {
     const result = await this.doGetResult<PlexMediaContainer<T>>(
       path,
-      optionalHeaders,
+      { headers: optionalHeaders },
       skipCache,
     );
-    if (isQuerySuccess(result)) {
-      return result.data;
-    } else {
-      return;
+
+    return result.orUndefined();
+  }
+
+  async *getLibraryContents(libraryId: string) {}
+
+  async *getMovieLibraryContents(libraryId: string, pageSize: number = 50) {
+    const count = await this.getLibraryCount(libraryId);
+    if (count.isFailure()) {
+      return count;
+    }
+
+    const totalSize = count.get().totalSize ?? 0;
+
+    const totalPages = Math.ceil(totalSize / pageSize);
+    for (let page = 0; page <= totalPages; page++) {
+      const chunkResult = await this.doGetResult<PlexLibraryMovies>(
+        `/library/sections/${libraryId}/all`,
+        {
+          params: {
+            'X-Plex-Container-Size': pageSize,
+            'X-Plex-Container-Start': page * pageSize,
+          },
+        },
+      );
+
+      if (chunkResult.isFailure()) {
+        throw chunkResult.error;
+      }
+
+      for (const movie of chunkResult.get().Metadata ?? []) {
+        yield movie;
+      }
     }
   }
 
+  async getLibraryCount(libraryId: string) {
+    return this.doGetResult<PlexLibraryMetadata>(
+      `/library/sections/${libraryId}/all`,
+      {
+        params: {
+          'X-Plex-Container-Size': 0,
+          'X-Plex-Container-Start': 0,
+        },
+      },
+    );
+  }
+
   async getItemMetadata(key: string): Promise<QueryResult<PlexMedia>> {
-    const parsedResponse = await this.doTypeCheckedGet(
+    const responseResult = await this.doTypeCheckedGet(
       `/library/metadata/${key}`,
       PlexMediaContainerResponseSchema,
     );
 
-    if (isQuerySuccess(parsedResponse)) {
-      const media = first(parsedResponse.data.MediaContainer.Metadata);
+    return responseResult.flatMap((parsedResponse) => {
+      const media = first(parsedResponse.MediaContainer.Metadata);
       if (!isUndefined(media)) {
         return this.makeSuccessResult(media);
       }
@@ -161,9 +198,7 @@ export class PlexApiClient extends BaseApiClient {
         key,
       );
       return this.makeErrorResult('parse_error');
-    }
-
-    return parsedResponse;
+    });
   }
 
   async checkServerStatus() {
@@ -172,8 +207,8 @@ export class PlexApiClient extends BaseApiClient {
         '/',
         PlexGenericMediaContainerResponseSchema,
       );
-      if (isQueryError(result)) {
-        throw result;
+      if (result.isFailure()) {
+        throw result.error;
       } else if (isUndefined(result)) {
         // Parse error - indicates that the URL is probably not a Plex server
         return false;
@@ -285,11 +320,11 @@ export class PlexApiClient extends BaseApiClient {
     this.opts.enableRequestCache = enable;
   }
 
-  protected override preRequestValidate(
+  protected override preRequestValidate<T>(
     req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
+  ): Maybe<QueryResult<T>> {
     if (isEmpty(this.accessToken)) {
-      return this.makeErrorResult(
+      return this.makeErrorResult<T>(
         'no_access_token',
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
       );

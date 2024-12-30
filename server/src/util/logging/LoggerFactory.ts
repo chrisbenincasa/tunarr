@@ -141,10 +141,10 @@ class LoggerFactoryImpl {
       file: isProduction
         ? undefined
         : caller
-        ? isString(caller)
-          ? caller
-          : getCaller(caller)
-        : undefined,
+          ? isString(caller)
+            ? caller
+            : getCaller(caller)
+          : undefined,
       caller: isProduction ? undefined : className, // Don't include this twice in production
     };
     const newChild = this.rootLogger.child(childOpts);

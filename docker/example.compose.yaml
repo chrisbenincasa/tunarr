@@ -12,9 +12,9 @@ services:
     environment:
       - LOG_LEVEL=${TUNARR_LOG_LEVEL:-INFO}
     # volumes:
-      # The host path is relative to the location of the compose file
-      # This can also use an absolute path. 
-      # 
-      # Uncomment if migrating from dizquetv. Chnage the host path
-      # to the location of your dizquetv "database"
-      # - ./.dizquetv:/.dizquetv
+    # The host path is relative to the location of the compose file
+    # This can also use an absolute path.
+    #
+    # Uncomment if migrating from dizquetv. Chnage the host path
+    # to the location of your dizquetv "database"
+    # - ./.dizquetv:/.dizquetv

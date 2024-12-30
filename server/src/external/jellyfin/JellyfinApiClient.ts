@@ -33,10 +33,8 @@ import { v4 } from 'uuid';
 import { z } from 'zod';
 import {
   BaseApiClient,
-  QueryErrorResult,
   QueryResult,
   RemoteMediaSourceOptions,
-  isQueryError,
 } from '../BaseApiClient.js';
 
 const RequiredLibraryFields = [
@@ -225,13 +223,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       },
     );
 
-    if (isQueryError(result)) {
-      return result;
-    }
-
-    return this.makeSuccessResult(
-      find(result.data.Items, (item) => item.Id === itemId),
-    );
+    return result.map((data) => find(data.Items, (item) => item.Id === itemId));
   }
 
   async getItems(
@@ -339,9 +331,9 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     return `${opts.uri}/Items/${opts.itemKey}/Images/Primary`;
   }
 
-  protected override preRequestValidate(
+  protected override preRequestValidate<T>(
     req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
+  ): Maybe<QueryResult<T>> {
     if (isEmpty(this.options.apiKey)) {
       return this.makeErrorResult(
         'no_access_token',

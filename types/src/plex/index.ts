@@ -116,6 +116,8 @@ const basePlexLibrarySchema = basePlexCollectionSchema.extend({
   type: PlexMediaTypeSchema,
 });
 
+export type PlexLibraryMetadata = z.infer<typeof basePlexLibrarySchema>;
+
 const basePlexChildCollectionSchema = basePlexCollectionSchema.extend({
   parentIndex: z.number().optional(),
   parentTitle: z.string().optional(),
@@ -463,7 +465,7 @@ export type PlexMusicTrack = Alias<z.infer<typeof PlexMusicTrackSchema>>;
 // /library/section/{id}/all for a Movie Library
 
 export const PlexLibraryMoviesSchema = basePlexLibrarySchema.extend({
-  Metadata: z.array(PlexMovieSchema),
+  Metadata: z.array(PlexMovieSchema).optional(),
 });
 
 export type PlexLibraryMovies = Alias<z.infer<typeof PlexLibraryMoviesSchema>>;
@@ -473,7 +475,7 @@ export type PlexLibraryMovies = Alias<z.infer<typeof PlexLibraryMoviesSchema>>;
 export const PlexLibraryShowsSchema = makePlexLibraryCollectionsSchema(
   PlexTvShowSchema,
 ).extend({
-  Metadata: z.array(PlexTvShowSchema),
+  Metadata: z.array(PlexTvShowSchema).optional(),
 });
 
 export type PlexLibraryShows = Alias<z.infer<typeof PlexLibraryShowsSchema>>;
@@ -483,7 +485,7 @@ export type PlexLibraryShows = Alias<z.infer<typeof PlexLibraryShowsSchema>>;
 export const PlexLibraryMusicSchema = makePlexLibraryCollectionsSchema(
   PlexMusicArtistSchema,
 ).extend({
-  Metadata: z.array(PlexMusicArtistSchema),
+  Metadata: z.array(PlexMusicArtistSchema).optional(),
 });
 
 export type PlexLibraryMusic = Alias<z.infer<typeof PlexLibraryMusicSchema>>;

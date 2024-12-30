@@ -1,5 +1,4 @@
 import { MediaSource, MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
@@ -77,15 +76,17 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           apiKey: mediaSource.accessToken,
         });
 
-        const response = await api.getUserViews();
+        const responseResult = await api.getUserViews();
 
-        if (isQueryError(response)) {
-          throw response;
+        if (responseResult.isFailure()) {
+          throw responseResult.error;
         }
 
+        const response = responseResult.get();
+
         const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
-          ...response.data,
-          Items: filter(response.data.Items, (library) => {
+          ...response,
+          Items: filter(response.Items, (library) => {
             if (!library.CollectionType) {
               return false;
             }
@@ -179,11 +180,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : ['SortName', 'ProductionYear'],
         );
 
-        if (isQueryError(response)) {
-          throw response;
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 

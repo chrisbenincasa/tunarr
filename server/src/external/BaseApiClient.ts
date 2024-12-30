@@ -1,3 +1,4 @@
+import { Result } from '@/types/result.ts';
 import { Maybe, Try } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined } from '@/util/index.js';
@@ -37,21 +38,11 @@ type QueryErrorCode =
 
 export type QueryErrorResult = {
   type: 'error';
-  code: QueryErrorCode;
-  message?: string;
+  name: QueryErrorCode;
+  message: string;
 };
 
-export type QueryResult<T> = QuerySuccessResult<T> | QueryErrorResult;
-
-export function isQueryError(x: QueryResult<unknown>): x is QueryErrorResult {
-  return x.type === 'error';
-}
-
-export function isQuerySuccess<T>(
-  x: QueryResult<T>,
-): x is QuerySuccessResult<T> {
-  return x.type === 'success';
-}
+export type QueryResult<T> = Result<T, QueryErrorResult>;
 
 export abstract class BaseApiClient<
   OptionsType extends ApiClientOptions = ApiClientOptions,
@@ -115,29 +106,26 @@ export abstract class BaseApiClient<
     return this.makeErrorResult('parse_error');
   }
 
-  protected preRequestValidate(
+  protected preRequestValidate<T>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
+  ): Maybe<QueryResult<T>> {
     return;
   }
 
-  protected makeErrorResult(
+  protected makeErrorResult<T>(
     code: QueryErrorCode,
-    message?: string,
-  ): QueryErrorResult {
-    return {
+    message: string = '',
+  ): QueryResult<T> {
+    return Result.failure({
       type: 'error',
-      code,
+      name: code,
       message,
-    };
+    });
   }
 
-  protected makeSuccessResult<T>(data: T): QuerySuccessResult<T> {
-    return {
-      type: 'success',
-      data,
-    };
+  protected makeSuccessResult<T>(data: T): QueryResult<T> {
+    return Result.success(data);
   }
 
   doGet<T>(req: Omit<AxiosRequestConfig, 'method'>) {

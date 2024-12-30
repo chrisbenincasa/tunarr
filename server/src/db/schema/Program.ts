@@ -44,6 +44,7 @@ export interface ProgramTable extends WithCreatedAt, WithUpdatedAt, WithUuid {
   tvShowUuid: string | null;
   type: ProgramType;
   year: number | null;
+  canonicalId: string | null;
 }
 
 export type ProgramDao = Selectable<ProgramTable>;

@@ -2,7 +2,6 @@ import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramMinterFactory } from '@/db/converters/ProgramMinter.ts';
 import { ProgramType } from '@/db/schema/Program.ts';
 import { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
-import { isQueryError } from '@/external/BaseApiClient.ts';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.ts';
@@ -108,7 +107,7 @@ export class JellyfinItemFinder {
 
     // If we can locate the item on JF, there is no problem.
     const existingItem = await jfClient.getItem(program.externalKey);
-    if (!isQueryError(existingItem) && isDefined(existingItem.data)) {
+    if (existingItem.isSuccess() && isDefined(existingItem.get())) {
       this.#logger.error(
         existingItem,
         'Item exists on Jellyfin - no need to find a new match',
@@ -160,8 +159,8 @@ export class JellyfinItemFinder {
           opts,
         );
 
-        if (queryResult.type === 'success') {
-          return find(queryResult.data.Items, (match) =>
+        if (queryResult.isSuccess()) {
+          return find(queryResult.get().Items, (match) =>
             some(
               match.ProviderIds,
               (val, key) =>

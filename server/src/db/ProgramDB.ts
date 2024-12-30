@@ -50,6 +50,7 @@ import {
   flatMapAsyncSeq,
   groupByUniq,
   groupByUniqProp,
+  isDefined,
   isNonEmptyString,
   mapToObj,
 } from '../util/index.ts';
@@ -665,6 +666,24 @@ export class ProgramDB {
     );
 
     return upsertedPrograms;
+  }
+
+  async getProgramsForMediaSource(mediaSourceId: string, type?: ProgramType) {
+    return getDatabase()
+      .selectFrom('mediaSource')
+      .where('mediaSource.uuid', '=', mediaSourceId)
+      .leftJoin(
+        (eb) =>
+          eb
+            .selectFrom('program')
+            .selectAll()
+            .$if(isDefined(type), (eb) => eb.where('program.type', '=', type!))
+            .as('programs'),
+        (join) =>
+          join.onRef('programs.externalSourceId', '=', 'mediaSource.name'),
+      )
+      .selectAll('programs')
+      .execute();
   }
 
   private async handleProgramGroupings(
