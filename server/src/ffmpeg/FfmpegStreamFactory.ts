@@ -103,7 +103,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
-        'Concat Wrapper v2 FFmpeg',
+        `channel-${this.channel.number}-concat`,
         pipeline.getCommandArgs(),
         pipeline.getCommandEnvironment(),
       ),
@@ -141,7 +141,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
-        'Concat Wrapper v2 FFmpeg',
+        `channel-${this.channel.number}-concat`,
         pipeline.getCommandArgs(),
         pipeline.getCommandEnvironment(),
       ),
@@ -424,7 +424,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
-        'Test',
+        `channel-${this.channel.number}-transcode`,
         pipeline.getCommandArgs(),
         pipeline.getCommandEnvironment(),
       ),
@@ -555,7 +555,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
-        'Error',
+        `channel-${this.channel.number}-error`,
         pipeline.getCommandArgs(),
         pipeline.getCommandEnvironment(),
       ),
@@ -659,7 +659,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return new FfmpegTranscodeSession(
       new FfmpegProcess(
         this.ffmpegSettings,
-        'Offline',
+        `channel-${this.channel.number}-transcode`,
         pipeline.getCommandArgs(),
         pipeline.getCommandEnvironment(),
       ),
