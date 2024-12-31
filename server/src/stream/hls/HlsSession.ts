@@ -210,11 +210,20 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       },
     );
 
-    await programStreamResult.mapAsync(async (programStream) => {
-      await this.trimPlaylistAndDeleteSegments();
-      await programStream.start();
-      return programStream.transcodeSession.wait();
-    });
+    const transcodeResult = await programStreamResult.mapAsync(
+      async (programStream) => {
+        await this.trimPlaylistAndDeleteSegments();
+        await programStream.start();
+        return programStream.transcodeSession.wait();
+      },
+    );
+
+    if (transcodeResult.isFailure()) {
+      this.logger.error(
+        transcodeResult.error,
+        'Error while transcoding program stream.',
+      );
+    }
 
     this.logger.debug('Stream ended.');
   }
