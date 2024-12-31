@@ -2,16 +2,15 @@ import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
 import React from 'react';
 import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
 
-export type ContextType = UseFormReturn<TimeSlotForm> & {
+export type TimeSlotFormContextType = UseFormReturn<TimeSlotForm> & {
   slotArray: UseFieldArrayReturn<TimeSlotForm, 'slots'>;
 };
 
-export const TimeSlotFormContext = React.createContext<ContextType | null>(
-  null,
-);
+export const TimeSlotFormContext =
+  React.createContext<TimeSlotFormContextType | null>(null);
 
 export const TimeSlotFormProvider = (
-  props: ContextType & {
+  props: TimeSlotFormContextType & {
     children: React.ReactNode | React.ReactNode[];
   },
 ) => {

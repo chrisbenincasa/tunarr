@@ -30,19 +30,19 @@ const DaysOfWeekMenuItems = [
   { value: 6, name: 'Saturday' },
 ];
 
-type EditSlotDialogContentProps = {
+type EditTimeSlotDialogContentProps = {
   slot: TimeSlot;
   index: number;
   programOptions: ProgramOption[];
   onClose: () => void;
 };
 
-export const EditSlotDialogContent = ({
+export const EditTimeSlotDialogContent = ({
   slot,
   index,
   programOptions,
   onClose,
-}: EditSlotDialogContentProps) => {
+}: EditTimeSlotDialogContentProps) => {
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
 
@@ -63,7 +63,11 @@ export const EditSlotDialogContent = ({
   );
 
   const updateSlotTime = useCallback(
-    (fieldValue: Dayjs, originalOnChange: (...args: unknown[]) => void) => {
+    (
+      fieldValue: Dayjs | null,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      if (!fieldValue) return;
       const h = fieldValue.hour();
       const m = fieldValue.minute();
       const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
@@ -130,9 +134,9 @@ export const EditSlotDialogContent = ({
                       reduceAnimations
                       {...field}
                       value={dayjs().startOf(currentPeriod).add(field.value)}
-                      onChange={(value) => {
-                        value ? updateSlotTime(value, field.onChange) : void 0;
-                      }}
+                      onChange={(value) =>
+                        updateSlotTime(value, field.onChange)
+                      }
                       label="Start Time"
                       closeOnSelect={false}
                       slotProps={{

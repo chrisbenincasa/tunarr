@@ -62,6 +62,7 @@ export function betterHumanize(
 
   if (mins >= 1) {
     const minsN = Math.round(mins);
+    console.log(minsN);
     const d =
       mergedOpts.style === 'full' ? ' ' + pluralize(minStr, minsN) : minStr;
     if (builder.length > 0 && mergedOpts.style === 'full') {
@@ -71,7 +72,7 @@ export function betterHumanize(
       const prefix = seconds > 0 && !mergedOpts.exact ? 'about ' : '';
       builder += `${prefix}${padStart(minsN.toString(), 2, '0')}${d}`;
     } else {
-      builder += `${hrs}${d}`;
+      builder += `${padStart(minsN.toString(), 2, '0')}${d}`;
     }
   }
 

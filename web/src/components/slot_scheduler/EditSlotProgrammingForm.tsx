@@ -14,12 +14,12 @@ import {
   TextField,
 } from '@mui/material';
 import {
+  BaseSlot,
   CustomShowProgrammingTimeSlot,
   FlexProgrammingTimeSlot,
   MovieProgrammingTimeSlot,
   RedirectProgrammingTimeSlot,
   ShowProgrammingTimeSlot,
-  TimeSlot,
   TimeSlotProgramming,
 } from '@tunarr/types/api';
 import { filter, find, first, map, uniqBy } from 'lodash-es';
@@ -33,7 +33,7 @@ type EditSlotProgramProps = {
 export const EditSlotProgrammingForm = ({
   programOptions,
 }: EditSlotProgramProps) => {
-  const { setValue, watch, control } = useFormContext<TimeSlot>();
+  const { setValue, watch, control } = useFormContext<BaseSlot>();
   const { type } = watch('programming');
   const availableTypes = useMemo(() => {
     return map(

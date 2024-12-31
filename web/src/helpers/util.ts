@@ -18,6 +18,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
   attempt,
+  filter,
   flatMap,
   isEmpty,
   isError,
@@ -515,4 +516,15 @@ export function estimateNumberOfColumns(containerWidth: number) {
   } else {
     return 8;
   }
+}
+
+export function countWhere<T>(
+  coll: T[] | null | undefined,
+  f: (t: T) => boolean,
+): number {
+  if (!coll) {
+    return 0;
+  }
+
+  return filter(coll, f)?.length;
 }
