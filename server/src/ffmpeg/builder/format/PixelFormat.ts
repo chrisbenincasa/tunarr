@@ -29,9 +29,7 @@ export const ValidHardwarePixelFormats = {
 export type ValidPixelFormatName =
   (typeof PixelFormats)[keyof typeof PixelFormats];
 
-interface PixelFormatEquals extends Equatable<PixelFormat> {}
-
-export interface PixelFormat extends PixelFormatEquals {
+export interface PixelFormat extends Equatable<PixelFormat> {
   // Name used in the generated ffmpeg command
   name: ValidPixelFormatName;
   bitDepth: number;
