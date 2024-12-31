@@ -84,6 +84,9 @@ importers:
 
   server:
     dependencies:
+      '@cospired/i18n-iso-languages':
+        specifier: ^4.2.0
+        version: 4.2.0
       '@fastify/cors':
         specifier: ^10.0.1
         version: 10.0.1
@@ -420,6 +423,9 @@ importers:
 
   web:
     dependencies:
+      '@cospired/i18n-iso-languages':
+        specifier: ^4.2.0
+        version: 4.2.0
       '@emotion/react':
         specifier: ^11.11.1
         version: 11.11.1(@types/react@18.2.15)(react@18.2.0)
@@ -1022,6 +1028,10 @@ packages:
   '@commitlint/types@19.0.3':
     resolution: {integrity: sha512-tpyc+7i6bPG9mvaBbtKUeghfyZSDgWquIDfMgqYtTbmZ9Y9VzEm2je9EYcQ0aoz5o7NvGS+rcDec93yO08MHYA==}
     engines: {node: '>=v18'}
+
+  '@cospired/i18n-iso-languages@4.2.0':
+    resolution: {integrity: sha512-vy8cq1176MTxVwB1X9niQjcIYOH29F8Huxtx8hLmT5Uz3l1ztGDGri8KN/4zE7LV2mCT7JrcAoNV/I9yb+lNUw==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -3749,6 +3759,7 @@ packages:
   eslint@8.56.0:
     resolution: {integrity: sha512-Go19xM6T9puCOWntie1/P997aXxFsOi37JIHRWI514Hc6ZnaHGKY9xFhrU65RT6CcBEzZoGG1e6Nq+DT04ZtZQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
 
   espree@10.0.1:
@@ -7687,6 +7698,8 @@ snapshots:
     dependencies:
       '@types/conventional-commits-parser': 5.0.0
       chalk: 5.3.0
+
+  '@cospired/i18n-iso-languages@4.2.0': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
