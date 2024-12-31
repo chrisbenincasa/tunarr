@@ -1,4 +1,7 @@
+import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
+import { RandomSlotFormProvider } from '@/components/slot_scheduler/RandomSlotFormProvider.tsx';
 import { RandomSlotSettingsForm } from '@/components/slot_scheduler/RandomSlotSettingsForm';
+import { RandomSlotTable } from '@/components/slot_scheduler/RandomSlotTable.tsx';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useChannelEditor } from '@/store/selectors';
 import { ArrowBack } from '@mui/icons-material';
@@ -19,12 +22,11 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { filter, isNil, isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
-import { RandomSlots } from '../../components/slot_scheduler/RandomSlots';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
@@ -81,11 +83,17 @@ export default function RandomSlotEditorPage() {
   const {
     control,
     getValues,
-    setValue,
-    watch,
     formState: { isValid, isDirty },
     reset,
   } = randomSlotForm;
+
+  const slotArray = useFieldArray({
+    control,
+    name: 'slots',
+    rules: {
+      required: true,
+    },
+  });
 
   const resetLineupToSaved = useCallback(() => {
     resetLineup();
@@ -125,6 +133,10 @@ export default function RandomSlotEditorPage() {
         <Typography variant="h4">
           Edit Random Slots (Channel {channel?.number})
         </Typography>
+        <MissingProgramsAlert
+          slots={slotArray.fields}
+          programOptions={programOptions}
+        />
         {hasExistingTimeSlotSchedule && (
           <Alert severity="warning">
             This channel has an existing time slot schedule. A channel can only
@@ -143,12 +155,9 @@ export default function RandomSlotEditorPage() {
             </Typography>
           </Stack>
           <Divider sx={{ my: 2 }} />
-          <RandomSlots
-            control={control}
-            setValue={setValue}
-            watch={watch}
-            programOptions={programOptions}
-          />
+          <RandomSlotFormProvider {...randomSlotForm} slotArray={slotArray}>
+            <RandomSlotTable />
+          </RandomSlotFormProvider>
           <Divider sx={{ my: 2 }} />
           <FormProvider {...randomSlotForm}>
             <RandomSlotSettingsForm

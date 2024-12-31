@@ -324,7 +324,7 @@ export default function TimeSlotEditorPage() {
       <Stack gap={2} useFlexGap>
         <Typography variant="h4">{channel!.name}</Typography>
         <MissingProgramsAlert
-          control={control}
+          slots={slotArray.fields}
           programOptions={programOptions}
         />
         {errors.slots?.message && (
@@ -484,7 +484,6 @@ export default function TimeSlotEditorPage() {
               variant="contained"
               onClick={() => calculateSlots()}
               disabled={isCalculatingSlots}
-              // disabled={!isValid || !isDirty}
               startIcon={
                 isCalculatingSlots ? <RotatingLoopIcon /> : <Autorenew />
               }
@@ -514,21 +513,6 @@ export default function TimeSlotEditorPage() {
               overscanCount: 5,
             }}
           />
-          {/* {generatedList && (
-            <ChannelProgrammingList
-              type={'direct'}
-              programList={zipWithIndex(generatedList)}
-              enableDnd={false}
-              enableRowDelete={false}
-              enableRowEdit={false}
-              virtualListProps={{
-                width: '100%',
-                height: 400,
-                itemSize: smallViewport ? 70 : 35,
-                overscanCount: 5,
-              }}
-            />
-          )} */}
         </PaddedPaper>
       </Stack>
       <UnsavedNavigationAlert isDirty={isDirty} />

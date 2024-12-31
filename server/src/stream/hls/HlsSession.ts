@@ -141,86 +141,78 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       },
     );
 
-    const programStreamResult = await lineupItemResult.mapAsync(
-      async (result) => {
-        this.logger.debug(
-          'About to play item: %s',
-          JSON.stringify(result, undefined, 4),
+    const transcodeResult = await lineupItemResult.mapAsync(async (result) => {
+      this.logger.debug(
+        'About to play item: %s',
+        JSON.stringify(result, undefined, 4),
+      );
+      const context = new PlayerContext(
+        result.lineupItem,
+        result.channelContext,
+        result.sourceChannel,
+        false,
+        result.lineupItem.type === 'loading',
+        realtime,
+        this.sessionOptions.useNewPipeline ??
+          this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+        this.channel.transcodeConfig,
+        this.sessionType,
+      );
+
+      let programStream = this.getProgramStream(context);
+
+      programStream.on('error', () => {
+        this.state = 'error';
+        this.error = new Error(
+          `Unrecoverable error in underlying FFMPEG process`,
         );
-        const context = new PlayerContext(
-          result.lineupItem,
-          result.channelContext,
-          result.sourceChannel,
-          false,
-          result.lineupItem.type === 'loading',
-          realtime,
-          this.sessionOptions.useNewPipeline ??
-            this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
-          this.channel.transcodeConfig,
-          this.sessionType,
+        this.emit('error', this.error);
+      });
+
+      let transcodeSessionResult = await programStream.setup({
+        ptsOffset,
+      });
+
+      if (transcodeSessionResult.isFailure()) {
+        this.logger.error(
+          transcodeSessionResult.error,
+          'Error while starting program stream. Attempting to subtitute with error stream',
         );
 
-        let programStream = this.getProgramStream(context);
+        programStream = this.getProgramStream(
+          PlayerContext.error(
+            result.lineupItem.streamDuration ?? result.lineupItem.duration,
+            transcodeSessionResult.error,
+            result.channelContext,
+            this.channel,
+            realtime,
+            this.sessionOptions.useNewPipeline ??
+              this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
+            this.channel.transcodeConfig,
+            this.sessionType,
+          ),
+        );
 
-        programStream.on('error', () => {
-          this.state = 'error';
-          this.error = new Error(
-            `Unrecoverable error in underlying FFMPEG process`,
-          );
-          this.emit('error', this.error);
-        });
-
-        let transcodeSessionResult = await programStream.setup({
-          ptsOffset,
-        });
+        transcodeSessionResult = await programStream.setup();
 
         if (transcodeSessionResult.isFailure()) {
-          this.logger.error(
-            transcodeSessionResult.error,
-            'Error while starting program stream. Attempting to subtitute with error stream',
-          );
-
-          programStream = this.getProgramStream(
-            PlayerContext.error(
-              result.lineupItem.streamDuration ?? result.lineupItem.duration,
-              transcodeSessionResult.error,
-              result.channelContext,
-              this.channel,
-              realtime,
-              this.sessionOptions.useNewPipeline ??
-                this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
-              this.channel.transcodeConfig,
-              this.sessionType,
-            ),
-          );
-
-          transcodeSessionResult = await programStream.setup();
-
-          if (transcodeSessionResult.isFailure()) {
-            this.state = 'error';
-            this.error = transcodeSessionResult.error;
-            this.emit('error', this.error);
-          }
+          this.state = 'error';
+          this.error = transcodeSessionResult.error;
+          this.emit('error', this.error);
         }
+      }
 
-        transcodeSessionResult.forEach((transcodeSession) => {
-          this.transcodedUntil = this.transcodedUntil.add(
-            transcodeSession.streamDuration,
-          );
-          this.#currentSession = transcodeSession;
-        });
+      transcodeSessionResult.forEach((transcodeSession) => {
+        this.transcodedUntil = this.transcodedUntil.add(
+          transcodeSession.streamDuration,
+        );
+        this.#currentSession = transcodeSession;
+      });
 
-        return programStream;
-      },
-    );
-
-    const transcodeResult = await programStreamResult.mapAsync(
-      async (programStream) => {
-        await this.trimPlaylistAndDeleteSegments();
-        await programStream.start();
-        return programStream.transcodeSession.wait();
-      },
-    );
+      await this.trimPlaylistAndDeleteSegments();
+      await programStream.start();
+      return programStream.transcodeSession.wait();
+    });
 
     if (transcodeResult.isFailure()) {
       this.logger.error(

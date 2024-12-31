@@ -1,5 +1,15 @@
-import { ChannelProgram } from '@tunarr/types';
-import { BaseSlot } from '@tunarr/types/api';
+import { isNonEmptyString } from '@/helpers/util.ts';
+import { Maybe } from '@/types/util.ts';
+import {
+  ChannelProgram,
+  CondensedChannelProgram,
+  ContentProgram,
+} from '@tunarr/types';
+import {
+  BaseSlot,
+  RandomSlotProgramming,
+  TimeSlotProgramming,
+} from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
 import { DropdownOption } from './DropdownOption';
@@ -28,7 +38,7 @@ export type ProgramOption =
   | RedirectProgramOption
   | ShowProgramOption;
 
-export type TimeSlotId =
+export type SlotId =
   | 'movie'
   | `show.${string}`
   | `custom-show.${string}`
@@ -98,12 +108,7 @@ export const slotOptionIsScheduled = (
           slot.programming.customShowId === option.customShowId,
       );
     case 'redirect':
-      return some(
-        slots,
-        (slot) =>
-          slot.programming.type === 'redirect' &&
-          slot.programming.channelId === option.channelId,
-      );
+      return true;
     case 'show':
       return some(
         slots,
@@ -148,3 +153,69 @@ export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
     description: 'Show',
   },
 ];
+
+export const getTimeSlotId = (programming: TimeSlotProgramming): SlotId => {
+  switch (programming.type) {
+    case 'show': {
+      return `show.${programming.showId}`;
+    }
+    case 'redirect': {
+      return `redirect.${programming.channelId}`;
+    }
+    case 'custom-show': {
+      return `${programming.type}.${programming.customShowId}`;
+    }
+    default: {
+      return programming.type;
+    }
+  }
+};
+
+export const getRandomSlotId = (programming: RandomSlotProgramming): SlotId => {
+  switch (programming.type) {
+    case 'show': {
+      return `show.${programming.showId}`;
+    }
+    case 'redirect': {
+      return `redirect.${programming.channelId}`;
+    }
+    case 'custom-show': {
+      return `${programming.type}.${programming.customShowId}`;
+    }
+    default: {
+      return programming.type;
+    }
+  }
+};
+
+export const getSlotIdForProgram = (
+  program: CondensedChannelProgram,
+  lookup: Record<string, ContentProgram>,
+): Maybe<SlotId> => {
+  switch (program.type) {
+    case 'content': {
+      if (isNonEmptyString(program.id)) {
+        const materialized = lookup[program.id];
+        if (materialized) {
+          switch (materialized.subtype) {
+            case 'movie':
+              return 'movie';
+            case 'episode':
+              return isNonEmptyString(materialized.showId)
+                ? `show.${materialized.showId}`
+                : undefined;
+            case 'track':
+              return;
+          }
+        }
+      }
+      return;
+    }
+    case 'custom':
+      return `custom-show.${program.customShowId}`;
+    case 'redirect':
+      return `redirect.${program.channel}`;
+    case 'flex':
+      return 'flex';
+  }
+};

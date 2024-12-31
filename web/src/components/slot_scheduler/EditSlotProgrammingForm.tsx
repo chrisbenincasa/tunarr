@@ -3,6 +3,7 @@ import {
   ProgramOption,
   RedirectProgramOption,
   ShowProgramOption,
+  showOrderOptions,
 } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
 import {
@@ -14,12 +15,12 @@ import {
   TextField,
 } from '@mui/material';
 import {
+  BaseSlot,
   CustomShowProgrammingTimeSlot,
   FlexProgrammingTimeSlot,
   MovieProgrammingTimeSlot,
   RedirectProgrammingTimeSlot,
   ShowProgrammingTimeSlot,
-  TimeSlot,
   TimeSlotProgramming,
 } from '@tunarr/types/api';
 import { filter, find, first, map, uniqBy } from 'lodash-es';
@@ -33,7 +34,7 @@ type EditSlotProgramProps = {
 export const EditSlotProgrammingForm = ({
   programOptions,
 }: EditSlotProgramProps) => {
-  const { setValue, watch, control } = useFormContext<TimeSlot>();
+  const { setValue, watch, control } = useFormContext<BaseSlot>();
   const { type } = watch('programming');
   const availableTypes = useMemo(() => {
     return map(
@@ -237,6 +238,24 @@ export const EditSlotProgrammingForm = ({
             />
           )}
         />
+      )}
+      {(type === 'show' || type === 'custom-show') && (
+        <FormControl fullWidth>
+          <InputLabel>Order</InputLabel>
+          <Controller
+            control={control}
+            name="order"
+            render={({ field }) => (
+              <Select label="Order" {...field}>
+                {map(showOrderOptions, ({ description, value }) => (
+                  <MenuItem key={value} value={value}>
+                    {description}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
       )}
     </>
   );

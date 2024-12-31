@@ -1,18 +1,9 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
-import { OneWeekMillis, TimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
-import { isNonEmptyString } from '@/helpers/util.ts';
+import { OneWeekMillis, getTimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
-import { useChannelEditorLazy } from '@/store/selectors.ts';
-import {
-  UICondensedChannelProgram,
-  UICondensedContentProgram,
-  UICondensedCustomProgram,
-} from '@/types/index.ts';
-import { Maybe } from '@/types/util.ts';
+import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import { Dialog, DialogTitle, IconButton, Stack, Tooltip } from '@mui/material';
-import { seq } from '@tunarr/shared/util';
-import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
 import { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -20,14 +11,12 @@ import {
   capitalize,
   filter,
   find,
-  forEach,
   isEmpty,
   isNil,
   map,
   nth,
   sortBy,
   uniq,
-  uniqBy,
 } from 'lodash-es';
 import {
   MRT_ColumnDef,
@@ -38,83 +27,23 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
-import { P, match } from 'ts-pattern';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
-import { EditSlotDialogContent } from './EditSlotDialogContent.tsx';
-import { SlotTableRowType, SlotWarning } from './SlotTypes.ts';
-import { SlotWarningsDialog } from './SlotWarningsDialog.tsx';
+import { EditTimeSlotDialogContent } from './EditTimeSlotDialogContent.tsx';
+import { SlotWarning, TimeSlotTableRowType } from './SlotTypes.ts';
+import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
-
-const getSlotId = (programming: TimeSlotProgramming): TimeSlotId => {
-  switch (programming.type) {
-    case 'show': {
-      return `show.${programming.showId}`;
-    }
-    case 'redirect': {
-      return `redirect.${programming.channelId}`;
-    }
-    case 'custom-show': {
-      return `${programming.type}.${programming.customShowId}`;
-    }
-    default: {
-      return programming.type;
-    }
-  }
-};
-
-const getSlotIdForProgram = (
-  program: CondensedChannelProgram,
-  lookup: Record<string, ContentProgram>,
-): Maybe<TimeSlotId> => {
-  switch (program.type) {
-    case 'content': {
-      if (isNonEmptyString(program.id)) {
-        const materialized = lookup[program.id];
-        if (materialized) {
-          switch (materialized.subtype) {
-            case 'movie':
-              return 'movie';
-            case 'episode':
-              return isNonEmptyString(materialized.showId)
-                ? `show.${materialized.showId}`
-                : undefined;
-            case 'track':
-              return;
-          }
-        }
-      }
-      return;
-    }
-    case 'custom':
-      return `custom-show.${program.customShowId}`;
-    case 'redirect':
-      return `redirect.${program.channel}`;
-    case 'flex':
-      return 'flex';
-  }
-};
-
-type SlotProgrammingDetails = {
-  programCount: number;
-  programDurations: {
-    id: string;
-    duration: number;
-  }[];
-};
 
 export const TimeSlotTable = () => {
   const { watch, slotArray } = useTimeSlotFormContext();
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
   const programOptions = useSlotProgramOptions();
   const startOfPeriod = dayjs().startOf(currentPeriod);
-  const {
-    channelEditor: { programLookup, originalProgramList },
-  } = useChannelEditorLazy();
   const slotIds = useMemo(
-    () => uniq(map(slotArray.fields, (slot) => getSlotId(slot.programming))),
+    () =>
+      uniq(map(slotArray.fields, (slot) => getTimeSlotId(slot.programming))),
     [slotArray.fields],
   );
 
@@ -123,71 +52,7 @@ export const TimeSlotTable = () => {
     pageSize: 25,
   });
 
-  const detailsBySlotId = useMemo(() => {
-    const programsBySlot: Map<TimeSlotId, UICondensedChannelProgram[]> =
-      new Map();
-
-    forEach(originalProgramList, (program) => {
-      if (program.type === 'flex') {
-        return;
-      }
-
-      const slotId = getSlotIdForProgram(program, programLookup);
-      if (!slotId) {
-        return;
-      }
-
-      if (programsBySlot.has(slotId)) {
-        programsBySlot.get(slotId)?.push(program);
-      } else {
-        programsBySlot.set(slotId, [program]);
-      }
-    });
-
-    const details: Partial<Record<TimeSlotId, SlotProgrammingDetails>> = {};
-
-    for (const scheduledSlotId of slotIds) {
-      if (!programsBySlot.has(scheduledSlotId) || details[scheduledSlotId]) {
-        continue;
-      }
-      const programs = programsBySlot.get(scheduledSlotId)!;
-      const programCount = match(scheduledSlotId)
-        .with(
-          P.string.startsWith('show'),
-          P.string.startsWith('custom'),
-          P.string.startsWith('movie'),
-          () =>
-            uniqBy(
-              programs as (
-                | UICondensedContentProgram
-                | UICondensedCustomProgram
-              )[],
-              (p) => p.id ?? '',
-            ).length,
-        )
-        .otherwise(() => 0);
-      const programDurations = match(scheduledSlotId)
-        .with(
-          P.string.startsWith('show'),
-          P.string.startsWith('custom'),
-          P.string.startsWith('movie'),
-          () =>
-            seq.collect(programs, (p) =>
-              p.type === 'content' ||
-              (p.type === 'custom' && isNonEmptyString(p.id))
-                ? { id: p.id!, duration: p.duration }
-                : null,
-            ),
-        )
-        .otherwise(() => []);
-
-      details[scheduledSlotId] = {
-        programCount,
-        programDurations,
-      };
-    }
-    return details;
-  }, [originalProgramList, programLookup, slotIds]);
+  const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 
   const [currentEditingSlot, setCurrentEditingSlot] = useState<{
     slot: TimeSlot;
@@ -215,17 +80,15 @@ export const TimeSlotTable = () => {
               ? OneWeekMillis
               : OneDayMillis
             : 0;
-        const slotDuration = dayjs.duration(
-          next.startTime + scale - slot.startTime,
-        );
+        const slotDuration = next.startTime + scale - slot.startTime;
         const warnings: SlotWarning[] = [];
-        const slotId = getSlotId(slot.programming);
+        const slotId = getTimeSlotId(slot.programming);
         const slotDetails = detailsBySlotId[slotId];
         let programCount = 0;
         if (slotDetails) {
           const overDuration = filter(
             slotDetails.programDurations,
-            ({ duration }) => duration > +slotDuration + latenessMs,
+            ({ duration }) => duration > slotDuration + latenessMs,
           );
 
           if (overDuration.length > 0) {
@@ -240,15 +103,15 @@ export const TimeSlotTable = () => {
 
         return {
           ...slot,
-          duration: slotDuration,
+          durationMs: slotDuration,
           warnings,
           programCount,
-        } satisfies SlotTableRowType;
+        } satisfies TimeSlotTableRowType;
       },
     );
   }, [currentPeriod, detailsBySlotId, latenessMs, slotArray.fields]);
 
-  const columns = useMemo<MRT_ColumnDef<SlotTableRowType>[]>(() => {
+  const columns = useMemo<MRT_ColumnDef<TimeSlotTableRowType>[]>(() => {
     return [
       {
         header: '',
@@ -369,8 +232,8 @@ export const TimeSlotTable = () => {
   const renderActionCell = ({
     row,
   }: {
-    row: MRT_Row<SlotTableRowType>;
-    table: MRT_TableInstance<SlotTableRowType>;
+    row: MRT_Row<TimeSlotTableRowType>;
+    table: MRT_TableInstance<TimeSlotTableRowType>;
   }) => {
     return (
       <>
@@ -457,7 +320,7 @@ export const TimeSlotTable = () => {
       >
         <DialogTitle>Edit Slot</DialogTitle>
         {currentEditingSlot && (
-          <EditSlotDialogContent
+          <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}
             index={currentEditingSlot.index}
             programOptions={programOptions}
@@ -465,7 +328,7 @@ export const TimeSlotTable = () => {
           />
         )}
       </Dialog>
-      <SlotWarningsDialog
+      <TimeSlotWarningsDialog
         slot={
           !isNil(currentSlotWarningsIndex)
             ? nth(rows, currentSlotWarningsIndex)

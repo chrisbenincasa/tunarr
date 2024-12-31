@@ -1,5 +1,5 @@
+import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
 import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
-import { Duration } from 'dayjs/plugin/duration';
 import { FieldArrayWithId } from 'react-hook-form';
 
 export type ProgramTooLongWarning = {
@@ -10,10 +10,18 @@ export type ProgramTooLongWarning = {
 export type SlotWarning = ProgramTooLongWarning;
 
 export type TimeSlotTableDataType = FieldArrayWithId<TimeSlotForm, 'slots'>;
+export type RandomSlotTableDataType = FieldArrayWithId<RandomSlotForm, 'slots'>;
 
-export type SlotTableRowType = TimeSlotTableDataType & {
-  duration: Duration;
+export type SlotTableWarnings = {
   warnings: SlotWarning[];
   programCount: number;
-  originalIndex: number;
+  durationMs: number;
 };
+
+export type TimeSlotTableRowType = TimeSlotTableDataType &
+  SlotTableWarnings & {
+    originalIndex: number;
+  };
+
+export type RandomSlotTableRowType = RandomSlotTableDataType &
+  SlotTableWarnings;
