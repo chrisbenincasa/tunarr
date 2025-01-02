@@ -1,6 +1,7 @@
 import { AddRandomSlotButton } from '@/components/slot_scheduler/AddRandomSlotButton2.tsx';
 import { ClearSlotsButton } from '@/components/slot_scheduler/ClearSlotsButton.tsx';
 import { EditRandomSlotDialogContent } from '@/components/slot_scheduler/EditRandomSlotDialogContent';
+import { RandomSlotTools } from '@/components/slot_scheduler/RandomSlotTools.tsx';
 import { RandomSlotWarningsDialog } from '@/components/slot_scheduler/RandomSlotWarningsDialog';
 import {
   RandomSlotTableRowType,
@@ -252,6 +253,7 @@ export const RandomSlotTable = () => {
             fields={slotArray.fields}
             remove={slotArray.remove}
           />
+          <RandomSlotTools />
         </Stack>
       );
     },

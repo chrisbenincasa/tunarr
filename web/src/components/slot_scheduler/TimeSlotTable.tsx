@@ -1,3 +1,4 @@
+import { TimeSlotTools } from '@/components/slot_scheduler/TimeSlotTools.tsx';
 import { OneDayMillis } from '@/helpers/constants.ts';
 import { OneWeekMillis, getTimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
@@ -290,6 +291,7 @@ export const TimeSlotTable = () => {
             fields={slotArray.fields}
             remove={slotArray.remove}
           />
+          <TimeSlotTools />
         </Stack>
       );
     },
