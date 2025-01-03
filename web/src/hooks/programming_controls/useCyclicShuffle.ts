@@ -1,5 +1,6 @@
+import { random } from '@/helpers/random.ts';
 import { removeDuplicatePrograms } from '@/hooks/programming_controls/useRemoveDuplicates.ts';
-import { chain, keys, sample, some, sortBy } from 'lodash-es';
+import { chain, keys, some, sortBy } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -8,6 +9,10 @@ import {
   UIContentProgram,
   UICustomProgram,
 } from '../../types/index.ts';
+
+function rotateArray<T>(arr: T[], positions: number): T[] {
+  return arr.slice(positions, arr.length).concat(arr.slice(0, positions));
+}
 
 export function useCyclicShuffle() {
   const programs = useStore(materializedProgramListSelector);
@@ -41,18 +46,18 @@ export function useCyclicShuffle() {
       .mapValues((programs) => {
         const firstProgram = programs[0];
         if (firstProgram.type === 'content') {
-          return sortBy(programs as UIContentProgram[], (program) => [
+          programs = sortBy(programs as UIContentProgram[], (program) => [
             program.parentIndex,
             program.index,
           ]);
         } else if (firstProgram.type === 'custom') {
-          return sortBy(
+          programs = sortBy(
             programs as UICustomProgram[],
             (program) => program.index,
           );
         }
 
-        return programs;
+        return rotateArray(programs, random.integer(0, programs.length));
       })
       .value();
 
@@ -61,22 +66,20 @@ export function useCyclicShuffle() {
     // Loop until all chunks are empty
     while (some(groupedContent, (chunk) => chunk.length > 0)) {
       // Get a random chunk of shows based on showId
-      const randomChunkKey = sample(keys(groupedContent));
+      const randomChunkKey = random.pick(keys(groupedContent));
 
-      if (randomChunkKey) {
-        const randomChunk = groupedContent[randomChunkKey];
+      const randomChunk = groupedContent[randomChunkKey];
 
-        // Pick the first show from the random chunk
-        const selectedShow = randomChunk.shift();
+      // Pick the first show from the random chunk
+      const selectedShow = randomChunk.shift();
 
-        if (selectedShow) {
-          // Add the selected show to the results
-          cycledShows.push(selectedShow);
+      if (selectedShow) {
+        // Add the selected show to the results
+        cycledShows.push(selectedShow);
 
-          // Remove the emptied chunk from the grouped shows
-          if (randomChunk.length === 0) {
-            delete groupedContent[randomChunkKey];
-          }
+        // Remove the emptied chunk from the grouped shows
+        if (randomChunk.length === 0) {
+          delete groupedContent[randomChunkKey];
         }
       }
     }
