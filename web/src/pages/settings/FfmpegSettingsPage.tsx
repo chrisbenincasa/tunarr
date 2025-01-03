@@ -42,6 +42,7 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { CheckboxFormController } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
+import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
 import {
   useFfmpegSettings,
   useTranscodeConfigs,
@@ -95,7 +96,12 @@ export default function FfmpegSettingsPage() {
     handleSubmit,
     watch,
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
-    defaultValues: defaultFfmpegSettings,
+    defaultValues: {
+      ...defaultFfmpegSettings,
+      languagePreferences: {
+        preferences: [{ iso6391: 'en', displayName: 'English' }]
+      }
+    },
     mode: 'onBlur',
   });
 
@@ -265,6 +271,7 @@ export default function FfmpegSettingsPage() {
             command line.
           </Alert>
         )}
+
         <FormControl fullWidth>
           <Controller
             control={control}
@@ -414,6 +421,19 @@ export default function FfmpegSettingsPage() {
         </Button>
       </Stack>
       <Divider sx={{ mt: 2 }} />
+      <FormControl fullWidth>
+        <Controller
+          control={control}
+          name="languagePreferences"
+          render={({ field }) => (
+            <LanguagePreferencesList
+              preferences={field.value?.preferences || [{ iso6391: 'en', displayName: 'English' }]}
+              onChange={(preferences) => field.onChange({ preferences })}
+            />
+          )}
+        />
+      </FormControl>
+      <Divider sx={{ mt: 2 }} />
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
         Transcoding Configs
       </Typography>
@@ -437,5 +457,6 @@ export default function FfmpegSettingsPage() {
         }}
       />
     </Box>
+
   );
 }

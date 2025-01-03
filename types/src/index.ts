@@ -14,3 +14,4 @@ export * from './TranscodeConfig.js';
 export * from './XmlTvSettings.js';
 export * from './misc.js';
 export * from './util.js';
+export * from './LanguagePreferences.js';

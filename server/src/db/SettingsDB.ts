@@ -161,7 +161,7 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.db.data.settings.plexStream;
   }
 
-  ffmpegSettings(): DeepReadonly<FfmpegSettings> {
+  ffmpegSettings(): FfmpegSettings {
     return this.db.data.settings.ffmpeg;
   }
 

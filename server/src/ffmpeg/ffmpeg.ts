@@ -16,15 +16,7 @@ import { FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
-import {
-  find,
-  first,
-  isEmpty,
-  isNil,
-  isUndefined,
-  merge,
-  round,
-} from 'lodash-es';
+import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
 import path from 'path';
 import { DeepReadonly, DeepRequired } from 'ts-essentials';
 import {
@@ -157,10 +149,22 @@ export type StreamSessionOptions = StreamOptions & {
   streamDetails: StreamDetails;
 };
 
+interface AudioStreamDetails {
+  index?: string;
+  codec?: string;
+  channels?: number;
+  language?: string;
+  languageTag?: string;
+  languageCode?: string;
+  selected?: boolean;
+  default?: boolean;
+}
+
 export class FFMPEG implements IFFMPEG {
   private logger: Logger;
   private errorPicturePath: string;
   private ffmpegName: string;
+  private readonly settings: FfmpegSettings;
 
   private wantedW: number;
   private wantedH: number;
@@ -173,11 +177,18 @@ export class FFMPEG implements IFFMPEG {
   private nvidiaCapabilities: NvidiaHardwareCapabilitiesFactory;
 
   constructor(
-    private opts: DeepReadonly<FfmpegSettings>,
+    opts: DeepReadonly<FfmpegSettings>,
     private transcodeConfig: TranscodeConfig,
     private channel: Channel,
     private audioOnly: boolean = false,
   ) {
+    this.settings = {
+      ...opts,
+      languagePreferences: {
+        ...opts.languagePreferences,
+        preferences: [...opts.languagePreferences.preferences],
+      },
+    };
     this.logger = LoggerFactory.child({
       caller: import.meta,
       className: FFMPEG.name,
@@ -186,12 +197,14 @@ export class FFMPEG implements IFFMPEG {
     this.errorPicturePath = makeLocalUrl('/images/generic-error-screen.png');
     this.ffmpegName = 'unnamed ffmpeg';
     this.channel = channel;
-    this.ffmpegInfo = new FfmpegInfo(this.opts);
-    this.nvidiaCapabilities = new NvidiaHardwareCapabilitiesFactory(this.opts);
+    this.ffmpegInfo = new FfmpegInfo(this.settings);
+    this.nvidiaCapabilities = new NvidiaHardwareCapabilitiesFactory(
+      this.settings,
+    );
     this.wantedW = transcodeConfig.resolution.widthPx;
     this.wantedH = transcodeConfig.resolution.heightPx;
     this.apad = true;
-    this.ensureResolution = this.opts.normalizeResolution;
+    this.ensureResolution = this.settings.normalizeResolution;
     this.volumePercent = this.transcodeConfig.audioVolumePercent;
   }
 
@@ -205,7 +218,7 @@ export class FFMPEG implements IFFMPEG {
       `-threads`,
       '1',
       '-loglevel',
-      this.opts.logLevel,
+      this.settings.logLevel,
       '-user_agent',
       `Ffmpeg Tunarr/${getTunarrVersion()}`,
       `-fflags`,
@@ -307,7 +320,7 @@ export class FFMPEG implements IFFMPEG {
       '1',
       '-hide_banner',
       '-loglevel',
-      this.opts.logLevel,
+      this.settings.logLevel,
       '-user_agent',
       `Ffmpeg Tunarr/${getTunarrVersion()}`,
       '-nostats',
@@ -441,14 +454,16 @@ export class FFMPEG implements IFFMPEG {
       `-fflags`,
       `+genpts+discardcorrupt+igndts`,
       '-loglevel',
-      this.opts.logLevel,
+      this.settings.logLevel,
     ];
 
     const videoStream = first(streamStats?.videoDetails);
-    const audioStream =
-      find(streamStats?.audioDetails, { selected: true }) ??
-      find(streamStats?.audioDetails, { default: true }) ??
-      first(streamStats?.audioDetails);
+    this.logger.debug(
+      'Finding best audio stream from:',
+      streamStats?.audioDetails,
+    );
+    const audioStream = this.findBestAudioStream(streamStats?.audioDetails);
+    this.logger.debug('Selected audio stream:', audioStream);
 
     // Initialize like this because we're not checking whether or not
     // the input is hardware decodeable, yet.
@@ -512,9 +527,11 @@ export class FFMPEG implements IFFMPEG {
     }
 
     // Map correct audio index. '?' so doesn't fail if no stream available.
-    const audioIndex = isUndefined(audioStream)
-      ? 'a'
-      : `${audioStream.index ?? 'a'}`;
+    const audioStreamIndex = audioStream?.index
+      ? parseInt(audioStream.index)
+      : 1;
+
+    this.logger.debug(`Using audio stream index: ${audioStreamIndex}`);
 
     //TODO: Do something about missing audio stream
     let inputFiles = 0;
@@ -553,7 +570,7 @@ export class FFMPEG implements IFFMPEG {
     const videoIndex = isNonEmptyString(videoStream?.streamIndex)
       ? videoStream?.streamIndex
       : 'v';
-    let audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
+    let audioComplex = `;[${audioFile}:${audioStreamIndex}]anull[audio]`;
     let videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
 
     // This is only tracked for the vaapi path at the moment
@@ -1001,7 +1018,7 @@ export class FFMPEG implements IFFMPEG {
     if (currentAudio !== '[audio]') {
       filterComplex += audioComplex;
     } else {
-      currentAudio = `${audioFile}:${audioIndex}`;
+      currentAudio = `${audioFile}:${audioStreamIndex}`;
     }
 
     //If there is a filter complex, add it.
@@ -1119,7 +1136,11 @@ export class FFMPEG implements IFFMPEG {
     ffmpegArgs: string[],
     streamDuration?: Duration,
   ): FfmpegTranscodeSession {
-    const process = new FfmpegProcess(this.opts, this.ffmpegName, ffmpegArgs);
+    const process = new FfmpegProcess(
+      this.settings,
+      this.ffmpegName,
+      ffmpegArgs,
+    );
 
     // TODO: Do we need a more accurate measure of "streamEndTime" by passing in
     // the request start time? Or is this really inaccurate because we still have
@@ -1257,6 +1278,58 @@ export class FFMPEG implements IFFMPEG {
     );
 
     return audioOutputOpts;
+  }
+
+  private findBestAudioStream(
+    audioDetails?: AudioStreamDetails[],
+  ): AudioStreamDetails | undefined {
+    if (!audioDetails?.length) {
+      return undefined;
+    }
+
+    this.logger.debug('Available audio streams:', audioDetails);
+    this.logger.debug(
+      'Language preferences:',
+      this.settings.languagePreferences,
+    );
+
+    // First try to find a stream matching our language preferences in order
+    for (const pref of this.settings.languagePreferences.preferences) {
+      this.logger.debug(
+        `Trying to match language preference: ${pref.iso6391} (${pref.displayName})`,
+      );
+      const matchingStream = audioDetails.find((stream) => {
+        const matches = [
+          // Match on ISO 639-1 code (languageTag)
+          stream.languageTag === pref.iso6391,
+          // Match on ISO 639-2 code (languageCode)
+          stream.languageCode?.toLowerCase() === pref.iso6391,
+          // Match on full language name
+          stream.language?.toLowerCase() === pref.displayName.toLowerCase(),
+        ];
+        this.logger.debug(
+          `Stream ${stream.index} (${stream.language}) matches:`,
+          matches,
+        );
+        return matches.some((match) => match);
+      });
+      if (matchingStream) {
+        this.logger.debug(`Found matching stream:`, matchingStream);
+        return matchingStream;
+      }
+    }
+
+    // If no language match, fallback to default/selected stream
+    const fallbackStream =
+      audioDetails.find((stream) => stream.selected) ??
+      audioDetails.find((stream) => stream.default) ??
+      audioDetails[0];
+
+    this.logger.debug(
+      `No language match found, using fallback stream:`,
+      fallbackStream,
+    );
+    return fallbackStream;
   }
 }
 

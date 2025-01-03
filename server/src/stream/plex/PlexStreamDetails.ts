@@ -339,7 +339,9 @@ export class PlexStreamDetails {
           // to pick these streams.
           selected: audioStream.selected,
           default: audioStream.default,
-          language: audioStream.languageCode,
+          language: audioStream.language,
+          languageTag: audioStream.languageTag,
+          languageCode: audioStream.languageCode,
           title: audioStream.displayTitle,
         } satisfies AudioStreamDetails;
       },

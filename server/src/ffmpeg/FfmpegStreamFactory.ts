@@ -1,13 +1,13 @@
 import { Channel } from '@/db/schema/Channel.ts';
 import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
-import { HttpStreamSource } from '@/stream/types.ts';
+import { AudioStreamDetails, HttpStreamSource } from '@/stream/types.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.ts';
 import { makeLocalUrl } from '@/util/serverUtil.ts';
 import { FfmpegSettings } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
-import { find, first, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
@@ -52,7 +52,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
   private pipelineBuilderFactory: PipelineBuilderFactory;
 
   constructor(
-    private ffmpegSettings: DeepReadonly<FfmpegSettings>,
+    private ffmpegSettings: FfmpegSettings,
     private transcodeConfig: TranscodeConfig,
     private channel: Channel,
   ) {
@@ -333,10 +333,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     let audioInput: AudioInputSource;
     if (isDefined(streamDetails.audioDetails)) {
-      const audioStream =
-        find(streamDetails.audioDetails, { selected: true }) ??
-        find(streamDetails.audioDetails, { default: true }) ??
-        first(streamDetails.audioDetails);
+      // Find the best matching audio stream based on language preferences
+      const audioStream = this.findBestAudioStream(
+        streamDetails.audioDetails as AudioStreamDetails[],
+      );
       const audioStreamIndex = isNonEmptyString(audioStream.index)
         ? parseInt(audioStream.index)
         : 1;
@@ -680,5 +680,36 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return this.transcodeConfig.vaapiDriver !== 'system'
       ? this.transcodeConfig.vaapiDriver
       : null;
+  }
+
+  private findBestAudioStream(
+    audioDetails: AudioStreamDetails[],
+  ): AudioStreamDetails {
+    // First try to find a stream matching our language preferences in order
+    for (const pref of this.ffmpegSettings.languagePreferences.preferences) {
+      const matchingStream = audioDetails.find((stream) => {
+        const matches = {
+          languageTag: stream.languageTag === pref.iso6391,
+          languageCode:
+            stream.languageCode &&
+            stream.languageCode.toLowerCase() === pref.iso6391,
+          fullName:
+            stream.language &&
+            stream.language.toLowerCase() === pref.displayName.toLowerCase(),
+        };
+
+        return matches.languageTag || matches.languageCode || matches.fullName;
+      });
+      if (matchingStream) {
+        return matchingStream;
+      }
+    }
+
+    // If no language match, fallback to default/selected stream
+    const fallbackStream =
+      audioDetails.find((stream) => stream.selected) ??
+      audioDetails.find((stream) => stream.default) ??
+      audioDetails[0];
+    return fallbackStream;
   }
 }
