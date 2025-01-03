@@ -1,5 +1,4 @@
 import { RouterPluginCallback } from '@/types/serverType.js';
-import { firstDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
 import { PlexStreamSettingsSchema } from '@tunarr/types/schemas';
@@ -73,7 +72,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
           module: 'plex',
           detail: {
             action: 'update',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });
@@ -118,7 +117,7 @@ export const plexSettingsRouter: RouterPluginCallback = (
           module: 'plex',
           detail: {
             action: 'reset',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });

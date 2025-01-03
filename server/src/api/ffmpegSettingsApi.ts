@@ -1,7 +1,7 @@
 import { TranscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.ts';
 import { serverOptions } from '@/globals.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
-import { firstDefined } from '@/util/index.js';
+import { makeWritable } from '@/util/index.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.ts';
 import { sanitizeForExec } from '@/util/strings.js';
@@ -80,7 +80,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           },
           level: 'info',
         });
-        return res.send(ffmpeg);
+        return res.send(makeWritable(ffmpeg));
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
@@ -90,7 +90,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           module: 'ffmpeg',
           detail: {
             action: 'update',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });
@@ -103,10 +103,9 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     async (req, res) => {
       // RESET
       try {
-        let ffmpeg = { ...defaultFfmpegSettings };
+        const ffmpeg = { ...defaultFfmpegSettings };
         ffmpeg.ffmpegExecutablePath = req.body.ffmpegPath;
         await req.serverCtx.settings.updateFfmpegSettings(ffmpeg);
-        ffmpeg = req.serverCtx.settings.ffmpegSettings();
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: 'FFMPEG configuration reset.',
@@ -116,7 +115,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           },
           level: 'warning',
         });
-        return res.send(ffmpeg);
+        return res.send(req.serverCtx.settings.ffmpegSettings());
       } catch (err) {
         logger.error(err);
         await res.status(500).send('error');
@@ -126,7 +125,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           module: 'ffmpeg',
           detail: {
             action: 'reset',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });

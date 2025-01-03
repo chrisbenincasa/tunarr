@@ -284,8 +284,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-              ? 'progressive'
-              : 'unknown',
+            ? 'progressive'
+            : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,
@@ -328,7 +328,9 @@ export class PlexStreamDetails {
           // to pick these streams.
           selected: audioStream.selected,
           default: audioStream.default,
-          language: audioStream.languageCode,
+          language: audioStream.language,
+          languageCodeISO6391: audioStream.languageTag,
+          languageCodeISO6392: audioStream.languageCode,
           title: audioStream.displayTitle,
         } satisfies AudioStreamDetails;
       },

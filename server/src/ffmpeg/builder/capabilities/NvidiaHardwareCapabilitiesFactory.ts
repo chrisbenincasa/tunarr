@@ -1,3 +1,4 @@
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
 import {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
@@ -8,7 +9,6 @@ import { ChildProcessHelper } from '@/util/ChildProcessHelper.ts';
 import { cacheGetOrSet } from '@/util/cache.ts';
 import dayjs from '@/util/dayjs.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { FfmpegSettings } from '@tunarr/types';
 import {
   attempt,
   drop,
@@ -40,7 +40,7 @@ export class NvidiaHardwareCapabilitiesFactory
     return `${path}_${command}`;
   }
 
-  constructor(private settings: FfmpegSettings) {}
+  constructor(private settings: ReadableFfmpegSettings) {}
 
   async getCapabilities(): Promise<BaseFfmpegHardwareCapabilities> {
     const result = await attempt(async () => {

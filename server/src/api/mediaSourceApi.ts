@@ -4,7 +4,7 @@ import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { firstDefined, nullToUndefined, wait } from '@/util/index.js';
+import { nullToUndefined, wait } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.ts';
 import { MediaSourceSettings, tag } from '@tunarr/types';
@@ -15,7 +15,7 @@ import {
   UpdateMediaSourceRequestSchema,
 } from '@tunarr/types/api';
 import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
-import { isError, isNil, isObject, map } from 'lodash-es';
+import { isError, isNil, map } from 'lodash-es';
 import { match } from 'ts-pattern';
 import z from 'zod';
 
@@ -263,9 +263,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         let modifiedPrograms = 0;
         let destroyedPrograms = 0;
         report.forEach((r) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           modifiedPrograms += r.modifiedPrograms;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           destroyedPrograms += r.destroyedPrograms;
         });
         req.serverCtx.eventService.push({
@@ -288,8 +286,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           module: 'media-source',
           detail: {
             action: 'update',
-            serverName: firstDefined(req, 'body', 'name'),
-            error: isObject(err) ? firstDefined(err, 'message') : 'unknown',
+            serverName: req.body.name,
+            error: isError(err) ? err.message : JSON.stringify(err),
           },
           level: 'error',
         });
@@ -338,7 +336,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           detail: {
             action: 'add',
             serverName: req.body.name,
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : JSON.stringify(err),
           },
           level: 'error',
         });

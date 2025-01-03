@@ -175,8 +175,6 @@ export class XmlTvWriter {
           },
         ];
       }
-    } else {
-      console.log(program);
     }
 
     return partial;

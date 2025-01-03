@@ -3,7 +3,6 @@ import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.ts';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
-import { firstDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { XmlTvSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
@@ -82,7 +81,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
           module: 'xmltv',
           detail: {
             action: 'update',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });
@@ -128,7 +127,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
           module: 'xmltv',
           detail: {
             action: 'reset',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });
