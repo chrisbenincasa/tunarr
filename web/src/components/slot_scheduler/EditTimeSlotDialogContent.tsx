@@ -1,5 +1,4 @@
 import { OneDayMillis, ProgramOption } from '@/helpers/slotSchedulerUtil';
-import { showOrderOptions } from '@/helpers/slotSchedulerUtil.ts';
 import {
   Box,
   Button,
@@ -30,29 +29,27 @@ const DaysOfWeekMenuItems = [
   { value: 6, name: 'Saturday' },
 ];
 
-type EditSlotDialogContentProps = {
+type EditTimeSlotDialogContentProps = {
   slot: TimeSlot;
   index: number;
   programOptions: ProgramOption[];
   onClose: () => void;
 };
 
-export const EditSlotDialogContent = ({
+export const EditTimeSlotDialogContent = ({
   slot,
   index,
   programOptions,
   onClose,
-}: EditSlotDialogContentProps) => {
+}: EditTimeSlotDialogContentProps) => {
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
 
   const formMethods = useForm({
     defaultValues: slot,
   });
-  const { control, watch, getValues } = formMethods;
+  const { control, getValues } = formMethods;
 
-  const slotType = watch(`programming.type`);
-  const isShowType = slotType === 'custom-show' || slotType === 'show';
   const updateSlotDay = useCallback(
     (newDayOfWeek: number, originalOnChange: (...args: unknown[]) => void) => {
       const startTimeOfDay = getValues('startTime') % OneDayMillis;
@@ -63,7 +60,11 @@ export const EditSlotDialogContent = ({
   );
 
   const updateSlotTime = useCallback(
-    (fieldValue: Dayjs, originalOnChange: (...args: unknown[]) => void) => {
+    (
+      fieldValue: Dayjs | null,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      if (!fieldValue) return;
       const h = fieldValue.hour();
       const m = fieldValue.minute();
       const multiplier = Math.floor(getValues('startTime') / OneDayMillis);
@@ -130,9 +131,9 @@ export const EditSlotDialogContent = ({
                       reduceAnimations
                       {...field}
                       value={dayjs().startOf(currentPeriod).add(field.value)}
-                      onChange={(value) => {
-                        value ? updateSlotTime(value, field.onChange) : void 0;
-                      }}
+                      onChange={(value) =>
+                        updateSlotTime(value, field.onChange)
+                      }
                       label="Start Time"
                       closeOnSelect={false}
                       slotProps={{
@@ -148,24 +149,6 @@ export const EditSlotDialogContent = ({
             <FormProvider {...formMethods}>
               <EditSlotProgrammingForm programOptions={programOptions} />
             </FormProvider>
-            {isShowType && (
-              <FormControl fullWidth>
-                <InputLabel>Order</InputLabel>
-                <Controller
-                  control={control}
-                  name="order"
-                  render={({ field }) => (
-                    <Select label="Order" {...field}>
-                      {map(showOrderOptions, ({ description, value }) => (
-                        <MenuItem key={value} value={value}>
-                          {description}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            )}
           </Stack>
         </Box>
       </DialogContent>

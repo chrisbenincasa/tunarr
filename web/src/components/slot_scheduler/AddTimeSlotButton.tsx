@@ -61,9 +61,8 @@ export const AddTimeSlotButton = ({
       startTime: newStartTime.asMilliseconds(),
       order: 'next',
     } satisfies TimeSlot;
-    append(newSlot);
-
     onAdd(newSlot);
+    append(newSlot);
   }, [slots, optionsByType, append, onAdd]);
 
   return (

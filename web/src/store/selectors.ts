@@ -131,3 +131,6 @@ export const useFillerListEditor = () => {
     };
   });
 };
+
+export const useStoreProgramLookup = () =>
+  useStore((s) => s.channelEditor.programLookup);

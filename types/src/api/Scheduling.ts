@@ -28,7 +28,8 @@ const CustomShowProgrammingSlotSchema = z.object({
   customShowId: z.string().uuid(),
 });
 
-const BaseSlotSchema = z.object({
+export const BaseSlotSchema = z.object({
+  order: z.enum(['next', 'shuffle']),
   programming: z.discriminatedUnion('type', [
     MovieProgrammingSlotSchema,
     ShowProgrammingSlotSchema,
@@ -82,7 +83,7 @@ export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
 export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;
 
 export const TimeSlotSchema = z.object({
-  order: z.union([z.literal('next'), z.literal('shuffle')]),
+  order: z.enum(['next', 'shuffle']),
   programming: TimeSlotProgrammingSchema,
   startTime: z.number(), // Offset from midnight in millis
 });
@@ -146,7 +147,7 @@ export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
 export type RandomSlotProgramming = z.infer<typeof RandomSlotProgrammingSchema>;
 
 export const RandomSlotSchema = z.object({
-  order: z.union([z.literal('next'), z.literal('shuffle')]).optional(), // Present for show slots only
+  order: z.enum(['next', 'shuffle']),
   startTime: z.number().optional(), // Offset from midnight millis
   cooldownMs: z.number(),
   periodMs: z.number().optional(),

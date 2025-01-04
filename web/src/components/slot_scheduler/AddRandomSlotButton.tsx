@@ -1,53 +1,102 @@
+import { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Add } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import { RandomSlot } from '@tunarr/types/api';
+import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { map, round } from 'lodash-es';
+import { first, map, round, sortBy } from 'lodash-es';
 import { useCallback } from 'react';
-import { Control, UseFormSetValue, useWatch } from 'react-hook-form';
-import { RandomSlotForm } from '../../pages/channels/RandomSlotEditorPage';
+
+const typeWeights: Record<ProgramOption['type'], number> = {
+  show: 0,
+  movie: 1,
+  'custom-show': 2,
+  redirect: 3,
+  flex: 4,
+} as const;
+
+const findBestProgramOption = (
+  programOptions: ProgramOption[],
+): ProgramOption => {
+  return (
+    first(sortBy(programOptions, (opt) => typeWeights[opt.type])) ?? {
+      type: 'flex',
+      value: 'flex',
+      description: 'Flex',
+    }
+  );
+};
+
+function programOptionToSlotProgram(
+  program: ProgramOption,
+): RandomSlotProgramming {
+  switch (program.type) {
+    case 'movie':
+      return {
+        type: 'movie',
+      };
+    case 'flex':
+      return {
+        type: 'flex',
+      };
+    case 'custom-show':
+      return {
+        type: 'custom-show',
+        customShowId: program.customShowId,
+      };
+    case 'redirect':
+      return {
+        type: 'redirect',
+        channelId: program.channelId,
+        channelName: program.channelName,
+      };
+    case 'show':
+      return {
+        type: 'show',
+        showId: program.showId,
+      };
+  }
+}
 
 export const AddRandomSlotButton = ({
-  control,
-  setValue,
-  setWeights,
+  onAdd,
+  programOptions,
 }: AddRandomSlotButtonProps) => {
-  const [currentSlots, distribution] = useWatch({
-    control,
-    name: ['slots', 'randomDistribution'],
-  });
+  const { watch, slotArray } = useRandomSlotFormContext();
+  const [currentSlots, distribution] = watch(['slots', 'randomDistribution']);
 
   const addSlot = useCallback(() => {
-    let newSlots: RandomSlot[];
-    const newSlot: Omit<RandomSlot, 'weight'> = {
-      programming: {
-        type: 'flex',
-      },
-      durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
-      cooldownMs: 0,
-      order: 'next',
-    };
-
+    let slots = currentSlots;
+    let weight: number;
     if (distribution === 'uniform') {
-      const slot = { ...newSlot, weight: 100 };
-      newSlots = [...currentSlots, slot];
+      weight = 100;
     } else {
       const newWeight = round(100 / (currentSlots.length + 1), 2);
       const distributeWeight = round(
         (100 - newWeight) / currentSlots.length,
         2,
       );
-      const slot = { ...newSlot, weight: newWeight };
-      const oldSlots = map(currentSlots, (slot) => ({
+      const updatedSlots = map(currentSlots, (slot) => ({
         ...slot,
         weight: distributeWeight,
       }));
-      newSlots = [...oldSlots, slot];
+      weight = newWeight;
+      slots = updatedSlots;
     }
 
-    setWeights(map(newSlots, 'weight'));
-    setValue('slots', newSlots, { shouldDirty: true });
-  }, [distribution, setWeights, setValue, currentSlots]);
+    const programOption = findBestProgramOption(programOptions);
+
+    const newSlot = {
+      programming: programOptionToSlotProgram(programOption),
+      durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+      cooldownMs: 0,
+      order: 'next',
+      weight,
+    } satisfies RandomSlot;
+
+    onAdd(newSlot);
+    slotArray.replace([...slots, newSlot]);
+  }, [currentSlots, distribution, programOptions, slotArray, onAdd]);
 
   return (
     <Button startIcon={<Add />} variant="contained" onClick={() => addSlot()}>
@@ -57,7 +106,6 @@ export const AddRandomSlotButton = ({
 };
 
 type AddRandomSlotButtonProps = {
-  control: Control<RandomSlotForm>;
-  setValue: UseFormSetValue<RandomSlotForm>;
-  setWeights: (weights: number[]) => void;
+  onAdd: (slot: RandomSlot) => void;
+  programOptions: ProgramOption[];
 };

@@ -2,12 +2,10 @@ import { DropdownOption } from '@/helpers/DropdownOption.js';
 import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
 import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
 import {
-  appendToCurrentLineup,
   setChannelStartTime,
   setCurrentLineup,
 } from '@/store/channelEditor/actions';
 import { useChannelEditorLazy } from '@/store/selectors';
-import { UIChannelProgram } from '@/types';
 import { Autorenew } from '@mui/icons-material';
 import {
   Box,
@@ -54,8 +52,7 @@ export const RandomSlotSettingsForm = ({
   const { control, getValues, watch } = useFormContext<RandomSlotForm>();
   const padTime = watch('padMs');
 
-  const { materializeNewProgramList: getMaterializedProgramList } =
-    useChannelEditorLazy();
+  const { materializeOriginalProgramList } = useChannelEditorLazy();
   const snackbar = useSnackbar();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
@@ -81,44 +78,45 @@ export const RandomSlotSettingsForm = ({
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const it = scheduleRandomSlots(
-      {
-        ...getValues(),
-        timeZoneOffset: new Date().getTimezoneOffset(),
-        type: 'random',
-      },
-      getMaterializedProgramList(),
-      now,
-    );
-
-    let buf: UIChannelProgram[] = [];
-    let offset = 0,
-      index = 0;
+    // let buf: UIChannelProgram[] = [];
+    // let offset = 0,
+    // index = 0;
 
     try {
-      for await (const x of it) {
-        buf.push({
-          ...x,
-          originalIndex: index,
-          startTimeOffset: offset,
-        });
-        offset += x.duration;
-        index++;
+      const previewPrograms = await scheduleRandomSlots(
+        {
+          ...getValues(),
+          timeZoneOffset: new Date().getTimezoneOffset(),
+          type: 'random',
+        },
+        materializeOriginalProgramList(),
+        now,
+      );
+      // for await (const program of schedulePreviewGenerator) {
+      //   buf.push({
+      //     ...program,
+      //     originalIndex: index,
+      //     startTimeOffset: offset,
+      //   });
 
-        // TODO: Look into if we really want this...
-        if (buf.length % 10000 === 0) {
-          appendToCurrentLineup(buf);
-          buf = [];
-        }
-      }
-      appendToCurrentLineup(buf);
+      //   offset += program.duration;
+      //   index++;
+
+      //   // TODO: Look into if we really want this...
+      //   if (buf.length % 10000 === 0) {
+      //     appendToCurrentLineup(buf);
+      //     buf = [];
+      //   }
+      // }
+      // appendToCurrentLineup(buf);
+      setCurrentLineup(previewPrograms);
       performance.mark('guide-end');
       const { duration: ms } = performance.measure(
         'guide',
         'guide-start',
         'guide-end',
       );
-      showPerfSnackbar(Math.round(ms), buf.length);
+      showPerfSnackbar(Math.round(ms), previewPrograms.length);
     } catch (e) {
       console.error(e);
     } finally {

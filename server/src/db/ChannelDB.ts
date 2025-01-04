@@ -770,14 +770,7 @@ export class ChannelDB {
       } else {
         const start = dayjs.tz();
         startTime = +start;
-        programs = [];
-        for await (const p of scheduleRandomSlots(
-          req.schedule,
-          req.programs,
-          start,
-        )) {
-          programs.push(p);
-        }
+        programs = await scheduleRandomSlots(req.schedule, req.programs, start);
       }
 
       const newLineup = await createNewLineup(programs);

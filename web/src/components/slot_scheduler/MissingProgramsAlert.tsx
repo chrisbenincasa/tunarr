@@ -2,22 +2,23 @@ import {
   ProgramOption,
   slotOptionIsScheduled,
 } from '@/helpers/slotSchedulerUtil';
-import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { Alert, Collapse, IconButton, ListItem } from '@mui/material';
+import { BaseSlot } from '@tunarr/types/api';
 import { isEmpty, map, reject } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
-import { Control, useWatch } from 'react-hook-form';
 import { useToggle } from 'usehooks-ts';
 
 type Props = {
-  control: Control<TimeSlotForm>;
+  slots: BaseSlot[];
   programOptions: ProgramOption[];
 };
 
-export const MissingProgramsAlert = ({ control, programOptions }: Props) => {
-  const currentSlots = useWatch({ control, name: 'slots' });
+export const MissingProgramsAlert = ({
+  slots: currentSlots,
+  programOptions,
+}: Props) => {
   const [unscheduledOpen, toggleUnscheduledOpen] = useToggle(false);
 
   const unscheduledOptions = useMemo(

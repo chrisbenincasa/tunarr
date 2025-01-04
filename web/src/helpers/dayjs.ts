@@ -45,6 +45,10 @@ export function betterHumanize(
   const hoursStr = styleStrings[mergedOpts.style]['hour'];
   const minStr = styleStrings[mergedOpts.style]['minutes'];
 
+  if (+dur === 0) {
+    return `0 mins`;
+  }
+
   if (days >= 1) {
     const d =
       mergedOpts.style === 'full' ? ' ' + pluralize(daysStr, days) : daysStr;
@@ -71,7 +75,7 @@ export function betterHumanize(
       const prefix = seconds > 0 && !mergedOpts.exact ? 'about ' : '';
       builder += `${prefix}${padStart(minsN.toString(), 2, '0')}${d}`;
     } else {
-      builder += `${hrs}${d}`;
+      builder += `${padStart(minsN.toString(), 2, '0')}${d}`;
     }
   }
 
