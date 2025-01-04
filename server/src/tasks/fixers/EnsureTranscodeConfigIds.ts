@@ -1,4 +1,6 @@
 import { getDatabase } from '@/db/DBAccess.ts';
+import { getSettings } from '@/db/SettingsDB.ts';
+import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.ts';
 import Fixer from '@/tasks/fixers/fixer.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { map } from 'lodash-es';
@@ -23,18 +25,19 @@ export class EnsureTranscodeConfigIds extends Fixer {
       return;
     }
 
-    const defaultConfig = await getDatabase()
+    let defaultConfig = await getDatabase()
       .selectFrom('transcodeConfig')
-      .selectAll()
+      .select('uuid')
       .where('isDefault', '=', 1)
       .limit(1)
       .executeTakeFirst();
 
     if (!defaultConfig) {
-      EnsureTranscodeConfigIds.logger.error(
-        'No default transcode config found!',
+      EnsureTranscodeConfigIds.logger.warn(
+        'No default transcode config found! Creating one.',
       );
-      return;
+
+      defaultConfig = { uuid: await this.createDefaultTranscodeConfig() };
     }
 
     await getDatabase()
@@ -44,5 +47,20 @@ export class EnsureTranscodeConfigIds extends Fixer {
       })
       .where('channel.uuid', 'in', map(channelsMissingTranscodeId, 'uuid'))
       .execute();
+  }
+
+  private async createDefaultTranscodeConfig() {
+    return (
+      await getDatabase()
+        .insertInto('transcodeConfig')
+        .values(
+          transcodeConfigFromLegacySettings(
+            getSettings().ffmpegSettings(),
+            true,
+          ),
+        )
+        .returning('uuid')
+        .executeTakeFirstOrThrow()
+    ).uuid;
   }
 }
