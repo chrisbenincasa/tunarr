@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import {
   CacheSettingsSchema,
-  LogLevelsSchema,
   LoggingSettingsSchema,
+  LogLevelsSchema,
   SystemSettingsSchema,
 } from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
+import { ChannelStreamModes } from '../schemas/channelSchema.js';
 import {
   ChannelProgramSchema,
   ContentProgramSchema,
@@ -241,14 +242,7 @@ export type StreamConnectionDetails = z.infer<
 
 export const ChannelSessionsResponseSchema = z.object({
   // TODO: Share types with session
-  type: z.union([
-    z.literal('hls'),
-    z.literal('hls_slower'),
-    z.literal('mpegts'),
-    z.literal('hls_concat'),
-    z.literal('hls_slower_concat'),
-    z.literal('mpegts_concat'),
-  ]),
+  type: z.enum([...ChannelStreamModes, 'hls_concat', 'hls_slower_concat', 'mpegts_concat']),
   state: z.string(),
   numConnections: z.number().nonnegative(),
   connections: z.array(StreamConnectionDetailsSchema),

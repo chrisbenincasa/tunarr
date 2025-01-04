@@ -161,6 +161,7 @@ function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
     fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
     guideFlexTitle: updateReq.guideFlexTitle,
     transcodeConfigId: updateReq.transcodeConfigId,
+    streamMode: updateReq.streamMode,
   } satisfies ChannelUpdate;
 }
 

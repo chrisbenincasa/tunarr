@@ -7,10 +7,22 @@ import { z } from 'zod';
 
 const baseStreamLineupItemSchema = z.object({
   originalTimestamp: z.number().nonnegative().optional(),
-  streamDuration: z.number().nonnegative().optional(),
+  streamDuration: z
+    .number()
+    .nonnegative()
+    .optional()
+    .describe('The amount of time left in the stream'),
   beginningOffset: z.number().nonnegative().optional(),
   title: z.string().optional(),
-  start: z.number().nonnegative().optional(),
+  startOffset: z
+    .number()
+    .nonnegative()
+    .optional()
+    .describe('How far into the stream item'),
+  programBeginMs: z
+    .number()
+    .nonnegative()
+    .describe('The time the stream item started'),
   duration: z.number().nonnegative(),
 });
 
@@ -139,10 +151,12 @@ export type EnrichedLineupItem = z.infer<typeof EnrichedLineupItemSchema>;
 
 export function createOfflineStreamLineupItem(
   duration: number,
+  programBeginMs: number,
 ): OfflineStreamLineupItem {
   return {
     duration,
-    start: 0,
+    startOffset: 0,
     type: 'offline',
+    programBeginMs,
   };
 }

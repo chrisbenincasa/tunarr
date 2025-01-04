@@ -1,13 +1,16 @@
 import { getDatabase } from '@/db/DBAccess.ts';
-import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
+import {
+  ProgramStreamLineupItem,
+  createOfflineStreamLineupItem,
+} from '@/db/derived_types/StreamLineup.ts';
 import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.ts';
 import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
 import {
   AllTranscodeConfigColumns,
   TranscodeConfig,
 } from '@/db/schema/TranscodeConfig.ts';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { serverContext } from '@/serverContext.ts';
 import { OfflineProgramStream } from '@/stream/OfflinePlayer.ts';
 import { PlayerContext } from '@/stream/PlayerStreamContext.ts';
 import { ProgramStream } from '@/stream/ProgramStream.ts';
@@ -15,6 +18,7 @@ import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.t
 import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.ts';
 import { TruthyQueryParam } from '@/types/schemas.ts';
 import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
+import dayjs from '@/util/dayjs.ts';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'stream';
@@ -57,15 +61,17 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         false,
         new PlayerContext(
           {
-            ...createOfflineStreamLineupItem(req.query.duration),
+            ...createOfflineStreamLineupItem(req.query.duration, +dayjs()),
             streamDuration: req.query.duration,
           },
+          channel,
           channel,
           false,
           false,
           true,
           req.query.useNewPipeline ?? false,
           channel.transcodeConfig,
+          'mpegts',
         ),
         MpegTsOutputFormat,
       );
@@ -111,9 +117,11 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           30_000,
           '',
           channel,
+          channel,
           true,
           req.query.useNewPipeline ?? false,
           channel.transcodeConfig,
+          'mpegts',
         ),
         MpegTsOutputFormat,
       );
@@ -267,18 +275,18 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     startTime: number = 0,
     useNewPipeline: boolean = false,
   ) {
-    const lineupItem = serverContext()
-      .streamProgramCalculator()
-      .createStreamItemFromProgram(program);
-    lineupItem.start = startTime;
+    const lineupItem = createStreamItemFromProgram(program);
+    lineupItem.startOffset = startTime;
     const ctx = new PlayerContext(
       lineupItem,
+      channel,
       channel,
       false,
       false,
       true,
       useNewPipeline,
       transcodeConfig,
+      'mpegts',
     );
 
     let stream: ProgramStream;
@@ -298,3 +306,20 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     return out;
   }
 };
+
+function createStreamItemFromProgram(
+  program: ProgramDao,
+): ProgramStreamLineupItem {
+  return {
+    ...program,
+    type: 'program',
+    programType: program.type,
+    programId: program.uuid,
+    id: program.uuid,
+    // HACK
+    externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
+    plexFilePath: program.plexFilePath ?? undefined,
+    filePath: program.filePath ?? undefined,
+    programBeginMs: +dayjs(),
+  };
+}

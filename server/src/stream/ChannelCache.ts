@@ -103,7 +103,7 @@ export class ChannelCache {
     }
     const lineupItem = { ...recorded.lineupItem };
     const timeSinceRecorded = timeNow - recorded.timestamp;
-    let remainingTime = lineupItem.duration - (lineupItem.start ?? 0);
+    let remainingTime = lineupItem.duration - (lineupItem.startOffset ?? 0);
     if (!isUndefined(lineupItem.streamDuration)) {
       remainingTime = Math.min(remainingTime, lineupItem.streamDuration);
     }
@@ -122,8 +122,8 @@ export class ChannelCache {
       }
     }
 
-    lineupItem.start
-      ? (lineupItem.start += timeSinceRecorded)
+    lineupItem.startOffset
+      ? (lineupItem.startOffset += timeSinceRecorded)
       : timeSinceRecorded;
     if (!isNil(lineupItem.streamDuration)) {
       lineupItem.streamDuration -= timeSinceRecorded;
@@ -132,7 +132,7 @@ export class ChannelCache {
         return;
       }
     }
-    if ((lineupItem.start ?? 0) + SLACK > lineupItem.duration) {
+    if ((lineupItem.startOffset ?? 0) + SLACK > lineupItem.duration) {
       return;
     }
     return lineupItem;
@@ -151,7 +151,7 @@ export class ChannelCache {
     if (!isUndefined(lineupItem.streamDuration)) {
       remaining = lineupItem.streamDuration;
     } else {
-      remaining = lineupItem.duration - (lineupItem.start ?? 0);
+      remaining = lineupItem.duration - (lineupItem.startOffset ?? 0);
     }
 
     if (lineupItem.type === 'program') {

@@ -1,3 +1,4 @@
+import { getTunarrVersion } from '@/util/version.ts';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
@@ -172,7 +173,7 @@ export async function initServer(opts: ServerOptions) {
         info: {
           title: 'Tunarr',
           description: 'Tunarr API',
-          version: '1.0.0',
+          version: getTunarrVersion(),
         },
         servers: [],
         tags: [
@@ -194,13 +195,9 @@ export async function initServer(opts: ServerOptions) {
       origin: '*', // Testing
     })
     .register(fastifyMultipart)
-    // .addHook('onRequest', (_req, _rep, done) =>
-    //   RequestContext.create(orm.em, done),
-    // )
     .addHook('onRequest', (_req, _res, done) => {
       ServerRequestContext.create(serverContext(), done);
     })
-    // .addHook('onClose', async () => await orm.close())
     .register(
       fp((f, _, done) => {
         f.decorateRequest('serverCtx');

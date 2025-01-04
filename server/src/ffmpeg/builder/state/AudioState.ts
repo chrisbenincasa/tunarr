@@ -1,4 +1,5 @@
 import { ExcludeByValueType, Nullable } from '@/types/util.ts';
+import { isNil, omitBy } from 'lodash-es';
 import { AnyFunction } from 'ts-essentials';
 
 export type AudioStateFields = ExcludeByValueType<AudioState, AnyFunction>;
@@ -15,7 +16,7 @@ const DefaultAudioState: AudioState = {
 
 export class AudioState {
   audioEncoder: string;
-  audioChannels: number;
+  audioChannels: Nullable<number>;
   audioBitrate: Nullable<number>;
   audioBufferSize: Nullable<number>;
   audioSampleRate: Nullable<number>;
@@ -25,7 +26,7 @@ export class AudioState {
   private constructor(fields: Partial<AudioStateFields> = {}) {
     const merged: AudioStateFields = {
       ...DefaultAudioState,
-      ...fields,
+      ...omitBy(fields, isNil),
     };
     this.audioEncoder = merged.audioEncoder;
     this.audioChannels = merged.audioChannels;

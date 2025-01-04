@@ -4,7 +4,6 @@ import { ProgramDB } from '@/db/ProgramDB.ts';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
 import { Channel } from '@/db/schema/Channel.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { ProgramDao as RawProgram } from '@/db/schema/Program.ts';
 import type { ProgramDaoWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { FillerPicker } from '@/services/FillerPicker.js';
 import { Result } from '@/types/result.js';
@@ -15,7 +14,6 @@ import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
-import { z } from 'zod';
 import {
   Lineup,
   isContentItem,
@@ -23,7 +21,6 @@ import {
 } from '../db/derived_types/Lineup.ts';
 import {
   EnrichedLineupItem,
-  ProgramStreamLineupItem,
   RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
@@ -68,6 +65,14 @@ export class StreamProgramCalculatorError extends Error {
   }
 }
 
+export type CurrentLineupItemResult = {
+  lineupItem: StreamLineupItem,
+  // Either the source channel or the target channel
+  // if the current program is a redirect
+  channelContext: Channel;
+  sourceChannel: Channel;
+}
+
 export class StreamProgramCalculator {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -84,7 +89,7 @@ export class StreamProgramCalculator {
   async getCurrentLineupItem(
     req: GetCurrentLineupItemRequest,
   ): Promise<
-    Result<{ lineupItem: StreamLineupItem; channelContext: Channel }>
+    Result<CurrentLineupItemResult>
   > {
     const channel = await this.channelDB.getChannel(req.channelId);
 
@@ -110,10 +115,7 @@ export class StreamProgramCalculator {
       lineup,
     );
 
-    while (
-      !isUndefined(currentProgram) &&
-      currentProgram.program.type === 'redirect'
-    ) {
+    while (currentProgram.program.type === 'redirect') {
       redirectChannels.push(channelContext.uuid);
       upperBounds.push(
         currentProgram.program.duration - currentProgram.timeElapsed,
@@ -131,7 +133,8 @@ export class StreamProgramCalculator {
               redirectChannels.join(', '),
             duration: 60_000,
             streamDuration: 60_000,
-            start: 0,
+            startOffset: 0,
+            programBeginMs: req.startTime,
           },
         );
       }
@@ -145,7 +148,7 @@ export class StreamProgramCalculator {
         this.logger.error(msg);
         currentProgram = {
           program: {
-            ...createOfflineStreamLineupItem(60000),
+            ...createOfflineStreamLineupItem(60000, req.startTime),
             type: 'error',
             error: msg,
           },
@@ -161,7 +164,7 @@ export class StreamProgramCalculator {
         req.startTime,
       );
 
-      if (!isUndefined(lineupItem)) {
+      if (lineupItem) {
         break;
       } else {
         currentProgram = await this.getCurrentProgramAndTimeElapsed(
@@ -193,6 +196,7 @@ export class StreamProgramCalculator {
         //filler to play (if any)
         currentProgram.program = createOfflineStreamLineupItem(
           dayjs.duration({ years: 1 }).asMilliseconds(),
+          req.startTime,
         );
       } else if (
         req.allowSkip &&
@@ -207,11 +211,10 @@ export class StreamProgramCalculator {
           await this.channelCache.clearPlayback(redirectChannels[i]);
         }
 
-        this.logger.info(
+        this.logger.debug(
           'Too little time before the filler ends, skip to next slot',
         );
 
-        // return await this.startStream(req, startTimestamp + dt + 1, false);
         return await this.getCurrentLineupItem({
           ...req,
           startTime: req.startTime + dt + 1,
@@ -235,7 +238,7 @@ export class StreamProgramCalculator {
       );
     }
 
-    if (!isUndefined(lineupItem)) {
+    if (lineupItem) {
       let upperBound = Number.MAX_SAFE_INTEGER;
       const beginningOffset = lineupItem?.beginningOffset ?? 0;
 
@@ -278,11 +281,12 @@ export class StreamProgramCalculator {
         type: 'error',
         error: 'Too many attempts, throttling',
         duration: 60_000,
-        start: 0,
+        startOffset: 0,
+        programBeginMs: req.startTime,
       };
     }
 
-    return Result.success({ lineupItem, channelContext });
+    return Result.success({ lineupItem, channelContext, sourceChannel: channel, });
   }
 
   // This code is almost identical to TvGuideService#getCurrentPlayingIndex
@@ -296,7 +300,10 @@ export class StreamProgramCalculator {
         'Channel start time is above the given date. Flex time is picked till that.',
       );
       return {
-        program: createOfflineStreamLineupItem(channel.startTime - timestamp),
+        program: createOfflineStreamLineupItem(
+          channel.startTime - timestamp,
+          timestamp,
+        ),
         timeElapsed: 0,
         programIndex: -1,
       };
@@ -375,9 +382,10 @@ export class StreamProgramCalculator {
       program = {
         duration: lineupItem.durationMs,
         type: 'offline',
+        programBeginMs: timestamp - timeElapsed,
       };
 
-      if (!isNil(backingItem)) {
+      if (backingItem) {
         // Will play this item on the first found server... unsure if that is
         // what we want
         const externalInfo = backingItem.externalIds.find(
@@ -386,10 +394,7 @@ export class StreamProgramCalculator {
             eid.sourceType === ProgramExternalIdType.JELLYFIN,
         );
 
-        if (
-          !isUndefined(externalInfo) &&
-          isNonEmptyString(externalInfo.externalSourceId)
-        ) {
+        if (externalInfo && isNonEmptyString(externalInfo.externalSourceId)) {
           program = {
             type: 'program',
             externalSource:
@@ -405,19 +410,21 @@ export class StreamProgramCalculator {
             title: backingItem.title,
             id: backingItem.uuid,
             programType: backingItem.type,
+            programBeginMs: timestamp - timeElapsed,
           };
         }
       }
     } else if (isOfflineItem(lineupItem)) {
       program = {
-        duration: lineupItem.durationMs,
-        type: 'offline',
+        ...createOfflineStreamLineupItem(lineupItem.durationMs, timestamp),
+        programBeginMs: timestamp - timeElapsed,
       };
     } else {
       program = {
         duration: lineupItem.durationMs,
         channel: lineupItem.channel,
         type: 'redirect',
+        programBeginMs: timestamp - timeElapsed,
       };
     }
 
@@ -451,8 +458,9 @@ export class StreamProgramCalculator {
         error: activeProgram.error,
         streamDuration: remaining,
         duration: remaining,
-        start: 0,
-        beginningOffset: beginningOffset,
+        startOffset: 0,
+        beginningOffset,
+        programBeginMs: activeProgram.programBeginMs,
       };
     }
 
@@ -524,7 +532,7 @@ export class StreamProgramCalculator {
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
                 ? MediaSourceType.Jellyfin
                 : MediaSourceType.Plex,
-            start: fillerstart,
+            startOffset: fillerstart,
             streamDuration: Math.max(
               1,
               Math.min(filler.duration - fillerstart, remaining),
@@ -535,6 +543,7 @@ export class StreamProgramCalculator {
             externalSourceId: externalInfo.externalSourceId!,
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
+            programBeginMs: activeProgram.programBeginMs,
           };
         }
       }
@@ -548,9 +557,10 @@ export class StreamProgramCalculator {
         type: 'offline',
         title: 'Channel Offline',
         streamDuration: remaining,
-        beginningOffset: beginningOffset,
+        beginningOffset,
         duration: remaining,
-        start: 0,
+        startOffset: 0,
+        programBeginMs: activeProgram.programBeginMs,
       };
     }
 
@@ -563,24 +573,10 @@ export class StreamProgramCalculator {
     return {
       ...activeProgram,
       type: 'program',
-      start: timeElapsed,
+      startOffset: timeElapsed,
       streamDuration: activeProgram.duration - timeElapsed,
-      beginningOffset: beginningOffset,
+      beginningOffset,
       id: activeProgram.id,
-    };
-  }
-
-  createStreamItemFromProgram(program: RawProgram): ProgramStreamLineupItem {
-    return {
-      ...program,
-      type: 'program',
-      programType: program.type,
-      programId: program.uuid,
-      id: program.uuid,
-      // HACK
-      externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
-      plexFilePath: program.plexFilePath ?? undefined,
-      filePath: program.filePath ?? undefined,
     };
   }
 }

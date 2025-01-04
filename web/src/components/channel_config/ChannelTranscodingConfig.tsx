@@ -82,7 +82,11 @@ const ChannelStreamModeOptions: {
     value: 'mpegts',
     label: 'MPEG-TS',
   },
-];
+  {
+    value: 'hls_direct',
+    label: 'HLS Direct',
+  },
+] as const;
 
 export default function ChannelTranscodingConfig() {
   const { backendUri } = useSettings();

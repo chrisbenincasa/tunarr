@@ -28,10 +28,10 @@ export class OfflineProgramStream extends ProgramStream {
   ) {
     super(context, outputFormat, settingsDB);
     if (context.isLoading === true) {
-      context.channel = {
-        ...context.channel,
+      context.targetChannel = {
+        ...context.targetChannel,
         offline: {
-          ...context.channel.offline,
+          ...context.targetChannel.offline,
           mode: 'pic',
           picture: makeLocalUrl('/images/loading-screen.png'),
           soundtrack: undefined,
@@ -49,11 +49,12 @@ export class OfflineProgramStream extends ProgramStream {
       const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
         this.settingsDB.ffmpegSettings(),
         this.context.transcodeConfig,
-        this.context.channel,
+        this.context.targetChannel,
+        this.context.streamMode,
       );
       const lineupItem = this.context.lineupItem;
       let duration = dayjs.duration(lineupItem.streamDuration ?? 0);
-      const start = dayjs.duration(lineupItem.start ?? 0);
+      const start = dayjs.duration(lineupItem.startOffset ?? 0);
       if (+duration > +start) {
         duration = duration.subtract(start);
       }

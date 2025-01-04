@@ -62,16 +62,19 @@ export const ChannelTranscodingOptionsSchema = z.object({
 export const HlsChannelStreamMode = 'hls';
 export const HlsSlowerChannelStreamMode = 'hls_slower';
 export const MpegTsChannelStreamMode = 'mpegts';
+export const HlsSDirectStreamMode = 'hls_direct';
 export const ChannelStreamMode = {
   Hls: HlsChannelStreamMode,
   HlsSlower: HlsSlowerChannelStreamMode,
   MpegTs: MpegTsChannelStreamMode,
+  HlsDirect: HlsSDirectStreamMode,
 } as const;
 
 export const ChannelStreamModes = [
   ChannelStreamMode.Hls,
   ChannelStreamMode.HlsSlower,
   ChannelStreamMode.MpegTs,
+  ChannelStreamMode.HlsDirect,
 ] as const;
 
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;

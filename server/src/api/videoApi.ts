@@ -2,6 +2,7 @@ import { FfmpegText } from '@/ffmpeg/ffmpegText.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { isProduction } from '@/util/index.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
@@ -85,7 +86,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/stream',
     {
       schema: {
-        hide: true,
+        hide: isProduction,
         querystring: z.object({
           channel: z.coerce.number().or(z.string().uuid()),
           audioOnly: TruthyQueryParam.catch(false),
@@ -93,6 +94,10 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           startTime: z.coerce.number().optional(),
           token: z.string().uuid().optional(),
         }),
+      },
+      onRequest(req, _, done) {
+        logger.debug('Raw stream requested: %s', req.raw.url);
+        done();
       },
       onError(req, _, e) {
         logger.error(e, 'Error on /stream: %s. %O', req.raw.url);
@@ -127,7 +132,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         {
           channel: req.query.channel,
           audioOnly: req.query.audioOnly ?? false,
-          sessionType: req.query.mode,
+          streamMode: req.query.mode,
           sessionToken: req.query.token,
         },
         now,

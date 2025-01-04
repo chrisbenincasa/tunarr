@@ -4,7 +4,7 @@ import { HttpStreamSource } from '@/stream/types.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.ts';
 import { makeLocalUrl } from '@/util/serverUtil.ts';
-import { FfmpegSettings } from '@tunarr/types';
+import { ChannelStreamModes, FfmpegSettings } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { find, first, isUndefined } from 'lodash-es';
@@ -154,7 +154,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
     concatInput: ConcatInputSource,
     opts: HlsWrapperOptions,
   ): Promise<FfmpegTranscodeSession> {
-    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
+    const calculator = new FfmpegPlaybackParamsCalculator(
+      this.transcodeConfig,
+      this.channel.streamMode,
+    );
     const playbackParams = calculator.calculateForHlsConcat();
 
     const videoStream = VideoStream.create({
@@ -226,7 +229,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoBufferSize: playbackParams.videoBufferSize,
         videoTrackTimescale: playbackParams.videoTrackTimeScale,
         videoFormat: playbackParams.videoFormat,
-        // videoPreset: playbackParams.vid
+        // videoPreset: playbackParams.video
       }),
     );
 
@@ -262,18 +265,22 @@ export class FfmpegStreamFactory extends IFFMPEG {
     duration,
     realtime,
     watermark,
+    streamMode,
   }: StreamSessionOptions): Promise<Maybe<FfmpegTranscodeSession>> {
     if (streamSource.type !== 'http' && streamSource.type !== 'file') {
-      throw new Error('');
+      throw new Error('Unsupported stream source format: ' + streamSource.type);
     }
 
-    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
+    const calculator = new FfmpegPlaybackParamsCalculator(
+      this.transcodeConfig,
+      streamMode ?? this.channel.streamMode,
+    );
     const playbackParams = calculator.calculateForStream(streamDetails);
 
     // Get inputs
     // Assume we always have a video stream!!!
     if (isUndefined(streamDetails.videoDetails)) {
-      throw new Error('no video streams!!');
+      throw new Error('Streams with no video are not currently supported.');
     }
     const [videoStreamDetails] = streamDetails.videoDetails;
 
@@ -328,7 +335,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       audioSampleRate: playbackParams.audioSampleRate,
       audioVolume: this.ffmpegSettings.audioVolumePercent,
       // Check if audio and video are coming from same location
-      audioDuration: duration.asMilliseconds(),
+      audioDuration:
+        streamMode === 'hls_direct' ? null : duration.asMilliseconds(),
     });
 
     let audioInput: AudioInputSource;
@@ -360,7 +368,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
-    if (watermark?.enabled) {
+    if (streamMode !== ChannelStreamModes.HlsDirect && watermark?.enabled) {
       const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
       watermarkSource = new WatermarkInputSource(
         new HttpStreamSource(watermarkUrl),
@@ -441,7 +449,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
     realtime: boolean,
     ptsOffset?: number,
   ): Promise<Maybe<FfmpegTranscodeSession>> {
-    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
+    const calculator = new FfmpegPlaybackParamsCalculator(
+      this.transcodeConfig,
+      this.channel.streamMode,
+    );
     const playbackParams = calculator.calculateForErrorStream(
       outputFormat,
       realtime,
@@ -587,7 +598,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
     );
 
-    const calculator = new FfmpegPlaybackParamsCalculator(this.transcodeConfig);
+    const calculator = new FfmpegPlaybackParamsCalculator(
+      this.transcodeConfig,
+      this.channel.streamMode,
+    );
     const playbackParams = calculator.calculateForErrorStream(
       outputFormat,
       true,
