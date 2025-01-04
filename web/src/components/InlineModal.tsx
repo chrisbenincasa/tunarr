@@ -38,7 +38,6 @@ export function InlineModal<ItemType, ItemKind extends string>(
     extractItemId,
     renderChildren,
   } = props;
-  console.log(props);
   const previousItemGuid = usePrevious(itemGuid);
   const [containerWidth, setContainerWidth] = useState(0);
   const [itemWidth, setItemWidth] = useState(0);

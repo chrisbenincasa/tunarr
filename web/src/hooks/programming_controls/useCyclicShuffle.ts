@@ -46,10 +46,11 @@ export function useCyclicShuffle() {
       .mapValues((programs) => {
         const firstProgram = programs[0];
         if (firstProgram.type === 'content') {
-          programs = sortBy(programs as UIContentProgram[], (program) => [
-            program.parentIndex,
-            program.index,
-          ]);
+          programs = sortBy(
+            programs as UIContentProgram[],
+            (p) => p.parentIndex,
+            (p) => p.index,
+          );
         } else if (firstProgram.type === 'custom') {
           programs = sortBy(
             programs as UICustomProgram[],
