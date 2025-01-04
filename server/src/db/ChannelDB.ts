@@ -12,7 +12,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { MutexMap } from '@/util/mutexMap.ts';
 import { Timer } from '@/util/perf.ts';
 import { booleanToNumber } from '@/util/sqliteUtil.ts';
-import { scheduleRandomSlots, scheduleTimeSlots } from '@tunarr/shared';
+import { RandomSlotScheduler, scheduleTimeSlots } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -770,7 +770,10 @@ export class ChannelDB {
       } else {
         const start = dayjs.tz();
         startTime = +start;
-        programs = await scheduleRandomSlots(req.schedule, req.programs, start);
+        programs = new RandomSlotScheduler(req.schedule).generateSchedule(
+          req.programs,
+          start,
+        );
       }
 
       const newLineup = await createNewLineup(programs);

@@ -1,0 +1,137 @@
+import { StyledMenu } from '@/components/base/StyledMenu.tsx';
+import { UnlockedWeightScale } from '@/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx';
+import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
+import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
+import { useCalculateProgramFrequency } from '@/hooks/slot_scheduler/useCalculatorProgramFrequency.ts';
+import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
+import { Shuffle, SvgIconComponent } from '@mui/icons-material';
+import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
+import { Button, ListItemIcon, MenuItem } from '@mui/material';
+import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import { forEach, maxBy } from 'lodash-es';
+import React from 'react';
+import { match } from 'ts-pattern';
+
+type Preset = {
+  key: 'cyclie_shuffle';
+  description: string;
+  Icon: SvgIconComponent;
+};
+
+const options = [
+  {
+    key: 'cyclie_shuffle',
+    description: 'Cyclic Shuffle',
+    Icon: Shuffle,
+  } satisfies Preset,
+] as const;
+
+export const RandomSlotPresetButton = () => {
+  const { reset } = useRandomSlotFormContext();
+  const [open, setOpen] = React.useState(false);
+  const anchorRef = React.useRef<HTMLButtonElement>(null);
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
+
+  const calculateProgramFrequency = useCalculateProgramFrequency();
+
+  const handleMenuItemClick = (
+    _: React.MouseEvent<HTMLLIElement, MouseEvent>,
+    preset: Preset,
+  ) => {
+    switch (preset.key) {
+      case 'cyclie_shuffle': {
+        const frequencies = calculateProgramFrequency();
+        const slots: RandomSlot[] = [];
+        for (const opt of programOptions) {
+          if (opt.type === 'flex' || opt.type === 'redirect') {
+            continue;
+          }
+
+          const programming = match(opt)
+            .returnType<RandomSlotProgramming | null>()
+            .with({ type: 'movie' }, () => ({
+              type: 'movie',
+            }))
+            .with({ type: 'show' }, (showOpt) => ({
+              type: 'show',
+              showId: showOpt.showId,
+            }))
+            .with({ type: 'custom-show' }, (csOpt) => ({
+              type: 'custom-show',
+              customShowId: csOpt.customShowId,
+            }))
+            .otherwise(() => null);
+
+          if (!programming) {
+            continue;
+          }
+
+          slots.push({
+            cooldownMs: 0,
+            programming,
+            durationSpec: {
+              type: 'dynamic',
+              programCount: 1,
+            },
+            order: 'ordered_shuffle',
+            weight: frequencies[getRandomSlotId(programming) as string] ?? 0.0,
+          });
+        }
+
+        const maxWeight = maxBy(slots, (slot) => slot.weight)?.weight ?? 100.0;
+        forEach(slots, (slot) => {
+          slot.weight = Math.ceil(
+            (slot.weight * UnlockedWeightScale) / maxWeight,
+          );
+        });
+
+        reset({
+          randomDistribution: 'weighted',
+          padMs: 1,
+          slots,
+          lockWeights: false,
+        });
+      }
+    }
+    handleClose();
+  };
+
+  const handleToggle = () => {
+    setOpen((prevOpen) => !prevOpen);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <React.Fragment>
+      <Button
+        // startIcon={<OrganizeIcon />}
+        endIcon={<KeyboardArrowDown />}
+        onClick={handleToggle}
+        ref={anchorRef}
+        variant="contained"
+      >
+        Presets
+      </Button>
+      <StyledMenu
+        anchorEl={anchorRef.current}
+        open={open}
+        onClose={handleClose}
+      >
+        {options.map((option) => (
+          <MenuItem
+            key={option.key}
+            onClick={(event) => handleMenuItemClick(event, option)}
+          >
+            <ListItemIcon>
+              <option.Icon fontSize="small" />
+            </ListItemIcon>
+            {option.description}
+          </MenuItem>
+        ))}
+      </StyledMenu>
+    </React.Fragment>
+  );
+};

@@ -31,7 +31,7 @@ import {
   mapValues,
   round,
 } from 'lodash-es';
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
@@ -170,12 +170,12 @@ export default function RandomSlotEditorPage() {
       }
 
       return (
-        <>
+        <React.Fragment key={key}>
           <span key={key}>
             {name}: {round((sums[key] / total) * 100, 2)}%
           </span>
           <br />
-        </>
+        </React.Fragment>
       );
     });
   }, [newLineup, programOptionNameById]);

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { PlexSearchSchema } from './plexSearch.js';
 
+const SlotProgrammingOrderSchema = z.enum([
+  'next',
+  'shuffle',
+  'ordered_shuffle',
+]);
+
 //
 // Base slots
 //
@@ -29,7 +35,7 @@ const CustomShowProgrammingSlotSchema = z.object({
 });
 
 export const BaseSlotSchema = z.object({
-  order: z.enum(['next', 'shuffle']),
+  order: SlotProgrammingOrderSchema,
   programming: z.discriminatedUnion('type', [
     MovieProgrammingSlotSchema,
     ShowProgrammingSlotSchema,
@@ -83,7 +89,7 @@ export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
 export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;
 
 export const TimeSlotSchema = z.object({
-  order: z.enum(['next', 'shuffle']),
+  order: SlotProgrammingOrderSchema,
   programming: TimeSlotProgrammingSchema,
   startTime: z.number(), // Offset from midnight in millis
 });
@@ -146,12 +152,29 @@ export const RandomSlotProgrammingSchema = z.discriminatedUnion('type', [
 
 export type RandomSlotProgramming = z.infer<typeof RandomSlotProgrammingSchema>;
 
+export const RandomSlotFixedDurationSpecSchema = z.object({
+  durationMs: z.number(),
+  type: z.literal('fixed'),
+});
+
+export const RandomSlotDynamicDurationspecSchema = z.object({
+  type: z.literal('dynamic'),
+  programCount: z.number().min(1),
+});
+
+export const RandomSlotDurationSpec = z.discriminatedUnion('type', [
+  RandomSlotFixedDurationSpecSchema,
+  RandomSlotDynamicDurationspecSchema,
+]);
+
 export const RandomSlotSchema = z.object({
-  order: z.enum(['next', 'shuffle']),
+  order: SlotProgrammingOrderSchema,
   startTime: z.number().optional(), // Offset from midnight millis
   cooldownMs: z.number(),
   periodMs: z.number().optional(),
-  durationMs: z.number(),
+  // Deprecated -  use durationSpec
+  durationMs: z.number().optional(),
+  durationSpec: RandomSlotDurationSpec,
   weight: z.number(),
   programming: RandomSlotProgrammingSchema,
 });
@@ -160,13 +183,13 @@ export type RandomSlot = z.infer<typeof RandomSlotSchema>;
 
 export const RandomSlotScheduleSchema = z.object({
   type: z.literal('random'),
-  flexPreference: z.union([z.literal('distribute'), z.literal('end')]),
+  flexPreference: z.enum(['distribute', 'end']),
   maxDays: z.number(),
   padMs: z.number(),
-  padStyle: z.union([z.literal('slot'), z.literal('episode')]),
+  padStyle: z.enum(['slot', 'episode']),
   slots: z.array(RandomSlotSchema),
   timeZoneOffset: z.number().optional(), // Timezone offset in minutes
-  randomDistribution: z.union([z.literal('uniform'), z.literal('weighted')]),
+  randomDistribution: z.enum(['uniform', 'weighted']),
   periodMs: z.number().optional(),
   // Purely for UI purposes. Adjusting weight of one program affects the
   // weights of all others if lock weights === true.

@@ -1,10 +1,13 @@
-import { ChannelProgram, ContentProgram, CustomProgram } from '@tunarr/types';
+import { ChannelProgram, ContentProgram } from '@tunarr/types';
+import { BaseSlot } from '@tunarr/types/api';
 import { nth, shuffle, slice, sortBy } from 'lodash-es';
-import { SlotLike } from './slotSchedulerUtil.js';
+import { seq } from '../util/index.js';
+import { random } from './randomSlotsService.js';
 
 export interface ProgramIterator {
   current(): ChannelProgram | null;
   next(): void;
+  reset(): void;
 }
 
 /**
@@ -22,6 +25,8 @@ export class StaticProgramIterator implements ProgramIterator {
   }
 
   next(): void {}
+
+  reset(): void {}
 }
 
 export class ProgramShuffler implements ProgramIterator {
@@ -47,6 +52,40 @@ export class ProgramShuffler implements ProgramIterator {
       this.#position = 0;
     }
   }
+
+  reset(): void {
+    this.#programs = shuffle(this.#programs);
+    this.#position = 0;
+  }
+}
+
+export class ProgramChunkedShuffle<ProgramType extends ChannelProgram>
+  implements ProgramIterator
+{
+  #programs: ProgramType[];
+  #position: number = 0;
+
+  constructor(
+    programs: ProgramType[],
+    orderer: (program: ProgramType) => string | number,
+  ) {
+    this.#programs = seq.rotateArray(
+      sortBy(programs, orderer),
+      random.integer(0, programs.length),
+    );
+  }
+
+  current(): ProgramType | null {
+    return nth(this.#programs, this.#position) ?? null;
+  }
+
+  next(): void {
+    this.#position = (this.#position + 1) % this.#programs.length;
+  }
+
+  reset(): void {
+    this.#position = 0;
+  }
 }
 
 /**
@@ -54,13 +93,15 @@ export class ProgramShuffler implements ProgramIterator {
  * them in a particular order. By default, the {@link getProgramOrder} ordering
  * is used.
  */
-export class ProgramOrderer implements ProgramIterator {
-  #programs: ContentProgram[];
+export class ProgramOrdereredIterator<ProgramType extends ChannelProgram>
+  implements ProgramIterator
+{
+  #programs: ProgramType[];
   #position: number = 0;
 
   constructor(
-    programs: ContentProgram[],
-    orderer: (program: ContentProgram) => string | number = getProgramOrder,
+    programs: ProgramType[],
+    orderer: (program: ProgramType) => string | number,
   ) {
     this.#programs = sortBy(programs, orderer);
   }
@@ -68,24 +109,13 @@ export class ProgramOrderer implements ProgramIterator {
   current(): ChannelProgram | null {
     return nth(this.#programs, this.#position) ?? null;
   }
+
   next(): void {
     this.#position = (this.#position + 1) % this.#programs.length;
   }
-}
 
-export class CustomProgramOrderer implements ProgramIterator {
-  #position: number = 0;
-
-  constructor(private programs: CustomProgram[]) {
-    this.programs = sortBy(programs, (p) => p.index);
-  }
-
-  current(): ChannelProgram | null {
-    return nth(this.programs, this.#position) ?? null;
-  }
-
-  next(): void {
-    this.#position = (this.#position + 1) % this.programs.length;
+  reset(): void {
+    this.#position = 0;
   }
 }
 
@@ -105,7 +135,7 @@ export function getProgramOrder(program: ContentProgram): string | number {
 
 // There is probably a way to make this typesafe by asserting the
 // programming subtype, but I haven't figured it out yet.
-export function slotIteratorKey(slot: SlotLike) {
+export function slotIteratorKey<T extends BaseSlot>(slot: T) {
   switch (slot.programming.type) {
     case 'movie':
       return `movie_${slot.order}`;
@@ -120,8 +150,8 @@ export function slotIteratorKey(slot: SlotLike) {
   }
 }
 
-export function getNextProgramForSlot(
-  slot: SlotLike,
+export function getNextProgramForSlot<T extends BaseSlot>(
+  slot: T,
   iterators: Record<string, ProgramIterator>,
   duration: number,
 ): ChannelProgram | null {
@@ -140,8 +170,8 @@ export function getNextProgramForSlot(
   }
 }
 
-export function advanceIterator(
-  slot: SlotLike,
+export function advanceIterator<T extends BaseSlot>(
+  slot: T,
   iterators: Record<string, ProgramIterator>,
 ) {
   switch (slot.programming.type) {

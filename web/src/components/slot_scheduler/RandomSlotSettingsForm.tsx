@@ -21,7 +21,7 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { scheduleRandomSlots } from '@tunarr/shared';
+import { RandomSlotScheduler } from '@tunarr/shared';
 import { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
@@ -83,15 +83,11 @@ export const RandomSlotSettingsForm = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
-      const previewPrograms = await scheduleRandomSlots(
-        {
-          ...getValues(),
-          timeZoneOffset: new Date().getTimezoneOffset(),
-          type: 'random',
-        },
-        materializeOriginalProgramList(),
-        now,
-      );
+      const previewPrograms = new RandomSlotScheduler({
+        ...getValues(),
+        timeZoneOffset: new Date().getTimezoneOffset(),
+        type: 'random',
+      }).generateSchedule(materializeOriginalProgramList(), now);
       setCurrentLineup(previewPrograms);
       performance.mark('guide-end');
       const { duration: ms } = performance.measure(

@@ -15,7 +15,7 @@ export type RandomSlotTableDataType = FieldArrayWithId<RandomSlotForm, 'slots'>;
 export type SlotTableWarnings = {
   warnings: SlotWarning[];
   programCount: number;
-  durationMs: number;
+  durationMs?: number;
 };
 
 export type TimeSlotTableRowType = TimeSlotTableDataType &

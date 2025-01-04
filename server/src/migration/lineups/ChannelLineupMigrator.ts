@@ -1,5 +1,6 @@
 import { ChannelDB } from '@/db/ChannelDB.ts';
 import { ProgramDB } from '@/db/ProgramDB.ts';
+import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { findIndex, map } from 'lodash-es';
 import {
@@ -9,19 +10,20 @@ import {
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 
-type MigrationFactory = (
+type MigrationFactory<From extends number, To extends number> = (
   channelDB: ChannelDB,
   programDB: ProgramDB,
-) => ChannelLineupMigration<number, number>;
+) => ChannelLineupMigration<From, To>;
 
-type MigrationStep<From extends number = number, To extends number = number> = [
+type MigrationStep<From extends number, To extends number> = [
   From,
   To,
-  MigrationFactory,
+  MigrationFactory<From, To>,
 ];
 
-const MigrationSteps: MigrationStep[] = [
+const MigrationSteps: MigrationStep<number, number>[] = [
   [0, 1, (cdb, pdb) => new SlotShowIdMigration(cdb, pdb)],
+  [1, 2, (cdb, pdb) => new RandomSlotDurationSpecMigration(cdb, pdb)],
 ] as const;
 
 type MigrationPipeline = [

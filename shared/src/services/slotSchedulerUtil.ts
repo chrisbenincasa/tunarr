@@ -1,5 +1,5 @@
-import { ChannelProgram, MultiExternalId } from '@tunarr/types';
-import { RandomSlot, TimeSlot } from '@tunarr/types/api';
+import { ChannelProgram, CustomProgram, MultiExternalId } from '@tunarr/types';
+import { BaseSlot } from '@tunarr/types/api';
 import {
   filter,
   first,
@@ -13,18 +13,14 @@ import {
 } from 'lodash-es';
 import { createExternalIdFromMulti } from '../index.js';
 import {
-  CustomProgramOrderer,
+  ProgramChunkedShuffle,
   ProgramIterator,
-  ProgramOrderer,
+  ProgramOrdereredIterator,
   ProgramShuffler,
   StaticProgramIterator,
+  getProgramOrder,
   slotIteratorKey,
 } from './ProgramIterator.js';
-
-export type SlotLike = {
-  order?: 'next' | 'shuffle';
-  programming: (TimeSlot & RandomSlot)['programming'];
-};
 
 type ProgramMapping = {
   [K in 'content' | 'redirect' | 'custom']: Record<
@@ -101,7 +97,7 @@ export function createProgramMap(programs: ChannelProgram[]): ProgramMapping {
  * @returns A mapping of slot ID -> {@link ProgramIterator}
  */
 export function createProgramIterators(
-  slots: SlotLike[],
+  slots: BaseSlot[],
   programBySlotType: ProgramMapping,
 ) {
   return reduce(
@@ -146,10 +142,24 @@ export function createProgramIterators(
             });
           }
         } else if (slot.programming.type === 'custom-show') {
-          acc[id] =
-            slot.order === 'next'
-              ? new CustomProgramOrderer(programBySlotType.custom[slotId] ?? [])
-              : new ProgramShuffler(programBySlotType.custom[slotId] ?? []);
+          switch (slot.order) {
+            case 'next':
+              acc[id] = new ProgramOrdereredIterator<CustomProgram>(
+                programBySlotType.custom[slotId] ?? [],
+                (program) => program.index,
+              );
+              break;
+            case 'shuffle':
+              acc[id] = new ProgramShuffler(
+                programBySlotType.custom[slotId] ?? [],
+              );
+              break;
+            case 'ordered_shuffle':
+              acc[id] = new ProgramChunkedShuffle(
+                programBySlotType.custom[slotId] ?? [],
+                (program) => program.index,
+              );
+          }
         } else {
           const programs = programBySlotType.content[slotId] ?? [];
           // Remove any duplicates.
@@ -180,10 +190,23 @@ export function createProgramIterators(
             forEach(eids, (eid) => seenIds.add(eid));
             return true;
           });
-          acc[id] =
-            slot.order === 'next'
-              ? new ProgramOrderer(uniquePrograms)
-              : new ProgramShuffler(uniquePrograms);
+          switch (slot.order) {
+            case 'next':
+              acc[id] = new ProgramOrdereredIterator(
+                uniquePrograms,
+                getProgramOrder,
+              );
+              break;
+            case 'shuffle':
+              acc[id] = new ProgramShuffler(uniquePrograms);
+              break;
+            case 'ordered_shuffle':
+              acc[id] = new ProgramChunkedShuffle(
+                uniquePrograms,
+                getProgramOrder,
+              );
+              break;
+          }
         }
       }
 
