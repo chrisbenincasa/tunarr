@@ -4,11 +4,11 @@
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
-    "bundle": "tsc --emitDeclarationOnly --declaration",
-    "build": "tsc",
+    "bundle": "tsc --declaration",
+    "build": "tsc --declaration ",
     "clean": "rimraf ./build/",
-    "dev": "tsc --watch",
-    "build-dev": "tsc --emitDeclarationOnly --declaration --watch"
+    "dev": "tsc --declaration --watch",
+    "build-dev": "tsc --declaration --watch"
   },
   "main": "./build/src/index.js",
   "module": "./build/src/index.js",
