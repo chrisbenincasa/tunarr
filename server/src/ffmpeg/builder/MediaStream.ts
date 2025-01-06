@@ -1,6 +1,5 @@
 import { ExcludeByValueType, Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import { isNull, merge } from 'lodash-es';
+import { isEmpty, isNull, merge } from 'lodash-es';
 import { AnyFunction, MarkOptional } from 'ts-essentials';
 import { PixelFormat } from './format/PixelFormat.ts';
 import { DataProps, FrameSize, StreamKind } from './types.ts';
@@ -91,15 +90,18 @@ export class VideoStream implements MediaStream {
     let width = this.frameSize.width;
     let height = this.frameSize.height;
 
-    if (this.isAnamorphic && !isNull(this.sampleAspectRatio)) {
+    console.log(this.isAnamorphic);
+    if (this.isAnamorphic) {
       const sar = this.getSampleAspectRatio();
-
+      console.log(sar);
       width = Math.floor(this.frameSize.width * sar);
       height = Math.floor(this.frameSize.height * sar);
     }
 
+    console.log(width);
     const widthPercent = resolution.width / width;
     const heightPercent = resolution.height / height;
+    console.log(width, height, widthPercent, heightPercent);
     const minPercent = Math.min(widthPercent, heightPercent);
 
     return FrameSize.create({
@@ -110,7 +112,8 @@ export class VideoStream implements MediaStream {
 
   private getSampleAspectRatio() {
     if (
-      !isNonEmptyString(this.sampleAspectRatio) ||
+      isNull(this.sampleAspectRatio) ||
+      isEmpty(this.sampleAspectRatio) ||
       this.sampleAspectRatio === '0:0'
     ) {
       let dar = parseFloat(this.displayAspectRatio);

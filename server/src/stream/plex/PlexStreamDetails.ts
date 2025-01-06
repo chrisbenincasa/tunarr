@@ -292,7 +292,7 @@ export class PlexStreamDetails {
         displayAspectRatio:
           (relevantMedia?.aspectRatio ?? 0) === 0
             ? ''
-            : round(relevantMedia?.aspectRatio ?? 0.0, 2).toFixed(),
+            : round(relevantMedia?.aspectRatio ?? 0.0, 10).toFixed(),
         // chapters
         anamorphic:
           videoStream.anamorphic === '1' || videoStream.anamorphic === true,
