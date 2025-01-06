@@ -18,10 +18,10 @@ export class LavfiVideoInputSource extends VideoInputSource {
       VideoStream.create({
         codec: 'generated',
         pixelFormat: PixelFormatUnknown(),
-        isAnamorphic: false,
         index: 0,
         inputKind: 'filter',
-        pixelAspectRatio: null,
+        sampleAspectRatio: null,
+        displayAspectRatio: '1:1',
         frameSize: size,
       }),
     ]);

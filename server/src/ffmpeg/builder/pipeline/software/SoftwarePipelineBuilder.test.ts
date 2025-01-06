@@ -20,7 +20,8 @@ describe('SoftwarePipelineBuilder', () => {
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
       isAnamorphic: false,
-      pixelAspectRatio: null,
+      sampleAspectRatio: null,
+      displayAspectRatio: '1:1',
     });
 
     const audioState = AudioState.create({

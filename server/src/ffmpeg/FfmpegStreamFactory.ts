@@ -165,9 +165,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       codec: VideoFormats.Raw,
       pixelFormat: new PixelFormatYuv420P(), // Hard-coded right now
       frameSize: FrameSize.fromResolution(this.ffmpegSettings.targetResolution),
-      pixelAspectRatio: '1:1',
+      sampleAspectRatio: '1:1',
+      displayAspectRatio: '1:1',
       inputKind: 'video',
-      isAnamorphic: false,
     });
 
     const videoInputSource = VideoInputSource.withStream(
@@ -314,9 +314,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       codec: videoStreamDetails.codec ?? 'unknown',
       profile: videoStreamDetails.profile,
       index: isNaN(streamIndex) ? 0 : streamIndex,
-      isAnamorphic: videoStreamDetails.anamorphic ?? false,
       inputKind: 'video',
-      pixelAspectRatio: null,
+      sampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
+      displayAspectRatio: videoStreamDetails.displayAspectRatio,
       pixelFormat,
       frameSize: FrameSize.create({
         height: videoStreamDetails.height,
@@ -474,8 +474,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
             codec: 'unknown',
             frameSize: FrameSize.create({ width: 1920, height: 1080 }),
             index: 0,
-            isAnamorphic: false,
-            pixelAspectRatio: null,
+            sampleAspectRatio: '1:1',
+            displayAspectRatio: '1:1',
             pixelFormat: PixelFormatUnknown(),
           }),
         );
@@ -592,8 +592,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
         codec: 'unknown',
         frameSize: FrameSize.create({ width: 1920, height: 1080 }),
         index: 0,
-        isAnamorphic: false,
-        pixelAspectRatio: null,
+        sampleAspectRatio: '1:1',
+        displayAspectRatio: '1:1',
         pixelFormat: PixelFormatUnknown(),
       }),
     );

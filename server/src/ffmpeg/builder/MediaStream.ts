@@ -1,4 +1,5 @@
 import { ExcludeByValueType, Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
 import { isNull, merge } from 'lodash-es';
 import { AnyFunction, MarkOptional } from 'ts-essentials';
 import { PixelFormat } from './format/PixelFormat.ts';
@@ -22,7 +23,7 @@ type MediaStreamFields<T extends MediaStream> = Omit<
 // semantics with class construction, but still enabling us
 // to have hierarchies, methods, etc.
 type AudioStreamFields = MediaStreamFields<AudioStream>;
-type VideoStreamFields = MediaStreamFields<VideoStream>;
+type VideoStreamFields = Omit<MediaStreamFields<VideoStream>, 'isAnamorphic'>;
 
 export class AudioStream implements MediaStream {
   readonly kind: StreamKind = 'audio';
@@ -51,9 +52,9 @@ export class VideoStream implements MediaStream {
   pixelFormat: Nullable<PixelFormat>;
   frameSize: FrameSize;
   frameRate?: string;
-  isAnamorphic: boolean;
-  pixelAspectRatio: Nullable<`${number}:${number}`>;
   inputKind: VideoInputKind = 'video' as const;
+  sampleAspectRatio: Nullable<string>;
+  displayAspectRatio: string;
 
   protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us
@@ -71,17 +72,30 @@ export class VideoStream implements MediaStream {
     return this.pixelFormat?.bitDepth ?? 8;
   }
 
+  get isAnamorphic() {
+    if (this.sampleAspectRatio === '1:1') {
+      return false;
+    } else if (this.sampleAspectRatio !== '0:1') {
+      return true;
+    } else if (this.displayAspectRatio === '0:1') {
+      return false;
+    }
+
+    return (
+      this.displayAspectRatio !==
+      `${this.frameSize.width}:${this.frameSize.height}`
+    );
+  }
+
   squarePixelFrameSize(resolution: FrameSize): FrameSize {
     let width = this.frameSize.width;
     let height = this.frameSize.height;
 
-    if (this.isAnamorphic && !isNull(this.pixelAspectRatio)) {
-      const [numStr, denStr] = this.pixelAspectRatio.split(':');
-      const num = Number.parseFloat(numStr);
-      const den = Number.parseFloat(denStr);
+    if (this.isAnamorphic && !isNull(this.sampleAspectRatio)) {
+      const sar = this.getSampleAspectRatio();
 
-      width = Math.floor((this.frameSize.width * num) / den);
-      height = Math.floor((this.frameSize.height * num) / den);
+      width = Math.floor(this.frameSize.width * sar);
+      height = Math.floor(this.frameSize.height * sar);
     }
 
     const widthPercent = resolution.width / width;
@@ -93,6 +107,25 @@ export class VideoStream implements MediaStream {
       height: Math.floor(height * minPercent),
     });
   }
+
+  private getSampleAspectRatio() {
+    if (
+      !isNonEmptyString(this.sampleAspectRatio) ||
+      this.sampleAspectRatio === '0:0'
+    ) {
+      let dar = parseFloat(this.displayAspectRatio);
+      if (isNaN(dar)) {
+        const [num, den] = this.displayAspectRatio.split(':');
+        dar = parseFloat(num) / parseFloat(den);
+      }
+
+      const res = this.frameSize.width / this.frameSize.height;
+      return dar / res;
+    }
+
+    const [num, den] = this.sampleAspectRatio.split(':');
+    return parseFloat(num) / parseFloat(den);
+  }
 }
 
 type StillImageStreamFields = Omit<
@@ -101,7 +134,8 @@ type StillImageStreamFields = Omit<
   | 'kind'
   | 'pixelFormat'
   | 'isAnamorphic'
-  | 'pixelAspectRatio'
+  | 'sampleAspectRatio'
+  | 'displayAspectRatio'
   | 'inputKind'
 >;
 
@@ -112,11 +146,10 @@ export class StillImageStream extends VideoStream {
     super({
       ...fields,
       codec: '',
-      isAnamorphic: false,
-      pixelAspectRatio: null,
+      sampleAspectRatio: '1:1',
+      displayAspectRatio: '1:1',
       pixelFormat: null,
     });
-    // merge(this, fields);
   }
 
   static create(fields: StillImageStreamFields) {

@@ -1,3 +1,6 @@
+import { Maybe } from '@/types/util.ts';
+import { isEmpty } from 'lodash-es';
+
 /**
  * Performs a naive sanitization for passing user-inputted text to
  * child_process exec:
@@ -14,4 +17,17 @@ export function sanitizeForExec(executable: string): string {
   }
 
   return cleaned.trim().replace(/\s+/g, ' ');
+}
+
+export function trimToUndefined(s: Maybe<string>): Maybe<string> {
+  if (!s) {
+    return;
+  }
+
+  const trim = s.trim();
+  if (isEmpty(trim)) {
+    return;
+  }
+
+  return s;
 }

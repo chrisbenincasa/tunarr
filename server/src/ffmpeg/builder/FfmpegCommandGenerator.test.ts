@@ -59,7 +59,7 @@ describe('FfmpegCommandGenerator', () => {
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
       isAnamorphic: false,
-      pixelAspectRatio: null,
+      sampleAspectRatio: null,
     });
 
     const audioState = AudioState.create({
