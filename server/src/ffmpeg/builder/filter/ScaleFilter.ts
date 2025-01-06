@@ -56,7 +56,7 @@ export class ScaleFilter extends FilterOption {
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
       scaledSize: this.desiredScaledSize,
-      paddedSize: this.desiredPaddedSize,
+      paddedSize: this.desiredScaledSize,
       isAnamorphic: false,
     });
   }
