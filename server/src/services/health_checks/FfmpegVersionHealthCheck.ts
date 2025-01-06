@@ -23,8 +23,6 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
     const ffmpegExists = await fileExists(settings.ffmpegExecutablePath);
     const ffprobeExists = await fileExists(settings.ffprobeExecutablePath);
 
-    console.log(ffmpegExists, ffprobeExists);
-
     const warningResult = match([ffmpegExists, ffprobeExists] as const)
       .with([false, true], () =>
         healthCheckResult({
