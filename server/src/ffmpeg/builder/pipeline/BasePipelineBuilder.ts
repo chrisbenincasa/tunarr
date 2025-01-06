@@ -292,6 +292,11 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       isIntelVaapiOrQsv: false,
     };
 
+    this.logger.debug(
+      'Creating ffmpeg transcode pipeline with context: %O',
+      this.context,
+    );
+
     this.context.pipelineSteps = [
       ...this.getThreadCountOption(desiredState, ffmpegState),
       new NoStdInOption(),
