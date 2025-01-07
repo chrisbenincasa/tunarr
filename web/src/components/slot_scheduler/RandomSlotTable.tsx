@@ -31,13 +31,13 @@ import dayjs from 'dayjs';
 import {
   capitalize,
   filter,
-  find,
   floor,
   isEmpty,
   isNil,
   map,
   nth,
   round,
+  sum,
   uniq,
 } from 'lodash-es';
 import {
@@ -52,7 +52,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export const RandomSlotTable = () => {
   const { slotArray, getValues, watch, setValue } = useRandomSlotFormContext();
-  const programOptions = useSlotProgramOptions();
+  const { dropdownOpts: programOptions, nameById: programOptionNameById } =
+    useSlotProgramOptions();
 
   const slotIds = useMemo(
     () =>
@@ -162,21 +163,7 @@ export const RandomSlotTable = () => {
         enableEditing: true,
         Cell: ({ cell }) => {
           const value = cell.getValue<RandomSlotProgramming>();
-          switch (value.type) {
-            case 'movie':
-              return 'Movie';
-            case 'show':
-              return find(programOptions, { showId: value.showId })
-                ?.description;
-            case 'flex':
-              return 'Flex';
-            case 'redirect':
-              return find(programOptions, { channelId: value.channelId })
-                ?.description;
-            case 'custom-show':
-              return find(programOptions, { customShowId: value.customShowId })
-                ?.description;
-          }
+          return programOptionNameById[getRandomSlotId(value)];
         },
         grow: true,
         size: 350,
@@ -228,7 +215,7 @@ export const RandomSlotTable = () => {
         Cell: ({ cell }) => `${cell.getValue<number>()}%`,
       },
     ];
-  }, [programOptions]);
+  }, [programOptionNameById]);
 
   const onDeleteSlot = useCallback(
     (index: number) => {
@@ -284,6 +271,7 @@ export const RandomSlotTable = () => {
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 
   const rows = useMemo<RandomSlotTableRowType[]>(() => {
+    const totalWeight = sum(map(slotArray.fields, 'weight'));
     return map(slotArray.fields, (slot) => {
       const warnings: SlotWarning[] = [];
       const slotId = getRandomSlotId(slot.programming);
@@ -306,6 +294,7 @@ export const RandomSlotTable = () => {
       }
       return {
         ...slot,
+        weight: round((slot.weight / totalWeight) * 100.0, 2),
         programCount,
         warnings,
       } satisfies RandomSlotTableRowType;

@@ -1,18 +1,22 @@
+import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
+import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid2,
   Slider,
+  Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { usePrevious } from '@uidotdev/usehooks';
-import { map } from 'lodash-es';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { isNumber, map, round, sum } from 'lodash-es';
+import { useCallback, useEffect, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
 type Props = {
@@ -24,17 +28,19 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
   const wasOpen = usePrevious(open);
   const { slotArray, setValue, watch } = useRandomSlotFormContext();
 
-  const currentSlots = watch('slots');
+  const [currentSlots, lockWeights] = watch(['slots', 'lockWeights']);
 
   const [weights, setWeights] = useState<number[]>(map(currentSlots, 'weight'));
+  const totalWeight = sum(weights);
 
   const adjustRandomSlotWeights = useAdjustRandomSlotWeights();
+  const programOptions = useSlotProgramOptions();
 
   useEffect(() => {
     if (!wasOpen && open) {
       setWeights(map(currentSlots, 'weight'));
     }
-  }, [currentSlots, wasOpen, open]);
+  }, [currentSlots, open, wasOpen]);
 
   const updateSlotWeights = useDebounceCallback(
     useCallback(() => {
@@ -57,6 +63,22 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
       upscaleAmt: number,
       commit: boolean = false,
     ) => {
+      if (!lockWeights) {
+        let newWeight = isNumber(value) ? value : parseInt(value);
+        if (isNaN(newWeight)) {
+          return;
+        }
+
+        newWeight /= upscaleAmt;
+        setWeights((prev) =>
+          map(prev, (prev, prevIdx) => (prevIdx === idx ? newWeight : prev)),
+        );
+        if (commit) {
+          updateSlotWeights();
+        }
+        return;
+      }
+
       const newWeights = adjustRandomSlotWeights(idx, value, upscaleAmt);
       if (newWeights) {
         setWeights(newWeights);
@@ -65,7 +87,7 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
         }
       }
     },
-    [adjustRandomSlotWeights, updateSlotWeights],
+    [adjustRandomSlotWeights, lockWeights, updateSlotWeights],
   );
 
   const onCommit = () => {
@@ -76,51 +98,61 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
   const renderSliders = () => {
     return slotArray.fields.map((slot, idx) => {
       return (
-        <Fragment key={slot.id}>
-          <Grid2 size={{ xs: 9 }}>
-            <Slider
-              min={0}
-              max={100}
-              value={weights[idx]}
-              step={0.1}
-              onChange={(_, value) => adjustWeights(idx, value as number, 1)}
-              onChangeCommitted={(_, value) =>
-                adjustWeights(idx, value as number, 1)
-              }
-              sx={{
-                width: '90%',
-                '& .MuiSlider-thumb': {
-                  transition: 'left 0.1s',
-                },
-                '& .MuiSlider-thumb.MuiSlider-active': {
-                  transition: 'left 0s',
-                },
-                '& .MuiSlider-track': {
-                  transition: 'width 0.1s',
-                },
-              }}
-            />
-          </Grid2>
-          <Grid2 size={{ xs: 3 }} sx={{ mt: 1 }}>
+        <Stack
+          key={slot.id}
+          spacing={2}
+          direction="row"
+          sx={{ alignItems: 'center', mb: 1, width: '100%', minHeight: 40 }}
+        >
+          <Slider
+            min={0}
+            max={100}
+            value={weights[idx]}
+            step={0.1}
+            onChange={(_, value) => adjustWeights(idx, value as number, 1)}
+            onChangeCommitted={(_, value) =>
+              adjustWeights(idx, value as number, 1)
+            }
+            component="div"
+            sx={{
+              flexBasis: '50%',
+              '& .MuiSlider-thumb': {
+                transition: 'left 0.1s',
+              },
+              '& .MuiSlider-thumb.MuiSlider-active': {
+                transition: 'left 0s',
+              },
+              '& .MuiSlider-track': {
+                transition: 'width 0.1s',
+              },
+            }}
+          />
+          {lockWeights && (
             <TextField
               type="number"
               label="Weight %"
               value={weights[idx]}
               disabled
             />
-          </Grid2>
-        </Fragment>
+          )}
+          <Box>
+            <Typography>
+              {programOptions.nameById[getRandomSlotId(slot.programming)]}{' '}
+              {`(${round((weights[idx] / totalWeight) * 100, 2)}%)`}
+            </Typography>
+          </Box>
+        </Stack>
       );
     });
   };
 
   return (
-    <Dialog maxWidth="sm" fullWidth open={open} onClose={onClose}>
+    <Dialog maxWidth="md" fullWidth open={open} onClose={onClose}>
       <DialogTitle>Adjust Weights</DialogTitle>
       <DialogContent>
-        <Grid2 container rowSpacing={2} alignItems="center">
+        <Stack spacing={2} alignItems="center">
           {renderSliders()}
-        </Grid2>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>

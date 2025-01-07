@@ -39,7 +39,7 @@ dayjs.extend(localizedFormat);
 export const TimeSlotTable = () => {
   const { watch, slotArray } = useTimeSlotFormContext();
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
-  const programOptions = useSlotProgramOptions();
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
   const startOfPeriod = dayjs().startOf(currentPeriod);
   const slotIds = useMemo(
     () =>

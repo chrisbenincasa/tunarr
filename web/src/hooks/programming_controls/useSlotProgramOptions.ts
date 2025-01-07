@@ -9,6 +9,11 @@ import { useMemo } from 'react';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
 
+type ProgramOptions = {
+  dropdownOpts: ProgramOption[];
+  nameById: Record<string, string>;
+};
+
 export const useSlotProgramOptions = (channelId?: string) => {
   const { originalProgramList: newLineup, programLookup } = useStore(
     (s) => s.channelEditor,
@@ -27,7 +32,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
     return byId;
   }, [customShows]);
 
-  return useMemo<ProgramOption[]>(() => {
+  return useMemo<ProgramOptions>(() => {
     const contentPrograms = seq.collect(newLineup, (program) => {
       if (program.type === 'content' && isNonEmptyString(program.id)) {
         return programLookup[program.id];
@@ -37,6 +42,10 @@ export const useSlotProgramOptions = (channelId?: string) => {
     const opts: ProgramOption[] = [
       { value: 'flex', description: 'Flex', type: 'flex' },
     ];
+    const nameById: Record<string, string> = {
+      flex: 'Flex',
+      movie: 'Movies',
+    };
 
     if (contentPrograms.length) {
       if (some(contentPrograms, (p) => p.subtype === 'movie')) {
@@ -57,6 +66,11 @@ export const useSlotProgramOptions = (channelId?: string) => {
             }) satisfies ProgramOption,
         )
         .sortBy((opt) => opt.description)
+        .tap((opts) => {
+          for (const opt of opts) {
+            nameById[opt.value] = opt.description;
+          }
+        })
         .value();
       opts.push(...showOptions);
     }
@@ -75,13 +89,16 @@ export const useSlotProgramOptions = (channelId?: string) => {
               type: 'custom-show',
             }) satisfies ProgramOption,
         )
+        .tap((opts) => {
+          for (const opt of opts) {
+            nameById[opt.value] = opt.description;
+          }
+        })
         .value(),
     );
 
     opts.push(
       ...chain(channels)
-        // .filter(isUICondensedRedirectProgram)
-        // .uniqBy((p) => p.channel)
         .map(
           (p) =>
             ({
@@ -92,9 +109,17 @@ export const useSlotProgramOptions = (channelId?: string) => {
               channelName: p.name,
             }) satisfies ProgramOption,
         )
+        .tap((opts) => {
+          for (const opt of opts) {
+            nameById[opt.value] = opt.description;
+          }
+        })
         .value(),
     );
 
-    return opts;
+    return {
+      dropdownOpts: opts,
+      nameById,
+    };
   }, [newLineup, channels, programLookup, customShowsById]);
 };
