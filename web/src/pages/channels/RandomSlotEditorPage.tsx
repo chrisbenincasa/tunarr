@@ -4,24 +4,34 @@ import { RandomSlotSettingsForm } from '@/components/slot_scheduler/RandomSlotSe
 import { RandomSlotTable } from '@/components/slot_scheduler/RandomSlotTable.tsx';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useChannelEditor } from '@/store/selectors';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, HelpOutline } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
   Divider,
   Stack,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
+import { seq } from '@tunarr/shared/util';
 import { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { filter, isNil, isUndefined } from 'lodash-es';
-import { useCallback } from 'react';
+import {
+  filter,
+  groupBy,
+  isNil,
+  isUndefined,
+  keys,
+  mapValues,
+  round,
+} from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
@@ -47,6 +57,8 @@ const defaultRandomSlotSchedule: RandomSlotSchedule = {
   padMs: 1,
   slots: [],
   timeZoneOffset: new Date().getTimezoneOffset(),
+  // UI mechanism
+  lockWeights: false,
 };
 
 export default function RandomSlotEditorPage() {
@@ -67,7 +79,8 @@ export default function RandomSlotEditorPage() {
 
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const programOptions = useSlotProgramOptions();
+  const { dropdownOpts: programOptions, nameById: programOptionNameById } =
+    useSlotProgramOptions();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
   const hasExistingTimeSlotSchedule =
@@ -122,6 +135,55 @@ export default function RandomSlotEditorPage() {
     });
   };
 
+  const programFrequency = useMemo(() => {
+    const total = newLineup.length;
+    const sums = mapValues(
+      groupBy(newLineup, (program) => {
+        switch (program.type) {
+          case 'content':
+            {
+              switch (program.subtype) {
+                case 'movie':
+                  return 'movie';
+                case 'episode':
+                  return `show.${program.showId}`;
+                case 'track':
+                  return `artist.${program.artistId}`;
+              }
+            }
+            break;
+          case 'custom':
+            return `custom-show.${program.customShowId}`;
+          case 'flex':
+            return 'flex';
+          case 'redirect':
+            return `redirect.${program.channel}`;
+        }
+      }),
+      (group) => group.length,
+    );
+
+    return seq.collect(keys(sums), (key) => {
+      const name = programOptionNameById[key];
+      if (!name) {
+        return;
+      }
+
+      return (
+        <>
+          <span key={key}>
+            {name}: {round((sums[key] / total) * 100, 2)}%
+          </span>
+          <br />
+        </>
+      );
+    });
+  }, [newLineup, programOptionNameById]);
+
+  const onCalculateSlotsEnd = useCallback(() => {
+    toggleIsCalculatingSlots(false);
+  }, [toggleIsCalculatingSlots]);
+
   if (isUndefined(channel)) {
     return <div>Loading</div>;
   }
@@ -162,13 +224,19 @@ export default function RandomSlotEditorPage() {
           <FormProvider {...randomSlotForm}>
             <RandomSlotSettingsForm
               onCalculateStart={() => toggleIsCalculatingSlots(true)}
-              onCalculateEnd={() => toggleIsCalculatingSlots(false)}
+              onCalculateEnd={onCalculateSlotsEnd}
             />
           </FormProvider>
         </PaddedPaper>
         <PaddedPaper>
-          <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
-
+          <Stack direction="row" sx={{ width: '100%' }}>
+            <Typography sx={{ pb: 1 }}>Programming Preview</Typography>
+            <Typography sx={{ ml: 'auto' }}>
+              <Tooltip title={<>{programFrequency}</>} placement="left">
+                <HelpOutline />
+              </Tooltip>
+            </Typography>
+          </Stack>
           <Divider />
           <Box sx={{ minHeight: 400 }}>
             <ChannelProgrammingList

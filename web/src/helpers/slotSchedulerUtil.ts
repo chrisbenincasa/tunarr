@@ -174,10 +174,10 @@ export const getTimeSlotId = (programming: TimeSlotProgramming): SlotId => {
 export const getRandomSlotId = (programming: RandomSlotProgramming): SlotId => {
   switch (programming.type) {
     case 'show': {
-      return `show.${programming.showId}`;
+      return `${programming.type}.${programming.showId}`;
     }
     case 'redirect': {
-      return `redirect.${programming.channelId}`;
+      return `${programming.type}.${programming.channelId}`;
     }
     case 'custom-show': {
       return `${programming.type}.${programming.customShowId}`;

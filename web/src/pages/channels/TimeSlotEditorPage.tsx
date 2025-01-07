@@ -116,7 +116,7 @@ export default function TimeSlotEditorPage() {
   const snackbar = useSnackbar();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const programOptions = useSlotProgramOptions();
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
 
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 

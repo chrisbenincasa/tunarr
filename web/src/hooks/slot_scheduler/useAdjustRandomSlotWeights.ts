@@ -5,7 +5,7 @@ import { useCallback, useMemo } from 'react';
 export const useAdjustRandomSlotWeights = () => {
   const { watch } = useRandomSlotFormContext();
 
-  const currentSlots = watch('slots');
+  const [currentSlots] = watch(['slots']);
   const weights = useMemo(() => map(currentSlots, 'weight'), [currentSlots]);
 
   return useCallback(
@@ -14,12 +14,15 @@ export const useAdjustRandomSlotWeights = () => {
       if (isNaN(newWeight)) {
         return;
       }
+
       newWeight /= upscaleAmt;
+
       const oldWeight = weights[idx];
       const scale = round((newWeight - oldWeight) / oldWeight, 2);
       if (scale === 0) {
         return;
       }
+
       const newRemainingWeight = 100 - newWeight;
       const oldRemainingWeight = 100 - oldWeight;
 

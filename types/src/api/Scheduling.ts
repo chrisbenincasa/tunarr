@@ -168,6 +168,9 @@ export const RandomSlotScheduleSchema = z.object({
   timeZoneOffset: z.number().optional(), // Timezone offset in minutes
   randomDistribution: z.union([z.literal('uniform'), z.literal('weighted')]),
   periodMs: z.number().optional(),
+  // Purely for UI purposes. Adjusting weight of one program affects the
+  // weights of all others if lock weights === true.
+  lockWeights: z.boolean().default(false),
 });
 
 export type RandomSlotSchedule = z.infer<typeof RandomSlotScheduleSchema>;
