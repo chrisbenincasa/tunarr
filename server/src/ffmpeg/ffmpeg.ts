@@ -5,15 +5,20 @@ import {
   TranscodeVideoOutputFormat,
 } from '@/db/schema/TranscodeConfig.ts';
 import { serverOptions } from '@/globals.js';
-import { ConcatSessionType } from '@/stream/Session.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { gcd } from '@/util/index.ts';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
-import { ChannelStreamMode, FfmpegSettings, Resolution, Watermark } from '@tunarr/types';
+import {
+  ChannelStreamMode,
+  FfmpegSettings,
+  Resolution,
+  Watermark,
+} from '@tunarr/types';
 
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
+import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';
 import {
@@ -77,14 +82,8 @@ export type ConcatOptions = {
   // hls = starts an underlying HLS session. The concat process takes
   // the HLS m3u playlist as input and stitches the generated mpeg-ts
   // files back together into a continuous stream
-  mode: ConcatSessionType;
-  // enableHls: boolean;
-  // enableDash: boolean;
+  mode: ChannelConcatStreamMode;
   outputFormat: OutputFormat;
-  // numThreads: number;
-  // hlsOptions?: Partial<HlsOptions>;
-  // dashOptions?: Partial<MpegDashOptions>;
-  // logOutput: boolean;
 };
 
 export const defaultHlsOptions: DeepRequired<HlsOptions> = {
@@ -150,7 +149,7 @@ export type StreamOptions = {
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;
   ptsOffset?: number;
-  streamMode?: ChannelStreamMode
+  streamMode?: ChannelStreamMode;
 };
 
 export type StreamSessionOptions = StreamOptions & {

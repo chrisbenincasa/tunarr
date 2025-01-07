@@ -19,7 +19,6 @@ import { PassThrough } from 'stream';
 import { v4 } from 'uuid';
 import z from 'zod';
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
@@ -113,6 +112,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       const mode = req.query.streamMode ?? channel.streamMode;
       const token = req.query.token ?? v4();
 
+      console.log(mode);
       const sessionResult =
         await req.serverCtx.sessionManager.getOrCreateConcatSession(
           channel.uuid,
@@ -123,8 +123,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           },
           {
             audioOnly: req.query.audioOnly,
-            sessionType:
-              mode === 'hls_direct' ? 'hls_concat' : `${mode}_concat`,
+            sessionType: `${mode}_concat`,
           },
         );
 

@@ -60,14 +60,26 @@ export const ChannelTranscodingOptionsSchema = z.object({
 });
 
 export const HlsChannelStreamMode = 'hls';
+export const HlsConcatChannelStreamMode = 'hls_concat';
 export const HlsSlowerChannelStreamMode = 'hls_slower';
+export const HlsSlowerConcatChannelStreamMode = 'hls_slower_concat';
 export const MpegTsChannelStreamMode = 'mpegts';
+export const MpegTsConcatChannelStreamMode = 'mpegts_concat';
 export const HlsSDirectStreamMode = 'hls_direct';
+export const HlsSDirectConcatStreamMode = 'hls_direct_concat';
+
 export const ChannelStreamMode = {
   Hls: HlsChannelStreamMode,
   HlsSlower: HlsSlowerChannelStreamMode,
   MpegTs: MpegTsChannelStreamMode,
   HlsDirect: HlsSDirectStreamMode,
+} as const;
+
+export const ChannelConcatStreamMode = {
+  Hls: HlsConcatChannelStreamMode,
+  HlsSlower: HlsSlowerConcatChannelStreamMode,
+  MpegTs: MpegTsConcatChannelStreamMode,
+  HlsDirect: HlsSDirectConcatStreamMode,
 } as const;
 
 export const ChannelStreamModes = [
@@ -77,8 +89,20 @@ export const ChannelStreamModes = [
   ChannelStreamMode.HlsDirect,
 ] as const;
 
+export const ChannelConcatStreamModes = [
+  ChannelConcatStreamMode.Hls,
+  ChannelConcatStreamMode.HlsSlower,
+  ChannelConcatStreamMode.MpegTs,
+  ChannelConcatStreamMode.HlsDirect,
+] as const;
+
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 export const ChannelStreamModeSchema = z.enum(ChannelStreamModes);
+
+export type ChannelConcatStreamMode = TupleToUnion<
+  typeof ChannelConcatStreamModes
+>;
+export const ChannelConcatStreamModeSchema = z.enum(ChannelConcatStreamModes);
 
 export const ChannelSchema = z.object({
   disableFillerOverlay: z.boolean(),

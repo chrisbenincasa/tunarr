@@ -18,7 +18,7 @@ import {
   TypedError,
 } from '../types/errors.js';
 import { ConcatSession, ConcatSessionOptions } from './ConcatSession.js';
-import { ConcatSessionType, HlsConcatSessionType, Session } from './Session.js';
+import { HlsConcatSessionType, Session } from './Session.js';
 import { HlsSession, HlsSessionOptions } from './hls/HlsSession.js';
 import {
   HlsSlowerSession,
@@ -30,6 +30,7 @@ import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { ifDefined } from '@/util/index.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
+import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { SessionType } from './Session.js';
 
@@ -371,12 +372,16 @@ export class SessionManager {
   }
 }
 
-function sessionTypeFromConcatType(typ: ConcatSessionType): ChannelStreamMode {
+function sessionTypeFromConcatType(
+  typ: ChannelConcatStreamMode,
+): ChannelStreamMode {
   return initial(typ.split('_')).join('_') as ChannelStreamMode;
 }
 
-function concatSessionTypeForSessionType(typ: SessionType): ConcatSessionType {
-  return `${typ}_concat` as ConcatSessionType;
+function concatSessionTypeForSessionType(
+  typ: SessionType,
+): ChannelConcatStreamMode {
+  return `${typ}_concat` as ChannelConcatStreamMode;
 }
 
 function sessionCacheKey(id: string, sessionType: SessionType): SessionKey {

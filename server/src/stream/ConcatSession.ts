@@ -1,14 +1,14 @@
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
 import { ConcatStream } from './ConcatStream.ts';
 import { DirectStreamSession } from './DirectStreamSession.js';
-import { ConcatSessionType, SessionOptions } from './Session.js';
+import { SessionOptions } from './Session.js';
 
 export type ConcatSessionOptions = SessionOptions & {
-  sessionType: ConcatSessionType;
+  sessionType: ChannelConcatStreamMode;
   audioOnly: boolean;
-  // concatOptions: ConcatOptions;
 };
 
 export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {

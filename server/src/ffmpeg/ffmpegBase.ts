@@ -1,5 +1,8 @@
-import { ConcatSessionType } from '@/stream/Session.ts';
 import { Maybe } from '@/types/util.ts';
+import {
+  ChannelConcatStreamMode,
+  ChannelStreamMode,
+} from '@tunarr/types/schemas';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { DeepReadonly, StrictExclude } from 'ts-essentials';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
@@ -8,14 +11,18 @@ import { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
 
 export type HlsWrapperOptions = DeepReadonly<
   Omit<ConcatOptions, 'mode'> & {
-    mode: StrictExclude<ConcatSessionType, 'mpegts_concat'>;
+    mode: StrictExclude<ChannelConcatStreamMode, 'mpegts_concat'>;
   }
 >;
 
-export const ConcatStreamModeToChildMode = {
+export const ConcatStreamModeToChildMode: Record<
+  ChannelConcatStreamMode,
+  ChannelStreamMode
+> = {
   hls_concat: 'hls',
   hls_slower_concat: 'hls_slower',
   mpegts_concat: 'mpegts',
+  hls_direct_concat: 'hls_direct',
 } as const;
 
 export abstract class IFFMPEG {

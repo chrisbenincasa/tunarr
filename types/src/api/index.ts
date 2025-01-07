@@ -1,12 +1,9 @@
 import { z } from 'zod';
-import {
-  CacheSettingsSchema,
-  LoggingSettingsSchema,
-  LogLevelsSchema,
-  SystemSettingsSchema,
-} from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
-import { ChannelStreamModes } from '../schemas/channelSchema.js';
+import {
+  ChannelConcatStreamModes,
+  ChannelStreamModes,
+} from '../schemas/channelSchema.js';
 import {
   ChannelProgramSchema,
   ContentProgramSchema,
@@ -18,12 +15,18 @@ import {
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
+  CacheSettingsSchema,
+  LoggingSettingsSchema,
+  LogLevelsSchema,
+  SystemSettingsSchema,
+} from '../SystemSettings.js';
+import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
 
-export * from './Scheduling.js';
 export * from './plexSearch.js';
+export * from './Scheduling.js';
 
 export const IdPathParamSchema = z.object({
   id: z.string(),
@@ -242,7 +245,7 @@ export type StreamConnectionDetails = z.infer<
 
 export const ChannelSessionsResponseSchema = z.object({
   // TODO: Share types with session
-  type: z.enum([...ChannelStreamModes, 'hls_concat', 'hls_slower_concat', 'mpegts_concat']),
+  type: z.enum([...ChannelStreamModes, ...ChannelConcatStreamModes]),
   state: z.string(),
   numConnections: z.number().nonnegative(),
   connections: z.array(StreamConnectionDetailsSchema),

@@ -6,14 +6,14 @@ import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.ts';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
 import { FfmpegSettings } from '@tunarr/types';
-import { ConcatSessionType } from './Session.ts';
+import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 
 export class ConcatStream {
   #ffmpegSettings: FfmpegSettings;
 
   constructor(
     private channel: ChannelWithTranscodeConfig,
-    private streamMode: ConcatSessionType,
+    private streamMode: ChannelConcatStreamMode,
     settings: SettingsDB = getSettings(),
   ) {
     this.#ffmpegSettings = settings.ffmpegSettings();
@@ -31,7 +31,8 @@ export class ConcatStream {
       // If we're wrapping an HLS stream, direct the concat process to
       // the m3u8 URL
       case 'hls_concat':
-      case 'hls_slower_concat': {
+      case 'hls_slower_concat':
+      case 'hls_direct_concat': {
         const childStreamMode = ConcatStreamModeToChildMode[this.streamMode];
         return ffmpeg.createHlsWrapperSession(
           makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {
