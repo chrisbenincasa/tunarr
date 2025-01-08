@@ -90,18 +90,14 @@ export class VideoStream implements MediaStream {
     let width = this.frameSize.width;
     let height = this.frameSize.height;
 
-    console.log(this.isAnamorphic);
     if (this.isAnamorphic) {
       const sar = this.getSampleAspectRatio();
-      console.log(sar);
       width = Math.floor(this.frameSize.width * sar);
       height = Math.floor(this.frameSize.height * sar);
     }
 
-    console.log(width);
     const widthPercent = resolution.width / width;
     const heightPercent = resolution.height / height;
-    console.log(width, height, widthPercent, heightPercent);
     const minPercent = Math.min(widthPercent, heightPercent);
 
     return FrameSize.create({
