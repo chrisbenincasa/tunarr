@@ -8,7 +8,7 @@ import { useBlocker } from '@tanstack/react-router';
 
 type Props = {
   isDirty: boolean;
-  onProceed?: CallableFunction;
+  onProceed?: () => void;
 };
 
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
@@ -16,14 +16,13 @@ type Props = {
 
 export default function UnsavedNavigationAlert({ isDirty, onProceed }: Props) {
   const { proceed, status, reset } = useBlocker({
-    condition: isDirty,
+    shouldBlockFn: () => isDirty,
+    withResolver: true,
   });
 
   const handleProceed = () => {
-    proceed();
-    if (onProceed) {
-      onProceed();
-    }
+    proceed?.();
+    onProceed?.();
   };
 
   return status === 'blocked' ? (

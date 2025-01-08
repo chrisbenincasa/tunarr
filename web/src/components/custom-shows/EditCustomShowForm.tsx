@@ -110,8 +110,8 @@ export function EditCustomShowsForm({
     navigate({
       to: isNew
         ? '/library/custom-shows/new/programming'
-        : `/library/custom-shows/$customShowId/programming`,
-      params: { customShowId: customShow?.id },
+        : `/library/custom-shows/$showId/programming`,
+      params: { showId: customShow?.id },
     }).catch(console.warn);
   };
 
