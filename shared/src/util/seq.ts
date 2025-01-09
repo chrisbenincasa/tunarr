@@ -41,8 +41,17 @@ export function groupBy<T, Key extends string | number | symbol>(
 
   for (const t of arr) {
     const key = f(t);
-    ret[key] ? ret[key].push(t) : (ret[key] = [t]);
+    const v = ret[key];
+    if (v) {
+      v.push(t);
+    } else {
+      ret[key] = [t];
+    }
   }
 
   return ret;
+}
+
+export function rotateArray<T>(arr: T[], positions: number): T[] {
+  return arr.slice(positions, arr.length).concat(arr.slice(0, positions));
 }

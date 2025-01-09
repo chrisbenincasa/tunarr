@@ -9,7 +9,7 @@
   "main": "src/index.ts",
   "bin": "dist/index.js",
   "scripts": {
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit",
     "build-dev": "NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "dotenv -- tsx scripts/bundle.ts",

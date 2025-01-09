@@ -1,3 +1,4 @@
+import { NumericFormControllerText } from '@/components/util/TypedController.tsx';
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
@@ -10,6 +11,8 @@ import {
   Slider,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { TimeField } from '@mui/x-date-pickers';
 import { RandomSlot } from '@tunarr/types/api';
@@ -42,7 +45,8 @@ export const EditRandomSlotDialogContent = ({
   const formMethods = useForm({
     defaultValues: slot,
   });
-  const { control, getValues, setValue } = formMethods;
+  const { control, getValues, setValue, watch } = formMethods;
+  const [durationSpec] = watch(['durationSpec']);
 
   // const [programming, slotDuration] = watch([`programming`, 'durationMs']);
   const [weightValue, setWeightValue] = useState(getValues('weight'));
@@ -116,33 +120,70 @@ export const EditRandomSlotDialogContent = ({
         >
           <Stack gap={2} useFlexGap>
             <Stack direction="row" gap={1}>
-              <Controller
-                control={control}
-                name="durationMs"
-                render={({ field, fieldState: { error } }) => {
-                  return (
-                    <TimeField
-                      format="H[h] m[m] s[s]"
+              <Box>
+                <Controller
+                  control={control}
+                  name="durationSpec.type"
+                  render={({ field }) => (
+                    <ToggleButtonGroup
+                      color="primary"
+                      exclusive
+                      aria-label="Platform"
                       {...field}
-                      value={dayjs().startOf('day').add(field.value)}
-                      onChange={(value) =>
-                        updateSlotTime(value, field.onChange)
-                      }
-                      label="Duration"
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          error: !isNil(error),
-                          helperText: betterHumanize(
-                            dayjs.duration(field.value),
-                            { exact: true, style: 'full' },
-                          ),
-                        },
-                      }}
-                    />
-                  );
-                }}
-              />
+                    >
+                      <ToggleButton value="fixed">Fixed</ToggleButton>
+                      <ToggleButton value="dynamic">Dynamic</ToggleButton>
+                    </ToggleButtonGroup>
+                  )}
+                />
+              </Box>
+              {durationSpec.type === 'dynamic' && (
+                <NumericFormControllerText
+                  control={control}
+                  TextFieldProps={{
+                    label: 'Program Count',
+                    fullWidth: true,
+                    helperText: '',
+                  }}
+                  rules={{
+                    min: 1,
+                  }}
+                  defaultValue={1}
+                  name="durationSpec.programCount"
+                />
+              )}
+              {durationSpec.type === 'fixed' && (
+                <Controller
+                  control={control}
+                  name="durationSpec.durationMs"
+                  rules={{
+                    min: 1,
+                  }}
+                  render={({ field, fieldState: { error } }) => {
+                    return (
+                      <TimeField
+                        format="H[h] m[m] s[s]"
+                        {...field}
+                        value={dayjs().startOf('day').add(field.value)}
+                        onChange={(value) =>
+                          updateSlotTime(value, field.onChange)
+                        }
+                        label="Duration"
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !isNil(error),
+                            helperText: betterHumanize(
+                              dayjs.duration(field.value),
+                              { exact: true, style: 'full' },
+                            ),
+                          },
+                        }}
+                      />
+                    );
+                  }}
+                />
+              )}
               <Controller
                 control={control}
                 name="cooldownMs"

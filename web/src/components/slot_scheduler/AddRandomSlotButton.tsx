@@ -88,10 +88,13 @@ export const AddRandomSlotButton = ({
 
     const newSlot = {
       programming: programOptionToSlotProgram(programOption),
-      durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
       cooldownMs: 0,
       order: 'next',
       weight,
+      durationSpec: {
+        type: 'fixed',
+        durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+      },
     } satisfies RandomSlot;
 
     onAdd(newSlot);

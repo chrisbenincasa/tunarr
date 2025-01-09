@@ -150,8 +150,8 @@ export const SlotProgrammingTooLongWarningDetails = ({
             <p>
               {warning.programs.length} of {slot.programCount}{' '}
               {pluralize('program', slot.programCount)} exceed the length of
-              this slot ({betterHumanize(dayjs.duration(slot.durationMs))}).
-              Average program length: {averageLength.humanize()}
+              this slot ({betterHumanize(dayjs.duration(slot.durationMs ?? 0))}
+              ). Average program length: {averageLength.humanize()}
               <br />
               This could cause the following slot's programs to go unscheduled.
               Possible solutions include:

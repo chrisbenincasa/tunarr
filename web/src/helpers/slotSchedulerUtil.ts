@@ -129,6 +129,10 @@ export const showOrderOptions = [
     value: 'shuffle',
     description: 'Shuffle',
   },
+  {
+    value: 'ordered_shuffle',
+    description: 'Ordered Shuffle',
+  },
 ];
 
 export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [

@@ -16,6 +16,7 @@ export const useAdjustRandomSlotWeights = () => {
       }
 
       newWeight /= upscaleAmt;
+      console.log(newWeight);
 
       const oldWeight = weights[idx];
       const scale = round((newWeight - oldWeight) / oldWeight, 2);

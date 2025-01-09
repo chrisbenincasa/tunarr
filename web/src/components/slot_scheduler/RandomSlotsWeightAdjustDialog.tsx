@@ -14,8 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { usePrevious } from '@uidotdev/usehooks';
-import { isNumber, map, round, sum } from 'lodash-es';
+import { isNumber, isUndefined, map, round, sum } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
@@ -24,23 +23,25 @@ type Props = {
   onClose: () => void;
 };
 
+export const UnlockedWeightScale = 24;
+
 export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
-  const wasOpen = usePrevious(open);
   const { slotArray, setValue, watch } = useRandomSlotFormContext();
 
   const [currentSlots, lockWeights] = watch(['slots', 'lockWeights']);
 
   const [weights, setWeights] = useState<number[]>(map(currentSlots, 'weight'));
   const totalWeight = sum(weights);
+  console.log(weights, totalWeight);
 
   const adjustRandomSlotWeights = useAdjustRandomSlotWeights();
   const programOptions = useSlotProgramOptions();
 
   useEffect(() => {
-    if (!wasOpen && open) {
+    if (open) {
       setWeights(map(currentSlots, 'weight'));
     }
-  }, [currentSlots, open, wasOpen]);
+  }, [currentSlots, open]);
 
   const updateSlotWeights = useDebounceCallback(
     useCallback(() => {
@@ -97,6 +98,10 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
 
   const renderSliders = () => {
     return slotArray.fields.map((slot, idx) => {
+      if (isUndefined(weights[idx])) {
+        return;
+      }
+
       return (
         <Stack
           key={slot.id}
@@ -106,7 +111,7 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
         >
           <Slider
             min={0}
-            max={100}
+            max={lockWeights ? 100 : UnlockedWeightScale}
             value={weights[idx]}
             step={0.1}
             onChange={(_, value) => adjustWeights(idx, value as number, 1)}
@@ -137,7 +142,11 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
           )}
           <Box>
             <Typography>
-              {programOptions.nameById[getRandomSlotId(slot.programming)]}{' '}
+              {
+                programOptions.nameById[
+                  getRandomSlotId(slot.programming) as string
+                ]
+              }{' '}
               {`(${round((weights[idx] / totalWeight) * 100, 2)}%)`}
             </Typography>
           </Box>
