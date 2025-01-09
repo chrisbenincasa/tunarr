@@ -16,7 +16,7 @@ function defaultNewChannel(num: number, transcodeConfigId: string): Channel {
     id: v4(),
     name: `Channel ${num}`,
     number: num,
-    startTime: dayjs().add(1, 'h').startOf('h').unix() * 1000,
+    startTime: +dayjs(),
     transcodeConfigId,
   };
 }
