@@ -149,7 +149,7 @@ export type StreamOptions = {
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;
   ptsOffset?: number;
-  streamMode?: ChannelStreamMode;
+  streamMode: ChannelStreamMode;
 };
 
 export type StreamSessionOptions = StreamOptions & {
@@ -456,8 +456,8 @@ export class FFMPEG implements IFFMPEG {
       const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
         ? this.transcodeConfig.vaapiDevice
         : isLinux()
-        ? '/dev/dri/renderD128'
-        : undefined;
+          ? '/dev/dri/renderD128'
+          : undefined;
       ffmpegArgs.push(
         // Crude workaround for no av1 decoding support
         ...(videoStream?.codec === 'av1' ? [] : ['-hwaccel', 'vaapi']),

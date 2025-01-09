@@ -68,6 +68,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
         realtime: false,
         startTime: dayjs.duration(0),
         watermark: channel.watermark ?? undefined,
+        streamMode: channel.streamMode,
       });
 
       return res.send({

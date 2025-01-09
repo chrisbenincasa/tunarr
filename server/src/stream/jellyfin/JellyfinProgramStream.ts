@@ -113,6 +113,7 @@ export class JellyfinProgramStream extends ProgramStream {
       realtime: this.context.realtime,
       extraInputHeaders: {},
       outputFormat: this.outputFormat,
+      streamMode: this.context.streamMode,
     });
 
     if (isUndefined(ffmpegOutStream)) {
