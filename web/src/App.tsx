@@ -44,7 +44,7 @@ import {
 } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Outlet, Link as RouterLink } from '@tanstack/react-router';
-import { isNull, isUndefined } from 'lodash-es';
+import { isEmpty, isNull, isUndefined } from 'lodash-es';
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import './App.css';
 import TunarrLogo from './components/TunarrLogo.tsx';
@@ -275,18 +275,22 @@ export function Root({ children }: { children?: React.ReactNode }) {
     [copyToClipboard, settings.backendUri],
   );
 
+  const actualBackendUri = isEmpty(settings.backendUri)
+    ? window.location.origin
+    : settings.backendUri;
+
   const TopBarLinks: NavItem[] = useMemo(
     () => [
       {
         name: 'XMLTV',
-        path: `${settings.backendUri}/api/xmltv.xml`,
+        path: `${actualBackendUri}/api/xmltv.xml`,
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
       },
       {
         name: 'M3U',
-        path: `${settings.backendUri}/api/channels.m3u`,
+        path: `${actualBackendUri}/api/channels.m3u`,
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
@@ -314,7 +318,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         icon: <TextSnippetIcon />,
       },
     ],
-    [settings.backendUri],
+    [actualBackendUri],
   );
 
   const handleOpenClick = useCallback((itemName: string) => {
