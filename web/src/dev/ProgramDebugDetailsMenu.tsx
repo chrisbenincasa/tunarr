@@ -86,7 +86,6 @@ const ProgramDebugDetailsMenuImpl = ({ program }: Props) => {
   );
 };
 
-export const ProgramDebugDetailsMenu =
-  process.env.NODE_ENV === 'production' || import.meta.env.PROD
-    ? () => null // Render nothing in production
-    : ProgramDebugDetailsMenuImpl;
+export const ProgramDebugDetailsMenu = import.meta.env.PROD
+  ? () => null // Render nothing in production
+  : ProgramDebugDetailsMenuImpl;

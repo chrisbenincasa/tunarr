@@ -1,5 +1,6 @@
 {
     "extends": "./tsconfig.json",
+    "files": [],
     "include": [
         "./src/**/*.ts",
         "./src/**/*.tsx",
