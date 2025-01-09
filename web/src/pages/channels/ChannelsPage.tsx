@@ -351,12 +351,6 @@ export default function ChannelsPage() {
   const columnsNew = useMemo<MRT_ColumnDef<ChannelRow>[]>(
     () => [
       {
-        header: 'Number',
-        accessorKey: 'number',
-        minSize: 120,
-        size: 120,
-      },
-      {
         header: 'Icon',
         accessorKey: 'icon',
         size: 100,
@@ -370,6 +364,12 @@ export default function ChannelsPage() {
         },
         enableColumnFilter: false,
         enableSorting: false,
+      },
+      {
+        header: 'Number',
+        accessorKey: 'number',
+        minSize: 120,
+        size: 120,
       },
       {
         header: 'Name',
@@ -471,7 +471,6 @@ export default function ChannelsPage() {
         visibleInShowHideMenu: false,
       },
     },
-    positionActionsColumn: 'last',
     renderRowActions: renderActionCell,
     onColumnVisibilityChange: (updater) => {
       setColumnVisibility(updater);

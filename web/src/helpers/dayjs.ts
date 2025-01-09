@@ -39,7 +39,7 @@ export function betterHumanize(
   const hrs = Math.floor(dur.asHours() % 24);
   const mins = Math.round(dur.asMinutes() % 60);
   const seconds = Math.floor(dur.asSeconds() % 60);
-  let builder = '';
+  const builder = [];
 
   const daysStr = styleStrings[mergedOpts.style]['day'];
   const hoursStr = styleStrings[mergedOpts.style]['hour'];
@@ -52,36 +52,30 @@ export function betterHumanize(
   if (days >= 1) {
     const d =
       mergedOpts.style === 'full' ? ' ' + pluralize(daysStr, days) : daysStr;
-    builder += `${days}${d}`;
+    builder.push(`${days}${d}`);
   }
 
   if (hrs >= 1) {
     const d =
       mergedOpts.style === 'full' ? ' ' + pluralize(hoursStr, hrs) : hoursStr;
-    if (builder.length > 0 && mergedOpts.style === 'full') {
-      builder += ' ';
-    }
-    builder += `${hrs}${d}`;
+    builder.push(`${hrs}${d}`);
   }
 
   if (mins >= 1) {
     const minsN = Math.round(mins);
     const d =
       mergedOpts.style === 'full' ? ' ' + pluralize(minStr, minsN) : minStr;
-    if (builder.length > 0 && mergedOpts.style === 'full') {
-      builder += ' ';
-    }
     if (hrs < 1) {
       const prefix = seconds > 0 && !mergedOpts.exact ? 'about ' : '';
-      builder += `${prefix}${padStart(minsN.toString(), 2, '0')}${d}`;
+      builder.push(`${prefix}${padStart(minsN.toString(), 2, '0')}${d}`);
     } else {
-      builder += `${padStart(minsN.toString(), 2, '0')}${d}`;
+      builder.push(`${padStart(minsN.toString(), 2, '0')}${d}`);
     }
   }
 
   if (builder.length === 0) {
     return mergedOpts.style === 'short' ? '0s' : dur.humanize();
   } else {
-    return builder;
+    return builder.join(' ');
   }
 }
