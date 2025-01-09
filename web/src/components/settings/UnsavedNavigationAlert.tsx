@@ -16,7 +16,9 @@ type Props = {
 
 export default function UnsavedNavigationAlert({ isDirty, onProceed }: Props) {
   const { proceed, status, reset } = useBlocker({
-    shouldBlockFn: () => isDirty,
+    shouldBlockFn: () => {
+      return isDirty;
+    },
     withResolver: true,
   });
 

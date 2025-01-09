@@ -32,9 +32,6 @@
   "files": [
     "vite.config.ts",
     "vitest.config.ts",
-    "src/components/slot_scheduler/EditTimeSlotDialogContent.tsx",
-    "src/components/slot_scheduler/EditSlotProgrammingForm.tsx",
-    "./src/Tunarr.tsx",
   ],
   "include": [
     "./src/**/*.ts",

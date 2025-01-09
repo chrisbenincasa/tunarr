@@ -84,8 +84,8 @@ export const alternateColors = (
       ? theme.palette.grey[100]
       : theme.palette.grey[400]
     : index % 2 === 0
-    ? theme.palette.grey[700]
-    : theme.palette.grey[800];
+      ? theme.palette.grey[700]
+      : theme.palette.grey[800];
 };
 
 export const isResolutionString = (
@@ -490,7 +490,7 @@ export function isValidUrl(url: string, allowEmpty: boolean = false) {
 }
 
 export const ifProd = <T>(f: () => T): T | null => {
-  if (process.env.NODE_ENV === 'production' || import.meta.env.PROD) {
+  if (import.meta.env.PROD) {
     return f();
   }
   return null;

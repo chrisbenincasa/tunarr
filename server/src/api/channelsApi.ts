@@ -349,8 +349,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         req.body,
       );
 
-      console.log('hello');
-
       if (isNil(result)) {
         return res.status(500).send();
       }

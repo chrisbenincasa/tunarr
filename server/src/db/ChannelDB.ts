@@ -616,7 +616,7 @@ export class ChannelDB {
 
     const updateChannel = async (
       lineup: readonly LineupItem[],
-      startTime: number,
+      startTime?: number,
     ) => {
       return await getDatabase()
         .transaction()
@@ -729,7 +729,7 @@ export class ChannelDB {
         createNewLineup(programs, lineupItems),
       );
       const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
-        updateChannel(newLineupItems, dayjs().unix() * 1000),
+        updateChannel(newLineupItems),
       );
 
       await this.timer.timeAsync('saveLineup', () =>
