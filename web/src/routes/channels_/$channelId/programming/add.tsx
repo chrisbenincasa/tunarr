@@ -1,3 +1,4 @@
+import { AddProgrammingContextProvider } from '@/components/base/AddProgrammingContextProvider.tsx';
 import {
   ChannelArgs,
   preloadChannelAndProgramming,
@@ -33,11 +34,14 @@ function ChannelProgrammingSelectorPage({
 }: Props) {
   const navigate = Route.useNavigate();
   return (
-    <ProgrammingSelectorPage
+    <AddProgrammingContextProvider
       onAddSelectedMedia={addMediaToCurrentChannel}
       onAddMediaSuccess={() => navigate({ to: '..' })}
-      initialMediaSourceId={initialMediaSourceId}
-      initialLibraryId={initialLibraryId}
-    />
+    >
+      <ProgrammingSelectorPage
+        initialMediaSourceId={initialMediaSourceId}
+        initialLibraryId={initialLibraryId}
+      />
+    </AddProgrammingContextProvider>
   );
 }

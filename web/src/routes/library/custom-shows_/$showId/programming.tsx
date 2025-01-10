@@ -1,3 +1,4 @@
+import { AddProgrammingContextProvider } from '@/components/base/AddProgrammingContextProvider.tsx';
 import { preloadCustomShowAndProgramming } from '@/helpers/routeLoaders.ts';
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage.tsx';
 import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
@@ -14,7 +15,7 @@ function CustomShowProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
   const { showId } = Route.useParams();
   return (
-    <ProgrammingSelectorPage
+    <AddProgrammingContextProvider
       onAddSelectedMedia={addMediaToCurrentCustomShow}
       onAddMediaSuccess={() =>
         navigate({
@@ -22,6 +23,8 @@ function CustomShowProgrammingSelectorPage() {
           params: { showId },
         })
       }
-    />
+    >
+      <ProgrammingSelectorPage />
+    </AddProgrammingContextProvider>
   );
 }

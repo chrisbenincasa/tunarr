@@ -14,7 +14,10 @@ import {
 } from '@tunarr/types';
 import { map, merge } from 'lodash-es';
 
-export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
+export const addMediaToCurrentFillerList = (
+  programs: AddedMedia[],
+  prepend: boolean = false,
+) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {
       fillerListEditor.dirty.programs = true;
@@ -27,9 +30,18 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
         }),
       );
 
-      fillerListEditor.programList = fillerListEditor.programList.concat(
-        zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
-      );
+      if (prepend) {
+        for (const program of fillerListEditor.programList) {
+          program.originalIndex += convertedPrograms.length;
+        }
+        fillerListEditor.programList = zipWithIndex(convertedPrograms).concat(
+          fillerListEditor.programList,
+        );
+      } else {
+        fillerListEditor.programList = fillerListEditor.programList.concat(
+          zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
+        );
+      }
     }
   });
 

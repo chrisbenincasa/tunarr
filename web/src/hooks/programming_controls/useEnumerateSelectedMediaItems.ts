@@ -1,4 +1,5 @@
 import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
+import { useAddProgrammingContext } from '@/hooks/programming_controls/useAddProgrammingContext.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { MouseEventHandler, useState } from 'react';
@@ -6,21 +7,19 @@ import {
   forSelectedMediaType,
   sequentialPromises,
 } from '../../helpers/util.ts';
-import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
 import { AddedCustomShowProgram, AddedMedia } from '../../types/index.ts';
+import { enumeratePlexItem } from '../plex/plexHookUtil.ts';
+import { useTunarrApi } from '../useTunarrApi.ts';
 
-export const useAddSelectedItems = (
-  onAddSelectedMedia: (items: AddedMedia[]) => void,
-  onAddMediaSuccess: () => void,
-) => {
+export const useAddSelectedMediaItems = () => {
   const apiClient = useTunarrApi();
   const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
+  const { onAddSelectedMedia, onAddMediaSuccess } = useAddProgrammingContext();
 
   const addSelectedItems: MouseEventHandler = (e) => {
     e.preventDefault();

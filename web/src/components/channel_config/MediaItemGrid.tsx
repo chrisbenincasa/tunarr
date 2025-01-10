@@ -437,6 +437,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
             right: 0,
             width: 35,
             zIndex: 1000,
+            bottom: 56,
           }}
         >
           <Box sx={{ position: 'sticky' }} ref={alphaFilterRef}>

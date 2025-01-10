@@ -372,7 +372,10 @@ export const jellyfinItemToContentProgram = (
   };
 };
 
-export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
+export const addMediaToCurrentChannel = (
+  programs: AddedMedia[],
+  prepend?: boolean,
+) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
@@ -402,19 +405,26 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       // const now = dayjs()
       channelEditor.currentEntity.duration = newDuration;
 
-      // Add offset times to all incoming programs
-      const lastItem = last(channelEditor.programList);
-      const firstOffset = lastItem
-        ? lastItem.startTimeOffset + lastItem.duration
-        : 0;
-      const programsWithOffset = addIndexesAndCalculateOffsets(
-        allNewPrograms,
-        firstOffset,
-        channelEditor.programList.length,
-      );
+      if (prepend) {
+        channelEditor.programList = addIndexesAndCalculateOffsets([
+          ...allNewPrograms,
+          ...channelEditor.programList,
+        ]);
+      } else {
+        // Add offset times to all incoming programs
+        const lastItem = last(channelEditor.programList);
+        const firstOffset = lastItem
+          ? lastItem.startTimeOffset + lastItem.duration
+          : 0;
+        const programsWithOffset = addIndexesAndCalculateOffsets(
+          allNewPrograms,
+          firstOffset,
+          channelEditor.programList.length,
+        );
 
-      // Add new programs to the end of the existing list
-      channelEditor.programList.push(...programsWithOffset);
+        // Add new programs to the end of the existing list
+        channelEditor.programList.push(...programsWithOffset);
+      }
 
       // Add new lookups for these programs for when we materialize them in the selector
       // Extract the underlying content program from any custom programs

@@ -1,27 +1,22 @@
-import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
+import { useAddSelectedMediaItems } from '@/hooks/programming_controls/useEnumerateSelectedMediaItems.ts';
 import { AddCircle } from '@mui/icons-material';
 import { CircularProgress, Tooltip } from '@mui/material';
 import Button, { ButtonProps } from '@mui/material/Button';
 import { ReactNode } from 'react';
 import useStore from '../../store/index.ts';
-import { AddedMedia } from '../../types/index.ts';
 
 type Props = {
-  onAdd: (items: AddedMedia[]) => void;
-  onSuccess: () => void;
   buttonText?: string;
   tooltipTitle?: ReactNode;
 } & ButtonProps;
 
 export default function AddSelectedMediaButton({
-  onAdd,
-  onSuccess,
   buttonText,
   tooltipTitle,
   ...rest
 }: Props) {
   const selectedMedia = useStore((s) => s.selectedMedia);
-  const { addSelectedItems, isLoading } = useAddSelectedItems(onAdd, onSuccess);
+  const { addSelectedItems, isLoading } = useAddSelectedMediaItems();
 
   return (
     <Tooltip

@@ -32,20 +32,15 @@ import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
-import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
 type Props = {
-  onAddSelectedMedia: (media: AddedMedia[]) => void;
-  onAddMediaSuccess: () => void;
   selectAllEnabled?: boolean;
   isOpen: boolean;
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
 export default function SelectedProgrammingList({
-  onAddSelectedMedia,
-  onAddMediaSuccess,
   isOpen,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
@@ -272,6 +267,7 @@ export default function SelectedProgrammingList({
             top: 64,
             right: open ? drawerWidth : 0,
             mt: 1,
+            zIndex: 10000,
           }}
         >
           <Tooltip
@@ -330,8 +326,6 @@ export default function SelectedProgrammingList({
             {selectedMedia.length}):
           </Typography>
           <AddSelectedMediaButton
-            onAdd={onAddSelectedMedia}
-            onSuccess={onAddMediaSuccess}
             buttonText={`Add ${pluralize('Item', selectedMedia.length)}`}
             variant="contained"
             color={'primary'}

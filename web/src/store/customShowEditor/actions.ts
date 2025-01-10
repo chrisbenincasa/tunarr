@@ -11,7 +11,10 @@ import useStore from '../index.ts';
 
 import { CustomShow, CustomShowProgramming } from '@tunarr/types';
 
-export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
+export const addMediaToCurrentCustomShow = (
+  programs: AddedMedia[],
+  prepend: boolean = false,
+) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
@@ -24,9 +27,18 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
         }),
       );
 
-      customShowEditor.programList = customShowEditor.programList.concat(
-        zipWithIndex(allNewPrograms, customShowEditor.programList.length),
-      );
+      if (prepend) {
+        for (const program of customShowEditor.programList) {
+          program.originalIndex += allNewPrograms.length;
+        }
+        customShowEditor.programList = zipWithIndex(allNewPrograms).concat(
+          customShowEditor.programList,
+        );
+      } else {
+        customShowEditor.programList = customShowEditor.programList.concat(
+          zipWithIndex(allNewPrograms, customShowEditor.programList.length),
+        );
+      }
     }
   });
 

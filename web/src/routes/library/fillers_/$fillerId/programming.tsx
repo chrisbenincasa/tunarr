@@ -1,3 +1,4 @@
+import { AddProgrammingContextProvider } from '@/components/base/AddProgrammingContextProvider.tsx';
 import { preloadFillerAndProgramming } from '@/helpers/routeLoaders.ts';
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage.tsx';
 import { addMediaToCurrentFillerList } from '@/store/fillerListEditor/action.ts';
@@ -12,7 +13,7 @@ function FillerProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
   const { fillerId } = Route.useParams();
   return (
-    <ProgrammingSelectorPage
+    <AddProgrammingContextProvider
       onAddSelectedMedia={addMediaToCurrentFillerList}
       onAddMediaSuccess={() =>
         navigate({
@@ -20,6 +21,8 @@ function FillerProgrammingSelectorPage() {
           params: { fillerId },
         })
       }
-    />
+    >
+      <ProgrammingSelectorPage />
+    </AddProgrammingContextProvider>
   );
 }

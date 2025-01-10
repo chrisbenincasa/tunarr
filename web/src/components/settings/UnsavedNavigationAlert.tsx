@@ -33,14 +33,6 @@ export default function UnsavedNavigationAlert({
           if (next.fullPath === excludedTarget) {
             return false;
           }
-          // if (isRegExp(excludedTarget) && excludedTarget.test(next.fullPath)) {
-          //   return false;
-          // } else if (
-          //   isString(excludedTarget) &&
-          //   next.fullPath.startsWith(excludedTarget)
-          // ) {
-          //   return false;
-          // }
         }
       }
       return isDirty;
