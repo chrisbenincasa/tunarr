@@ -1,0 +1,26 @@
+import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { Nullable } from '@/types/util.ts';
+import { isNonEmptyString } from '@/util/index.ts';
+import { QsvEncoder } from './QsvEncoders.ts';
+
+export class H264QsvEncoder extends QsvEncoder {
+  protected videoFormat: string = VideoFormats.H264;
+
+  constructor(
+    private videoPreset: Nullable<string>,
+    private videoProfile: Nullable<string>,
+  ) {
+    super('h264_qsv');
+  }
+
+  options(): string[] {
+    const opts = [...super.options()];
+    if (isNonEmptyString(this.videoProfile)) {
+      opts.push('-profile:v', this.videoProfile);
+    }
+    if (isNonEmptyString(this.videoPreset)) {
+      opts.push('-preset:v', this.videoPreset);
+    }
+    return opts;
+  }
+}

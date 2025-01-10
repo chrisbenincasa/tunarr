@@ -17,11 +17,11 @@ export const HardwareAccelerationMode: Record<
   Capitalize<HardwareAccelerationMode>,
   HardwareAccelerationMode
 > = {
-  Cuda: 'cuda',
-  None: 'none',
-  Qsv: 'qsv',
-  Videotoolbox: 'videotoolbox',
-  Vaapi: 'vaapi',
+  Cuda: 'cuda' as const,
+  None: 'none' as const,
+  Qsv: 'qsv' as const,
+  Videotoolbox: 'videotoolbox' as const,
+  Vaapi: 'vaapi' as const,
 } as const;
 
 export type HardwareAccelerationMode = TupleToUnion<
