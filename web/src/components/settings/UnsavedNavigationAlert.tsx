@@ -1,22 +1,48 @@
+import { router } from '@/main.tsx';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { useBlocker } from '@tanstack/react-router';
+import { AnyRoute, ParseRoute, useBlocker } from '@tanstack/react-router';
+import { isEmpty } from 'lodash-es';
+
+type AvailablePaths<
+  TRoute extends AnyRoute = ParseRoute<(typeof router)['routeTree']>,
+> = TRoute['fullPath'];
 
 type Props = {
   isDirty: boolean;
+  exceptTargetPaths?: AvailablePaths[];
   onProceed?: () => void;
 };
 
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
 // This ensures the Alert is not activated in the middle of a form navigation.
 
-export default function UnsavedNavigationAlert({ isDirty, onProceed }: Props) {
+export default function UnsavedNavigationAlert({
+  isDirty,
+  exceptTargetPaths,
+  onProceed,
+}: Props) {
   const { proceed, status, reset } = useBlocker({
-    shouldBlockFn: () => {
+    shouldBlockFn: ({ next }) => {
+      if (exceptTargetPaths && !isEmpty(exceptTargetPaths)) {
+        for (const excludedTarget of exceptTargetPaths) {
+          if (next.fullPath === excludedTarget) {
+            return false;
+          }
+          // if (isRegExp(excludedTarget) && excludedTarget.test(next.fullPath)) {
+          //   return false;
+          // } else if (
+          //   isString(excludedTarget) &&
+          //   next.fullPath.startsWith(excludedTarget)
+          // ) {
+          //   return false;
+          // }
+        }
+      }
       return isDirty;
     },
     withResolver: true,
