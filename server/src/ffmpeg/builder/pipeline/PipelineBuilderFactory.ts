@@ -33,7 +33,8 @@ class PipelineBuilderFactory$Builder {
   private audioInputSource: Nullable<AudioInputSource> = null;
   private concatInputSource: Nullable<ConcatInputSource> = null;
   private watermarkInputSource: Nullable<WatermarkInputSource> = null;
-  private hardwareAccelerationMode: HardwareAccelerationMode = 'none';
+  private hardwareAccelerationMode: HardwareAccelerationMode =
+    HardwareAccelerationMode.None;
 
   constructor(
     private ffmpegSettings: FfmpegSettings,
@@ -86,8 +87,9 @@ class PipelineBuilderFactory$Builder {
       ).getCapabilities(),
       info.getCapabilities(),
     ]);
+
     switch (this.hardwareAccelerationMode) {
-      case 'cuda':
+      case HardwareAccelerationMode.Cuda:
         return new NvidiaPipelineBuilder(
           hardwareCapabilities,
           binaryCapabilities,
@@ -96,15 +98,16 @@ class PipelineBuilderFactory$Builder {
           this.concatInputSource,
           this.watermarkInputSource,
         );
-      case 'qsv':
+      case HardwareAccelerationMode.Qsv:
         return new QsvPipelineBuilder(
+          hardwareCapabilities,
+          binaryCapabilities,
           this.videoInputSource,
           this.audioInputSource,
-          this.watermarkInputSource,
           this.concatInputSource,
-          binaryCapabilities,
+          this.watermarkInputSource,
         );
-      case 'vaapi':
+      case HardwareAccelerationMode.Vaapi:
         return new VaapiPipelineBuilder(
           hardwareCapabilities,
           binaryCapabilities,
@@ -113,7 +116,7 @@ class PipelineBuilderFactory$Builder {
           this.watermarkInputSource,
           this.concatInputSource,
         );
-      case 'videotoolbox':
+      case HardwareAccelerationMode.Videotoolbox:
         return new VideoToolboxPipelineBuilder(
           hardwareCapabilities,
           binaryCapabilities,

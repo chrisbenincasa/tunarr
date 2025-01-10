@@ -17,13 +17,11 @@ import {
   NvidiaVc1Decoder,
   NvidiaVp9Decoder,
 } from './nvidia/NvidiaDecoders.ts';
-import {
-  H264QsvDecoder,
-  HevcQsvDecoder,
-  Mpeg2QsvDecoder,
-  Vc1QsvDecoder,
-  Vp9QsvDecoder,
-} from './qsv/QsvDecoders.ts';
+import { H264QsvDecoder } from './qsv/H264QsvDecoder.ts';
+import { HevcQsvDecoder } from './qsv/HevcQsvDecoder.ts';
+import { Mpeg2QsvDecoder } from './qsv/Mpeg2QsvDecoder.ts';
+import { Vc1QsvDecoder } from './qsv/Vc1QsvDecoder.ts';
+import { Vp9QsvDecoder } from './qsv/Vp9QsvDecoder.ts';
 
 export class DecoderFactory {
   static getSoftwareDecoder(videoStream: VideoStream) {
