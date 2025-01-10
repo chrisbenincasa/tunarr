@@ -1,6 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
+import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
+import { inject, injectable } from 'inversify';
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
@@ -10,12 +12,16 @@ import {
   healthCheckResult,
 } from './HealthCheck.ts';
 
+@injectable()
 export class FfmpegVersionHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegVersion';
 
   private static minVersion = '6.1';
 
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo,
+  ) {}
 
   async getStatus(): Promise<HealthCheckResult> {
     const settings = this.settingsDB.ffmpegSettings();
@@ -48,15 +54,14 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
       return warningResult;
     }
 
-    const info = new FfmpegInfo(settings);
-    const version = await info.getVersion();
+    const version = await this.ffmpegInfo.getVersion();
     const ffmpegVersionError = this.isVersionValid(version, 'ffmpeg');
     if (ffmpegVersionError) {
       return ffmpegVersionError;
     }
 
     const ffprobeVersionError = this.isVersionValid(
-      await info.getFfprobeVersion(),
+      await this.ffmpegInfo.getFfprobeVersion(),
       'ffprobe',
     );
     if (ffprobeVersionError) {

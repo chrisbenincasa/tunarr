@@ -1,6 +1,9 @@
-import { SettingsSchema, getSettings } from '@/db/SettingsDB.js';
+import { SettingsSchema } from '@/db/SettingsDB.js';
 import { merge } from 'lodash-es';
 import { CommandModule } from 'yargs';
+import { container } from '../../container.ts';
+import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import { KEYS } from '../../types/inject.ts';
 
 type SettingsUpdateCommandArgs = {
   pretty: boolean;
@@ -31,12 +34,13 @@ export const SettingsUpdateCommand: CommandModule<
         ],
       ]),
   handler: async (args) => {
-    const settings = getSettings().getAll();
+    const settingsDB = container.get<ISettingsDB>(KEYS.SettingsDB);
+    const settings = settingsDB.getAll();
     const newSettings = merge({}, settings.settings, args.settings);
 
     try {
       const validSettings = SettingsSchema.parse(newSettings);
-      await getSettings().directUpdate((prev) => {
+      await settingsDB.directUpdate((prev) => {
         prev.settings = validSettings;
       });
 

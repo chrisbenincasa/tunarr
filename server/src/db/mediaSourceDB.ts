@@ -17,9 +17,11 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ChannelDB } from './ChannelDB.ts';
 
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
+import { inject, injectable } from 'inversify';
 import { getDatabase } from './DBAccess.ts';
 import {
   withProgramChannels,
@@ -37,12 +39,9 @@ type Report = {
   modifiedPrograms: number;
 };
 
+@injectable()
 export class MediaSourceDB {
-  #channelDb: ChannelDB;
-
-  constructor(channelDb: ChannelDB) {
-    this.#channelDb = channelDb;
-  }
+  constructor(@inject(KEYS.ChannelDB) private channelDb: IChannelDB) {}
 
   async getAll(): Promise<MediaSource[]> {
     return getDatabase().selectFrom('mediaSource').selectAll().execute();
@@ -320,7 +319,7 @@ export class MediaSourceDB {
           }
 
           for (const channel of keys(channelById)) {
-            await this.#channelDb.removeProgramsFromLineup(
+            await this.channelDb.removeProgramsFromLineup(
               channel,
               map(allPrograms, 'uuid'),
             );

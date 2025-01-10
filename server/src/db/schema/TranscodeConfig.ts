@@ -1,4 +1,3 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TupleToUnion, defaultFfmpegSettings } from '@tunarr/types';
 import {
@@ -9,6 +8,7 @@ import {
   Updateable,
 } from 'kysely';
 import { v4 } from 'uuid';
+import { ReadableFfmpegSettings } from '../interfaces/ISettingsDB.ts';
 import { WithUuid } from './base.ts';
 
 export const HardwareAccelerationModes = [

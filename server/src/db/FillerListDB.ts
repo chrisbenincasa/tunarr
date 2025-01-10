@@ -1,10 +1,13 @@
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
+import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
 import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { CaseWhenBuilder } from 'kysely';
 import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
 import {
@@ -26,7 +29,6 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { getDatabase } from './DBAccess.ts';
-import { ProgramDB } from './ProgramDB.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
@@ -36,12 +38,12 @@ import { programExternalIdString } from './schema/Program.ts';
 import { DB } from './schema/db.ts';
 import { ChannelFillerShowWithContent } from './schema/derivedTypes.js';
 
+@injectable()
 export class FillerDB {
-  #programConverter: ProgramConverter = new ProgramConverter();
-
   constructor(
-    private channelCache: ChannelCache = new ChannelCache(),
-    private programDB: ProgramDB = new ProgramDB(),
+    @inject(ChannelCache) private channelCache: ChannelCache,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(ProgramConverter) private programConverter: ProgramConverter,
   ) {}
 
   getFiller(id: string) {
@@ -333,7 +335,7 @@ export class FillerDB {
       .executeTakeFirst();
 
     return map(programs?.fillerContent, (program) =>
-      this.#programConverter.programDaoToContentProgram(program, []),
+      this.programConverter.programDaoToContentProgram(program, []),
     );
   }
 

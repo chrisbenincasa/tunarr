@@ -6,10 +6,12 @@ import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { DB } from '@/db/schema/db.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniqPropAndMap, wait } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
+import { inject, injectable } from 'inversify';
 import { CaseWhenBuilder } from 'kysely';
 import {
   chunk,
@@ -33,13 +35,13 @@ import {
 } from '../../db/schema/Program.ts';
 import Fixer from './fixer.js';
 
+@injectable()
 export class MissingSeasonNumbersFixer extends Fixer {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   canRunInBackground: boolean = true;
+
+  constructor(@inject(KEYS.Logger) protected logger: Logger) {
+    super();
+  }
 
   async runInternal(): Promise<void> {
     const allPlexServers = await getDatabase()

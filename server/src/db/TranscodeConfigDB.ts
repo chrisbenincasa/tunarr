@@ -1,5 +1,6 @@
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TranscodeConfig } from '@tunarr/types';
+import { injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { omit } from 'lodash-es';
 import { v4 } from 'uuid';
@@ -10,6 +11,7 @@ import {
 } from './schema/TranscodeConfig.ts';
 import { DB } from './schema/db.ts';
 
+@injectable()
 export class TranscodeConfigDB {
   getAll() {
     return getDatabase().selectFrom('transcodeConfig').selectAll().execute();

@@ -1,4 +1,3 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -17,41 +16,53 @@ import {
   GenericError,
   TypedError,
 } from '../types/errors.js';
-import { ConcatSession, ConcatSessionOptions } from './ConcatSession.js';
+import {
+  ConcatSession,
+  ConcatSessionFactory,
+  ConcatSessionOptions,
+} from './ConcatSession.js';
 import { HlsConcatSessionType, Session } from './Session.js';
-import { HlsSession, HlsSessionOptions } from './hls/HlsSession.js';
+import {
+  HlsSession,
+  HlsSessionOptions,
+  HlsSessionProvider,
+  HlsSlowerSessionProvider,
+} from './hls/HlsSession.js';
 import {
   HlsSlowerSession,
   HlsSlowerSessionOptions,
 } from './hls/HlsSlowerSession.js';
 
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
+import { KEYS } from '@/types/inject.js';
 import { ifDefined } from '@/util/index.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { SessionType } from './Session.js';
 
 export type SessionKey = `${string}_${SessionType}`;
 
+@injectable()
 export class SessionManager {
   #logger = LoggerFactory.child({ className: this.constructor.name });
   #sessionLocker = new MutexMap();
   #sessions: Record<SessionKey, Session> = {};
 
-  private constructor(
-    private channelDB: ChannelDB,
+  constructor(
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(OnDemandChannelService)
     private onDemandChannelService: OnDemandChannelService,
+    @inject(KEYS.HlsSession) private hlsSessionFactory: HlsSessionProvider,
+    @inject(KEYS.HlsSlowerSession)
+    private hlsSlowerSessionFactory: HlsSlowerSessionProvider,
+    @inject(KEYS.ConcatSession)
+    private concatSessionFactory: ConcatSessionFactory,
   ) {}
-
-  static create(
-    channelDB: ChannelDB,
-    onDemandChannelService: OnDemandChannelService,
-  ) {
-    return new SessionManager(channelDB, onDemandChannelService);
-  }
 
   allSessions(): Record<SessionKey, Session> {
     return this.#sessions;
@@ -164,7 +175,7 @@ export class SessionManager {
       token,
       connection,
       options.sessionType,
-      (channel) => new ConcatSession(channel, options),
+      (channel) => this.concatSessionFactory(channel, options),
     );
   }
 
@@ -185,7 +196,7 @@ export class SessionManager {
       connection,
       'hls_slower',
       (channel) =>
-        new HlsSlowerSession(channel, {
+        this.hlsSlowerSessionFactory(channel, {
           ...options,
           initialSegmentCount: 2, // 8 seconds of content
           sessionType: 'hls_slower',
@@ -205,7 +216,7 @@ export class SessionManager {
       connection,
       'hls',
       (channel) =>
-        new HlsSession(channel, {
+        this.hlsSessionFactory(channel, {
           ...options,
           initialSegmentCount: 2, // 8 seconds of content
           sessionType: 'hls',

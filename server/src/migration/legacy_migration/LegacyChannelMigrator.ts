@@ -1,13 +1,12 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { CustomShowDB } from '@/db/CustomShowDB.js';
 import { getDatabase } from '@/db/DBAccess.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramUpsertFields } from '@/db/programQueryHelpers.js';
 import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.js';
 import { ProgramDao } from '@/db/schema/Program.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
 import { Maybe } from '@/types/util.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   Channel as ApiChannel,
@@ -43,6 +42,9 @@ import {
 } from '../../db/derived_types/Lineup.ts';
 
 import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
+import { inject, injectable } from 'inversify';
+import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { KEYS } from '../../types/inject.ts';
 import {
   emptyStringToUndefined,
   groupByUniq,
@@ -83,16 +85,13 @@ export type LegacyProgram = Omit<ApiProgram, 'channel'> & {
   ratingKey?: string;
 };
 
+@injectable()
 export class LegacyChannelMigrator {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   constructor(
-    private channelDB: ChannelDB = new ChannelDB(),
-    private customShowDB: CustomShowDB = new CustomShowDB(new ProgramDB()),
-    private transcodeConfigDB = new TranscodeConfigDB(),
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(CustomShowDB) private customShowDB: CustomShowDB,
+    @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
   ) {}
 
   async createLineup(

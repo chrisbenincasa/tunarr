@@ -1,8 +1,7 @@
 import {
+  ISettingsDB,
   ReadableFfmpegSettings,
-  SettingsDB,
-  getSettings,
-} from '@/db/SettingsDB.js';
+} from '@/db/interfaces/ISettingsDB.js';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
@@ -14,7 +13,10 @@ import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { Nullable } from '@/types/util.js';
+import { ContainerModule } from 'inversify';
 import { isUndefined } from 'lodash-es';
+import { KEYS } from '../../../types/inject.ts';
+import { bindFactoryFunc } from '../../../util/inject.ts';
 import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
@@ -22,16 +24,26 @@ import { VaapiPipelineBuilder } from './hardware/VaapiPipelineBuilder.ts';
 import { VideoToolboxPipelineBuilder } from './hardware/VideoToolboxPipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 
-export class PipelineBuilderFactory {
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+export type PipelineBuilderFactory = (
+  transcodeConfig: TranscodeConfig,
+) => PipelineBuilderFactory$Builder;
 
-  builder(transcodeConfig: TranscodeConfig): PipelineBuilderFactory$Builder {
-    return new PipelineBuilderFactory$Builder(
-      this.settingsDB.ffmpegSettings(),
-      transcodeConfig,
-    );
-  }
-}
+export const FfmpegPipelineBuilderModule = new ContainerModule((bind) => {
+  bindFactoryFunc<PipelineBuilderFactory>(
+    bind,
+    KEYS.PipelineBuilderFactory,
+    (ctx) => {
+      const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
+      const ffmpegInfo = ctx.container.get(FfmpegInfo);
+      return (config) =>
+        new PipelineBuilderFactory$Builder(
+          settingsDB.ffmpegSettings(),
+          ffmpegInfo,
+          config,
+        );
+    },
+  );
+});
 
 class PipelineBuilderFactory$Builder {
   private videoInputSource: Nullable<VideoInputSource> = null;
@@ -43,6 +55,7 @@ class PipelineBuilderFactory$Builder {
 
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
+    private ffmpegInfo: FfmpegInfo,
     private transcodeConfig: TranscodeConfig,
   ) {}
 
@@ -84,13 +97,12 @@ class PipelineBuilderFactory$Builder {
       throw new Error();
     }
 
-    const info = new FfmpegInfo(this.ffmpegSettings);
     const [hardwareCapabilities, binaryCapabilities] = await Promise.all([
       new HardwareCapabilitiesFactory(
         this.ffmpegSettings,
         this.transcodeConfig,
       ).getCapabilities(),
-      info.getCapabilities(),
+      this.ffmpegInfo.getCapabilities(),
     ]);
 
     switch (this.hardwareAccelerationMode) {

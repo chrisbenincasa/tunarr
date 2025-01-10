@@ -1,4 +1,7 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import {
+  ISettingsDB,
+  ReadableFfmpegSettings,
+} from '@/db/interfaces/ISettingsDB.js';
 import { Channel } from '@/db/schema/Channel.js';
 import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
@@ -52,17 +55,16 @@ import { FfmpegInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
   private logger = LoggerFactory.child({ className: FfmpegStreamFactory.name });
-  private ffmpegInfo: FfmpegInfo;
-  private pipelineBuilderFactory: PipelineBuilderFactory;
 
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
     private transcodeConfig: TranscodeConfig,
     private channel: Channel,
+    private ffmpegInfo: FfmpegInfo,
+    private settingsDB: ISettingsDB,
+    private pipelineBuilderFactory: PipelineBuilderFactory,
   ) {
     super();
-    this.ffmpegInfo = new FfmpegInfo(ffmpegSettings);
-    this.pipelineBuilderFactory = new PipelineBuilderFactory();
   }
 
   async createConcatSession(
@@ -91,8 +93,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       });
     }
 
-    const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.transcodeConfig)
+    const pipelineBuilder = await this.pipelineBuilderFactory(
+      this.transcodeConfig,
+    )
       .setConcatInputSource(concatInput)
       .build();
 
@@ -109,6 +112,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         `channel-${this.channel.number}-concat`,
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       dayjs.duration(-1),
@@ -128,8 +132,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
     );
 
-    const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.transcodeConfig)
+    const pipelineBuilder = await this.pipelineBuilderFactory(
+      this.transcodeConfig,
+    )
       .setConcatInputSource(concatInput)
       .build();
 
@@ -147,6 +152,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         `channel-${this.channel.number}-concat`,
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       dayjs.duration(-1),
@@ -199,8 +205,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
     );
 
-    const pipelineBuilder = await this.pipelineBuilderFactory
-      .builder(this.transcodeConfig)
+    const pipelineBuilder = await this.pipelineBuilderFactory(
+      this.transcodeConfig,
+    )
       .setHardwareAccelerationMode(
         this.transcodeConfig.hardwareAccelerationMode,
       )
@@ -252,6 +259,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         'Concat Wrapper v2 FFmpeg',
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       dayjs.duration(-1),
@@ -404,8 +412,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       );
     }
 
-    const builder = await new PipelineBuilderFactory()
-      .builder(this.transcodeConfig)
+    const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(playbackParams.hwAccel)
       .setVideoInputSource(videoInputSource)
       .setAudioInputSource(audioInput)
@@ -455,6 +462,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         `channel-${this.channel.number}-transcode`,
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       duration,
@@ -543,8 +551,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         break;
     }
 
-    const builder = await new PipelineBuilderFactory()
-      .builder(this.transcodeConfig)
+    const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(
         this.transcodeConfig.hardwareAccelerationMode,
       )
@@ -585,6 +592,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         `channel-${this.channel.number}-error`,
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       duration,
@@ -648,8 +656,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         break;
     }
 
-    const builder = await new PipelineBuilderFactory()
-      .builder(this.transcodeConfig)
+    const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(
         this.transcodeConfig.hardwareAccelerationMode,
       )
@@ -690,6 +697,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         this.ffmpegSettings,
         `channel-${this.channel.number}-transcode`,
         pipeline.getCommandArgs(),
+        this.settingsDB.systemSettings().logging.logsDirectory,
         pipeline.getCommandEnvironment(),
       ),
       duration,

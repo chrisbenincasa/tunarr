@@ -1,13 +1,14 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { SettingsDB } from '@/db/SettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { registerSingletonInitializer } from '@/globals.js';
+import { globalOptions, registerSingletonInitializer } from '@/globals.js';
 import { Maybe } from '@/types/util.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FindChild } from '@tunarr/types';
 import { forEach, isBoolean, isEmpty, isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
+import { SettingsDBFactory } from '../db/SettingsDBFactory.js';
 import { BaseApiClient, RemoteMediaSourceOptions } from './BaseApiClient.js';
 import {
   JellyfinApiClient,
@@ -29,7 +30,7 @@ export class MediaSourceApiFactoryImpl {
 
   constructor(
     private mediaSourceDB: MediaSourceDB,
-    private settings: SettingsDB = getSettings(),
+    private settings: SettingsDB,
   ) {
     this.#cache = new NodeCache({
       useClones: false,
@@ -167,7 +168,10 @@ export class MediaSourceApiFactoryImpl {
 
 registerSingletonInitializer((ctx) => {
   if (!instance) {
-    instance = new MediaSourceApiFactoryImpl(ctx.mediaSourceDB);
+    instance = new MediaSourceApiFactoryImpl(
+      ctx.mediaSourceDB,
+      new SettingsDBFactory(globalOptions()).get(),
+    );
   }
   return instance;
 });

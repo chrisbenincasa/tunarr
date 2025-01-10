@@ -1,6 +1,6 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
 import { Lineup } from '@/db/derived_types/Lineup.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { Migration } from '@/migration/Migration.js';
 
 export abstract class ChannelLineupMigration<
@@ -9,8 +9,8 @@ export abstract class ChannelLineupMigration<
 > implements Migration<Lineup, From, To>
 {
   constructor(
-    protected channelDB: ChannelDB,
-    protected programDB: ProgramDB,
+    protected channelDB: IChannelDB,
+    protected programDB: IProgramDB,
   ) {}
 
   abstract from: From;

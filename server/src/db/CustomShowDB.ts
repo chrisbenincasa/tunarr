@@ -1,3 +1,4 @@
+import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { CustomProgram } from '@tunarr/types';
 import {
@@ -5,6 +6,7 @@ import {
   UpdateCustomShowRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { filter, isNil, map } from 'lodash-es';
 import { v4 } from 'uuid';
 import { getDatabase } from './DBAccess.ts';
@@ -18,10 +20,11 @@ import {
 import { NewCustomShow, NewCustomShowContent } from './schema/CustomShow.ts';
 import { programExternalIdString } from './schema/Program.ts';
 
+@injectable()
 export class CustomShowDB {
-  #programConverter: ProgramConverter = new ProgramConverter();
+  @inject(ProgramConverter) private programConverter: ProgramConverter;
 
-  constructor(private programDB: ProgramDB = new ProgramDB()) {}
+  constructor(@inject(KEYS.ProgramDB) private programDB: ProgramDB) {}
 
   async getShow(id: string) {
     return getDatabase()
@@ -47,7 +50,7 @@ export class CustomShowDB {
       type: 'custom' as const,
       persisted: true,
       duration: csc.duration,
-      program: this.#programConverter.programDaoToContentProgram(csc, []),
+      program: this.programConverter.programDaoToContentProgram(csc, []),
       customShowId: id,
       index: csc.index,
       id: csc.uuid,

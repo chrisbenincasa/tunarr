@@ -1,19 +1,23 @@
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import {
   MkvOutputFormat,
   Mp4OutputFormat,
   MpegTsOutputFormat,
   OutputFormat,
 } from '@/ffmpeg/builder/constants.js';
-import { getServerContext, serverContext } from '@/serverContext.js';
+import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
+import { SessionManager } from '@/stream/SessionManager.js';
+import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelStreamMode } from '@tunarr/types';
+import { inject, injectable } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStream } from './ProgramStream.js';
-import { ProgramStreamFactory } from './ProgramStreamFactory.js';
 import {
   StreamProgramCalculator,
   StreamProgramCalculatorError,
@@ -45,14 +49,17 @@ type StartVideoStreamRequest = {
  * Starts a video stream for the given channel, playing the show airing at the
  * given timestamp
  */
+@injectable()
 export class VideoStream {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: VideoStream.name,
-  });
-
   constructor(
-    private calculator: StreamProgramCalculator = getServerContext().streamProgramCalculator(),
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(StreamProgramCalculator)
+    private calculator: StreamProgramCalculator,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.ProgramStreamFactory)
+    private programStreamFactory: ProgramStreamFactory,
+    @inject(SessionManager) private sessionManager: SessionManager,
   ) {}
 
   async startStream(
@@ -66,10 +73,10 @@ export class VideoStream {
     allowSkip: boolean,
   ): Promise<VideoStreamResult> {
     const start = performance.now();
-    const serverCtx = getServerContext();
+    // const serverCtx = getServerContext();
     const outStream = new PassThrough();
 
-    const channel = await serverCtx.channelDB
+    const channel = await this.channelDB
       .getChannelBuilder(channelIdOrNumber)
       .withTranscodeConfig()
       .executeTakeFirst();
@@ -82,7 +89,7 @@ export class VideoStream {
       };
     }
 
-    const ffmpegSettings = serverCtx.settings.ffmpegSettings();
+    const ffmpegSettings = this.settingsDB.ffmpegSettings();
 
     // Check if ffmpeg path is valid
     if (!(await fileExists(ffmpegSettings.ffmpegExecutablePath))) {
@@ -100,7 +107,7 @@ export class VideoStream {
     let programStreamResult: Result<ProgramStream>;
     switch (streamMode) {
       case 'hls_slower': {
-        const hlsSession = serverContext().sessionManager.getHlsSlowerSession(
+        const hlsSession = this.sessionManager.getHlsSlowerSession(
           channel.uuid,
         );
         if (!hlsSession) {
@@ -151,7 +158,7 @@ export class VideoStream {
             }
           }
 
-          const programStream = ProgramStreamFactory.create(
+          const programStream = this.programStreamFactory(
             playerContext,
             outputFormat,
           );

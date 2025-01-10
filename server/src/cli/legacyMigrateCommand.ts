@@ -1,4 +1,4 @@
-import { getSettings } from '@/db/SettingsDB.js';
+import { container } from '@/container.js';
 import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.js';
 import { isArray, isString } from 'lodash-es';
 import { existsSync } from 'node:fs';
@@ -56,9 +56,7 @@ export const LegacyMigrateCommand: CommandModule<
   },
   handler: async (argv) => {
     console.log('Migrating DB from legacy schema...');
-    return await new LegacyDbMigrator(
-      getSettings(),
-      argv.legacy_path,
-    ).migrateFromLegacyDb(argv.entities);
+    const migrator = container.get<LegacyDbMigrator>(LegacyDbMigrator);
+    return await migrator.migrateFromLegacyDb(argv.legacy_path, argv.entities);
   },
 };

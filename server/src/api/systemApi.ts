@@ -1,6 +1,5 @@
 import { serverOptions } from '@/globals.js';
 import { scheduleBackupJobs } from '@/services/Scheduler.js';
-import { FixersByName } from '@/tasks/fixers/index.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { ifDefined } from '@/util/index.js';
@@ -55,7 +54,9 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const fixer = FixersByName[req.params.fixerId];
+      const fixer = req.serverCtx.fixerRunner.getFixerByName(
+        req.params.fixerId,
+      );
       if (!fixer) {
         return res
           .status(400)

@@ -2,6 +2,7 @@ import { serverOptions } from '@/globals.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { promises as fs } from 'fs';
+import { injectable } from 'inversify';
 import NodeCache from 'node-cache';
 import path from 'path';
 
@@ -10,6 +11,7 @@ import path from 'path';
  *
  * @class FileCacheService
  */
+@injectable()
 export class FileCacheService {
   #logger = LoggerFactory.child({ className: this.constructor.name });
 

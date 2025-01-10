@@ -1,5 +1,6 @@
+import { container } from '@/container.js';
 import { setServerOptions } from '@/globals.js';
-import { initServer } from '@/server.js';
+import { Server } from '@/Server.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { getDefaultServerPort } from '@/util/defaults.js';
 import { isNonEmptyString, isProduction } from '@/util/index.js';
@@ -45,7 +46,7 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
   },
   handler: async (args: ArgumentsCamelCase<ServerArgsType>) => {
     const serverOpts = setServerOptions(args);
-    /* eslint-disable max-len */
+
     console.log(
       `
 ${chalk.blue(' _____')} ${chalk.green('_   _')}${chalk.yellow(
@@ -71,8 +72,8 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
 \n\t  ${getTunarrVersion()}
 `,
       serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
-      /* eslint-enable max-len */
     );
-    await initServer(serverOpts);
+    await container.get(Server).init();
+    // await initServer(serverOpts);
   },
 };

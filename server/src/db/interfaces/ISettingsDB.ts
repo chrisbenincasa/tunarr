@@ -1,0 +1,52 @@
+import { MigrationState, Settings, SettingsFile } from '@/db/SettingsDB.js';
+import {
+  FfmpegSettings,
+  HdhrSettings,
+  PlexStreamSettings,
+  SystemSettings,
+  XmlTvSettings,
+} from '@tunarr/types';
+import { BackupSettings } from '@tunarr/types/schemas';
+import { DeepReadonly } from 'ts-essentials';
+
+export interface ISettingsDB {
+  migrationState: DeepReadonly<MigrationState>;
+  backup: DeepReadonly<BackupSettings>;
+
+  needsLegacyMigration(): boolean;
+
+  getAll(): DeepReadonly<SettingsFile>;
+
+  clientId(): string;
+
+  xmlTvSettings(): DeepReadonly<XmlTvSettings>;
+
+  hdhrSettings(): DeepReadonly<HdhrSettings>;
+
+  plexSettings(): DeepReadonly<PlexStreamSettings>;
+
+  ffmpegSettings(): ReadableFfmpegSettings;
+
+  ffprobePath: string;
+
+  systemSettings(): DeepReadonly<SystemSettings>;
+
+  directUpdate(
+    fn: (settings: SettingsFile) => SettingsFile | void,
+  ): Promise<void>;
+
+  updateSettings<K extends keyof Settings>(
+    key: K,
+    settings: Settings[K],
+  ): Promise<void>;
+
+  updateBaseSettings<K extends keyof Omit<SettingsFile, 'settings'>>(
+    key: K,
+    settings: Partial<SettingsFile[K]>,
+  ): Promise<void>;
+
+  updateFfmpegSettings(ffmpegSettings: FfmpegSettings): Promise<void>;
+
+  flush(): Promise<void>;
+}
+export type ReadableFfmpegSettings = DeepReadonly<FfmpegSettings>;

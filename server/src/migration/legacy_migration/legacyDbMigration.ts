@@ -1,4 +1,5 @@
 import { getDatabase } from '@/db/DBAccess.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
   NewTranscodeConfig,
@@ -7,12 +8,13 @@ import {
 } from '@/db/schema/TranscodeConfig.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';
-import { serverContext } from '@/serverContext.js';
+import { EventService } from '@/services/EventService.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { AnonymousTask } from '@/tasks/Task.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { attempt } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import {
   FfmpegSettings,
@@ -32,6 +34,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';
+import { inject, injectable } from 'inversify';
 import {
   find,
   isArray,
@@ -51,11 +54,7 @@ import {
 import path, { dirname, join } from 'path';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import {
-  Settings,
-  SettingsDB,
-  defaultXmlTvSettings,
-} from '../../db/SettingsDB.ts';
+import { Settings, defaultXmlTvSettings } from '../../db/SettingsDB.ts';
 import {
   MediaSourceType,
   NewMediaSource,
@@ -112,22 +111,19 @@ function parseIntOrDefault(s: JSONValue, defaultValue: number): number {
   return isNaN(parsed) ? defaultValue : parsed;
 }
 
+@injectable()
 export class LegacyDbMigrator {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   constructor(
-    private settings: SettingsDB,
-    private legacyDbPath: string,
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.SettingsDB) private settings: ISettingsDB,
+    @inject(EventService) private eventService: EventService,
+    @inject(LegacyChannelMigrator)
+    private legacyChannelMigrator: LegacyChannelMigrator,
+    @inject(LegacyMetadataBackfiller)
+    private legacyMetadataBackiller: LegacyMetadataBackfiller,
   ) {}
 
-  migrateFromLegacyDb(entities?: string[]) {
-    return this.migrateFromLegacyDbInner(entities);
-  }
-
-  private async migrateFromLegacyDbInner(entities?: string[]) {
+  async migrateFromLegacyDb(legacyDbPath: string, entities?: string[]) {
     const entitiesToMigrate = entities ?? MigratableEntities;
     // First initialize the default schema:
     // db.data = { ...defaultSchema(globalOptions().databaseDirectory) };
@@ -137,7 +133,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('hdhr')) {
       try {
         const hdhrSettings = await attempt(() =>
-          this.readOldDbFile('hdhr-settings'),
+          this.readOldDbFile(legacyDbPath, 'hdhr-settings'),
         );
         if (isError(hdhrSettings)) {
           settings = {
@@ -165,7 +161,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('xmltv')) {
       try {
         const xmltvSettings = await attempt(() =>
-          this.readOldDbFile('xmltv-settings'),
+          this.readOldDbFile(legacyDbPath, 'xmltv-settings'),
         );
 
         const defaultSettings = defaultXmlTvSettings(
@@ -197,7 +193,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('plex')) {
       try {
         const plexSettings = await attempt(() =>
-          this.readOldDbFile('plex-settings'),
+          this.readOldDbFile(legacyDbPath, 'plex-settings'),
         );
         if (isError(plexSettings)) {
           settings = {
@@ -299,7 +295,7 @@ export class LegacyDbMigrator {
 
     if (entitiesToMigrate.includes('plex-servers')) {
       const plexServers = await attempt(() =>
-        this.readAllOldDbFile('plex-servers'),
+        this.readAllOldDbFile(legacyDbPath, 'plex-servers'),
       );
       try {
         if (!isError(plexServers)) {
@@ -386,7 +382,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('ffmpeg')) {
       try {
         const ffmpegSettings = await attempt(
-          async () => await this.readOldDbFile('ffmpeg-settings'),
+          async () => await this.readOldDbFile(legacyDbPath, 'ffmpeg-settings'),
         );
         if (isError(ffmpegSettings)) {
           settings = {
@@ -545,7 +541,7 @@ export class LegacyDbMigrator {
 
     try {
       this.logger.debug('Migrating client ID');
-      const clientId = await this.readOldDbFile('client-id');
+      const clientId = await this.readOldDbFile(legacyDbPath, 'client-id');
       settings = {
         ...settings,
         clientId: clientId['clientId'] as string,
@@ -559,10 +555,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('custom-shows')) {
       try {
         this.logger.debug('Migrating custom shows');
-        await libraryMigrator.migrateCustomShows(
-          this.legacyDbPath,
-          'custom-shows',
-        );
+        await libraryMigrator.migrateCustomShows(legacyDbPath, 'custom-shows');
       } catch (e) {
         this.logger.error(e, 'Unable to migrate all custom shows');
       }
@@ -571,7 +564,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('filler-shows')) {
       try {
         this.logger.debug('Migrating filler shows');
-        await libraryMigrator.migrateCustomShows(this.legacyDbPath, 'filler');
+        await libraryMigrator.migrateCustomShows(legacyDbPath, 'filler');
       } catch (e) {
         this.logger.error(e, 'Unable to migrate all filler shows');
       }
@@ -580,13 +573,13 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('channels')) {
       try {
         this.logger.debug('Migraing channels...');
-        await new LegacyChannelMigrator().migrateChannels(this.legacyDbPath);
+        await this.legacyChannelMigrator.migrateChannels(legacyDbPath);
         // Finish this process in the background, since it could take a while
         GlobalScheduler.scheduleOneOffTask(
           'BackfillParentMetadata',
           dayjs().add(10, 'seconds').toDate(),
           AnonymousTask('BackfillParentMetadata', async () => {
-            serverContext().eventService.push({
+            this.eventService.push({
               type: 'lifecycle',
               detail: {
                 time: new Date().getTime(),
@@ -595,7 +588,7 @@ export class LegacyDbMigrator {
                 'Background metadata backfill in progress. Please be patient!',
               level: 'info',
             });
-            return new LegacyMetadataBackfiller().backfillParentMetadata();
+            return this.legacyMetadataBackiller.backfillParentMetadata();
           }),
         );
       } catch (e) {
@@ -606,7 +599,7 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('cached-images')) {
       try {
         this.logger.debug('Migrating cached images');
-        const result = await this.migrateCachedImages();
+        const result = await this.migrateCachedImages(legacyDbPath);
         if (!isEmpty(result)) {
           this.logger.info(
             'Successfully migrated %d cached images',
@@ -635,21 +628,23 @@ export class LegacyDbMigrator {
   }
 
   private async readAllOldDbFile(
+    legacyDbPath: string,
     file: string,
   ): Promise<JSONArray | JSONObject> {
     // We make an assumption about the location of the legacy db file, because
     // we know how the server discovered it...
-    const data = await fs.readFile(
-      path.join(this.legacyDbPath, file + '.json'),
-    );
+    const data = await fs.readFile(path.join(legacyDbPath, file + '.json'));
     const str = data.toString('utf-8');
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const parsed = JSON.parse(str);
     return isArray(parsed) ? (parsed as JSONArray) : (parsed as JSONObject);
   }
 
-  private async readOldDbFile(file: string): Promise<JSONObject> {
-    const data = await this.readAllOldDbFile(file);
+  private async readOldDbFile(
+    legacyDbPath: string,
+    file: string,
+  ): Promise<JSONObject> {
+    const data = await this.readAllOldDbFile(legacyDbPath, file);
     if (isArray(data)) {
       return data[0] as JSONObject;
     } else {
@@ -657,8 +652,9 @@ export class LegacyDbMigrator {
     }
   }
 
-  private async migrateCachedImages() {
+  private async migrateCachedImages(legacyDbPath: string) {
     const cacheImages = (await this.readAllOldDbFile(
+      legacyDbPath,
       'cache-images',
     )) as JSONObject[];
     const newCacheImages: NewCachedImage[] = [];

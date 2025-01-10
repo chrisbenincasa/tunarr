@@ -11,6 +11,7 @@ import { dayjsMod } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { fileURLToPath } from 'node:url';
+import 'reflect-metadata';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 import { commands } from './cli/commands.ts';

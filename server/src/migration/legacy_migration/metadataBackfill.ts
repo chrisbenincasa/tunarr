@@ -1,8 +1,6 @@
 // This should be run after all regular entities have been migrated
 
-import { ChannelDB } from '@/db/ChannelDB.js';
 import { getDatabase } from '@/db/DBAccess.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
@@ -11,7 +9,7 @@ import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExterna
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { isNonEmptyString, wait } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import {
   PlexEpisodeView,
   PlexLibraryMusic,
@@ -24,22 +22,22 @@ import {
   PlexTvShow,
 } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { first, groupBy, isNil, isUndefined, keys } from 'lodash-es';
 import { v4 } from 'uuid';
+import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import {
   NewProgramGrouping,
   ProgramGroupingType,
 } from '../../db/schema/ProgramGrouping.ts';
+import { KEYS } from '../../types/inject.ts';
 
+@injectable()
 export class LegacyMetadataBackfiller {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: LegacyMetadataBackfiller.name,
-  });
-
   constructor(
-    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
-    private programDB: ProgramDB = new ProgramDB(),
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
   ) {}
 
   // It requires valid PlexServerSettings, program metadata, etc

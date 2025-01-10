@@ -1,16 +1,19 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
-import { serverContext } from '@/serverContext.js';
+import { CacheImageService } from '@/services/cacheImageService.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
+import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Result } from '@/types/result.js';
-import { MarkNullable, Maybe } from '@/types/util.js';
+import { Maybe } from '@/types/util.js';
+import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
-import { Timer } from '@/util/perf.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { RandomSlotScheduler, scheduleTimeSlots } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
@@ -24,6 +27,7 @@ import {
   Watermark,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import { inject, injectable } from 'inversify';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -54,7 +58,7 @@ import {
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
 import { join } from 'path';
-import { MarkOptional, MarkRequired } from 'ts-essentials';
+import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import {
@@ -66,7 +70,6 @@ import {
   run,
 } from '../util/index.ts';
 import { getDatabase } from './DBAccess.ts';
-import { ProgramDB } from './ProgramDB.ts';
 import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import {
@@ -80,6 +83,10 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from './derived_types/Lineup.ts';
+import {
+  PageParams,
+  UpdateChannelLineupRequest,
+} from './interfaces/IChannelDB.ts';
 import {
   AllProgramGroupingFields,
   MinimalProgramGroupingFields,
@@ -207,30 +214,20 @@ function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
 const fileDbCache: Record<string | number, Low<Lineup>> = {};
 const fileDbLocks = new MutexMap();
 
-type PageParams = {
-  offset: number;
-  limit: number;
-};
-
-type UpdateChannelLineupRequest = MarkOptional<
-  MarkNullable<
-    Omit<Lineup, 'lastUpdated'>,
-    | 'dynamicContentConfig'
-    | 'schedule'
-    | 'schedulingOperations'
-    | 'pendingPrograms'
-  >,
-  'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets'
->;
-export class ChannelDB {
+@injectable()
+export class ChannelDB implements IChannelDB {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
   });
-  private timer = new Timer(this.logger, 'trace');
-  #programConverter = new ProgramConverter();
 
-  constructor(private programDB: ProgramDB = new ProgramDB()) {}
+  private timer = new Timer(this.logger, 'trace');
+
+  @inject(ProgramConverter) private programConverter: ProgramConverter;
+  @inject(KEYS.ProgramDB) private programDB: IProgramDB;
+  @inject(CacheImageService) private cacheImageService: CacheImageService;
+
+  // constructor(private programDB: ProgramDB = new ProgramDB()) {}
 
   async channelExists(channelId: string) {
     const channel = await getDatabase()
@@ -427,7 +424,7 @@ export class ChannelDB {
       if (!parsed.hostname.includes('localhost')) {
         // Attempt to download the watermark and cache it.
         const cacheWatermarkResult = await Result.attemptAsync(() =>
-          serverContext().cacheImageService.getOrDownloadImageUrl(url),
+          this.cacheImageService.getOrDownloadImageUrl(url),
         );
         if (cacheWatermarkResult.isFailure()) {
           this.logger.warn(
@@ -561,12 +558,6 @@ export class ChannelDB {
           .$if(pageParams!.limit >= 0, (qb) => qb.limit(pageParams!.limit)),
       )
       .execute();
-    // .then((channels) =>
-    //   map(channels, (channel) => ({
-    //     ...channel,
-    //     stealth: numberToBoolean(channel.stealth),
-    //   })),
-    // );
   }
 
   async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
@@ -939,18 +930,6 @@ export class ChannelDB {
     };
   }
 
-  async loadDirectChannelAndLineup(channelId: string) {
-    const channel = await this.getChannel(channelId);
-    if (isNil(channel)) {
-      return null;
-    }
-
-    return {
-      channel,
-      lineup: await this.loadLineup(channelId),
-    };
-  }
-
   async loadLineup(channelId: string, forceRead: boolean = false) {
     const db = await this.getFileDb(channelId, forceRead);
     return db.data;
@@ -1044,7 +1023,7 @@ export class ChannelDB {
           return;
         }
 
-        const converted = this.#programConverter.programDaoToContentProgram(
+        const converted = this.programConverter.programDaoToContentProgram(
           program,
           externalIdsByProgramId[program.uuid] ?? [],
         );
@@ -1255,13 +1234,13 @@ export class ChannelDB {
           if (!fullProgram) {
             return null;
           }
-          return this.#programConverter.programDaoToContentProgram(
+          return this.programConverter.programDaoToContentProgram(
             fullProgram,
             fullProgram.externalIds ?? [],
           );
         })
         .otherwise((item) =>
-          this.#programConverter.lineupItemToChannelProgram(
+          this.programConverter.lineupItemToChannelProgram(
             channel,
             item,
             allChannels,
@@ -1330,10 +1309,10 @@ export class ChannelDB {
     const programs = seq.collect(lineup, (item) => {
       let p: CondensedChannelProgram | null = null;
       if (isOfflineItem(item)) {
-        p = this.#programConverter.offlineLineupItemToProgram(channel, item);
+        p = this.programConverter.offlineLineupItemToProgram(channel, item);
       } else if (isRedirectItem(item)) {
         if (channelsById[item.channel]) {
-          p = this.#programConverter.redirectLineupItemToProgram(
+          p = this.programConverter.redirectLineupItemToProgram(
             item,
             channelsById[item.channel],
           );

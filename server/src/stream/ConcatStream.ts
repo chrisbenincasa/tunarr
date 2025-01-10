@@ -1,30 +1,24 @@
-import {
-  ReadableFfmpegSettings,
-  SettingsDB,
-  getSettings,
-} from '@/db/SettingsDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegModule.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.js';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 
+export type ConcatStreamFactory = (
+  channel: ChannelWithTranscodeConfig,
+  streamMode: ChannelConcatStreamMode,
+) => ConcatStream;
 export class ConcatStream {
-  #ffmpegSettings: ReadableFfmpegSettings;
-
   constructor(
     private channel: ChannelWithTranscodeConfig,
     private streamMode: ChannelConcatStreamMode,
-    settings: SettingsDB = getSettings(),
-  ) {
-    this.#ffmpegSettings = settings.ffmpegSettings();
-  }
+    private ffmpegFactory: FFmpegFactory,
+  ) {}
 
   async createSession(): Promise<FfmpegTranscodeSession> {
-    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      this.#ffmpegSettings,
+    const ffmpeg = this.ffmpegFactory(
       this.channel.transcodeConfig,
       this.channel,
       ConcatStreamModeToChildMode[this.streamMode],

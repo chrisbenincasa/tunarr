@@ -1,15 +1,16 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
-import { PlayerContext } from './PlayerStreamContext.js';
-import { ProgramStream } from './ProgramStream.js';
+import { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import { PlayerContext } from './PlayerStreamContext.ts';
+import { ProgramStream } from './ProgramStream.ts';
 
 /**
  * Player for flex, error, and other misc non-content streams.
@@ -21,12 +22,15 @@ export class OfflineProgramStream extends ProgramStream {
   });
 
   constructor(
+    settingsDB: ISettingsDB,
+    cacheImageService: CacheImageService,
+    ffmpegFactory: FFmpegFactory,
     private error: boolean,
     context: PlayerContext,
     outputFormat: OutputFormat,
-    settingsDB: SettingsDB = getSettings(),
   ) {
-    super(context, outputFormat, settingsDB);
+    super(context, outputFormat, settingsDB, cacheImageService, ffmpegFactory);
+
     if (context.isLoading === true) {
       context.targetChannel = {
         ...context.targetChannel,
@@ -46,8 +50,7 @@ export class OfflineProgramStream extends ProgramStream {
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>> {
     try {
-      const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-        this.settingsDB.ffmpegSettings(),
+      const ffmpeg = this.ffmpegFactory(
         this.context.transcodeConfig,
         this.context.targetChannel,
         this.context.streamMode,

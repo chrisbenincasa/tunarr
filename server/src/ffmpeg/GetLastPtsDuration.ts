@@ -1,4 +1,4 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { Result } from '@/types/result.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { NewLineTransformStream } from '@/util/streams.js';
@@ -11,7 +11,7 @@ export type PtsAndDuration = {
 };
 
 export class GetLastPtsDurationTask {
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(private settingsDB: ISettingsDB) {}
 
   async run(segmentFilePath: string): Promise<Result<PtsAndDuration>> {
     const args = [

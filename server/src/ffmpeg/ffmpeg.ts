@@ -10,14 +10,12 @@ import { gcd } from '@/util/index.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
-import {
-  ChannelStreamMode,
-  FfmpegSettings,
-  Resolution,
-  Watermark,
-} from '@tunarr/types';
+import { ChannelStreamMode, Resolution, Watermark } from '@tunarr/types';
 
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import {
+  ISettingsDB,
+  ReadableFfmpegSettings,
+} from '@/db/interfaces/ISettingsDB.js';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.js';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -174,22 +172,16 @@ export class FFMPEG implements IFFMPEG {
   private volumePercent: number;
   private hasBeenKilled: boolean = false;
   private alignAudio: boolean;
-  private ffmpegInfo: FfmpegInfo;
   private nvidiaCapabilities: NvidiaHardwareCapabilitiesFactory;
 
   constructor(
-    opts: DeepReadonly<FfmpegSettings>,
+    private settingsDB: ISettingsDB,
+    private ffmpegInfo: FfmpegInfo,
     private transcodeConfig: TranscodeConfig,
     private channel: Channel,
     private audioOnly: boolean = false,
   ) {
-    this.settings = {
-      ...opts,
-      languagePreferences: {
-        ...opts.languagePreferences,
-        preferences: [...opts.languagePreferences.preferences],
-      },
-    };
+    this.settings = this.settingsDB.ffmpegSettings();
     this.logger = LoggerFactory.child({
       caller: import.meta,
       className: FFMPEG.name,
@@ -198,7 +190,6 @@ export class FFMPEG implements IFFMPEG {
     this.errorPicturePath = makeLocalUrl('/images/generic-error-screen.png');
     this.ffmpegName = 'unnamed ffmpeg';
     this.channel = channel;
-    this.ffmpegInfo = new FfmpegInfo(this.settings);
     this.nvidiaCapabilities = new NvidiaHardwareCapabilitiesFactory(
       this.settings,
     );
@@ -1141,6 +1132,7 @@ export class FFMPEG implements IFFMPEG {
       this.settings,
       this.ffmpegName,
       ffmpegArgs,
+      this.settingsDB.systemSettings().logging.logsDirectory,
     );
 
     // TODO: Do we need a more accurate measure of "streamEndTime" by passing in

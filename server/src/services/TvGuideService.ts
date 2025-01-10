@@ -4,12 +4,13 @@ import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
+import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
-import { Timer } from '@/util/perf.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import throttle from '@/util/throttle.js';
 import constants from '@tunarr/shared/constants';
@@ -23,6 +24,7 @@ import {
 import retry from 'async-retry';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
+import { inject, injectable } from 'inversify';
 import {
   compact,
   filter,
@@ -94,13 +96,9 @@ type ChannelWithLineup = {
 
 type ChannelId = string;
 
+@injectable()
 export class TVGuideService {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
-  private timer = new Timer(this.logger);
+  private timer: Timer;
   private locks = new MutexMap();
   private xmltv: XmlTvWriter;
   private eventService: EventService;
@@ -120,11 +118,14 @@ export class TVGuideService {
   private channelsById: Record<string, ChannelWithLineup>;
 
   constructor(
-    xmltv: XmlTvWriter,
-    eventService: EventService,
-    private channelDB: ChannelDB,
-    private programDB: ProgramDB,
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(XmlTvWriter) xmltv: XmlTvWriter,
+    @inject(EventService) eventService: EventService,
+    @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
+    @inject(KEYS.ProgramDB) private programDB: ProgramDB,
+    @inject(ProgramConverter) programConverter: ProgramConverter,
   ) {
+    this.timer = new Timer(this.logger);
     this.cachedGuide = {};
     this.lastUpdateTime = {};
     this.lastEndTime = {};
@@ -132,7 +133,7 @@ export class TVGuideService {
     this.currentEndTime = {};
     this.xmltv = xmltv;
     this.eventService = eventService;
-    this.programConverter = new ProgramConverter();
+    this.programConverter = programConverter;
   }
 
   /**

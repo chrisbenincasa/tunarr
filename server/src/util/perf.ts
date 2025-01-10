@@ -86,26 +86,3 @@ export function timeNamedAsync<T>(
     },
   });
 }
-
-export class Timer {
-  constructor(
-    private logger: Logger,
-    private defaultLevel: LogLevels = 'debug',
-  ) {}
-
-  timeSync<T>(
-    name: string,
-    f: () => T,
-    opts: { level: LogLevels } = { level: this.defaultLevel },
-  ): T {
-    return timeNamedSync(name, this.logger, f, opts);
-  }
-
-  timeAsync<T>(
-    name: string,
-    f: () => Promise<T>,
-    opts: { level: LogLevels } = { level: this.defaultLevel },
-  ): Promise<T> {
-    return timeNamedAsync(name, this.logger, f, opts);
-  }
-}

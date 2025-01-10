@@ -1,3 +1,4 @@
+import { container } from '@/container.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -74,7 +75,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const finder = new JellyfinItemFinder(req.serverCtx.programDB);
+      const finder = container.get(JellyfinItemFinder);
       const match = await finder.findForProgramId(req.params.id);
       return res.status(match ? 200 : 404).send(match);
     },

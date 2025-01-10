@@ -1,7 +1,9 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
+import { KEYS } from '@/types/inject.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import { findIndex, map } from 'lodash-es';
 import {
   CurrentLineupSchemaVersion,
@@ -11,8 +13,8 @@ import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 
 type MigrationFactory<From extends number, To extends number> = (
-  channelDB: ChannelDB,
-  programDB: ProgramDB,
+  channelDB: IChannelDB,
+  programDB: IProgramDB,
 ) => ChannelLineupMigration<From, To>;
 
 type MigrationStep<From extends number, To extends number> = [
@@ -35,13 +37,14 @@ type MigrationPipeline = [
 /**
  * One-way migrations for lineup JSON files.
  */
+@injectable()
 export class ChannelLineupMigrator {
   #logger = LoggerFactory.child({ className: this.constructor.name });
   #migrationPipeline: MigrationPipeline;
 
   constructor(
-    private channelDB: ChannelDB = new ChannelDB(),
-    programDB: ProgramDB = new ProgramDB(),
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.ProgramDB) programDB: IProgramDB,
   ) {
     this.#migrationPipeline = map(MigrationSteps, ([from, to, factory]) => [
       from,

@@ -1,20 +1,20 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { typedProperty } from '@/types/path.js';
 import { asyncPool, unfurlPool } from '@/util/asyncPool.js';
 import { flatMapAsyncSeq, wait } from '@/util/index.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Timer } from '@/util/perf.js';
+import { Timer } from '@/util/Timer.js';
 import { createExternalId } from '@tunarr/shared';
 import {
+  isPlexDirectory,
+  isTerminalItem,
   PlexChildMediaViewType,
   PlexLibrarySection,
   PlexMedia,
   PlexTerminalMedia,
-  isPlexDirectory,
-  isTerminalItem,
 } from '@tunarr/types/plex';
 import { flatten, isNil, map, uniqBy } from 'lodash-es';
+import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 
 export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;
@@ -24,11 +24,12 @@ export class PlexItemEnumerator {
   #logger: Logger = LoggerFactory.child({ className: PlexItemEnumerator.name });
   #timer = new Timer(this.#logger);
   #plex: PlexApiClient;
-  #programDB: ProgramDB;
 
-  constructor(plex: PlexApiClient, programDB: ProgramDB) {
+  constructor(
+    plex: PlexApiClient,
+    private programDB: IProgramDB,
+  ) {
     this.#plex = plex;
-    this.#programDB = programDB;
   }
 
   async enumerateItems(initialItems: (PlexMedia | PlexLibrarySection)[]) {
@@ -94,7 +95,7 @@ export class PlexItemEnumerator {
     try {
       const existingIdsByExternalId = await this.#timer.timeAsync(
         'programIdsByExternalIds',
-        () => this.#programDB.programIdsByExternalIds(new Set(externalIds)),
+        () => this.programDB.programIdsByExternalIds(new Set(externalIds)),
       );
       return map(res, (media) => ({
         ...media,

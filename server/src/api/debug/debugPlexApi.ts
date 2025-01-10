@@ -1,3 +1,4 @@
+import { container } from '@/container.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -35,11 +36,13 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
         return res.status(400).send('No program');
       }
 
-      const streamDetails = await new PlexStreamDetails(mediaSource).getStream({
-        programId: program.id!,
-        externalKey: req.query.key,
-        programType: program.subtype,
-      });
+      const streamDetails = await container
+        .get(PlexStreamDetails)
+        .getStream(mediaSource, {
+          programId: program.id!,
+          externalKey: req.query.key,
+          programType: program.subtype,
+        });
 
       return res.send(streamDetails);
     },

@@ -1,9 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
-import { serverContext } from '@/serverContext.js';
+import { CacheImageService } from '@/services/cacheImageService.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
@@ -14,6 +13,7 @@ import dayjs from 'dayjs';
 import events from 'events';
 import { isUndefined } from 'lodash-es';
 import { PassThrough } from 'stream';
+import { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
 import {
   attempt,
   isDefined,
@@ -41,7 +41,9 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   constructor(
     public context: PlayerContext,
     protected outputFormat: OutputFormat,
-    protected settingsDB: SettingsDB = getSettings(),
+    protected settingsDB: ISettingsDB,
+    private cacheImageService: CacheImageService,
+    protected ffmpegFactory: FFmpegFactory,
   ) {
     super();
   }
@@ -134,8 +136,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   }
 
   private getErrorStream(context: PlayerContext) {
-    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      this.settingsDB.ffmpegSettings(),
+    const ffmpeg = this.ffmpegFactory(
       context.transcodeConfig,
       context.sourceChannel,
       context.streamMode,
@@ -179,9 +180,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
           icon = watermarkUrl;
         } else {
           const cachedWatermarkUrl = await attempt(() =>
-            serverContext().cacheImageService.getOrDownloadImageUrl(
-              watermarkUrl,
-            ),
+            this.cacheImageService.getOrDownloadImageUrl(watermarkUrl),
           );
 
           if (

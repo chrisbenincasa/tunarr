@@ -1,8 +1,4 @@
-import {
-  ReadableFfmpegSettings,
-  SettingsDB,
-  getSettings,
-} from '@/db/SettingsDB.js';
+import { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
@@ -44,8 +40,8 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     private ffmpegSettings: ReadableFfmpegSettings,
     private ffmpegName: string,
     private ffmpegArgs: string[],
+    private logDirectory: string,
     private environmentVariables: NodeJS.ProcessEnv = {},
-    private settingsDB: SettingsDB = getSettings(),
   ) {
     super();
   }
@@ -87,7 +83,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     if (this.ffmpegSettings.enableFileLogging) {
       const normalizedName = this.ffmpegName.toLowerCase().replaceAll(' ', '-');
       let logPath = path.join(
-        this.settingsDB.systemSettings().logging.logsDirectory,
+        this.logDirectory,
         `ffmpeg-report-${normalizedName}-%t.log`,
       );
       if (os.platform() === 'win32') {

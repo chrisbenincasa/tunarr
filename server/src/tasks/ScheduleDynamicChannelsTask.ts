@@ -1,34 +1,32 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { Channel } from '@/db/schema/Channel.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { ContentSourceUpdaterFactory } from '@/services/dynamic_channels/ContentSourceUpdaterFactory.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { DynamicContentConfigSource } from '@tunarr/types/api';
+import { Logger } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import { filter } from 'lodash-es';
+import { DynamicChannelUpdaterFactory } from './DynamicChannelUpdaterFactory.ts';
 import { ScheduledTask } from './ScheduledTask.ts';
 import { Task, TaskId } from './Task.ts';
 
+@injectable()
 export class ScheduleDynamicChannelsTask extends Task<void> {
+  public static KEY = Symbol.for(ScheduleDynamicChannelsTask.name);
   public static ID: TaskId = 'schedule-dynamic-channels';
-
-  #channelsDb: ChannelDB;
-  #taskFactory: DynamicChannelUpdaterFactory;
 
   public ID = ScheduleDynamicChannelsTask.ID;
 
-  static create(channelsDb: ChannelDB) {
-    return new ScheduleDynamicChannelsTask(channelsDb);
+  constructor(
+    @inject(KEYS.ChannelDB) private channelsDb: IChannelDB,
+    @inject(KEYS.Logger) logger: Logger,
+    @inject(DynamicChannelUpdaterFactory)
+    private taskFactory: DynamicChannelUpdaterFactory,
+  ) {
+    super(logger);
   }
 
-  private constructor(channelsDb: ChannelDB) {
-    super();
-    this.#channelsDb = channelsDb;
-    this.#taskFactory = new DynamicChannelUpdaterFactory();
-  }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
   protected async runInternal(): Promise<Maybe<void>> {
-    const lineups = await this.#channelsDb.loadAllLineupConfigs();
+    const lineups = await this.channelsDb.loadAllLineupConfigs();
     const dynamicLineups = filter(
       lineups,
       ({ lineup }) => lineup.dynamicContentConfig?.enabled === true,
@@ -44,30 +42,11 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
           new ScheduledTask(
             'UpdateDynamicChannel',
             source.updater.schedule,
-            () => this.#taskFactory.getTask(channel, source),
+            () => this.taskFactory.getTask(channel, source),
           ),
         );
         console.log('scheduling task = ' + scheduled);
       }
     }
-  }
-}
-
-class DynamicChannelUpdaterFactory {
-  getTask(
-    channel: Channel,
-    contentSourceDef: DynamicContentConfigSource,
-  ): Task<unknown> {
-    // This won't always be anonymous
-    return new (class extends Task<unknown> {
-      public ID = contentSourceDef.updater._id;
-      // eslint-disable-next-line @typescript-eslint/require-await
-      protected async runInternal() {
-        return ContentSourceUpdaterFactory.getUpdater(
-          channel,
-          contentSourceDef,
-        ).update();
-      }
-    })();
   }
 }

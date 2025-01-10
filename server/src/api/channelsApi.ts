@@ -1,4 +1,3 @@
-import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import { dbChannelToApiChannel } from '@/db/converters/channelConverters.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -262,7 +261,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
         if (!isNil(channel)) {
-          const converter = new ProgramConverter();
           const externalIds =
             await req.serverCtx.channelDB.getChannelProgramExternalIds(
               channel.uuid,
@@ -270,7 +268,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const externalIdsByProgramId = groupBy(externalIds, 'programUuid');
           return res.send(
             map(channel.programs, (program) =>
-              converter.programDaoToContentProgram(
+              req.serverCtx.programConverter.programDaoToContentProgram(
                 program,
                 externalIdsByProgramId[program.uuid] ?? [],
               ),

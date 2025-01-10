@@ -6,7 +6,8 @@ import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
-import { SettingsFile, getSettings } from './db/SettingsDB.ts';
+import { SettingsDB, SettingsFile } from './db/SettingsDB.ts';
+import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
@@ -25,7 +26,7 @@ export async function migrateFromPreAlphaDefaultDb(targetDir: string) {
  * @returns True if an existing database directory was found
  */
 
-export async function initDbDirectories() {
+export async function initDbDirectories(settingsDb: SettingsDB) {
   // Early init, have to use the non-settings-based root Logger
   const opts = globalOptions();
   const hasTunarrDb = await fileExists(opts.databaseDirectory);
@@ -35,7 +36,7 @@ export async function initDbDirectories() {
     );
     await fs.mkdir(opts.databaseDirectory, { recursive: true });
     await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
-    await getSettings().flush();
+    await settingsDb.flush();
   }
 
   for (const subpaths of [
@@ -62,9 +63,12 @@ export async function initDbDirectories() {
 export async function bootstrapTunarr(
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
-  await initDbDirectories();
+  const settingsDb = new SettingsDBFactory(globalOptions()).get(
+    undefined,
+    initialSettings,
+  );
+  await initDbDirectories(settingsDb);
   initDatabaseAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
-  const settingsDb = getSettings(undefined, initialSettings);
   LoggerFactory.initialize(settingsDb);
 }

@@ -1,4 +1,5 @@
 import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.js';
+import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Nullable } from '@/types/util.js';
 import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
@@ -6,7 +7,7 @@ import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
-import { FfmpegSettings } from '@tunarr/types';
+import { inject, injectable } from 'inversify';
 import {
   drop,
   filter,
@@ -20,8 +21,8 @@ import {
   trim,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { DeepReadonly } from 'ts-essentials';
 import { format } from 'util';
+import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.ts';
 import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
 
@@ -52,6 +53,7 @@ const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 
+@injectable()
 export class FfmpegInfo {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -70,12 +72,14 @@ export class FfmpegInfo {
     return format(`${path}_${CacheKeys[command]}`, ...args);
   }
 
-  private ffmpegPath: string;
-  private ffprobePath: string;
+  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {}
 
-  constructor(opts: DeepReadonly<FfmpegSettings>) {
-    this.ffmpegPath = opts.ffmpegExecutablePath;
-    this.ffprobePath = opts.ffprobeExecutablePath;
+  private get ffmpegPath() {
+    return this.settingsDB.ffmpegSettings().ffmpegExecutablePath;
+  }
+
+  private get ffprobePath() {
+    return this.settingsDB.ffmpegSettings().ffprobeExecutablePath;
   }
 
   async seed() {

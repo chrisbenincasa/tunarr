@@ -1,4 +1,4 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -14,8 +14,8 @@ import {
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import {
+  MinimalProgramExternalId,
   NewProgramExternalId,
-  ProgramExternalId,
 } from '../../db/schema/ProgramExternalId.ts';
 
 export class SaveJellyfinProgramExternalIdsTask extends Task {
@@ -23,7 +23,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
 
   constructor(
     private programId: string,
-    private programDB: ProgramDB = new ProgramDB(),
+    private programDB: IProgramDB,
   ) {
     super();
   }
@@ -45,7 +45,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
       return;
     }
 
-    let chosenId: Maybe<ProgramExternalId> = undefined;
+    let chosenId: Maybe<MinimalProgramExternalId> = undefined;
     let api: Maybe<JellyfinApiClient>;
     for (const id of jellyfinIds) {
       if (!isNonEmptyString(id.externalSourceId)) {
