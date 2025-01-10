@@ -8,15 +8,19 @@ import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts'
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
+import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.ts';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
 import { DeinterlaceQsvFilter } from '@/ffmpeg/builder/filter/qsv/DeinterlaceQsvFilter.ts';
 import { QsvFormatFilter } from '@/ffmpeg/builder/filter/qsv/QsvFormatFilter.ts';
 import { ScaleQsvFilter } from '@/ffmpeg/builder/filter/qsv/ScaleQsvFilter.ts';
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
+import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.ts';
+import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkScaleFilter.ts';
 import {
-  KnownPixelFormats,
   PixelFormatNv12,
   PixelFormatP010,
   PixelFormatYuv420P10Le,
+  PixelFormatYuva420P,
   PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.ts';
 import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
@@ -25,6 +29,8 @@ import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
 import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/QsvOptions.ts';
+import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
@@ -33,8 +39,8 @@ import {
   HardwareAccelerationMode,
 } from '@/ffmpeg/builder/types.ts';
 import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import { every, isNull, some } from 'lodash-es';
+import { isDefined, isNonEmptyString } from '@/util/index.ts';
+import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
@@ -140,6 +146,17 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
 
+    if (
+      currentState.frameDataLocation === FrameDataLocation.Hardware &&
+      this.context.hasWatermark
+    ) {
+      const hwDownload = new HardwareDownloadFilter(currentState);
+      currentState = hwDownload.nextState(currentState);
+      this.videoInputSource.filterSteps.push(hwDownload);
+    }
+
+    this.setWatermark(currentState);
+
     const noEncoderSteps = every(
       this.getEncoderSteps(),
       (encoder) => encoder.kind !== 'video',
@@ -223,9 +240,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     if (isNonEmptyString(scaleFilter.filter)) {
-      if (scaleFilter.affectsFrameState) {
-        nextState = scaleFilter.nextState(nextState);
-      }
+      nextState = scaleFilter.nextState(nextState);
       this.videoInputSource.filterSteps.push(scaleFilter);
     }
 
@@ -253,13 +268,8 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (this.desiredState.pixelFormat) {
       let pixelFormat = this.desiredState.pixelFormat;
-      if (this.desiredState.pixelFormat instanceof PixelFormatNv12) {
-        const mappedFormat = KnownPixelFormats.forPixelFormat(
-          this.desiredState.pixelFormat.name,
-        );
-        if (mappedFormat) {
-          pixelFormat = mappedFormat;
-        }
+      if (this.desiredState.pixelFormat.name === PixelFormats.NV12) {
+        pixelFormat = this.desiredState.pixelFormat.unwrap();
       }
 
       let pixelFormatToDownload = pixelFormat;
@@ -350,6 +360,75 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
       this.context.filterChain.pixelFormatFilterSteps = steps;
     }
+    return currentState;
+  }
+
+  protected setWatermark(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (!this.context.hasWatermark) {
+      return currentState;
+    }
+
+    const watermarkInput = this.watermarkInputSource!;
+
+    for (const watermark of watermarkInput.streams ?? []) {
+      if (watermark.inputKind !== 'stillimage') {
+        watermarkInput.addOption(new DoNotIgnoreLoopInputOption());
+      } else if (isDefined(head(watermarkInput.watermark.fadeConfig))) {
+        // TODO: Needs hwaccel option here
+        watermarkInput.addOption(new InfiniteLoopInputOption());
+      }
+    }
+
+    if (!watermarkInput.watermark.fixedSize) {
+      // scale filter
+      watermarkInput.filterSteps.push(
+        new WatermarkScaleFilter(
+          currentState.paddedSize,
+          watermarkInput.watermark,
+        ),
+      );
+    }
+
+    if (inRange(watermarkInput.watermark.opacity, 0, 100)) {
+      // opacity
+      watermarkInput.filterSteps.push(
+        new WatermarkOpacityFilter(watermarkInput.watermark.opacity),
+      );
+    }
+
+    watermarkInput.filterSteps.push(
+      ...this.getWatermarkFadeFilters(watermarkInput.watermark),
+    );
+
+    watermarkInput.filterSteps.push(
+      new PixelFormatFilter(new PixelFormatYuva420P()),
+    );
+
+    const fadeConfig = head(watermarkInput.watermark.fadeConfig);
+    if (isDefined(fadeConfig)) {
+      // Fades
+    }
+
+    if (this.desiredState.pixelFormat) {
+      const pf = this.desiredState.pixelFormat.unwrap();
+
+      // Overlay
+      this.context.filterChain.watermarkOverlayFilterSteps.push(
+        new OverlayWatermarkFilter(
+          watermarkInput.watermark,
+          this.desiredState.paddedSize,
+          this.context.videoStream.squarePixelFrameSize(
+            currentState.paddedSize,
+          ),
+          pf,
+        ),
+      );
+    }
+
     return currentState;
   }
 }

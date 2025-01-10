@@ -6,11 +6,12 @@
   "author": "chrisbenincasa",
   "license": "Zlib",
   "scripts": {
-    "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test",
+    "dev": "turbo run dev",
+    "fmt": "prettier --write .",
     "lint-staged": "lint-staged",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
+    "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky install"
   },
