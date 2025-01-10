@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.17.1](https://github.com/chrisbenincasa/tunarr/compare/v0.17.0...v0.17.1) (2025-01-10)
+
+
+### Bug Fixes
+
+* add "new" button for transcode configs ([f7bca67](https://github.com/chrisbenincasa/tunarr/commit/f7bca67df5a222f5fecc5cbd63693ee747bc6df9))
+* enable watermarks on new qsv ffmpeg pipeline ([0260abc](https://github.com/chrisbenincasa/tunarr/commit/0260abc555f6761deb20f3b86e440bc4e1506ef1))
+* handle 10-bit hevc in new qsv pipeline + other fixes ([0260abc](https://github.com/chrisbenincasa/tunarr/commit/0260abc555f6761deb20f3b86e440bc4e1506ef1))
+* use transcode configs where appropriate in new pipeline ([0260abc](https://github.com/chrisbenincasa/tunarr/commit/0260abc555f6761deb20f3b86e440bc4e1506ef1))
+
 ## [0.17.0](https://github.com/chrisbenincasa/tunarr/compare/v0.16.13...v0.17.0) (2025-01-10)
 
 
