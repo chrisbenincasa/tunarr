@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.17.0](https://github.com/chrisbenincasa/tunarr/compare/v0.16.13...v0.17.0) (2025-01-10)
+
+
+### Features
+
+* add "transcode configurations" ([#1001](https://github.com/chrisbenincasa/tunarr/issues/1001)) ([b5a4fdf](https://github.com/chrisbenincasa/tunarr/commit/b5a4fdf9bbd2e96249b3d93552a394ded1a1eb48))
+* implement existing program tools using random slots ([#1041](https://github.com/chrisbenincasa/tunarr/issues/1041)) ([00fa4d4](https://github.com/chrisbenincasa/tunarr/commit/00fa4d4f57bc69e7643f460b31eae76e6635af18))
+* improvements to random slot weighting ([#1040](https://github.com/chrisbenincasa/tunarr/issues/1040)) ([4e7740b](https://github.com/chrisbenincasa/tunarr/commit/4e7740b55833224dd912bb2d34d198df18a9fe92))
+* re-implement random slot UI to match time slot UI ([#1036](https://github.com/chrisbenincasa/tunarr/issues/1036)) ([8027f99](https://github.com/chrisbenincasa/tunarr/commit/8027f998db9d6320ca399bbe8b02c10b56ab5912))
+* support for toggling between 12/24-hour time in UI ([#1026](https://github.com/chrisbenincasa/tunarr/issues/1026)) ([891ed29](https://github.com/chrisbenincasa/tunarr/commit/891ed296fb4794ba4ab164850bcf3c70c8f93825))
+* support HLS direct channel stream mode ([#1029](https://github.com/chrisbenincasa/tunarr/issues/1029)) ([303964b](https://github.com/chrisbenincasa/tunarr/commit/303964bfe3c13aa5f060c8ca1552d68ddd9991fb))
+
+
+### Bug Fixes
+
+* additional fix for square pixel calculation ([df369f3](https://github.com/chrisbenincasa/tunarr/commit/df369f3767fc53efadc602c7e69c69f4c1be2ff3))
+* allow navigation to add more programs when there are unsaved programs ([b7d05df](https://github.com/chrisbenincasa/tunarr/commit/b7d05df495a8472e4786ead5ca12906e62dff82d))
+* allow setting channel stream mode on initial creation ([2f39648](https://github.com/chrisbenincasa/tunarr/commit/2f39648a5a0ee241ab79aa3d370c410d0417caed))
+* always ensure a default transcode config exists via fixer ([67d1acf](https://github.com/chrisbenincasa/tunarr/commit/67d1acf456a0c523de45cfb9d4cdc6bd9c84fac4))
+* choose default/selected audio streams first ([732e81d](https://github.com/chrisbenincasa/tunarr/commit/732e81d28657d6e433402efb42db5d7a5d84e4bb))
+* copy full m3u url instead of just path (if backendUri is empty) ([de5cd1d](https://github.com/chrisbenincasa/tunarr/commit/de5cd1d9c52644f2b8b01d2da11cff4ffb8d5f24))
+* cyclic shuffle now works with custom programs ([1a106a4](https://github.com/chrisbenincasa/tunarr/commit/1a106a4f0c3c0fa1b39b6fb8c94e32dc6b933a89))
+* default new channel start time to now ([13db6ec](https://github.com/chrisbenincasa/tunarr/commit/13db6ec83cb263a0cf0e5f0dca31933aa78840f1))
+* determine isAnamorphic via DAR/SAR; better square pixel size calculations ([d3dd7e4](https://github.com/chrisbenincasa/tunarr/commit/d3dd7e4f7fb83a8bd8356e678c47a32c5e16ca84))
+* do not count initializing sessions in stale check ([ca0ec6a](https://github.com/chrisbenincasa/tunarr/commit/ca0ec6a92b002b7f0e43e36bc6fbb3ab38d81f35))
+* do not set channel start time when saving lineups ([#1042](https://github.com/chrisbenincasa/tunarr/issues/1042)) ([4c96a24](https://github.com/chrisbenincasa/tunarr/commit/4c96a2492fe03cc47b592fc839749ce32947a437)), closes [#276](https://github.com/chrisbenincasa/tunarr/issues/276)
+* fix default audio stream sort for boolean ([b298be3](https://github.com/chrisbenincasa/tunarr/commit/b298be3b6e963a225f79b0b8cd4a26fc6e714436))
+* fix HLS direct mode when requested from an mpeg-ts wrapper stream ([27ab7a8](https://github.com/chrisbenincasa/tunarr/commit/27ab7a871a5ebda0499deb6d8016a59877eecf32))
+* fix Jellyfin HLS direct streams ([84a8e63](https://github.com/chrisbenincasa/tunarr/commit/84a8e6346bb88ead0dd2aa1ed474f0640c1e1e04))
+* fix JF streams + local watermark file inputs on legacy ffmpeg pipeline ([c6d07c8](https://github.com/chrisbenincasa/tunarr/commit/c6d07c88a48c726de282645511208565ade63e35))
+* fix show sorting in cyclic shuffle ([9122018](https://github.com/chrisbenincasa/tunarr/commit/9122018c27c16ab9f3e1a913b83dc8b80efdd115))
+* further delineate between selected and default audio streams for plex ([43f9ffc](https://github.com/chrisbenincasa/tunarr/commit/43f9ffc7285e4cae5d6f397f50996a9ce578d5b7))
+* pick random start position for each group in cyclic shuffle ([e2d6c03](https://github.com/chrisbenincasa/tunarr/commit/e2d6c03d33bc8d5abc562072303a06a3ae0fc334))
+* set correct output pad size state in ScaleFilter ([dea698c](https://github.com/chrisbenincasa/tunarr/commit/dea698c5d953c8b3ec2a6fc3b4b474735045c6be))
+* use stream.selected over stream.default for plex audio streams ([1a8afb6](https://github.com/chrisbenincasa/tunarr/commit/1a8afb63edf7fffd4a4d71f66c16d02cf8e2f2b7))
+
+
+### UI Changes
+
+* move channel table actions column to first ([dedb6e4](https://github.com/chrisbenincasa/tunarr/commit/dedb6e441cd00427e899aea3da218a4b5a7f79c3))
+
 ## [0.16.13](https://github.com/chrisbenincasa/tunarr/compare/v0.16.12...v0.16.13) (2024-12-18)
 
 
