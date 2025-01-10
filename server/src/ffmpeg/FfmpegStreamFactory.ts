@@ -119,8 +119,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const concatInput = new ConcatInputSource(
       new HttpStreamSource(streamUrl),
       FrameSize.create({
-        height: this.ffmpegSettings.targetResolution.heightPx,
-        width: this.ffmpegSettings.targetResolution.widthPx,
+        height: this.transcodeConfig.resolution.heightPx,
+        width: this.transcodeConfig.resolution.widthPx,
       }),
     );
 
@@ -164,7 +164,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       index: 0,
       codec: VideoFormats.Raw,
       pixelFormat: new PixelFormatYuv420P(), // Hard-coded right now
-      frameSize: FrameSize.fromResolution(this.ffmpegSettings.targetResolution),
+      frameSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
       sampleAspectRatio: '1:1',
       displayAspectRatio: '1:1',
       inputKind: 'video',
@@ -178,7 +178,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     const audioStream = AudioStream.create({
       index: 1,
       codec: '', // Unknown
-      channels: this.ffmpegSettings.audioChannels,
+      channels: this.transcodeConfig.audioChannels,
     });
 
     const audioInputSource = new AudioInputSource(
@@ -333,7 +333,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       audioBitrate: playbackParams.audioBitrate,
       audioBufferSize: playbackParams.audioBufferSize,
       audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.ffmpegSettings.audioVolumePercent,
+      audioVolume: this.transcodeConfig.audioVolumePercent,
       // Check if audio and video are coming from same location
       audioDuration:
         streamMode === 'hls_direct' ? null : duration.asMilliseconds(),
@@ -385,18 +385,20 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const builder = await new PipelineBuilderFactory()
       .builder(this.transcodeConfig)
-      .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
+      .setHardwareAccelerationMode(
+        this.transcodeConfig.hardwareAccelerationMode,
+      )
       .setVideoInputSource(videoInput)
       .setAudioInputSource(audioInput)
       .setWatermarkInputSource(watermarkSource)
       .build();
 
     const scaledSize = videoStream.squarePixelFrameSize(
-      FrameSize.fromResolution(this.ffmpegSettings.targetResolution),
+      FrameSize.fromResolution(this.transcodeConfig.resolution),
     );
 
     const paddedSize = FrameSize.fromResolution(
-      this.ffmpegSettings.targetResolution,
+      this.transcodeConfig.resolution,
     );
 
     const pipeline = builder.build(
@@ -405,7 +407,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         start: startTime,
         duration,
         ptsOffset,
-        threadCount: this.ffmpegSettings.numThreads,
+        threadCount: this.transcodeConfig.threadCount,
         outputFormat,
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
@@ -458,12 +460,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
       realtime,
     );
 
-    const frameSize = FrameSize.fromResolution(
-      this.ffmpegSettings.targetResolution,
-    );
+    const frameSize = FrameSize.fromResolution(this.transcodeConfig.resolution);
 
     let errorInput: VideoInputSource;
-    switch (this.ffmpegSettings.errorScreen) {
+    switch (this.transcodeConfig.errorScreen) {
       case 'pic':
         errorInput = VideoInputSource.withStream(
           new HttpStreamSource(
@@ -506,13 +506,13 @@ export class FfmpegStreamFactory extends IFFMPEG {
       audioBitrate: playbackParams.audioBitrate,
       audioBufferSize: playbackParams.audioBufferSize,
       audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.ffmpegSettings.audioVolumePercent,
+      audioVolume: this.transcodeConfig.audioVolumePercent,
       // Check if audio and video are coming from same location
       audioDuration: duration.asMilliseconds(),
     });
 
     let audioInput: NullAudioInputSource;
-    switch (this.ffmpegSettings.errorAudio) {
+    switch (this.transcodeConfig.errorScreenAudio) {
       case 'silent':
         audioInput = new NullAudioInputSource(audioState);
         break;
@@ -526,7 +526,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const builder = await new PipelineBuilderFactory()
       .builder(this.transcodeConfig)
-      .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
+      .setHardwareAccelerationMode(
+        this.transcodeConfig.hardwareAccelerationMode,
+      )
       .setVideoInputSource(errorInput)
       .setAudioInputSource(audioInput)
       .build();
@@ -536,7 +538,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         version: await this.ffmpegInfo.getVersion(),
         duration,
         ptsOffset,
-        threadCount: this.ffmpegSettings.numThreads,
+        threadCount: this.transcodeConfig.threadCount,
         outputFormat,
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
@@ -545,12 +547,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
       new FrameState({
         isAnamorphic: false,
-        scaledSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
-        paddedSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
+        scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
+        paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         videoBitrate: playbackParams.videoBitrate,
         videoBufferSize: playbackParams.videoBufferSize,
         pixelFormat: new PixelFormatYuv420P(),
@@ -613,13 +611,13 @@ export class FfmpegStreamFactory extends IFFMPEG {
       audioBitrate: playbackParams.audioBitrate,
       audioBufferSize: playbackParams.audioBufferSize,
       audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.ffmpegSettings.audioVolumePercent,
+      audioVolume: this.transcodeConfig.audioVolumePercent,
       // Check if audio and video are coming from same location
       audioDuration: duration.asMilliseconds(),
     });
 
     let audioInput: NullAudioInputSource;
-    switch (this.ffmpegSettings.errorAudio) {
+    switch (this.transcodeConfig.errorScreenAudio) {
       case 'silent':
         audioInput = new NullAudioInputSource(audioState);
         break;
@@ -633,7 +631,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const builder = await new PipelineBuilderFactory()
       .builder(this.transcodeConfig)
-      .setHardwareAccelerationMode(this.ffmpegSettings.hardwareAccelerationMode)
+      .setHardwareAccelerationMode(
+        this.transcodeConfig.hardwareAccelerationMode,
+      )
       .setVideoInputSource(offlineInput)
       .setAudioInputSource(audioInput)
       .build();
@@ -643,21 +643,17 @@ export class FfmpegStreamFactory extends IFFMPEG {
         version: await this.ffmpegInfo.getVersion(),
         duration,
         ptsOffset,
-        threadCount: this.ffmpegSettings.numThreads,
+        threadCount: this.transcodeConfig.threadCount,
         outputFormat,
-        softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
-        softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
+        // softwareDeinterlaceFilter: this.transcodeConfig.deinterlaceFilter,
+        // softwareScalingAlgorithm: this.transcodeConfig.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
       }),
       new FrameState({
         isAnamorphic: false,
-        scaledSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
-        paddedSize: FrameSize.fromResolution(
-          this.ffmpegSettings.targetResolution,
-        ),
+        scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
+        paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         videoBitrate: playbackParams.videoBitrate,
         videoBufferSize: playbackParams.videoBufferSize,
         pixelFormat: new PixelFormatYuv420P(),
@@ -683,11 +679,11 @@ export class FfmpegStreamFactory extends IFFMPEG {
   }
 
   private getVaapiDevice() {
-    return isNonEmptyString(this.ffmpegSettings.vaapiDevice)
-      ? this.ffmpegSettings.vaapiDevice
+    return isNonEmptyString(this.transcodeConfig.vaapiDevice)
+      ? this.transcodeConfig.vaapiDevice
       : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
+        ? '/dev/dri/renderD128'
+        : undefined;
   }
 
   private getVaapiDriver() {
