@@ -42,6 +42,7 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { CheckboxFormController } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
+import AddCircle from '@mui/icons-material/AddCircle';
 import {
   useFfmpegSettings,
   useTranscodeConfigs,
@@ -245,6 +246,20 @@ export default function FfmpegSettingsPage() {
       },
     },
     positionActionsColumn: 'last',
+    renderTopToolbarCustomActions() {
+      return (
+        <Stack direction="row" alignItems="center" gap={2} useFlexGap>
+          <Button
+            variant="contained"
+            startIcon={<AddCircle />}
+            component={Link}
+            to="/settings/ffmpeg/new"
+          >
+            New
+          </Button>
+        </Stack>
+      );
+    },
   });
 
   if (isPending || error || ffmpegInfo.isPending || ffmpegInfo.isError) {
