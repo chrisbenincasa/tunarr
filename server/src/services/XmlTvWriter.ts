@@ -175,6 +175,8 @@ export class XmlTvWriter {
           },
         ];
       }
+    } else {
+      console.log(program);
     }
 
     return partial;
@@ -188,13 +190,6 @@ export class XmlTvWriter {
 
     return (channelIdCache[channel.uuid] = getChannelId(channel.number));
   }
-
-  // private static titleExtractor = forProgramType({
-  //   custom: (program) => program.program?.title ?? 'Custom Program',
-  //   content: (program) => program.title,
-  //   redirect: (program) => `Redirect to Channel ${program.channel}`,
-  //   flex: program => ,
-  // });
 
   isWriting() {
     return lock.isLocked();

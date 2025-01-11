@@ -26,6 +26,7 @@ import duration, { Duration } from 'dayjs/plugin/duration.js';
 import {
   compact,
   filter,
+  find,
   first,
   flatMap,
   inRange,
@@ -71,6 +72,7 @@ type GuideItem = {
   index?: number;
   // Start time of the program in this guide generation
   startTimeMs: number;
+  redirectChannelId?: string;
 };
 
 export type TvGuideChannel = {
@@ -554,6 +556,7 @@ export class TVGuideService {
             index: playing.index,
             startTimeMs: start,
             lineupItem: program2,
+            redirectChannelId: channel2.channel.uuid,
           };
         }
       }
@@ -954,8 +957,8 @@ export class TVGuideService {
     const icon = isNonEmptyString(materializedItem.icon)
       ? materializedItem.icon
       : isNonEmptyString(channel.icon?.path)
-      ? channel.icon.path
-      : makeLocalUrl('/images/tunarr.png');
+        ? channel.icon.path
+        : makeLocalUrl('/images/tunarr.png');
 
     return match(materializedItem)
       .returnType<TvGuideProgram>()
@@ -1000,6 +1003,18 @@ export class TVGuideService {
         channel,
         currentProgram.lineupItem,
         allChannels,
+        currentProgram.lineupItem.type === 'content'
+          ? find(
+              this.channelsById[
+                isNonEmptyString(currentProgram.redirectChannelId)
+                  ? currentProgram.redirectChannelId
+                  : channel.uuid
+              ]?.channel.programs,
+              (p) =>
+                currentProgram.lineupItem.type === 'content' &&
+                p.uuid === currentProgram.lineupItem.id,
+            )
+          : undefined,
       ),
     );
   }
