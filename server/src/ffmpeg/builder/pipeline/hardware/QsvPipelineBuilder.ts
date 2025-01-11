@@ -182,9 +182,11 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
             encoder = super.setupEncoder(currentState);
             break;
         }
+      } else {
+        encoder = super.setupEncoder(currentState);
       }
 
-      if (!isNull(encoder)) {
+      if (encoder) {
         pipelineSteps.push(encoder);
         this.videoInputSource.filterSteps.push(encoder);
       }
