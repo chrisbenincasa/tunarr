@@ -29,6 +29,14 @@ export class VaapiHardwareCapabilitiesFactory
   constructor(private transcodeConfig: TranscodeConfig) {}
 
   async getCapabilities() {
+    // windows check bail!
+    if (process.platform === 'win32') {
+      this.logger.debug(
+        'Cannot detect VAAPI capabilities on Windows. Using default hw capabilities',
+      );
+      return new DefaultHardwareCapabilities();
+    }
+
     const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
@@ -38,14 +46,6 @@ export class VaapiHardwareCapabilitiesFactory
     if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
       this.logger.error('Cannot detect VAAPI capabilities without a device');
       return new NoHardwareCapabilities();
-    }
-
-    // windows check bail!
-    if (process.platform === 'win32') {
-      this.logger.debug(
-        'Cannot detect VAAPI capabilities on Windows. Using default hw capabilities',
-      );
-      return new DefaultHardwareCapabilities();
     }
 
     const driver =
