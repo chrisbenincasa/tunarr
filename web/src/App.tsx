@@ -204,6 +204,10 @@ export function Root({ children }: { children?: React.ReactNode }) {
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const showWelcome = useStore((state) => state.theme.showWelcome);
 
+  const actualBackendUri = isEmpty(settings.backendUri)
+    ? window.location.origin
+    : settings.backendUri;
+
   const navItems: NavItem[] = useMemo(
     () => [
       {
@@ -267,17 +271,13 @@ export function Root({ children }: { children?: React.ReactNode }) {
       if (navItem.copyToClipboard) {
         e.preventDefault();
         copyToClipboard(
-          `${settings.backendUri}${navItem.path}`,
+          `${actualBackendUri}${navItem.path}`,
           `Copied ${navItem.name} URL to clipboard`,
         ).catch(console.error);
       }
     },
-    [copyToClipboard, settings.backendUri],
+    [actualBackendUri, copyToClipboard],
   );
-
-  const actualBackendUri = isEmpty(settings.backendUri)
-    ? window.location.origin
-    : settings.backendUri;
 
   const TopBarLinks: NavItem[] = useMemo(
     () => [
