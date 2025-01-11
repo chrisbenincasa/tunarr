@@ -1,4 +1,5 @@
 import {
+  HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
   TranscodeConfig,
 } from '@/db/schema/TranscodeConfig.ts';
@@ -12,7 +13,7 @@ import {
   PixelFormat,
   PixelFormatYuv420P,
 } from './builder/format/PixelFormat.ts';
-import { FrameSize, HardwareAccelerationMode } from './builder/types.ts';
+import { FrameSize } from './builder/types.ts';
 
 export class FfmpegPlaybackParamsCalculator {
   constructor(

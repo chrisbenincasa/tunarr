@@ -4,30 +4,6 @@ import { AnyFunction } from 'ts-essentials';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
-export const HardwareAccelerationModes = [
-  'none',
-  'qsv',
-  'cuda',
-  'vaapi',
-  'videotoolbox',
-  // 'amf',
-] as const;
-
-export const HardwareAccelerationMode: Record<
-  Capitalize<HardwareAccelerationMode>,
-  HardwareAccelerationMode
-> = {
-  Cuda: 'cuda' as const,
-  None: 'none' as const,
-  Qsv: 'qsv' as const,
-  Videotoolbox: 'videotoolbox' as const,
-  Vaapi: 'vaapi' as const,
-} as const;
-
-export type HardwareAccelerationMode = TupleToUnion<
-  typeof HardwareAccelerationModes
->;
-
 export const StreamKinds = ['audio', 'video', 'all', 'stillimage'] as const;
 
 export type StreamKind = TupleToUnion<typeof StreamKinds>;

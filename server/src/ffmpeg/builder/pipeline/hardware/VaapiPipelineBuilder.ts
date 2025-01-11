@@ -1,3 +1,4 @@
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
@@ -47,11 +48,7 @@ import {
   NoAutoScaleOutputOption,
   PixelFormatOutputOption,
 } from '../../options/OutputOption.ts';
-import {
-  FrameDataLocation,
-  HardwareAccelerationMode,
-  RateControlMode,
-} from '../../types.ts';
+import { FrameDataLocation, RateControlMode } from '../../types.ts';
 
 export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(

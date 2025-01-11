@@ -4,7 +4,8 @@ import { Maybe } from '@/types/util.ts';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';
 
 export class DefaultHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
-  readonly type = 'none' as const;
+  readonly type = 'default' as const;
+
   constructor() {
     super();
   }

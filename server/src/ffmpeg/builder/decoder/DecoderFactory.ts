@@ -1,6 +1,6 @@
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import {
   H264Decoder,
   HevcDecoder,

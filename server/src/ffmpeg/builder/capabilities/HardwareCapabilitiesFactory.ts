@@ -1,4 +1,7 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import {
+  HardwareAccelerationMode,
+  TranscodeConfig,
+} from '@/db/schema/TranscodeConfig.ts';
 import {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
@@ -19,19 +22,21 @@ export class HardwareCapabilitiesFactory
 
   async getCapabilities(): Promise<BaseFfmpegHardwareCapabilities> {
     switch (this.transcodeConfig.hardwareAccelerationMode) {
-      case 'none':
+      case HardwareAccelerationMode.None:
         return new NoHardwareCapabilities();
-      case 'cuda':
+      case HardwareAccelerationMode.Cuda:
         return new NvidiaHardwareCapabilitiesFactory(
           this.ffmpegSettings,
         ).getCapabilities();
-      case 'qsv':
-      case 'vaapi':
+      case HardwareAccelerationMode.Qsv:
+      case HardwareAccelerationMode.Vaapi:
         return new VaapiHardwareCapabilitiesFactory(
           this.transcodeConfig,
         ).getCapabilities();
-      case 'videotoolbox':
+      case HardwareAccelerationMode.Videotoolbox:
         return new DefaultHardwareCapabilities();
+      default:
+        return new NoHardwareCapabilities();
     }
   }
 }

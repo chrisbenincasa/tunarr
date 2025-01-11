@@ -1,3 +1,4 @@
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
@@ -34,10 +35,7 @@ import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/Infinite
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import {
-  FrameDataLocation,
-  HardwareAccelerationMode,
-} from '@/ffmpeg/builder/types.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 import { Nullable } from '@/types/util.ts';
 import { isDefined, isNonEmptyString } from '@/util/index.ts';
 import { every, head, inRange, isNull, some } from 'lodash-es';
@@ -137,7 +135,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       paddedSize: videoStream.frameSize,
     });
 
-    if (decoder?.affectsFrameState) {
+    if (decoder) {
       currentState = decoder.nextState(currentState);
     }
 
@@ -432,5 +430,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     return currentState;
+  }
+
+  protected getIsIntelQsvOrVaapi(): boolean {
+    return (
+      this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv ||
+      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Qsv
+    );
   }
 }

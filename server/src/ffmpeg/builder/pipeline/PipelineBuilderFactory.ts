@@ -1,11 +1,13 @@
 import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import {
+  HardwareAccelerationMode,
+  TranscodeConfig,
+} from '@/db/schema/TranscodeConfig.ts';
 import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.ts';
 import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
 import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
 import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
-import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { Nullable } from '@/types/util.ts';
 import { FfmpegSettings } from '@tunarr/types';

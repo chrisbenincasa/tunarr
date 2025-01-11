@@ -1,3 +1,4 @@
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
 import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
@@ -31,10 +32,7 @@ import { UserAgentInputOption } from '@/ffmpeg/builder/options/input/UserAgentIn
 import { AudioState } from '@/ffmpeg/builder/state/AudioState.ts';
 import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import {
-  FrameDataLocation,
-  HardwareAccelerationMode,
-} from '@/ffmpeg/builder/types.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 import {
   IPipelineStep,
   PipelineStep,
@@ -225,7 +223,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
     }
     pipelineSteps.push(MpegTsOutputFormatOption(), PipeProtocolOutputOption());
-    // TODO: save report
 
     return new Pipeline(pipelineSteps, {
       videoInput: null,
@@ -455,8 +452,24 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected buildVideoPipeline() {
     this.setHardwareAccelState();
+
+    this.logger.debug(
+      'Input = %O, Output = %O. Using decode mode = %s and encode mode = %s',
+      {
+        codec: this.context.videoStream?.codec,
+        bitDepth: this.context.videoStream?.bitDepth(),
+      },
+      {
+        codec: this.desiredState.videoFormat,
+        bitDepth: this.desiredState.bitDepth,
+      },
+      this.ffmpegState.decoderHwAccelMode,
+      this.ffmpegState.encoderHwAccelMode,
+    );
+
     if (isVideoPipelineContext(this.context)) {
       this.decoder = this.setupDecoder();
+      this.logger.debug('Setup decoder: %O', this.decoder);
     }
 
     this.setRealtime();
@@ -727,5 +740,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.pipelineSteps,
       (step): step is Encoder => step instanceof Encoder,
     );
+  }
+
+  protected getIsIntelQsvOrVaapi() {
+    return false;
   }
 }

@@ -1,3 +1,4 @@
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
 import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
@@ -13,7 +14,6 @@ import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.t
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
 import { Nullable } from '@/types/util.ts';
 import { match } from 'ts-pattern';
 import {

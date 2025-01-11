@@ -27,6 +27,17 @@ export type HardwareAccelerationMode = TupleToUnion<
   typeof HardwareAccelerationModes
 >;
 
+export const HardwareAccelerationMode: Record<
+  Capitalize<HardwareAccelerationMode>,
+  HardwareAccelerationMode
+> = {
+  Cuda: 'cuda' as const,
+  None: 'none' as const,
+  Qsv: 'qsv' as const,
+  Videotoolbox: 'videotoolbox' as const,
+  Vaapi: 'vaapi' as const,
+} as const;
+
 export const VaapiDrivers = [
   'system',
   'ihd',

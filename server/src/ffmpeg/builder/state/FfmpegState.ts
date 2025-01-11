@@ -1,4 +1,5 @@
-import { DataProps, HardwareAccelerationMode } from '@/ffmpeg/builder/types.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
+import { DataProps } from '@/ffmpeg/builder/types.ts';
 import { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { FfmpegLogLevel } from '@tunarr/types/schemas';

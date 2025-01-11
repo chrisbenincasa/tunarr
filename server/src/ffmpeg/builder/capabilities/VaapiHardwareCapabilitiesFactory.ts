@@ -32,8 +32,8 @@ export class VaapiHardwareCapabilitiesFactory
     const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
+        ? '/dev/dri/renderD128'
+        : undefined;
 
     if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
       this.logger.error('Cannot detect VAAPI capabilities without a device');
@@ -42,6 +42,9 @@ export class VaapiHardwareCapabilitiesFactory
 
     // windows check bail!
     if (process.platform === 'win32') {
+      this.logger.debug(
+        'Cannot detect VAAPI capabilities on Windows. Using default hw capabilities',
+      );
       return new DefaultHardwareCapabilities();
     }
 
