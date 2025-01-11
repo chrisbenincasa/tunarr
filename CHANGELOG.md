@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.17.2](https://github.com/chrisbenincasa/tunarr/compare/v0.17.1...v0.17.2) (2025-01-11)
+
+
+### Bug Fixes
+
+* always specify an encoder in QSV pipeline ([f964ce1](https://github.com/chrisbenincasa/tunarr/commit/f964ce1fa2dbeff283272c94061a8b58f92f4f91))
+* check for windows sooner when checking qsv/vaapi capabilities ([d973630](https://github.com/chrisbenincasa/tunarr/commit/d9736305e701932e95cbd84b9c06f704011e2195))
+* fix m3u/xml copy to clipboard urls...again ([f166552](https://github.com/chrisbenincasa/tunarr/commit/f166552c02ac4796b782a8c43f86682a60361b34))
+* remove erroneous channel transcode overrides ([235d3e9](https://github.com/chrisbenincasa/tunarr/commit/235d3e96b6ca9df9940aeac983569e27e2ff5e4e))
+* show redirect programming properly in xmltv ([16eff87](https://github.com/chrisbenincasa/tunarr/commit/16eff8788777a1c0cde0d9ad3260dcab0e18b2c3))
+
 ## [0.17.1](https://github.com/chrisbenincasa/tunarr/compare/v0.17.0...v0.17.1) (2025-01-10)
 
 
