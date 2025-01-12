@@ -143,8 +143,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     const transcodeResult = await lineupItemResult.mapAsync(async (result) => {
       this.logger.debug(
-        'About to play item: %s',
-        JSON.stringify(result, undefined, 4),
+        'About to play lineup item: %s',
+        JSON.stringify(result.lineupItem, undefined, 4),
       );
       const context = new PlayerContext(
         result.lineupItem,

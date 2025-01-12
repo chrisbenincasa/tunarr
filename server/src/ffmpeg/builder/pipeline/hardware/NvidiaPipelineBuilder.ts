@@ -125,7 +125,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         decoder = super.setupDecoder();
       }
     }
-    this.context.decoder = decoder;
+    this.decoder = decoder;
     return decoder;
   }
 

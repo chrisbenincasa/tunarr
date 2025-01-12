@@ -127,7 +127,6 @@ export type PipelineBuilderContext = {
   desiredAudioState?: AudioState;
   pipelineSteps: PipelineStep[];
   filterChain: FilterChain;
-  decoder: Nullable<Decoder>;
 
   hasWatermark: boolean;
   hasSubtitleOverlay: boolean;
@@ -281,7 +280,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       desiredAudioState: this.audioInputSource?.desiredState,
       pipelineSteps: [],
       filterChain: new FilterChain(),
-      decoder: this.decoder,
       hasWatermark: !!this.watermarkInputSource,
       hasSubtitleOverlay: false, // TODO:
       is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
@@ -604,7 +602,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       decoder = DecoderFactory.getSoftwareDecoder(this.context.videoStream);
       this.videoInputSource.addOption(decoder);
     }
-    this.context.decoder = decoder;
+    this.decoder = decoder;
     return decoder;
   }
 

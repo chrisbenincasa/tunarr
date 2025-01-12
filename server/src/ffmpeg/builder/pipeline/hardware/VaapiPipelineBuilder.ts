@@ -128,7 +128,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       })
       .otherwise(() => super.setupDecoder());
 
-    this.context.decoder = decoder;
+    this.decoder = decoder;
 
     return decoder;
   }
@@ -138,7 +138,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return;
     }
 
-    const { desiredState, videoStream, ffmpegState, pipelineSteps, decoder } =
+    const { desiredState, videoStream, ffmpegState, pipelineSteps } =
       this.context;
 
     let currentState = desiredState.update({
@@ -148,7 +148,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       pixelFormat: videoStream.pixelFormat,
     });
 
-    currentState = decoder?.nextState(currentState) ?? currentState;
+    currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);

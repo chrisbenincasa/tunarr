@@ -123,7 +123,6 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     const {
       desiredState,
       videoStream,
-      decoder,
       ffmpegState,
       pipelineSteps,
       filterChain,
@@ -135,8 +134,8 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       paddedSize: videoStream.frameSize,
     });
 
-    if (decoder) {
-      currentState = decoder.nextState(currentState);
+    if (this.decoder) {
+      currentState = this.decoder.nextState(currentState);
     }
 
     currentState = this.setDeinterlace(currentState);

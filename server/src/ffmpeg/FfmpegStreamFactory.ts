@@ -3,6 +3,7 @@ import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import { makeLocalUrl } from '@/util/serverUtil.ts';
 import { ChannelStreamModes, FfmpegSettings } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -48,6 +49,7 @@ import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
+  private logger = LoggerFactory.child({ className: FfmpegStreamFactory.name });
   private ffmpegInfo: FfmpegInfo;
   private pipelineBuilderFactory: PipelineBuilderFactory;
 
@@ -325,6 +327,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       frameRate: videoStreamDetails.framerate?.toString(),
     });
 
+    this.logger.debug('Video stream input: %O', videoStream);
     const videoInput = new VideoInputSource(streamSource, [videoStream]);
 
     const audioState = AudioState.create({
