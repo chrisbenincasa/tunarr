@@ -32,10 +32,12 @@ Tunarr has the following goals:
 
 - **NEW** Jellyfin library support!
 - **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116)
-- **NEW** Improvements to stream stability
+- **NEW** Complete rewrite of streaming pipeline, offering better stability and improved performance
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
 - **NEW** Scheduled, configurable backups - never lose your channels and configuration!
+- **NEW** Support multiple transcode configurations and set them per-channel
+- **NEW** Improved UI for time/random slot scheduling
 - Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) or [Threadfin](https://github.com/Threadfin/Threadfin) and Plex, or the IPTV client of your choice.
 - Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
 - View channel lineups on the web-based TV Guide
