@@ -284,8 +284,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-            ? 'progressive'
-            : 'unknown',
+              ? 'progressive'
+              : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,
@@ -303,18 +303,7 @@ export class PlexStreamDetails {
         streamIndex: videoStream.index?.toString() ?? '0',
       } satisfies VideoStreamDetails;
     }
-    console.log(
-      sortBy(
-        filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
-          return stream.streamType === 2;
-        }),
-        (stream) => [
-          stream.selected ? -1 : 0,
-          stream.default ? 0 : 1,
-          stream.index,
-        ],
-      ),
-    );
+
     const audioStreamDetails = map(
       sortBy(
         filter(mediaStreams, (stream): stream is PlexMediaAudioStream => {
@@ -379,14 +368,15 @@ export class PlexStreamDetails {
           this.plex.doHead({ url: placeholderThumbPath }),
         );
         if (!isError(result)) {
-          streamDetails.placeholderImage =
-            this.plex.getFullUrl(placeholderThumbPath);
+          streamDetails.placeholderImage = new HttpStreamSource(
+            this.plex.getFullUrl(placeholderThumbPath),
+          );
         }
       }
 
       if (isEmpty(streamDetails.placeholderImage)) {
-        streamDetails.placeholderImage = makeLocalUrl(
-          '/images/generic-music-screen.png',
+        streamDetails.placeholderImage = new HttpStreamSource(
+          makeLocalUrl('/images/generic-music-screen.png'),
         );
       }
     }

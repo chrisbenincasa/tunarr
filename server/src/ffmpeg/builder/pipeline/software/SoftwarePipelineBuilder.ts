@@ -7,6 +7,7 @@ import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
 import dayjs from '@/util/dayjs.ts';
 import { Watermark } from '@tunarr/types';
 import { filter, first, isEmpty, isNull, some } from 'lodash-es';
@@ -29,7 +30,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       this.context;
 
     let currentState = desiredState.update({
-      frameDataLocation: 'software',
+      frameDataLocation: FrameDataLocation.Software,
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
@@ -60,7 +61,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   }
 
   protected setDeinterlace(currentState: FrameState): FrameState {
-    if (this.desiredState.deinterlaced) {
+    if (this.desiredState.deinterlace) {
       const filter = new DeinterlaceFilter(this.ffmpegState, currentState);
       this.videoInputSource.filterSteps.push(filter);
 

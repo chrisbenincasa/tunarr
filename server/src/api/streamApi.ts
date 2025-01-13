@@ -69,6 +69,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       switch (mode) {
         case 'hls':
         case 'hls_slower':
+        case 'hls_direct':
           return res.redirect(
             `/stream/channels/${channel.uuid}.m3u8?${params.toString()}`,
           );

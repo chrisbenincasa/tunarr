@@ -16,7 +16,7 @@ export class DeinterlaceVaapiFilter extends FilterOption {
 
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
-      deinterlaced: true,
+      deinterlace: true,
       frameDataLocation: 'hardware',
     });
   }

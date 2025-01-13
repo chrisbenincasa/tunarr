@@ -283,7 +283,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       hasWatermark: !!this.watermarkInputSource,
       hasSubtitleOverlay: false, // TODO:
       is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
-      shouldDeinterlace: desiredState.deinterlaced,
+      shouldDeinterlace: desiredState.deinterlace,
       isIntelVaapiOrQsv: false,
     };
 
@@ -362,11 +362,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
 
     if (isVideoPipelineContext(this.context)) {
-      if (desiredState.videoFormat === VideoFormats.Copy) {
-        this.context.pipelineSteps.push(new CopyVideoEncoder());
-      } else {
-        this.buildVideoPipeline();
-      }
+      this.buildVideoPipeline();
     }
 
     if (isNull(this.audioInputSource)) {
@@ -465,7 +461,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.ffmpegState.encoderHwAccelMode,
     );
 
-    if (isVideoPipelineContext(this.context)) {
+    if (
+      isVideoPipelineContext(this.context) &&
+      this.desiredState.videoFormat !== VideoFormats.Copy
+    ) {
       this.decoder = this.setupDecoder();
       this.logger.debug('Setup decoder: %O', this.decoder);
     }
@@ -697,7 +696,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       ffmpegState.encoderHwAccelMode !== 'none'
     ) {
       threadCount = 1;
-    } else if (isNonEmptyString(ffmpegState.start) && desiredState.realtime) {
+    } else if (!!ffmpegState.start && desiredState.realtime) {
       threadCount = 1;
     } else if (
       !isNull(ffmpegState.threadCount) &&

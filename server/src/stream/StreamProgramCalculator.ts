@@ -66,12 +66,12 @@ export class StreamProgramCalculatorError extends Error {
 }
 
 export type CurrentLineupItemResult = {
-  lineupItem: StreamLineupItem,
+  lineupItem: StreamLineupItem;
   // Either the source channel or the target channel
   // if the current program is a redirect
   channelContext: Channel;
   sourceChannel: Channel;
-}
+};
 
 export class StreamProgramCalculator {
   private logger = LoggerFactory.child({
@@ -88,9 +88,7 @@ export class StreamProgramCalculator {
 
   async getCurrentLineupItem(
     req: GetCurrentLineupItemRequest,
-  ): Promise<
-    Result<CurrentLineupItemResult>
-  > {
+  ): Promise<Result<CurrentLineupItemResult>> {
     const channel = await this.channelDB.getChannel(req.channelId);
 
     if (isNil(channel)) {
@@ -286,7 +284,11 @@ export class StreamProgramCalculator {
       };
     }
 
-    return Result.success({ lineupItem, channelContext, sourceChannel: channel, });
+    return Result.success({
+      lineupItem,
+      channelContext,
+      sourceChannel: channel,
+    });
   }
 
   // This code is almost identical to TvGuideService#getCurrentPlayingIndex

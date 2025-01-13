@@ -275,7 +275,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     const softwareEncoder =
       ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;
 
-    const noHardwareFilters = !desiredState.deinterlaced;
+    const noHardwareFilters = !desiredState.deinterlace;
     const needsToPad = !currentState.paddedSize.equals(desiredState.paddedSize);
 
     if (

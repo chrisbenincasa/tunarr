@@ -21,7 +21,7 @@ export type StreamDetails = {
   audioDetails?: [AudioStreamDetails, ...AudioStreamDetails[]];
 
   audioOnly?: boolean;
-  placeholderImage?: string;
+  placeholderImage?: StreamSource;
   serverPath?: string;
   directFilePath?: string;
 };
