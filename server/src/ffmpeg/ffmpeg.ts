@@ -618,7 +618,7 @@ export class FFMPEG implements IFFMPEG {
           (streamSrc.type === 'file' || streamSrc.type === 'http') &&
           streamStats?.audioOnly
         ) {
-          pic = streamStats.placeholderImage;
+          pic = streamStats.placeholderImage?.path;
         } else if (streamSrc.type === 'offline') {
           // TODO fix me
           const defaultOfflinePic = makeLocalUrl(

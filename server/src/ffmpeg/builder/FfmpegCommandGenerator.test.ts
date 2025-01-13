@@ -81,7 +81,7 @@ describe('FfmpegCommandGenerator', () => {
       videoFormat: VideoFormats.H264,
       frameRate: 20,
       videoBitrate: 30_000,
-      deinterlaced: true,
+      deinterlace: true,
       pixelFormat: new PixelFormatYuv420P10Le(),
     });
 

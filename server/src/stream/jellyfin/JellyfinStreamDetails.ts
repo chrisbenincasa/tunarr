@@ -315,13 +315,15 @@ export class JellyfinStreamDetails {
         const path = `/Items/${placeholderThumbPath}/Images/Primary`;
         const result = await attempt(() => this.jellyfin.doHead({ url: path }));
         if (!isError(result)) {
-          streamDetails.placeholderImage = this.jellyfin.getFullUrl(path);
+          streamDetails.placeholderImage = new HttpStreamSource(
+            this.jellyfin.getFullUrl(path),
+          );
         }
       }
 
       if (isEmpty(streamDetails.placeholderImage)) {
-        streamDetails.placeholderImage = makeLocalUrl(
-          '/images/generic-music-screen.png',
+        streamDetails.placeholderImage = new HttpStreamSource(
+          makeLocalUrl('/images/generic-music-screen.png'),
         );
       }
     }

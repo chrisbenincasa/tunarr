@@ -24,7 +24,7 @@ export const DefaultFrameState: Omit<
   videoBitrate: null,
   videoBufferSize: null,
   frameDataLocation: FrameDataLocation.Unknown,
-  deinterlaced: true,
+  deinterlace: false,
   pixelFormat: null,
   bitDepth: 8,
 };
@@ -43,7 +43,7 @@ export class FrameState {
   videoBitrate: Nullable<number>;
   videoBufferSize: Nullable<number>;
   frameDataLocation: FrameDataLocation;
-  deinterlaced: boolean;
+  deinterlace: boolean;
   pixelFormat: Nullable<PixelFormat>;
 
   constructor(

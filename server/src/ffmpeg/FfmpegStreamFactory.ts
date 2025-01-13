@@ -1,5 +1,6 @@
 import { Channel } from '@/db/schema/Channel.ts';
 import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
 import { HttpStreamSource } from '@/stream/types.ts';
 import { Maybe, Nullable } from '@/types/util.ts';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.ts';
@@ -224,7 +225,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         isAnamorphic: false,
-        deinterlaced: false,
+        deinterlace: false,
         pixelFormat: new PixelFormatYuv420P(),
         frameRate: playbackParams.frameRate,
         videoBitrate: playbackParams.videoBitrate,
@@ -281,54 +282,72 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     // Get inputs
     // Assume we always have a video stream!!!
-    if (isUndefined(streamDetails.videoDetails)) {
+    let videoStream: VideoStream;
+    let videoInputSource: VideoInputSource;
+    if (streamDetails.videoDetails) {
+      const [videoStreamDetails] = streamDetails.videoDetails;
+
+      const streamIndex = isNonEmptyString(videoStreamDetails.streamIndex)
+        ? parseInt(videoStreamDetails.streamIndex)
+        : 0;
+
+      let pixelFormat: Maybe<PixelFormat>;
+      if (videoStreamDetails.pixelFormat) {
+        pixelFormat = KnownPixelFormats.forPixelFormat(
+          videoStreamDetails.pixelFormat,
+        );
+      }
+
+      if (isUndefined(pixelFormat)) {
+        switch (videoStreamDetails.bitDepth) {
+          case 8: {
+            pixelFormat = new PixelFormatYuv420P();
+            break;
+          }
+          case 10: {
+            pixelFormat = new PixelFormatYuv420P10Le();
+            break;
+          }
+          default:
+            pixelFormat = PixelFormatUnknown(videoStreamDetails.bitDepth);
+        }
+      }
+
+      videoStream = VideoStream.create({
+        codec: videoStreamDetails.codec ?? 'unknown',
+        profile: videoStreamDetails.profile,
+        index: isNaN(streamIndex) ? 0 : streamIndex,
+        inputKind: 'video',
+        sampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
+        displayAspectRatio: videoStreamDetails.displayAspectRatio,
+        pixelFormat,
+        frameSize: FrameSize.create({
+          height: videoStreamDetails.height,
+          width: videoStreamDetails.width,
+        }),
+        frameRate: videoStreamDetails.framerate?.toString(),
+      });
+
+      videoInputSource = new VideoInputSource(streamSource, [videoStream]);
+
+      this.logger.debug('Video stream input: %O', videoStream);
+    } else if (
+      streamDetails.placeholderImage &&
+      (streamDetails.placeholderImage.type === 'file' ||
+        streamDetails.placeholderImage.type === 'http')
+    ) {
+      // This is sort of hacky...
+      videoStream = StillImageStream.create({
+        frameSize: FrameSize.create({ height: 0, width: 0 }),
+        index: 0,
+      });
+      videoInputSource = new VideoInputSource(streamDetails.placeholderImage, [
+        videoStream,
+      ]);
+      videoInputSource.addOption(new InfiniteLoopInputOption());
+    } else {
       throw new Error('Streams with no video are not currently supported.');
     }
-    const [videoStreamDetails] = streamDetails.videoDetails;
-
-    const streamIndex = isNonEmptyString(videoStreamDetails.streamIndex)
-      ? parseInt(videoStreamDetails.streamIndex)
-      : 0;
-
-    let pixelFormat: Maybe<PixelFormat>;
-    if (videoStreamDetails.pixelFormat) {
-      pixelFormat = KnownPixelFormats.forPixelFormat(
-        videoStreamDetails.pixelFormat,
-      );
-    }
-
-    if (isUndefined(pixelFormat)) {
-      switch (videoStreamDetails.bitDepth) {
-        case 8: {
-          pixelFormat = new PixelFormatYuv420P();
-          break;
-        }
-        case 10: {
-          pixelFormat = new PixelFormatYuv420P10Le();
-          break;
-        }
-        default:
-          pixelFormat = PixelFormatUnknown(videoStreamDetails.bitDepth);
-      }
-    }
-
-    const videoStream = VideoStream.create({
-      codec: videoStreamDetails.codec ?? 'unknown',
-      profile: videoStreamDetails.profile,
-      index: isNaN(streamIndex) ? 0 : streamIndex,
-      inputKind: 'video',
-      sampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
-      displayAspectRatio: videoStreamDetails.displayAspectRatio,
-      pixelFormat,
-      frameSize: FrameSize.create({
-        height: videoStreamDetails.height,
-        width: videoStreamDetails.width,
-      }),
-      frameRate: videoStreamDetails.framerate?.toString(),
-    });
-
-    this.logger.debug('Video stream input: %O', videoStream);
-    const videoInput = new VideoInputSource(streamSource, [videoStream]);
 
     const audioState = AudioState.create({
       audioEncoder: playbackParams.audioFormat,
@@ -388,10 +407,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const builder = await new PipelineBuilderFactory()
       .builder(this.transcodeConfig)
-      .setHardwareAccelerationMode(
-        this.transcodeConfig.hardwareAccelerationMode,
-      )
-      .setVideoInputSource(videoInput)
+      .setHardwareAccelerationMode(playbackParams.hwAccel)
+      .setVideoInputSource(videoInputSource)
       .setAudioInputSource(audioInput)
       .setWatermarkInputSource(watermarkSource)
       .build();
@@ -430,7 +447,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         realtime,
         videoFormat: playbackParams.videoFormat,
         videoProfile: null, // 'main', // TODO:
-        deinterlaced: playbackParams.deinterlace,
+        deinterlace: playbackParams.deinterlace,
       }),
     );
 
@@ -560,7 +577,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         realtime,
         videoFormat: playbackParams.videoFormat,
         videoProfile: null, // TODO:
-        deinterlaced: false,
+        deinterlace: false,
       }),
     );
 
@@ -665,7 +682,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         realtime,
         videoFormat: playbackParams.videoFormat,
         videoProfile: null, // TODO:
-        deinterlaced: false,
+        deinterlace: false,
       }),
     );
 

@@ -68,7 +68,7 @@ export class M3uService {
           : '{{host}}/images/tunarr.png'
       }" group-title="${channel.groupTitle}",${channel.name}\n`;
 
-      data += `{{host}}/stream/channels/${channel.uuid}.ts\n`;
+      data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;
     }
 
     if (channels.length === 0) {

@@ -283,7 +283,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       hasWatermark: !!this.watermarkInputSource,
       hasSubtitleOverlay: false, // TODO:
       is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
-      shouldDeinterlace: desiredState.deinterlaced,
+      shouldDeinterlace: desiredState.deinterlace,
       isIntelVaapiOrQsv: false,
     };
 
@@ -696,7 +696,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       ffmpegState.encoderHwAccelMode !== 'none'
     ) {
       threadCount = 1;
-    } else if (isNonEmptyString(ffmpegState.start) && desiredState.realtime) {
+    } else if (!!ffmpegState.start && desiredState.realtime) {
       threadCount = 1;
     } else if (
       !isNull(ffmpegState.threadCount) &&

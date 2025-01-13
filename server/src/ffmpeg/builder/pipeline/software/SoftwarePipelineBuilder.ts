@@ -61,7 +61,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   }
 
   protected setDeinterlace(currentState: FrameState): FrameState {
-    if (this.desiredState.deinterlaced) {
+    if (this.desiredState.deinterlace) {
       const filter = new DeinterlaceFilter(this.ffmpegState, currentState);
       this.videoInputSource.filterSteps.push(filter);
 

@@ -13,7 +13,7 @@ export class YadifCudaFilter extends FilterOption {
 
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
-      deinterlaced: false,
+      deinterlace: false,
       frameDataLocation: FrameDataLocation.Hardware,
     });
   }
