@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.17.3](https://github.com/chrisbenincasa/tunarr/compare/v0.17.2...v0.17.3) (2025-01-13)
+
+
+### Bug Fixes
+
+* fix audio + album cover streaming in new ffmpeg pipeline ([0c32d99](https://github.com/chrisbenincasa/tunarr/commit/0c32d9941ad866a430d638ff105643729caecbcc))
+* fix audio + album cover streaming in new ffmpeg pipeline ([#1048](https://github.com/chrisbenincasa/tunarr/issues/1048)) ([0c32d99](https://github.com/chrisbenincasa/tunarr/commit/0c32d9941ad866a430d638ff105643729caecbcc))
+* minor fixes for hls direct stream mode - still not very smooth ([0c32d99](https://github.com/chrisbenincasa/tunarr/commit/0c32d9941ad866a430d638ff105643729caecbcc))
+* properly apply next state from decoder in qsv pipeline ([3a8a8e7](https://github.com/chrisbenincasa/tunarr/commit/3a8a8e7690ceb766d5d74a9313176ba82404bf71))
+
 ## [0.17.2](https://github.com/chrisbenincasa/tunarr/compare/v0.17.1...v0.17.2) (2025-01-11)
 
 
