@@ -277,6 +277,22 @@ export default function ChannelsPage() {
           <ListItemText>Copy M3U URL</ListItemText>
         </MenuItem>
         <MenuItem
+          disableRipple
+          onClick={(e) => {
+            e.stopPropagation();
+            copyToClipboard(channelId, 'Copied Channel ID!')
+              .catch(console.error)
+              .finally(() => {
+                setChannelMenuOpen(null);
+              });
+          }}
+        >
+          <ListItemIcon>
+            <TextSnippetIcon />
+          </ListItemIcon>
+          <ListItemText>Copy Channel ID</ListItemText>
+        </MenuItem>
+        <MenuItem
           component={RouterLink}
           to={`/channels/${channelId}/watch`}
           onClick={(e) => {
