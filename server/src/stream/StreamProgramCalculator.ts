@@ -450,7 +450,7 @@ export class StreamProgramCalculator {
     // Start time of a file is never consistent unless 0. Run time of an episode can vary.
     // When within 30 seconds of start time, just make the time 0 to smooth things out
     // Helps prevents losing first few seconds of an episode upon lineup change
-    let beginningOffset = 0;
+    const beginningOffset = 0;
 
     if (activeProgram.type === 'error') {
       const remaining = activeProgram.duration - timeElapsed;
@@ -566,18 +566,12 @@ export class StreamProgramCalculator {
       };
     }
 
-    const originalTimeElapsed = timeElapsed;
-    if (timeElapsed < 30000) {
-      timeElapsed = 0;
-    }
-    beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
-
     return {
       ...activeProgram,
       type: 'program',
       startOffset: timeElapsed,
       streamDuration: activeProgram.duration - timeElapsed,
-      beginningOffset,
+      beginningOffset: timeElapsed,
       id: activeProgram.id,
     };
   }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getDatabase } from '@/db/DBAccess.ts';
 import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.ts';
 import { MediaSourceType } from '@/db/schema/MediaSource.ts';
@@ -60,7 +59,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const result = req.serverCtx
+      const result = await req.serverCtx
         .streamProgramCalculator()
         .getCurrentLineupItem({
           startTime: new Date().getTime(),
@@ -68,7 +67,11 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           allowSkip: true,
         });
 
-      return res.send(result);
+      if (result.isFailure()) {
+        return res.status(500).send(result.error);
+      }
+
+      return res.send(result.get());
     },
   );
 
@@ -296,8 +299,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const knownProgramIds = await getDatabase()
         .selectFrom('programExternalId as p1')
-        .where(({ eb, and }) =>
-          and([
+        .where(({ eb }) =>
+          eb.and([
             eb('p1.externalSourceId', '=', mediaSource.name),
             eb('p1.sourceType', '=', mediaSource.type),
           ]),
