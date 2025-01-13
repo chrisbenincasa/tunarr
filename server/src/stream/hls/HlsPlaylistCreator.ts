@@ -3,7 +3,6 @@ import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
 import dayjs from '@/util/dayjs.ts';
 import { isNonEmptyString } from '@/util/index.ts';
 import { ChannelStreamMode } from '@tunarr/types';
-import { round } from 'lodash-es';
 import NodeCache from 'node-cache';
 import util from 'node:util';
 
@@ -54,8 +53,6 @@ export class HlsPlaylistCreator {
     const { lineupItem } = lineupItemResult.get();
 
     const currentIndex = this.getLineupItemIndex(channelId, lineupItem);
-    const endTime = lineupItem.programBeginMs + lineupItem.duration;
-    const remainingDuration = endTime - +now;
 
     const streamMode = isNonEmptyString(request.streamMode)
       ? `&mode=${request.streamMode}`
@@ -63,7 +60,9 @@ export class HlsPlaylistCreator {
     return util.format(
       playlistFmtString,
       currentIndex,
-      round(remainingDuration / 1000.0, 2),
+      dayjs
+        .duration(lineupItem.streamDuration ?? lineupItem.duration)
+        .asSeconds(),
       request.protocol,
       request.host,
       request.channelIdOrNumber,

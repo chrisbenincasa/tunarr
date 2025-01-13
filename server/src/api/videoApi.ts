@@ -152,12 +152,24 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       req.raw.on('close', () => {
         logger.debug('Client closed video stream, stopping it now.');
-        // TODO if HLS stream, check the session to see if we can cleana it up
+        // TODO if HLS stream, check the session to see if we can clean it up
         rawStreamResult.stop();
       });
 
+      let contentType: string;
+      switch (req.query.mode) {
+        case 'hls':
+        case 'mpegts':
+        case 'hls_direct':
+          contentType = 'video/mp2t';
+          break;
+        case 'hls_slower':
+          contentType = 'video/nut';
+          break;
+      }
+
       return res
-        .header('Content-Type', 'video/nut')
+        .header('Content-Type', contentType)
         .send(rawStreamResult.stream);
     },
   );

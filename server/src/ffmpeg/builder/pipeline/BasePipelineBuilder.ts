@@ -362,11 +362,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
 
     if (isVideoPipelineContext(this.context)) {
-      if (desiredState.videoFormat === VideoFormats.Copy) {
-        this.context.pipelineSteps.push(new CopyVideoEncoder());
-      } else {
-        this.buildVideoPipeline();
-      }
+      this.buildVideoPipeline();
     }
 
     if (isNull(this.audioInputSource)) {
@@ -465,7 +461,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.ffmpegState.encoderHwAccelMode,
     );
 
-    if (isVideoPipelineContext(this.context)) {
+    if (
+      isVideoPipelineContext(this.context) &&
+      this.desiredState.videoFormat !== VideoFormats.Copy
+    ) {
       this.decoder = this.setupDecoder();
       this.logger.debug('Setup decoder: %O', this.decoder);
     }
