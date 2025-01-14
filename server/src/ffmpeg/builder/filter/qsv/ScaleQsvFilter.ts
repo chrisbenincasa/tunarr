@@ -67,7 +67,9 @@ export class ScaleQsvFilter extends FilterOption {
       return scale;
     }
 
-    const fmt = this.currentState.pixelFormat?.name ?? PixelFormats.NV12;
+    const fmt =
+      this.currentState.pixelFormat?.toHardwareFormat()?.name ??
+      PixelFormats.NV12;
     if (isNonEmptyString(scale)) {
       return `format=${fmt},hwupload=extra_hw_frames=64,${scale}`;
     }
