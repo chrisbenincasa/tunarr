@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.17.4](https://github.com/chrisbenincasa/tunarr/compare/v0.17.3...v0.17.4) (2025-01-15)
+
+
+### Bug Fixes
+
+* add default value to RandomSlot#durationSpec to fix JSON DB schema migration ([c4944db](https://github.com/chrisbenincasa/tunarr/commit/c4944db8b384fb7b6237892242924f0782eaf817))
+* do not backtract first 30s of a program ([3972b77](https://github.com/chrisbenincasa/tunarr/commit/3972b77728f2045c102560c1c37f5a64bfdf44cb))
+* do not loop infinitely on invalid JSON schemas ([eb61d59](https://github.com/chrisbenincasa/tunarr/commit/eb61d59ed5b3d3b505608976f6eab2152115ed45))
+* use hardware pixel format before vpp_qsv filter ([bbe6cd9](https://github.com/chrisbenincasa/tunarr/commit/bbe6cd9f79000ee1208af097bf7a33e7d129f9fe))
+
+
+### UI Changes
+
+* add "copy channel id to clipboard" button on channels table ([16b6cfb](https://github.com/chrisbenincasa/tunarr/commit/16b6cfb59c8488f4cadf724c343d7d27b89c8046))
+
 ## [0.17.3](https://github.com/chrisbenincasa/tunarr/compare/v0.17.2...v0.17.3) (2025-01-13)
 
 
