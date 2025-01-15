@@ -41,7 +41,8 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     let parseResult: z.SafeParseReturnType<unknown, Out> =
       await this.schema.safeParseAsync(parsed);
     let needsWriteFlush = false;
-    while (!parseResult.success) {
+    let attempts = 0;
+    while (!parseResult.success && attempts < 5) {
       if (this.defaultValue !== null) {
         const mergedData = merge({}, this.defaultValue, parsed);
         parseResult = await this.schema.safeParseAsync(mergedData);
@@ -49,12 +50,21 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
           'Attempting to merge with defaults to obtain valid object',
         );
         needsWriteFlush = parseResult.success;
+        attempts++;
         continue;
       }
 
       this.logger.error(
         `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
         parseResult.error,
+      );
+      return null;
+    }
+
+    if (!parseResult.success) {
+      this.logger.error(
+        parseResult.error,
+        'Reached max attempts while attempting to remedy invalid config',
       );
       return null;
     }
