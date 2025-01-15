@@ -174,7 +174,10 @@ export const RandomSlotSchema = z.object({
   periodMs: z.number().optional(),
   // Deprecated -  use durationSpec
   durationMs: z.number().optional(),
-  durationSpec: RandomSlotDurationSpec,
+  durationSpec: RandomSlotDurationSpec.default({
+    type: 'dynamic',
+    programCount: 1,
+  }),
   weight: z.number(),
   programming: RandomSlotProgrammingSchema,
 });

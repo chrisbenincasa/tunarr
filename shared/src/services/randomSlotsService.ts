@@ -15,6 +15,7 @@ import {
   isNil,
   isNull,
   isNumber,
+  isUndefined,
   last,
   map,
   reject,
@@ -188,16 +189,7 @@ class ScheduleContext {
 }
 
 export class RandomSlotScheduler {
-  // private programmingIteratorsById: Record<string, ProgramIterator>;
-
-  constructor(
-    private schedule: RandomSlotSchedule, // programming: ChannelProgram[],
-  ) {
-    // this.programmingIteratorsById = createProgramIterators(
-    //   schedule.slots,
-    //   createProgramMap(reject(programming, (p) => isFlexProgram(p))),
-    // );
-  }
+  constructor(private schedule: RandomSlotSchedule) {}
 
   generateSchedule(
     programming: ChannelProgram[],
@@ -206,22 +198,11 @@ export class RandomSlotScheduler {
     this.validateSchedule();
 
     const context = new ScheduleContext(this.schedule, programming, startTime);
-    // for (const iterator of values(this.programmingIteratorsById)) {
-    //   iterator.reset();
-    // }
 
     const { slots, maxDays, padMs, padStyle, flexPreference } = this.schedule;
 
     const t0 = startTime;
     const upperLimit = t0.add(maxDays + 1, 'day');
-
-    // let timeCursor = t0;
-
-    // const advanceTime = (by: number | Duration) => {
-    //   timeCursor = dayjs.isDuration(by)
-    //     ? timeCursor.add(by)
-    //     : timeCursor.add(by);
-    // };
 
     const slotsLastPlayedMap: Record<number, number> = {};
 
@@ -266,6 +247,18 @@ export class RandomSlotScheduler {
         );
         context.pushOrExtendFlex(duration);
         continue;
+      }
+
+      if (
+        isUndefined(currSlot.durationSpec) &&
+        !isUndefined(currSlot.durationMs)
+      ) {
+        currSlot.durationSpec = {
+          type: 'fixed',
+          durationMs: currSlot.durationMs,
+        };
+      } else if (isUndefined(currSlot.durationSpec)) {
+        throw new Error('Invalid slot configuration - missing durationSpec');
       }
 
       let paddedPrograms: NonEmptyArray<PaddedProgram>;
@@ -342,6 +335,12 @@ export class RandomSlotScheduler {
 
   private validateSchedule() {
     for (const slot of this.schedule.slots) {
+      if (isUndefined(slot.durationSpec)) {
+        throw new Error(
+          `Slot definition missing duration spec: ${JSON.stringify(slot)}`,
+        );
+      }
+
       if (slot.durationSpec.type === 'dynamic') {
         switch (slot.programming.type) {
           case 'flex':
@@ -363,7 +362,9 @@ export class RandomSlotScheduler {
     context: ScheduleContext,
   ) {
     if (currSlot.durationSpec.type !== 'fixed') {
-      throw new Error('');
+      throw new Error(
+        'Invalid slot durationSpec type = ' + currSlot.durationSpec.type,
+      );
     }
 
     const { padStyle, padMs } = this.schedule;
