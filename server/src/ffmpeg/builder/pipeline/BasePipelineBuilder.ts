@@ -1,8 +1,15 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
+import { Av1Decoder } from '@/ffmpeg/builder/decoder/Av1Decoder.ts';
 import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
-import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
+import { H264Decoder } from '@/ffmpeg/builder/decoder/H264Decoder.ts';
+import { HevcDecoder } from '@/ffmpeg/builder/decoder/HevcDecoder.ts';
+import { ImplicitDecoder } from '@/ffmpeg/builder/decoder/ImplicitDecoder.ts';
+import { Mpeg2Decoder } from '@/ffmpeg/builder/decoder/Mpeg2Decoder.ts';
+import { Mpeg4Decoder } from '@/ffmpeg/builder/decoder/Mpeg4Decoder.ts';
+import { RawVideoDecoder } from '@/ffmpeg/builder/decoder/RawVideoDecoder.ts';
+import { Vc1Decoder } from '@/ffmpeg/builder/decoder/Vc1Decoder.ts';
 import {
   AudioEncoder,
   VideoEncoder,
@@ -54,14 +61,12 @@ import {
   CopyAudioEncoder,
   CopyVideoEncoder,
 } from '../encoder/CopyEncoders.ts';
-import {
-  ImplicitVideoEncoder,
-  LibKvazaarEncoder,
-  LibOpenH264Encoder,
-  Libx264Encoder,
-  Libx265Encoder,
-  RawVideoEncoder,
-} from '../encoder/SoftwareVideoEncoders.ts';
+import { ImplicitVideoEncoder } from '../encoder/ImplicitVideoEncoder.ts';
+import { LibKvazaarEncoder } from '../encoder/LibKvazaarEncoder.ts';
+import { LibOpenH264Encoder } from '../encoder/LibOpenH264Encoder.ts';
+import { Libx264Encoder } from '../encoder/Libx264Encoder.ts';
+import { Libx265Encoder } from '../encoder/Libx265Encoder.ts';
+import { RawVideoEncoder } from '../encoder/RawVideoEncoder.ts';
 import {
   AudioBitrateOutputOption,
   AudioBufferSizeOutputOption,
@@ -598,7 +603,25 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   protected setupDecoder(): Nullable<Decoder> {
     let decoder: Nullable<Decoder> = null;
     if (isVideoPipelineContext(this.context)) {
-      decoder = DecoderFactory.getSoftwareDecoder(this.context.videoStream);
+      decoder = match(this.context.videoStream.codec)
+        .with(VideoFormats.H264, () => new H264Decoder())
+        .with(VideoFormats.Hevc, () => new HevcDecoder())
+        .with(VideoFormats.Vc1, () => new Vc1Decoder())
+        .with(VideoFormats.Mpeg2Video, () => new Mpeg2Decoder())
+        .with(VideoFormats.Mpeg4, () => new Mpeg4Decoder())
+        .with(VideoFormats.Raw, () => new RawVideoDecoder())
+        .with(
+          VideoFormats.Av1,
+          () => this.ffmpegCapabilities.hasVideoEncoder('libdav1d'),
+          () => new Av1Decoder('libdav1d'),
+        )
+        .with(
+          VideoFormats.Av1,
+          () => this.ffmpegCapabilities.hasVideoEncoder('libaom-av1'),
+          () => new Av1Decoder('libaom-av1'),
+        )
+        .with(VideoFormats.Av1, () => new Av1Decoder('av1'))
+        .otherwise(() => new ImplicitDecoder());
       this.videoInputSource.addOption(decoder);
     }
     this.decoder = decoder;
