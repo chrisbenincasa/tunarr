@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.5](https://github.com/chrisbenincasa/tunarr/compare/v0.17.4...v0.17.5) (2025-01-16)
+
+
+### Bug Fixes
+
+* add missing comma in ScaleQsvFilter ([f5fa38d](https://github.com/chrisbenincasa/tunarr/commit/f5fa38d12bf52b71901a56bbecafe5e7f64aca32))
+* av1 decoding support on new pipeline ([#1053](https://github.com/chrisbenincasa/tunarr/issues/1053)) ([18d8363](https://github.com/chrisbenincasa/tunarr/commit/18d8363b0c4b6d054214eaf7ebbdb0bc0e4d3151))
+
 ## [0.17.4](https://github.com/chrisbenincasa/tunarr/compare/v0.17.3...v0.17.4) (2025-01-15)
 
 
