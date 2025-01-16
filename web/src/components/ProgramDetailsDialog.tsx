@@ -31,6 +31,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { P, match } from 'ts-pattern';
 import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
 import { useSettings } from '../store/settings/selectors';
 
@@ -124,6 +125,20 @@ export default function ProgramDetailsDialog({
     [rating],
   );
 
+  const dateChip = useCallback((program: ChannelProgram) => {
+    const date = match(program)
+      .with({ type: 'content', date: P.not(P.nullish) }, (p) => dayjs(p.date))
+      .otherwise(() => undefined);
+    return date ? (
+      <Chip
+        key="release-date"
+        color="primary"
+        label={date.year()}
+        sx={{ mr: 1, mt: 1 }}
+      />
+    ) : null;
+  }, []);
+
   const sourceChip = useCallback((program: ChannelProgram) => {
     if (isContentProgram(program)) {
       const id = find(
@@ -185,6 +200,7 @@ export default function ProgramDetailsDialog({
       ratingChip(program),
       timeChip(),
       sourceChip(program),
+      dateChip(program),
     ]);
   };
 
@@ -358,8 +374,8 @@ export default function ProgramDetailsDialog({
                       program.type === 'content' && program.subtype === 'movie'
                         ? 360
                         : smallViewport
-                        ? undefined
-                        : 140
+                          ? undefined
+                          : 140
                     }
                     animation={thumbLoadState === 'loading' ? 'pulse' : false}
                   ></Skeleton>

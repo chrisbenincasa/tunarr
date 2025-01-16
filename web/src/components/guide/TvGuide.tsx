@@ -524,7 +524,7 @@ export function TvGuide({ channelId, start, end }: Props) {
                   lineHeight: '1.25',
                 }}
               >
-                {smallViewport ? channel.number : channel.name}
+                <span>{smallViewport ? channel.number : channel.name}</span>
               </StyledButton>
               {renderChannelMenu()}
             </Box>

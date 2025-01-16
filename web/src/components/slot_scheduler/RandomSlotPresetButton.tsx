@@ -75,6 +75,7 @@ export const RandomSlotPresetButton = () => {
             },
             order: 'ordered_shuffle',
             weight: frequencies[getRandomSlotId(programming) as string] ?? 0.0,
+            direction: 'asc',
           });
         }
 

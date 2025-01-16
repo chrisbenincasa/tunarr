@@ -1,6 +1,8 @@
 import { ChannelProgram, ContentProgram } from '@tunarr/types';
 import { BaseSlot } from '@tunarr/types/api';
-import { nth, shuffle, slice, sortBy } from 'lodash-es';
+import dayjs from 'dayjs';
+import { nth, orderBy, shuffle, slice } from 'lodash-es';
+import { StrictExclude } from 'ts-essentials';
 import { seq } from '../util/index.js';
 import { random } from './randomSlotsService.js';
 
@@ -68,9 +70,10 @@ export class ProgramChunkedShuffle<ProgramType extends ChannelProgram>
   constructor(
     programs: ProgramType[],
     orderer: (program: ProgramType) => string | number,
+    asc: boolean = true,
   ) {
     this.#programs = seq.rotateArray(
-      sortBy(programs, orderer),
+      orderBy(programs, orderer, [asc ? 'asc' : 'desc']),
       random.integer(0, programs.length),
     );
   }
@@ -102,8 +105,10 @@ export class ProgramOrdereredIterator<ProgramType extends ChannelProgram>
   constructor(
     programs: ProgramType[],
     orderer: (program: ProgramType) => string | number,
+    asc: boolean = true,
   ) {
-    this.#programs = sortBy(programs, orderer);
+    console.log(asc);
+    this.#programs = orderBy(programs, orderer, [asc ? 'asc' : 'desc']);
   }
 
   current(): ChannelProgram | null {
@@ -119,11 +124,10 @@ export class ProgramOrdereredIterator<ProgramType extends ChannelProgram>
   }
 }
 
-export function getProgramOrder(program: ContentProgram): string | number {
+function programOrdererNext(program: ContentProgram) {
   switch (program.subtype) {
     case 'movie':
-      // A-z for now
-      return program.title;
+      return +dayjs(program.date);
     case 'episode':
       // Hacky thing from original code...
       return program.seasonNumber! * 1e5 + program.episodeNumber!;
@@ -131,6 +135,42 @@ export function getProgramOrder(program: ContentProgram): string | number {
       // A-z for now
       return program.title;
   }
+}
+
+function programOrdererAlpha(program: ContentProgram) {
+  switch (program.subtype) {
+    case 'movie':
+      return program.title;
+    case 'episode':
+      return `${program.title}_${program.episodeTitle ?? ''}`;
+    case 'track':
+      return `${program.artistName ?? ''}_${program.title}`;
+  }
+}
+
+function programOrdererChronological(program: ContentProgram) {
+  return +dayjs(program.date);
+}
+
+type ProgramOrderer = (program: ContentProgram) => string | number;
+
+export function getProgramOrderer(
+  order: StrictExclude<BaseSlot['order'], 'shuffle' | 'ordered_shuffle'>,
+): (program: ContentProgram) => string | number {
+  let orderer: ProgramOrderer;
+  switch (order) {
+    case 'next':
+      orderer = programOrdererNext;
+      break;
+    case 'alphanumeric':
+      orderer = programOrdererAlpha;
+      break;
+    case 'chronological':
+      orderer = programOrdererChronological;
+      break;
+  }
+
+  return orderer;
 }
 
 // There is probably a way to make this typesafe by asserting the
