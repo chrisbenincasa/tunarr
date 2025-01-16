@@ -12,6 +12,7 @@ import {
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
+import { StrictExclude } from 'ts-essentials';
 import { DropdownOption } from './DropdownOption';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
@@ -120,20 +121,48 @@ export const slotOptionIsScheduled = (
 };
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
 export const OneWeekMillis = dayjs.duration(1, 'week').asMilliseconds();
-export const showOrderOptions = [
-  {
-    value: 'next',
-    description: 'Next Episode',
-  },
-  {
-    value: 'shuffle',
-    description: 'Shuffle',
-  },
-  {
-    value: 'ordered_shuffle',
-    description: 'Ordered Shuffle',
-  },
-];
+
+export function slotOrderOptions(
+  slotProgrammingType: StrictExclude<
+    BaseSlot['programming']['type'],
+    'redirect' | 'flex'
+  >,
+): DropdownOption<BaseSlot['order']>[] {
+  const common = [
+    {
+      value: 'shuffle',
+      description: 'Shuffle',
+    },
+  ] satisfies DropdownOption<BaseSlot['order']>[];
+
+  switch (slotProgrammingType) {
+    case 'movie':
+      return [
+        {
+          value: 'alphanumeric',
+          description: 'Alphanumeric',
+        },
+        {
+          value: 'chronological',
+          description: 'Chronological',
+        },
+        ...common,
+      ];
+    case 'show':
+    case 'custom-show':
+      return [
+        {
+          value: 'next',
+          description: 'Next Episode',
+        },
+        {
+          value: 'ordered_shuffle',
+          description: 'Ordered Shuffle',
+        },
+        ...common,
+      ];
+  }
+}
 
 export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
   {

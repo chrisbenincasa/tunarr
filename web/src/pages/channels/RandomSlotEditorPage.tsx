@@ -257,7 +257,10 @@ export default function RandomSlotEditorPage() {
           </Box>
         </PaddedPaper>
       </Stack>
-      <UnsavedNavigationAlert isDirty={isDirty} />
+      <UnsavedNavigationAlert
+        isDirty={isDirty}
+        onProceed={resetLineupToSaved}
+      />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Box flexGrow={1}>
           <Button

@@ -86,15 +86,17 @@ export const AddRandomSlotButton = ({
 
     const programOption = findBestProgramOption(programOptions);
 
+    const programming = programOptionToSlotProgram(programOption);
     const newSlot = {
-      programming: programOptionToSlotProgram(programOption),
+      programming,
       cooldownMs: 0,
-      order: 'next',
+      order: programming.type === 'movie' ? 'chronological' : 'next',
       weight,
       durationSpec: {
         type: 'fixed',
         durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
       },
+      direction: 'asc',
     } satisfies RandomSlot;
 
     onAdd(newSlot);

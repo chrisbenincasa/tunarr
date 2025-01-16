@@ -18,7 +18,7 @@ import {
   ProgramOrdereredIterator,
   ProgramShuffler,
   StaticProgramIterator,
-  getProgramOrder,
+  getProgramOrderer,
   slotIteratorKey,
 } from './ProgramIterator.js';
 
@@ -192,9 +192,12 @@ export function createProgramIterators(
           });
           switch (slot.order) {
             case 'next':
+            case 'alphanumeric':
+            case 'chronological':
               acc[id] = new ProgramOrdereredIterator(
                 uniquePrograms,
-                getProgramOrder,
+                getProgramOrderer(slot.order),
+                slot.direction === 'asc',
               );
               break;
             case 'shuffle':
@@ -203,7 +206,8 @@ export function createProgramIterators(
             case 'ordered_shuffle':
               acc[id] = new ProgramChunkedShuffle(
                 uniquePrograms,
-                getProgramOrder,
+                getProgramOrderer('next'),
+                slot.direction === 'asc',
               );
               break;
           }

@@ -3,7 +3,7 @@ import {
   ProgramOption,
   RedirectProgramOption,
   ShowProgramOption,
-  showOrderOptions,
+  slotOrderOptions,
 } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
 import {
@@ -12,7 +12,10 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   BaseSlot,
@@ -142,6 +145,15 @@ export const EditSlotProgrammingForm = ({
     [programOptions, type],
   );
 
+  const handleDirectionChange = (
+    newDirection: string | null,
+    originalOnChange: (...args: unknown[]) => void,
+  ) => {
+    if (newDirection) {
+      originalOnChange(newDirection);
+    }
+  };
+
   return (
     <>
       <FormControl fullWidth>
@@ -239,23 +251,41 @@ export const EditSlotProgrammingForm = ({
           )}
         />
       )}
-      {(type === 'show' || type === 'custom-show') && (
-        <FormControl fullWidth>
-          <InputLabel>Order</InputLabel>
+      {(type === 'show' || type === 'custom-show' || type === 'movie') && (
+        <Stack direction="row" spacing={2}>
+          <FormControl fullWidth>
+            <InputLabel>Order</InputLabel>
+            <Controller
+              control={control}
+              name="order"
+              render={({ field }) => (
+                <Select label="Order" {...field}>
+                  {map(slotOrderOptions(type), ({ description, value }) => (
+                    <MenuItem key={value} value={value}>
+                      {description}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
+          </FormControl>
           <Controller
             control={control}
-            name="order"
+            name="direction"
             render={({ field }) => (
-              <Select label="Order" {...field}>
-                {map(showOrderOptions, ({ description, value }) => (
-                  <MenuItem key={value} value={value}>
-                    {description}
-                  </MenuItem>
-                ))}
-              </Select>
+              <ToggleButtonGroup
+                exclusive
+                value={field.value}
+                onChange={(_, value) =>
+                  handleDirectionChange(value as string | null, field.onChange)
+                }
+              >
+                <ToggleButton value="asc">Asc</ToggleButton>
+                <ToggleButton value="desc">Desc</ToggleButton>
+              </ToggleButtonGroup>
             )}
           />
-        </FormControl>
+        </Stack>
       )}
     </>
   );

@@ -59,7 +59,8 @@ export const AddTimeSlotButton = ({
     const newSlot = {
       programming,
       startTime: newStartTime.asMilliseconds(),
-      order: 'next',
+      order: programming.type === 'movie' ? 'chronological' : 'next',
+      direction: 'asc',
     } satisfies TimeSlot;
     onAdd(newSlot);
     append(newSlot);

@@ -219,10 +219,10 @@ export const RandomSlotTable = () => {
         header: 'Order',
         accessorFn(originalRow) {
           switch (originalRow.programming.type) {
-            case 'movie':
             case 'flex':
             case 'redirect':
               return null;
+            case 'movie':
             case 'show':
             case 'custom-show':
               switch (originalRow.order) {
