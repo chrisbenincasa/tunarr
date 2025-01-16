@@ -55,7 +55,7 @@ export class ScaleQsvFilter extends FilterOption {
       let squareScale = '';
       let format = '';
       if (this.currentState.isAnamorphic) {
-        squareScale = `vpp_qsv=w=iw*${sarValue}:h=ih,setsar=1`;
+        squareScale = `vpp_qsv=w=iw*${sarValue}:h=ih,setsar=1,`;
       } else {
         format = `,setsar=1`;
       }
