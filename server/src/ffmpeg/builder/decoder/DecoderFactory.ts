@@ -1,22 +1,20 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
 import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
 import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import {
-  H264Decoder,
-  HevcDecoder,
-  ImplicitDecoder,
-  Mpeg2Decoder,
-  Mpeg4Decoder,
-  RawVideoDecoder,
-  Vc1Decoder,
-} from './SoftwareDecoder.ts';
-import {
-  NvidiaH264Decoder,
-  NvidiaHevcDecoder,
-  NvidiaMpeg2Decoder,
-  NvidiaVc1Decoder,
-  NvidiaVp9Decoder,
-} from './nvidia/NvidiaDecoders.ts';
+import { NvidiaAv1Decoder } from '@/ffmpeg/builder/decoder/nvidia/NvidiaAv1Decoder.ts';
+import { Av1QsvDecoder } from '@/ffmpeg/builder/decoder/qsv/Av1QsvDecoder.ts';
+import { H264Decoder } from './H264Decoder.ts';
+import { HevcDecoder } from './HevcDecoder.ts';
+import { ImplicitDecoder } from './ImplicitDecoder.ts';
+import { Mpeg2Decoder } from './Mpeg2Decoder.ts';
+import { Mpeg4Decoder } from './Mpeg4Decoder.ts';
+import { RawVideoDecoder } from './RawVideoDecoder.ts';
+import { Vc1Decoder } from './Vc1Decoder.ts';
+import { NvidiaH264Decoder } from './nvidia/NvidiaH264Decoder.ts';
+import { NvidiaHevcDecoder } from './nvidia/NvidiaHevcDecoder.ts';
+import { NvidiaMpeg2Decoder } from './nvidia/NvidiaMpeg2Decoder.ts';
+import { NvidiaVc1Decoder } from './nvidia/NvidiaVc1Decoder.ts';
+import { NvidiaVp9Decoder } from './nvidia/NvidiaVp9Decoder.ts';
 import { H264QsvDecoder } from './qsv/H264QsvDecoder.ts';
 import { HevcQsvDecoder } from './qsv/HevcQsvDecoder.ts';
 import { Mpeg2QsvDecoder } from './qsv/Mpeg2QsvDecoder.ts';
@@ -61,6 +59,8 @@ export class DecoderFactory {
         return new NvidiaVc1Decoder(hardwareAccelerationMode);
       case VideoFormats.Vp9:
         return new NvidiaVp9Decoder(hardwareAccelerationMode);
+      case VideoFormats.Av1:
+        return new NvidiaAv1Decoder(hardwareAccelerationMode);
       default:
         return null;
     }
@@ -78,6 +78,8 @@ export class DecoderFactory {
         return new Vc1QsvDecoder();
       case VideoFormats.Vp9:
         return new Vp9QsvDecoder();
+      case VideoFormats.Av1:
+        return new Av1QsvDecoder();
       default:
         return null;
     }
