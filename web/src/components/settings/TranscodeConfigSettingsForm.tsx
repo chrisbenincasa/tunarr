@@ -51,7 +51,7 @@ const VideoFormats: DropdownOption<SupportedVideoFormats>[] = [
   },
   {
     description: 'MPEG-2',
-    value: 'mpeg2',
+    value: 'mpeg2video',
   },
 ] as const;
 
@@ -494,10 +494,10 @@ export const TranscodeConfigSettingsForm = ({
                       isNonEmptyString(error?.message)
                         ? error.message
                         : error?.type === 'required'
-                        ? 'Name is required'
-                        : error?.type === 'minLength'
-                        ? 'Name is required'
-                        : null
+                          ? 'Name is required'
+                          : error?.type === 'minLength'
+                            ? 'Name is required'
+                            : null
                     }
                     {...field}
                   />
