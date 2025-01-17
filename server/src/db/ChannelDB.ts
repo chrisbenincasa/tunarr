@@ -283,7 +283,7 @@ export class ChannelDB {
       .selectFrom('channel')
       .selectAll(['channel'])
       .where('channel.uuid', '=', uuid)
-      .innerJoin(
+      .leftJoin(
         'channelPrograms',
         'channel.uuid',
         'channelPrograms.channelUuid',
