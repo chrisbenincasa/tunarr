@@ -1,15 +1,18 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import {
+  ReadableFfmpegSettings,
+  SettingsDB,
+  getSettings,
+} from '@/db/SettingsDB.ts';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
 import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.ts';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
-import { FfmpegSettings } from '@tunarr/types';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 
 export class ConcatStream {
-  #ffmpegSettings: FfmpegSettings;
+  #ffmpegSettings: ReadableFfmpegSettings;
 
   constructor(
     private channel: ChannelWithTranscodeConfig,

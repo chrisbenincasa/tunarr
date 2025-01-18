@@ -1,9 +1,12 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import {
+  ReadableFfmpegSettings,
+  SettingsDB,
+  getSettings,
+} from '@/db/SettingsDB.ts';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { FfmpegSettings } from '@tunarr/types';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import { isNull, isUndefined } from 'lodash-es';
 import { ChildProcessByStdio, exec, spawn } from 'node:child_process';
@@ -38,7 +41,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
   #sentData = false;
 
   constructor(
-    private ffmpegSettings: FfmpegSettings,
+    private ffmpegSettings: ReadableFfmpegSettings,
     private ffmpegName: string,
     private ffmpegArgs: string[],
     private environmentVariables: NodeJS.ProcessEnv = {},

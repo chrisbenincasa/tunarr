@@ -28,7 +28,7 @@ import {
   defaultFfmpegSettings,
 } from '@tunarr/types';
 import { FfmpegLogLevels } from '@tunarr/types/schemas';
-import { capitalize, isEqual, isNull, map, some } from 'lodash-es';
+import { capitalize, isEmpty, isEqual, isNull, map, some } from 'lodash-es';
 import {
   MRT_ColumnDef,
   MRT_Row,
@@ -42,6 +42,7 @@ import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationA
 import { CheckboxFormController } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
+import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
 import AddCircle from '@mui/icons-material/AddCircle';
 import {
   useFfmpegSettings,
@@ -96,8 +97,10 @@ export default function FfmpegSettingsPage() {
     handleSubmit,
     watch,
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
-    defaultValues: defaultFfmpegSettings,
-    mode: 'onBlur',
+    defaultValues: {
+      ...defaultFfmpegSettings,
+    },
+    mode: 'onChange',
   });
 
   const [ffmpegConsoleLoggingEnabled, ffmpegFileLoggingEnabled] = watch([
@@ -271,7 +274,7 @@ export default function FfmpegSettingsPage() {
       <Typography variant="h5" sx={{ mb: 2 }}>
         Global Options
       </Typography>
-      <Stack spacing={3} useFlexGap>
+      <Stack spacing={3} useFlexGap sx={{ mb: 2 }}>
         {!systemSettings.data.adminMode && (
           <Alert severity="info">
             Tunarr must be run in admin mode in order to update the FFmpeg and
@@ -279,6 +282,7 @@ export default function FfmpegSettingsPage() {
             command line.
           </Alert>
         )}
+
         <FormControl fullWidth>
           <Controller
             control={control}
@@ -429,30 +433,60 @@ export default function FfmpegSettingsPage() {
             the selected container format.
           </FormHelperText>
         </FormControl>
-        <Stack spacing={2} direction="row" justifyContent="right">
-          {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (
-            <Button
-              variant="outlined"
-              onClick={() => {
-                reset(data);
-                setRestoreTunarrDefaults(false);
-              }}
-            >
-              Reset Changes
-            </Button>
-          )}
+      </Stack>
+      <Divider sx={{ my: 1 }} />
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Audio Options
+      </Typography>
+      <Stack spacing={3} sx={{ mb: 2 }}>
+        <FormControl fullWidth>
+          <Controller
+            control={control}
+            name="languagePreferences.preferences"
+            rules={{
+              validate: {
+                minLength: (v) =>
+                  isEmpty(v)
+                    ? 'Must define at least one language preference'
+                    : undefined,
+              },
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <LanguagePreferencesList
+                preferences={
+                  field.value ?? [{ iso6391: 'en', displayName: 'English' }]
+                }
+                onChange={field.onChange}
+                error={error}
+              />
+            )}
+          />
+        </FormControl>
+      </Stack>
+      <Stack spacing={2} direction="row" justifyContent="right">
+        {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (
           <Button
-            variant="contained"
-            disabled={
-              !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
-            }
-            type="submit"
+            variant="outlined"
+            onClick={() => {
+              reset(data);
+              setRestoreTunarrDefaults(false);
+            }}
           >
-            Save
+            Reset Changes
           </Button>
-        </Stack>
+        )}
+        <Button
+          variant="contained"
+          disabled={
+            !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
+          }
+          type="submit"
+        >
+          Save
+        </Button>
       </Stack>
       <Divider sx={{ mt: 2 }} />
+
       <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
         Transcoding Configs
       </Typography>

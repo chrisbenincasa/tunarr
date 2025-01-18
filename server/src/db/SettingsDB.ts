@@ -112,6 +112,8 @@ type SettingsChangeEvents = {
   change(): void;
 };
 
+export type ReadableFfmpegSettings = DeepReadonly<FfmpegSettings>;
+
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
 
 export class SettingsDB extends ITypedEventEmitter {
@@ -161,7 +163,7 @@ export class SettingsDB extends ITypedEventEmitter {
     return this.db.data.settings.plexStream;
   }
 
-  ffmpegSettings(): DeepReadonly<FfmpegSettings> {
+  ffmpegSettings(): ReadableFfmpegSettings {
     return this.db.data.settings.ffmpeg;
   }
 

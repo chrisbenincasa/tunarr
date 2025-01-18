@@ -484,6 +484,7 @@ export class LegacyDbMigrator {
                 (ffmpegSettings['disablePreludes'] as Maybe<boolean>) ?? false,
               useNewFfmpegPipeline: false,
               hlsDirectOutputFormat: 'mpegts',
+              languagePreferences: defaultFfmpegSettings.languagePreferences,
             },
             defaultFfmpegSettings,
           );

@@ -1,5 +1,4 @@
 import { RouterPluginCallback } from '@/types/serverType.js';
-import { firstDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { HdhrSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
@@ -72,7 +71,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
           module: 'hdhr',
           detail: {
             action: 'action',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });
@@ -117,7 +116,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
           module: 'hdhr',
           detail: {
             action: 'reset',
-            error: isError(err) ? firstDefined(err, 'message') : 'unknown',
+            error: isError(err) ? err.message : 'unknown',
           },
           level: 'error',
         });

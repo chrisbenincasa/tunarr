@@ -1,10 +1,6 @@
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
 import { booleanToNumber } from '@/util/sqliteUtil.ts';
-import {
-  FfmpegSettings,
-  Resolution,
-  TupleToUnion,
-  defaultFfmpegSettings,
-} from '@tunarr/types';
+import { Resolution, TupleToUnion, defaultFfmpegSettings } from '@tunarr/types';
 import {
   Generated,
   Insertable,
@@ -165,7 +161,7 @@ export type NewTranscodeConfig = Insertable<TrannscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TrannscodeConfigTable>;
 
 export const transcodeConfigFromLegacySettings = (
-  legacySettings: FfmpegSettings,
+  legacySettings: ReadableFfmpegSettings,
   isDefault?: boolean,
 ): NewTranscodeConfig => {
   const audioSetting = TranscodeAudioOutputFormats.find(

@@ -20,6 +20,7 @@ import {
   trim,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
+import { DeepReadonly } from 'ts-essentials';
 import { format } from 'util';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.ts';
 import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
@@ -72,7 +73,7 @@ export class FfmpegInfo {
   private ffmpegPath: string;
   private ffprobePath: string;
 
-  constructor(opts: FfmpegSettings) {
+  constructor(opts: DeepReadonly<FfmpegSettings>) {
     this.ffmpegPath = opts.ffmpegExecutablePath;
     this.ffprobePath = opts.ffprobeExecutablePath;
   }

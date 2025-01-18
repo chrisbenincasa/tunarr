@@ -73,6 +73,18 @@ export const FfmpegNumericLogLevels: Record<
   trace: 56,
 };
 
+export const LanguagePreferenceSchema = z.object({
+  // ISO 639-1 (2-letter)
+  iso6391: z.string().length(2),
+  // ISO 639-2 (3-letter)
+  iso6392: z.string().length(3),
+  displayName: z.string(),
+});
+
+export const LanguagePreferencesSchema = z.object({
+  preferences: z.array(LanguagePreferenceSchema).min(1),
+});
+
 export const FfmpegSettingsSchema = z.object({
   configVersion: z.number().default(5),
   ffmpegExecutablePath: z.string().default('/usr/bin/ffmpeg'),
@@ -82,6 +94,9 @@ export const FfmpegSettingsSchema = z.object({
   enableLogging: z.boolean().default(false),
   enableFileLogging: z.boolean().default(false),
   logLevel: z.enum(FfmpegLogLevels).optional().default('warning'),
+  languagePreferences: LanguagePreferencesSchema.default({
+    preferences: [{ iso6391: 'en', iso6392: 'eng', displayName: 'English' }],
+  }),
   // DEPRECATED
   enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
   audioVolumePercent: z.number().default(100),

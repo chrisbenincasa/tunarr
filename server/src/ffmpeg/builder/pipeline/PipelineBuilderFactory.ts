@@ -1,4 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import {
+  ReadableFfmpegSettings,
+  SettingsDB,
+  getSettings,
+} from '@/db/SettingsDB.ts';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
@@ -10,7 +14,6 @@ import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
 import { Nullable } from '@/types/util.ts';
-import { FfmpegSettings } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
@@ -39,7 +42,7 @@ class PipelineBuilderFactory$Builder {
     HardwareAccelerationMode.None;
 
   constructor(
-    private ffmpegSettings: FfmpegSettings,
+    private ffmpegSettings: ReadableFfmpegSettings,
     private transcodeConfig: TranscodeConfig,
   ) {}
 

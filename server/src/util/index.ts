@@ -30,6 +30,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
+import { DeepReadonly, DeepWritable } from 'ts-essentials';
 
 dayjs.extend(duration);
 
@@ -241,20 +242,6 @@ export const wait = (ms?: number | Duration) => {
   }
   return new Promise((resolve) => setTimeout(resolve, ms ?? 0));
 };
-
-export function firstDefined(obj: object, ...args: string[]): string {
-  if (isEmpty(args)) {
-    return String(obj);
-  }
-
-  for (const arg of args) {
-    if (!isUndefined(obj[arg])) {
-      return String(obj[arg]);
-    }
-  }
-
-  return 'missing';
-}
 
 type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
 
@@ -524,4 +511,8 @@ export function gcd(a: number, b: number) {
       return a;
     }
   }
+}
+
+export function makeWritable<T>(obj: DeepReadonly<T>): DeepWritable<T> {
+  return obj as DeepWritable<T>; // here be hacks
 }

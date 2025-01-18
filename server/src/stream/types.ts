@@ -53,6 +53,8 @@ export type AudioStreamDetails = {
   selected?: boolean;
   title?: string;
   language?: string;
+  languageCodeISO6391?: string;
+  languageCodeISO6392?: string;
   forced?: boolean;
 };
 

@@ -1,17 +1,14 @@
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
 import { Channel } from '@/db/schema/Channel.ts';
 import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
-import {
-  ChannelStreamMode,
-  ChannelStreamModes,
-  FfmpegSettings,
-} from '@tunarr/types';
+import { ChannelStreamMode, ChannelStreamModes } from '@tunarr/types';
 import { FfmpegStreamFactory } from './FfmpegStreamFactory.ts';
 import { FFMPEG } from './ffmpeg.ts';
 import { IFFMPEG } from './ffmpegBase.ts';
 
 export class FFmpegFactory {
   static getFFmpegPipelineBuilder(
-    settings: FfmpegSettings,
+    settings: ReadableFfmpegSettings,
     transcodeConfig: TranscodeConfig,
     channel: Channel,
     streamMode: ChannelStreamMode,

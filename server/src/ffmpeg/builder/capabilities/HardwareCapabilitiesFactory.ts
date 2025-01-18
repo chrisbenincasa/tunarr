@@ -1,3 +1,4 @@
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
@@ -10,13 +11,12 @@ import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/Defau
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.ts';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import { VaapiHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesFactory.ts';
-import { FfmpegSettings } from '@tunarr/types';
 
 export class HardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
 {
   constructor(
-    private ffmpegSettings: FfmpegSettings,
+    private ffmpegSettings: ReadableFfmpegSettings,
     private transcodeConfig: TranscodeConfig,
   ) {}
 

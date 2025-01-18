@@ -280,6 +280,7 @@ export class JellyfinStreamDetails {
           language: nullToUndefined(audioStream.Language),
           profile: nullToUndefined(audioStream.Profile),
           title: nullToUndefined(audioStream.Title),
+          languageCodeISO6392: nullToUndefined(audioStream.Language),
         } satisfies AudioStreamDetails;
       },
     );
