@@ -30,17 +30,19 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { TranscodeConfig } from '@tunarr/types';
+import {
+  SupportedTranscodeVideoOutputFormat,
+  TranscodeConfig,
+} from '@tunarr/types';
 import {
   SupportedHardwareAccels,
   SupportedTranscodeAudioOutputFormats,
-  SupportedVideoFormats,
 } from '@tunarr/types/schemas';
 import { chain } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 
-const VideoFormats: DropdownOption<SupportedVideoFormats>[] = [
+const VideoFormats: DropdownOption<SupportedTranscodeVideoOutputFormat>[] = [
   {
     description: 'H.264',
     value: 'h264',
