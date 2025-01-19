@@ -202,8 +202,10 @@ export class FillerDB {
         );
 
         forEach(values(fillersByChannel), (cfs) => {
-          const removedWeight = find(cfs, (cf) => cf.fillerShowUuid === id)
-            ?.weight;
+          const removedWeight = find(
+            cfs,
+            (cf) => cf.fillerShowUuid === id,
+          )?.weight;
           if (isUndefined(removedWeight)) {
             return;
           }
@@ -312,6 +314,7 @@ export class FillerDB {
         ).as('content'),
       )
       .groupBy('fillerShow.uuid')
+      .orderBy('fillerShow.name asc')
       .execute();
   }
 
