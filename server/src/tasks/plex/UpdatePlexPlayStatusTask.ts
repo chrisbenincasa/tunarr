@@ -1,10 +1,10 @@
-import type { MediaSource } from '@/db/schema/MediaSource.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
-import { ScheduledTask } from '@/tasks/ScheduledTask.ts';
-import { Task } from '@/tasks/Task.ts';
-import { run } from '@/util/index.ts';
-import { getTunarrVersion } from '@/util/version.ts';
+import type { MediaSource } from '@/db/schema/MediaSource.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { GlobalScheduler } from '@/services/Scheduler.js';
+import { ScheduledTask } from '@/tasks/ScheduledTask.js';
+import { Task } from '@/tasks/Task.js';
+import { run } from '@/util/index.js';
+import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';

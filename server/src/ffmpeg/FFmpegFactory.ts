@@ -1,6 +1,6 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import { Channel } from '@/db/schema/Channel.js';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { ChannelStreamMode, ChannelStreamModes } from '@tunarr/types';
 import { FfmpegStreamFactory } from './FfmpegStreamFactory.ts';
 import { FFMPEG } from './ffmpeg.ts';

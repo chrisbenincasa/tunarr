@@ -1,5 +1,5 @@
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { StreamKinds } from '@/ffmpeg/builder/types.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { StreamKinds } from '@/ffmpeg/builder/types.js';
 import { TupleToUnion } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
 import { Encoder } from './Encoder.ts';

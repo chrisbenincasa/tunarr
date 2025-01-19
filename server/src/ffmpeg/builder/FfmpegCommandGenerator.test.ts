@@ -1,5 +1,5 @@
-import { bootstrapTunarr } from '@/bootstrap.ts';
-import { setGlobalOptions } from '@/globals.ts';
+import { bootstrapTunarr } from '@/bootstrap.js';
+import { setGlobalOptions } from '@/globals.js';
 import tmp from 'tmp';
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator.ts';
 import { AudioStream, StillImageStream, VideoStream } from './MediaStream.ts';

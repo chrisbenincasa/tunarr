@@ -1,6 +1,6 @@
-import { fileExists } from '@/util/fsUtil.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import { sanitizeForExec } from '@/util/strings.ts';
+import { fileExists } from '@/util/fsUtil.js';
+import { isNonEmptyString } from '@/util/index.js';
+import { sanitizeForExec } from '@/util/strings.js';
 import { isEmpty } from 'lodash-es';
 import { ExecOptions, exec } from 'node:child_process';
 import PQueue from 'p-queue';

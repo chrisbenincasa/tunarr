@@ -1,6 +1,6 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { serverContext } from '@/serverContext.ts';
-import { OnDemandChannelService } from '@/services/OnDemandChannelService.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { serverContext } from '@/serverContext.js';
+import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { every, values } from 'lodash-es';

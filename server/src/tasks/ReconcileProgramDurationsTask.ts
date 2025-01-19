@@ -1,7 +1,7 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
-import { isContentItem } from '@/db/derived_types/Lineup.ts';
-import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { getDatabase } from '@/db/DBAccess.js';
+import { isContentItem } from '@/db/derived_types/Lineup.js';
+import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
 import {
   chunk,
   differenceWith,

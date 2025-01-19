@@ -1,8 +1,8 @@
-import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.ts';
+import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.js';
 import { Maybe, Nilable } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
-import { getTunarrVersion } from '@/util/version.ts';
+import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import {
   PlexDvr,

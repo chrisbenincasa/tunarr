@@ -1,8 +1,8 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
-import { ContentSourceUpdaterFactory } from '@/services/dynamic_channels/ContentSourceUpdaterFactory.ts';
-import { Maybe } from '@/types/util.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { Channel } from '@/db/schema/Channel.js';
+import { GlobalScheduler } from '@/services/Scheduler.js';
+import { ContentSourceUpdaterFactory } from '@/services/dynamic_channels/ContentSourceUpdaterFactory.js';
+import { Maybe } from '@/types/util.js';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { filter } from 'lodash-es';
 import { ScheduledTask } from './ScheduledTask.ts';

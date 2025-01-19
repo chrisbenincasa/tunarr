@@ -1,24 +1,24 @@
-import { getDatabase } from '@/db/DBAccess.ts';
+import { getDatabase } from '@/db/DBAccess.js';
 import {
   ProgramStreamLineupItem,
   createOfflineStreamLineupItem,
-} from '@/db/derived_types/StreamLineup.ts';
-import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
+} from '@/db/derived_types/StreamLineup.js';
+import { AllChannelTableKeys, Channel } from '@/db/schema/Channel.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { ProgramDao, ProgramType } from '@/db/schema/Program.js';
 import {
   AllTranscodeConfigColumns,
   TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.ts';
-import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { OfflineProgramStream } from '@/stream/OfflinePlayer.ts';
-import { PlayerContext } from '@/stream/PlayerStreamContext.ts';
-import { ProgramStream } from '@/stream/ProgramStream.ts';
-import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.ts';
-import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.ts';
-import { TruthyQueryParam } from '@/types/schemas.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
-import dayjs from '@/util/dayjs.ts';
+} from '@/db/schema/TranscodeConfig.js';
+import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
+import { OfflineProgramStream } from '@/stream/OfflinePlayer.js';
+import { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import { ProgramStream } from '@/stream/ProgramStream.js';
+import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.js';
+import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.js';
+import { TruthyQueryParam } from '@/types/schemas.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import dayjs from '@/util/dayjs.js';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'stream';

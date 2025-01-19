@@ -1,6 +1,6 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -9,7 +9,7 @@ import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 
-import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.ts';
+import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';

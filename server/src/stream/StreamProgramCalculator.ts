@@ -1,9 +1,9 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { FillerDB } from '@/db/FillerListDB.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { Channel } from '@/db/schema/Channel.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { FillerDB } from '@/db/FillerListDB.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { Channel } from '@/db/schema/Channel.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { ProgramDaoWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { FillerPicker } from '@/services/FillerPicker.js';
 import { Result } from '@/types/result.js';

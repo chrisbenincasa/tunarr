@@ -1,7 +1,7 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
+import { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import { serverContext } from '@/serverContext.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';

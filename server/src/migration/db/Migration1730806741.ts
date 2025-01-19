@@ -1,4 +1,4 @@
-import { ChannelFillerShowTable } from '@/db/schema/Channel.ts';
+import { ChannelFillerShowTable } from '@/db/schema/Channel.js';
 import { CompiledQuery, Kysely, Migration } from 'kysely';
 
 type DBTemp = {

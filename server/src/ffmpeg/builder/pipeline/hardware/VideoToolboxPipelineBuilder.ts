@@ -1,20 +1,20 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
-import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
-import { VideoToolboxDecoder } from '@/ffmpeg/builder/decoder/videotoolbox/VideoToolboxDecoder.ts';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { VideoToolboxHardwareAccelerationOption } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxHardwareAccelerationOption.ts';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
-import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
-import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { Nullable } from '@/types/util.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import { VideoToolboxDecoder } from '@/ffmpeg/builder/decoder/videotoolbox/VideoToolboxDecoder.js';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { VideoToolboxHardwareAccelerationOption } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxHardwareAccelerationOption.js';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { Nullable } from '@/types/util.js';
 import { match } from 'ts-pattern';
 import {
   VideoToolboxH264Encoder,

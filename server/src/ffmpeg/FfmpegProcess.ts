@@ -2,7 +2,7 @@ import {
   ReadableFfmpegSettings,
   SettingsDB,
   getSettings,
-} from '@/db/SettingsDB.ts';
+} from '@/db/SettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';

@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { Channel } from '@/db/schema/Channel.js';
 import { CompiledQuery, Kysely, sql } from 'kysely';
 
 interface ChannelProgramsInMigration {

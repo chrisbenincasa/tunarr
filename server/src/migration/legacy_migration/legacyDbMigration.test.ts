@@ -1,5 +1,5 @@
-import { Channel } from '@/entities/Channel.ts';
-import { CustomShow } from '@/entities/CustomShow.ts';
+import { Channel } from '@/entities/Channel.js';
+import { CustomShow } from '@/entities/CustomShow.js';
 import dbConfig from '@/mikro-orm.prod.config.js';
 import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
 import fs from 'node:fs/promises';

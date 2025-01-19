@@ -1,11 +1,11 @@
-import { ScaleCudaFilter } from '@/ffmpeg/builder/filter/nvidia/ScaleCudaFilter.ts';
+import { ScaleCudaFilter } from '@/ffmpeg/builder/filter/nvidia/ScaleCudaFilter.js';
 import {
   PixelFormatP010,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('ScaleCudaFilter', () => {
   test('format only, 8-bit, on hardware', () => {

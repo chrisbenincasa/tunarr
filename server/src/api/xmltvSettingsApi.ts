@@ -1,6 +1,6 @@
-import { defaultXmlTvSettings } from '@/db/SettingsDB.ts';
+import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
 import { serverOptions } from '@/globals.js';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';

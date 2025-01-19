@@ -1,6 +1,6 @@
-import { StreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import { Channel } from '@/db/schema/Channel.ts';
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
+import { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import { Channel } from '@/db/schema/Channel.js';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { GetCurrentLineupItemRequest } from './StreamProgramCalculator.ts';

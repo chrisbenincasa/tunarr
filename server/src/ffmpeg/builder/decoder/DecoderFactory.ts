@@ -1,8 +1,8 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { NvidiaAv1Decoder } from '@/ffmpeg/builder/decoder/nvidia/NvidiaAv1Decoder.ts';
-import { Av1QsvDecoder } from '@/ffmpeg/builder/decoder/qsv/Av1QsvDecoder.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { NvidiaAv1Decoder } from '@/ffmpeg/builder/decoder/nvidia/NvidiaAv1Decoder.js';
+import { Av1QsvDecoder } from '@/ffmpeg/builder/decoder/qsv/Av1QsvDecoder.js';
 import { H264Decoder } from './H264Decoder.ts';
 import { HevcDecoder } from './HevcDecoder.ts';
 import { ImplicitDecoder } from './ImplicitDecoder.ts';

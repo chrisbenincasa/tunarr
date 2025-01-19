@@ -1,6 +1,6 @@
-import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
-import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
+import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { z } from 'zod';
 
 export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (

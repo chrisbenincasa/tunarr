@@ -1,7 +1,7 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { registerSingletonInitializer } from '@/globals.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { registerSingletonInitializer } from '@/globals.js';
 import { Maybe } from '@/types/util.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';

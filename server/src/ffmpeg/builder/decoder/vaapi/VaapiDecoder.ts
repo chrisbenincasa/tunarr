@@ -1,9 +1,9 @@
-import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
 import {
   PixelFormatNv12,
   PixelFormatVaapi,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '../../types.ts';
 
 export class VaapiDecoder extends BaseDecoder {

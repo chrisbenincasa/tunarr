@@ -1,9 +1,9 @@
-import { setServerOptions } from '@/globals.ts';
-import { initServer } from '@/server.ts';
-import { TruthyQueryParam } from '@/types/schemas.ts';
-import { getDefaultServerPort } from '@/util/defaults.ts';
-import { isNonEmptyString, isProduction } from '@/util/index.ts';
-import { getTunarrVersion } from '@/util/version.ts';
+import { setServerOptions } from '@/globals.js';
+import { initServer } from '@/server.js';
+import { TruthyQueryParam } from '@/types/schemas.js';
+import { getDefaultServerPort } from '@/util/defaults.js';
+import { isNonEmptyString, isProduction } from '@/util/index.js';
+import { getTunarrVersion } from '@/util/version.js';
 import chalk from 'chalk';
 import { ArgumentsCamelCase, CommandModule } from 'yargs';
 import { GlobalArgsType } from './types.ts';

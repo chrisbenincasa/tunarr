@@ -1,6 +1,6 @@
-import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
-import { dbChannelToApiChannel } from '@/db/converters/channelConverters.ts';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
+import { dbChannelToApiChannel } from '@/db/converters/channelConverters.js';
+import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';

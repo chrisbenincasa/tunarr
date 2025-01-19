@@ -1,5 +1,5 @@
-import { Nullable } from '@/types/util.ts';
-import { ifDefined } from '@/util/index.ts';
+import { Nullable } from '@/types/util.js';
+import { ifDefined } from '@/util/index.js';
 import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
 import { Dictionary } from 'ts-essentials';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';

@@ -1,6 +1,6 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { Maybe } from '@/types/util.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { Maybe } from '@/types/util.js';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';
 
 const MaxwellGm206Models = new Set([

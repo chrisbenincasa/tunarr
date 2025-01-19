@@ -1,11 +1,11 @@
-import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
+import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import {
   PixelFormatVaapi,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('PadFilter', () => {
   test('generates pad filter', () => {

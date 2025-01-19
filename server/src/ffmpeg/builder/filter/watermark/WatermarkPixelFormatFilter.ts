@@ -1,4 +1,4 @@
-import { isNonEmptyString } from '@/util/index.ts';
+import { isNonEmptyString } from '@/util/index.js';
 import { Watermark } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
 import { match } from 'ts-pattern';

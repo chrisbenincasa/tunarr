@@ -1,6 +1,6 @@
-import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.js';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import os from 'node:os';
 
 export class QsvHardwareAccelerationOption extends GlobalOption {

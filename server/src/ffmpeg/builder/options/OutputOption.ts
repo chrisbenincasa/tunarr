@@ -1,6 +1,6 @@
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { OutputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { OutputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { Duration } from 'dayjs/plugin/duration.js';
 
 export abstract class OutputOption implements OutputOptionPipelineStep {

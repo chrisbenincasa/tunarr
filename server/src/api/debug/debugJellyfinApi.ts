@@ -1,7 +1,7 @@
-import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.ts';
-import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
-import { Nilable } from '@/types/util.ts';
+import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
+import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { Nilable } from '@/types/util.js';
 import { isNil } from 'lodash-es';
 import { z } from 'zod';
 

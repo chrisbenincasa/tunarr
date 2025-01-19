@@ -1,5 +1,5 @@
-import { Lineup } from '@/db/derived_types/Lineup.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { Lineup } from '@/db/derived_types/Lineup.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   ShowProgrammingRandomSlot,
   ShowProgrammingTimeSlot,

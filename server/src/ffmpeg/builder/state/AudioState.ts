@@ -1,4 +1,4 @@
-import { ExcludeByValueType, Nullable } from '@/types/util.ts';
+import { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isNil, omitBy } from 'lodash-es';
 import { AnyFunction } from 'ts-essentials';
 

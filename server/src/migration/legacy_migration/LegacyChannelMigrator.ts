@@ -1,13 +1,13 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { CustomShowDB } from '@/db/CustomShowDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { ProgramUpsertFields } from '@/db/programQueryHelpers.ts';
-import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.ts';
-import { ProgramDao } from '@/db/schema/Program.ts';
-import { ChannelNotFoundError } from '@/types/errors.ts';
-import { Maybe } from '@/types/util.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { CustomShowDB } from '@/db/CustomShowDB.js';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { ProgramUpsertFields } from '@/db/programQueryHelpers.js';
+import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.js';
+import { ProgramDao } from '@/db/schema/Program.js';
+import { ChannelNotFoundError } from '@/types/errors.js';
+import { Maybe } from '@/types/util.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   Channel as ApiChannel,
@@ -42,7 +42,7 @@ import {
   RedirectItem,
 } from '../../db/derived_types/Lineup.ts';
 
-import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.ts';
+import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import {
   emptyStringToUndefined,
   groupByUniq,

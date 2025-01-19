@@ -1,19 +1,19 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { NewCachedImage } from '@/db/schema/CachedImage.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,
   TranscodeVideoOutputFormats,
-} from '@/db/schema/TranscodeConfig.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { globalOptions } from '@/globals.ts';
-import { serverContext } from '@/serverContext.ts';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
-import { AnonymousTask } from '@/tasks/Task.ts';
-import { Maybe } from '@/types/util.ts';
-import { attempt } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
+} from '@/db/schema/TranscodeConfig.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { globalOptions } from '@/globals.js';
+import { serverContext } from '@/serverContext.js';
+import { GlobalScheduler } from '@/services/Scheduler.js';
+import { AnonymousTask } from '@/tasks/Task.js';
+import { Maybe } from '@/types/util.js';
+import { attempt } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
 import {
   FfmpegSettings,
   PlexServerSettings,

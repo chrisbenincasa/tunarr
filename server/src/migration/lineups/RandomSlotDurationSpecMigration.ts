@@ -1,5 +1,5 @@
-import { Lineup } from '@/db/derived_types/Lineup.ts';
-import { ChannelLineupMigration } from '@/migration/lineups/ChannelLineupMigration.ts';
+import { Lineup } from '@/db/derived_types/Lineup.js';
+import { ChannelLineupMigration } from '@/migration/lineups/ChannelLineupMigration.js';
 import { isUndefined } from 'lodash-es';
 
 export class RandomSlotDurationSpecMigration extends ChannelLineupMigration<

@@ -1,4 +1,4 @@
-import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
+import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 
 export abstract class QsvEncoder extends VideoEncoder {
   protected constructor(name: string) {

@@ -1,7 +1,7 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 
 export class NvidiaHevcEncoder extends VideoEncoder {
   protected videoFormat: string = VideoFormats.Hevc;

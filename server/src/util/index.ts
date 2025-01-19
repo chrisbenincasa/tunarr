@@ -1,5 +1,5 @@
-import { Func } from '@/types/func.ts';
-import { Try } from '@/types/util.ts';
+import { Func } from '@/types/func.js';
+import { Try } from '@/types/util.js';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import {

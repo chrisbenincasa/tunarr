@@ -1,4 +1,4 @@
-import { MediaSource, MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { MediaSource, MediaSourceType } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';

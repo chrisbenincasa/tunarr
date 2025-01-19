@@ -1,6 +1,6 @@
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { PixelFormatYuv420P } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import { PixelFormatYuv420P } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('MediaStream', () => {
   test('squarePixelFrameSize @ FHD', () => {

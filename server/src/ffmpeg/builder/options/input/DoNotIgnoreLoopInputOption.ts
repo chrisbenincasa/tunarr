@@ -1,4 +1,4 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { every } from 'lodash-es';
 import { InputOption } from './InputOption.ts';
 

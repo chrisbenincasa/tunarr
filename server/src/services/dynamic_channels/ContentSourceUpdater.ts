@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { Channel } from '@/db/schema/Channel.js';
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 

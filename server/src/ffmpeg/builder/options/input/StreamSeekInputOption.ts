@@ -1,5 +1,5 @@
-import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.js';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { some } from 'lodash-es';
 import { InputOption } from './InputOption.ts';

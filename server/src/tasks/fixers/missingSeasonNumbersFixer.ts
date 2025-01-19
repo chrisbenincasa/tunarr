@@ -1,9 +1,9 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
-import { DB } from '@/db/schema/db.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import { DB } from '@/db/schema/db.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Maybe } from '@/types/util.js';

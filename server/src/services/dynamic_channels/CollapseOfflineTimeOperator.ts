@@ -1,4 +1,4 @@
-import { Lineup, LineupItem } from '@/db/derived_types/Lineup.ts';
+import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import { Func } from '@/types/func.js';
 import { ChannelAndLineup } from '@/types/internal.js';
 

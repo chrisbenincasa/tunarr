@@ -2,18 +2,18 @@ import {
   ReadableFfmpegSettings,
   SettingsDB,
   getSettings,
-} from '@/db/SettingsDB.ts';
+} from '@/db/SettingsDB.js';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.ts';
-import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.ts';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
-import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
-import { Nullable } from '@/types/util.ts';
+} from '@/db/schema/TranscodeConfig.js';
+import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.js';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
+import { Nullable } from '@/types/util.js';
 import { isUndefined } from 'lodash-es';
 import { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';

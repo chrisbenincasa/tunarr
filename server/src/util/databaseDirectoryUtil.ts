@@ -1,4 +1,4 @@
-import { globalOptions } from '@/globals.ts';
+import { globalOptions } from '@/globals.js';
 import path from 'node:path';
 
 export function getDatabasePath(dbPath: string) {

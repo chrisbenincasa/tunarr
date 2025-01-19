@@ -1,4 +1,4 @@
-import { ExcludeByValueType, Nullable } from '@/types/util.ts';
+import { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isEmpty, isNull, merge } from 'lodash-es';
 import { AnyFunction, MarkOptional } from 'ts-essentials';
 import { PixelFormat } from './format/PixelFormat.ts';

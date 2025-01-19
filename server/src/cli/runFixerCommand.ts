@@ -1,5 +1,5 @@
-import { FixersByName } from '@/tasks/fixers/index.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { FixersByName } from '@/tasks/fixers/index.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { keys } from 'lodash-es';
 import { CommandModule } from 'yargs';
 import { GlobalArgsType } from './types.ts';

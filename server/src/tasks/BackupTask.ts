@@ -1,5 +1,5 @@
-import { getSettings } from '@/db/SettingsDB.ts';
-import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.ts';
+import { getSettings } from '@/db/SettingsDB.js';
+import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { Tag } from '@tunarr/types';
 import { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';

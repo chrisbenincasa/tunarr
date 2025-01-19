@@ -1,7 +1,7 @@
-import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { HttpHeadersInputOption } from '@/ffmpeg/builder/options/input/HttpHeadersInputOption.ts';
-import { InputOption } from '@/ffmpeg/builder/options/input/InputOption.ts';
-import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.js';
+import { HttpHeadersInputOption } from '@/ffmpeg/builder/options/input/HttpHeadersInputOption.js';
+import { InputOption } from '@/ffmpeg/builder/options/input/InputOption.js';
+import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { flatMap } from 'lodash-es';
 import {
   FileStreamSource,

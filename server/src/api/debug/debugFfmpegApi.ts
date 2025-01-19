@@ -1,7 +1,7 @@
-import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.ts';
-import { NutOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
+import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
+import { NutOutputFormat } from '@/ffmpeg/builder/constants.js';
+import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 

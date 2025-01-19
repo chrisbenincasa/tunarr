@@ -1,4 +1,4 @@
-import { Maybe } from '@/types/util.ts';
+import { Maybe } from '@/types/util.js';
 
 export interface Equatable<T> {
   equals(other: T): boolean;

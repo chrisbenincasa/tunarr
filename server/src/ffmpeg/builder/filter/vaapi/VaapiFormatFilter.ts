@@ -1,6 +1,6 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 
 export class VaapiFormatFilter extends FilterOption {
   constructor(

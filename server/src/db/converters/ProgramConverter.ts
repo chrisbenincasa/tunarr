@@ -1,8 +1,8 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramType } from '@/db/schema/Program.ts';
-import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
-import { isNonEmptyString, nullToUndefined } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramType } from '@/db/schema/Program.js';
+import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,

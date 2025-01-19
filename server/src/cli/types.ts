@@ -1,4 +1,4 @@
-import { LogLevels } from '@/util/logging/LoggerFactory.ts';
+import { LogLevels } from '@/util/logging/LoggerFactory.js';
 
 export type GlobalArgsType = {
   log_level: LogLevels;

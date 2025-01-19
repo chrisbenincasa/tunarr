@@ -1,4 +1,4 @@
-import { AxiosRequestRedacter } from '@/external/Redacter.ts';
+import { AxiosRequestRedacter } from '@/external/Redacter.js';
 import { InternalAxiosRequestConfig } from 'axios';
 import { isObject } from 'lodash-es';
 

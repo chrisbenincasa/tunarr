@@ -1,4 +1,4 @@
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TranscodeConfig } from '@tunarr/types';
 import { Kysely } from 'kysely';
 import { omit } from 'lodash-es';

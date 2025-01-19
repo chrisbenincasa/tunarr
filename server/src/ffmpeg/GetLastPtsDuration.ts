@@ -1,4 +1,4 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { Result } from '@/types/result.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { NewLineTransformStream } from '@/util/streams.js';

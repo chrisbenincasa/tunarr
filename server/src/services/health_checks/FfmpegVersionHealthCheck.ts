@@ -1,6 +1,6 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.ts';
-import { fileExists } from '@/util/fsUtil.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
+import { fileExists } from '@/util/fsUtil.js';
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {

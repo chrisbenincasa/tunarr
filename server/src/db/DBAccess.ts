@@ -1,5 +1,5 @@
-import { attempt } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { attempt } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import Sqlite from 'better-sqlite3';
 import dayjs from 'dayjs';
 import {

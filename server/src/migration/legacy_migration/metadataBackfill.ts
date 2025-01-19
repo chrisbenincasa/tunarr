@@ -1,17 +1,17 @@
 // This should be run after all regular entities have been migrated
 
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
-import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { ProgramDao, ProgramType } from '@/db/schema/Program.ts';
-import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
-import { isNonEmptyString, wait } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
+import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { ProgramDao, ProgramType } from '@/db/schema/Program.js';
+import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { isNonEmptyString, wait } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   PlexEpisodeView,
   PlexLibraryMusic,

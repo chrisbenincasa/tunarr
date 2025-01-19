@@ -1,4 +1,4 @@
-import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
 import { MediaStream } from '../../MediaStream.ts';
 import { InputSource } from '../../input/InputSource.ts';
 

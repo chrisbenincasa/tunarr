@@ -1,7 +1,7 @@
-import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.ts';
-import { Maybe, Nilable } from '@/types/util.ts';
+import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.js';
+import { Maybe, Nilable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import {
   JellyfinAuthenticationResult,

@@ -1,6 +1,6 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { QsvEncoder } from './QsvEncoders.ts';
 
 export class H264QsvEncoder extends QsvEncoder {

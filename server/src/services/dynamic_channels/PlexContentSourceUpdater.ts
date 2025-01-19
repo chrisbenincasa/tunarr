@@ -1,9 +1,9 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { PendingProgram } from '@/db/derived_types/Lineup.ts';
-import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { PendingProgram } from '@/db/derived_types/Lineup.js';
+import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { Channel } from '@/db/schema/Channel.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Timer } from '@/util/perf.js';

@@ -1,5 +1,5 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { CachedImage } from '@/db/schema/CachedImage.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { CachedImage } from '@/db/schema/CachedImage.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';

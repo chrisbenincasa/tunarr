@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { bootstrapTunarr } from '@/bootstrap.ts';
-import { setGlobalOptions } from '@/globals.ts';
+import { bootstrapTunarr } from '@/bootstrap.js';
+import { setGlobalOptions } from '@/globals.js';
 import {
   getDefaultDatabaseDirectory,
   getDefaultLogLevel,
-} from '@/util/defaults.ts';
-import { LogLevels, ValidLogLevels } from '@/util/logging/LoggerFactory.ts';
-import { getTunarrVersion } from '@/util/version.ts';
+} from '@/util/defaults.js';
+import { LogLevels, ValidLogLevels } from '@/util/logging/LoggerFactory.js';
+import { getTunarrVersion } from '@/util/version.js';
 import { dayjsMod } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';

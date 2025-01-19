@@ -1,4 +1,4 @@
-import { ProgramDao } from '@/db/schema/Program.ts';
+import { ProgramDao } from '@/db/schema/Program.js';
 import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
 

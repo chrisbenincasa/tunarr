@@ -1,7 +1,7 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { Maybe, TupleToUnion } from '@/types/util.ts';
-import { getDefaultLogLevel } from '@/util/defaults.ts';
-import { isNonEmptyString, isProduction } from '@/util/index.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { Maybe, TupleToUnion } from '@/types/util.js';
+import { getDefaultLogLevel } from '@/util/defaults.js';
+import { isNonEmptyString, isProduction } from '@/util/index.js';
 import {
   forEach,
   isEmpty,

@@ -1,7 +1,7 @@
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { TruthyQueryParam } from '@/types/schemas.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { TruthyQueryParam } from '@/types/schemas.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { isNonEmptyString } from '@/util/index.js';
 import axios, { AxiosHeaders } from 'axios';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';

@@ -1,5 +1,5 @@
-import { Maybe } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { Maybe } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { Migrator } from 'kysely';
 import { isNil, isUndefined } from 'lodash-es';
 

@@ -1,6 +1,6 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 import { isEmpty } from 'lodash-es';
 import {
   PixelFormats,

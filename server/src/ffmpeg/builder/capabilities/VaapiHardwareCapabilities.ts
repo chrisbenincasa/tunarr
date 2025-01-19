@@ -1,8 +1,8 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { RateControlMode } from '@/ffmpeg/builder/types.ts';
-import { Maybe } from '@/types/util.ts';
-import { isDefined } from '@/util/index.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { RateControlMode } from '@/ffmpeg/builder/types.js';
+import { Maybe } from '@/types/util.js';
+import { isDefined } from '@/util/index.js';
 import { find, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';

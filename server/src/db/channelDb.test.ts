@@ -1,4 +1,4 @@
-import { setGlobalOptions } from '@/globals.ts';
+import { setGlobalOptions } from '@/globals.js';
 import fs from 'fs/promises';
 import { join } from 'path';
 import temp from 'temp';

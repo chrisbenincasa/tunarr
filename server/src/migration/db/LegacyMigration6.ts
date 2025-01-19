@@ -1,4 +1,4 @@
-import { DB } from '@/db/schema/db.ts';
+import { DB } from '@/db/schema/db.js';
 import { Kysely, Migration } from 'kysely';
 
 export default {

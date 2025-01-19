@@ -1,7 +1,7 @@
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { Nullable } from '@/types/util.ts';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { Nullable } from '@/types/util.js';
 import { Pipeline } from './Pipeline.ts';
 
 export interface PipelineBuilder {

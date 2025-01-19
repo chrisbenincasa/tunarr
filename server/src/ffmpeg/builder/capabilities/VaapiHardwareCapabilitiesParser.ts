@@ -1,4 +1,4 @@
-import { RateControlMode } from '@/ffmpeg/builder/types.ts';
+import { RateControlMode } from '@/ffmpeg/builder/types.js';
 import { isEmpty, split } from 'lodash-es';
 import {
   VaapiHardwareCapabilities,

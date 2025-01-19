@@ -1,5 +1,5 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { intersection, isEmpty, reject } from 'lodash-es';
 import {

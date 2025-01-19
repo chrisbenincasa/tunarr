@@ -1,8 +1,8 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class LibKvazaarEncoder extends VideoEncoder {

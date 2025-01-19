@@ -1,5 +1,5 @@
-import { dbOptions } from '@/globals.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { dbOptions } from '@/globals.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import BetterSqlite3 from 'better-sqlite3';
 
 export class SqliteDatabaseBackup {

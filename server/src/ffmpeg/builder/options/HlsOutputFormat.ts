@@ -1,6 +1,6 @@
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { Maybe } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { Maybe } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { nth } from 'lodash-es';
 import { OutputOption } from './OutputOption.ts';
 

@@ -1,4 +1,4 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { round } from 'lodash-es';
 
 export class WatermarkOpacityFilter extends FilterOption {

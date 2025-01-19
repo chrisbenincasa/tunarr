@@ -1,9 +1,9 @@
-import { TranscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.ts';
+import { TranscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.js';
 import { serverOptions } from '@/globals.js';
 import { RouterPluginCallback } from '@/types/serverType.js';
-import { makeWritable } from '@/util/index.ts';
+import { makeWritable } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { numberToBoolean } from '@/util/sqliteUtil.ts';
+import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { sanitizeForExec } from '@/util/strings.js';
 import { TranscodeConfig, defaultFfmpegSettings } from '@tunarr/types';
 import { IdPathParamSchema } from '@tunarr/types/api';

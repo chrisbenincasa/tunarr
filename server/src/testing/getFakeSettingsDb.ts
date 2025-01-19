@@ -1,4 +1,4 @@
-import { SettingsFile, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsFile, getSettings } from '@/db/SettingsDB.js';
 import { GlobalOptions, globalOptions, setGlobalOptions } from '@/globals.js';
 import tmp from 'tmp';
 import { DeepPartial } from 'ts-essentials';

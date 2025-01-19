@@ -1,15 +1,15 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import type { MediaSourceTable } from '@/db/schema/MediaSource.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { MediaSourceTable } from '@/db/schema/MediaSource.js';
 import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
-import { Maybe, Nullable } from '@/types/util.ts';
-import { fileExists } from '@/util/fsUtil.ts';
-import { attempt, isNonEmptyString } from '@/util/index.ts';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { Maybe, Nullable } from '@/types/util.js';
+import { fileExists } from '@/util/fsUtil.js';
+import { attempt, isNonEmptyString } from '@/util/index.js';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import {
   PlexEpisode,

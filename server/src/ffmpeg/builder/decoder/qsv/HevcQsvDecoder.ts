@@ -1,8 +1,8 @@
 import {
   PixelFormatNv12,
   PixelFormatP010,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { QsvDecoder } from './QsvDecoder.ts';
 
 export class HevcQsvDecoder extends QsvDecoder {

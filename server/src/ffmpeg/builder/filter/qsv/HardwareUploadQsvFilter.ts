@@ -1,6 +1,6 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 
 export class HardwareUploadQsvFilter extends FilterOption {
   constructor(private extraHardwareFrames?: number) {

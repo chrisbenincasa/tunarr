@@ -1,8 +1,8 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { getSettings } from '@/db/SettingsDB.ts';
-import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.ts';
-import Fixer from '@/tasks/fixers/fixer.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { getSettings } from '@/db/SettingsDB.js';
+import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.js';
+import Fixer from '@/tasks/fixers/fixer.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { map } from 'lodash-es';
 
 export class EnsureTranscodeConfigIds extends Fixer {

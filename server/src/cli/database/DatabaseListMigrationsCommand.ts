@@ -1,4 +1,4 @@
-import { getMigrator } from '@/db/DBAccess.ts';
+import { getMigrator } from '@/db/DBAccess.js';
 import { isEmpty } from 'lodash-es';
 import { CommandModule } from 'yargs';
 
