@@ -1,21 +1,45 @@
+import { inArray } from 'drizzle-orm';
+import {
+  check,
+  index,
+  integer,
+  sqliteTable,
+  text,
+} from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
-import type {
-  ProgramExternalIdSourceType,
-  WithCreatedAt,
-  WithUpdatedAt,
-  WithUuid,
-} from './base.ts';
+import { ProgramExternalIdSourceTypes } from './base.ts';
+import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { ProgramGrouping } from './ProgramGrouping.ts';
 
-export interface ProgramGroupingExternalIdTable
-  extends WithUuid,
-    WithCreatedAt,
-    WithUpdatedAt {
-  externalFilePath: string | null;
-  externalKey: string;
-  externalSourceId: string | null;
-  groupUuid: string;
-  sourceType: ProgramExternalIdSourceType;
-}
+export const ProgramGroupingExternalId = sqliteTable(
+  'program_grouping_external_id',
+  {
+    uuid: text().primaryKey(),
+    createdAt: integer(),
+    updatedAt: integer(),
+    externalFilePath: text(),
+    externalKey: text().notNull(),
+    externalSourceId: text(),
+    groupUuid: text()
+      .notNull()
+      .references(() => ProgramGrouping.uuid, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      }),
+    sourceType: text({ enum: ProgramExternalIdSourceTypes }).notNull(),
+  },
+  (table) => [
+    index('program_grouping_group_uuid_index').on(table.groupUuid),
+    check(
+      'source_type_check',
+      inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
+    ),
+  ],
+);
+
+export type ProgramGroupingExternalIdTable = KyselifyBetter<
+  typeof ProgramGroupingExternalId
+>;
 
 export type ProgramGroupingExternalId =
   Selectable<ProgramGroupingExternalIdTable>;
@@ -28,13 +52,13 @@ export type ProgramGroupingExternalIdFields<
 
 export const ProgramGroupingExternalIdKeys: (keyof ProgramGroupingExternalId)[] =
   [
-    'createdAt',
+    // 'createdAt',
     'externalFilePath',
     'externalKey',
     'externalSourceId',
     'sourceType',
     'groupUuid',
-    'updatedAt',
+    // 'updatedAt',
     'uuid',
   ];
 

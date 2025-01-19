@@ -1,3 +1,4 @@
+import { type TupleToUnion } from '@tunarr/types';
 import {
   ContentProgramTypeSchema,
   ResolutionSchema,
@@ -17,15 +18,26 @@ export interface WithUuid {
   uuid: string;
 }
 
-export type ProgramExternalIdSourceType =
-  | 'plex'
-  | 'plex-guid'
-  | 'tmdb'
-  | 'imdb'
-  | 'tvdb'
-  | 'jellyfin';
+export const ProgramExternalIdSourceTypes = [
+  'plex',
+  'plex-guid',
+  'tmdb',
+  'imdb',
+  'tvdb',
+  'jellyfin',
+] as const;
 
-export type ChannelStreamMode = 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct';
+export type ProgramExternalIdSourceType = TupleToUnion<
+  typeof ProgramExternalIdSourceTypes
+>;
+
+export const ChannelStreamModes = [
+  'hls',
+  'hls_slower',
+  'mpegts',
+  'hls_direct',
+] as const;
+export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 
 // export const DefaultChannelIcon = ChannelIconSchema.parse({});
 

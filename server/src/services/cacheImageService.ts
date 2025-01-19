@@ -1,5 +1,5 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import type { CachedImage } from '@/db/schema/CachedImage.ts';
+import type { CachedImage } from '@/db/schema/CachedImage.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import { FastifyReply } from 'fastify';

@@ -1,6 +1,6 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { NewCachedImage } from '@/db/schema/CachedImage.ts';
+import type { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,

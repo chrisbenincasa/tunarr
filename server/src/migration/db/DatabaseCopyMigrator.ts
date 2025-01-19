@@ -6,7 +6,7 @@ import {
   getDatabase,
   MigrationLockTableName,
   MigrationTableName,
-  runPendingMigrations,
+  runDBMigrations,
 } from '../../db/DBAccess.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
@@ -19,11 +19,11 @@ export class DatabaseCopyMigrator {
     className: DatabaseCopyMigrator.name,
   });
 
-  async migrate(currentDbPath: string) {
+  async migrate(currentDbPath: string, migrateTo?: string) {
     const { path: tmpPath } = await tmp.file({ keep: true });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
     const tempDB = getDatabase(tmpPath);
-    await runPendingMigrations(tempDB);
+    await runDBMigrations(tempDB, migrateTo);
 
     const oldDB = getDatabase(currentDbPath);
     const oldTables = (
