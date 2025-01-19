@@ -12,6 +12,7 @@ import * as tar from 'tar';
 import unzip from 'unzip-stream';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import serverPackage from '../package.json';
 
 const NODE_VERSION = '22.13.0';
 const LINUX_TARGET = `linux-x64`;
@@ -68,7 +69,7 @@ for (const target of args.target) {
     const NODE_URL = `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${nodeBuild}.${ext}`;
 
     console.log(
-      `Creating Tunarr executable archive: ./build/tunarr-${target}.zip`,
+      `Creating Tunarr executable archive: ./dist/tunarr-${target}-${serverPackage.version}.zip`,
     );
 
     const tmp = await fs.mkdtemp(
@@ -103,7 +104,9 @@ for (const target of args.target) {
       }
     });
 
-    const outputArchive = createWriteStream(`./build/tunarr-${target}.zip`);
+    const outputArchive = createWriteStream(
+      `./dist/tunarr-${target}-${serverPackage.version}.zip`,
+    );
     const archive = archiver('zip');
     const outStreamEnd = new Promise((resolve, reject) => {
       outputArchive.on('close', resolve);

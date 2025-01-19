@@ -135,5 +135,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./server/build/tunarr-${{ matrix.os.binary_name }}.zip*
+            ./server/dist/tunarr-${{ matrix.os.binary_name }}*
         if: startsWith(github.ref, 'refs/tags/')
