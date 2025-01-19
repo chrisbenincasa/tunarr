@@ -2,7 +2,7 @@
 // but contain a bit more context and are used during an
 // active streaming session
 
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { z } from 'zod';
 
 const baseStreamLineupItemSchema = z.object({

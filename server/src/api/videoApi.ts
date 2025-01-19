@@ -2,7 +2,7 @@ import { FfmpegText } from '@/ffmpeg/ffmpegText.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { isProduction } from '@/util/index.ts';
+import { isProduction } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';

@@ -1,10 +1,10 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.ts';
-import { MediaSourceDB } from '@/db/mediaSourceDB.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.js';
+import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';
 import { ServerContext } from '@/serverContext.js';
-import { TVGuideService } from '@/services/TvGuideService.ts';
+import { TVGuideService } from '@/services/TvGuideService.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';

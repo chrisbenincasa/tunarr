@@ -1,5 +1,5 @@
 import { ChannelAndLineup } from '@/types/internal.js';
-import { random } from '@/util/random.ts';
+import { random } from '@/util/random.js';
 import { RandomSortOrderOperation } from '@tunarr/types/api';
 import { SchedulingOperator } from './SchedulingOperator.ts';
 

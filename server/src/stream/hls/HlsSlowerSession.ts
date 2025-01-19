@@ -1,14 +1,14 @@
-import { getSettings } from '@/db/SettingsDB.ts';
+import { getSettings } from '@/db/SettingsDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
-import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
-import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.ts';
-import { serverContext } from '@/serverContext.ts';
-import { ProgramStream } from '@/stream/ProgramStream.ts';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.ts';
-import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
-import { Result } from '@/types/result.ts';
-import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.js';
+import { serverContext } from '@/serverContext.js';
+import { ProgramStream } from '@/stream/ProgramStream.js';
+import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
+import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
+import { Result } from '@/types/result.js';
+import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { StrictOmit } from 'ts-essentials';
 import {

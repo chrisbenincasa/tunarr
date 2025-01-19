@@ -1,7 +1,7 @@
-import { SessionType } from '@/stream/Session.ts';
-import { SessionKey } from '@/stream/SessionManager.ts';
-import { RouterPluginAsyncCallback } from '@/types/serverType.ts';
-import { run } from '@/util/index.ts';
+import { SessionType } from '@/stream/Session.js';
+import { SessionKey } from '@/stream/SessionManager.js';
+import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { run } from '@/util/index.js';
 import { ChannelSessionsResponseSchema } from '@tunarr/types/api';
 import { isEmpty, isNil, isNumber, map } from 'lodash-es';
 import z from 'zod';

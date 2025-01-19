@@ -1,4 +1,4 @@
-import { NamedFunc } from '@/types/func.ts';
+import { NamedFunc } from '@/types/func.js';
 import { ChannelAndLineup } from '@/types/internal.js';
 import { last, reduce } from 'lodash-es';
 

@@ -1,5 +1,5 @@
-import { getSettings } from '@/db/SettingsDB.ts';
-import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.ts';
+import { getSettings } from '@/db/SettingsDB.js';
+import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.js';
 import { isArray, isString } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import path from 'node:path';

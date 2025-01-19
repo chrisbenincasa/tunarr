@@ -1,17 +1,17 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { ProgramConverter } from '@/db/converters/ProgramConverter.ts';
-import { Lineup, LineupItem } from '@/db/derived_types/Lineup.ts';
-import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.ts';
-import { Maybe } from '@/types/util.ts';
-import { binarySearchRange } from '@/util/binarySearch.ts';
-import { devAssert } from '@/util/debug.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { MutexMap } from '@/util/mutexMap.ts';
-import { Timer } from '@/util/perf.ts';
-import { makeLocalUrl } from '@/util/serverUtil.ts';
-import throttle from '@/util/throttle.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
+import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
+import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
+import { Maybe } from '@/types/util.js';
+import { binarySearchRange } from '@/util/binarySearch.js';
+import { devAssert } from '@/util/debug.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { MutexMap } from '@/util/mutexMap.js';
+import { Timer } from '@/util/perf.js';
+import { makeLocalUrl } from '@/util/serverUtil.js';
+import throttle from '@/util/throttle.js';
 import constants from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -957,8 +957,8 @@ export class TVGuideService {
     const icon = isNonEmptyString(materializedItem.icon)
       ? materializedItem.icon
       : isNonEmptyString(channel.icon?.path)
-        ? channel.icon.path
-        : makeLocalUrl('/images/tunarr.png');
+      ? channel.icon.path
+      : makeLocalUrl('/images/tunarr.png');
 
     return match(materializedItem)
       .returnType<TvGuideProgram>()

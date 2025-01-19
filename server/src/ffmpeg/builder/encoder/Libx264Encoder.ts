@@ -1,6 +1,6 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class Libx264Encoder extends VideoEncoder {

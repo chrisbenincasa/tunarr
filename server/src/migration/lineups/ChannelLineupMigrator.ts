@@ -1,7 +1,7 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { findIndex, map } from 'lodash-es';
 import {
   CurrentLineupSchemaVersion,

@@ -1,11 +1,11 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
-import { ProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
+import { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { Task } from '@/tasks/Task.ts';
+import { Task } from '@/tasks/Task.js';
 import { Maybe } from '@/types/util.js';
 import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';

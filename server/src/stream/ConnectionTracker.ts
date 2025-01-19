@@ -1,5 +1,5 @@
-import { TypedEventEmitter } from '@/types/eventEmitter.ts';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { TypedEventEmitter } from '@/types/eventEmitter.js';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { StreamConnectionDetails } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import events from 'events';

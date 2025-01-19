@@ -1,10 +1,10 @@
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import {
   DataProps,
   FrameDataLocation,
   FrameSize,
-} from '@/ffmpeg/builder/types.ts';
-import { Nullable } from '@/types/util.ts';
+} from '@/ffmpeg/builder/types.js';
+import { Nullable } from '@/types/util.js';
 import { merge } from 'lodash-es';
 import { MarkOptional } from 'ts-essentials';
 

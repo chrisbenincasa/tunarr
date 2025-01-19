@@ -1,7 +1,7 @@
-import { globalOptions } from '@/globals.ts';
-import { TypedEventEmitter } from '@/types/eventEmitter.ts';
-import { isProduction } from '@/util/index.ts';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { globalOptions } from '@/globals.js';
+import { TypedEventEmitter } from '@/types/eventEmitter.js';
+import { isProduction } from '@/util/index.js';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   FfmpegSettings,
   HdhrSettings,

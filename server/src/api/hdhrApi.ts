@@ -1,4 +1,4 @@
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 

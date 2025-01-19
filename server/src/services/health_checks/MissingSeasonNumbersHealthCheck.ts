@@ -1,6 +1,6 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramType } from '@/db/schema/Program.ts';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramType } from '@/db/schema/Program.js';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import {
   HealthCheck,
   HealthCheckResult,

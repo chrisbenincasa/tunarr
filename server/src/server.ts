@@ -1,4 +1,4 @@
-import { getTunarrVersion } from '@/util/version.ts';
+import { getTunarrVersion } from '@/util/version.js';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';

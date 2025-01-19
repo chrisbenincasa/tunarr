@@ -1,7 +1,7 @@
-import { StreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.ts';
-import dayjs from '@/util/dayjs.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
+import dayjs from '@/util/dayjs.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import NodeCache from 'node-cache';
 import util from 'node:util';

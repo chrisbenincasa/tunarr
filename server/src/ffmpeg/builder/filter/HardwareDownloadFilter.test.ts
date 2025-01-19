@@ -1,13 +1,13 @@
-import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
 import {
   PixelFormatNv12,
   PixelFormatP010,
   PixelFormatVaapi,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('HardwareDownloadFilter', () => {
   test('vaapi download, 8-bit', () => {

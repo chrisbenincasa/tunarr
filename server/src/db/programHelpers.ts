@@ -1,4 +1,4 @@
-import { isNonEmptyString } from '@/util/index.ts';
+import { isNonEmptyString } from '@/util/index.js';
 import { createExternalId } from '@tunarr/shared';
 import {
   ContentProgram,

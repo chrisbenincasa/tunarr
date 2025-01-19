@@ -1,12 +1,12 @@
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { GlobalScheduler } from '@/services/Scheduler.ts';
+import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { nullToUndefined, wait } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { numberToBoolean } from '@/util/sqliteUtil.ts';
+import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { MediaSourceSettings, tag } from '@tunarr/types';
 import {
   BaseErrorSchema,

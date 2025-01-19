@@ -1,5 +1,5 @@
-import { DefaultChannelIcon } from '@/db/schema/base.ts';
-import { ChannelAndLineup } from '@/types/internal.ts';
+import { DefaultChannelIcon } from '@/db/schema/base.js';
+import { ChannelAndLineup } from '@/types/internal.js';
 import { Channel } from '@tunarr/types';
 import { filter } from 'lodash-es';
 import {

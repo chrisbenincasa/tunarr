@@ -1,5 +1,5 @@
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { Duration } from 'dayjs/plugin/duration.js';
 import { first, isNull, isUndefined } from 'lodash-es';
 import { Dictionary } from 'ts-essentials';

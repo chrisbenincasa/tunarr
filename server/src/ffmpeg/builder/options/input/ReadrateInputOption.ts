@@ -1,10 +1,10 @@
-import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
-import { NullAudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
-import { KnownFfmpegOptions } from '@/ffmpeg/builder/options/KnownFfmpegOptions.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.js';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import { NullAudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import { KnownFfmpegOptions } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { every } from 'lodash-es';
 import { InputOption } from './InputOption.ts';
 

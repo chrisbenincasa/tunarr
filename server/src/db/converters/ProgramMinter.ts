@@ -1,6 +1,6 @@
-import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
-import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
-import { parsePlexGuid } from '@/util/externalIds.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
+import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import { parsePlexGuid } from '@/util/externalIds.js';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   PlexEpisode,

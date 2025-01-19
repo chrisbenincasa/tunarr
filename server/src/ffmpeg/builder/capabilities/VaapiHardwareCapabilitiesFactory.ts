@@ -1,13 +1,13 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
-import { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.ts';
-import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.ts';
-import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.ts';
-import { ChildProcessHelper } from '@/util/ChildProcessHelper.ts';
-import { cacheGetOrSet } from '@/util/cache.ts';
-import dayjs from '@/util/dayjs.ts';
-import { attempt, isLinux, isNonEmptyString } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
+import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
+import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.js';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
+import { cacheGetOrSet } from '@/util/cache.js';
+import dayjs from '@/util/dayjs.js';
+import { attempt, isLinux, isNonEmptyString } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isEmpty, isError, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 
@@ -40,8 +40,8 @@ export class VaapiHardwareCapabilitiesFactory
     const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
-        ? '/dev/dri/renderD128'
-        : undefined;
+      ? '/dev/dri/renderD128'
+      : undefined;
 
     if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
       this.logger.error('Cannot detect VAAPI capabilities without a device');

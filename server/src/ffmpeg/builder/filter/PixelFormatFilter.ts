@@ -1,5 +1,5 @@
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FilterOption } from './FilterOption.ts';
 
 export class PixelFormatFilter extends FilterOption {

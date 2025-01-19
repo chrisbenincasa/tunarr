@@ -1,4 +1,4 @@
-import { getDatabase } from '@/db/DBAccess.ts';
+import { getDatabase } from '@/db/DBAccess.js';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {

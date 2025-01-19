@@ -1,4 +1,4 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import {
   HealthCheck,

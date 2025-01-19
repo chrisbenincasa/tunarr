@@ -1,6 +1,6 @@
-import { Nullable } from '@/types/util.ts';
-import { isProduction } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { Nullable } from '@/types/util.js';
+import { isProduction } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { merge } from 'lodash-es';
 import { SyncAdapter } from 'lowdb';
 import { TextFileSync } from 'lowdb/node';

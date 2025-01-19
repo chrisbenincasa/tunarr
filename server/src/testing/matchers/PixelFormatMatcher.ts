@@ -1,4 +1,4 @@
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 
 expect.extend({
   toMatchPixelFormat(received: PixelFormat, expected: PixelFormat) {

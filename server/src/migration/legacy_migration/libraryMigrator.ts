@@ -1,7 +1,7 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { NewCustomShowContent } from '@/db/schema/CustomShow.ts';
-import { NewFillerShowContent } from '@/db/schema/FillerShow.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { NewCustomShowContent } from '@/db/schema/CustomShow.js';
+import { NewFillerShowContent } from '@/db/schema/FillerShow.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import fs from 'fs/promises';

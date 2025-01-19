@@ -1,4 +1,4 @@
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.ts';
+import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import 'vitest';
 
 interface CustomMatchers<R = unknown> {

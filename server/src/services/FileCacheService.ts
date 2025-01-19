@@ -1,4 +1,4 @@
-import { serverOptions } from '@/globals.ts';
+import { serverOptions } from '@/globals.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { promises as fs } from 'fs';

@@ -1,4 +1,4 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
 import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,

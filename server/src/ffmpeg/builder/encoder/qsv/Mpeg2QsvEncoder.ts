@@ -1,4 +1,4 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { QsvEncoder } from './QsvEncoders.ts';
 
 export class Mpeg2QsvEncoder extends QsvEncoder {

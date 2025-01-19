@@ -1,9 +1,9 @@
-import { SettingsDB } from '@/db/SettingsDB.ts';
-import { asyncPool } from '@/util/asyncPool.ts';
-import { getDatabasePath } from '@/util/databaseDirectoryUtil.ts';
-import { fileExists } from '@/util/fsUtil.ts';
-import { isDocker } from '@/util/isDocker.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { SettingsDB } from '@/db/SettingsDB.js';
+import { asyncPool } from '@/util/asyncPool.js';
+import { getDatabasePath } from '@/util/databaseDirectoryUtil.js';
+import { fileExists } from '@/util/fsUtil.js';
+import { isDocker } from '@/util/isDocker.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FileBackupOutput } from '@tunarr/types/schemas';
 import archiver from 'archiver';
 import dayjs from 'dayjs';

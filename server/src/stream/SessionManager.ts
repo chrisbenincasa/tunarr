@@ -1,4 +1,4 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';

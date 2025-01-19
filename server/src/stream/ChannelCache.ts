@@ -1,5 +1,5 @@
-import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.ts';
-import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.ts';
+import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.js';
+import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.js';
 import { globalOptions } from '@/globals.js';
 import constants from '@tunarr/shared/constants';
 import { isNil, isUndefined } from 'lodash-es';

@@ -1,37 +1,37 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
-import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
-import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
-import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.js';
 import {
   BaseEncoder,
   VideoEncoder,
-} from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
-import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
-import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.ts';
-import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
-import { FormatCudaFilter } from '@/ffmpeg/builder/filter/nvidia/FormatCudaFilter.ts';
-import { HardwareDownloadCudaFilter } from '@/ffmpeg/builder/filter/nvidia/HardwareDownloadCudaFilter.ts';
-import { HardwareUploadCudaFilter } from '@/ffmpeg/builder/filter/nvidia/HardwareUploadCudaFilter.ts';
-import { OverlayWatermarkCudaFilter } from '@/ffmpeg/builder/filter/nvidia/OverlayWatermarkCudaFilter.ts';
-import { ScaleCudaFilter } from '@/ffmpeg/builder/filter/nvidia/ScaleCudaFilter.ts';
-import { YadifCudaFilter } from '@/ffmpeg/builder/filter/nvidia/YadifCudaFilter.ts';
-import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
-import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
-import { CudaHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/NvidiaOptions.ts';
-import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
-import { Nullable } from '@/types/util.ts';
-import { isDefined, isNonEmptyString } from '@/util/index.ts';
+} from '@/ffmpeg/builder/encoder/BaseEncoder.js';
+import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
+import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
+import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
+import { FormatCudaFilter } from '@/ffmpeg/builder/filter/nvidia/FormatCudaFilter.js';
+import { HardwareDownloadCudaFilter } from '@/ffmpeg/builder/filter/nvidia/HardwareDownloadCudaFilter.js';
+import { HardwareUploadCudaFilter } from '@/ffmpeg/builder/filter/nvidia/HardwareUploadCudaFilter.js';
+import { OverlayWatermarkCudaFilter } from '@/ffmpeg/builder/filter/nvidia/OverlayWatermarkCudaFilter.js';
+import { ScaleCudaFilter } from '@/ffmpeg/builder/filter/nvidia/ScaleCudaFilter.js';
+import { YadifCudaFilter } from '@/ffmpeg/builder/filter/nvidia/YadifCudaFilter.js';
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
+import { CudaHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/NvidiaOptions.js';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { Nullable } from '@/types/util.js';
+import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { isEmpty, isNil, isNull, reject, some } from 'lodash-es';
 import {
   NvidiaH264Encoder,

@@ -1,4 +1,4 @@
-import { parseIntOrNull } from '@/util/index.ts';
+import { parseIntOrNull } from '@/util/index.js';
 import { isNull, split } from 'lodash-es';
 import { z } from 'zod';
 

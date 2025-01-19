@@ -2,6 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
+    "build": {
+      "outputs": ["build/**"]
+    },
     "typecheck": {
       "dependsOn": ["^build"]
     },
@@ -10,7 +13,9 @@
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "dependsOn": ["^bundle"]
+      "inputs": ["./scripts/bundle.ts"],
+      "dependsOn": ["build", "^bundle"],
+      "outputs": ["dist/**"]
     },
     "build-dev": {
       "dependsOn": ["^build"]

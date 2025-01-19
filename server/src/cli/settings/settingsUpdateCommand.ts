@@ -1,4 +1,4 @@
-import { SettingsSchema, getSettings } from '@/db/SettingsDB.ts';
+import { SettingsSchema, getSettings } from '@/db/SettingsDB.js';
 import { merge } from 'lodash-es';
 import { CommandModule } from 'yargs';
 

@@ -1,9 +1,9 @@
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.ts';
-import { ifDefined, isNonEmptyString } from '@/util/index.ts';
+import { Nullable } from '@/types/util.js';
+import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import { filter, forEach, isNull, some } from 'lodash-es';
 import {

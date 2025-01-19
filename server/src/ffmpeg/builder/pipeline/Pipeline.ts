@@ -1,5 +1,5 @@
-import { FfmpegCommandGenerator } from '@/ffmpeg/builder/FfmpegCommandGenerator.ts';
-import { PipelineStep } from '@/ffmpeg/builder/types/PipelineStep.ts';
+import { FfmpegCommandGenerator } from '@/ffmpeg/builder/FfmpegCommandGenerator.js';
+import { PipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { Dictionary } from 'ts-essentials';
 import { PipelineInputs } from './PipelineInputs.ts';
 

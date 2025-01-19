@@ -1,5 +1,5 @@
-import { getMigrator } from '@/db/DBAccess.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { getMigrator } from '@/db/DBAccess.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { CommandModule } from 'yargs';
 import { isWrongMigrationDirection } from './databaseCommandUtil.ts';
 

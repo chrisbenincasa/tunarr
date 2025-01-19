@@ -1,5 +1,5 @@
-import { OutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
-import { StreamKind } from '@/ffmpeg/builder/types.ts';
+import { OutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
+import { StreamKind } from '@/ffmpeg/builder/types.js';
 
 export abstract class Encoder extends OutputOption {
   name: string;

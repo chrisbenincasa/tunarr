@@ -1,10 +1,10 @@
-import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.ts';
+import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import {
   PixelFormatNv12,
   PixelFormatP010,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
 
 describe('VaapiFormatFilter', () => {
   test('yuv420p', () => {

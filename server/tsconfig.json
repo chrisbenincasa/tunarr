@@ -2,7 +2,6 @@
     "compilerOptions": {
         "target": "ESNext",
         "module": "NodeNext",
-        "allowImportingTsExtensions": true,
         "lib": [
             "ESNext",
             "DOM" // We have to declare this so vitest doesn't explode
@@ -20,7 +19,6 @@
         "noImplicitReturns": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        // "noUncheckedIndexedAccess": true,
         "noImplicitAny": false,
         "noImplicitThis": true,
         "strictNullChecks": true,
@@ -30,7 +28,6 @@
         ],
         "declaration": true,
         "experimentalDecorators": true,
-        "noEmit": true,
         "emitDecoratorMetadata": true,
         "esModuleInterop": true,
         "noErrorTruncation": true,
@@ -38,7 +35,8 @@
             "@/*": [
                 "./src/*"
             ]
-        }
+        },
+        "rewriteRelativeImportExtensions": true,
     },
     "include": [
         "./src/**/*.ts",

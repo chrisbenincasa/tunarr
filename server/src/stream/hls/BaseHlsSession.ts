@@ -1,7 +1,7 @@
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { Session, SessionOptions } from '@/stream/Session.ts';
-import { Result } from '@/types/result.ts';
-import { isNodeError } from '@/util/index.ts';
+import { Session, SessionOptions } from '@/stream/Session.js';
+import { Result } from '@/types/result.js';
+import { isNodeError } from '@/util/index.js';
 import retry from 'async-retry';
 import dayjs, { Dayjs } from 'dayjs';
 import { filter, isError, isString, map, some } from 'lodash-es';

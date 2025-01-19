@@ -1,4 +1,4 @@
-import { ExcludeByValueType, TupleToUnion } from '@/types/util.ts';
+import { ExcludeByValueType, TupleToUnion } from '@/types/util.js';
 import { Resolution } from '@tunarr/types';
 import { AnyFunction } from 'ts-essentials';
 

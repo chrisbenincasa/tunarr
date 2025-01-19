@@ -1,4 +1,4 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
 import { getChannelId } from '@/util/channels.js';
 import { devAssert } from '@/util/debug.js';
 import { attempt, isDefined, isNonEmptyString } from '@/util/index.js';

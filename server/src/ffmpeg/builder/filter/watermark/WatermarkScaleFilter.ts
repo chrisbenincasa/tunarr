@@ -1,5 +1,5 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { FrameSize } from '@/ffmpeg/builder/types.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { FrameSize } from '@/ffmpeg/builder/types.js';
 import { Watermark } from '@tunarr/types';
 
 export class WatermarkScaleFilter extends FilterOption {

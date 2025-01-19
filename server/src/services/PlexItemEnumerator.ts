@@ -1,10 +1,10 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.ts';
-import { typedProperty } from '@/types/path.ts';
-import { asyncPool, unfurlPool } from '@/util/asyncPool.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { typedProperty } from '@/types/path.js';
+import { asyncPool, unfurlPool } from '@/util/asyncPool.js';
 import { flatMapAsyncSeq, wait } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { Timer } from '@/util/perf.ts';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Timer } from '@/util/perf.js';
 import { createExternalId } from '@tunarr/shared';
 import {
   PlexChildMediaViewType,

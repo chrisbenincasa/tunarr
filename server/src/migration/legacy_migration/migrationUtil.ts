@@ -1,6 +1,6 @@
-import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.ts';
-import { Maybe } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
+import { Maybe } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { ProgramType, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { every, isNaN, isUndefined, parseInt } from 'lodash-es';

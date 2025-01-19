@@ -1,6 +1,6 @@
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import type { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import type { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
 import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';

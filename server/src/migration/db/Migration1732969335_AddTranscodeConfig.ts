@@ -1,11 +1,11 @@
-import { getSettings } from '@/db/SettingsDB.ts';
+import { getSettings } from '@/db/SettingsDB.js';
 import {
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,
   TranscodeVideoOutputFormats,
-} from '@/db/schema/TranscodeConfig.ts';
-import { DB } from '@/db/schema/db.ts';
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
+} from '@/db/schema/TranscodeConfig.js';
+import { DB } from '@/db/schema/db.js';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution } from '@tunarr/types';
 import { Kysely, sql } from 'kysely';
 import { isEmpty } from 'lodash-es';

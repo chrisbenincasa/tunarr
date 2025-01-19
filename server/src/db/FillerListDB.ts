@@ -1,5 +1,5 @@
-import { ChannelCache } from '@/stream/ChannelCache.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { ChannelCache } from '@/stream/ChannelCache.js';
+import { isNonEmptyString } from '@/util/index.js';
 import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
@@ -202,10 +202,8 @@ export class FillerDB {
         );
 
         forEach(values(fillersByChannel), (cfs) => {
-          const removedWeight = find(
-            cfs,
-            (cf) => cf.fillerShowUuid === id,
-          )?.weight;
+          const removedWeight = find(cfs, (cf) => cf.fillerShowUuid === id)
+            ?.weight;
           if (isUndefined(removedWeight)) {
             return;
           }

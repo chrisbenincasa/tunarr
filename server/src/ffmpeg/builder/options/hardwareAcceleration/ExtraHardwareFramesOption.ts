@@ -1,4 +1,4 @@
-import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.ts';
+import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.js';
 
 export class ExtraHardwareFramesOption extends GlobalOption {
   constructor(private numFrames: number = 64) {

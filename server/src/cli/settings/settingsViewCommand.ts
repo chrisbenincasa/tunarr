@@ -1,4 +1,4 @@
-import { getSettings } from '@/db/SettingsDB.ts';
+import { getSettings } from '@/db/SettingsDB.js';
 import { at, isArray, isEmpty } from 'lodash-es';
 import { CommandModule } from 'yargs';
 

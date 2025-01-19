@@ -13,7 +13,7 @@ import unzip from 'unzip-stream';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-const NODE_VERSION = '20.15.1';
+const NODE_VERSION = '22.13.0';
 const LINUX_TARGET = `linux-x64`;
 const LINUX_ARM64V8_TARGET = `linux-arm64`;
 const LINUX_ARMV7_TARGET = 'linux-armv7l';
@@ -46,11 +46,11 @@ const args = await yargs(hideBin(process.argv))
   })
   .parseAsync();
 
-if (existsSync('./build/web')) {
-  await fs.rm('./build/web', { recursive: true });
+if (existsSync('./dist/web')) {
+  await fs.rm('./dist/web', { recursive: true });
 }
 
-await fs.cp(path.resolve(process.cwd(), '../web/dist'), './build/web', {
+await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
   recursive: true,
 });
 
@@ -113,13 +113,13 @@ for (const target of args.target) {
     archive.pipe(outputArchive);
 
     archive
-      .file('./build/bundle.js', { name: 'bundle.js' })
-      .file('./build/package.json', { name: 'package.json' })
+      .file('./dist/bundle.js', { name: 'bundle.js' })
+      .file('./dist/package.json', { name: 'package.json' })
       .directory(tmp, '')
-      .directory('./build/migrations', 'migrations')
-      .directory('./build/resources', 'resources')
-      .directory('./build/web', 'web')
-      .directory('./build/build', 'build');
+      .directory('./dist/migrations', 'migrations')
+      .directory('./dist/resources', 'resources')
+      .directory('./dist/web', 'web')
+      .directory('./dist/build', 'build');
     if (target.startsWith('windows')) {
       archive.file('./scripts/tunarr.bat', { name: 'tunarr.bat' });
     } else {

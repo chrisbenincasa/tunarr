@@ -1,14 +1,14 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
 import {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
-} from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.ts';
-import { NvidiaHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilities.ts';
-import { ChildProcessHelper } from '@/util/ChildProcessHelper.ts';
-import { cacheGetOrSet } from '@/util/cache.ts';
-import dayjs from '@/util/dayjs.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+} from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
+import { NvidiaHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilities.js';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
+import { cacheGetOrSet } from '@/util/cache.js';
+import dayjs from '@/util/dayjs.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   attempt,
   drop,

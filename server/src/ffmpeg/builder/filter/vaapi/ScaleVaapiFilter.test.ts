@@ -1,12 +1,12 @@
-import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.ts';
+import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
 import {
   PixelFormatNv12,
   PixelFormatP010,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 
 describe('ScaleVaapiFilter', () => {
   test('format only, 8-bit, on hardware', () => {

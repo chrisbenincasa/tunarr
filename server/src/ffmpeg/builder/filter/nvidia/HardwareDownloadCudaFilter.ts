@@ -1,11 +1,11 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import {
   PixelFormat,
   PixelFormatNv12,
   PixelFormats,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { Nullable } from '@/types/util.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { Nullable } from '@/types/util.js';
 import { isNull } from 'lodash-es';
 import { FrameDataLocation } from '../../types.ts';
 

@@ -1,9 +1,9 @@
-import { AudioStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { SineWaveGeneratorFilter } from '@/ffmpeg/builder/filter/SineWaveGeneratorFilter.ts';
-import { LavfiInputOption } from '@/ffmpeg/builder/options/input/LavfiInputOption.ts';
-import { AudioState } from '@/ffmpeg/builder/state/AudioState.ts';
-import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.ts';
-import { FilterStreamSource } from '@/stream/types.ts';
+import { AudioStream } from '@/ffmpeg/builder/MediaStream.js';
+import { SineWaveGeneratorFilter } from '@/ffmpeg/builder/filter/SineWaveGeneratorFilter.js';
+import { LavfiInputOption } from '@/ffmpeg/builder/options/input/LavfiInputOption.js';
+import { AudioState } from '@/ffmpeg/builder/state/AudioState.js';
+import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
+import { FilterStreamSource } from '@/stream/types.js';
 import {
   InputSource,
   InputSourceContinuity,

@@ -1,9 +1,9 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.js';
+import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
+import { isNonEmptyString } from '@/util/index.js';
 
 export class ScaleQsvFilter extends FilterOption {
   readonly filter: string;

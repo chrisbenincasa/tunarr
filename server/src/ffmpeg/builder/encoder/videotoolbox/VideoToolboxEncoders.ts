@@ -1,9 +1,9 @@
-import { VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
-import { Nullable } from '@/types/util.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { Nullable } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 
 export class VideoToolboxHevcEncoder extends VideoEncoder {
   constructor(private bitDepth: number) {

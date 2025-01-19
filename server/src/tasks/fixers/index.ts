@@ -1,4 +1,4 @@
-import { EnsureTranscodeConfigIds } from '@/tasks/fixers/EnsureTranscodeConfigIds.ts';
+import { EnsureTranscodeConfigIds } from '@/tasks/fixers/EnsureTranscodeConfigIds.js';
 import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { round, values } from 'lodash-es';

@@ -1,5 +1,5 @@
-import { FrameSize } from '@/ffmpeg/builder/types.ts';
-import { serverOptions } from '@/globals.ts';
+import { FrameSize } from '@/ffmpeg/builder/types.js';
+import { serverOptions } from '@/globals.js';
 import { FilterOption } from './FilterOption.ts';
 
 export class TitleTextFilter extends FilterOption {

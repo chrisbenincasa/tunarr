@@ -1,5 +1,5 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.ts';
-import { MarkNonNullable } from '@/types/util.ts';
+import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { MarkNonNullable } from '@/types/util.js';
 import type { DeepNullable, MarkRequired } from 'ts-essentials';
 import { Channel, ChannelFillerShow } from './Channel.ts';
 import { FillerShow } from './FillerShow.ts';

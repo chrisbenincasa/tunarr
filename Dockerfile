@@ -95,11 +95,11 @@ COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
 COPY --from=build-server /tunarr/types /tunarr/types
 COPY --from=build-server /tunarr/shared /tunarr/shared
 COPY --from=build-server /tunarr/server/package.json /tunarr/server/package.json
-COPY --from=build-server /tunarr/server/build /tunarr/server/build
+COPY --from=build-server /tunarr/server/dist /tunarr/server/dist
 # Create a symlink to the bundle at /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/build/bundle.js /tunarr/bundle.js
+RUN ln -s /tunarr/server/dist/bundle.js /tunarr/bundle.js
 # CMD [ "/tunarr/bundle.js" ]
 ### Begin server run
 
@@ -112,9 +112,9 @@ COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
 COPY --from=build-full-stack /tunarr/types /tunarr/types
 COPY --from=build-full-stack /tunarr/shared /tunarr/shared
 COPY --from=build-full-stack /tunarr/server/package.json /tunarr/server/package.json
-COPY --from=build-full-stack /tunarr/server/build /tunarr/server/build
-COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/build/web
+COPY --from=build-full-stack /tunarr/server/dist /tunarr/server/dist
+COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/dist/web
 # Create a symlink to the bundle at /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/build/bundle.js /tunarr/bundle.js
+RUN ln -s /tunarr/server/dist/bundle.js /tunarr/bundle.js

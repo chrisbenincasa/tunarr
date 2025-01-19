@@ -1,5 +1,5 @@
-import { programExternalIdTypeFromExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.ts';
+import { programExternalIdTypeFromExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { Nullable } from '@/types/util.js';
 import { MultiExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';

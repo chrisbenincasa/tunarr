@@ -1,7 +1,7 @@
-import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.ts';
-import { isNonEmptyString } from '@/util/index.ts';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { FilterOption } from './FilterOption.ts';
 
 export class PadFilter extends FilterOption {

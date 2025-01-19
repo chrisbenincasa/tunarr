@@ -1,12 +1,12 @@
-import { Channel } from '@/db/schema/Channel.ts';
+import { Channel } from '@/db/schema/Channel.js';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
   TranscodeVideoOutputFormat,
-} from '@/db/schema/TranscodeConfig.ts';
+} from '@/db/schema/TranscodeConfig.js';
 import { serverOptions } from '@/globals.js';
 import { Maybe, Nullable } from '@/types/util.js';
-import { gcd } from '@/util/index.ts';
+import { gcd } from '@/util/index.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { getTunarrVersion } from '@/util/version.js';
@@ -17,8 +17,8 @@ import {
   Watermark,
 } from '@tunarr/types';
 
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
-import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.js';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { Duration } from 'dayjs/plugin/duration.js';

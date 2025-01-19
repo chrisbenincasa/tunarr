@@ -1,12 +1,12 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { SettingsDB } from '@/db/SettingsDB.ts';
-import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import { MediaSourceTable } from '@/db/schema/MediaSource.ts';
-import { ProgramType } from '@/db/schema/Program.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { SettingsDB } from '@/db/SettingsDB.js';
+import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import { MediaSourceTable } from '@/db/schema/MediaSource.js';
+import { ProgramType } from '@/db/schema/Program.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.ts';
+import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';

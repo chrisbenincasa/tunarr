@@ -1,5 +1,5 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 
 export class DeinterlaceVaapiFilter extends FilterOption {
   public get filter(): string {

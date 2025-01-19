@@ -1,4 +1,4 @@
-import { StillImageStream } from '@/ffmpeg/builder/MediaStream.ts';
+import { StillImageStream } from '@/ffmpeg/builder/MediaStream.js';
 import { Watermark } from '@tunarr/types';
 import { StreamSource } from './InputSource.ts';
 import { VideoInputSource } from './VideoInputSource.ts';

@@ -1,13 +1,13 @@
-import { GlobalScheduler } from '@/services/Scheduler.ts';
-import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.ts';
-import { AnonymousTask } from '@/tasks/Task.ts';
-import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.ts';
-import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
-import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.ts';
-import { Maybe } from '@/types/util.ts';
-import { devAssert } from '@/util/debug.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
-import { Timer } from '@/util/perf.ts';
+import { GlobalScheduler } from '@/services/Scheduler.js';
+import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
+import { AnonymousTask } from '@/tasks/Task.js';
+import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
+import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
+import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { Maybe } from '@/types/util.js';
+import { devAssert } from '@/util/debug.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Timer } from '@/util/perf.js';
 import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {

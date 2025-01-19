@@ -1,6 +1,6 @@
-import { ChannelDB } from '@/db/ChannelDB.ts';
-import { getDatabase } from '@/db/DBAccess.ts';
-import { Lineup, isContentItem } from '@/db/derived_types/Lineup.ts';
+import { ChannelDB } from '@/db/ChannelDB.js';
+import { getDatabase } from '@/db/DBAccess.js';
+import { Lineup, isContentItem } from '@/db/derived_types/Lineup.js';
 import { Func } from '@/types/func.js';
 import { ChannelAndLineup } from '@/types/internal.js';
 import { asyncPool } from '@/util/asyncPool.js';

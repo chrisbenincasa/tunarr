@@ -1,6 +1,6 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { OutputFormat } from '@/ffmpeg/builder/constants.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { OfflineProgramStream } from './OfflinePlayer.js';
 import { PlayerContext } from './PlayerStreamContext.js';

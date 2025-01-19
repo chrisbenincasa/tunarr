@@ -1,8 +1,8 @@
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.ts';
+import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import { StreamConnectionDetails } from '@tunarr/types/api';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';

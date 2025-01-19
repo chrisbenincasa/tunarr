@@ -1,4 +1,4 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { NvidiaDecoder } from './NvidiaDecoders.ts';
 
 export class NvidiaMpeg2Decoder extends NvidiaDecoder {

@@ -2,11 +2,11 @@ import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
   TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.ts';
-import { ChannelStreamMode } from '@/db/schema/base.ts';
-import { StreamDetails, VideoStreamDetails } from '@/stream/types.ts';
-import { gcd } from '@/util/index.ts';
-import { numberToBoolean } from '@/util/sqliteUtil.ts';
+} from '@/db/schema/TranscodeConfig.js';
+import { ChannelStreamMode } from '@/db/schema/base.js';
+import { StreamDetails, VideoStreamDetails } from '@/stream/types.js';
+import { gcd } from '@/util/index.js';
+import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { ChannelStreamModes, Resolution } from '@tunarr/types';
 import { OutputFormat } from './builder/constants.ts';
 import {

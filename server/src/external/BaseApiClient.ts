@@ -1,4 +1,4 @@
-import { AxiosRequestRedacter } from '@/external/Redacter.ts';
+import { AxiosRequestRedacter } from '@/external/Redacter.js';
 import { Maybe, Try } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined } from '@/util/index.js';

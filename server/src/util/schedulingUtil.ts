@@ -1,4 +1,4 @@
-import { TupleToUnion } from '@/types/util.ts';
+import { TupleToUnion } from '@/types/util.js';
 import { EverySchedule } from '@tunarr/types/schemas';
 import parser, {
   CronFields,

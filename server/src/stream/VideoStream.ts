@@ -3,11 +3,11 @@ import {
   Mp4OutputFormat,
   MpegTsOutputFormat,
   OutputFormat,
-} from '@/ffmpeg/builder/constants.ts';
-import { getServerContext, serverContext } from '@/serverContext.ts';
-import { Result } from '@/types/result.ts';
+} from '@/ffmpeg/builder/constants.js';
+import { getServerContext, serverContext } from '@/serverContext.js';
+import { Result } from '@/types/result.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelStreamMode } from '@tunarr/types';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';

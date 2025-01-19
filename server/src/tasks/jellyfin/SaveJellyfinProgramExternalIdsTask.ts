@@ -1,5 +1,5 @@
-import { ProgramDB } from '@/db/ProgramDB.ts';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.ts';
+import { ProgramDB } from '@/db/ProgramDB.js';
+import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';

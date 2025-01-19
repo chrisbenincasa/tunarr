@@ -1,8 +1,8 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { Channel } from '@/db/schema/Channel.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { Channel } from '@/db/schema/Channel.js';
 import { getChannelId } from '@/util/channels.js';
-import { isNonEmptyString } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { isNonEmptyString } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   writeXmltv,
   type XmltvChannel,

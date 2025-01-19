@@ -1,5 +1,5 @@
-import { mapAsyncSeq } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { mapAsyncSeq } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import { chunk, flatten, isEmpty, isUndefined, partition } from 'lodash-es';
 import { getDatabase } from './DBAccess.ts';

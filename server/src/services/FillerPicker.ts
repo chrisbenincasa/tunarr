@@ -1,7 +1,7 @@
-import { Channel } from '@/db/schema/Channel.ts';
-import { ChannelCache } from '@/stream/ChannelCache.ts';
-import { Maybe, Nullable } from '@/types/util.ts';
-import { random } from '@/util/random.ts';
+import { Channel } from '@/db/schema/Channel.js';
+import { ChannelCache } from '@/stream/ChannelCache.js';
+import { Maybe, Nullable } from '@/types/util.js';
+import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import {

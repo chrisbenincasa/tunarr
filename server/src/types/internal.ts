@@ -1,4 +1,4 @@
-import { Lineup } from '@/db/derived_types/Lineup.ts';
+import { Lineup } from '@/db/derived_types/Lineup.js';
 import { ChannelWithRelations } from '@/db/schema/derivedTypes.js';
 
 export type ChannelAndLineup = {

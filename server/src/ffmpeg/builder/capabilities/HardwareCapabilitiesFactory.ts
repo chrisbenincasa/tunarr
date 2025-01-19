@@ -1,16 +1,16 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.ts';
+} from '@/db/schema/TranscodeConfig.js';
 import {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
-} from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.ts';
-import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.ts';
-import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
-import { VaapiHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesFactory.ts';
+} from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
+import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
+import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.js';
+import { VaapiHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesFactory.js';
 
 export class HardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory

@@ -1,5 +1,5 @@
-import { MediaStream } from '@/ffmpeg/builder/MediaStream.ts';
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { MediaStream } from '@/ffmpeg/builder/MediaStream.js';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { InputOption } from './InputOption.ts';
 
 export class UserAgentInputOption extends InputOption {

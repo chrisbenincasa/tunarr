@@ -1,4 +1,4 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.ts';
+import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { SoftwareDecoder } from './SoftwareDecoder.ts';
 
 export class ImplicitDecoder extends SoftwareDecoder {

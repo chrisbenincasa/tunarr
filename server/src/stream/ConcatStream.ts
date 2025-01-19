@@ -2,12 +2,12 @@ import {
   ReadableFfmpegSettings,
   SettingsDB,
   getSettings,
-} from '@/db/SettingsDB.ts';
+} from '@/db/SettingsDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.ts';
-import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.ts';
-import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.ts';
-import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.ts';
+import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
+import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
+import { ConcatStreamModeToChildMode } from '@/ffmpeg/ffmpegBase.js';
 import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 

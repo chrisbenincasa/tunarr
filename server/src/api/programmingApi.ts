@@ -1,8 +1,8 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.ts';
-import { MediaSource } from '@/db/schema/MediaSource.ts';
-import { ProgramType } from '@/db/schema/Program.ts';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import { MediaSource } from '@/db/schema/MediaSource.js';
+import { ProgramType } from '@/db/schema/Program.js';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';

@@ -1,43 +1,43 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.ts';
-import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.ts';
-import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.ts';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.ts';
-import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.ts';
-import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.ts';
-import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.ts';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
-import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.ts';
-import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.ts';
-import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.ts';
-import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.ts';
-import { DeinterlaceQsvFilter } from '@/ffmpeg/builder/filter/qsv/DeinterlaceQsvFilter.ts';
-import { QsvFormatFilter } from '@/ffmpeg/builder/filter/qsv/QsvFormatFilter.ts';
-import { ScaleQsvFilter } from '@/ffmpeg/builder/filter/qsv/ScaleQsvFilter.ts';
-import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.ts';
-import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.ts';
-import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkScaleFilter.ts';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.js';
+import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.js';
+import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
+import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
+import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
+import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
+import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
+import { DeinterlaceQsvFilter } from '@/ffmpeg/builder/filter/qsv/DeinterlaceQsvFilter.js';
+import { QsvFormatFilter } from '@/ffmpeg/builder/filter/qsv/QsvFormatFilter.js';
+import { ScaleQsvFilter } from '@/ffmpeg/builder/filter/qsv/ScaleQsvFilter.js';
+import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
+import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.js';
+import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkScaleFilter.js';
 import {
   PixelFormatNv12,
   PixelFormatP010,
   PixelFormatYuv420P10Le,
   PixelFormatYuva420P,
   PixelFormats,
-} from '@/ffmpeg/builder/format/PixelFormat.ts';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.ts';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.ts';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.ts';
-import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.ts';
-import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/QsvOptions.ts';
-import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.ts';
-import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.ts';
-import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.ts';
-import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.ts';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.ts';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
-import { Nullable } from '@/types/util.ts';
-import { isDefined, isNonEmptyString } from '@/util/index.ts';
+} from '@/ffmpeg/builder/format/PixelFormat.js';
+import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
+import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/QsvOptions.js';
+import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.js';
+import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
+import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
+import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
+import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { Nullable } from '@/types/util.js';
+import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';

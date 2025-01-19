@@ -1,5 +1,5 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.ts';
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TupleToUnion, defaultFfmpegSettings } from '@tunarr/types';
 import {
   Generated,

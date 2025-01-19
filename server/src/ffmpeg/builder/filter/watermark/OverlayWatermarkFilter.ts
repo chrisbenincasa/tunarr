@@ -1,4 +1,4 @@
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.ts';
+import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameSize } from '@/ffmpeg/builder/types.js';

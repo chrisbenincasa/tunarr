@@ -1,4 +1,4 @@
-import { ServerContext } from '@/serverContext.ts';
+import { ServerContext } from '@/serverContext.js';
 import { ExtraLogLevels, LogLevels } from '@/util/logging/LoggerFactory.js';
 import { LevelWithSilent } from 'pino';
 

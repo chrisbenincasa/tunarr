@@ -1,5 +1,5 @@
-import { Maybe } from '@/types/util.ts';
-import { groupByUniqProp, isNonEmptyString } from '@/util/index.ts';
+import { Maybe } from '@/types/util.js';
+import { groupByUniqProp, isNonEmptyString } from '@/util/index.js';
 import {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
@@ -19,7 +19,7 @@ import {
 import { v4 } from 'uuid';
 import { ChannelDB } from './ChannelDB.ts';
 
-import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { getDatabase } from './DBAccess.ts';
 import {
   withProgramChannels,

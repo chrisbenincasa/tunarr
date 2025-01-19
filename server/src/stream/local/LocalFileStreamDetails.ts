@@ -1,11 +1,11 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.ts';
-import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.ts';
-import { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.ts';
-import { Maybe, Nullable } from '@/types/util.ts';
-import dayjs from '@/util/dayjs.ts';
-import { fileExists } from '@/util/fsUtil.ts';
-import { isNonEmptyString } from '@/util/index.ts';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
+import { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.js';
+import { Maybe, Nullable } from '@/types/util.js';
+import dayjs from '@/util/dayjs.js';
+import { fileExists } from '@/util/fsUtil.js';
+import { isNonEmptyString } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { filter, find, isEmpty, map } from 'lodash-es';
 import { NonEmptyArray } from 'ts-essentials';
 import {

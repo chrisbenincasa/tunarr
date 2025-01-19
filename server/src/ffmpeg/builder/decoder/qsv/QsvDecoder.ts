@@ -1,5 +1,5 @@
-import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.ts';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.ts';
+import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 
 export abstract class QsvDecoder extends BaseDecoder {
   affectsFrameState: boolean = true;

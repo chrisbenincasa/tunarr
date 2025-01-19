@@ -1,6 +1,6 @@
-import { getDatabase } from '@/db/DBAccess.ts';
-import { MediaSourceType } from '@/db/schema/MediaSource.ts';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.ts';
+import { getDatabase } from '@/db/DBAccess.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { find, isNil } from 'lodash-es';
 import Fixer from './fixer.js';
 

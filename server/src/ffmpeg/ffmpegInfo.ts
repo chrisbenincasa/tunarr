@@ -1,10 +1,10 @@
-import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.ts';
-import { Result } from '@/types/result.ts';
+import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.js';
+import { Result } from '@/types/result.js';
 import { Nullable } from '@/types/util.js';
-import { ChildProcessHelper } from '@/util/ChildProcessHelper.ts';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { FfmpegSettings } from '@tunarr/types';
 import {
