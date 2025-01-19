@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.0](https://github.com/chrisbenincasa/tunarr/compare/v0.17.5...v0.18.0) (2025-01-19)
+
+
+### Features
+
+* add new sort order options for slot scheduling ([#1054](https://github.com/chrisbenincasa/tunarr/issues/1054)) ([d15e4e8](https://github.com/chrisbenincasa/tunarr/commit/d15e4e8847495a8e1f8392d7fdb7d85d7e455854))
+* **ffmpeg:** add audio language preferences ([#1046](https://github.com/chrisbenincasa/tunarr/issues/1046)) ([f0f78eb](https://github.com/chrisbenincasa/tunarr/commit/f0f78eb84b955202609d52e3e73764b695014127))
+
+
+### Bug Fixes
+
+* always return channels even if they have no program associations ([d41f81b](https://github.com/chrisbenincasa/tunarr/commit/d41f81b3acc074e4527eaf5c2f0575e1df53eb90))
+* ensure Jellyfin password redaction works as expected ([e717cac](https://github.com/chrisbenincasa/tunarr/commit/e717cacdccb644beb4047b8e2a0d70d4f7675d3c))
+* fix selecting mpeg2video as a video format ([a46cdd2](https://github.com/chrisbenincasa/tunarr/commit/a46cdd26be87fc3ad20de79f8a8a47684dd389a1))
+* return filler lists in alphabetical order by name ([51647ad](https://github.com/chrisbenincasa/tunarr/commit/51647ad91bd1ba95fb49f6c3291f5074e0ea52c0))
+
 ## [0.17.5](https://github.com/chrisbenincasa/tunarr/compare/v0.17.4...v0.17.5) (2025-01-16)
 
 
