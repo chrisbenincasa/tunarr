@@ -1,3 +1,4 @@
+import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.ts';
 import { Maybe, Nilable } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
@@ -13,7 +14,6 @@ import {
 } from '@tunarr/types/plex';
 import {
   AxiosRequestConfig,
-  InternalAxiosRequestConfig,
   RawAxiosRequestHeaders,
   isAxiosError,
 } from 'axios';
@@ -24,7 +24,6 @@ import {
   forEach,
   isEmpty,
   isError,
-  isObject,
   isUndefined,
   map,
   reject,
@@ -58,6 +57,7 @@ const PlexHeaders = {
 };
 
 export class PlexApiClient extends BaseApiClient {
+  protected redacter = new PlexRequestRedacter();
   private opts: PlexApiOptions;
   private accessToken: string;
 
@@ -173,7 +173,7 @@ export class PlexApiClient extends BaseApiClient {
         PlexGenericMediaContainerResponseSchema,
       );
       if (isQueryError(result)) {
-        throw result;
+        throw new Error(result.message);
       } else if (isUndefined(result)) {
         // Parse error - indicates that the URL is probably not a Plex server
         return false;
@@ -187,7 +187,6 @@ export class PlexApiClient extends BaseApiClient {
 
   async getDvrs() {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await this.doGetPath<PlexDvrsResponse>('/livetv/dvrs');
       return isUndefined(result?.Dvr) ? [] : result?.Dvr;
     } catch (err) {
@@ -295,27 +294,6 @@ export class PlexApiClient extends BaseApiClient {
       );
     }
     return super.preRequestValidate(req);
-  }
-
-  protected override redactRequestInfo(
-    conf: InternalAxiosRequestConfig<unknown>,
-  ): void {
-    super.redactRequestInfo(conf);
-    if (conf.headers) {
-      if (conf.headers.Authorization) {
-        conf.headers.Authorization = '<REDACTED>';
-      }
-
-      if (conf.headers['X-Plex-Token']) {
-        conf.headers['X-Plex-Token'] = '<REDACTED>';
-      }
-    }
-
-    if (conf.params && isObject(conf.params)) {
-      if (conf.params['X-Plex-Token']) {
-        conf.params['X-Plex-Token'] = '<REDACTED>';
-      }
-    }
   }
 
   static getThumbUrl(opts: {

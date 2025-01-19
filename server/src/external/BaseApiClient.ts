@@ -1,3 +1,4 @@
+import { AxiosRequestRedacter } from '@/external/Redacter.ts';
 import { Maybe, Try } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined } from '@/util/index.js';
@@ -6,7 +7,6 @@ import axios, {
   AxiosHeaderValue,
   AxiosInstance,
   AxiosRequestConfig,
-  InternalAxiosRequestConfig,
   isAxiosError,
 } from 'axios';
 import { isError, isString } from 'lodash-es';
@@ -58,6 +58,7 @@ export abstract class BaseApiClient<
 > {
   protected logger: Logger;
   protected axiosInstance: AxiosInstance;
+  protected redacter?: AxiosRequestRedacter;
 
   constructor(protected options: OptionsType) {
     this.logger = LoggerFactory.child({
@@ -116,7 +117,6 @@ export abstract class BaseApiClient<
   }
 
   protected preRequestValidate(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _req: AxiosRequestConfig,
   ): Maybe<QueryErrorResult> {
     return;
@@ -169,7 +169,7 @@ export abstract class BaseApiClient<
     } catch (error) {
       if (isAxiosError(error)) {
         if (error.config) {
-          this.redactRequestInfo(error.config);
+          this.redacter?.redact(error.config);
         }
         if (error.response?.status === 404) {
           this.logger.warn(
@@ -212,18 +212,6 @@ export abstract class BaseApiClient<
         // at this point.
         this.logger.error('Unknown error type thrown: %O', error);
         return new Error('Unknown error');
-      }
-    }
-  }
-
-  protected redactRequestInfo(conf: InternalAxiosRequestConfig): void {
-    BaseApiClient.redactRequestInfo(conf);
-  }
-
-  protected static redactRequestInfo(conf: InternalAxiosRequestConfig): void {
-    if (conf.headers) {
-      if (conf.headers.Authorization) {
-        conf.headers.Authorization = '<REDACTED>';
       }
     }
   }

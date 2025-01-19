@@ -1,3 +1,4 @@
+import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.ts';
 import { Maybe, Nilable } from '@/types/util.ts';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.ts';
@@ -13,18 +14,13 @@ import {
   JellyfinSystemInfo,
   JellyfinUser,
 } from '@tunarr/types/jellyfin';
-import axios, {
-  AxiosRequestConfig,
-  InternalAxiosRequestConfig,
-  isAxiosError,
-} from 'axios';
+import axios, { AxiosRequestConfig, isAxiosError } from 'axios';
 import {
   find,
   isBoolean,
   isEmpty,
   isNil,
   isNumber,
-  isObject,
   mapValues,
   omitBy,
   union,
@@ -94,6 +90,8 @@ export type JellyfinGetItemsQuery = {
 };
 
 export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
+  protected redacter = new JellyfinRequestRedacter();
+
   constructor(options: JellyfinApiClientOptions) {
     super({
       ...options,
@@ -156,7 +154,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       return await JellyfinAuthenticationResult.parseAsync(response.data);
     } catch (e) {
       if (isAxiosError(e) && e.config) {
-        this.redactRequestInfo(e.config);
+        new JellyfinRequestRedacter().redact(e.config);
       }
 
       LoggerFactory.root.error(
@@ -349,26 +347,5 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       );
     }
     return super.preRequestValidate(req);
-  }
-
-  protected override redactRequestInfo(
-    conf: InternalAxiosRequestConfig<unknown>,
-  ): void {
-    super.redactRequestInfo(conf);
-    if (conf.url?.includes('/AuthenticateByName')) {
-      conf.data = '<REDACTED>';
-    }
-
-    if (conf.headers) {
-      if (conf.headers['X-Emby-Token']) {
-        conf.headers['X-Emby-Token'] = '<REDACTED>';
-      }
-    }
-
-    if (conf.params && isObject(conf.params)) {
-      if (conf.params['X-Emby-Token']) {
-        conf.headers['X-Emby-Token'] = '<REDACTED>';
-      }
-    }
   }
 }
