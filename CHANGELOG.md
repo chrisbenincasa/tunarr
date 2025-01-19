@@ -6,7 +6,7 @@
 ### Features
 
 * add new sort order options for slot scheduling ([#1054](https://github.com/chrisbenincasa/tunarr/issues/1054)) ([d15e4e8](https://github.com/chrisbenincasa/tunarr/commit/d15e4e8847495a8e1f8392d7fdb7d85d7e455854))
-* **ffmpeg:** add audio language preferences ([#1046](https://github.com/chrisbenincasa/tunarr/issues/1046)) ([f0f78eb](https://github.com/chrisbenincasa/tunarr/commit/f0f78eb84b955202609d52e3e73764b695014127))
+* **ffmpeg:** add audio language preferences ([#1046](https://github.com/chrisbenincasa/tunarr/issues/1046)) ([f0f78eb](https://github.com/chrisbenincasa/tunarr/commit/f0f78eb84b955202609d52e3e73764b695014127)) - thanks @AugusDogus!
 
 
 ### Bug Fixes
