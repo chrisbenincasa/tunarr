@@ -5,7 +5,7 @@
       "changelog-path": "CHANGELOG.md",
       "release-type": "node",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
       "draft": false,
       "prerelease": false,
       "bootstrap-sha": "3f92f16fb02166239bc33b0f9b4ca5727b3be52b",
