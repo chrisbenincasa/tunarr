@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/chrisbenincasa/tunarr/compare/v0.18.1...v0.18.2) (2025-01-21)
+
+
+### Bug Fixes
+
+* fix tunarr.bat hardcoded node version path ([20c41f6](https://github.com/chrisbenincasa/tunarr/commit/20c41f69848a59a274700797c53f358ebcfe76a9))
+
 ## [0.18.1](https://github.com/chrisbenincasa/tunarr/compare/v0.18.0...v0.18.1) (2025-01-21)
 
 
