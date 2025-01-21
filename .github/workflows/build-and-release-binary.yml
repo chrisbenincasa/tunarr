@@ -66,7 +66,7 @@ jobs:
           # - name: ubuntu-latest
           #   target_name: linux-arm64
           #   binary_name: linux-arm64
-        node_version: [20.11.1]
+        node_version: [22.13.0]
     runs-on: ${{matrix.os.name}}
     continue-on-error: true
     steps:
@@ -80,7 +80,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.11.1
+          node-version: 22.13.0
 
       - uses: pnpm/action-setup@v3
         name: Install pnpm
