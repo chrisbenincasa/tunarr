@@ -9,8 +9,8 @@
   "main": "src/index.ts",
   "bin": "dist/index.js",
   "scripts": {
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
-    "build-dev": "NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
+    "build-dev": "cross-env NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "dotenv -- tsx scripts/bundle.ts",
     "clean": "rimraf ./build/",
@@ -87,6 +87,7 @@
     "@types/yargs": "^17.0.29",
     "@vitest/coverage-v8": "^2.1.8",
     "copyfiles": "^2.2.0",
+    "cross-env": "^7.0.3",
     "del-cli": "^3.0.0",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.1",
