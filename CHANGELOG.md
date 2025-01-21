@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/chrisbenincasa/tunarr/compare/v0.18.0...v0.18.1) (2025-01-21)
+
+
+### UI Changes
+
+* fix betterHumanize duration function to handle &gt;=1 days with &lt;1 hours ([6c07fe2](https://github.com/chrisbenincasa/tunarr/commit/6c07fe2aced5a13a151811fb600b08e84d3b5091))
+
 ## [0.18.0](https://github.com/chrisbenincasa/tunarr/compare/v0.17.5...v0.18.0) (2025-01-19)
 
 
