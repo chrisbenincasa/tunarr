@@ -3,20 +3,17 @@ import { ProgramDB } from '@/db/ProgramDB.js';
 import { PendingProgram } from '@/db/derived_types/Lineup.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { Channel } from '@/db/schema/Channel.js';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { MediaSource } from '@/db/schema/MediaSource.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Timer } from '@/util/perf.js';
-import { createExternalId } from '@tunarr/shared';
+import { ApiProgramMinter } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
 import { ContentProgram } from '@tunarr/types';
 import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
-import { isNil, map } from 'lodash-es';
-import {
-  EnrichedPlexTerminalMedia,
-  PlexItemEnumerator,
-} from '../PlexItemEnumerator.js';
+import { map } from 'lodash-es';
+import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
 export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicContentConfigPlexSource> {
@@ -28,6 +25,8 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   #channelDB: ChannelDB;
   #programDB: ProgramDB;
   #mediaSourceDB: MediaSourceDB;
+
+  #mediaSource: MediaSource;
 
   constructor(channel: Channel, config: DynamicContentConfigPlexSource) {
     super(channel, config);
@@ -41,11 +40,12 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       'plex',
       this.config.plexServerId,
     );
+
     if (!server) {
       throw new Error('media source not found');
     }
 
-    this.#plex = MediaSourceApiFactory().get(server);
+    this.#mediaSource = server;
   }
 
   protected async run() {
@@ -67,7 +67,10 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     );
 
     const channelPrograms: ContentProgram[] = map(enumeratedItems, (media) => {
-      return plexMediaToContentProgram(this.#plex.serverName, media);
+      return ApiProgramMinter.mintProgram(
+        { id: this.#mediaSource.uuid, name: this.#mediaSource.name },
+        { program: media, sourceType: 'plex' },
+      );
     });
 
     const dbPrograms =
@@ -89,50 +92,3 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     );
   }
 }
-
-// TODO: duplicated from web - move to common
-const plexMediaToContentProgram = (
-  serverName: string,
-  media: EnrichedPlexTerminalMedia,
-): ContentProgram => {
-  const uniqueId = createExternalId('plex', serverName, media.ratingKey);
-  return {
-    id: media.id ?? uniqueId,
-    persisted: !isNil(media.id),
-    originalProgram: { sourceType: 'plex', program: media },
-    duration: media.duration ?? 0,
-    externalSourceName: serverName,
-    externalSourceType: 'plex',
-    externalKey: media.ratingKey,
-    uniqueId,
-    type: 'content',
-    subtype: media.type,
-    title:
-      media.type === 'episode'
-        ? media.grandparentTitle ?? media.title
-        : media.title,
-    episodeTitle: media.type === 'episode' ? media.title : undefined,
-    episodeNumber: media.type === 'episode' ? media.index : undefined,
-    seasonNumber: media.type === 'episode' ? media.parentIndex : undefined,
-    artistName: media.type === 'track' ? media.grandparentTitle : undefined,
-    albumName: media.type === 'track' ? media.parentTitle : undefined,
-    // showId:
-    //   media.showId ??
-    //   (media.type === 'episode'
-    //     ? createExternalId('plex', serverName, media.grandparentRatingKey)
-    //     : undefined),
-    // seasonId:
-    //   media.seasonId ??
-    //   (media.type === 'episode'
-    //     ? createExternalId('plex', serverName, media.parentRatingKey)
-    //     : undefined),
-    externalIds: [
-      {
-        type: 'multi',
-        source: 'plex',
-        sourceId: serverName,
-        id: media.ratingKey,
-      },
-    ],
-  };
-};

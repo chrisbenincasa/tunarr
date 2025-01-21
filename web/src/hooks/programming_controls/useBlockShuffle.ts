@@ -8,9 +8,9 @@ import {
   map,
   mapValues,
   max,
+  orderBy,
   range,
   shuffle,
-  sortBy,
   values,
 } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
@@ -47,29 +47,30 @@ export interface BlockShuffleConfig {
 function sortProgram(
   p: UIContentProgram,
   by: 'release_date' | 'index' | 'alpha',
-  asc: boolean,
 ) {
   switch (by) {
     case 'release_date': {
       const ts = p.date ? new Date(p.date).getTime() : 0;
-      return asc ? ts : -ts;
+      return ts;
     }
     case 'index': {
       let n = 1;
 
-      if (!isUndefined(p.seasonNumber)) {
-        n += p.seasonNumber * 1e4;
+      const seasonNumber = p.parent?.index ?? p.seasonNumber;
+      if (!isUndefined(seasonNumber)) {
+        n += seasonNumber * 1e4;
       }
 
-      if (!isUndefined(p.episodeNumber)) {
-        n += p.episodeNumber * 1e2;
+      const episodeNumber = p.index ?? p.episodeNumber;
+      if (!isUndefined(episodeNumber)) {
+        n += episodeNumber * 1e2;
       }
 
-      return asc ? n : -n;
+      return n;
     }
 
     case 'alpha':
-      return asc ? p.title : -p.title;
+      return p.title;
   }
 }
 
@@ -124,18 +125,24 @@ function blockShuffle(
     .thru((groups) => {
       forEach(groups, (programs, key) => {
         if (key.startsWith('custom_')) {
-          groups[key] = sortBy(programs as UICustomProgram[], (p) => p.index);
+          groups[key] = orderBy(programs as UICustomProgram[], (p) => p.index, [
+            showsAscending ? 'asc' : 'desc',
+          ]);
         } else if (key.startsWith('show_') || key.startsWith('track_')) {
-          groups[key] = sortBy(programs as UIContentProgram[], (p) =>
-            sortProgram(p, 'index', showsAscending),
+          groups[key] = orderBy(
+            programs as UIContentProgram[],
+            (p) => sortProgram(p, 'index'),
+            [showsAscending ? 'asc' : 'desc'],
           );
         } else if (key.startsWith('movie')) {
-          groups[key] = sortBy(programs as UIContentProgram[], (p) =>
-            sortProgram(
-              p,
-              options?.sortOptions.movies.sort ?? 'release_date',
-              moviesAscending,
-            ),
+          groups[key] = orderBy(
+            programs as UIContentProgram[],
+            (p) =>
+              sortProgram(
+                p,
+                options?.sortOptions.movies.sort ?? 'release_date',
+              ),
+            [moviesAscending ? 'asc' : 'desc'],
           );
         }
       });

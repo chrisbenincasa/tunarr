@@ -44,7 +44,7 @@ export class JellyfinItemFinder {
     );
 
     const minter = ProgramMinterFactory.create();
-    const newExternalId = minter.mintJellyfinExternalId(
+    const newExternalId = minter.mintJellyfinExternalIdForApiItem(
       program.externalSourceId,
       program.uuid,
       potentialApiMatch,

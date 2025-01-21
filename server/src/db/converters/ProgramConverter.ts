@@ -1,6 +1,7 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import { ProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
@@ -15,7 +16,7 @@ import {
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { find, isNil, omitBy } from 'lodash-es';
-import { DeepPartial, MarkRequired } from 'ts-essentials';
+import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
 import {
   LineupItem,
@@ -23,11 +24,11 @@ import {
   RedirectItem,
   isOfflineItem,
   isRedirectItem,
-} from '../derived_types/Lineup.ts';
+} from '../derived_types/Lineup.js';
 import {
   ChannelWithPrograms,
   ChannelWithRelations,
-  ProgramDaoWithRelations,
+  ProgramWithRelations,
 } from '../schema/derivedTypes.js';
 
 /**
@@ -46,7 +47,7 @@ export class ProgramConverter {
       DeepPartial<ChannelWithRelations>,
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
-    preMaterializedProgram?: ProgramDaoWithRelations,
+    preMaterializedProgram?: ProgramWithRelations,
   ): ChannelProgram | null;
   lineupItemToChannelProgram(
     channel: ChannelWithPrograms,
@@ -55,7 +56,7 @@ export class ProgramConverter {
       DeepPartial<ChannelWithRelations>,
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
-    preMaterializedProgram?: ProgramDaoWithRelations,
+    preMaterializedProgram?: ProgramWithRelations,
   ): ChannelProgram | null {
     if (isOfflineItem(item)) {
       return this.offlineLineupItemToProgram(channel, item);
@@ -90,7 +91,7 @@ export class ProgramConverter {
   }
 
   programDaoToContentProgram(
-    program: ProgramDaoWithRelations,
+    program: ProgramWithRelations,
     externalIds: MinimalProgramExternalId[],
   ): ContentProgram {
     let extraFields: Partial<ContentProgram> = {};
@@ -102,33 +103,82 @@ export class ProgramConverter {
         seasonId: nullToUndefined(program.tvSeason?.uuid ?? program.seasonUuid),
         // Fallback to the denormalized field, for now
         seasonNumber: nullToUndefined(
-          program.tvSeason?.index, // ?? program.seasonNumber,
+          program.tvSeason?.index ?? program.seasonNumber,
         ),
         episodeNumber: nullToUndefined(program.episode),
-        episodeTitle: program.title,
-        title: nullToUndefined(program.tvShow?.title ?? program.showTitle),
+        title: program.title,
+        parent: {
+          id: nullToUndefined(program.tvSeason?.uuid ?? program.seasonUuid),
+          index: nullToUndefined(program.tvSeason?.index),
+          title: nullToUndefined(program.tvSeason?.title ?? program.showTitle),
+          year: nullToUndefined(program.tvSeason?.year),
+          externalKey: nullToUndefined(
+            find(
+              program.tvSeason?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          externalIds: seq.collect(program.tvSeason?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        grandparent: {
+          id: nullToUndefined(program.tvShow?.uuid ?? program.tvShowUuid),
+          index: nullToUndefined(program.tvShow?.index),
+          title: nullToUndefined(program.tvShow?.title),
+          externalKey: nullToUndefined(
+            find(
+              program.tvShow?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.tvShow?.year),
+          externalIds: seq.collect(program.tvShow?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
         index: nullToUndefined(program.episode),
-        parentIndex: nullToUndefined(program.tvSeason?.index),
-        grandparentIndex: nullToUndefined(program.tvShow?.index),
       };
-      // if (isEmpty(extraFields.showId)) {
-      //   this.logger.warn(
-      //     'Empty show UUID when converting program ID = %s. This may lead to broken frontend features. Please file a bug!',
-      //     program.uuid,
-      //   );
-      // }
     } else if (program.type === ProgramType.Track.toString()) {
       extraFields = {
-        albumName: nullToUndefined(program.trackAlbum?.title),
-        artistName: nullToUndefined(program.trackArtist?.title),
+        parent: {
+          id: nullToUndefined(program.trackAlbum?.uuid ?? program.albumUuid),
+          index: nullToUndefined(program.trackAlbum?.index),
+          title: nullToUndefined(
+            program.albumName ?? program.trackAlbum?.title,
+          ),
+          externalKey: nullToUndefined(
+            find(
+              program.trackAlbum?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.trackAlbum?.year),
+          externalIds: seq.collect(program.trackAlbum?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        grandparent: {
+          id: nullToUndefined(program.trackArtist?.uuid ?? program.artistUuid),
+          index: nullToUndefined(program.trackArtist?.index),
+          title: nullToUndefined(program.trackArtist?.title),
+          externalKey: nullToUndefined(
+            find(
+              program.trackArtist?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.trackArtist?.year),
+          externalIds: seq.collect(program.trackArtist?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
         albumId: nullToUndefined(program.trackAlbum?.uuid ?? program.albumUuid),
         artistId: nullToUndefined(
           program.trackArtist?.uuid ?? program.artistUuid,
         ),
         // HACK: Tracks save their index under the episode field
         index: nullToUndefined(program.episode),
-        parentIndex: nullToUndefined(program.trackAlbum?.index),
-        grandparentIndex: nullToUndefined(program.trackArtist?.index),
       };
     }
 
@@ -145,6 +195,10 @@ export class ProgramConverter {
       id: program.uuid,
       subtype: program.type,
       externalIds: seq.collect(externalIds, (eid) => this.toExternalId(eid)),
+      externalKey: program.externalKey,
+      externalSourceId: program.externalSourceId,
+      externalSourceName: program.externalSourceId,
+      externalSourceType: program.sourceType,
       ...omitBy(extraFields, isNil),
     };
   }
@@ -213,6 +267,39 @@ export class ProgramConverter {
         id: rawExternalId.externalKey,
       };
     } else if (
+      isValidSingleExternalIdType(rawExternalId.sourceType) &&
+      !isNonEmptyString(rawExternalId.externalSourceId)
+    ) {
+      return {
+        type: 'single' as const,
+        source: rawExternalId.sourceType,
+        id: rawExternalId.externalKey,
+      };
+    }
+
+    return;
+  }
+
+  private toGroupingExternalId(
+    rawExternalId: DeepNullable<ProgramGroupingExternalId>,
+  ) {
+    if (!rawExternalId.externalKey) {
+      return;
+    }
+
+    if (
+      rawExternalId.sourceType &&
+      isNonEmptyString(rawExternalId.externalSourceId) &&
+      isValidMultiExternalIdType(rawExternalId.sourceType)
+    ) {
+      return {
+        type: 'multi' as const,
+        source: rawExternalId.sourceType,
+        sourceId: rawExternalId.externalSourceId,
+        id: rawExternalId.externalKey,
+      };
+    } else if (
+      rawExternalId.sourceType &&
       isValidSingleExternalIdType(rawExternalId.sourceType) &&
       !isNonEmptyString(rawExternalId.externalSourceId)
     ) {

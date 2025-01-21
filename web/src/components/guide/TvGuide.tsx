@@ -292,15 +292,15 @@ export function TvGuide({ channelId, start, end }: Props) {
     lineup: TvGuideProgram[],
   ) => {
     const title = forTvGuideProgram({
-      content: (p) => p.title,
+      content: (p) => p.grandparent?.title ?? p.title,
       custom: (p) => p.program?.title ?? 'Custom Program',
       redirect: (p) => `Redirect to Channel ${p.channel}`,
       flex: 'Flex',
     })(program);
 
     const episodeTitle = forTvGuideProgram({
-      custom: (p) => p.program?.episodeTitle ?? '',
-      content: (p) => p.episodeTitle,
+      custom: (p) => p.program?.title ?? '',
+      content: (p) => p.title,
       default: '',
     })(program);
 

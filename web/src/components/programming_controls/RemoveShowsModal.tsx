@@ -70,9 +70,6 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
             }
             break;
           }
-          // case 'custom':
-          // case 'flex':
-          // case 'redirect':
           default:
             break;
         }

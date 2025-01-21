@@ -8,18 +8,18 @@ import { MinimalProgramExternalId } from './ProgramExternalId.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
 
-export type ProgramDaoWithRelations = ProgramDao & {
-  tvShow?: DeepNullable<Partial<ProgramGrouping>> | null;
-  tvSeason?: DeepNullable<Partial<ProgramGrouping>> | null;
-  trackArtist?: DeepNullable<Partial<ProgramGrouping>> | null;
-  trackAlbum?: DeepNullable<Partial<ProgramGrouping>> | null;
+export type ProgramWithRelations = ProgramDao & {
+  tvShow?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  tvSeason?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  trackArtist?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  trackAlbum?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
   // Require minimum data from externalId
   externalIds?: MinimalProgramExternalId[];
 };
 
 export type ChannelWithRelations = Channel & {
-  programs?: ProgramDaoWithRelations[];
-  fillerContent?: ProgramDaoWithRelations[];
+  programs?: ProgramWithRelations[];
+  fillerContent?: ProgramWithRelations[];
   fillerShows?: ChannelFillerShow[];
   transcodeConfig?: TranscodeConfig;
 };
@@ -39,7 +39,7 @@ export type ChannelWithPrograms = MarkRequired<
 
 export type ChannelFillerShowWithRelations = ChannelFillerShow & {
   fillerShow: MarkNonNullable<DeepNullable<FillerShow>, 'uuid'>;
-  fillerContent?: ProgramDaoWithRelations[];
+  fillerContent?: ProgramWithRelations[];
 };
 
 export type ChannelFillerShowWithContent = MarkRequired<
@@ -54,8 +54,3 @@ export type ProgramWithExternalIds = ProgramDao & {
 export type ProgramGroupingWithExternalIds = ProgramGrouping & {
   externalIds: ProgramGroupingExternalId[];
 };
-
-// export type DB = Omit<RawType.DB, 'channel' | 'mediaSource'> & {
-//   channel: Channel;
-//   mediaSource: MediaSource;
-// };

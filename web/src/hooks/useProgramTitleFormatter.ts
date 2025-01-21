@@ -3,7 +3,7 @@ import { isNonEmptyString } from '@/helpers/util';
 import { forProgramType } from '@tunarr/shared/util';
 import { ChannelProgram, CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { join, negate, reject } from 'lodash-es';
+import { isNil, join, negate, reject } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { useCustomShows } from './useCustomShows';
 
@@ -36,21 +36,19 @@ export const useProgramTitleFormatter = () => {
               // TODO: this makes some assumptions about number of seasons
               // and episodes... it may break
               const epPart =
-                p.seasonNumber && p.episodeNumber
-                  ? ` S${p.seasonNumber
-                      .toString()
-                      .padStart(2, '0')}E${p.episodeNumber
+                !isNil(p.parent?.index) && !isNil(p.index)
+                  ? ` S${p.parent.index.toString().padStart(2, '0')}E${p.index
                       .toString()
                       .padStart(2, '0')}`
                   : '';
-              return p.episodeTitle
-                ? `${p.title}${epPart} - ${p.episodeTitle}`
+              return isNonEmptyString(p.grandparent?.title)
+                ? `${p.grandparent.title}${epPart} - ${p.title}`
                 : p.title;
             }
             case 'track': {
               return join(
                 reject(
-                  [p.artistName, p.albumName, p.title],
+                  [p.grandparent?.title, p.parent?.title, p.title],
                   negate(isNonEmptyString),
                 ),
                 ' - ',

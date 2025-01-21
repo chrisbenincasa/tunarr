@@ -66,11 +66,15 @@ export const AllFillerShowFields: FillerShowFields = [
 export function withTvShow(
   eb: ExpressionBuilder<DB, 'program'>,
   fields: ProgramGroupingFields = AllProgramGroupingFields,
+  includeExternalIds: boolean = false,
 ) {
   return jsonObjectFrom(
     eb
       .selectFrom('programGrouping')
       .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
       .whereRef('programGrouping.uuid', '=', 'program.tvShowUuid')
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
@@ -80,11 +84,15 @@ export function withTvShow(
 export function withTvSeason(
   eb: ExpressionBuilder<DB, 'program'>,
   fields: ProgramGroupingFields = AllProgramGroupingFields,
+  includeExternalIds: boolean = false,
 ) {
   return jsonObjectFrom(
     eb
       .selectFrom('programGrouping')
       .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
       .whereRef('programGrouping.uuid', '=', 'program.seasonUuid')
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
@@ -94,11 +102,15 @@ export function withTvSeason(
 export function withTrackArtist(
   eb: ExpressionBuilder<DB, 'program'>,
   fields: ProgramGroupingFields = AllProgramGroupingFields,
+  includeExternalIds: boolean = false,
 ) {
   return jsonObjectFrom(
     eb
       .selectFrom('programGrouping')
       .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
       .whereRef('programGrouping.uuid', '=', 'program.artistUuid')
       .where('program.type', '=', ProgramType.Track)
       .orderBy('uuid'),
@@ -108,11 +120,15 @@ export function withTrackArtist(
 export function withTrackAlbum(
   eb: ExpressionBuilder<DB, 'program'>,
   fields: ProgramGroupingFields = AllProgramGroupingFields,
+  includeExternalIds: boolean = false,
 ) {
   return jsonObjectFrom(
     eb
       .selectFrom('programGrouping')
       .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
       .whereRef('programGrouping.uuid', '=', 'program.albumUuid')
       .where('program.type', '=', ProgramType.Track)
       .orderBy('uuid'),

@@ -5,17 +5,17 @@ export default defineConfig({
     globals: true,
     includeSource: ['src/**/*.test.ts'],
     typecheck: {
-      tsconfig: 'tsconfig.dev.json',
+      tsconfig: 'tsconfig.json',
     },
   },
-  define: {
-    'import.meta.vitest': false,
-  },
-  build: {
-    lib: {
-      formats: ['es', 'cjs'],
-      entry: './index.ts',
-      fileName: 'index',
-    },
-  },
+  // define: {
+  //   'import.meta.vitest': false,
+  // },
+  // build: {
+  //   lib: {
+  //     formats: ['es', 'cjs'],
+  //     entry: './index.ts',
+  //     fileName: 'index',
+  //   },
+  // },
 });

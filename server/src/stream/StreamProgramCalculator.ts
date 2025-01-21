@@ -4,7 +4,7 @@ import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { Channel } from '@/db/schema/Channel.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import type { ProgramDaoWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
+import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { FillerPicker } from '@/services/FillerPicker.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';

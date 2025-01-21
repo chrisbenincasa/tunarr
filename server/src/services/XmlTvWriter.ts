@@ -91,7 +91,15 @@ export class XmlTvWriter {
     channel: Channel,
   ): XmltvProgramme {
     const title = match(program)
-      .with({ type: 'content' }, (c) => c.title)
+      .with({ type: 'content' }, (c) => {
+        switch (c.subtype) {
+          case 'movie':
+            return c.title;
+          case 'episode':
+          case 'track':
+            return c.parent?.title ?? c.title;
+        }
+      })
       .with({ type: 'custom' }, (c) => c.program?.title ?? 'Custom Program')
       .with({ type: 'flex' }, (c) => c.title)
       .with({ type: 'redirect' }, (c) => `Redirect to Channel ${c.channel}`)
@@ -107,10 +115,10 @@ export class XmlTvWriter {
 
     if (isContentProgram(program)) {
       // TODO: Use grouping mappings here.
-      if (isNonEmptyString(program.episodeTitle)) {
+      if (program.subtype !== 'movie' && title !== program.title) {
         partial.subTitle ??= [
           {
-            _value: escape(program.episodeTitle),
+            _value: escape(program.title),
           },
         ];
       }
@@ -132,21 +140,21 @@ export class XmlTvWriter {
         ];
       }
 
-      if (!isNil(program.seasonNumber) && !isNil(program.episodeNumber)) {
+      const seasonNumber = program.parent?.index ?? program.seasonNumber;
+      const episodeNumber = program.index ?? program.episodeNumber;
+      if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
         partial.episodeNum = [
           {
             system: 'onscreen',
-            _value: `S${program.seasonNumber}E${program.episodeNumber}`,
+            _value: `S${seasonNumber}E${episodeNumber}`,
           },
         ];
         // Simply drop the xmltv notation system for specials (seasonn == 0)
         // or for any epipsode number that would lead to invalid syntax
-        if (program.seasonNumber > 0 && program.episodeNumber > 0) {
+        if (seasonNumber > 0 && episodeNumber > 0) {
           partial.episodeNum.push({
             system: 'xmltv_ns',
-            _value: `${program.seasonNumber - 1}.${
-              program.episodeNumber - 1
-            }.0/1`,
+            _value: `${seasonNumber - 1}.${episodeNumber - 1}.0/1`,
           });
         }
       }

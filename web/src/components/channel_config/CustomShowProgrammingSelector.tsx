@@ -1,3 +1,4 @@
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -33,10 +34,9 @@ import {
   customShowProgramsQuery,
   useCustomShows,
 } from '../../hooks/useCustomShows';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 dayjs.extend(duration);
 
@@ -46,12 +46,12 @@ const formattedTitle = forProgramType({
 });
 
 const formattedEpisodeTitle = forProgramType({
-  custom: (p) => p.program?.episodeTitle ?? '',
+  custom: (p) => p.program?.title ?? '',
 });
 
 type CustomShowListItemProps = {
   customShow: CustomShow;
-  selectShow(show: CustomShow): Promise<void>;
+  selectShow: (show: CustomShow) => Promise<void>;
 };
 
 function CustomShowListItem({

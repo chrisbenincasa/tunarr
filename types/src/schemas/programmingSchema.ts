@@ -20,10 +20,7 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const ExternalSourceTypeSchema = z.union([
-  z.literal('plex'),
-  z.literal('jellyfin'),
-]);
+export const ExternalSourceTypeSchema = z.enum(['plex', 'jellyfin']);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),
@@ -84,7 +81,7 @@ export const RedirectProgramSchema = BaseProgramSchema.extend({
   channelName: z.string(),
 });
 
-const OriginalProgramSchema = z.discriminatedUnion('sourceType', [
+export const OriginalProgramSchema = z.discriminatedUnion('sourceType', [
   z.object({
     sourceType: z.literal('plex'),
     program: z.discriminatedUnion('type', [
@@ -106,15 +103,27 @@ export type ContentProgramOriginalProgram = z.infer<
 export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   type: z.literal('content'),
   id: z.string().optional(), // Populated if persisted
-  // Only populated on client requests to the server
-  originalProgram: OriginalProgramSchema.optional(),
+  duration: z.number().min(0),
 });
 
-export const ContentProgramTypeSchema = z.union([
-  z.literal('movie'),
-  z.literal('episode'),
-  z.literal('track'),
-]);
+export const ContentProgramTypeSchema = z.enum(['movie', 'episode', 'track']);
+
+export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
+
+export const ContentProgramParentSchema = z.object({
+  // ID of the program_grouping in Tunarr
+  id: z.string().optional(),
+  // title - e.g. album, show, etc
+  title: z.string().optional(),
+  // Index of this parent relative to its grandparent
+  // e.g. season number
+  index: z.coerce.number().nonnegative().optional().catch(undefined),
+  // externalIds: z.array(ExternalIdSchema).default([]),
+  guids: z.array(z.string()).optional(),
+  year: z.number().nonnegative().optional().catch(undefined),
+  externalKey: z.string().optional(),
+  externalIds: z.array(ExternalIdSchema),
+});
 
 // Unfortunately we can't make this a discrim union, or even a regular union,
 // because it is used in other discriminatedUnions and zod cannot handle this
@@ -126,42 +135,42 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   subtype: ContentProgramTypeSchema,
   summary: z.string().optional(),
   date: z.string().optional(),
+  year: z.coerce.number().nonnegative().optional().catch(undefined),
   rating: z.string().optional(),
-  // If subtype = episode, this is the show title
+
+  // Path to the file exposed from the server's API
+  // e.g. Plex exposes a /library/parts/XYZ/123/file.CONTAINER endpoint
+  serverFileKey: z.string().optional(),
+  // The disk file path as seen from the server
+  serverFilePath: z.string().optional(),
   title: z.string(),
   // Episode specific stuff
+  // DEPRECATED: Use parentId/grandparentId
   showId: z.string().optional(),
   seasonId: z.string().optional(),
-  episodeTitle: z.string().optional(),
+  // Deprecated use parent.index
   seasonNumber: z.number().optional(),
+  // DEPRECATED: Use index
   episodeNumber: z.number().optional(),
   // Track specific stuff
+  // DEPRECATED: Use parentId/grandparentId
   albumId: z.string().optional(),
   artistId: z.string().optional(),
-  artistName: z.string().optional(),
-  albumName: z.string().optional(),
-  // These will eventually replace season/track specific stuff
-  index: z.number().nonnegative().optional(),
-  parentIndex: z.number().nonnegative().optional(),
-  grandparentIndex: z.number().nonnegative().optional(),
+
+  // Index of this item relative to its parent
+  index: z.number().nonnegative().optional().catch(undefined),
+  // ID of the program_grouping in Tunarr
+  parent: ContentProgramParentSchema.optional(),
+  grandparent: ContentProgramParentSchema.optional(),
   // External source metadata
-  externalSourceType: ExternalSourceTypeSchema.optional(),
-  externalSourceName: z.string().optional(),
-  externalKey: z.string().optional(),
+  externalSourceType: ExternalSourceTypeSchema,
+  externalSourceName: z.string(),
+  externalSourceId: z.string(),
+  externalKey: z.string(),
+
   uniqueId: z.string(), // If persisted, this is the ID. If not persisted, this is `externalSourceType|externalSourceName|externalKey`
   externalIds: z.array(ExternalIdSchema),
 });
-
-// Should be able to do this once we have https://github.com/colinhacks/zod/issues/2106
-// .refine(
-//   (val) =>
-//     (!val.externalSourceName && !val.externalSourceType) ||
-//     (val.externalSourceName && val.externalSourceType),
-//   {
-//     message:
-//       'Must define neither externalSourceName / externalSourceType, or both.',
-//   },
-// );
 
 export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),

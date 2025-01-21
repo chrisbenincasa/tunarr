@@ -176,8 +176,8 @@ const ProgramListItem = ({
     program.type === 'content'
       ? program
       : program.type === 'custom'
-      ? program.program
-      : null;
+        ? program.program
+        : null;
 
   if (underlyingProgram) {
     switch (underlyingProgram.subtype) {
