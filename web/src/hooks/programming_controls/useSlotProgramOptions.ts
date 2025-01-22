@@ -59,7 +59,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
         .map(
           (show) =>
             ({
-              description: show.title,
+              description: show.grandparent?.title ?? 'Missing Show Title',
               value: `show.${show.showId}`,
               type: 'show',
               showId: show.showId!,

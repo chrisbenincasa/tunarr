@@ -1,3 +1,5 @@
+import { betterHumanize } from '@/helpers/dayjs.ts';
+import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Box,
@@ -13,7 +15,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { forProgramType } from '@tunarr/shared/util';
 import { CustomShow, isCustomProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -40,15 +41,6 @@ import { addSelectedMedia } from '../../store/programmingSelector/actions';
 
 dayjs.extend(duration);
 
-const formattedTitle = forProgramType({
-  content: (p) => p.title,
-  custom: (p) => p.program!.title,
-});
-
-const formattedEpisodeTitle = forProgramType({
-  custom: (p) => p.program?.title ?? '',
-});
-
 type CustomShowListItemProps = {
   customShow: CustomShow;
   selectShow: (show: CustomShow) => Promise<void>;
@@ -59,6 +51,7 @@ function CustomShowListItem({
   selectShow,
 }: CustomShowListItemProps) {
   const apiClient = useTunarrApi();
+  const formatter = useProgramTitleFormatter();
   const [open, setOpen] = useState(false);
 
   const { data: programs, isPending: programsLoading } = useQuery({
@@ -75,18 +68,11 @@ function CustomShowListItem({
         .filter(typedProperty('persisted'))
         .filter(flow(typedProperty('program'), negate(isNil)))
         .map((program) => {
-          let title = formattedTitle(program);
-          const epTitle = formattedEpisodeTitle(program);
-          if (!isEmpty(epTitle)) {
-            title += ` - ${epTitle}`;
-          }
-
           return (
             <ListItem divider dense key={program.id} sx={{ pl: 4 }}>
               <ListItemText
-                // TODO add season and episode number?
-                primary={title}
-                secondary={dayjs.duration(program.duration).humanize()}
+                primary={formatter(program)}
+                secondary={betterHumanize(dayjs.duration(program.duration))}
               />
             </ListItem>
           );

@@ -44,8 +44,9 @@ type Props = {
 };
 
 const formattedTitle = forProgramType({
-  content: (p) => p.title,
-  custom: (p) => p.program?.title ?? 'Custom Program',
+  content: (p) => p.grandparent?.title ?? p.title,
+  custom: (p) =>
+    p.program?.grandparent?.title ?? p.program?.title ?? 'Custom Program',
   redirect: (p) => `Redirect to Channel ${p.channel}`,
   flex: 'Flex',
 });
@@ -85,7 +86,7 @@ export default function ProgramDetailsDialog({
     [],
   );
 
-  const episodeTitle = useMemo(
+  const programTitle = useMemo(
     () =>
       forProgramType({
         custom: (p) => p.program?.title ?? '',
@@ -253,7 +254,7 @@ export default function ProgramDetailsDialog({
   const thumbUrl = program ? thumbnailImage(program) : null;
   const externalUrl = program ? externalLink(program) : null;
   const programSummary = program ? summary(program) : null;
-  const programEpisodeTitle = program ? episodeTitle(program) : null;
+  const programEpisodeTitle = program ? programTitle(program) : null;
 
   useEffect(() => {
     setThumbLoadState('loading');

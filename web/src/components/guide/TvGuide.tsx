@@ -23,7 +23,7 @@ import {
 import { Link as RouterLink } from '@tanstack/react-router';
 import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
 import dayjs, { Dayjs } from 'dayjs';
-import { isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
+import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import { alternateColors, forTvGuideProgram } from '../../helpers/util';
@@ -298,9 +298,18 @@ export function TvGuide({ channelId, start, end }: Props) {
       flex: 'Flex',
     })(program);
 
+    // Clean this up...
     const episodeTitle = forTvGuideProgram({
-      custom: (p) => p.program?.title ?? '',
-      content: (p) => p.title,
+      custom: (p) =>
+        p.program?.subtype === 'movie'
+          ? compact([
+              p.program.date ? dayjs(p.program.date).year() : null,
+            ]).join(',')
+          : p.program?.title ?? '',
+      content: (p) =>
+        p.subtype === 'movie'
+          ? compact([p.date ? dayjs(p.date).year() : null]).join(',')
+          : p.title,
       default: '',
     })(program);
 

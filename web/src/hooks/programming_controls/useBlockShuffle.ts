@@ -70,7 +70,7 @@ function sortProgram(
     }
 
     case 'alpha':
-      return p.title;
+      return p.grandparent?.title ?? p.title;
   }
 }
 
@@ -91,9 +91,9 @@ function groupProgram(program: UIContentProgram | UICustomProgram) {
       case 'movie':
         return 'movie';
       case 'episode':
-        return `show_${program.title}`;
+        return `show_${program.showId ?? program.grandparent?.title}`;
       case 'track':
-        return `track_${program.albumId ?? program.title}`;
+        return `track_${program.albumId ?? program.parent?.title}`;
     }
   } else {
     return `custom_${program.customShowId}`;

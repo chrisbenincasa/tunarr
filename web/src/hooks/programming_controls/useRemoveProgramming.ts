@@ -56,14 +56,16 @@ export const removeProgramming = (
       case 'episode': {
         const basedOnShow = isEmpty(request.showIds)
           ? false
-          : showIdsSet.has(program.showId ?? program.title);
+          : showIdsSet.has(program.showId ?? program.grandparent?.title ?? '');
         const basedOnSpecial = !!request.specials && program.seasonNumber === 0;
         return basedOnShow || basedOnSpecial;
       }
       case 'track':
         return isEmpty(request.artistIds)
           ? false
-          : artistsSet.has(program.artistId ?? program.title);
+          : artistsSet.has(
+              program.artistId ?? program.grandparent?.title ?? '',
+            );
     }
   };
 
