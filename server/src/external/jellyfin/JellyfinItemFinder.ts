@@ -1,16 +1,18 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramMinterFactory } from '@/db/converters/ProgramMinter.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
 import {
@@ -19,16 +21,18 @@ import {
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
+@injectable()
 export class JellyfinItemFinder {
-  #logger = LoggerFactory.child({ className: this.constructor.name });
-
-  constructor(private programDB: ProgramDB) {}
+  constructor(
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(KEYS.Logger) private logger: Logger,
+  ) {}
 
   async findForProgramAndUpdate(programId: string) {
     const program = await this.programDB.getProgramById(programId);
 
     if (!program) {
-      this.#logger.warn('No program found with ID: %s', programId);
+      this.logger.warn('No program found with ID: %s', programId);
       return;
     }
 
@@ -70,9 +74,8 @@ export class JellyfinItemFinder {
         updatedProgram.duration,
       );
       GlobalScheduler.scheduleOneOffTask(
-        ReconcileProgramDurationsTask.name,
+        ReconcileProgramDurationsTask.KEY,
         dayjs().add(500, 'ms'),
-        new ReconcileProgramDurationsTask(),
       );
     }
 
@@ -82,7 +85,7 @@ export class JellyfinItemFinder {
   async findForProgramId(programId: string) {
     const program = await this.programDB.getProgramById(programId);
     if (!program) {
-      this.#logger.warn('No program found with ID: %s', programId);
+      this.logger.warn('No program found with ID: %s', programId);
       return;
     }
     return this.findForProgram(program);
@@ -90,7 +93,7 @@ export class JellyfinItemFinder {
 
   async findForProgram(program: ProgramWithExternalIds) {
     if (program.sourceType !== 'jellyfin') {
-      this.#logger.warn('Program does not have source type "jellyfin"');
+      this.logger.warn('Program does not have source type "jellyfin"');
       return;
     }
 
@@ -99,7 +102,7 @@ export class JellyfinItemFinder {
     );
 
     if (!jfClient) {
-      this.#logger.error(
+      this.logger.error(
         "Couldn't get jellyfin api client for id: %s",
         program.externalSourceId,
       );
@@ -109,7 +112,7 @@ export class JellyfinItemFinder {
     // If we can locate the item on JF, there is no problem.
     const existingItem = await jfClient.getItem(program.externalKey);
     if (!isQueryError(existingItem) && isDefined(existingItem.data)) {
-      this.#logger.error(
+      this.logger.error(
         existingItem,
         'Item exists on Jellyfin - no need to find a new match',
       );
@@ -170,7 +173,7 @@ export class JellyfinItemFinder {
             ),
           );
         } else {
-          this.#logger.error(
+          this.logger.error(
             { error: queryResult },
             'Error while querying items on Jellyfin',
           );

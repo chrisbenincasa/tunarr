@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import { serverOptions, setServerOptions } from '../src/globals.js';
-import { initServer } from '../src/server.js';
+import { initServer } from '../src/Server.js';
 import { initTestDb } from './testDb.js';
 
 export async function initTestApp(port: number) {

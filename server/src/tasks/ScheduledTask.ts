@@ -1,6 +1,7 @@
 import { Maybe } from '@/types/util.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
+import { interfaces } from 'inversify';
 import { isDate } from 'lodash-es';
 import schedule, { RecurrenceRule } from 'node-schedule';
 import { Task } from './Task.js';
@@ -19,7 +20,7 @@ export class ScheduledTask<OutType = unknown> {
   protected logger: Logger;
   protected scheduledJob: schedule.Job;
 
-  private factory: TaskFactoryFn<OutType>;
+  private factory: interfaces.AutoFactory<Task<OutType>>;
   private schedule: ScheduleRule;
 
   public running: boolean = false;
@@ -30,7 +31,7 @@ export class ScheduledTask<OutType = unknown> {
   constructor(
     jobName: string,
     scheduleRule: ScheduleRule,
-    taskFactory: TaskFactoryFn<OutType>,
+    taskFactory: interfaces.AutoFactory<Task<OutType>>,
     options?: ScheduledTaskOptions,
   ) {
     this.logger = LoggerFactory.child({

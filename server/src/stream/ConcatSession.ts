@@ -2,7 +2,7 @@ import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
-import { ConcatStream } from './ConcatStream.ts';
+import { ConcatStreamFactory } from './ConcatStream.ts';
 import { DirectStreamSession } from './DirectStreamSession.js';
 import { SessionOptions } from './Session.js';
 
@@ -11,12 +11,18 @@ export type ConcatSessionOptions = SessionOptions & {
   audioOnly: boolean;
 };
 
+export type ConcatSessionFactory = (
+  channel: ChannelWithTranscodeConfig,
+  options: ConcatSessionOptions,
+) => ConcatSession;
+
 export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
   #transcodeSession: FfmpegTranscodeSession;
 
   constructor(
     channel: ChannelWithTranscodeConfig,
     options: ConcatSessionOptions,
+    private concatStreamFactory: ConcatStreamFactory,
   ) {
     super(channel, options);
     this.on('removeConnection', () => {
@@ -35,7 +41,7 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
   }
 
   protected async initializeStream(): Promise<FfmpegTranscodeSession> {
-    this.#transcodeSession = await new ConcatStream(
+    this.#transcodeSession = await this.concatStreamFactory(
       this.channel,
       this.sessionOptions.sessionType,
     ).createSession();

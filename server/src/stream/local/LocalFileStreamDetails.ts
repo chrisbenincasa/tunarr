@@ -1,4 +1,3 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.js';
 import { Maybe, Nullable } from '@/types/util.js';
@@ -8,6 +7,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { filter, find, isEmpty, map } from 'lodash-es';
 import { NonEmptyArray } from 'ts-essentials';
+import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import {
   AudioStreamDetails,
   FileStreamSource,
@@ -21,7 +21,7 @@ export class LocalFileStreamDetails {
 
   constructor(
     private path: string,
-    private settingsDB: SettingsDB = getSettings(),
+    private settingsDB: ISettingsDB,
   ) {}
 
   async getStream(): Promise<Nullable<ProgramStreamResult>> {
@@ -30,7 +30,7 @@ export class LocalFileStreamDetails {
       return null;
     }
 
-    const ffmpegInfo = new FfmpegInfo(this.settingsDB.ffmpegSettings());
+    const ffmpegInfo = new FfmpegInfo(this.settingsDB);
 
     const probeResult = await ffmpegInfo.probeFile(this.path);
 

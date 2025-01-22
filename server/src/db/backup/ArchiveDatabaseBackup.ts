@@ -15,8 +15,12 @@ import path from 'node:path';
 import { BackupResult, DatabaseBackup } from './DatabaseBackup.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
 
+export type ArchiveDatabaseBackupFactory = (
+  config: FileBackupOutput,
+) => ArchiveDatabaseBackup;
+
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
-  #logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
+  logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
   #config: FileBackupOutput;
   #normalizedOutputPath: string;
 
@@ -42,9 +46,9 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     let tempDir: string;
     try {
       tempDir = await fs.mkdtemp(workingDirectory);
-      this.#logger.debug('Working on new backup at %s', tempDir);
+      this.logger.debug('Working on new backup at %s', tempDir);
     } catch (e) {
-      this.#logger.error(
+      this.logger.error(
         e,
         'Error creating temp directory at %s',
         workingDirectory,
@@ -56,7 +60,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     const isGzip = !!this.#config.gzip && this.#config.archiveFormat === 'tar';
 
     if (!(await fileExists(this.#normalizedOutputPath))) {
-      this.#logger.debug(
+      this.logger.debug(
         'Backup path at %s does not exist. Creating it now.',
         this.#normalizedOutputPath,
       );
@@ -70,7 +74,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       }${isGzip ? '.gz' : ''}`,
     );
 
-    this.#logger.info(`Writing backup to ${backupFileName}`);
+    this.logger.info(`Writing backup to ${backupFileName}`);
 
     const outStream = createWriteStream(backupFileName);
     const archive = archiver(this.#config.archiveFormat, { gzip: isGzip });
@@ -78,7 +82,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       archive.on('end', () => resolve(void 0));
       archive.on('error', reject);
       archive.on('entry', (entry) => {
-        this.#logger.debug('Added entry to backup: %s', entry.name);
+        this.logger.debug('Added entry to backup: %s', entry.name);
       });
     });
 
@@ -96,18 +100,18 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       .glob('*.xml', { cwd: getDatabasePath('') });
     await archive.finalize();
 
-    this.#logger.trace('Finalized archive stream %s', backupFileName);
+    this.logger.trace('Finalized archive stream %s', backupFileName);
 
     await fs.rm(tempDir, { recursive: true });
 
-    this.#logger.trace('Deleted temp backup directory');
+    this.logger.trace('Deleted temp backup directory');
 
     await this.deleteOldBackupIfNecessary();
 
     return finishedPromise
       .then(() => ({ type: 'success' as const, data: backupFileName }))
       .catch((e) => {
-        this.#logger.error(e, 'Error creating backup');
+        this.logger.error(e, 'Error creating backup');
         return { type: 'error' };
       });
   }
@@ -141,7 +145,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     );
 
     if (relevantListings.length > this.#config.maxBackups) {
-      this.#logger.debug(
+      this.logger.debug(
         'Found %d old backups. The limit is %d',
         relevantListings.length,
         this.#config.maxBackups,
@@ -157,12 +161,12 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
         { concurrency: 3 },
       )) {
         if (result.type === 'error') {
-          this.#logger.warn(
+          this.logger.warn(
             'Unable to delete old backup file: %s',
             result.input,
           );
         } else {
-          this.#logger.debug(
+          this.logger.debug(
             'Successfully deleted old backup file %s',
             result.input[0],
           );
@@ -171,3 +175,5 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     }
   }
 }
+
+export const ArchiveDatabaseBackupKey = Symbol.for(ArchiveDatabaseBackup.name);

@@ -26,11 +26,9 @@ export abstract class Task<Data = unknown> {
 
   public abstract ID: string | Tag<TaskId, Data>;
 
-  constructor() {
-    this.logger = LoggerFactory.child({
-      caller: import.meta,
-      className: this.constructor.name,
-    });
+  constructor(logger?: Logger) {
+    this.logger =
+      logger ?? LoggerFactory.child({ className: this.constructor.name });
   }
 
   protected abstract runInternal(): Promise<Maybe<Data>>;
@@ -59,7 +57,7 @@ export abstract class Task<Data = unknown> {
       const duration = round(performance.now() - start, 2);
       this.logger.warn(
         error,
-        'Task %s ran in %d ms and failed. Error = %O',
+        'Task %s ran in %d ms and failed',
         this.constructor.name,
         duration,
       );
@@ -104,9 +102,8 @@ export function AnonymousTask<OutType = unknown>(
       return `AnonymousTest_` + id;
     }
 
-    // eslint-disable-next-line @typescript-eslint/require-await
     protected async runInternal() {
       return runnable();
     }
-  })();
+  })(LoggerFactory.child({ className: `AnonymousTask`, caller: import.meta }));
 }

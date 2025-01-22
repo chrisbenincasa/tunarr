@@ -346,7 +346,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           break;
         case 'hls_direct': {
           const playlist = await new HlsPlaylistCreator(
-            req.serverCtx.streamProgramCalculator(),
+            req.serverCtx.streamProgramCalculator,
           ).createPlaylist(channelId, dayjs(), {
             protocol: req.protocol,
             host: req.host,

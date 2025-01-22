@@ -1,11 +1,12 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { SettingsDB, defaultXmlTvSettings } from '@/db/SettingsDB.js';
+import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';
-import { ServerContext } from '@/serverContext.js';
 import { TVGuideService } from '@/services/TvGuideService.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { mapAsyncSeq } from '@/util/index.js';
@@ -13,8 +14,10 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { Task } from './Task.js';
 
+@injectable()
 export class UpdateXmlTvTask extends Task<void> {
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
 
@@ -23,31 +26,16 @@ export class UpdateXmlTvTask extends Task<void> {
     task: UpdateXmlTvTask.ID as string,
     className: this.constructor.name,
   });
-  #channelDB: ChannelDB;
-  #settingsDB: SettingsDB;
-  #guideService: TVGuideService;
 
   public ID = UpdateXmlTvTask.ID;
 
-  static create(serverContext: ServerContext): UpdateXmlTvTask {
-    return new UpdateXmlTvTask(
-      serverContext.channelDB,
-      serverContext.settings,
-      serverContext.guideService,
-      serverContext.mediaSourceDB,
-    );
-  }
-
-  private constructor(
-    channelDB: ChannelDB,
-    dbAccess: SettingsDB,
-    guideService: TVGuideService,
-    private mediaSourceDB: MediaSourceDB,
+  constructor(
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(TVGuideService) private guideService: TVGuideService,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {
     super();
-    this.#channelDB = channelDB;
-    this.#settingsDB = dbAccess;
-    this.#guideService = guideService;
   }
 
   get taskName() {
@@ -60,24 +48,24 @@ export class UpdateXmlTvTask extends Task<void> {
 
   private async updateXmlTv() {
     try {
-      let xmltvSettings = this.#settingsDB.xmlTvSettings();
+      let xmltvSettings = this.settingsDB.xmlTvSettings();
       if (!(await fileExists(xmltvSettings.outputPath))) {
         this.logger.debug(
           'XMLTV settings missing at path %s. Regenerating path.',
           xmltvSettings.outputPath,
         );
-        await this.#settingsDB.updateSettings('xmltv', {
+        await this.settingsDB.updateSettings('xmltv', {
           ...xmltvSettings,
           outputPath: defaultXmlTvSettings(globalOptions().databaseDirectory)
             .outputPath,
         });
         // Re-read
-        xmltvSettings = this.#settingsDB.xmlTvSettings();
+        xmltvSettings = this.settingsDB.xmlTvSettings();
       }
 
       await new LineupCreator().promoteAllPendingLineups();
 
-      await this.#guideService.buildAllChannels(
+      await this.guideService.buildAllChannels(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),
       );
 
@@ -87,7 +75,7 @@ export class UpdateXmlTvTask extends Task<void> {
       return;
     }
 
-    const channels = await this.#channelDB.getAllChannels();
+    const channels = await this.channelDB.getAllChannels();
 
     const allMediaSources = await this.mediaSourceDB.findByType('plex');
 

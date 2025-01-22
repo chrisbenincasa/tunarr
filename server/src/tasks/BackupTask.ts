@@ -1,15 +1,22 @@
-import { getSettings } from '@/db/SettingsDB.js';
-import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.js';
+import { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { Tag } from '@tunarr/types';
 import { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { Task, TaskId } from './Task.ts';
 
+export type BackupTaskFactory = (
+  config: DeepReadonly<BackupConfiguration>,
+) => () => BackupTask;
+
 export class BackupTask extends Task {
+  static KEY = Symbol.for(BackupTask.name);
   public ID: string | Tag<TaskId, unknown> = BackupTask.name;
 
-  constructor(private config: DeepReadonly<BackupConfiguration>) {
+  constructor(
+    private config: DeepReadonly<BackupConfiguration>,
+    private dbBackupFactory: ArchiveDatabaseBackupFactory,
+  ) {
     super();
   }
 
@@ -41,10 +48,7 @@ export class BackupTask extends Task {
 
     for (const output of validOutputs) {
       try {
-        const result = await new ArchiveDatabaseBackup(
-          getSettings(),
-          output,
-        ).backup();
+        const result = await this.dbBackupFactory(output).backup();
         if (result.type === 'success') {
           this.logger.info('Successfully generated backup to %s', result.data);
         }

@@ -2,8 +2,9 @@ import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { ProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
+import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -15,6 +16,7 @@ import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
+import { inject, injectable } from 'inversify';
 import { find, isNil, omitBy } from 'lodash-es';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
 import { isPromise } from 'util/types';
@@ -34,11 +36,9 @@ import {
 /**
  * Converts DB types to API types
  */
+@injectable()
 export class ProgramConverter {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: ProgramConverter.name,
-  });
+  constructor(@inject(KEYS.Logger) private logger: Logger) {}
 
   lineupItemToChannelProgram(
     channel: ChannelWithRelations,

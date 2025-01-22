@@ -1,4 +1,3 @@
-import { getSettings } from '@/db/SettingsDB.js';
 import {
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,
@@ -10,6 +9,8 @@ import { Resolution } from '@tunarr/types';
 import { Kysely, sql } from 'kysely';
 import { isEmpty } from 'lodash-es';
 import { v4 } from 'uuid';
+import { SettingsDBFactory } from '../../db/SettingsDBFactory.ts';
+import { globalOptions } from '../../globals.ts';
 
 export default {
   async up(db: Kysely<DB>) {
@@ -99,7 +100,10 @@ export default {
     // Then we will need to associate the config with channels, creating new configs
     // with channel-specific overrides wherever necessary.
     // This process should happen exactly once, which is why we are putting it here.
-    const existingFfmpegSettings = getSettings().ffmpegSettings();
+    // TODO: Dont do this
+    const existingFfmpegSettings = new SettingsDBFactory(globalOptions())
+      .get()
+      .ffmpegSettings();
     const audioSetting = TranscodeAudioOutputFormats.find(
       (fmt) => existingFfmpegSettings.audioEncoder === fmt,
     );

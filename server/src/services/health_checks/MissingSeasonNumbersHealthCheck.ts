@@ -1,12 +1,14 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import { injectable } from 'inversify';
 import {
   HealthCheck,
   HealthCheckResult,
   HealthyHealthCheckResult,
 } from './HealthCheck.ts';
 
+@injectable()
 export class MissingSeasonNumbersHealthCheck implements HealthCheck {
   readonly id = 'MissingSeasonNumbers';
 

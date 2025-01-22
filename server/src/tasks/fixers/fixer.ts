@@ -1,15 +1,21 @@
-import { RootLogger } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 
 export default abstract class Fixer {
+  protected abstract logger: Logger;
+
   // False if the fixed data isn't required for proper server functioning
   canRunInBackground: boolean = false;
 
   async run() {
     try {
-      RootLogger.debug('Running fixer %s', this.constructor.name);
+      this.logger.debug('Running fixer %s', this.constructor.name);
       return this.runInternal();
     } catch (e) {
-      RootLogger.debug(e, 'Error when running fixer %s', this.constructor.name);
+      this.logger.debug(
+        e,
+        'Error when running fixer %s',
+        this.constructor.name,
+      );
     }
   }
 

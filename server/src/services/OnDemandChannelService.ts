@@ -1,14 +1,24 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { KEYS } from '@/types/inject.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { isNull, isUndefined } from 'lodash-es';
 
+@injectable()
 export class OnDemandChannelService {
-  #logger = LoggerFactory.child({ className: this.constructor.name });
-  #locks: MutexMap = new MutexMap();
+  #locks: MutexMap;
 
-  constructor(private channelDB: ChannelDB) {}
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.MutexMap) mutexMap: MutexMap,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+  ) {
+    this.#locks = mutexMap;
+  }
+
+  // constructor(private channelDB: ChannelDB) {}
 
   async isChannelPlaying(id: string) {
     const channelAndLineup = await this.channelDB.loadChannelAndLineup(id);
@@ -81,7 +91,7 @@ export class OnDemandChannelService {
           cursor: nextCursor,
         })
         .finally(() => {
-          this.#logger.debug(
+          this.logger.debug(
             'Paused on-demand channel %s (at = %s)',
             id,
             dayjs(pauseTime).format(),
@@ -119,7 +129,7 @@ export class OnDemandChannelService {
           lastResumed: +now,
         })
         .finally(() => {
-          this.#logger.debug(
+          this.logger.debug(
             'Resumed on-demand channel %s (at = %s)',
             id,
             now.format(),
@@ -154,8 +164,7 @@ export class OnDemandChannelService {
   }
 
   private async loadOnDemandChannelLineup(id: string) {
-    const channelAndLineup =
-      await this.channelDB.loadDirectChannelAndLineup(id);
+    const channelAndLineup = await this.channelDB.loadChannelAndLineup(id);
     if (isNull(channelAndLineup)) {
       return;
     }

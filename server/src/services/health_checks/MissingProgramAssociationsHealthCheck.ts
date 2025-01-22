@@ -1,4 +1,5 @@
 import { getDatabase } from '@/db/DBAccess.js';
+import { injectable } from 'inversify';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
@@ -8,6 +9,7 @@ import {
   healthCheckResult,
 } from './HealthCheck.ts';
 
+@injectable()
 export class MissingProgramAssociationsHealthCheck implements HealthCheck {
   readonly id: string = this.constructor.name;
 

@@ -1,13 +1,15 @@
-import { ServerContext } from '@/serverContext.js';
-import { BackupTask } from '@/tasks/BackupTask.js';
+import { container } from '@/container.js';
+import { ServerContext } from '@/ServerContext.js';
+import { BackupTask, BackupTaskFactory } from '@/tasks/BackupTask.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
-import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
+import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { Task, TaskId } from '@/tasks/Task.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
+import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -15,6 +17,7 @@ import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
 import type { Tag } from '@tunarr/types';
 import { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
+import { interfaces } from 'inversify';
 import {
   filter,
   flatten,
@@ -30,6 +33,7 @@ import { v4 } from 'uuid';
 const { isDayjs } = dayjs;
 
 class Scheduler {
+  private logger = LoggerFactory.child({ className: Scheduler.name });
   #scheduledJobsById: Record<string, ScheduledTask[]> = {};
 
   // TaskId values always have an associated task (after server startup)
@@ -60,7 +64,14 @@ class Scheduler {
     Id extends TaskId,
     OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
   >(id: TaskId): ScheduledTask<OutType> {
-    return this.getScheduledJobs<Id, OutType>(id)[0];
+    return this.getScheduledJobs<Id, OutType>(id)?.[0];
+  }
+
+  runScheduledJobNow<
+    Id extends TaskId,
+    OutType = Id extends Tag<TaskId, infer Out> ? Out : unknown,
+  >(id: TaskId, background?: boolean): Promise<OutType | undefined> {
+    return this.getScheduledJob<Id, OutType>(id)?.runNow(background);
   }
 
   // Clears all scheduled tasks for an ID and cancels them
@@ -76,16 +87,29 @@ class Scheduler {
 
   scheduleTask(id: string, task: ScheduledTask): boolean {
     this.insertTask(id, task);
+    this.logger.debug('Scheduled task %s', task.name);
     return true;
   }
 
   scheduleOneOffTask<OutType = unknown>(
-    name: string,
+    name: interfaces.ServiceIdentifier,
     when: Dayjs | Date | number,
-    task: Task<OutType>,
-  ) {
-    const id = `one_off_${name}`;
-    const scheduledTaskName = `${name}_${v4()}`;
+    taskInstance?: Task<OutType>,
+  ): void {
+    let task: Task<OutType>;
+    if (taskInstance) {
+      task = taskInstance;
+    } else {
+      const taskFactory = container.tryGet<() => Task<OutType>>(name);
+      if (!taskFactory) {
+        this.logger.error('Unable to schedule unknown task: %s', name);
+        return;
+      }
+
+      task = taskFactory();
+    }
+    const id = `one_off_${name.toString()}`;
+    const scheduledTaskName = `${name.toString()}_${v4()}`;
     task.addOnCompleteListener(() => {
       this.#scheduledJobsById[id] = reject(
         this.#scheduledJobsById[id] ?? [],
@@ -125,7 +149,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       UpdateXmlTvTask.name,
       hoursCrontab(xmlTvSettings.refreshHours),
-      () => UpdateXmlTvTask.create(serverContext),
+      container.get(KEYS.UpdateXmlTvTaskFactory),
     ),
   );
 
@@ -134,7 +158,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       CleanupSessionsTask.name,
       minutesCrontab(1),
-      () => new CleanupSessionsTask(),
+      container.get(CleanupSessionsTask.KEY),
     ),
   );
 
@@ -143,7 +167,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     new ScheduledTask(
       OnDemandChannelStateTask.name,
       minutesCrontab(1),
-      () => new OnDemandChannelStateTask(),
+      container.get(OnDemandChannelStateTask.KEY),
       { runAtStartup: true },
     ),
   );
@@ -154,7 +178,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       ScheduleDynamicChannelsTask.name,
       // Temporary
       hoursCrontab(1),
-      () => ScheduleDynamicChannelsTask.create(serverContext.channelDB),
+      container.get(ScheduleDynamicChannelsTask.KEY),
       {
         runAtStartup: true,
         runOnSchedule: true,
@@ -168,7 +192,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       ReconcileProgramDurationsTask.name,
       // temporary
       hoursCrontab(1),
-      () => new ReconcileProgramDurationsTask(),
+      container.get(ReconcileProgramDurationsTask.KEY),
     ),
   );
 
@@ -222,7 +246,7 @@ export function scheduleBackupJobs(
         new ScheduledTask(
           BackupTask.name,
           cronSchedule,
-          () => new BackupTask(config),
+          container.get<BackupTaskFactory>(BackupTask.KEY)(config),
           { runOnSchedule: true },
         ),
       );

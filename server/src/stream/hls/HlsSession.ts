@@ -1,25 +1,38 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { getSettings } from '@/db/SettingsDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.js';
-import { HlsOutputFormat } from '@/ffmpeg/builder/constants.js';
-import { serverContext } from '@/serverContext.js';
+import { HlsOutputFormat, OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
+import { ProgramStream } from '@/stream/ProgramStream.js';
 import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
+import {
+  HlsSlowerSession,
+  HlsSlowerSessionOptions,
+} from '@/stream/hls/HlsSlowerSession.js';
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { wait } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import dayjs, { Dayjs } from 'dayjs';
+import { interfaces } from 'inversify';
 import { filter, isEmpty, last, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
-import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession.ts';
-import { HlsPlaylistMutator } from './HlsPlaylistMutator.ts';
+import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession.js';
+import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
+
+export type HlsSessionProvider = (
+  channel: ChannelWithTranscodeConfig,
+  options: HlsSessionOptions,
+) => HlsSession;
+
+export type HlsSlowerSessionProvider = (
+  channel: ChannelWithTranscodeConfig,
+  options: HlsSlowerSessionOptions,
+) => HlsSlowerSession;
 
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
@@ -28,7 +41,6 @@ import { HlsPlaylistMutator } from './HlsPlaylistMutator.ts';
 export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   public readonly sessionType = 'hls' as const;
   #playlistStart: Dayjs;
-  #programCalculator: StreamProgramCalculator;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
@@ -36,14 +48,15 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   constructor(
     channel: ChannelWithTranscodeConfig,
     options: HlsSessionOptions,
-    programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
-    private settingsDB = getSettings(),
-    private onDemandService: OnDemandChannelService = new OnDemandChannelService(
-      new ChannelDB(),
-    ),
+    private programCalculator: StreamProgramCalculator,
+    private settingsDB: ISettingsDB,
+    private onDemandService: OnDemandChannelService,
+    private programStreamFactory: interfaces.SimpleFactory<
+      ProgramStream,
+      [PlayerContext, OutputFormat]
+    >,
   ) {
     super(channel, options);
-    this.#programCalculator = programCalculator;
   }
 
   async trimPlaylist(filterBefore: Dayjs) {
@@ -130,16 +143,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   private async transcode(realtime: boolean) {
     const ptsOffset = await this.getPtsOffset();
 
-    const lineupItemResult = await this.#programCalculator.getCurrentLineupItem(
-      {
-        allowSkip: true,
-        channelId: this.channel.uuid,
-        startTime: await this.onDemandService.getLiveTimestamp(
-          this.channel.uuid,
-          +this.transcodedUntil,
-        ),
-      },
-    );
+    const lineupItemResult = await this.programCalculator.getCurrentLineupItem({
+      allowSkip: true,
+      channelId: this.channel.uuid,
+      startTime: await this.onDemandService.getLiveTimestamp(
+        this.channel.uuid,
+        +this.transcodedUntil,
+      ),
+    });
 
     const transcodeResult = await lineupItemResult.mapAsync(async (result) => {
       this.logger.debug(
@@ -225,7 +236,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private getProgramStream(context: PlayerContext) {
-    return ProgramStreamFactory.create(
+    return this.programStreamFactory(
       context,
       HlsOutputFormat({
         hlsDeleteThreshold: 3,
@@ -238,7 +249,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         deleteThreshold: null,
         appendSegments: true,
       }),
-      this.settingsDB,
     );
   }
 

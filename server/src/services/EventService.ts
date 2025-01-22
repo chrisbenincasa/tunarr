@@ -3,6 +3,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { TunarrEvent } from '@tunarr/types';
 import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
+import { injectable } from 'inversify';
 import { isString } from 'lodash-es';
 import { Readable } from 'stream';
 import { v4 } from 'uuid';
@@ -12,6 +13,7 @@ type Events = {
   push: (event: TunarrEvent) => void;
 };
 
+@injectable()
 export class EventService {
   private static stream: TypedEventEmitter<Events> =
     new EventEmitter() as TypedEventEmitter<Events>;

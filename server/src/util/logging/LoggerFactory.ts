@@ -1,4 +1,4 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { SettingsDB } from '@/db/SettingsDB.js';
 import { Maybe, TupleToUnion } from '@/types/util.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { isNonEmptyString, isProduction } from '@/util/index.js';
@@ -58,6 +58,11 @@ export type Logger = PinoLogger<ExtraLogLevels>;
 
 export type LogLevels = LevelWithSilent | ExtraLogLevels;
 
+export type GetChildLoggerArgs = {
+  caller?: ImportMeta | string;
+  className: string;
+} & Bindings;
+
 class LoggerFactoryImpl {
   private settingsDB: SettingsDB;
   private rootLogger: PinoLogger<ExtraLogLevels>;
@@ -72,7 +77,7 @@ class LoggerFactoryImpl {
     this.rootLogger = this.createRootLogger();
   }
 
-  initialize(settingsDB: SettingsDB = getSettings()) {
+  initialize(settingsDB: SettingsDB) {
     if (!this.initialized) {
       this.settingsDB = settingsDB;
       // We're not going to mess with multi-threaded transports right now
@@ -129,7 +134,7 @@ class LoggerFactoryImpl {
     );
   }
 
-  child(opts: { caller?: ImportMeta | string; className: string } & Bindings) {
+  child(opts: GetChildLoggerArgs) {
     const { caller, className, ...rest } = opts;
 
     if (this.children[className]) {

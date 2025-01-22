@@ -1,5 +1,6 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { SettingsDB } from '@/db/SettingsDB.js';
 import { Channel } from '@/db/schema/Channel.js';
+import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -11,6 +12,7 @@ import {
 import { TvGuideProgram, isContentProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
 import { writeFile } from 'fs/promises';
+import { inject, injectable } from 'inversify';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { match } from 'ts-pattern';
 
@@ -23,13 +25,14 @@ type MaterializedChannelPrograms = {
   programs: TvGuideProgram[];
 };
 
+@injectable()
 export class XmlTvWriter {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
   });
 
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(@inject(KEYS.SettingsDB) private settingsDB: SettingsDB) {}
 
   async write(channels: MaterializedChannelPrograms[]) {
     const start = performance.now();

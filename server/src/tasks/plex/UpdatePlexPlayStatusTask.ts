@@ -4,6 +4,7 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task } from '@/tasks/Task.js';
 import { run } from '@/util/index.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
@@ -50,6 +51,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
       () => this.getNextTask(),
       { visible: false },
     );
+
     // Kick off leading edge task
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
@@ -103,7 +105,11 @@ class UpdatePlexPlayStatusTask extends Task {
     private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusInvocation,
   ) {
-    super();
+    super(
+      LoggerFactory.child({
+        className: UpdatePlexPlayStatusScheduledTask.name,
+      }),
+    );
   }
 
   protected async runInternal(): Promise<boolean> {

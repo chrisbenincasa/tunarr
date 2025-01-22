@@ -1,3 +1,4 @@
+import { container } from '@/container.js';
 import { FfmpegText } from '@/ffmpeg/ffmpegText.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
@@ -104,7 +105,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const videoStream = new VideoStream();
+      const videoStream = container.get(VideoStream);
 
       const channelId = isNumber(req.query.channel)
         ? await req.serverCtx.channelDB

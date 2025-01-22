@@ -4,7 +4,7 @@ import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
 import { ServerArgsType } from './cli/RunServerCommand.ts';
 import { GlobalArgsType } from './cli/types.ts';
-import { ServerContext } from './serverContext.ts';
+import { ServerContext } from './ServerContext.ts';
 import { LogLevels } from './util/logging/LoggerFactory.ts';
 
 export type GlobalOptions = GlobalArgsType & {

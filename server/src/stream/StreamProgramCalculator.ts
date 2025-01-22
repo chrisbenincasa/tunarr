@@ -6,12 +6,14 @@ import { Channel } from '@/db/schema/Channel.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { FillerPicker } from '@/services/FillerPicker.js';
+import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
 import {
@@ -73,17 +75,14 @@ export type CurrentLineupItemResult = {
   sourceChannel: Channel;
 };
 
+@injectable()
 export class StreamProgramCalculator {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   constructor(
-    private fillerDB: FillerDB,
-    private channelDB: ChannelDB,
-    private channelCache: ChannelCache,
-    private programDB: ProgramDB,
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(FillerDB) private fillerDB: FillerDB,
+    @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
+    @inject(ChannelCache) private channelCache: ChannelCache,
+    @inject(KEYS.ProgramDB) private programDB: ProgramDB,
   ) {}
 
   async getCurrentLineupItem(
@@ -139,7 +138,7 @@ export class StreamProgramCalculator {
 
       const nextChannelId = currentProgram.program.channel;
       const newChannelAndLineup =
-        await this.channelDB.loadDirectChannelAndLineup(nextChannelId);
+        await this.channelDB.loadChannelAndLineup(nextChannelId);
 
       if (isNil(newChannelAndLineup)) {
         const msg = "Invalid redirect to a channel that doesn't exist";

@@ -1,7 +1,10 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
 import { getDatabase } from '@/db/DBAccess.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { KEYS } from '@/types/inject.js';
 import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import {
   chunk,
   differenceWith,
@@ -20,7 +23,9 @@ import { Task } from './Task.ts';
 // Program durations can change when the underlying file in a media server has
 // changed, ex. replacing a movie with an extended edition (or sometimes a)
 // different versions varies in length by a few seconds).
+@injectable()
 export class ReconcileProgramDurationsTask extends Task {
+  static KEY = Symbol.for(ReconcileProgramDurationsTask.name);
   static ID = ReconcileProgramDurationsTask.name;
 
   ID = ReconcileProgramDurationsTask.ID;
@@ -28,10 +33,11 @@ export class ReconcileProgramDurationsTask extends Task {
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.
   constructor(
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.Logger) logger: Logger,
     private channelId?: string,
-    private channelDB: ChannelDB = new ChannelDB(),
   ) {
-    super();
+    super(logger);
     this.logger.setBindings({ task: this.ID });
   }
 

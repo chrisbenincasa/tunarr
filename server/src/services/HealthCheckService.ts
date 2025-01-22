@@ -1,5 +1,7 @@
-import { mapToObj } from '@/util/index.js';
+import { KEYS } from '@/types/inject.js';
+import { groupByUniq, mapToObj } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { injectable, multiInject } from 'inversify';
 import { difference, keys, map, reduce, values } from 'lodash-es';
 import {
   HealthCheck,
@@ -7,9 +9,14 @@ import {
   healthCheckResult,
 } from './health_checks/HealthCheck.ts';
 
+@injectable()
 export class HealthCheckService {
   #logger = LoggerFactory.child({ className: this.constructor.name });
   #checks: Record<string, HealthCheck> = {};
+
+  constructor(@multiInject(KEYS.HealthCheck) healthChecks: HealthCheck[]) {
+    this.#checks = groupByUniq(healthChecks, (check) => check.id);
+  }
 
   registerCheck(check: HealthCheck) {
     if (this.#checks[check.id]) {

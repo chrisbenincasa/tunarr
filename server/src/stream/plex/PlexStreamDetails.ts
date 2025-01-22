@@ -1,15 +1,16 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import type { MediaSourceTable } from '@/db/schema/MediaSource.js';
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { attempt, isNonEmptyString } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import {
   PlexEpisode,
@@ -20,7 +21,7 @@ import {
   PlexMusicTrack,
   isPlexMusicTrack,
 } from '@tunarr/types/plex';
-import { Selectable } from 'kysely';
+import { inject, injectable } from 'inversify';
 import {
   filter,
   find,
@@ -58,35 +59,30 @@ type PlexItemStreamDetailsQuery = Pick<
  * metadata through standard Plex endpoints and always "direct plays" items,
  * leaving normalization up to the Tunarr FFMPEG pipeline.
  */
+@injectable()
 export class PlexStreamDetails {
-  private logger: Logger;
   private plex: PlexApiClient;
 
   constructor(
-    private server: Selectable<MediaSourceTable>,
-    private settings: SettingsDB = getSettings(),
-    private programDB: ProgramDB = new ProgramDB(),
-  ) {
-    this.logger = LoggerFactory.child({
-      plexServer: server.name,
-      caller: import.meta,
-      className: this.constructor.name,
-    });
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.SettingsDB) private settings: ISettingsDB,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+  ) {}
 
-    this.plex = MediaSourceApiFactory().get(this.server);
-  }
-
-  async getStream(item: PlexItemStreamDetailsQuery) {
-    return this.getStreamInternal(item);
+  async getStream(server: MediaSource, item: PlexItemStreamDetailsQuery) {
+    return this.getStreamInternal(server, item);
   }
 
   private async getStreamInternal(
+    server: MediaSource,
     item: PlexItemStreamDetailsQuery,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }
+
+    this.plex = MediaSourceApiFactory().get(server);
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.plex.getItemMetadata(
@@ -134,10 +130,11 @@ export class PlexStreamDetails {
               );
               await this.programDB.updateProgramPlexRatingKey(
                 item.programId,
-                this.server.name,
+                server.name,
                 { externalKey: newRatingKey },
               );
               return this.getStreamInternal(
+                server,
                 {
                   ...item,
                   externalKey: newRatingKey,
@@ -185,7 +182,7 @@ export class PlexStreamDetails {
       details.serverPath !== item.plexFilePath
     ) {
       this.programDB
-        .updateProgramPlexRatingKey(item.programId, this.server.name, {
+        .updateProgramPlexRatingKey(item.programId, server.name, {
           externalKey: item.externalKey,
           externalFilePath: details.serverPath,
           directFilePath: details.directFilePath ?? null,
@@ -225,8 +222,8 @@ export class PlexStreamDetails {
         path = path.startsWith('/') ? path : `/${path}`;
 
         streamSource = new HttpStreamSource(
-          `${trimEnd(this.server.uri, '/')}${path}?X-Plex-Token=${
-            this.server.accessToken
+          `${trimEnd(server.uri, '/')}${path}?X-Plex-Token=${
+            server.accessToken
           }`,
         );
         // streamUrl = this.getPlexTranscodeStreamUrl(

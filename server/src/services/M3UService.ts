@@ -1,9 +1,11 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
+import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { devAssert } from '@/util/debug.js';
 import { attempt, isDefined, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Mutex } from 'async-mutex';
+import { inject, injectable } from 'inversify';
 import { isError, sortBy } from 'lodash-es';
 import { FileCacheService } from './FileCacheService.ts';
 
@@ -12,22 +14,18 @@ import { FileCacheService } from './FileCacheService.ts';
  *
  * @class M3uService
  */
+@injectable()
 export class M3uService {
   private static cacheKey = 'channels.m3u';
   private static lock = new Mutex();
 
   #logger = LoggerFactory.child({ className: this.constructor.name });
-  #channelDB: ChannelDB;
-  #fileCacheService: FileCacheService;
 
   // TODO figure out a better way to manage interdependencies of 'services'
   constructor(
-    fileCacheService: FileCacheService = new FileCacheService(),
-    channelDB: ChannelDB = new ChannelDB(),
-  ) {
-    this.#channelDB = channelDB;
-    this.#fileCacheService = fileCacheService;
-  }
+    @inject(FileCacheService) private fileCacheService: FileCacheService,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+  ) {}
 
   async getChannelsM3U(host: string): Promise<string> {
     return await M3uService.lock.runExclusive(async () =>
@@ -42,14 +40,14 @@ export class M3uService {
     devAssert(M3uService.lock.isLocked());
 
     const cachedM3U = await attempt(() =>
-      this.#fileCacheService.getCache(M3uService.cacheKey),
+      this.fileCacheService.getCache(M3uService.cacheKey),
     );
 
     if (!isError(cachedM3U) && isDefined(cachedM3U)) {
       return cachedM3U;
     }
 
-    const channels = sortBy(await this.#channelDB.getAllChannels(), 'number');
+    const channels = sortBy(await this.channelDB.getAllChannels(), 'number');
 
     const tvg = `{{host}}/api/xmltv.xml`;
 
@@ -77,7 +75,7 @@ export class M3uService {
     }
 
     try {
-      await this.#fileCacheService.setCache(M3uService.cacheKey, data);
+      await this.fileCacheService.setCache(M3uService.cacheKey, data);
     } catch (err) {
       this.#logger.error(err, 'Unable to set file cache for channels.m3u');
     }
@@ -97,7 +95,7 @@ export class M3uService {
    */
   async clearCache() {
     await M3uService.lock.runExclusive(() => {
-      return this.#fileCacheService.deleteCache(M3uService.cacheKey);
+      return this.fileCacheService.deleteCache(M3uService.cacheKey);
     });
   }
 
@@ -106,7 +104,7 @@ export class M3uService {
    */
   async regenerateCache() {
     await M3uService.lock.runExclusive(async () => {
-      await this.#fileCacheService.deleteCache(M3uService.cacheKey);
+      await this.fileCacheService.deleteCache(M3uService.cacheKey);
       await this.getChannelsM3UInternal();
     });
   }

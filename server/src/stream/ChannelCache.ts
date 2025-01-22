@@ -2,6 +2,7 @@ import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.js';
 import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.js';
 import { globalOptions } from '@/globals.js';
 import constants from '@tunarr/shared/constants';
+import { injectable } from 'inversify';
 import { isNil, isUndefined } from 'lodash-es';
 import { Low } from 'lowdb';
 import { join } from 'node:path';
@@ -92,6 +93,7 @@ const persistentChannelCache = new PersistentChannelCache();
 
 export const initPersistentStreamCache = () => persistentChannelCache.init();
 
+@injectable()
 export class ChannelCache {
   getCurrentLineupItem(
     channelId: string,

@@ -1,5 +1,7 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { KEYS } from '@/types/inject.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
+import { inject, injectable } from 'inversify';
 import {
   HealthCheck,
   HealthCheckResult,
@@ -7,10 +9,11 @@ import {
   healthCheckResult,
 } from './HealthCheck.ts';
 
+@injectable()
 export class FfmpegDebugLoggingHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegDebugLogging';
 
-  constructor(private settingsDB: SettingsDB = getSettings()) {}
+  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {}
 
   getStatus(): Promise<HealthCheckResult> {
     const settings = this.settingsDB.ffmpegSettings();

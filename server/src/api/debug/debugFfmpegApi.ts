@@ -4,6 +4,9 @@ import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
 import { z } from 'zod';
+import { container } from '../../container.ts';
+import { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import { KEYS } from '../../types/inject.ts';
 
 export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -19,7 +22,10 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const details = new LocalFileStreamDetails(req.query.path);
+      const details = new LocalFileStreamDetails(
+        req.query.path,
+        req.serverCtx.settings,
+      );
       return res.send(await details.getStream());
     },
   );
@@ -46,18 +52,20 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       const transcodeConfig =
         await req.serverCtx.transcodeConfigDB.getChannelConfig(channel.uuid);
 
-      const details = new LocalFileStreamDetails(req.query.path);
+      const details = new LocalFileStreamDetails(
+        req.query.path,
+        req.serverCtx.settings,
+      );
       const streamDetails = await details.getStream();
 
       if (!streamDetails) {
         return res.status(500).send();
       }
 
-      const ffmpeg = new FfmpegStreamFactory(
-        req.serverCtx.settings.ffmpegSettings(),
-        transcodeConfig,
-        channel,
-      );
+      const ffmpeg = container.getNamed<FFmpegFactory>(
+        KEYS.FFmpegFactory,
+        FfmpegStreamFactory.name,
+      )(transcodeConfig, channel, channel.streamMode);
 
       console.log(channel.watermark);
 

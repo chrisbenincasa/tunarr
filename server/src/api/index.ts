@@ -80,8 +80,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       try {
-        const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
-        const v = await new FfmpegInfo(ffmpegSettings).getVersion();
+        const v = await new FfmpegInfo(req.serverCtx.settings).getVersion();
         let tunarrVersion: string = getTunarrVersion();
         if (!isProduction) {
           tunarrVersion += `-dev`;
@@ -101,7 +100,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get('/ffmpeg-info', async (req, res) => {
-    const info = new FfmpegInfo(req.serverCtx.settings.ffmpegSettings());
+    const info = new FfmpegInfo(req.serverCtx.settings);
     const [audioEncoders, videoEncoders] = await Promise.all([
       run(async () => {
         const res = await info.getAvailableAudioEncoders();

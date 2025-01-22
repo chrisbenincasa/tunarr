@@ -1,12 +1,15 @@
 import { SettingsDB } from '@/db/SettingsDB.js';
 import { serverOptions } from '@/globals.js';
+import { KEYS } from '@/types/inject.js';
+import { inject, injectable } from 'inversify';
 import { Server as SSDP } from 'node-ssdp';
 
+@injectable()
 export class HdhrService {
   private db: SettingsDB;
   private server: SSDP;
 
-  constructor(db: SettingsDB) {
+  constructor(@inject(KEYS.SettingsDB) db: SettingsDB) {
     this.db = db;
     this.server = new SSDP({
       location: {

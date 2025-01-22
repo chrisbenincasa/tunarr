@@ -1,4 +1,7 @@
-import { globalOptions } from '@/globals.js';
+import {
+  ISettingsDB,
+  ReadableFfmpegSettings,
+} from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { isProduction } from '@/util/index.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -23,9 +26,9 @@ import {
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
 import events from 'events';
+import { injectable } from 'inversify';
 import { merge } from 'lodash-es';
-import { Low, LowSync } from 'lowdb';
-import { existsSync } from 'node:fs';
+import { Low } from 'lowdb';
 import path from 'path';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,12 +37,10 @@ import {
   getDefaultLogDirectory,
   getDefaultLogLevel,
 } from '../util/defaults.ts';
-import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
-import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedJSONDBAdapter.ts';
 
 // Version 1 -> 2: slot show ids changed to be the program_grouping ID
 //   rather than the show name.
-const CURRENT_VERSION = 1;
+export const CURRENT_VERSION = 1;
 
 export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({
   ...defaultXmlTvSettingsSchema,
@@ -112,11 +113,10 @@ type SettingsChangeEvents = {
   change(): void;
 };
 
-export type ReadableFfmpegSettings = DeepReadonly<FfmpegSettings>;
-
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
 
-export class SettingsDB extends ITypedEventEmitter {
+@injectable()
+export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
   private logger: Logger;
   private db: Low<SettingsFile>;
 
@@ -230,54 +230,7 @@ export class SettingsDB extends ITypedEventEmitter {
   // }
 }
 
-// let settingsDbInstance: SettingsDB | undefined;
-const settingsDbInstances: Record<string, SettingsDB> = {};
-
-export const getSettings = (
+export type SettingsDBFactoryType = (
   dbPath?: string,
   initialSettings?: DeepPartial<SettingsFile>,
-) => {
-  const actualPath =
-    dbPath ?? path.resolve(globalOptions().databaseDirectory, 'settings.json');
-
-  const instance = settingsDbInstances[actualPath];
-  if (instance) {
-    return instance;
-  }
-
-  const freshSettings = !existsSync(actualPath);
-
-  const defaultValue = merge(
-    {},
-    defaultSettings(globalOptions().databaseDirectory),
-    initialSettings,
-  );
-  // Load this synchronously, but then give the DB instance an async version
-  const db = new LowSync<SettingsFile>(
-    new SyncSchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
-    defaultValue,
-  );
-
-  db.read();
-  db.update((data) => {
-    data.migration.isFreshSettings = freshSettings;
-    // Redefine thie variable... it came before "isFreshSettings".
-    // If this is a fresh run, mark legacyMigration as false
-    if (freshSettings) {
-      data.migration.legacyMigration = false;
-    }
-  });
-
-  settingsDbInstances[actualPath] = new SettingsDB(
-    new Low<SettingsFile>(
-      new SchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
-      db.data,
-    ),
-  );
-
-  if (db.data.version < CURRENT_VERSION) {
-    // We need to perform a migration
-  }
-
-  return settingsDbInstances[actualPath];
-};
+) => ISettingsDB;

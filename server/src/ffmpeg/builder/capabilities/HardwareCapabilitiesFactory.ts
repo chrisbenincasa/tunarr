@@ -1,4 +1,4 @@
-import { ReadableFfmpegSettings } from '@/db/SettingsDB.js';
+import { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
 import {
   HardwareAccelerationMode,
   TranscodeConfig,

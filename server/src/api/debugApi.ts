@@ -1,5 +1,9 @@
+import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import { getDatabase } from '@/db/DBAccess.js';
-import { ArchiveDatabaseBackup } from '@/db/backup/ArchiveDatabaseBackup.js';
+import {
+  ArchiveDatabaseBackupFactory,
+  ArchiveDatabaseBackupKey,
+} from '@/db/backup/ArchiveDatabaseBackup.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
@@ -9,7 +13,6 @@ import { map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod';
 
-import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
@@ -18,6 +21,7 @@ import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { enumValues } from '@/util/enumUtil.js';
 import { ifDefined } from '@/util/index.js';
+import { container } from '../container.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
@@ -59,9 +63,8 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No channel with ID ' + req.query.channelId });
       }
 
-      const result = await req.serverCtx
-        .streamProgramCalculator()
-        .getCurrentLineupItem({
+      const result =
+        await req.serverCtx.streamProgramCalculator.getCurrentLineupItem({
           startTime: new Date().getTime(),
           channelId: req.query.channelId,
           allowSkip: true,
@@ -224,14 +227,17 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get('/debug/db/backup', async (req, res) => {
-    await new ArchiveDatabaseBackup(req.serverCtx.settings, {
-      type: 'file',
-      outputPath: os.tmpdir(),
-      archiveFormat: 'tar',
-      gzip: true,
-      maxBackups: 3,
-    }).backup();
+  fastify.get('/debug/db/backup', async (_, res) => {
+    await container
+      .get<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey)({
+        type: 'file',
+        outputPath: os.tmpdir(),
+        archiveFormat: 'tar',
+        gzip: true,
+        maxBackups: 3,
+      })
+      .backup();
+
     return res.send();
   });
 

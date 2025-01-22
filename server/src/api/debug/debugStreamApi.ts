@@ -1,3 +1,4 @@
+import { container } from '@/container.js';
 import { getDatabase } from '@/db/DBAccess.js';
 import {
   ProgramStreamLineupItem,
@@ -11,11 +12,12 @@ import {
   TranscodeConfig,
 } from '@/db/schema/TranscodeConfig.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
-import { OfflineProgramStream } from '@/stream/OfflinePlayer.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import { ProgramStream } from '@/stream/ProgramStream.js';
-import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.js';
-import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.js';
+import {
+  OfflineStreamFactoryType,
+  ProgramStreamFactoryType,
+} from '@/stream/StreamModule.js';
+import { KEYS } from '@/types/inject.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
@@ -57,8 +59,10 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         .$narrowType<{ transcodeConfig: TranscodeConfig }>()
         .executeTakeFirstOrThrow();
 
-      const stream = new OfflineProgramStream(
-        false,
+      const stream = container.getNamed<OfflineStreamFactoryType>(
+        KEYS.ProgramStreamFactory,
+        'offline',
+      )(false)(
         new PlayerContext(
           {
             ...createOfflineStreamLineupItem(req.query.duration, +dayjs()),
@@ -111,8 +115,10 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         .$narrowType<{ transcodeConfig: TranscodeConfig }>()
         .executeTakeFirstOrThrow();
 
-      const stream = new OfflineProgramStream(
-        true,
+      const stream = container.getNamed<OfflineStreamFactoryType>(
+        KEYS.ProgramStreamFactory,
+        'offline',
+      )(true)(
         PlayerContext.error(
           30_000,
           '',
@@ -289,15 +295,10 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       'mpegts',
     );
 
-    let stream: ProgramStream;
-    switch (program.sourceType) {
-      case 'jellyfin':
-        stream = new JellyfinProgramStream(ctx, MpegTsOutputFormat);
-        break;
-      case 'plex':
-        stream = new PlexProgramStream(ctx, MpegTsOutputFormat);
-        break;
-    }
+    const stream = container.getNamed<ProgramStreamFactoryType>(
+      KEYS.ProgramStreamFactory,
+      program.sourceType,
+    )(ctx, MpegTsOutputFormat);
 
     const out = new PassThrough();
     stream.on('error', () => out.end());

@@ -1,16 +1,18 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import { getSettings } from '@/db/SettingsDB.js';
 import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.js';
 import Fixer from '@/tasks/fixers/fixer.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { KEYS } from '@/types/inject.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import { map } from 'lodash-es';
+import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 
+@injectable()
 export class EnsureTranscodeConfigIds extends Fixer {
-  private static logger = LoggerFactory.child({
-    className: EnsureTranscodeConfigIds.name,
-  });
-
-  constructor() {
+  constructor(
+    @inject(KEYS.Logger) protected logger: Logger,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+  ) {
     super();
   }
 
@@ -33,9 +35,7 @@ export class EnsureTranscodeConfigIds extends Fixer {
       .executeTakeFirst();
 
     if (!defaultConfig) {
-      EnsureTranscodeConfigIds.logger.warn(
-        'No default transcode config found! Creating one.',
-      );
+      this.logger.warn('No default transcode config found! Creating one.');
 
       defaultConfig = { uuid: await this.createDefaultTranscodeConfig() };
     }
@@ -55,7 +55,7 @@ export class EnsureTranscodeConfigIds extends Fixer {
         .insertInto('transcodeConfig')
         .values(
           transcodeConfigFromLegacySettings(
-            getSettings().ffmpegSettings(),
+            this.settingsDB.ffmpegSettings(),
             true,
           ),
         )

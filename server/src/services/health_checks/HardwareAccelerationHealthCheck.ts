@@ -1,6 +1,6 @@
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { SupportedHardwareAccels } from '@tunarr/types/schemas';
+import { inject, injectable } from 'inversify';
 import { intersection, isEmpty, reject } from 'lodash-es';
 import {
   HealthCheck,
@@ -9,15 +9,15 @@ import {
   healthCheckResult,
 } from './HealthCheck.ts';
 
+@injectable()
 export class HardwareAccelerationHealthCheck implements HealthCheck {
   readonly id: string = 'HardwareAcceleration';
 
-  constructor(private settings: SettingsDB = getSettings()) {}
+  constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
 
   async getStatus(): Promise<HealthCheckResult> {
     const supported = reject(SupportedHardwareAccels, (hw) => hw === 'none');
-    const info = new FfmpegInfo(this.settings.ffmpegSettings());
-    const hwAccels = await info.getHwAccels();
+    const hwAccels = await this.ffmpegInfo.getHwAccels();
 
     if (intersection(supported, hwAccels).length === 0) {
       return healthCheckResult({

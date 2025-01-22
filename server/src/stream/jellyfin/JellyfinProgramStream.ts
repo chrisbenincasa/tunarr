@@ -1,12 +1,11 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { SettingsDB, getSettings } from '@/db/SettingsDB.js';
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
+import { CacheImageService } from '@/services/cacheImageService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
 import { UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
@@ -15,7 +14,9 @@ import { Maybe, Nullable } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
+import { interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
+import { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
 import { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
 export class JellyfinProgramStream extends ProgramStream {
@@ -23,17 +24,21 @@ export class JellyfinProgramStream extends ProgramStream {
     caller: import.meta,
     className: JellyfinProgramStream.name,
   });
+
   private ffmpeg: Nullable<IFFMPEG> = null;
   private killed: boolean = false;
   private updatePlayStatusTask: Maybe<UpdateJellyfinPlayStatusScheduledTask>;
 
   constructor(
+    settingsDB: ISettingsDB,
+    private mediaSourceDB: MediaSourceDB,
+    private streamDetailsFactory: interfaces.AutoFactory<JellyfinStreamDetails>,
+    cacheImageService: CacheImageService,
+    ffmpegFactory: FFmpegFactory,
     context: PlayerContext,
     outputFormat: OutputFormat,
-    settingsDB: SettingsDB = getSettings(),
-    private mediaSourceDB: MediaSourceDB = new MediaSourceDB(new ChannelDB()),
   ) {
-    super(context, outputFormat, settingsDB);
+    super(context, outputFormat, settingsDB, cacheImageService, ffmpegFactory);
   }
 
   protected shutdownInternal() {
@@ -67,21 +72,16 @@ export class JellyfinProgramStream extends ProgramStream {
       );
     }
 
-    // const plexSettings = this.context.settings.plexSettings();
-    const jellyfinStreamDetails = new JellyfinStreamDetails(
-      server,
-      this.settingsDB,
-    );
+    const jellyfinStreamDetails = this.streamDetailsFactory();
 
     const watermark = await this.getWatermark();
-    this.ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      this.settingsDB.ffmpegSettings(),
+    this.ffmpeg = this.ffmpegFactory(
       this.context.transcodeConfig,
       this.context.sourceChannel,
       this.context.streamMode,
     );
 
-    const stream = await jellyfinStreamDetails.getStream(lineupItem);
+    const stream = await jellyfinStreamDetails.getStream(server, lineupItem);
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Jellyfin'),

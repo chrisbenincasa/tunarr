@@ -1,3 +1,4 @@
+import swc from '@rollup/plugin-swc';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
@@ -26,4 +27,20 @@ export default defineConfig({
       fileName: 'index',
     },
   },
+  plugins: [
+    swc({
+      swc: {
+        jsc: {
+          parser: {
+            syntax: 'typescript',
+            decorators: true,
+          },
+          target: 'esnext',
+          transform: {
+            decoratorMetadata: true,
+          },
+        },
+      },
+    }),
+  ],
 });

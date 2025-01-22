@@ -5,6 +5,7 @@ import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
+import { injectable } from 'inversify';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 import { FileCacheService } from './FileCacheService.ts';
@@ -14,11 +15,13 @@ import { FileCacheService } from './FileCacheService.ts';
  *
  * @class CacheImageService
  */
+@injectable()
 export class CacheImageService {
   private logger = LoggerFactory.child({
     caller: import.meta,
     className: this.constructor.name,
   });
+
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
 

@@ -1,4 +1,5 @@
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
+import { injectable } from 'inversify';
 import { isDefined } from './index.ts';
 
 /**
@@ -6,6 +7,7 @@ import { isDefined } from './index.ts';
  * a particular keyspace. Useful for initializing global cache objects
  * in an async environment
  */
+@injectable()
 export class MutexMap {
   #mu = new Mutex();
   #keyedLocks: Record<string, MutexInterface> = {};

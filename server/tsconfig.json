@@ -6,7 +6,7 @@
             "ESNext",
             "DOM" // We have to declare this so vitest doesn't explode
         ],
-        "moduleResolution": "NodeNext",
+        "moduleResolution": "nodenext",
         "resolveJsonModule": true,
         "rootDir": ".",
         "outDir": "build",

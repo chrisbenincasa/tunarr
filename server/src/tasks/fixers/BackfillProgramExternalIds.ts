@@ -8,11 +8,13 @@ import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { asyncPool } from '@/util/asyncPool.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import {
   difference,
   first,
@@ -34,11 +36,11 @@ import {
 } from '../../util/index.js';
 import Fixer from './fixer.ts';
 
+@injectable()
 export class BackfillProgramExternalIds extends Fixer {
-  #logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
+  constructor(@inject(KEYS.Logger) protected logger: Logger) {
+    super();
+  }
 
   canRunInBackground: boolean = false;
 
@@ -105,7 +107,7 @@ export class BackfillProgramExternalIds extends Fixer {
         { concurrency: 1, waitAfterEachMs: 50 },
       )) {
         if (result.type === 'error') {
-          this.#logger.error(
+          this.logger.error(
             result.error,
             'Error while attempting to get external IDs for program %s',
             result.input.uuid,
@@ -115,7 +117,7 @@ export class BackfillProgramExternalIds extends Fixer {
             upsertRawProgramExternalIds(result.result),
           );
           if (isError(upsertResult)) {
-            this.#logger.warn(
+            this.logger.warn(
               upsertResult,
               'Failed to upsert external IDs: %O',
               result,

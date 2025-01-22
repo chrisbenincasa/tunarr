@@ -1,13 +1,15 @@
+import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
+import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Timer } from '@/util/perf.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -16,6 +18,7 @@ import {
   isContentProgram,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { CaseWhenBuilder } from 'kysely';
 import {
   chunk,
@@ -79,6 +82,7 @@ import {
   programExternalIdString,
 } from './schema/Program.ts';
 import {
+  MinimalProgramExternalId,
   NewProgramExternalId,
   NewProgramExternalId as NewRawProgramExternalId,
   ProgramExternalId,
@@ -120,9 +124,16 @@ type ProgramRelationCaseBuilder = CaseWhenBuilder<
   string | null
 >;
 
-export class ProgramDB {
-  private logger = LoggerFactory.child({ className: this.constructor.name });
-  private timer = new Timer(this.logger);
+@injectable()
+export class ProgramDB implements IProgramDB {
+  private timer: Timer; // = new Timer(this.logger);
+
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    private programConverter: ProgramConverter,
+  ) {
+    this.timer = new Timer(this.logger);
+  }
 
   async getProgramById(id: string) {
     return getDatabase()
@@ -159,7 +170,7 @@ export class ProgramDB {
   }
 
   async updateProgramDuration(programId: string, duration: number) {
-    return await getDatabase()
+    await getDatabase()
       .updateTable('program')
       .where('uuid', '=', programId)
       .set({
@@ -239,8 +250,6 @@ export class ProgramDB {
   }
 
   async lookupByExternalIds(ids: Set<[string, string, string]>) {
-    const converter = new ProgramConverter();
-
     const allIds = [...ids];
     const programsByExternalIds: ProgramWithRelations[] = [];
     for (const idChunk of chunk(allIds, 200)) {
@@ -272,7 +281,7 @@ export class ProgramDB {
 
     return groupByUniq(
       map(programsByExternalIds, (program) =>
-        converter.programDaoToContentProgram(
+        this.programConverter.programDaoToContentProgram(
           program,
           program.externalIds ?? [],
         ),
@@ -286,7 +295,7 @@ export class ProgramDB {
     chunkSize: number = 50,
   ) {
     if (ids.size === 0) {
-      return [];
+      return {};
     }
 
     const externalIds = await flatMapAsyncSeq(
@@ -393,7 +402,7 @@ export class ProgramDB {
   async replaceProgramExternalId(
     programId: string,
     newExternalId: NewProgramExternalId,
-    oldExternalId?: ProgramExternalId,
+    oldExternalId?: MinimalProgramExternalId,
   ) {
     await getDatabase()
       .transaction()
@@ -606,9 +615,8 @@ export class ProgramDB {
       this.logger.debug('Scheduling follow-up program tasks...');
 
       GlobalScheduler.scheduleOneOffTask(
-        ReconcileProgramDurationsTask.name,
+        ReconcileProgramDurationsTask.KEY,
         dayjs().add(500, 'ms'),
-        new ReconcileProgramDurationsTask(),
       );
 
       PlexTaskQueue.resume();
@@ -1125,8 +1133,10 @@ export class ProgramDB {
         ),
         (program) => {
           try {
-            const task = new SaveJellyfinProgramExternalIdsTask(program.uuid);
-            task.logLevel = 'trace';
+            const task = new SaveJellyfinProgramExternalIdsTask(
+              program.uuid,
+              this,
+            );
             JellyfinTaskQueue.add(task).catch((e) => {
               this.logger.error(
                 e,

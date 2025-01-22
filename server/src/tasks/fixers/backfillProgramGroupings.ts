@@ -1,16 +1,18 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { KEYS } from '@/types/inject.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import Fixer from './fixer.ts';
 
 // TODO: Handle Jellyfin items
 // Generalize and reuse the calculator
+@injectable()
 export class BackfillProgramGroupings extends Fixer {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: BackfillProgramGroupings.name,
-  });
+  constructor(@inject(KEYS.Logger) protected logger: Logger) {
+    super();
+  }
 
   protected async runInternal(): Promise<void> {
     // This clears out mismatches that might have happened on bugged earlier versions
@@ -21,11 +23,12 @@ export class BackfillProgramGroupings extends Fixer {
       .execute((tx) =>
         tx
           .updateTable('program')
-          .set(({ selectFrom, eb }) => ({
+          .set(({ eb }) => ({
             seasonUuid: eb
               .case()
               .when(
-                selectFrom('programGrouping')
+                eb
+                  .selectFrom('programGrouping')
                   .whereRef('programGrouping.uuid', '=', 'program.seasonUuid')
                   .where('programGrouping.type', '=', ProgramGroupingType.Show)
                   .select((eb) => eb.lit(1).as('true'))
@@ -49,8 +52,9 @@ export class BackfillProgramGroupings extends Fixer {
       .execute((tx) =>
         tx
           .updateTable('program')
-          .set(({ selectFrom }) => ({
-            tvShowUuid: selectFrom('programGroupingExternalId')
+          .set(({ eb }) => ({
+            tvShowUuid: eb
+              .selectFrom('programGroupingExternalId')
               .whereRef(
                 'programGroupingExternalId.externalSourceId',
                 '=',
@@ -96,8 +100,9 @@ export class BackfillProgramGroupings extends Fixer {
       .execute((tx) =>
         tx
           .updateTable('program')
-          .set(({ selectFrom }) => ({
-            artistUuid: selectFrom('programGroupingExternalId')
+          .set(({ eb }) => ({
+            artistUuid: eb
+              .selectFrom('programGroupingExternalId')
               .whereRef(
                 'programGroupingExternalId.externalSourceId',
                 '=',
@@ -143,8 +148,9 @@ export class BackfillProgramGroupings extends Fixer {
       .execute(async (tx) => {
         const updatedSeasons = await tx
           .updateTable('program')
-          .set(({ selectFrom }) => ({
-            seasonUuid: selectFrom('programGroupingExternalId')
+          .set(({ eb }) => ({
+            seasonUuid: eb
+              .selectFrom('programGroupingExternalId')
               .whereRef(
                 'programGroupingExternalId.externalSourceId',
                 '=',
@@ -185,8 +191,9 @@ export class BackfillProgramGroupings extends Fixer {
 
         const res = await tx
           .updateTable('programGrouping')
-          .set(({ selectFrom }) => ({
-            showUuid: selectFrom('program')
+          .set(({ eb }) => ({
+            showUuid: eb
+              .selectFrom('program')
               .where('program.type', '=', 'episode')
               .where('program.grandparentExternalKey', 'is not', null)
               .innerJoin('programGroupingExternalId', (join) =>
@@ -232,8 +239,9 @@ export class BackfillProgramGroupings extends Fixer {
       .execute(async (tx) => {
         const updatedTracks = await tx
           .updateTable('program')
-          .set(({ selectFrom }) => ({
-            albumUuid: selectFrom('programGroupingExternalId')
+          .set(({ eb }) => ({
+            albumUuid: eb
+              .selectFrom('programGroupingExternalId')
               .whereRef(
                 'programGroupingExternalId.externalSourceId',
                 '=',
@@ -273,8 +281,9 @@ export class BackfillProgramGroupings extends Fixer {
 
         const res = await tx
           .updateTable('programGrouping')
-          .set(({ selectFrom }) => ({
-            artistUuid: selectFrom('program')
+          .set(({ eb }) => ({
+            artistUuid: eb
+              .selectFrom('program')
               .where('program.type', '=', ProgramType.Track)
               .where('program.grandparentExternalKey', 'is not', null)
               .innerJoin('programGroupingExternalId', (join) =>

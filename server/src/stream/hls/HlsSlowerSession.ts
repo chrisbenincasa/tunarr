@@ -1,16 +1,14 @@
-import { getSettings } from '@/db/SettingsDB.js';
+import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { FFmpegFactory } from '@/ffmpeg/FFmpegFactory.js';
 import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.js';
-import { serverContext } from '@/serverContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
 import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import { Result } from '@/types/result.js';
 import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { StrictOmit } from 'ts-essentials';
+import { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import {
   HlsOutputFormat,
   NutOutputFormat,
@@ -19,6 +17,7 @@ import {
   GetPlayerContextRequest,
   PlayerContext,
 } from '../PlayerStreamContext.ts';
+import { ProgramStreamFactoryType } from '../StreamModule.ts';
 import { BaseHlsSession, BaseHlsSessionOptions } from './BaseHlsSession.ts';
 
 export type HlsSlowerSessionOptions = BaseHlsSessionOptions & {
@@ -40,8 +39,10 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
   constructor(
     channel: ChannelWithTranscodeConfig,
     options: HlsSlowerSessionOptions,
-    programCalculator: StreamProgramCalculator = serverContext().streamProgramCalculator(),
-    private settingsDB = getSettings(),
+    programCalculator: StreamProgramCalculator,
+    private settingsDB: ISettingsDB,
+    private programStreamFactory: ProgramStreamFactoryType,
+    private ffmpegFactory: FFmpegFactory,
   ) {
     super(channel, options);
     this.#programCalculator = programCalculator;
@@ -86,11 +87,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
         this.sessionType,
       );
 
-      let programStream = ProgramStreamFactory.create(
-        context,
-        NutOutputFormat,
-        this.settingsDB,
-      );
+      let programStream = this.programStreamFactory(context, NutOutputFormat);
 
       let transcodeSessionResult = await programStream.setup();
 
@@ -100,7 +97,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
           'Error while starting program stream. Attempting to subtitute with error stream',
         );
 
-        programStream = ProgramStreamFactory.create(
+        programStream = this.programStreamFactory(
           PlayerContext.error(
             result.lineupItem.streamDuration ?? result.lineupItem.duration,
             transcodeSessionResult.error,
@@ -156,8 +153,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
       mode: this.sessionType,
     });
 
-    const ffmpeg = FFmpegFactory.getFFmpegPipelineBuilder(
-      this.settingsDB.ffmpegSettings(),
+    const ffmpeg = this.ffmpegFactory(
       this.channel.transcodeConfig,
       this.channel,
       this.sessionType,

@@ -1,7 +1,6 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
-import { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
@@ -11,13 +10,14 @@ import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;
 
   constructor(
     private programId: string,
-    private programDB: ProgramDB,
+    private programDB: IProgramDB,
   ) {
     super();
   }
@@ -39,7 +39,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       return;
     }
 
-    let chosenId: Maybe<ProgramExternalId> = undefined;
+    let chosenId: Maybe<MinimalProgramExternalId> = undefined;
     let api: Maybe<PlexApiClient>;
     for (const id of plexIds) {
       if (!isNonEmptyString(id.externalSourceId)) {

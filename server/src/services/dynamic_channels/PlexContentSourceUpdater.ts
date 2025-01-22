@@ -1,18 +1,18 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { ProgramDB } from '@/db/ProgramDB.js';
 import { PendingProgram } from '@/db/derived_types/Lineup.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { Channel } from '@/db/schema/Channel.js';
 import { MediaSource } from '@/db/schema/MediaSource.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import { Timer } from '@/util/Timer.js';
 import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Timer } from '@/util/perf.js';
 import { ApiProgramMinter } from '@tunarr/shared';
 import { buildPlexFilterKey } from '@tunarr/shared/util';
 import { ContentProgram } from '@tunarr/types';
 import { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { PlexLibraryListing } from '@tunarr/types/plex';
 import { map } from 'lodash-es';
+import { IChannelDB } from '../../db/interfaces/IChannelDB.js';
+import { IProgramDB } from '../../db/interfaces/IProgramDB.js';
 import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
@@ -22,21 +22,20 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   });
   #timer = new Timer(this.#logger);
   #plex: PlexApiClient;
-  #channelDB: ChannelDB;
-  #programDB: ProgramDB;
-  #mediaSourceDB: MediaSourceDB;
-
   #mediaSource: MediaSource;
 
-  constructor(channel: Channel, config: DynamicContentConfigPlexSource) {
+  constructor(
+    private channelDB: IChannelDB,
+    private programDB: IProgramDB,
+    private mediaSourceDB: MediaSourceDB,
+    channel: Channel,
+    config: DynamicContentConfigPlexSource,
+  ) {
     super(channel, config);
-    this.#channelDB = new ChannelDB();
-    this.#programDB = new ProgramDB();
-    this.#mediaSourceDB = new MediaSourceDB(this.#channelDB);
   }
 
   protected async prepare() {
-    const server = await this.#mediaSourceDB.findByType(
+    const server = await this.mediaSourceDB.findByType(
       'plex',
       this.config.plexServerId,
     );
@@ -60,7 +59,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ),
     );
 
-    const enumerator = new PlexItemEnumerator(this.#plex, new ProgramDB());
+    const enumerator = new PlexItemEnumerator(this.#plex, this.programDB);
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
       enumerator.enumerateItems(plexResult?.Metadata ?? []),
@@ -74,7 +73,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     });
 
     const dbPrograms =
-      await this.#programDB.upsertContentPrograms(channelPrograms);
+      await this.programDB.upsertContentPrograms(channelPrograms);
 
     const now = new Date().getTime();
 
@@ -86,9 +85,6 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       addedAt: now,
     }));
 
-    await this.#channelDB.addPendingPrograms(
-      this.channel.uuid,
-      pendingPrograms,
-    );
+    await this.channelDB.addPendingPrograms(this.channel.uuid, pendingPrograms);
   }
 }
