@@ -1,11 +1,8 @@
 import { resetCurrentLineup } from '@/store/channelEditor/actions';
-import {
-  UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { CondensedChannelProgramming } from '@tunarr/types';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import type { UseMutationOptions } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { CondensedChannelProgramming } from '@tunarr/types';
+import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ZodiosError } from '@zodios/core';
 import { useTunarrApi } from './useTunarrApi';
 
@@ -21,7 +18,7 @@ export const useUpdateLineup = (
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
-      return apiClient.post('/api/channels/:id/programming', lineupRequest, {
+      return apiClient.updateChannelProgramming(lineupRequest, {
         params: { id: channelId },
       });
     },

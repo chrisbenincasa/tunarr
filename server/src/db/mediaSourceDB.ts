@@ -1,6 +1,6 @@
 import { Maybe } from '@/types/util.js';
 import { groupByUniqProp, isNonEmptyString } from '@/util/index.js';
-import {
+import type {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
@@ -22,6 +22,7 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { inject, injectable } from 'inversify';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { getDatabase } from './DBAccess.ts';
 import {
   withProgramChannels,
@@ -41,7 +42,11 @@ type Report = {
 
 @injectable()
 export class MediaSourceDB {
-  constructor(@inject(KEYS.ChannelDB) private channelDb: IChannelDB) {}
+  constructor(
+    @inject(KEYS.ChannelDB) private channelDb: IChannelDB,
+    @inject(KEYS.MediaSourceApiFactory)
+    private mediaSourceApiFactory: () => MediaSourceApiFactory,
+  ) {}
 
   async getAll(): Promise<MediaSource[]> {
     return getDatabase().selectFrom('mediaSource').selectAll().execute();
@@ -135,15 +140,17 @@ export class MediaSourceDB {
       );
     }
 
+    this.mediaSourceApiFactory().deleteCachedClient(deletedServer);
+
     return { deletedServer, reports };
   }
 
   async updateMediaSource(server: UpdateMediaSourceRequest) {
     const id = server.id;
 
-    const s = await this.getById(id);
+    const mediaSource = await this.getById(id);
 
-    if (isNil(s)) {
+    if (isNil(mediaSource)) {
       throw new Error("Server doesn't exist.");
     }
 
@@ -167,7 +174,13 @@ export class MediaSourceDB {
       // .limit(1)
       .executeTakeFirst();
 
-    const report = await this.fixupProgramReferences(id, s.type, s);
+    this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
+
+    const report = await this.fixupProgramReferences(
+      id,
+      mediaSource.type,
+      mediaSource,
+    );
 
     return report;
   }

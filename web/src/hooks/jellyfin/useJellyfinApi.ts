@@ -1,9 +1,9 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
-import { QueryParamTypeForAlias } from '@/types/index.ts';
+import { type QueryParamTypeForAlias } from '@/types/index.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { type JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { type MediaSourceId } from '@tunarr/types/schemas';
 import {
   every,
   flatMap,

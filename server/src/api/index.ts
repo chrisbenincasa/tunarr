@@ -1,5 +1,4 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -24,6 +23,7 @@ import {
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
+import { embyApiRouter } from './embyApi.ts';
 import { ffmpegSettingsRouter } from './ffmpegSettingsApi.js';
 import { fillerListsApi } from './fillerListsApi.js';
 import { guideRouter } from './guideApi.js';
@@ -66,7 +66,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(systemApiRouter)
     .register(guideRouter)
     .register(jellyfinApiRouter)
-    .register(sessionApiRouter);
+    .register(sessionApiRouter)
+    .register(embyApiRouter);
 
   fastify.get(
     '/version',
@@ -286,7 +287,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
           .send({ error: 'No server found with id: ' + req.query.id });
       }
 
-      const plex = MediaSourceApiFactory().get(server);
+      const plex =
+        await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server);
       return res.send(await plex.doGetPath(req.query.path));
     },
   );

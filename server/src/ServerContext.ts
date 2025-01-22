@@ -13,6 +13,7 @@ import { FillerDB } from './db/FillerListDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
+import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { EventService } from './services/EventService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
@@ -60,6 +61,9 @@ export class ServerContext {
 
   @inject(LegacyDbMigrator)
   public readonly legacyDBMigrator!: LegacyDbMigrator;
+
+  @inject(MediaSourceApiFactory)
+  public readonly mediaSourceApiFactory!: MediaSourceApiFactory;
 }
 
 export class ServerRequestContext {

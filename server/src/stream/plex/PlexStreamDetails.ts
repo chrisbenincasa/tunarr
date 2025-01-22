@@ -67,6 +67,8 @@ export class PlexStreamDetails {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   async getStream(server: MediaSource, item: PlexItemStreamDetailsQuery) {
@@ -82,7 +84,7 @@ export class PlexStreamDetails {
       return null;
     }
 
-    this.plex = MediaSourceApiFactory().get(server);
+    this.plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.plex.getItemMetadata(

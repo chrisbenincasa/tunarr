@@ -18,7 +18,9 @@ import {
   type ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
 import { type ApiClient } from '../external/api.ts';
+import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';
 import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
+import type { Emby } from './MediaSource';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;
@@ -136,10 +138,16 @@ export type AddedJellyfinMedia = {
   media: EnrichedJellyfinItem;
 };
 
+export type AddedEmbyMedia = {
+  type: Emby;
+  media: EnrichedEmbyItem;
+};
+
 /**
  * Media type going from "selected" -> "added to entity".
  */
 export type AddedMedia =
   | AddedPlexMedia
   | AddedJellyfinMedia
+  | AddedEmbyMedia
   | AddedCustomShowProgram;

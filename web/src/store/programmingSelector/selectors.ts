@@ -1,14 +1,16 @@
-import { FindChild, MediaSourceSettings } from '@tunarr/types';
+import { type FindChild, type MediaSourceSettings } from '@tunarr/types';
 import { filter } from 'lodash-es';
 import useStore from '..';
+import { Plex } from '../../helpers/constants.ts';
 import { KnownMedia } from './KnownMedia';
 import {
-  CustomShowView,
-  JellyfinMediaSourceView,
-  MediaSourceView,
+  type CustomShowView,
+  type EmbyMediaSourceView,
+  type JellyfinMediaSourceView,
+  type MediaSourceView,
   PlexMediaSourceLibraryViewType,
-  PlexMediaSourceView,
-  SelectedMedia,
+  type PlexMediaSourceView,
+  type SelectedMedia,
 } from './store';
 
 export function useCurrentMediaSource<
@@ -32,6 +34,7 @@ export function useCurrentMediaSource<
 type SourceTypeToLibrary = [
   ['plex', PlexMediaSourceView],
   ['jellyfin', JellyfinMediaSourceView],
+  ['emby', EmbyMediaSourceView],
   ['custom-show', CustomShowView],
 ];
 
@@ -55,8 +58,8 @@ export function useCurrentMediaSourceView<
 
 // Returns the current Plex media source view, if it if a library view.
 export function useCurrentPlexMediaSourceLibraryView() {
-  const view = useCurrentMediaSourceView('plex');
-  return view?.view.type === 'library' ? view.view : null;
+  const plexView = useCurrentMediaSourceView(Plex);
+  return plexView?.view.type === 'library' ? plexView.view : null;
 }
 
 export function useCurrentMediaSourceAndView<
@@ -75,11 +78,11 @@ export function useCurrentMediaSourceAndView<
 
 // Returns the current Plex media source view, if it if a library view.
 export function useCurrentPlexMediaSourceAndLibraryView() {
-  const [mediaSource, view] = useCurrentMediaSourceAndView('plex');
+  const [mediaSource, plexView] = useCurrentMediaSourceAndView(Plex);
   return [
     mediaSource,
-    view?.view.type === PlexMediaSourceLibraryViewType.Library
-      ? view.view
+    plexView?.view.type === PlexMediaSourceLibraryViewType.Library
+      ? plexView.view
       : null,
   ] as const;
 }

@@ -11,9 +11,13 @@ import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
+import { type IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
 import { BackupTask } from './BackupTask.ts';
+import { SaveJellyfinProgramExternalIdsTask } from './jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
+import { SavePlexProgramExternalIdsTask } from './plex/SavePlexProgramExternalIdsTask.ts';
 
 const TasksModule = new ContainerModule((bind) => {
   bind(UpdateXmlTvTask).toSelf();
@@ -46,6 +50,29 @@ const TasksModule = new ContainerModule((bind) => {
         channelId,
       ),
   );
+
+  bind<interfaces.Factory<SavePlexProgramExternalIdsTask>>(
+    SavePlexProgramExternalIdsTask.KEY,
+  ).toFactory((ctx) => {
+    return (programId: string) => {
+      new SavePlexProgramExternalIdsTask(
+        programId,
+        ctx.container.get<IProgramDB>(KEYS.ProgramDB),
+        ctx.container.get(MediaSourceApiFactory),
+      );
+    };
+  });
+
+  bind<interfaces.Factory<SaveJellyfinProgramExternalIdsTask>>(
+    SaveJellyfinProgramExternalIdsTask.KEY,
+  ).toFactory((ctx) => {
+    return (programId: string) =>
+      new SaveJellyfinProgramExternalIdsTask(
+        programId,
+        ctx.container.get<IProgramDB>(KEYS.ProgramDB),
+        ctx.container.get(MediaSourceApiFactory),
+      );
+  });
 
   bindFactoryFunc<ArchiveDatabaseBackupFactory>(
     bind,

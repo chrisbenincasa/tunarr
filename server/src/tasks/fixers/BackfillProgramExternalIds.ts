@@ -18,7 +18,6 @@ import { inject, injectable } from 'inversify';
 import {
   difference,
   first,
-  forEach,
   isEmpty,
   isError,
   isUndefined,
@@ -38,11 +37,15 @@ import Fixer from './fixer.ts';
 
 @injectable()
 export class BackfillProgramExternalIds extends Fixer {
-  constructor(@inject(KEYS.Logger) protected logger: Logger) {
+  constructor(
+    @inject(KEYS.Logger) protected logger: Logger,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
+  ) {
     super();
   }
 
-  canRunInBackground: boolean = false;
+  canRunInBackground: boolean = true;
 
   async runInternal(): Promise<void> {
     const getNextPage = (offset?: string) => {
@@ -93,9 +96,10 @@ export class BackfillProgramExternalIds extends Fixer {
         .where('name', 'in', missingServers)
         .execute();
 
-      forEach(serverSettings, (server) => {
-        plexConnections[server.name] = MediaSourceApiFactory().get(server);
-      });
+      for (const server of serverSettings) {
+        plexConnections[server.name] =
+          await this.mediaSourceApiFactory.getPlexApiClient(server);
+      }
 
       for await (const result of asyncPool(
         programs,
