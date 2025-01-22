@@ -1,13 +1,13 @@
 import { container } from '@/container.js';
 import { setServerOptions } from '@/globals.js';
-import { Server } from '@/Server.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { getDefaultServerPort } from '@/util/defaults.js';
 import { isNonEmptyString, isProduction } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import chalk from 'chalk';
-import { ArgumentsCamelCase, CommandModule } from 'yargs';
-import { GlobalArgsType } from './types.ts';
+import type { ArgumentsCamelCase, CommandModule } from 'yargs';
+import { Server } from '../Server.ts';
+import type { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {
   port: number;

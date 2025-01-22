@@ -18,22 +18,22 @@ import {
 } from '../types/errors.js';
 import {
   ConcatSession,
-  ConcatSessionFactory,
-  ConcatSessionOptions,
+  type ConcatSessionFactory,
+  type ConcatSessionOptions,
 } from './ConcatSession.js';
 import { HlsConcatSessionType, Session } from './Session.js';
 import {
   HlsSession,
-  HlsSessionOptions,
-  HlsSessionProvider,
-  HlsSlowerSessionProvider,
+  type HlsSessionOptions,
+  type HlsSessionProvider,
+  type HlsSlowerSessionProvider,
 } from './hls/HlsSession.js';
 import {
   HlsSlowerSession,
   HlsSlowerSessionOptions,
 } from './hls/HlsSlowerSession.js';
 
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { KEYS } from '@/types/inject.js';

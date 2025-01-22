@@ -1,15 +1,15 @@
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { ProgramType, Resolution } from '@tunarr/types';
+import type { ProgramType, Resolution } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { every, isNaN, isUndefined, parseInt } from 'lodash-es';
 import { v4 } from 'uuid';
-import {
+import type {
   ProgramType as DBProgramType,
   NewProgramDao,
 } from '../../db/schema/Program.ts';
-import { LegacyProgram } from './LegacyChannelMigrator.ts';
+import type { LegacyProgram } from './LegacyChannelMigrator.ts';
 
 // JSON representation for easier parsing of legacy db files
 export interface JSONArray extends Array<JSONValue> {}

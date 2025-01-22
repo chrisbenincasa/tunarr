@@ -2,10 +2,10 @@ import { getDatabase } from '@/db/DBAccess.js';
 import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.js';
 import Fixer from '@/tasks/fixers/fixer.js';
 import { KEYS } from '@/types/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { map } from 'lodash-es';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 
 @injectable()
 export class EnsureTranscodeConfigIds extends Fixer {

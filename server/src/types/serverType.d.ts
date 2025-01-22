@@ -1,4 +1,4 @@
-import {
+import type {
   FastifyBaseLogger,
   FastifyInstance,
   FastifyPluginAsync,
@@ -6,12 +6,12 @@ import {
   RawServerDefault,
   RouteGenericInterface,
 } from 'fastify';
-import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify/types/request.d.ts';
 import type { FastifySchema } from 'fastify/types/schema.d.ts';
 import type { ResolveFastifyRequestType } from 'fastify/types/type-provider.d.ts';
-import { IncomingMessage, ServerResponse } from 'http';
-import { z } from 'zod';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { z } from 'zod';
 
 export type ServerType = FastifyInstance<
   RawServerDefault,

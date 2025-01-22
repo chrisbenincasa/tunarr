@@ -1,5 +1,5 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
   NewTranscodeConfig,
@@ -14,7 +14,7 @@ import { AnonymousTask } from '@/tasks/Task.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { attempt } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import {
   FfmpegSettings,

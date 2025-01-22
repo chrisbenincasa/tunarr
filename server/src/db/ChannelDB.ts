@@ -1,6 +1,6 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
 import { ChannelNotFoundError } from '@/types/errors.js';

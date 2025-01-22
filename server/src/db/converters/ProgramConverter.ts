@@ -4,7 +4,7 @@ import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { ProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,

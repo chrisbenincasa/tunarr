@@ -1,7 +1,7 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
 import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 
 export abstract class NvidiaDecoder extends BaseDecoder {

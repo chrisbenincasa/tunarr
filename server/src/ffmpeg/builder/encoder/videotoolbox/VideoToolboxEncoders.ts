@@ -1,8 +1,8 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 
 export class VideoToolboxHevcEncoder extends VideoEncoder {

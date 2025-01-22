@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { ITimer } from '../interfaces/ITimer.ts';
-import { LogLevels, Logger } from './logging/LoggerFactory.ts';
+import type { ITimer } from '../interfaces/ITimer.ts';
+import type { LogLevels, Logger } from './logging/LoggerFactory.ts';
 import { timeNamedAsync, timeNamedSync } from './perf.ts';
 
 @injectable()

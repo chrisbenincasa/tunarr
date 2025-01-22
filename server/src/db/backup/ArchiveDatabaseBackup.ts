@@ -1,10 +1,10 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { getDatabasePath } from '@/util/databaseDirectoryUtil.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isDocker } from '@/util/isDocker.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { FileBackupOutput } from '@tunarr/types/schemas';
+import type { FileBackupOutput } from '@tunarr/types/schemas';
 import archiver from 'archiver';
 import dayjs from 'dayjs';
 import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
@@ -12,7 +12,8 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { BackupResult, DatabaseBackup } from './DatabaseBackup.ts';
+import type { BackupResult } from './DatabaseBackup.ts';
+import { DatabaseBackup } from './DatabaseBackup.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
 
 export type ArchiveDatabaseBackupFactory = (

@@ -1,9 +1,9 @@
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { RateControlMode } from '@/ffmpeg/builder/types.js';
-import { Maybe, Nilable } from '@/types/util.js';
-import { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.ts';
+import type { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { RateControlMode } from '@/ffmpeg/builder/types.js';
+import type { Maybe, Nilable } from '@/types/util.js';
+import type { NvidiaHardwareCapabilities } from './NvidiaHardwareCapabilities.ts';
 
 export interface FfmpegHardwareCapabilitiesFactory {
   getCapabilities(): Promise<BaseFfmpegHardwareCapabilities>;

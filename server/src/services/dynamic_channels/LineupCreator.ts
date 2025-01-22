@@ -1,11 +1,12 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { getDatabase } from '@/db/DBAccess.js';
-import { Lineup, isContentItem } from '@/db/derived_types/Lineup.js';
-import { Func } from '@/types/func.js';
-import { ChannelAndLineup } from '@/types/internal.js';
+import type { Lineup } from '@/db/derived_types/Lineup.js';
+import { isContentItem } from '@/db/derived_types/Lineup.js';
+import type { Func } from '@/types/func.js';
+import type { ChannelAndLineup } from '@/types/internal.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { SchedulingOperation } from '@tunarr/types/api';
+import type { SchedulingOperation } from '@tunarr/types/api';
 import {
   compact,
   filter,
@@ -23,10 +24,8 @@ import {
 } from '../../util/index.js';
 import { CollapseOfflineTimeOperator } from './CollapseOfflineTimeOperator.js';
 import { IntermediateOperator } from './IntermediateOperator.js';
-import {
-  LineupBuilderContext,
-  LineupCreatorContext,
-} from './LineupCreatorContext.js';
+import type { LineupBuilderContext } from './LineupCreatorContext.js';
+import { LineupCreatorContext } from './LineupCreatorContext.js';
 import { SchedulingOperatorFactory } from './SchedulingOperatorFactory.js';
 
 const OperatorToWeight: Record<SchedulingOperation['type'], number> = {

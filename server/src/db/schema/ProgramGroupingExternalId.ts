@@ -1,5 +1,5 @@
-import { Insertable, Selectable } from 'kysely';
-import {
+import type { Insertable, Selectable } from 'kysely';
+import type {
   ProgramExternalIdSourceType,
   WithCreatedAt,
   WithUpdatedAt,

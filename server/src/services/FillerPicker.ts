@@ -1,10 +1,10 @@
-import { Channel } from '@/db/schema/Channel.js';
+import type { Channel } from '@/db/schema/Channel.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
-import {
+import type {
   ChannelFillerShowWithContent,
   ProgramWithRelations,
 } from '../db/schema/derivedTypes.js';

@@ -1,4 +1,4 @@
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 import { DatabaseListMigrationsCommand } from './DatabaseListMigrationsCommand.ts';
 import { DatabaseMigrateDownCommand } from './DatabaseMigrateDownCommand.ts';
 import { DatabaseMigrateUpCommand } from './DatabaseMigrateUpCommand .ts';

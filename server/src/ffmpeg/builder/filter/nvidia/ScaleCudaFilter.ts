@@ -1,11 +1,10 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameSize } from '@/ffmpeg/builder/types.js';
+import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { isEmpty } from 'lodash-es';
-import {
-  PixelFormats,
-  ValidPixelFormatName,
-} from '../../format/PixelFormat.ts';
+import type { ValidPixelFormatName } from '../../format/PixelFormat.ts';
+import { PixelFormats } from '../../format/PixelFormat.ts';
 
 export class ScaleCudaFilter extends FilterOption {
   readonly filter: string;

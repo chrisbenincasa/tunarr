@@ -1,23 +1,21 @@
-import {
+import type {
   ISettingsDB,
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
-import {
-  HardwareAccelerationMode,
-  TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.js';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { ContainerModule } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import { KEYS } from '../../../types/inject.ts';
 import { bindFactoryFunc } from '../../../util/inject.ts';
-import { PipelineBuilder } from './PipelineBuilder.js';
+import type { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
 import { VaapiPipelineBuilder } from './hardware/VaapiPipelineBuilder.ts';

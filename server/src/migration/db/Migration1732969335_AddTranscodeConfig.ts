@@ -1,12 +1,13 @@
+import type { NewTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import {
-  NewTranscodeConfig,
   TranscodeAudioOutputFormats,
   TranscodeVideoOutputFormats,
 } from '@/db/schema/TranscodeConfig.js';
-import { DB } from '@/db/schema/db.js';
+import type { DB } from '@/db/schema/db.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { Resolution } from '@tunarr/types';
-import { Kysely, sql } from 'kysely';
+import type { Resolution } from '@tunarr/types';
+import type { Kysely } from 'kysely';
+import { sql } from 'kysely';
 import { isEmpty } from 'lodash-es';
 import { v4 } from 'uuid';
 import { SettingsDBFactory } from '../../db/SettingsDBFactory.ts';

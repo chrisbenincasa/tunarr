@@ -1,15 +1,15 @@
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
-import { Dictionary } from 'ts-essentials';
+import type { Dictionary } from 'ts-essentials';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';
 import { ComplexFilter } from './filter/ComplexFilter.ts';
-import { AudioInputSource } from './input/AudioInputSource.ts';
-import { ConcatInputSource } from './input/ConcatInputSource.ts';
-import { VideoInputSource } from './input/VideoInputSource.ts';
-import { WatermarkInputSource } from './input/WatermarkInputSource.ts';
+import type { AudioInputSource } from './input/AudioInputSource.ts';
+import type { ConcatInputSource } from './input/ConcatInputSource.ts';
+import type { VideoInputSource } from './input/VideoInputSource.ts';
+import type { WatermarkInputSource } from './input/WatermarkInputSource.ts';
+import type { PipelineStep } from './types/PipelineStep.ts';
 import {
-  PipelineStep,
   isFilterOption,
   isGlobalOption,
   isOutputOption,

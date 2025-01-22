@@ -1,5 +1,6 @@
-import { Channel } from '@/db/schema/Channel.js';
-import { CompiledQuery, Kysely, sql } from 'kysely';
+import type { Channel } from '@/db/schema/Channel.js';
+import type { Kysely } from 'kysely';
+import { CompiledQuery, sql } from 'kysely';
 
 interface ChannelProgramsInMigration {
   channelUuid: string;

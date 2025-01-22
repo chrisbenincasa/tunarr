@@ -1,4 +1,4 @@
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';

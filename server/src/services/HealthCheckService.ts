@@ -4,8 +4,8 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { injectable, multiInject } from 'inversify';
 import { difference, keys, map, reduce, values } from 'lodash-es';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   healthCheckResult,
 } from './health_checks/HealthCheck.ts';
 

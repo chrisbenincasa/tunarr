@@ -1,9 +1,9 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import {
   chunk,

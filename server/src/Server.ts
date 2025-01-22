@@ -36,7 +36,7 @@ import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
 import {
-  ServerOptions,
+  type ServerOptions,
   initializeSingletons,
   serverOptions,
 } from './globals.js';
@@ -46,7 +46,7 @@ import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
-import { Logger, RootLogger } from './util/logging/LoggerFactory.js';
+import { type Logger, RootLogger } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 

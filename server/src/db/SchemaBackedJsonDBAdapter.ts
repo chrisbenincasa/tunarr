@@ -1,11 +1,11 @@
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isProduction } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { merge } from 'lodash-es';
-import { Adapter } from 'lowdb';
+import type { Adapter } from 'lowdb';
 import { TextFile } from 'lowdb/node';
-import { PathLike } from 'node:fs';
-import { z } from 'zod';
+import type { PathLike } from 'node:fs';
+import type { z } from 'zod';
 
 export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   implements Adapter<Out>

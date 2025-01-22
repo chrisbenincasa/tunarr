@@ -3,8 +3,8 @@ import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration
 import { isArray, isString } from 'lodash-es';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { CommandModule } from 'yargs';
-import { GlobalArgsType } from './types.ts';
+import type { CommandModule } from 'yargs';
+import type { GlobalArgsType } from './types.ts';
 
 type LegacyMigrateCommandArgs = {
   legacy_path: string;

@@ -3,13 +3,13 @@ import { BackfillProgramExternalIds } from '@/tasks/fixers/BackfillProgramExtern
 import { EnsureTranscodeConfigIds } from '@/tasks/fixers/EnsureTranscodeConfigIds.js';
 import { AddPlexServerIdsFixer } from '@/tasks/fixers/addPlexServerIds.js';
 import { BackfillProgramGroupings } from '@/tasks/fixers/backfillProgramGroupings.js';
-import Fixer from '@/tasks/fixers/fixer.js';
+import type Fixer from '@/tasks/fixers/fixer.js';
 import { MissingSeasonNumbersFixer } from '@/tasks/fixers/missingSeasonNumbersFixer.js';
 import { KEYS } from '@/types/inject.js';
 import { groupByUniq, isNonEmptyString } from '@/util/index.js';
-import { TupleToUnion } from '@tunarr/types';
-import { CommandModule } from 'yargs';
-import { GlobalArgsType } from './types.ts';
+import type { TupleToUnion } from '@tunarr/types';
+import type { CommandModule } from 'yargs';
+import type { GlobalArgsType } from './types.ts';
 
 const FixerNames = [
   MissingSeasonNumbersFixer.name,

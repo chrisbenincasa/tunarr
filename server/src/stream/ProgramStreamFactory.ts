@@ -1,6 +1,6 @@
-import { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import { PlayerContext } from './PlayerStreamContext.js';
-import { ProgramStream } from './ProgramStream.js';
+import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { PlayerContext } from './PlayerStreamContext.js';
+import type { ProgramStream } from './ProgramStream.js';
 
 /**
  * Creates a {@link ProgramStream} baased on the given context

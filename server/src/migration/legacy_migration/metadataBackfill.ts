@@ -9,7 +9,7 @@ import { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExterna
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { isNonEmptyString, wait } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import {
   PlexEpisodeView,
   PlexLibraryMusic,
@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { first, groupBy, isNil, isUndefined, keys } from 'lodash-es';
 import { v4 } from 'uuid';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import {
   NewProgramGrouping,
   ProgramGroupingType,

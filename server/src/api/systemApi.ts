@@ -1,19 +1,20 @@
 import { serverOptions } from '@/globals.js';
 import { scheduleBackupJobs } from '@/services/Scheduler.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { ifDefined } from '@/util/index.js';
 import { getEnvironmentLogLevel } from '@/util/logging/LoggerFactory.js';
-import { LoggingSettings, SystemSettings } from '@tunarr/types';
+import type { LoggingSettings, SystemSettings } from '@tunarr/types';
+import type { SystemSettingsResponse } from '@tunarr/types/api';
 import {
-  SystemSettingsResponse,
   SystemSettingsResponseSchema,
   UpdateBackupSettingsRequestSchema,
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
-import { BackupSettings, BackupSettingsSchema } from '@tunarr/types/schemas';
+import type { BackupSettings } from '@tunarr/types/schemas';
+import { BackupSettingsSchema } from '@tunarr/types/schemas';
 import { isUndefined } from 'lodash-es';
-import { DeepReadonly, Writable } from 'ts-essentials';
+import type { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (

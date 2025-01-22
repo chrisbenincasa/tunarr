@@ -18,7 +18,7 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { inject, injectable } from 'inversify';

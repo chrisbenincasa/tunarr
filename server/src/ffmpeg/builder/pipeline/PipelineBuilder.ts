@@ -1,8 +1,8 @@
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.js';
-import { Pipeline } from './Pipeline.ts';
+import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { Nullable } from '@/types/util.js';
+import type { Pipeline } from './Pipeline.ts';
 
 export interface PipelineBuilder {
   validate(): Nullable<Error>;

@@ -24,7 +24,8 @@
         "strictNullChecks": true,
         "types": [
             "vitest/globals",
-            "vitest/importMeta"
+            "vitest/importMeta",
+            "@types/bun",
         ],
         "noEmit": true,
         "declaration": true,
@@ -38,6 +39,7 @@
             ]
         },
         "rewriteRelativeImportExtensions": true,
+        "skipLibCheck": true
     },
     "include": [
         "./src/**/*.ts",

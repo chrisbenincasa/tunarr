@@ -4,7 +4,7 @@ import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';

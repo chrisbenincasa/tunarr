@@ -1,6 +1,6 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { InputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
+import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { InputOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
 
 export abstract class InputOption implements InputOptionPipelineStep {
   readonly type = 'input';

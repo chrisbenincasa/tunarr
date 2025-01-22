@@ -1,6 +1,6 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.js';
 import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
 import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';

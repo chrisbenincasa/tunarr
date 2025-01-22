@@ -1,4 +1,4 @@
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   CreateCustomShowRequestSchema,

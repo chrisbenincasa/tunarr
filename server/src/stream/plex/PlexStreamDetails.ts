@@ -1,7 +1,7 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -10,7 +10,7 @@ import { KEYS } from '@/types/inject.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { attempt, isNonEmptyString } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import {
   PlexEpisode,

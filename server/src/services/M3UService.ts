@@ -1,4 +1,4 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { devAssert } from '@/util/debug.js';

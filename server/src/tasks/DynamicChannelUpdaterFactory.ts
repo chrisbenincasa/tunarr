@@ -1,7 +1,7 @@
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
 import { Channel } from '../db/schema/Channel.ts';
-import { ContentSourceUpdaterFactory } from '../services/dynamic_channels/DynamicChannelsModule.ts';
+import type { ContentSourceUpdaterFactory } from '../services/dynamic_channels/DynamicChannelsModule.ts';
 import { KEYS } from '../types/inject.ts';
 import { Task } from './Task.ts';
 

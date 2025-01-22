@@ -1,6 +1,6 @@
-import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
-import { Func } from '@/types/func.js';
-import { ChannelAndLineup } from '@/types/internal.js';
+import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
+import type { Func } from '@/types/func.js';
+import type { ChannelAndLineup } from '@/types/internal.js';
 
 export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
   const newLineup: LineupItem[] = [];

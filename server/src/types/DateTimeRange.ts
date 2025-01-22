@@ -1,5 +1,6 @@
-import dayjs, { Dayjs } from 'dayjs';
-import { Nullable } from './util.ts';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import type { Nullable } from './util.ts';
 
 export class DateTimeRange {
   private constructor(

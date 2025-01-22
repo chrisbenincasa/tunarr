@@ -1,13 +1,13 @@
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import constants from '@tunarr/shared/constants';
 import { isNull, isUndefined } from 'lodash-es';
 import path from 'node:path';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './constants.js';
 import { isNonEmptyString, isProduction } from './index.js';
 import { isDocker } from './isDocker.js';
+import type { LogLevels } from './logging/LoggerFactory.ts';
 import {
   LogConfigEnvVars,
-  LogLevels,
   getEnvironmentLogLevel,
 } from './logging/LoggerFactory.ts';
 

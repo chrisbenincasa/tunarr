@@ -1,6 +1,6 @@
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
 import axios, { AxiosHeaders } from 'axios';
 import { createHash } from 'crypto';
@@ -16,7 +16,7 @@ import {
   omitBy,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import stream from 'stream';
+import type stream from 'stream';
 import { z } from 'zod';
 import {
   ProgramSourceType,

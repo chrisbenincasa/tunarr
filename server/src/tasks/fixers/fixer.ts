@@ -1,4 +1,4 @@
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
 
 export default abstract class Fixer {
   protected abstract logger: Logger;

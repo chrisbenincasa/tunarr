@@ -11,7 +11,7 @@ import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { asyncPool } from '@/util/asyncPool.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

@@ -1,9 +1,10 @@
-import { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
-import { Tag } from '@tunarr/types';
-import { BackupConfiguration } from '@tunarr/types/schemas';
+import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
+import type { Tag } from '@tunarr/types';
+import type { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
-import { DeepReadonly } from 'ts-essentials';
-import { Task, TaskId } from './Task.ts';
+import type { DeepReadonly } from 'ts-essentials';
+import type { TaskId } from './Task.ts';
+import { Task } from './Task.ts';
 
 export type BackupTaskFactory = (
   config: DeepReadonly<BackupConfiguration>,

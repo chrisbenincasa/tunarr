@@ -4,7 +4,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { promises as fs } from 'fs';
 import { injectable } from 'inversify';
 import NodeCache from 'node-cache';
-import path from 'path';
+import { join } from 'node:path';
 
 /**
  * Store files in cache
@@ -34,14 +34,14 @@ export class FileCacheService {
     if (this.enableInMemoryCache) {
       FileCacheService.cache.set(fullFilePath, data);
     }
-    await fs.writeFile(path.join(this.cachePath, fullFilePath), data);
+    await fs.writeFile(join(this.cachePath, fullFilePath), data);
     return true;
   }
 
   async exists(fullFilePath: string) {
     return (
       (this.enableInMemoryCache && FileCacheService.cache.has(fullFilePath)) ||
-      (await fileExists(path.join(this.cachePath, fullFilePath)))
+      (await fileExists(join(this.cachePath, fullFilePath)))
     );
   }
 
@@ -49,7 +49,7 @@ export class FileCacheService {
    * `get` a File from cache folder
    */
   async getCache(fullFilePath: string): Promise<string | undefined> {
-    const fullPath = path.join(this.cachePath, fullFilePath);
+    const fullPath = join(this.cachePath, fullFilePath);
     try {
       const memValue = this.enableInMemoryCache
         ? FileCacheService.cache.get<string>(fullFilePath)
@@ -70,7 +70,7 @@ export class FileCacheService {
    * `delete` a File from cache folder
    */
   async deleteCache(fullFilePath: string): Promise<boolean> {
-    const thePath = path.join(this.cachePath, fullFilePath);
+    const thePath = join(this.cachePath, fullFilePath);
 
     if (!(await fileExists(thePath))) {
       return false;

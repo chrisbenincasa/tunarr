@@ -3,7 +3,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import { chunk, flatten, isEmpty, isUndefined, partition } from 'lodash-es';
 import { getDatabase } from './DBAccess.ts';
-import { NewProgramExternalId as NewRawProgramExternalId } from './schema/ProgramExternalId.ts';
+import type { NewProgramExternalId as NewRawProgramExternalId } from './schema/ProgramExternalId.ts';
 
 export const upsertRawProgramExternalIds = async (
   externalIds: NewRawProgramExternalId[],

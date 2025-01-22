@@ -1,4 +1,4 @@
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
@@ -9,7 +9,7 @@ import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {

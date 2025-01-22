@@ -3,8 +3,8 @@ import { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import { intersection, isEmpty, reject } from 'lodash-es';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
 } from './HealthCheck.ts';

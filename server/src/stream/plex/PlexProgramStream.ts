@@ -1,24 +1,24 @@
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { CacheImageService } from '@/services/cacheImageService.js';
-import { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import type { CacheImageService } from '@/services/cacheImageService.js';
+import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
 import { UpdatePlexPlayStatusScheduledTask } from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
 import { Result } from '@/types/result.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import { interfaces } from 'inversify';
+import type { interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
-import { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
-import { PlexStreamDetails } from './PlexStreamDetails.js';
+import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
+import type { PlexStreamDetails } from './PlexStreamDetails.js';
 
 export class PlexProgramStream extends ProgramStream {
   protected logger = LoggerFactory.child({

@@ -1,5 +1,5 @@
 import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSource } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
@@ -9,7 +9,7 @@ import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { inject, injectable } from 'inversify';

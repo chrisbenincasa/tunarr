@@ -1,9 +1,10 @@
-import { RouterPluginCallback } from '@/types/serverType.js';
+import type { RouterPluginCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
+import type { PlexStreamSettings } from '@tunarr/types';
+import { defaultPlexStreamSettings } from '@tunarr/types';
 import { PlexStreamSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
-import { DeepWritable } from 'ts-essentials';
+import type { DeepWritable } from 'ts-essentials';
 import { z } from 'zod';
 
 export const plexSettingsRouter: RouterPluginCallback = (

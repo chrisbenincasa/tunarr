@@ -1,20 +1,20 @@
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { typedProperty } from '@/types/path.js';
 import { asyncPool, unfurlPool } from '@/util/asyncPool.js';
 import { flatMapAsyncSeq, wait } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Timer } from '@/util/Timer.js';
 import { createExternalId } from '@tunarr/shared';
-import {
-  isPlexDirectory,
-  isTerminalItem,
+import type {
   PlexChildMediaViewType,
   PlexLibrarySection,
   PlexMedia,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
+import { isPlexDirectory, isTerminalItem } from '@tunarr/types/plex';
 import { flatten, isNil, map, uniqBy } from 'lodash-es';
-import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 
 export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;

@@ -6,7 +6,7 @@ export class SqliteDatabaseBackup {
   #logger = LoggerFactory.child({ className: SqliteDatabaseBackup.name });
 
   async backup(outFile: string) {
-    const conn = BetterSqlite3(dbOptions().dbName!, {
+    const conn = BetterSqlite3(dbOptions().dbName, {
       fileMustExist: true,
     });
 

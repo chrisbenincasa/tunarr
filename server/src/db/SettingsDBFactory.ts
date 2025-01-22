@@ -1,4 +1,4 @@
-import { GlobalOptions } from '@/globals.js';
+import type { GlobalOptions } from '@/globals.js';
 import { KEYS } from '@/types/inject.js';
 import { SETTINGS_JSON_FILENAME } from '@/util/constants.js';
 import { inject, injectable } from 'inversify';

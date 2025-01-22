@@ -1,8 +1,9 @@
-import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { once, round } from 'lodash-es';
-import { Readable } from 'node:stream';
-import { Session, SessionOptions } from './Session.js';
+import type { Readable } from 'node:stream';
+import type { SessionOptions } from './Session.js';
+import { Session } from './Session.js';
 
 /**
  * Base class for a shared stream session where all participants share

@@ -4,7 +4,7 @@ import {
 } from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { isProduction } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   FfmpegSettings,
   HdhrSettings,

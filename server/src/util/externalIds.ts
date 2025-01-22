@@ -1,7 +1,7 @@
 import { programExternalIdTypeFromExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
-import { Nullable } from '@/types/util.js';
-import { MultiExternalId } from '@tunarr/types';
+import type { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type { Nullable } from '@/types/util.js';
+import type { MultiExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isError, trimEnd, trimStart } from 'lodash-es';

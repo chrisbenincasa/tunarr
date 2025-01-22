@@ -5,7 +5,8 @@ import {
   getDefaultDatabaseDirectory,
   getDefaultLogLevel,
 } from '@/util/defaults.js';
-import { LogLevels, ValidLogLevels } from '@/util/logging/LoggerFactory.js';
+import type { LogLevels } from '@/util/logging/LoggerFactory.js';
+import { ValidLogLevels } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { dayjsMod } from '@tunarr/shared/util';
 import dayjs from 'dayjs';

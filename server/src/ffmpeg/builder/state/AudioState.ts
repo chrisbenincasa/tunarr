@@ -1,6 +1,6 @@
-import { ExcludeByValueType, Nullable } from '@/types/util.js';
+import type { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isNil, omitBy } from 'lodash-es';
-import { AnyFunction } from 'ts-essentials';
+import type { AnyFunction } from 'ts-essentials';
 
 export type AudioStateFields = ExcludeByValueType<AudioState, AnyFunction>;
 

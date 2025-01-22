@@ -2,7 +2,8 @@ import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { sanitizeForExec } from '@/util/strings.js';
 import { isEmpty } from 'lodash-es';
-import { ExecOptions, exec } from 'node:child_process';
+import type { ExecOptions } from 'node:child_process';
+import { exec } from 'node:child_process';
 import PQueue from 'p-queue';
 
 export class ChildProcessHelper {

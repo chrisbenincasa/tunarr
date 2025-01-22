@@ -1,11 +1,11 @@
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { first, isNull, isUndefined } from 'lodash-es';
-import { Dictionary } from 'ts-essentials';
+import type { Dictionary } from 'ts-essentials';
+import type { PixelFormat } from '../ffmpeg/builder/format/PixelFormat.ts';
 import {
   KnownPixelFormats,
-  PixelFormat,
   PixelFormatUnknown,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,

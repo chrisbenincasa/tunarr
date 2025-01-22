@@ -1,16 +1,16 @@
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.js';
+import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { Nullable } from '@/types/util.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import { filter, forEach, isNull, some } from 'lodash-es';
-import {
+import type {
   FilterOptionPipelineStep,
   HasFilterOption,
 } from '../types/PipelineStep.ts';
-import { FilterChain } from './FilterChain.ts';
+import type { FilterChain } from './FilterChain.ts';
 
 export class ComplexFilter implements FilterOptionPipelineStep {
   readonly type = 'filter';

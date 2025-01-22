@@ -1,12 +1,12 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import { MarkNonNullable } from '@/types/util.js';
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { MarkNonNullable } from '@/types/util.js';
 import type { DeepNullable, MarkRequired } from 'ts-essentials';
-import { Channel, ChannelFillerShow } from './Channel.ts';
-import { FillerShow } from './FillerShow.ts';
-import { ProgramDao } from './Program.ts';
-import { MinimalProgramExternalId } from './ProgramExternalId.ts';
-import { ProgramGrouping } from './ProgramGrouping.ts';
-import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
+import type { Channel, ChannelFillerShow } from './Channel.ts';
+import type { FillerShow } from './FillerShow.ts';
+import type { ProgramDao } from './Program.ts';
+import type { MinimalProgramExternalId } from './ProgramExternalId.ts';
+import type { ProgramGrouping } from './ProgramGrouping.ts';
+import type { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
 
 export type ProgramWithRelations = ProgramDao & {
   tvShow?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;

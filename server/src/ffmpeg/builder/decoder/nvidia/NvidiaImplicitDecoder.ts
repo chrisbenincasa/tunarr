@@ -1,4 +1,4 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { NvidiaDecoder } from './NvidiaDecoders.ts';
 
 export class NvidiaImplicitDecoder extends NvidiaDecoder {

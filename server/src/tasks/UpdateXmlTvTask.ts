@@ -1,6 +1,6 @@
 import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';

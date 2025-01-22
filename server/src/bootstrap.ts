@@ -1,12 +1,12 @@
 import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
 import path from 'path';
-import { DeepPartial } from 'ts-essentials';
+import type { DeepPartial } from 'ts-essentials';
 import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
-import { SettingsFile } from './db/SettingsDB.ts';
+import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';

@@ -1,12 +1,9 @@
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import type { Tag } from '@tunarr/types';
 import { isError, isString, round } from 'lodash-es';
-import {
-  LogLevels,
-  Logger,
-  LoggerFactory,
-} from '../util/logging/LoggerFactory.js';
+import type { LogLevels, Logger } from '../util/logging/LoggerFactory.js';
+import { LoggerFactory } from '../util/logging/LoggerFactory.js';
 
 // Set of all of the possible Task IDs
 export type TaskId =

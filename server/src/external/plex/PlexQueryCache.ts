@@ -1,8 +1,5 @@
-import {
-  QueryResult,
-  isQueryError,
-  isQuerySuccess,
-} from '@/external/BaseApiClient.js';
+import type { QueryResult } from '@/external/BaseApiClient.js';
+import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { isDefined } from '@/util/index.js';
 import NodeCache from 'node-cache';
 

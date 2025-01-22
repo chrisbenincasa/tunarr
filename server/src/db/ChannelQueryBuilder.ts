@@ -1,11 +1,11 @@
 import { AllTranscodeConfigColumns } from '@/db/schema/TranscodeConfig.js';
-import { DB } from '@/db/schema/db.js';
-import {
+import type { DB } from '@/db/schema/db.js';
+import type {
   ChannelWithRelations,
   ChannelWithTranscodeConfig,
 } from '@/db/schema/derivedTypes.js';
-import { Maybe } from '@/types/util.js';
-import { Kysely, NotNull, SelectQueryBuilder } from 'kysely';
+import type { Maybe } from '@/types/util.js';
+import type { Kysely, NotNull, SelectQueryBuilder } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isString } from 'lodash-es';
 

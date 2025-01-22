@@ -1,11 +1,7 @@
 import { isNonEmptyString } from '@/util/index.js';
 import { createExternalId } from '@tunarr/shared';
-import {
-  ContentProgram,
-  CustomProgram,
-  isContentProgram,
-  isCustomProgram,
-} from '@tunarr/types';
+import type { ContentProgram, CustomProgram } from '@tunarr/types';
+import { isContentProgram, isCustomProgram } from '@tunarr/types';
 import { reduce } from 'lodash-es';
 
 // Takes a listing of programs and makes a mapping of a unique identifier,

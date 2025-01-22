@@ -1,19 +1,21 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
-import { ContentProgram } from '@tunarr/types';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexEpisode, PlexMovie, PlexMusicTrack } from '@tunarr/types/plex';
-import { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
+import type { ContentProgram } from '@tunarr/types';
+import type { JellyfinItem } from '@tunarr/types/jellyfin';
+import type {
+  PlexEpisode,
+  PlexMovie,
+  PlexMusicTrack,
+} from '@tunarr/types/plex';
+import type { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { find, first, isError } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import {
-  NewProgramDao as NewRawProgram,
-  ProgramType,
-} from '../schema/Program.ts';
+import type { NewProgramDao as NewRawProgram } from '../schema/Program.ts';
+import { ProgramType } from '../schema/Program.ts';
 
 /**
  * Generates Program DB entities for Plex media

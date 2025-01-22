@@ -1,20 +1,21 @@
-import {
+import type {
   ISettingsDB,
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
-import { Channel } from '@/db/schema/Channel.js';
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { Channel } from '@/db/schema/Channel.js';
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
-import { AudioStreamDetails, HttpStreamSource } from '@/stream/types.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import type { AudioStreamDetails } from '@/stream/types.js';
+import { HttpStreamSource } from '@/stream/types.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
-import { DeepReadonly, NonEmptyArray } from 'ts-essentials';
+import type { DeepReadonly, NonEmptyArray } from 'ts-essentials';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
@@ -23,14 +24,11 @@ import {
   StillImageStream,
   VideoStream,
 } from './builder/MediaStream.ts';
-import {
-  MpegTsOutputFormat,
-  OutputFormat,
-  VideoFormats,
-} from './builder/constants.ts';
+import type { OutputFormat } from './builder/constants.ts';
+import { MpegTsOutputFormat, VideoFormats } from './builder/constants.ts';
+import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import {
   KnownPixelFormats,
-  PixelFormat,
   PixelFormatUnknown,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
@@ -44,14 +42,15 @@ import { ConcatInputSource } from './builder/input/ConcatInputSource.ts';
 import { LavfiVideoInputSource } from './builder/input/LavfiVideoInputSource.ts';
 import { VideoInputSource } from './builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from './builder/input/WatermarkInputSource.ts';
-import { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
+import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { AudioState } from './builder/state/AudioState.ts';
 import { FfmpegState } from './builder/state/FfmpegState.ts';
 import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
-import { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
-import { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
-import { FfmpegInfo } from './ffmpegInfo.ts';
+import type { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
+import type { HlsWrapperOptions } from './ffmpegBase.ts';
+import { IFFMPEG } from './ffmpegBase.ts';
+import type { FfmpegInfo } from './ffmpegInfo.ts';
 
 export class FfmpegStreamFactory extends IFFMPEG {
   private logger = LoggerFactory.child({ className: FfmpegStreamFactory.name });
