@@ -38,6 +38,8 @@ export class LegacyMetadataBackfiller {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   // It requires valid PlexServerSettings, program metadata, etc
@@ -181,7 +183,7 @@ export class LegacyMetadataBackfiller {
       }
 
       // Otherwise, we need to go and find details...
-      const plex = MediaSourceApiFactory().get(server);
+      const plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
 
       // This where the types have to diverge, because the Plex
       // API types differ.

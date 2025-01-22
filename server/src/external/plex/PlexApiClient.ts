@@ -1,5 +1,5 @@
 import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.js';
-import type { Maybe, Nilable } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
@@ -33,19 +33,12 @@ import type {
 } from '../../types/plexApiTypes.js';
 import type { QueryErrorResult, QueryResult } from '../BaseApiClient.js';
 import {
+  type ApiClientOptions,
   BaseApiClient,
   isQueryError,
   isQuerySuccess,
 } from '../BaseApiClient.js';
 import { PlexQueryCache } from './PlexQueryCache.js';
-
-export type PlexApiOptions = {
-  accessToken: string;
-  uri: string;
-  name: string;
-  clientIdentifier?: Nilable<string>;
-  enableRequestCache?: boolean;
-};
 
 const PlexCache = new PlexQueryCache();
 
@@ -56,13 +49,12 @@ const PlexHeaders = {
 
 export class PlexApiClient extends BaseApiClient {
   protected redacter = new PlexRequestRedacter();
-  private opts: PlexApiOptions;
+  private opts: ApiClientOptions;
   private accessToken: string;
 
-  constructor(opts: PlexApiOptions) {
+  constructor(opts: ApiClientOptions) {
     super({
-      url: opts.uri,
-      name: opts.name,
+      ...opts,
       extraHeaders: {
         ...PlexHeaders,
         'X-Plex-Version': getTunarrVersion(),
@@ -70,7 +62,7 @@ export class PlexApiClient extends BaseApiClient {
       },
     });
     this.opts = opts;
-    this.accessToken = opts.accessToken;
+    // this.accessToken = opts.accessToken;
   }
 
   get serverName() {

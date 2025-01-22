@@ -16,6 +16,7 @@ const KEYS = {
   ChannelDB: Symbol.for('ChannelDB'),
   ProgramDB: Symbol.for('ProgramDB'),
   SettingsDB: Symbol.for('SettingsDB'),
+  MediaSourceApiFactory: Symbol.for('MediaSourceApiFactory'),
 
   // Streaming
   HlsSession: Symbol.for('HlsSession'),
@@ -27,6 +28,8 @@ const KEYS = {
   JellyfinStreamDetailsFactory: Symbol.for('JellyfinStreamDetailsFactory'),
   PlexStreamDetails: Symbol.for('PlexStreamDetails'),
   PlexStreamDetailsFactory: Symbol.for('PlexStreamDetailsFactory'),
+  EmbyStreamDetails: Symbol.for('EmbyStreamDetails'),
+  EmbyStreamDetailsFactory: Symbol.for('EmbyStreamDetailsFactory'),
   FFmpegFactory: Symbol.for('FFmpegFactory'),
   ConcatStreamFactory: Symbol.for('ConcatStreamFactory'),
   PipelineBuilderFactory: Symbol.for('PipelineBuilderFactory'),

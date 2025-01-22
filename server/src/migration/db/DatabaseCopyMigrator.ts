@@ -1,4 +1,6 @@
+import dayjs from 'dayjs';
 import { type Kysely, sql } from 'kysely';
+import { trimEnd } from 'lodash-es';
 import fs from 'node:fs/promises';
 import tmp from 'tmp-promise';
 import {
@@ -59,7 +61,10 @@ export class DatabaseCopyMigrator {
     await sql`PRAGMA foreign_keys = ON;`.execute(tempDB);
     await sql`PRAGMA defer_foreign_keys = OFF;`.execute(tempDB);
 
-    await fs.copyFile(currentDbPath, `${currentDbPath}.bak`);
+    await fs.copyFile(
+      currentDbPath,
+      `${trimEnd(currentDbPath, '.db')}-${+dayjs()}.bak`,
+    );
     await fs.rename(tmpPath, currentDbPath);
     // Force reinit at the new path
     getDatabase(currentDbPath, true);

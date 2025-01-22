@@ -1,12 +1,11 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { nullToUndefined, wait } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
+import { seq } from '@tunarr/shared/util';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import {
@@ -15,9 +14,12 @@ import {
   InsertMediaSourceRequestSchema,
   UpdateMediaSourceRequestSchema,
 } from '@tunarr/types/api';
-import { MediaSourceSettingsSchema } from '@tunarr/types/schemas';
-import { isError, isNil, map } from 'lodash-es';
-import { match } from 'ts-pattern';
+import {
+  ExternalSourceTypeSchema,
+  MediaSourceSettingsSchema,
+} from '@tunarr/types/schemas';
+import { isError, isNil } from 'lodash-es';
+import { match, P } from 'ts-pattern';
 import z from 'zod';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
@@ -42,25 +44,26 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const servers = await req.serverCtx.mediaSourceDB.getAll();
-        return res.send(
-          map(
-            servers,
-            (dao) =>
-              ({
-                // ...dao,
-                id: tag(dao.uuid),
-                index: dao.index,
-                uri: dao.uri,
-                type: dao.type,
-                name: dao.name,
-                accessToken: dao.accessToken,
-                clientIdentifier: nullToUndefined(dao.clientIdentifier),
-                sendChannelUpdates: numberToBoolean(dao.sendChannelUpdates),
-                sendGuideUpdates: numberToBoolean(dao.sendGuideUpdates),
-              }) satisfies MediaSourceSettings,
-          ),
-        );
+        const sources = await req.serverCtx.mediaSourceDB.getAll();
+
+        const dtos = seq.collect(sources, (source) => {
+          return match(source)
+            .returnType<MediaSourceSettings | null>()
+            .with({ type: P.union('plex', 'jellyfin', 'emby') }, (source) => ({
+              id: tag(source.uuid),
+              index: source.index,
+              uri: source.uri,
+              type: source.type,
+              name: source.name,
+              accessToken: source.accessToken,
+              clientIdentifier: nullToUndefined(source.clientIdentifier),
+              sendChannelUpdates: numberToBoolean(source.sendChannelUpdates),
+              sendGuideUpdates: numberToBoolean(source.sendGuideUpdates),
+            }))
+            .otherwise(() => null);
+        });
+
+        return res.send(dtos);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');
@@ -92,16 +95,24 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         }
 
         const healthyPromise = match(server)
-          .with({ type: 'plex' }, (server) => {
-            return MediaSourceApiFactory().get(server).checkServerStatus();
+          .with({ type: 'plex' }, async (server) => {
+            return (
+              await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server)
+            ).checkServerStatus();
           })
           .with({ type: 'jellyfin' }, async (server) => {
             return (
-              await MediaSourceApiFactory().getJellyfinClient({
-                url: server.uri,
-                apiKey: server.accessToken,
-                name: server.name,
-              })
+              await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
+                server,
+              )
+            )
+              .getSystemInfo()
+              .then(() => true)
+              .catch(() => false);
+          })
+          .with({ type: 'emby' }, async (server) => {
+            return (
+              await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient(server)
             )
               .getSystemInfo()
               .then(() => true)
@@ -137,7 +148,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           name: z.string().optional(),
           accessToken: z.string(),
           uri: z.string(),
-          type: z.union([z.literal('plex'), z.literal('jellyfin')]),
+          type: ExternalSourceTypeSchema,
           username: z.string().optional(),
         }),
         response: {
@@ -153,23 +164,36 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       let healthyPromise: Promise<boolean>;
       switch (req.body.type) {
         case 'plex': {
-          const plex = MediaSourceApiFactory().get({
-            ...req.body,
-            name: req.body.name ?? 'unknown',
-            clientIdentifier: null,
-          });
+          const plex =
+            await req.serverCtx.mediaSourceApiFactory.getPlexApiClient({
+              ...req.body,
+              name: req.body.name ?? 'unknown',
+              clientIdentifier: null,
+            });
 
           healthyPromise = plex.checkServerStatus();
           break;
         }
         case 'jellyfin': {
-          const jellyfin = new JellyfinApiClient({
-            url: req.body.uri,
-            name: req.body.name ?? 'unknown',
-            apiKey: req.body.accessToken,
-          });
+          const jellyfin =
+            await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient({
+              ...req.body,
+              name: req.body.name ?? 'unknown',
+              clientIdentifier: null,
+            });
 
           healthyPromise = jellyfin.ping();
+          break;
+        }
+        case 'emby': {
+          const emby =
+            await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient({
+              ...req.body,
+              name: req.body.name ?? 'unknown',
+              clientIdentifier: null,
+            });
+
+          healthyPromise = emby.ping();
           break;
         }
       }
@@ -380,7 +404,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           return res.status(404).send({ message: 'Plex server not found.' });
         }
 
-        const plex = MediaSourceApiFactory().get(server);
+        const plex =
+          await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server);
 
         const s = await Promise.race([
           plex.checkServerStatus(),

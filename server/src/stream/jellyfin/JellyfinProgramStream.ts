@@ -1,23 +1,23 @@
 import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.js';
-import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { type MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
-import type { CacheImageService } from '@/services/cacheImageService.js';
-import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import { type FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import { type OutputFormat } from '@/ffmpeg/builder/constants.js';
+import { type IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
+import { type CacheImageService } from '@/services/cacheImageService.js';
+import { type PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
-import type { UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
+import { type UpdateJellyfinPlayStatusScheduledTask } from '@/tasks/jellyfin/UpdateJellyfinPlayStatusTask.js';
 import { Result } from '@/types/result.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import { type Maybe, type Nullable } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import type { interfaces } from 'inversify';
+import { type interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
-import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
-import type { JellyfinStreamDetails } from './JellyfinStreamDetails.js';
+import { type FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
+import { type JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
 export class JellyfinProgramStream extends ProgramStream {
   protected logger = LoggerFactory.child({

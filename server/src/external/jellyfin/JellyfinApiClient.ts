@@ -30,12 +30,13 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import type {
-  QueryErrorResult,
-  QueryResult,
-  RemoteMediaSourceOptions,
+import {
+  type ApiClientOptions,
+  BaseApiClient,
+  isQueryError,
+  type QueryErrorResult,
+  type QueryResult,
 } from '../BaseApiClient.js';
-import { BaseApiClient, isQueryError } from '../BaseApiClient.js';
 
 const RequiredLibraryFields = [
   'Path',
@@ -71,10 +72,7 @@ function getJellyfinAuthorization(
   return `MediaBrowser ${parts.join(', ')}`;
 }
 
-export type JellyfinApiClientOptions = Omit<
-  RemoteMediaSourceOptions,
-  'type'
-> & {
+export type JellyfinApiClientOptions = Omit<ApiClientOptions, 'type'> & {
   userId?: string;
 };
 
@@ -100,17 +98,17 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       extraHeaders: {
         ...options.extraHeaders,
         Accept: 'application/json',
-        Authorization: getJellyfinAuthorization(options.apiKey, undefined),
+        Authorization: getJellyfinAuthorization(options.accessToken, undefined),
       },
     });
   }
 
   static async findAdminUser(
-    server: Omit<RemoteMediaSourceOptions, 'apiKey' | 'type'>,
+    server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
     apiKey: string,
   ) {
     try {
-      const response = await axios.get(`${server.url}/Users`, {
+      const response = await axios.get(`${server.uri}/Users`, {
         headers: {
           Authorization: getJellyfinAuthorization(apiKey, undefined),
         },
@@ -134,14 +132,14 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
   }
 
   static async login(
-    server: Omit<RemoteMediaSourceOptions, 'apiKey' | 'type'>,
+    serverUrl: string,
     username: string,
     password: string,
     clientId: string = v4(),
   ) {
     try {
       const response = await axios.post(
-        `${server.url}/Users/AuthenticateByName`,
+        `${serverUrl}/Users/AuthenticateByName`,
         {
           Username: username,
           Pw: password,
@@ -174,6 +172,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
       });
       return true;
     } catch (e) {
+      this.logger.error(e);
       return false;
     }
   }
@@ -272,7 +271,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
 
   getThumbUrl(id: string) {
     // Naive impl for now...
-    return `${this.options.url}/Items/${id}/Images/Primary`;
+    return `${this.options.uri}/Items/${id}/Images/Primary`;
   }
 
   async recordPlaybackStart(itemId: string, deviceId: string) {
@@ -282,7 +281,10 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
         userId: this.options.userId,
       },
       headers: {
-        Authorization: getJellyfinAuthorization(this.options.apiKey, deviceId),
+        Authorization: getJellyfinAuthorization(
+          this.options.accessToken,
+          deviceId,
+        ),
       },
       data: {
         ItemId: itemId,
@@ -317,7 +319,10 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
         userId: this.options.userId,
       },
       headers: {
-        Authorization: getJellyfinAuthorization(this.options.apiKey, deviceId),
+        Authorization: getJellyfinAuthorization(
+          this.options.accessToken,
+          deviceId,
+        ),
       },
       data: {
         ItemId: itemId,
@@ -342,7 +347,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
   protected override preRequestValidate(
     req: AxiosRequestConfig,
   ): Maybe<QueryErrorResult> {
-    if (isEmpty(this.options.apiKey)) {
+    if (isEmpty(this.options.accessToken)) {
       return this.makeErrorResult(
         'no_access_token',
         'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',

@@ -3,14 +3,6 @@ import { getDatabase } from '@/db/DBAccess.js';
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { ChannelLineupQuery } from '@tunarr/types/api';
-import { ChannelLineupSchema } from '@tunarr/types/schemas';
-import dayjs from 'dayjs';
-import { jsonArrayFrom } from 'kysely/helpers/sqlite';
-import { map, reject, some } from 'lodash-es';
-import os from 'node:os';
-import z from 'zod';
-
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
@@ -19,6 +11,13 @@ import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { enumValues } from '@/util/enumUtil.js';
 import { ifDefined } from '@/util/index.js';
+import { ChannelLineupQuery } from '@tunarr/types/api';
+import { ChannelLineupSchema } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
+import { map, reject, some } from 'lodash-es';
+import os from 'node:os';
+import z from 'zod';
 import { container } from '../container.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
@@ -268,6 +267,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         new SavePlexProgramExternalIdsTask(
           req.params.programId,
           req.serverCtx.programDB,
+          req.serverCtx.mediaSourceApiFactory,
         ),
       );
 

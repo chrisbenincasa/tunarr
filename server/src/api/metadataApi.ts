@@ -1,4 +1,3 @@
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
@@ -22,6 +21,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
+import { getServerContext } from '../ServerContext.ts';
 
 const externalIdSchema = z
   .string()
@@ -182,9 +182,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   async function handlePlexItem(query: ExternalMetadataQuery) {
-    const plexApi = await MediaSourceApiFactory().getOrSet(
-      query.id.externalSourceId,
-    );
+    const plexApi =
+      await getServerContext().mediaSourceApiFactory.getPlexApiClientByName(
+        query.id.externalSourceId,
+      );
 
     if (isNil(plexApi)) {
       return null;
@@ -203,9 +204,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   }
 
   async function handleJellyfishItem(query: ExternalMetadataQuery) {
-    const jellyfinClient = await MediaSourceApiFactory().getJellyfinByName(
-      query.id.externalSourceId,
-    );
+    const jellyfinClient =
+      await getServerContext().mediaSourceApiFactory.getJellyfinApiClientByName(
+        query.id.externalSourceId,
+      );
 
     if (isNil(jellyfinClient)) {
       return null;

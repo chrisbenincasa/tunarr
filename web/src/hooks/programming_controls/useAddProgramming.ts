@@ -2,19 +2,15 @@ import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { type MouseEventHandler, useState } from 'react';
-import {
-  forSelectedMediaType,
-  sequentialPromises,
-} from '../../helpers/util.ts';
+import { match } from 'ts-pattern';
+import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { enumerateEmbyItem } from '../../helpers/embyUtil.ts';
+import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
-import { type CustomShowSelectedMedia } from '../../store/programmingSelector/store.ts';
-import {
-  type AddedCustomShowProgram,
-  type AddedMedia,
-} from '../../types/index.ts';
+import { type AddedMedia } from '../../types/index.ts';
 import { useProgrammingSelectionContext } from '../useProgrammingSelectionContext.ts';
 
 export const useAddSelectedItems = () => {
@@ -25,38 +21,41 @@ export const useAddSelectedItems = () => {
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
 
+  console.log(selectedMedia);
+
   const addSelectedItems: MouseEventHandler = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsLoading(true);
-    sequentialPromises(
-      selectedMedia,
-      forSelectedMediaType<Promise<AddedMedia[]>>({
-        plex: async (selected) => {
+    sequentialPromises(selectedMedia, (selectedMedia) =>
+      match(selectedMedia)
+        .returnType<Promise<AddedMedia[]>>()
+        .with({ type: Plex }, async (selected) => {
           const media = knownMedia.getMediaOfType(
             selected.serverId,
             selected.id,
-            'plex',
+            Plex,
           );
 
           if (!media) {
             return [];
           }
 
-          const items = await enumeratePlexItem(
-            apiClient,
-            selected.serverId,
-            selected.serverName,
-            media,
-          )();
-
-          return map(items, (item) => ({ media: item, type: 'plex' }));
-        },
-        jellyfin: async (selected) => {
+          return map(
+            await enumeratePlexItem(
+              apiClient,
+              selected.serverId,
+              selected.serverName,
+              media,
+            )(),
+            (item) => ({ media: item, type: Plex }),
+          );
+        })
+        .with({ type: Jellyfin }, async (selected) => {
           const media = knownMedia.getMediaOfType(
             selected.serverId,
             selected.id,
-            'jellyfin',
+            Jellyfin,
           );
 
           if (!media) {
@@ -70,11 +69,29 @@ export const useAddSelectedItems = () => {
             media,
           )();
 
-          return map(items, (item) => ({ media: item, type: 'jellyfin' }));
-        },
-        'custom-show': (
-          selected: CustomShowSelectedMedia,
-        ): Promise<AddedCustomShowProgram[]> => {
+          return map(items, (item) => ({ media: item, type: Jellyfin }));
+        })
+        .with({ type: Emby }, async (selected) => {
+          const media = knownMedia.getMediaOfType(
+            selected.serverId,
+            selected.id,
+            Emby,
+          );
+
+          if (!media) {
+            return [];
+          }
+
+          const items = await enumerateEmbyItem(
+            apiClient,
+            selected.serverId,
+            selected.serverName,
+            media,
+          )();
+
+          return map(items, (item) => ({ media: item, type: Emby }));
+        })
+        .with({ type: 'custom-show' }, (selected) => {
           return Promise.resolve(
             map(selected.programs, (p) => ({
               type: 'custom-show',
@@ -83,9 +100,8 @@ export const useAddSelectedItems = () => {
               program: p,
             })),
           );
-        },
-        default: Promise.resolve([]),
-      }),
+        })
+        .exhaustive(),
     )
       .then(flattenDeep)
       .then(onAddSelectedMedia)

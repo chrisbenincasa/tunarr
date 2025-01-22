@@ -254,8 +254,8 @@ export async function migrateExistingDatabase(
   const copyMigrator = new DatabaseCopyMigrator();
   for (const migration of pendingMigrations) {
     if (
-      (has(migration, 'fullCopy') && migration.fullCopy) ||
-      (has(migration, 'inPlace') && !migration.inPlace)
+      (has(migration.migration, 'fullCopy') && migration.migration.fullCopy) ||
+      (has(migration.migration, 'inPlace') && !migration.migration.inPlace)
     ) {
       await copyMigrator.migrate(dbPath, migration.name);
     } else {
