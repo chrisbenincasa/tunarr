@@ -1,11 +1,11 @@
 import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
-import { FrameSize } from '@/ffmpeg/builder/types.js';
-import {
-  InputSource,
+import type { FrameSize } from '@/ffmpeg/builder/types.js';
+import type {
   InputSourceContinuity,
   InputSourceType,
   StreamSource,
 } from './InputSource.ts';
+import { InputSource } from './InputSource.ts';
 
 export class ConcatInputSource extends InputSource<VideoStream> {
   readonly type: InputSourceType = 'video';

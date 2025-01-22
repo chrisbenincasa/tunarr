@@ -2,7 +2,7 @@ import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { KEYS } from '@/types/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import Fixer from './fixer.ts';
 

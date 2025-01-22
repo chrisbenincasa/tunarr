@@ -1,12 +1,12 @@
-import { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import { Maybe } from '@/types/util.js';
+import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { Maybe } from '@/types/util.js';
 import constants from '@tunarr/shared/constants';
 import { isUndefined } from 'lodash-es';
 import util from 'node:util';
 
 type CacheEntry = {
   t0: number;
-  timer?: NodeJS.Timeout | null;
+  timer?: Timer | null;
   lineupItem?: StreamLineupItem;
 };
 

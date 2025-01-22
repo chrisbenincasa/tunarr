@@ -1,5 +1,5 @@
-import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
-import { FilterOption } from './FilterOption.ts';
+import type { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
+import type { FilterOption } from './FilterOption.ts';
 
 export class FilterChain {
   videoFilterSteps: HasFilterOption[] = [];

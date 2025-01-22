@@ -1,8 +1,8 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { SessionManager } from '@/stream/SessionManager.js';
 import { KEYS } from '@/types/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

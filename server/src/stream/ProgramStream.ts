@@ -1,26 +1,26 @@
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import { StreamOptions } from '@/ffmpeg/ffmpeg.js';
-import { CacheImageService } from '@/services/cacheImageService.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
+import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
+import type { CacheImageService } from '@/services/cacheImageService.js';
+import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
-import { Watermark } from '@tunarr/types';
+import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
-import events from 'events';
 import { isUndefined } from 'lodash-es';
-import { PassThrough } from 'stream';
-import { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
+import events from 'node:events';
+import { PassThrough } from 'node:stream';
+import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
 import {
   attempt,
   isDefined,
   isNonEmptyString,
   isSuccess,
 } from '../util/index.js';
-import { PlayerContext } from './PlayerStreamContext.js';
+import type { PlayerContext } from './PlayerStreamContext.js';
 
 type ProgramStreamEvents = {
   // Emitted when the stream has reached a fatal error point

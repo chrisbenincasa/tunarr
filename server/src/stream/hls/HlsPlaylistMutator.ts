@@ -1,5 +1,6 @@
 import { isNonEmptyString } from '@/util/index.js';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import {
   dropWhile,
   filter,

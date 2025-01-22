@@ -4,7 +4,7 @@ import {
 } from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { isProduction } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   FfmpegSettings,
   HdhrSettings,
@@ -25,11 +25,12 @@ import {
   PlexStreamSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
-import events from 'events';
 import { injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low } from 'lowdb';
-import path from 'path';
+import events from 'node:events';
+import path from 'node:path';
+import { setImmediate } from 'node:timers';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';

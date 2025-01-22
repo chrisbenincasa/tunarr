@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {

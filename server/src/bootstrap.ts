@@ -1,12 +1,12 @@
 import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
-import path from 'path';
-import { DeepPartial } from 'ts-essentials';
+import path from 'node:path';
+import type { DeepPartial } from 'ts-essentials';
 import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
-import { SettingsFile } from './db/SettingsDB.ts';
+import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
@@ -56,9 +56,7 @@ export async function bootstrapTunarr(
   const opts = globalOptions();
   const hasTunarrDb = await fileExists(opts.databaseDirectory);
   if (!hasTunarrDb) {
-    RootLogger.debug(
-      `Existing database at ${opts.databaseDirectory} not found`,
-    );
+    RootLogger.info(`Existing database at ${opts.databaseDirectory} not found`);
     await fs.mkdir(opts.databaseDirectory, { recursive: true });
     await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
   }

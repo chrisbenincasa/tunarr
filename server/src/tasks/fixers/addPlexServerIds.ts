@@ -2,7 +2,7 @@ import { getDatabase } from '@/db/DBAccess.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { find, isNil } from 'lodash-es';
 import Fixer from './fixer.js';

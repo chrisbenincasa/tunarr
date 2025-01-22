@@ -14,34 +14,28 @@
     },
     "bundle": {
       "inputs": ["./scripts/bundle.ts"],
-      "dependsOn": ["^build", "^bundle"],
-      "outputs": ["dist/**"]
+      "dependsOn": ["^build", "^bundle", "make-web-vfs"],
+      "outputs": ["dist/bin/**"]
     },
     "build-dev": {
       "dependsOn": ["^build"]
     },
-    "make-exec-base": {
-      "dependsOn": ["bundle", "@tunarr/web#bundle"],
-      "outputs": ["build/**"]
-    },
-    "make-exec:linux": {
-      "dependsOn": ["make-exec-base"]
-    },
-    "make-exec:linux-x64": {
-      "dependsOn": ["make-exec-base"]
-    },
-    "make-exec:linux-arm64": {
-      "dependsOn": ["make-exec-base"]
-    },
-    "make-exec:windows": {
-      "dependsOn": ["make-exec-base"]
-    },
-    "make-exec:macos": {
-      "dependsOn": ["make-exec-base"]
+    "make-exec": {
+      "dependsOn": ["^bundle", "@tunarr/web#bundle"],
+      "outputs": ["dist/**"]
     },
     "lint-staged": {},
     "lint": {
       "dependsOn": ["lint-staged"]
+    },
+    "make-web-vfs": {
+      "dependsOn": ["@tunarr/web#bundle"],
+      "outputs": ["src/generated/web-imports.ts"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false,
+      "dependsOn": ["make-web-vfs"]
     }
   }
 }

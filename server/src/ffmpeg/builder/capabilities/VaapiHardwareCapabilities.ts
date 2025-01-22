@@ -1,7 +1,7 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { RateControlMode } from '@/ffmpeg/builder/types.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isDefined } from '@/util/index.js';
 import { find, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';

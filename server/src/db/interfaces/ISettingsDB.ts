@@ -1,13 +1,17 @@
-import { MigrationState, Settings, SettingsFile } from '@/db/SettingsDB.js';
-import {
+import type {
+  MigrationState,
+  Settings,
+  SettingsFile,
+} from '@/db/SettingsDB.js';
+import type {
   FfmpegSettings,
   HdhrSettings,
   PlexStreamSettings,
   SystemSettings,
   XmlTvSettings,
 } from '@tunarr/types';
-import { BackupSettings } from '@tunarr/types/schemas';
-import { DeepReadonly } from 'ts-essentials';
+import type { BackupSettings } from '@tunarr/types/schemas';
+import type { DeepReadonly } from 'ts-essentials';
 
 export interface ISettingsDB {
   migrationState: DeepReadonly<MigrationState>;

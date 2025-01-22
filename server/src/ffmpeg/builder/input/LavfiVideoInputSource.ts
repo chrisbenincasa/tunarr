@@ -4,7 +4,7 @@ import { TitleTextFilter } from '@/ffmpeg/builder/filter/TitleTextFilter.js';
 import { PixelFormatUnknown } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { LavfiInputOption } from '@/ffmpeg/builder/options/input/LavfiInputOption.js';
 import { FrameSize } from '@/ffmpeg/builder/types.js';
-import { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
+import type { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { FilterStreamSource } from '@/stream/types.js';
 import { VideoInputSource } from './VideoInputSource.ts';
 

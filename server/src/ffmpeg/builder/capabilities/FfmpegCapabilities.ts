@@ -1,4 +1,4 @@
-import { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
+import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 
 export class FfmpegCapabilities {
   constructor(

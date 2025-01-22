@@ -1,6 +1,6 @@
+import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import {
   ArchiveDatabaseBackup,
-  ArchiveDatabaseBackupFactory,
   ArchiveDatabaseBackupKey,
 } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
@@ -9,9 +9,11 @@ import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurations
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
-import { ContainerModule, interfaces } from 'inversify';
+import type { interfaces } from 'inversify';
+import { ContainerModule } from 'inversify';
 import { bindFactoryFunc } from '../util/inject.ts';
-import { BackupTask, BackupTaskFactory } from './BackupTask.ts';
+import type { BackupTaskFactory } from './BackupTask.ts';
+import { BackupTask } from './BackupTask.ts';
 
 const TasksModule = new ContainerModule((bind) => {
   bind(UpdateXmlTvTask).toSelf();

@@ -1,16 +1,16 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
-import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
+import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Task } from '@/tasks/Task.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import { PlexTerminalMedia } from '@tunarr/types/plex';
+import type { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 
 export class SavePlexProgramExternalIdsTask extends Task {
   ID = SavePlexProgramExternalIdsTask.name;

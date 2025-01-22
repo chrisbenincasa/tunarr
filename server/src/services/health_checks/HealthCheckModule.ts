@@ -1,7 +1,7 @@
 import { FfmpegDebugLoggingHealthCheck } from '@/services/health_checks/FfmpegDebugLoggingHealthCheck.js';
 import { FfmpegVersionHealthCheck } from '@/services/health_checks/FfmpegVersionHealthCheck.js';
 import { HardwareAccelerationHealthCheck } from '@/services/health_checks/HardwareAccelerationHealthCheck.js';
-import { HealthCheck } from '@/services/health_checks/HealthCheck.js';
+import type { HealthCheck } from '@/services/health_checks/HealthCheck.js';
 import { MissingProgramAssociationsHealthCheck } from '@/services/health_checks/MissingProgramAssociationsHealthCheck.js';
 import { MissingSeasonNumbersHealthCheck } from '@/services/health_checks/MissingSeasonNumbersHealthCheck.js';
 import { KEYS } from '@/types/inject.js';

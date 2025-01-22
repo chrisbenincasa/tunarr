@@ -1,5 +1,5 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import type { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import type { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { NvidiaAv1Decoder } from '@/ffmpeg/builder/decoder/nvidia/NvidiaAv1Decoder.js';
 import { Av1QsvDecoder } from '@/ffmpeg/builder/decoder/qsv/Av1QsvDecoder.js';

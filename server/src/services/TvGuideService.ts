@@ -9,7 +9,7 @@ import { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import throttle from '@/util/throttle.js';
@@ -48,11 +48,11 @@ import {
 import * as syncRetry from 'retry';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import {
+import type {
   ChannelWithPrograms,
   ChannelWithRelations,
   ChannelWithPrograms as RawChannel,
-} from '../db/schema/derivedTypes.js';
+} from '../db/schema/derivedTypes.ts';
 import {
   deepCopy,
   groupByUniqProp,

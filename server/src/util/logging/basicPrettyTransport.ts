@@ -1,5 +1,5 @@
-import { once } from 'events';
-import { createWriteStream } from 'fs';
+import { once } from 'node:events';
+import { createWriteStream } from 'node:fs';
 
 export default async (options) => {
   console.log(options);

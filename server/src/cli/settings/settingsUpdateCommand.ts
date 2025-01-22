@@ -1,8 +1,8 @@
 import { SettingsSchema } from '@/db/SettingsDB.js';
 import { merge } from 'lodash-es';
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 import { container } from '../../container.ts';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 
 type SettingsUpdateCommandArgs = {

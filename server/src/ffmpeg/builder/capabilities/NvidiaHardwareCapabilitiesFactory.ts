@@ -1,5 +1,5 @@
-import { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
-import {
+import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
+import type {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
 } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';

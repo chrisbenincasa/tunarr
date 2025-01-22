@@ -1,7 +1,7 @@
 import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
-import { InputSource } from '../../input/InputSource.ts';
+import type { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { type BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
+import { type InputSource } from '../../input/InputSource.ts';
 import { KnownFfmpegOptions } from '../../options/KnownFfmpegOptions.ts';
 
 export abstract class QsvDecoder extends BaseDecoder {

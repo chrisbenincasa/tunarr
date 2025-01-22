@@ -4,7 +4,7 @@ import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { ProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -18,8 +18,8 @@ import {
 } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import { find, isNil, omitBy } from 'lodash-es';
+import { isPromise } from 'node:util/types';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
-import { isPromise } from 'util/types';
 import {
   LineupItem,
   OfflineItem,
@@ -27,11 +27,11 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from '../derived_types/Lineup.js';
-import {
+import type {
   ChannelWithPrograms,
   ChannelWithRelations,
   ProgramWithRelations,
-} from '../schema/derivedTypes.js';
+} from '../schema/derivedTypes.ts';
 
 /**
  * Converts DB types to API types

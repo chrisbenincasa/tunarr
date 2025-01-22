@@ -1,5 +1,5 @@
-import { DB } from '@/db/schema/db.js';
-import { Kysely, Migration } from 'kysely';
+import type { DB } from '@/db/schema/db.js';
+import type { Kysely, Migration } from 'kysely';
 
 export default {
   async up(db: Kysely<DB>): Promise<void> {

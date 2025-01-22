@@ -1,5 +1,5 @@
-import { NamedFunc } from '@/types/func.js';
-import { ChannelAndLineup } from '@/types/internal.js';
+import type { NamedFunc } from '@/types/func.js';
+import type { ChannelAndLineup } from '@/types/internal.js';
 import { last, reduce } from 'lodash-es';
 
 function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {

@@ -1,6 +1,6 @@
-import { TupleToUnion } from '@tunarr/types';
-import { Generated, Insertable, Selectable } from 'kysely';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
+import type { TupleToUnion } from '@tunarr/types';
+import type { Generated, Insertable, Selectable } from 'kysely';
+import type { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export const MediaSourceTypes = ['plex', 'jellyfin'] as const;
 

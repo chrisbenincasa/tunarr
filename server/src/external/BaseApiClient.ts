@@ -1,16 +1,17 @@
-import { AxiosRequestRedacter } from '@/external/Redacter.js';
-import { Maybe, Try } from '@/types/util.js';
+import type { AxiosRequestRedacter } from '@/external/Redacter.js';
+import type { Maybe, Try } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import axios, {
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type {
   AxiosHeaderValue,
   AxiosInstance,
   AxiosRequestConfig,
-  isAxiosError,
 } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { isError, isString } from 'lodash-es';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type ApiClientOptions = {
   name?: string;

@@ -3,8 +3,8 @@ import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { injectable } from 'inversify';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   HealthyHealthCheckResult,
 } from './HealthCheck.ts';
 

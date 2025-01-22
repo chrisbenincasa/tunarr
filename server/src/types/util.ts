@@ -1,4 +1,4 @@
-import { DeepNonNullable, StrictExclude } from 'ts-essentials';
+import type { DeepNonNullable, StrictExclude } from 'ts-essentials';
 
 export type Maybe<T> = T | undefined;
 

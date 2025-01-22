@@ -11,9 +11,9 @@ import {
 } from '@iptv/xmltv';
 import { TvGuideProgram, isContentProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
-import { writeFile } from 'fs/promises';
 import { inject, injectable } from 'inversify';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
+import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 
 const lock = new Mutex();

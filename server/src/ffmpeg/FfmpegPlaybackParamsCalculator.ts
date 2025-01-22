@@ -1,18 +1,17 @@
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
-  TranscodeConfig,
 } from '@/db/schema/TranscodeConfig.js';
-import { ChannelStreamMode } from '@/db/schema/base.js';
-import { StreamDetails, VideoStreamDetails } from '@/stream/types.js';
+import type { ChannelStreamMode } from '@/db/schema/base.js';
+import type { StreamDetails, VideoStreamDetails } from '@/stream/types.js';
 import { gcd } from '@/util/index.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
-import { ChannelStreamModes, Resolution } from '@tunarr/types';
-import { OutputFormat } from './builder/constants.ts';
-import {
-  PixelFormat,
-  PixelFormatYuv420P,
-} from './builder/format/PixelFormat.ts';
+import type { Resolution } from '@tunarr/types';
+import { ChannelStreamModes } from '@tunarr/types';
+import type { OutputFormat } from './builder/constants.ts';
+import type { PixelFormat } from './builder/format/PixelFormat.ts';
+import { PixelFormatYuv420P } from './builder/format/PixelFormat.ts';
 import { FrameSize } from './builder/types.ts';
 
 export class FfmpegPlaybackParamsCalculator {

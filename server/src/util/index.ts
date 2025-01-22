@@ -1,7 +1,8 @@
-import { Func } from '@/types/func.js';
-import { Try } from '@/types/util.js';
+import type { Func } from '@/types/func.js';
+import type { Try } from '@/types/util.js';
 import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import {
   chunk,
   compact,
@@ -30,7 +31,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
-import { DeepReadonly, DeepWritable } from 'ts-essentials';
+import type { DeepReadonly, DeepWritable } from 'ts-essentials';
 
 dayjs.extend(duration);
 
@@ -301,8 +302,7 @@ export function deepCopy<T>(value: T): T {
         ...prev,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         [key]: isArray(value[key])
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            deepCopyArray(value[key] as any[])
+          ? deepCopyArray(value[key])
           : deepCopy(value[key]),
       };
     },

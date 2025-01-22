@@ -4,15 +4,15 @@ import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
-import { createReadStream, promises as fsPromises } from 'fs';
 import { isEmpty, isError, isNil } from 'lodash-es';
-import path from 'path';
+import { createReadStream, promises as fsPromises } from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import {
   isEdgeBuild,

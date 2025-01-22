@@ -1,10 +1,10 @@
-import { RouterPluginCallback } from '@/types/serverType.js';
+import type { RouterPluginCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { HdhrSettings } from '@tunarr/types';
+import type { HdhrSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { HdhrSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
-import { DeepWritable } from 'ts-essentials';
+import type { DeepWritable } from 'ts-essentials';
 
 export const hdhrSettingsRouter: RouterPluginCallback = (
   fastify,

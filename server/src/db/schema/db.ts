@@ -1,5 +1,5 @@
 import type { CachedImageTable } from './CachedImage.js';
-import {
+import type {
   ChannelCustomShowsTable,
   ChannelFallbackTable,
   ChannelFillerShowTable,
@@ -9,12 +9,12 @@ import {
 import type { CustomShowContentTable, CustomShowTable } from './CustomShow.js';
 import type { FillerShowContentTable, FillerShowTable } from './FillerShow.js';
 import type { MediaSourceTable } from './MediaSource.ts';
-import { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
-import { ProgramTable } from './Program.ts';
+import type { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
+import type { ProgramTable } from './Program.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.ts';
 import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.ts';
-import { TrannscodeConfigTable } from './TranscodeConfig.ts';
+import type { TrannscodeConfigTable } from './TranscodeConfig.ts';
 
 export interface DB {
   cachedImage: CachedImageTable;

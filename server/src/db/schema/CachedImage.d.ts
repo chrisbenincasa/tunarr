@@ -1,4 +1,4 @@
-import { Insertable, Selectable } from 'kysely';
+import type { Insertable, Selectable } from 'kysely';
 
 export interface CachedImageTable {
   hash: string;

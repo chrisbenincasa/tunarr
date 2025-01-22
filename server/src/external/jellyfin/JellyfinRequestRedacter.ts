@@ -1,5 +1,5 @@
 import { AxiosRequestRedacter } from '@/external/Redacter.js';
-import { InternalAxiosRequestConfig } from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 import { isObject } from 'lodash-es';
 
 export class JellyfinRequestRedacter extends AxiosRequestRedacter {

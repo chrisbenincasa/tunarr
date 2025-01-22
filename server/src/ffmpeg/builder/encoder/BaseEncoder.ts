@@ -1,8 +1,8 @@
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { StreamKinds } from '@/ffmpeg/builder/types.js';
-import { TupleToUnion } from '@tunarr/types';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { StreamKinds } from '@/ffmpeg/builder/types.js';
+import type { TupleToUnion } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
-import { Encoder } from './Encoder.ts';
+import type { Encoder } from './Encoder.ts';
 
 export abstract class BaseEncoder implements Encoder {
   readonly type = 'output';

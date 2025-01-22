@@ -1,5 +1,5 @@
 import { isUndefined } from 'lodash-es';
-import { Adapter } from 'lowdb';
+import type { Adapter } from 'lowdb';
 
 /**
  * Caches writes in-memory and flushes to fs periodically. Safe for

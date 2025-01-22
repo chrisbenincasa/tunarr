@@ -1,15 +1,15 @@
 import { ServerContext } from '@/ServerContext.js';
 import { dbContainer } from '@/db/DBModule.js';
-import { SettingsDB, SettingsFile } from '@/db/SettingsDB.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { SettingsDB, SettingsFile } from '@/db/SettingsDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FFmpegModule } from '@/ffmpeg/FFmpegModule.js';
 import {
-  GlobalOptions,
-  ServerOptions,
+  type GlobalOptions,
+  type ServerOptions,
   globalOptions,
   serverOptions,
 } from '@/globals.js';
-import { ITimer } from '@/interfaces/ITimer.js';
+import type { ITimer } from '@/interfaces/ITimer.js';
 import { EventService } from '@/services/EventService.js';
 import { HdhrService } from '@/services/HDHRService.js';
 import { TVGuideService } from '@/services/TvGuideService.js';
@@ -18,11 +18,13 @@ import { StreamModule } from '@/stream/StreamModule.js';
 import { TasksModule } from '@/tasks/TasksModule.js';
 import { FixerModule } from '@/tasks/fixers/FixerModule.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Maybe } from '@/types/util.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
-import { Container, interfaces } from 'inversify';
-import { DeepPartial } from 'ts-essentials';
+import type { interfaces } from 'inversify';
+import { Container } from 'inversify';
+import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';

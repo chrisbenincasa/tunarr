@@ -1,4 +1,4 @@
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 import { SettingsUpdateCommand } from './settingsUpdateCommand.ts';
 import { SettingsViewCommand } from './settingsViewCommand.ts';
 

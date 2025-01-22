@@ -2,10 +2,10 @@ import { findKey, forEach, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
-import { ServerArgsType } from './cli/RunServerCommand.ts';
-import { GlobalArgsType } from './cli/types.ts';
-import { ServerContext } from './ServerContext.ts';
-import { LogLevels } from './util/logging/LoggerFactory.ts';
+import type { ServerArgsType } from './cli/RunServerCommand.ts';
+import type { GlobalArgsType } from './cli/types.ts';
+import type { ServerContext } from './ServerContext.ts';
+import type { LogLevels } from './util/logging/LoggerFactory.ts';
 
 export type GlobalOptions = GlobalArgsType & {
   databaseDirectory: string;

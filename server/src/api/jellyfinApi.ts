@@ -1,22 +1,23 @@
-import { MediaSource, MediaSourceType } from '@/db/schema/MediaSource.js';
+import type { MediaSource } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { isDefined, nullToUndefined } from '@/util/index.js';
 import { JellyfinLoginRequest } from '@tunarr/types/api';
+import type { JellyfinCollectionType } from '@tunarr/types/jellyfin';
 import {
-  JellyfinCollectionType,
   JellyfinItemFields,
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
   type JellyfinLibraryItemsResponse as JellyfinLibraryItemsResponseTyp,
 } from '@tunarr/types/jellyfin';
-import { FastifyReply } from 'fastify/types/reply.js';
+import type { FastifyReply } from 'fastify/types/reply.js';
 import { filter, isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod';
-import {
+import type {
   RouterPluginCallback,
   ZodFastifyRequest,
 } from '../types/serverType.js';

@@ -1,23 +1,24 @@
 import { container } from '@/container.js';
-import { ServerContext } from '@/ServerContext.js';
-import { BackupTask, BackupTaskFactory } from '@/tasks/BackupTask.js';
+import type { ServerContext } from '@/ServerContext.js';
+import type { BackupTaskFactory } from '@/tasks/BackupTask.js';
+import { BackupTask } from '@/tasks/BackupTask.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
-import { Task, TaskId } from '@/tasks/Task.js';
+import type { Task, TaskId } from '@/tasks/Task.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
 import type { Tag } from '@tunarr/types';
-import { BackupSettings } from '@tunarr/types/schemas';
+import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
-import { interfaces } from 'inversify';
+import type { interfaces } from 'inversify';
 import {
   filter,
   flatten,
@@ -27,7 +28,7 @@ import {
   reject,
   values,
 } from 'lodash-es';
-import { DeepReadonly } from 'ts-essentials';
+import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
 
 const { isDayjs } = dayjs;

@@ -1,10 +1,10 @@
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { KEYS } from '@/types/inject.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
 } from './HealthCheck.ts';

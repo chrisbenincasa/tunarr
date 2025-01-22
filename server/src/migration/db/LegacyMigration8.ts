@@ -1,4 +1,4 @@
-import { Kysely, Migration } from 'kysely';
+import type { Kysely, Migration } from 'kysely';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {

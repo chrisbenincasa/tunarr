@@ -1,4 +1,4 @@
-import {
+import type {
   ColumnType,
   Generated,
   Insertable,
@@ -6,7 +6,7 @@ import {
   Selectable,
   Updateable,
 } from 'kysely';
-import {
+import type {
   ChannelIcon,
   ChannelOfflineSettings,
   ChannelStreamMode,

@@ -1,4 +1,4 @@
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
@@ -33,10 +33,13 @@ import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
 import { ChannelFillerShow } from './schema/Channel.ts';
-import { NewFillerShow, NewFillerShowContent } from './schema/FillerShow.ts';
+import type {
+  NewFillerShow,
+  NewFillerShowContent,
+} from './schema/FillerShow.ts';
 import { programExternalIdString } from './schema/Program.ts';
 import { DB } from './schema/db.ts';
-import { ChannelFillerShowWithContent } from './schema/derivedTypes.js';
+import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
 
 @injectable()
 export class FillerDB {

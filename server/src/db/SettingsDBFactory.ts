@@ -1,11 +1,11 @@
-import { GlobalOptions } from '@/globals.js';
+import type { GlobalOptions } from '@/globals.js';
 import { KEYS } from '@/types/inject.js';
 import { SETTINGS_JSON_FILENAME } from '@/util/constants.js';
 import { inject, injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
-import path from 'path';
+import path from 'node:path';
 import { DeepPartial } from 'ts-essentials';
 import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
 import {

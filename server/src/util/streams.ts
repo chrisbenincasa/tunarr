@@ -1,5 +1,6 @@
 import { last } from 'lodash-es';
-import { Transform, TransformCallback } from 'node:stream';
+import type { TransformCallback } from 'node:stream';
+import { Transform } from 'node:stream';
 
 export class NewLineTransformStream extends Transform {
   #buffer = '';

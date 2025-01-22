@@ -1,6 +1,6 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { Maybe } from '@/types/util.js';
+import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import type { Maybe } from '@/types/util.js';
 import { BaseFfmpegHardwareCapabilities } from './BaseFfmpegHardwareCapabilities.ts';
 
 export class DefaultHardwareCapabilities extends BaseFfmpegHardwareCapabilities {

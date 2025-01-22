@@ -1,5 +1,6 @@
 import Migration1735044379_AddHlsDirect from '@/migration/db/Migration1735044379_AddHlsDirect.js';
-import { CompiledQuery, Migration, MigrationProvider } from 'kysely';
+import type { Migration, MigrationProvider } from 'kysely';
+import { CompiledQuery } from 'kysely';
 import { mapValues } from 'lodash-es';
 import LegacyMigration0 from './db/LegacyMigration0.ts';
 import LegacyMigration1 from './db/LegacyMigration1.ts';

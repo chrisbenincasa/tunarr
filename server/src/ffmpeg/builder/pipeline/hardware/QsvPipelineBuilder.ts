@@ -1,12 +1,12 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import type { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
 import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.js';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
@@ -24,19 +24,19 @@ import {
   PixelFormatYuva420P,
   PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import { QsvHardwareAccelerationOption } from '@/ffmpeg/builder/options/hardwareAcceleration/QsvOptions.js';
 import { DoNotIgnoreLoopInputOption } from '@/ffmpeg/builder/options/input/DoNotIgnoreLoopInputOption.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';

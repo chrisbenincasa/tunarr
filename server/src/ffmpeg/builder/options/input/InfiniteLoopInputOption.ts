@@ -1,5 +1,5 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { some } from 'lodash-es';
 import { InputOption } from './InputOption.ts';
 

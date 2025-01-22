@@ -1,12 +1,12 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import {
   MkvOutputFormat,
   Mp4OutputFormat,
   MpegTsOutputFormat,
   OutputFormat,
 } from '@/ffmpeg/builder/constants.js';
-import { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
+import type { ProgramStreamFactory } from '@/stream/ProgramStreamFactory.js';
 import { SessionManager } from '@/stream/SessionManager.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
@@ -15,7 +15,7 @@ import { ChannelStreamMode } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { isNil, once } from 'lodash-es';
 import { PassThrough, Readable } from 'node:stream';
-import { Logger } from '../util/logging/LoggerFactory.ts';
+import { type Logger } from '../util/logging/LoggerFactory.ts';
 import { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStream } from './ProgramStream.js';
 import {

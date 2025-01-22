@@ -1,20 +1,20 @@
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import { ProgramDao } from '@/db/schema/Program.js';
-import {
+import type { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
+import type { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
+import type { ProgramDao } from '@/db/schema/Program.js';
+import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
   ProgramExternalId,
 } from '@/db/schema/ProgramExternalId.js';
-import { ProgramExternalIdSourceType } from '@/db/schema/base.js';
-import {
+import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
+import type {
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
 } from '@/db/schema/derivedTypes.js';
-import { Maybe } from '@/types/util.js';
-import { ChannelProgram, ContentProgram } from '@tunarr/types';
-import { MarkOptional } from 'ts-essentials';
+import type { Maybe } from '@/types/util.js';
+import type { ChannelProgram, ContentProgram } from '@tunarr/types';
+import type { MarkOptional } from 'ts-essentials';
 
 export interface IProgramDB {
   getProgramById(id: string): Promise<Maybe<ProgramWithExternalIds>>;

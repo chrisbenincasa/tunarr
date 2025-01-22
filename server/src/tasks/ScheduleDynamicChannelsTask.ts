@@ -1,8 +1,8 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { filter } from 'lodash-es';
 import { DynamicChannelUpdaterFactory } from './DynamicChannelUpdaterFactory.ts';

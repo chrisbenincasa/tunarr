@@ -1,7 +1,7 @@
 import { FfmpegCommandGenerator } from '@/ffmpeg/builder/FfmpegCommandGenerator.js';
-import { PipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
-import { Dictionary } from 'ts-essentials';
-import { PipelineInputs } from './PipelineInputs.ts';
+import type { PipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
+import type { Dictionary } from 'ts-essentials';
+import type { PipelineInputs } from './PipelineInputs.ts';
 
 /**
  * Result from invoking a {@link PipelineBuilder}

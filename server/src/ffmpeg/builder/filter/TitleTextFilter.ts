@@ -1,4 +1,4 @@
-import { FrameSize } from '@/ffmpeg/builder/types.js';
+import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { serverOptions } from '@/globals.js';
 import { FilterOption } from './FilterOption.ts';
 

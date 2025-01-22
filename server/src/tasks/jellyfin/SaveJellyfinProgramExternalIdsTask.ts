@@ -1,10 +1,10 @@
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
+import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { Task } from '@/tasks/Task.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import dayjs from 'dayjs';
 import { compact, isEmpty, isUndefined, map } from 'lodash-es';
@@ -13,7 +13,7 @@ import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
-import {
+import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
 } from '../../db/schema/ProgramExternalId.ts';

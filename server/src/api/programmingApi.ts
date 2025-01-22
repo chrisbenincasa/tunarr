@@ -1,18 +1,18 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { MediaSource } from '@/db/schema/MediaSource.js';
+import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { BasicIdParamSchema } from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
-import { HttpHeader } from 'fastify/types/utils.js';
+import type { HttpHeader } from 'fastify/types/utils.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   every,
@@ -25,7 +25,7 @@ import {
   omitBy,
   values,
 } from 'lodash-es';
-import stream from 'stream';
+import type stream from 'node:stream';
 import z from 'zod';
 import {
   ProgramSourceType,

@@ -1,5 +1,5 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
 import { KEYS } from '@/types/inject.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';

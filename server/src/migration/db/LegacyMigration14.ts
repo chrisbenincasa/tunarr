@@ -1,7 +1,8 @@
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
-import { CompiledQuery, Kysely, sql } from 'kysely';
-import {
+import type { MediaSourceType } from '@/db/schema/MediaSource.js';
+import type { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import type { Kysely } from 'kysely';
+import { CompiledQuery, sql } from 'kysely';
+import type {
   ProgramExternalIdSourceType,
   WithCreatedAt,
   WithUpdatedAt,

@@ -1,11 +1,11 @@
 import { getMigrator } from '@/db/DBAccess.js';
 import { isEmpty } from 'lodash-es';
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 
 export const DatabaseListMigrationsCommand: CommandModule = {
   command: 'list',
   describe: 'Tunarr database migration commands',
-  // eslint-disable-next-line @typescript-eslint/require-await
+
   handler: async () => {
     const migrator = getMigrator();
     const migrations = await migrator.getMigrations();

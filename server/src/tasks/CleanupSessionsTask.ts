@@ -1,7 +1,7 @@
 import { SessionManager } from '@/stream/SessionManager.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { Task, TaskId } from './Task.js';
 

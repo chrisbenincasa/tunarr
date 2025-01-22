@@ -1,4 +1,4 @@
-import { HlsOptions, MpegDashOptions } from '@/ffmpeg/ffmpeg.js';
+import type { HlsOptions, MpegDashOptions } from '@/ffmpeg/ffmpeg.js';
 
 export const VideoFormats = {
   Hevc: 'hevc',

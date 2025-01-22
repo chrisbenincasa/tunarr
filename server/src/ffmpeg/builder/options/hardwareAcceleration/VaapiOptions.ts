@@ -1,5 +1,5 @@
 import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 
 export class VaapiHardwareAccelerationOption extends GlobalOption {

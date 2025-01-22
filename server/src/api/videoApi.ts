@@ -2,14 +2,14 @@ import { container } from '@/container.js';
 import { FfmpegText } from '@/ffmpeg/ffmpegText.js';
 import { VideoStream } from '@/stream/VideoStream.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNil, isNumber } from 'lodash-es';
 import * as fsSync from 'node:fs';
-import { Readable } from 'stream';
+import { Readable } from 'node:stream';
 import { z } from 'zod';
 
 const FfmpegPlaylistQuerySchema = z.object({

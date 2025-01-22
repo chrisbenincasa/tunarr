@@ -1,8 +1,8 @@
-import { SchedulingOperation } from '@tunarr/types/api';
+import type { SchedulingOperation } from '@tunarr/types/api';
 import { PadProgramsSchedulingOperator } from './PadProgramsSchedulingOperator.ts';
 import { RandomSortOperator } from './RandomSortOperator.ts';
 import { ReleaseDateSortOperator } from './ReleaseDateSortOperator.ts';
-import { SchedulingOperator } from './SchedulingOperator.ts';
+import type { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class SchedulingOperatorFactory {
   private constructor() {}

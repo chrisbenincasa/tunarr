@@ -1,12 +1,12 @@
-import { DynamicContentConfigSource } from '@tunarr/types/api';
+import type { DynamicContentConfigSource } from '@tunarr/types/api';
 import { ContainerModule } from 'inversify';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { Channel } from '../../db/schema/Channel.ts';
+import type { Channel } from '../../db/schema/Channel.ts';
 import { KEYS } from '../../types/inject.ts';
 import { bindFactoryFunc } from '../../util/inject.ts';
-import { ContentSourceUpdater } from './ContentSourceUpdater.ts';
+import type { ContentSourceUpdater } from './ContentSourceUpdater.ts';
 import { PlexContentSourceUpdater } from './PlexContentSourceUpdater.ts';
 
 export type ContentSourceUpdaterFactory = (

@@ -1,6 +1,6 @@
-import { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { first, isNil } from 'lodash-es';
 import { Decoder } from './Decoder.ts';
 

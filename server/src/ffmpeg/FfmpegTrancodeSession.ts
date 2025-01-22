@@ -1,12 +1,12 @@
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
-import { Nullable } from '@/types/util.js';
+import type { TypedEventEmitter } from '@/types/eventEmitter.js';
+import type { Nullable } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Dayjs } from 'dayjs';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { Dayjs } from 'dayjs';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
-import { FfmpegEvents, FfmpegProcess } from './FfmpegProcess.js';
+import type { FfmpegEvents, FfmpegProcess } from './FfmpegProcess.js';
 
 enum State {
   Idle = 'idle',

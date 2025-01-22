@@ -1,4 +1,7 @@
-import { GetChildLoggerArgs, Logger } from '@/util/logging/LoggerFactory.js';
+import type {
+  GetChildLoggerArgs,
+  Logger,
+} from '@/util/logging/LoggerFactory.js';
 
 const KEYS = {
   GlobalOptions: Symbol.for('GlobalOptions'),

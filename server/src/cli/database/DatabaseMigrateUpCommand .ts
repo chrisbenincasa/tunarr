@@ -1,6 +1,6 @@
 import { getMigrator } from '@/db/DBAccess.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 import { isWrongMigrationDirection } from './databaseCommandUtil.ts';
 
 interface DatabaseMigrateUpCommandArgs {

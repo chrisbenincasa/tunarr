@@ -1,11 +1,11 @@
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
 import { NutOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 import { container } from '../../container.ts';
-import { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import { KEYS } from '../../types/inject.ts';
 
 export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (

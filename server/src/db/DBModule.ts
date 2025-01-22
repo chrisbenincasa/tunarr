@@ -1,7 +1,7 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
 

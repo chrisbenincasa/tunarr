@@ -1,21 +1,24 @@
-import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
-import {
+import type { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
+import type {
   Lineup,
   LineupItem,
   PendingProgram,
 } from '@/db/derived_types/Lineup.js';
-import { Channel } from '@/db/schema/Channel.js';
-import { ProgramDao } from '@/db/schema/Program.js';
-import { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
-import {
+import type { Channel } from '@/db/schema/Channel.js';
+import type { ProgramDao } from '@/db/schema/Program.js';
+import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type {
   ChannelWithPrograms,
   ChannelWithRelations,
 } from '@/db/schema/derivedTypes.js';
-import { ChannelAndLineup } from '@/types/internal.js';
-import { MarkNullable, Maybe, Nullable } from '@/types/util.js';
-import { CondensedChannelProgramming, SaveChannelRequest } from '@tunarr/types';
-import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { MarkOptional, MarkRequired } from 'ts-essentials';
+import type { ChannelAndLineup } from '@/types/internal.js';
+import type { MarkNullable, Maybe, Nullable } from '@/types/util.js';
+import type {
+  CondensedChannelProgramming,
+  SaveChannelRequest,
+} from '@tunarr/types';
+import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import type { MarkOptional, MarkRequired } from 'ts-essentials';
 
 export type ChannnelAndLineup = { channel: Channel; lineup: Lineup };
 

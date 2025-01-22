@@ -1,4 +1,4 @@
-import { Lineup } from '@/db/derived_types/Lineup.js';
+import type { Lineup } from '@/db/derived_types/Lineup.js';
 import { ChannelLineupMigration } from '@/migration/lineups/ChannelLineupMigration.js';
 import { isUndefined } from 'lodash-es';
 

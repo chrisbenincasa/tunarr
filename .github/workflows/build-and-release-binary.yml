@@ -48,39 +48,19 @@ jobs:
         run: pnpm turbo typecheck --filter=@tunarr/web
   build:
     needs: typecheck
-    strategy:
-      matrix:
-        os:
-          - name: macos-13
-            target_name: macos
-            binary_name: macos-x64
-          - name: macos-latest
-            target_name: macos-arm64
-            binary_name: macos-arm64
-          - name: ubuntu-latest
-            target_name: linux
-            binary_name: linux-x64
-          - name: windows-latest
-            target_name: windows
-            binary_name: windows-x64
-          # - name: ubuntu-latest
-          #   target_name: linux-arm64
-          #   binary_name: linux-arm64
-        node_version: [22.13.0]
-    runs-on: ${{matrix.os.name}}
-    continue-on-error: true
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # Checkout code from repository
-        with:
-          ref: dev
-
-      - uses: ilammy/setup-nasm@v1
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: ".bun-version"
 
       - uses: pnpm/action-setup@v3
         name: Install pnpm
@@ -112,14 +92,11 @@ jobs:
           cat server/.env
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
-      - name: Bundle server
-        run: pnpm turbo bundle --filter=@tunarr/server
-
       - name: Bundle web
         run: pnpm turbo bundle --filter=@tunarr/web
 
       - name: Build Executable
-        run: pnpm run --filter=server make-exec:${{ matrix.os.target_name }}
+        run: pnpm turbo make-exec
 
       - name: Upload Edge Binary
         uses: softprops/action-gh-release@v2
@@ -128,12 +105,12 @@ jobs:
           tag_name: edge
           prerelease: true
           files: |
-            ./server/dist/tunarr-${{ matrix.os.binary_name }}*
+            ./server/dist/bin/tunarr-*
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./server/dist/tunarr-${{ matrix.os.binary_name }}*
+            ./server/dist/bin/tunarr-*
         if: startsWith(github.ref, 'refs/tags/')

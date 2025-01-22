@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json --noEmit",
     "build-dev": "tsc -p tsconfig.build.json --noEmit --watch",
+    "prebuild": "make-vfs --verbose --dir ./dist --content-format import-bunfile --outfile dist/web-imports.js",
     "bundle": "vite build",
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -69,6 +70,7 @@
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
+    "make-vfs": "^1.0.15",
     "nodemon": "^3.0.3",
     "openapi-zod-client": "^1.14.0",
     "ts-essentials": "^9.4.1",

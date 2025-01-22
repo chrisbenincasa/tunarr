@@ -1,11 +1,12 @@
-import { TupleToUnion } from '@/types/util.js';
-import { EverySchedule } from '@tunarr/types/schemas';
-import parser, {
+import type { TupleToUnion } from '@/types/util.js';
+import type { EverySchedule } from '@tunarr/types/schemas';
+import type {
   CronFields,
   DayOfTheMonthRange,
   HourRange,
   SixtyRange,
 } from 'cron-parser';
+import parser from 'cron-parser';
 import CronExpression from 'cron-parser/lib/expression';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';

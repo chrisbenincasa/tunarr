@@ -1,8 +1,8 @@
-import { LineupItem } from '@/db/derived_types/Lineup.js';
-import { Channel } from '@/db/schema/Channel.js';
-import { ChannelAndLineup } from '@/types/internal.js';
+import type { LineupItem } from '@/db/derived_types/Lineup.js';
+import type { Channel } from '@/db/schema/Channel.js';
+import type { ChannelAndLineup } from '@/types/internal.js';
 import { scale } from '@/util/index.js';
-import { AddPaddingOperation } from '@tunarr/types/api';
+import type { AddPaddingOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import {
   find,

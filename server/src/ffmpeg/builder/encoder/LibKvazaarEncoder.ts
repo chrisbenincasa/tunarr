@@ -1,7 +1,7 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { VideoEncoder } from './BaseEncoder.js';
 

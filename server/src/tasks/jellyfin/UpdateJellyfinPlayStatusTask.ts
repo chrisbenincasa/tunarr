@@ -1,4 +1,4 @@
-import { MediaSource } from '@/db/schema/MediaSource.js';
+import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';

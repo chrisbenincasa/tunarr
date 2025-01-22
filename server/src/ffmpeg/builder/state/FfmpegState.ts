@@ -1,15 +1,15 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import { DataProps } from '@/ffmpeg/builder/types.js';
-import { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
-import { Maybe, Nullable } from '@/types/util.js';
-import { FfmpegLogLevel } from '@tunarr/types/schemas';
-import { Duration } from 'dayjs/plugin/duration.js';
+import type { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import type { DataProps } from '@/ffmpeg/builder/types.js';
+import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
+import type { Maybe, Nullable } from '@/types/util.js';
+import type { FfmpegLogLevel } from '@tunarr/types/schemas';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import { isNil, merge } from 'lodash-es';
-import path from 'path';
-import { MarkRequired } from 'ts-essentials';
+import path from 'node:path';
+import type { MarkRequired } from 'ts-essentials';
+import type { OutputFormat } from '../constants.ts';
 import {
   MpegTsOutputFormat,
-  OutputFormat,
   OutputFormatTypes,
   OutputLocation,
 } from '../constants.ts';

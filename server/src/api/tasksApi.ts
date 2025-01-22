@@ -1,5 +1,5 @@
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
