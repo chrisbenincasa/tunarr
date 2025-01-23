@@ -100,7 +100,7 @@ export class XmlTvWriter {
             return c.title;
           case 'episode':
           case 'track':
-            return c.parent?.title ?? c.title;
+            return c.grandparent?.title ?? c.title;
         }
       })
       .with({ type: 'custom' }, (c) => c.program?.title ?? 'Custom Program')
