@@ -374,8 +374,8 @@ export function MediaItemGrid<PageDataType, ItemType>({
             index === 0
               ? gridItemRef
               : modalIndex === index
-              ? selectedModalItemRef
-              : null,
+                ? selectedModalItemRef
+                : null,
         },
         {
           open: isOpen,
@@ -435,8 +435,10 @@ export function MediaItemGrid<PageDataType, ItemType>({
             flexDirection: 'column',
             overflow: 'hidden',
             right: 0,
+            bottom: 'max(10em, env(safe-area-inset-top))',
             width: 35,
             zIndex: 1000,
+            fontSize: '85%',
           }}
         >
           <Box sx={{ position: 'sticky' }} ref={alphaFilterRef}>
@@ -449,10 +451,11 @@ export function MediaItemGrid<PageDataType, ItemType>({
                     py: 0,
                     px: 1,
                     minWidth: '100%',
-                    height: 28,
-                    fontSize: alphanumericFilter === str ? '175%' : '100%',
+                    transition: 'font-size 0.1s',
+                    fontSize: alphanumericFilter === str ? '150%' : 'inherit',
                     '&:hover': {
-                      fontSize: '175%',
+                      transition: 'font-size 0.1s ease-in-out',
+                      fontSize: '150%',
                     },
                   }}
                   key={code}
