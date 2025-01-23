@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.3](https://github.com/chrisbenincasa/tunarr/compare/v0.18.2...v0.18.3) (2025-01-23)
+
+
+### Bug Fixes
+
+* fix XMLTV to display show/artist title and not season/album ([45455e2](https://github.com/chrisbenincasa/tunarr/commit/45455e2a0abfe34460e78f651b8db26b493c43e3))
+* fixes to displaying program title after [#910](https://github.com/chrisbenincasa/tunarr/issues/910) ([c1e673d](https://github.com/chrisbenincasa/tunarr/commit/c1e673d5130f60d3e61e74d730750f9c8931fba0))
+* more flexible positioning of alphanumeric filtering ([3ab34d4](https://github.com/chrisbenincasa/tunarr/commit/3ab34d4c6d1f9449fe4def4f542490d369f87375)), closes [#1062](https://github.com/chrisbenincasa/tunarr/issues/1062)
+
 ## [0.18.2](https://github.com/chrisbenincasa/tunarr/compare/v0.18.1...v0.18.2) (2025-01-21)
 
 
