@@ -61,7 +61,7 @@ const StreamModule = new ContainerModule((bind) => {
 
   bindFactoryFunc<ProgramStreamFactoryType>(
     bind,
-    KEYS.PipelineBuilderFactory,
+    KEYS.ProgramStreamFactory,
     (ctx) => {
       return (playerContext: PlayerContext, outputFormat: OutputFormat) => {
         return new JellyfinProgramStream(
