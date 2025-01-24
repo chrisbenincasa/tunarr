@@ -51,7 +51,7 @@ export type FfmpegEncoder = {
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
-const OptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
+export const FFmpegOptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
 
 @injectable()
 export class FfmpegInfo {
@@ -235,7 +235,7 @@ export class FfmpegInfo {
       );
 
       return seq.collect(nonEmptyLines, (line) => {
-        return line.match(OptionsExtractionPattern)?.[1];
+        return line.match(FFmpegOptionsExtractionPattern)?.[1];
       });
     });
   }

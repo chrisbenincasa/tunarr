@@ -47,6 +47,12 @@ export abstract class BaseFfmpegHardwareCapabilities {
   ): Maybe<RateControlMode> {
     return;
   }
+
+  // Right now we assume that all decoders for a hw "class"
+  // have the same decoder options. This is not necessarily true.
+  hasDecoderOption(_opt: string): boolean {
+    return false;
+  }
 }
 
 export type FfmpegHardwareCapabilities = NvidiaHardwareCapabilities;

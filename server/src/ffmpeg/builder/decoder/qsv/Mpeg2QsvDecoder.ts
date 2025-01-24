@@ -1,7 +1,8 @@
+import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { QsvDecoder } from './QsvDecoder.ts';
 
 export class Mpeg2QsvDecoder extends QsvDecoder {
-  constructor() {
-    super('mpeg2_qsv');
+  constructor(hardwareCapabilities: BaseFfmpegHardwareCapabilities) {
+    super('mpeg2_qsv', hardwareCapabilities);
   }
 }

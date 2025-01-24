@@ -3,11 +3,12 @@ import {
   PixelFormatP010,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { QsvDecoder } from './QsvDecoder.ts';
 
 export class Av1QsvDecoder extends QsvDecoder {
-  constructor() {
-    super('av1_qsv');
+  constructor(hardwareCapabilities: BaseFfmpegHardwareCapabilities) {
+    super('av1_qsv', hardwareCapabilities);
   }
 
   nextState(currentState: FrameState): FrameState {
