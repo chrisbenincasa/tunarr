@@ -80,6 +80,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/metadata/external',
     {
       schema: {
+        hide: true,
         querystring: ExternalMetadataQuerySchema,
       },
       config: {

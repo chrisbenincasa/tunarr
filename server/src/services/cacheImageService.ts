@@ -3,7 +3,7 @@ import { CachedImage } from '@/db/schema/CachedImage.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
 import { injectable } from 'inversify';
 import { isString, isUndefined } from 'lodash-es';
@@ -39,14 +39,11 @@ export class CacheImageService {
    * @returns
    * @memberof CacheImageService
    */
-  async routerInterceptor(
-    req: FastifyRequest<{ Params: { hash: string } }>,
-    res: FastifyReply,
-  ) {
+  async routerInterceptor(hash: string, res: FastifyReply) {
     try {
       const imgItem = await getDatabase()
         .selectFrom('cachedImage')
-        .where('hash', '=', req.params.hash)
+        .where('hash', '=', hash)
         .selectAll()
         .executeTakeFirst();
 
@@ -60,6 +57,7 @@ export class CacheImageService {
         }
       }
     } catch (err) {
+      this.logger.error(err);
       return res.status(500).send('error');
     }
   }

@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  CacheSettingsSchema,
+  LogLevelsSchema,
+  LoggingSettingsSchema,
+  SystemSettingsSchema,
+} from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
 import {
   ChannelConcatStreamModes,
@@ -6,8 +12,13 @@ import {
 } from '../schemas/channelSchema.js';
 import {
   ChannelProgramSchema,
+  CondensedChannelProgrammingSchema,
+  CondensedContentProgramSchema,
+  CondensedCustomProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+  FlexProgramSchema,
+  RedirectProgramSchema,
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
@@ -15,18 +26,12 @@ import {
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
-  CacheSettingsSchema,
-  LoggingSettingsSchema,
-  LogLevelsSchema,
-  SystemSettingsSchema,
-} from '../SystemSettings.js';
-import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
 
-export * from './plexSearch.js';
 export * from './Scheduling.js';
+export * from './plexSearch.js';
 
 export const IdPathParamSchema = z.object({
   id: z.string(),
@@ -254,6 +259,25 @@ export const ChannelSessionsResponseSchema = z.object({
 export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
+
+const CondensedChannelProgramWithNoOriginalSchema = z.discriminatedUnion(
+  'type',
+  [
+    CondensedContentProgramSchema,
+    CondensedCustomProgramSchema.extend({
+      program: CondensedContentProgramSchema.optional(),
+    }),
+    RedirectProgramSchema,
+    FlexProgramSchema,
+  ],
+);
+
+// This is sorta hacky.
+export const GetChannelProgrammingResponseSchema =
+  CondensedChannelProgrammingSchema.extend({
+    lineup: z.array(CondensedChannelProgramWithNoOriginalSchema),
+    programs: z.record(ContentProgramSchema),
+  });
 
 export const JellyfinGetLibraryItemsQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),

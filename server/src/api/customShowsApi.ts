@@ -25,6 +25,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows',
     {
       schema: {
+        tags: ['Custom Shows'],
         response: {
           200: z.array(CustomShowSchema),
         },
@@ -48,6 +49,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id',
     {
       schema: {
+        tags: ['Custom Shows'],
         params: IdPathParamSchema,
         response: {
           200: CustomShowSchema,
@@ -77,6 +79,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id',
     {
       schema: {
+        tags: ['Custom Shows'],
         params: IdPathParamSchema,
         body: UpdateCustomShowRequestSchema,
         response: {
@@ -108,6 +111,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id/programs',
     {
       schema: {
+        tags: ['Custom Shows'],
         params: IdPathParamSchema,
         response: {
           200: z.array(CustomProgramSchema),
@@ -126,6 +130,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows',
     {
       schema: {
+        tags: ['Custom Shows'],
+        operationId: 'createCustomShow',
+        description: 'Creates a new Custom Show',
         body: CreateCustomShowRequestSchema,
         response: {
           201: z.object({ id: z.string() }),
@@ -143,6 +150,9 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
     '/custom-shows/:id',
     {
       schema: {
+        tags: ['Custom Shows'],
+        operationId: 'deleteCustomShow',
+        description: 'Delets a custom show with the given ID',
         params: IdPathParamSchema,
         response: {
           200: z.object({ id: z.string() }),

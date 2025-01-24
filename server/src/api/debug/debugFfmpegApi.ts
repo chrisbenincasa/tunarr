@@ -16,6 +16,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
     '/ffmpeg/probe',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           path: z.string(),
         }),
@@ -34,6 +35,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
     '/ffmpeg/pipeline',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           channel: z.coerce.number().or(z.string()),
           path: z.string(),

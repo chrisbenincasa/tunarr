@@ -72,6 +72,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/version',
     {
       schema: {
+        tags: ['System'],
         response: {
           200: VersionApiResponseSchema,
           500: z.void(),
@@ -99,25 +100,33 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get('/ffmpeg-info', async (req, res) => {
-    const info = new FfmpegInfo(req.serverCtx.settings);
-    const [audioEncoders, videoEncoders] = await Promise.all([
-      run(async () => {
-        const res = await info.getAvailableAudioEncoders();
-        return isError(res) ? [] : res;
-      }),
-      run(async () => {
-        const res = await info.getAvailableVideoEncoders();
-        return isError(res) ? [] : res;
-      }),
-    ]);
-    const hwAccels = await info.getHwAccels();
-    return res.send({
-      audioEncoders,
-      videoEncoders,
-      hardwareAccelerationTypes: hwAccels,
-    });
-  });
+  fastify.get(
+    '/ffmpeg-info',
+    {
+      schema: {
+        tags: ['System'],
+      },
+    },
+    async (req, res) => {
+      const info = new FfmpegInfo(req.serverCtx.settings);
+      const [audioEncoders, videoEncoders] = await Promise.all([
+        run(async () => {
+          const res = await info.getAvailableAudioEncoders();
+          return isError(res) ? [] : res;
+        }),
+        run(async () => {
+          const res = await info.getAvailableVideoEncoders();
+          return isError(res) ? [] : res;
+        }),
+      ]);
+      const hwAccels = await info.getHwAccels();
+      return res.send({
+        audioEncoders,
+        videoEncoders,
+        hardwareAccelerationTypes: hwAccels,
+      });
+    },
+  );
 
   fastify.post('/upload/image', async (req, res) => {
     try {
@@ -189,6 +198,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.route({
     url: '/xmltv.xml',
     method: ['HEAD', 'GET'],
+    schema: {
+      tags: ['Streaming'],
+    },
     handler: async (req, res) => {
       try {
         const host = `${req.protocol}://${req.host}`;
@@ -219,6 +231,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   // CHANNELS.M3U Download
   fastify.route({
     url: '/channels.m3u',
+    schema: {
+      tags: ['Streaming'],
+    },
     method: ['HEAD', 'GET'],
     handler: async (req, res) => {
       try {
@@ -233,15 +248,28 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   });
 
-  fastify.delete('/channels.m3u', async (req, res) => {
-    await req.serverCtx.m3uService.regenerateCache();
-    return res.send(204);
-  });
+  fastify.delete(
+    '/channels.m3u',
+    {
+      schema: {
+        tags: ['Streaming'],
+        description: 'Clears the channels m3u cache',
+        response: {
+          204: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      await req.serverCtx.m3uService.regenerateCache();
+      return res.status(204).send();
+    },
+  );
 
   fastify.get(
     '/plex',
     {
       schema: {
+        hide: true,
         querystring: z.object({ id: z.string(), path: z.string() }),
       },
     },

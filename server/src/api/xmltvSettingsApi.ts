@@ -24,6 +24,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: XmlTvSettingsSchema,
           500: z.string(),
@@ -34,6 +35,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
       try {
         return res.send(req.serverCtx.settings.xmlTvSettings());
       } catch (err) {
+        logger.error(err);
         return res.status(500).send('error');
       }
     },
@@ -43,6 +45,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: XmlTvSettingsSchema,
           500: BaseErrorSchema,
@@ -94,6 +97,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     '/xmltv-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: XmlTvSettingsSchema,
           500: z.string(),

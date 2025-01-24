@@ -34,6 +34,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/offline',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           duration: z.coerce.number().default(30_000),
           useNewPipeline: TruthyQueryParam.optional(),
@@ -91,6 +92,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/error',
     {
       schema: {
+        tags: ['Debug'],
         querystring: z.object({
           useNewPipeline: TruthyQueryParam.optional(),
         }),
@@ -191,6 +193,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     '/streams/programs/:id',
     {
       schema: {
+        tags: ['Debug'],
         params: z.object({
           id: z.string(),
         }),

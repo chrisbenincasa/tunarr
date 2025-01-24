@@ -43,6 +43,14 @@ function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
 }
 
 export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
+  fastify.addHook('onRoute', (routeOptions) => {
+    if (!routeOptions.schema) {
+      routeOptions.schema = {};
+    }
+
+    routeOptions.schema.hide = true;
+  });
+
   fastify.post(
     '/jellyfin/login',
     {
@@ -80,7 +88,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         const response = await api.getUserViews();
 
         if (isQueryError(response)) {
-          throw response;
+          throw new Error(response.message);
         }
 
         const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
@@ -180,7 +188,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         );
 
         if (isQueryError(response)) {
-          throw response;
+          throw new Error(response.message);
         }
 
         return res.send(response.data);

@@ -1,3 +1,4 @@
+import { GenerateOpenApiCommand } from './GenerateOpenApiCommand.ts';
 import { RunServerCommand } from './RunServerCommand.ts';
 import { databaseCommands } from './database/databaseCommands.ts';
 import { LegacyMigrateCommand } from './legacyMigrateCommand.ts';
@@ -10,4 +11,5 @@ export const commands = [
   RunFixerCommand,
   RunServerCommand,
   databaseCommands,
+  GenerateOpenApiCommand,
 ];

@@ -20,15 +20,24 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
   // eslint-disable-next-line @typescript-eslint/require-await
 ) => {
-  fastify.get('/system/health', async (req, res) => {
-    const results = await req.serverCtx.healthCheckService.runAll();
-    return res.send(results);
-  });
+  fastify.get(
+    '/system/health',
+    {
+      schema: {
+        tags: ['System'],
+      },
+    },
+    async (req, res) => {
+      const results = await req.serverCtx.healthCheckService.runAll();
+      return res.send(results);
+    },
+  );
 
   fastify.get(
     '/system/settings',
     {
       schema: {
+        tags: ['System', 'Settings'],
         response: {
           200: SystemSettingsResponseSchema,
         },
@@ -40,14 +49,23 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/system/state', async (req, res) => {
-    return res.send(req.serverCtx.settings.migrationState);
-  });
+  fastify.get(
+    '/system/state',
+    {
+      schema: {
+        tags: ['System'],
+      },
+    },
+    async (req, res) => {
+      return res.send(req.serverCtx.settings.migrationState);
+    },
+  );
 
   fastify.post(
     '/system/fixers/:fixerId/run',
     {
       schema: {
+        tags: ['System'],
         params: z.object({
           fixerId: z.string(),
         }),
@@ -78,6 +96,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/settings',
     {
       schema: {
+        tags: ['System', 'Settings'],
         body: UpdateSystemSettingsRequestSchema,
         response: {
           200: SystemSettingsResponseSchema,
@@ -118,6 +137,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/settings/backup',
     {
       schema: {
+        tags: ['System', 'Settings'],
         body: UpdateBackupSettingsRequestSchema,
         response: {
           200: BackupSettingsSchema,

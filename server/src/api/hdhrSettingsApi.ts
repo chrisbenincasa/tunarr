@@ -20,6 +20,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: HdhrSettingsSchema,
           500: BaseErrorSchema,
@@ -41,6 +42,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        tags: ['Settings'],
         body: HdhrSettingsSchema,
         response: {
           200: HdhrSettingsSchema,
@@ -83,6 +85,7 @@ export const hdhrSettingsRouter: RouterPluginCallback = (
     '/hdhr-settings',
     {
       schema: {
+        tags: ['Settings'],
         response: {
           200: HdhrSettingsSchema,
           500: BaseErrorSchema,

@@ -35,7 +35,7 @@
     "@fastify/static": "^8.0.1",
     "@fastify/swagger": "^9.0.1",
     "@iptv/xmltv": "^1.0.1",
-    "@scalar/fastify-api-reference": "^1.25.33",
+    "@scalar/fastify-api-reference": "^1.25.106",
     "@tunarr/playlist": "^1.1.0",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",

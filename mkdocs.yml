@@ -37,6 +37,7 @@ theme:
 
 nav:
   - Home: index.md
+  - API Docs: api-docs.html
   - Getting Started:
     - Install: getting-started/installation.md
     - Run: getting-started/run.md
