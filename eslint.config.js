@@ -1,11 +1,11 @@
-import globals from 'globals';
 import eslint from '@eslint/js';
-import tseslint, { parser } from 'typescript-eslint';
-import reactRecommended from 'eslint-plugin-react/configs/recommended.js';
-import jsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
-import reactRefresh from 'eslint-plugin-react-refresh';
 import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
+import reactRecommended from 'eslint-plugin-react/configs/recommended.js';
 import noUnusedImports from 'eslint-plugin-unused-imports';
+import globals from 'globals';
+import tseslint, { parser } from 'typescript-eslint';
 
 export default tseslint.config(
   {
@@ -83,6 +83,14 @@ export default tseslint.config(
           checksVoidReturn: {
             attributes: false,
           },
+        },
+      ],
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: ['Redirect', 'NotFoundError'],
+          allowThrowingAny: false,
+          allowThrowingUnknown: false,
         },
       ],
     },

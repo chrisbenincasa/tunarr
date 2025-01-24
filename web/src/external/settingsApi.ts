@@ -224,6 +224,24 @@ const deleteTranscodeConfig = makeEndpoint({
   response: z.void(),
 });
 
+const duplicateTranscodeConfig = makeEndpoint({
+  method: 'post',
+  alias: 'duplicateTranscodeConfig',
+  path: '/api/transcode_configs/:id/copy',
+  parameters: parametersBuilder().addPath('id', z.string().uuid()).build(),
+  response: TranscodeConfigSchema,
+  errors: [
+    {
+      status: 404,
+      schema: z.void(),
+    },
+    {
+      status: 500,
+      schema: z.void(),
+    },
+  ],
+});
+
 export const endpoints = [
   getMediaSourcesEndpoint,
   createMediaSourceEndpoint,
@@ -248,4 +266,5 @@ export const endpoints = [
   createTranscodeConfig,
   updateTranscodeConfig,
   deleteTranscodeConfig,
+  duplicateTranscodeConfig,
 ] as const;

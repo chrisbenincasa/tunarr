@@ -5,14 +5,16 @@ import { makeWritable } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { sanitizeForExec } from '@/util/strings.js';
-import { TranscodeConfig, defaultFfmpegSettings } from '@tunarr/types';
+import { defaultFfmpegSettings, TranscodeConfig } from '@tunarr/types';
 import { IdPathParamSchema } from '@tunarr/types/api';
 import {
   FfmpegSettingsSchema,
   TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
 import { isError, map, merge, omit } from 'lodash-es';
+import { match, P } from 'ts-pattern';
 import { z } from 'zod';
+import { TranscodeConfigNotFoundError } from '../types/errors.ts';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
   fastify,
@@ -198,6 +200,39 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
       }
 
       return res.send(dbTranscodeConfigToApiSchema(config));
+    },
+  );
+
+  fastify.post(
+    '/transcode_configs/:id/copy',
+    {
+      schema: {
+        params: z.object({
+          id: z.string().uuid(),
+        }),
+        response: {
+          200: TranscodeConfigSchema,
+          404: z.void(),
+          500: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const copyResult = await req.serverCtx.transcodeConfigDB.duplicateConfig(
+        req.params.id,
+      );
+
+      if (copyResult.isFailure()) {
+        logger.error(copyResult.error);
+        return match(copyResult.error)
+          .with(P.instanceOf(TranscodeConfigNotFoundError), () =>
+            res.status(404).send(),
+          )
+          .with(P._, () => res.status(500).send())
+          .exhaustive();
+      }
+
+      return res.send(dbTranscodeConfigToApiSchema(copyResult.get()));
     },
   );
 

@@ -4,9 +4,12 @@ import { injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { omit } from 'lodash-es';
 import { v4 } from 'uuid';
+import { TranscodeConfigNotFoundError } from '../types/errors.ts';
+import { Result } from '../types/result.ts';
 import { getDatabase } from './DBAccess.ts';
 import {
   NewTranscodeConfig,
+  TranscodeConfig as TranscodeConfigDAO,
   TranscodeConfigUpdate,
 } from './schema/TranscodeConfig.ts';
 import { DB } from './schema/db.ts';
@@ -76,6 +79,31 @@ export class TranscodeConfigDB {
       .values(newConfig)
       .returningAll()
       .executeTakeFirstOrThrow();
+  }
+
+  async duplicateConfig(
+    id: string,
+  ): Promise<Result<TranscodeConfigDAO, TranscodeConfigNotFoundError | Error>> {
+    const baseConfig = await this.getById(id);
+    if (!baseConfig) {
+      return Result.failure(new TranscodeConfigNotFoundError(id));
+    }
+
+    const newId = v4();
+    baseConfig.uuid = newId;
+    baseConfig.isDefault = booleanToNumber(false);
+    baseConfig.name = `${baseConfig.name} (copy)`;
+
+    return Result.attemptAsync(() => {
+      return getDatabase()
+        .insertInto('transcodeConfig')
+        .values({
+          ...baseConfig,
+          resolution: JSON.stringify(baseConfig.resolution),
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+    });
   }
 
   updateConfig(id: string, updatedConfig: TranscodeConfig) {
