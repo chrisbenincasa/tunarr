@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.5](https://github.com/chrisbenincasa/tunarr/compare/v0.18.4...v0.18.5) (2025-01-24)
+
+
+### Features
+
+* ability to duplicate transcode configs ([#1067](https://github.com/chrisbenincasa/tunarr/issues/1067)) ([4ede70f](https://github.com/chrisbenincasa/tunarr/commit/4ede70fa81aa3fc89c8139e040d43fb706f337c2))
+
+
+### Bug Fixes
+
+* actually bind the server ([fb9abf0](https://github.com/chrisbenincasa/tunarr/commit/fb9abf02d7e1831c5265ee0e4be909bd361f4e2b))
+* display show name properly in RemoveShowsModal ([b09ea55](https://github.com/chrisbenincasa/tunarr/commit/b09ea55a4c43c88ff764dd4427794f903b36136b))
+* potential fixes/workarounds for quicksync audio sync issues ([#1069](https://github.com/chrisbenincasa/tunarr/issues/1069)) ([93141ba](https://github.com/chrisbenincasa/tunarr/commit/93141ba4380fd728e04c8abca37c7f5a1b12a30c))
+
 ## [0.18.4](https://github.com/chrisbenincasa/tunarr/compare/v0.18.3...v0.18.4) (2025-01-24)
 
 
