@@ -1,5 +1,5 @@
 import { useSystemSettingsSuspense } from '@/hooks/useSystemSettings.ts';
-import { Delete, Edit } from '@mui/icons-material';
+import { ContentCopy, Delete, Edit } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -82,12 +82,31 @@ export default function FfmpegSettingsPage() {
     queryKey: ['ffmpeg-info'],
     queryFn: (apiClient) => apiClient.getFfmpegInfo(),
   });
+  const queryClient = useQueryClient();
 
   const systemSettings = useSystemSettingsSuspense();
   const transcodeConfigs = useTranscodeConfigs();
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
+
+  const duplicateConfigMutation = useMutation({
+    mutationFn: (baseId: string) => {
+      return apiClient.duplicateTranscodeConfig(undefined, {
+        params: { id: baseId },
+      });
+    },
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        exact: false,
+        queryKey: ['settings', 'transcode_configs'],
+      });
+    },
+  });
+
+  const handleDuplicateConfig = (id: string) => {
+    duplicateConfigMutation.mutate(id);
+  };
 
   const {
     reset,
@@ -153,7 +172,6 @@ export default function FfmpegSettingsPage() {
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
   const snackbar = useSnackbar();
-  const queryClient = useQueryClient();
 
   const updateFfmpegSettingsMutation = useMutation({
     mutationFn: apiClient.updateFfmpegSettings,
@@ -222,6 +240,11 @@ export default function FfmpegSettingsPage() {
           <Tooltip title="Edit" placement="top">
             <IconButton to={`/settings/ffmpeg/${config.id}`} component={Link}>
               <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Duplicate" placement="top">
+            <IconButton onClick={() => handleDuplicateConfig(config.id)}>
+              <ContentCopy />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" placement="top">

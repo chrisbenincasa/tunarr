@@ -28,14 +28,26 @@ export abstract class TypedError extends Error {
   }
 }
 
-export class ChannelNotFoundError extends TypedError {
+export abstract class NotFoundError extends TypedError {}
+
+export class ChannelNotFoundError extends NotFoundError {
   readonly type = 'channel_not_found';
   constructor(channelId: string | number) {
     super(`Channel ${channelId} not found`);
   }
 }
 
-export type KnownErrorTypes = 'channel_not_found' | 'generic_error';
+export class TranscodeConfigNotFoundError extends NotFoundError {
+  readonly type = 'transcode_config_not_found';
+  constructor(id: string) {
+    super(`Transcode config id = ${id} not found`);
+  }
+}
+
+export type KnownErrorTypes =
+  | 'channel_not_found'
+  | 'generic_error'
+  | 'transcode_config_not_found';
 
 export class GenericError extends TypedError {
   readonly type = 'generic_error';
