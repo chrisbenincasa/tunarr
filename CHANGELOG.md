@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.4](https://github.com/chrisbenincasa/tunarr/compare/v0.18.3...v0.18.4) (2025-01-24)
+
+
+### Bug Fixes
+
+* fix bad binding causing jellyfin stream injection failure ([009f55a](https://github.com/chrisbenincasa/tunarr/commit/009f55ac84a1bec300272128ca76eb9b5b9b3917))
+
 ## [0.18.3](https://github.com/chrisbenincasa/tunarr/compare/v0.18.2...v0.18.3) (2025-01-23)
 
 
