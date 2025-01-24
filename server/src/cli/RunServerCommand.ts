@@ -73,7 +73,6 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
 `,
       serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
     );
-    await container.get(Server).init();
-    // await initServer(serverOpts);
+    await container.get(Server).initAndRun();
   },
 };
