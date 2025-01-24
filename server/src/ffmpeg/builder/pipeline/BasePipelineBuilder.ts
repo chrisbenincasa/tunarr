@@ -541,7 +541,14 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     // TODO Audio volumne
     if (encoder.name !== 'copy') {
-      this.audioInputSource?.filterSteps.push(new AudioFirstPtsFilter(0));
+      // This seems to help with audio sync issues in QSV
+      const asyncSamples =
+        this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv
+          ? 1000
+          : 1;
+      this.audioInputSource?.filterSteps.push(
+        new AudioFirstPtsFilter(asyncSamples, 0),
+      );
     }
 
     if (!isNull(this.context.desiredAudioState.audioDuration)) {

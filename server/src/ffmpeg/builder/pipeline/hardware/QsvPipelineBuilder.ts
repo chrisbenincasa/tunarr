@@ -104,7 +104,10 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     let decoder: Nullable<Decoder> = null;
 
     if (ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv) {
-      decoder = DecoderFactory.getQsvDecoder(videoStream);
+      decoder = DecoderFactory.getQsvDecoder(
+        videoStream,
+        this.hardwareCapabilities,
+      );
       if (!isNull(decoder)) {
         this.videoInputSource.addOption(decoder);
       }

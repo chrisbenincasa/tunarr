@@ -1,10 +1,11 @@
 import { PixelFormatNv12 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { BaseFfmpegHardwareCapabilities } from '../../capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { QsvDecoder } from './QsvDecoder.ts';
 
 export class H264QsvDecoder extends QsvDecoder {
-  constructor() {
-    super('h264_qsv');
+  constructor(hardwareCapabilities: BaseFfmpegHardwareCapabilities) {
+    super('h264_qsv', hardwareCapabilities);
   }
 
   nextState(currentState: FrameState): FrameState {

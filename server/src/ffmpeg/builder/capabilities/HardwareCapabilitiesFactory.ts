@@ -11,6 +11,7 @@ import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/Defau
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.js';
 import { VaapiHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesFactory.js';
+import { QsvHardwareCapabilitiesFactory } from './QsvHardwareCapabilitiesFactory.ts';
 
 export class HardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
@@ -28,10 +29,14 @@ export class HardwareCapabilitiesFactory
         return new NvidiaHardwareCapabilitiesFactory(
           this.ffmpegSettings,
         ).getCapabilities();
-      case HardwareAccelerationMode.Qsv:
       case HardwareAccelerationMode.Vaapi:
         return new VaapiHardwareCapabilitiesFactory(
           this.transcodeConfig,
+        ).getCapabilities();
+      case HardwareAccelerationMode.Qsv:
+        return new QsvHardwareCapabilitiesFactory(
+          this.transcodeConfig,
+          this.ffmpegSettings,
         ).getCapabilities();
       case HardwareAccelerationMode.Videotoolbox:
         return new DefaultHardwareCapabilities();

@@ -3,6 +3,7 @@ import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { NvidiaAv1Decoder } from '@/ffmpeg/builder/decoder/nvidia/NvidiaAv1Decoder.js';
 import { Av1QsvDecoder } from '@/ffmpeg/builder/decoder/qsv/Av1QsvDecoder.js';
+import { BaseFfmpegHardwareCapabilities } from '../capabilities/BaseFfmpegHardwareCapabilities.ts';
 import { H264Decoder } from './H264Decoder.ts';
 import { HevcDecoder } from './HevcDecoder.ts';
 import { ImplicitDecoder } from './ImplicitDecoder.ts';
@@ -66,20 +67,23 @@ export class DecoderFactory {
     }
   }
 
-  static getQsvDecoder(videoStream: VideoStream) {
+  static getQsvDecoder(
+    videoStream: VideoStream,
+    hardwareCapabilities: BaseFfmpegHardwareCapabilities,
+  ) {
     switch (videoStream.codec) {
       case VideoFormats.H264:
-        return new H264QsvDecoder();
+        return new H264QsvDecoder(hardwareCapabilities);
       case VideoFormats.Hevc:
-        return new HevcQsvDecoder();
+        return new HevcQsvDecoder(hardwareCapabilities);
       case VideoFormats.Mpeg2Video:
-        return new Mpeg2QsvDecoder();
+        return new Mpeg2QsvDecoder(hardwareCapabilities);
       case VideoFormats.Vc1:
-        return new Vc1QsvDecoder();
+        return new Vc1QsvDecoder(hardwareCapabilities);
       case VideoFormats.Vp9:
-        return new Vp9QsvDecoder();
+        return new Vp9QsvDecoder(hardwareCapabilities);
       case VideoFormats.Av1:
-        return new Av1QsvDecoder();
+        return new Av1QsvDecoder(hardwareCapabilities);
       default:
         return null;
     }

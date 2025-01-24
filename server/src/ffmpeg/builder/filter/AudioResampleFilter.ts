@@ -19,13 +19,16 @@ export class AudioResampleFilter extends FilterOption {
 }
 
 export class AudioFirstPtsFilter extends FilterOption {
-  constructor(private pts: number) {
+  constructor(
+    private asyncSamples: number = 1,
+    private pts: number = 0,
+  ) {
     super();
   }
 
   get filter() {
     return `aresample=${AudioResampleAsyncOption(
-      1,
+      this.asyncSamples,
     )}:${AudioResampleFirstPtsOption(this.pts)}`;
   }
 }
