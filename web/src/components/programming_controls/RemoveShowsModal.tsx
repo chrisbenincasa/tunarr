@@ -101,7 +101,10 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         }),
         'showId',
       ),
-      (program) => ({ id: program.showId!, title: program.title }),
+      (program) => ({
+        id: program.showId!,
+        title: program.grandparent?.title ?? program.title,
+      }),
     );
   }, [programs]);
 
@@ -120,7 +123,10 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
         }),
         'artistId',
       ),
-      (program) => ({ id: program.artistId!, title: program.title }),
+      (program) => ({
+        id: program.artistId!,
+        title: program.grandparent?.title ?? program.title,
+      }),
     );
   }, [programs]);
 
@@ -172,7 +178,11 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                       ...prev,
                       movies: !prev.movies,
                     }));
-                    e.target.checked ? increment() : decrement();
+                    if (e.target.checked) {
+                      increment();
+                    } else {
+                      decrement();
+                    }
                   }}
                   checked={!!removeRequest.movies}
                   inputProps={{ 'aria-labelledby': 'Select Show' }}
@@ -200,7 +210,11 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                           ? [...(prev.showIds ?? []), id]
                           : reject(prev.showIds, (i) => i === id),
                       }));
-                      e.target.checked ? increment() : decrement();
+                      if (e.target.checked) {
+                        increment();
+                      } else {
+                        decrement();
+                      }
                     }}
                     checked={includes(removeRequest.showIds, id)}
                     inputProps={{ 'aria-labelledby': 'Select Show' }}
@@ -230,7 +244,11 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
                           ? [...(prev.artistIds ?? []), id]
                           : reject(prev.artistIds, (i) => i === id),
                       }));
-                      e.target.checked ? increment() : decrement();
+                      if (e.target.checked) {
+                        increment();
+                      } else {
+                        decrement();
+                      }
                     }}
                     checked={includes(removeRequest.artistIds, id)}
                     inputProps={{ 'aria-labelledby': 'Select Show' }}
