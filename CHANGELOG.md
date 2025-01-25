@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.6](https://github.com/chrisbenincasa/tunarr/compare/v0.18.5...v0.18.6) (2025-01-25)
+
+
+### Bug Fixes
+
+* fix bundled build; apparently only works with a TS entrypoint with esbuild ([3dcf327](https://github.com/chrisbenincasa/tunarr/commit/3dcf327e308fd4ed4d92909cbe2e17e3b321c711))
+
 ## [0.18.5](https://github.com/chrisbenincasa/tunarr/compare/v0.18.4...v0.18.5) (2025-01-24)
 
 
