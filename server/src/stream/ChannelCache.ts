@@ -1,6 +1,7 @@
 import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.js';
 import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.js';
 import { globalOptions } from '@/globals.js';
+import { isDefined } from '@/util/index.ts';
 import constants from '@tunarr/shared/constants';
 import { injectable } from 'inversify';
 import { isNil, isUndefined } from 'lodash-es';
@@ -22,9 +23,9 @@ const streamPlayCacheItemSchema = z.object({
 type StreamPlayCacheItem = z.infer<typeof streamPlayCacheItemSchema>;
 
 const channelCacheSchema = z.object({
-  streamPlayCache: z.record(streamPlayCacheItemSchema),
-  fillerPlayTimeCache: z.record(z.number()),
-  programPlayTimeCache: z.record(z.number()),
+  streamPlayCache: z.record(streamPlayCacheItemSchema).default({}),
+  fillerPlayTimeCache: z.record(z.number()).default({}),
+  programPlayTimeCache: z.record(z.number()).default({}),
 });
 
 type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;
@@ -124,9 +125,9 @@ export class ChannelCache {
       }
     }
 
-    lineupItem.startOffset
-      ? (lineupItem.startOffset += timeSinceRecorded)
-      : timeSinceRecorded;
+    if (isDefined(lineupItem.startOffset)) {
+      lineupItem.startOffset += timeSinceRecorded;
+    }
     if (!isNil(lineupItem.streamDuration)) {
       lineupItem.streamDuration -= timeSinceRecorded;
       if (lineupItem.streamDuration < SLACK) {

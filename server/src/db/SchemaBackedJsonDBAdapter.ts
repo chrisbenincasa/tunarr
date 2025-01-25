@@ -32,6 +32,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
       this.logger.error(e);
       return null;
     });
+
     if (data === null && this.defaultValue === null) {
       this.logger.debug('Unexpected null data at %s; %O', this.path, data);
       return null;

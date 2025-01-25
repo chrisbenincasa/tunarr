@@ -6,7 +6,7 @@ import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
-import { SettingsDB, SettingsFile } from './db/SettingsDB.ts';
+import { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
@@ -20,24 +20,16 @@ export async function migrateFromPreAlphaDefaultDb(targetDir: string) {
   if (hasPreAlphaDefaultDb) {
     await copyDirectoryContents(preAlphaPath, targetDir);
   }
-} /**
+}
+
+/**
  * Initializes the Tunarr "database" directory at the configured location, including
  * subdirectories
  * @returns True if an existing database directory was found
  */
-
-export async function initDbDirectories(settingsDb: SettingsDB) {
+async function initDbDirectories() {
   // Early init, have to use the non-settings-based root Logger
   const opts = globalOptions();
-  const hasTunarrDb = await fileExists(opts.databaseDirectory);
-  if (!hasTunarrDb) {
-    RootLogger.debug(
-      `Existing database at ${opts.databaseDirectory} not found`,
-    );
-    await fs.mkdir(opts.databaseDirectory, { recursive: true });
-    await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
-    await settingsDb.flush();
-  }
 
   for (const subpaths of [
     ['channel-lineups'],
@@ -56,18 +48,32 @@ export async function initDbDirectories(settingsDb: SettingsDB) {
   if (!(await fileExists(path.join(process.cwd(), 'streams')))) {
     await fs.mkdir(path.join(process.cwd(), 'streams'));
   }
-
-  return hasTunarrDb;
 }
 
 export async function bootstrapTunarr(
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
+  const opts = globalOptions();
+  const hasTunarrDb = await fileExists(opts.databaseDirectory);
+  if (!hasTunarrDb) {
+    RootLogger.debug(
+      `Existing database at ${opts.databaseDirectory} not found`,
+    );
+    await fs.mkdir(opts.databaseDirectory, { recursive: true });
+    await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
+  }
+
   const settingsDb = new SettingsDBFactory(globalOptions()).get(
     undefined,
     initialSettings,
   );
-  await initDbDirectories(settingsDb);
+
+  // Init the settings if we created the db directory
+  if (!hasTunarrDb) {
+    await settingsDb.flush();
+  }
+
+  await initDbDirectories();
   initDatabaseAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
   LoggerFactory.initialize(settingsDb);
