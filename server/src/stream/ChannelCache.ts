@@ -1,7 +1,7 @@
 import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.js';
 import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.js';
 import { globalOptions } from '@/globals.js';
-import { isDefined } from '@/util/index.ts';
+import { isDefined } from '@/util/index.js';
 import constants from '@tunarr/shared/constants';
 import { injectable } from 'inversify';
 import { isNil, isUndefined } from 'lodash-es';

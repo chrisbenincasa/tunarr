@@ -5,7 +5,7 @@ import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import crypto from 'crypto';
 import { FastifyReply } from 'fastify';
 import { createWriteStream, promises as fs } from 'fs';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isString, isUndefined } from 'lodash-es';
 import stream from 'stream';
 import { FileCacheService } from './FileCacheService.ts';
@@ -25,7 +25,7 @@ export class CacheImageService {
   private cacheService: FileCacheService;
   private imageCacheFolder: string;
 
-  constructor(fileCacheService: FileCacheService) {
+  constructor(@inject(FileCacheService) fileCacheService: FileCacheService) {
     this.cacheService = fileCacheService;
     this.imageCacheFolder = 'images';
   }
@@ -157,7 +157,7 @@ export class CacheImageService {
     const encodedUrl = crypto
       .createHash('md5')
       .update(imageUrl)
-      .digest('base64');
+      .digest('base64url');
 
     await getDatabase()
       .insertInto('cachedImage')
