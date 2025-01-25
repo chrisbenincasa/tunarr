@@ -26,6 +26,7 @@
             "vitest/globals",
             "vitest/importMeta"
         ],
+        "noEmit": true,
         "declaration": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,

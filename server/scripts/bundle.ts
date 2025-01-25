@@ -27,7 +27,7 @@ const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
 console.log('Bundling app...');
 const result = await esbuild.build({
   entryPoints: {
-    bundle: 'build/src/index.js',
+    bundle: 'src/index.ts',
   },
   bundle: true,
   minify: true,

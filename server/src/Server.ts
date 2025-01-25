@@ -1,7 +1,6 @@
 import { container } from '@/container.js';
 import { KEYS } from '@/types/inject.js';
 import { ServerType } from '@/types/serverType.js';
-import { assistedInject } from '@/util/assisted.js';
 import { getTunarrVersion } from '@/util/version.js';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
@@ -65,7 +64,6 @@ async function legacyDizquetvDirectoryPath() {
   return;
 }
 
-@assistedInject()
 @injectable()
 export class Server {
   private app: ServerType;
