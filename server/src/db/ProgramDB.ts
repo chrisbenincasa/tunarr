@@ -130,7 +130,7 @@ export class ProgramDB implements IProgramDB {
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    private programConverter: ProgramConverter,
+    @inject(ProgramConverter) private programConverter: ProgramConverter,
   ) {
     this.timer = new Timer(this.logger);
   }
