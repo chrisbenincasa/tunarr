@@ -25,6 +25,8 @@ import { CustomShow } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import ChannelProgrammingList from '../channel_config/ChannelProgrammingList';
+import { ChannelProgrammingSort } from '../channel_config/ChannelProgrammingSort.tsx';
+import { ChannelProgrammingTools } from '../channel_config/ChannelProgrammingTools.tsx';
 
 type CustomShowForm = {
   id?: string;
@@ -127,10 +129,23 @@ export function EditCustomShowsForm({
         />
         <Divider />
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            gap={{ xs: 1 }}
+            sx={{
+              display: 'flex',
+              pt: 1,
+              mb: 2,
+              columnGap: 1,
+              alignItems: 'center',
+            }}
+          >
             <Typography variant="h6" sx={{ flex: 1 }}>
               Programming
             </Typography>
+            <ChannelProgrammingTools />
+            <ChannelProgrammingSort />
+
             <Tooltip
               title="Add TV Shows or Movies to custom show"
               placement="right"
@@ -145,7 +160,7 @@ export function EditCustomShowsForm({
                 Add Media
               </Button>
             </Tooltip>
-          </Box>
+          </Stack>
           <Paper>
             <ChannelProgrammingList
               type="selector"
