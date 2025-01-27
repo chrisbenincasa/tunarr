@@ -181,34 +181,8 @@ export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
 ]);
 
 export const PlexStreamSettingsSchema = z.object({
-  // Plex is deprecated here
-  streamPath: z
-    .union([z.literal('plex'), z.literal('direct'), z.literal('network')])
-    .default('network'),
-  enableDebugLogging: z.boolean().default(false),
-  directStreamBitrate: z.number().default(20000),
-  transcodeBitrate: z.number().default(2000),
-  mediaBufferSize: z.number().default(1000),
-  transcodeMediaBufferSize: z.number().default(20000),
-  maxPlayableResolution: ResolutionSchema.default({
-    widthPx: 1920,
-    heightPx: 1080,
-  }),
-  maxTranscodeResolution: ResolutionSchema.default({
-    widthPx: 1920,
-    heightPx: 1080,
-  }),
-  videoCodecs: z
-    .array(z.string())
-    .default(['h264', 'hevc', 'mpeg2video', 'av1']),
-  audioCodecs: z.array(z.string()).default(['ac3']),
-  maxAudioChannels: z.string().default('2.0'),
-  audioBoost: z.number().default(100),
-  enableSubtitles: z.boolean().default(false),
-  subtitleSize: z.number().default(100),
+  streamPath: z.enum(['network', 'direct']).default('network'),
   updatePlayStatus: z.boolean().default(false),
-  streamProtocol: z.string().default('http'),
-  forceDirectPlay: z.boolean().default(false),
   pathReplace: z.string().default(''),
   pathReplaceWith: z.string().default(''),
 });

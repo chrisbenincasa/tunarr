@@ -36,19 +36,14 @@ import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import { inject, injectable } from 'inversify';
 import {
-  find,
   isArray,
   isEmpty,
   isError,
-  isNaN,
-  isNil,
-  isNumber,
   isObject,
   isUndefined,
   map,
   merge,
   mergeWith,
-  parseInt,
   sortBy,
 } from 'lodash-es';
 import path, { dirname, join } from 'path';
@@ -65,13 +60,7 @@ import {
 } from './LegacyChannelMigrator.ts';
 import { LegacyLibraryMigrator } from './libraryMigrator.ts';
 import { LegacyMetadataBackfiller } from './metadataBackfill.ts';
-import {
-  JSONArray,
-  JSONObject,
-  JSONValue,
-  tryParseResolution,
-  tryStringSplitOrDefault,
-} from './migrationUtil.ts';
+import { JSONArray, JSONObject, tryParseResolution } from './migrationUtil.ts';
 
 // Mapping from the old web UI
 const maxAudioChannelsOptions = [
@@ -102,14 +91,6 @@ export const MigratableEntities = [
   'ffmpeg',
   'cached-images',
 ];
-
-function parseIntOrDefault(s: JSONValue, defaultValue: number): number {
-  const sOrN = s as Maybe<string | number>;
-  if (isUndefined(sOrN)) return defaultValue;
-  if (isNumber(sOrN)) return sOrN;
-  const parsed = parseInt(sOrN);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
 
 @injectable()
 export class LegacyDbMigrator {
@@ -204,13 +185,6 @@ export class LegacyDbMigrator {
           };
         } else {
           this.logger.debug('Migrating Plex settings', plexSettings);
-          const audioChannelValue = plexSettings[
-            'maxAudioChannels'
-          ] as Maybe<string>;
-          const newAudioChannelValue = !isNil(audioChannelValue)
-            ? find(maxAudioChannelsOptions, { newValue: audioChannelValue })
-                ?.newValue ?? '2.0'
-            : '2.0';
           settings = {
             ...settings,
             plexStream: mergeWith<
@@ -218,65 +192,12 @@ export class LegacyDbMigrator {
               PlexStreamSettings
             >(
               {
-                audioBoost: parseIntOrDefault(
-                  plexSettings['audioBoost'],
-                  defaultPlexStreamSettings.audioBoost,
-                ),
-                audioCodecs: tryStringSplitOrDefault(
-                  plexSettings['audioCodecs'] as Maybe<string>,
-                  ',',
-                  defaultPlexStreamSettings.audioCodecs,
-                ),
-                directStreamBitrate: parseIntOrDefault(
-                  plexSettings['directStreamBitrate'],
-                  defaultPlexStreamSettings.directStreamBitrate,
-                ),
-                transcodeBitrate: parseIntOrDefault(
-                  plexSettings['transcodeBitrate'],
-                  defaultPlexStreamSettings.transcodeBitrate,
-                ),
-                mediaBufferSize: plexSettings[
-                  'mediaBufferSize'
-                ] as Maybe<number>,
-                enableDebugLogging: plexSettings[
-                  'debugLogging'
-                ] as Maybe<boolean>,
-                enableSubtitles: plexSettings[
-                  'enableSubtitles'
-                ] as Maybe<boolean>,
-                forceDirectPlay: plexSettings[
-                  'forceDirectPlay'
-                ] as Maybe<boolean>,
-                maxAudioChannels: newAudioChannelValue,
-                maxPlayableResolution:
-                  tryParseResolution(
-                    plexSettings['maxPlayableResolution'] as Maybe<string>,
-                  ) ?? defaultPlexStreamSettings.maxPlayableResolution,
-                maxTranscodeResolution:
-                  tryParseResolution(
-                    plexSettings['maxTranscodeResolution'] as Maybe<string>,
-                  ) ?? defaultPlexStreamSettings.maxTranscodeResolution,
                 pathReplace: plexSettings['pathReplace'] as Maybe<string>,
                 pathReplaceWith: plexSettings[
                   'pathReplaceWith'
                 ] as Maybe<string>,
-                streamPath: plexSettings['streamPath'] as Maybe<
-                  'plex' | 'direct'
-                >,
-                streamProtocol: plexSettings['streamProtocol'] as Maybe<string>,
-                subtitleSize: parseIntOrDefault(
-                  plexSettings['subtitleSize'],
-                  defaultPlexStreamSettings.subtitleSize,
-                ),
-                transcodeMediaBufferSize:
-                  plexSettings.transcodeMediaBufferSize as Maybe<number>,
                 updatePlayStatus:
                   plexSettings.updatePlayStatus as Maybe<boolean>,
-                videoCodecs: tryStringSplitOrDefault(
-                  plexSettings.videoCodecs as Maybe<string>,
-                  ',',
-                  defaultPlexStreamSettings.videoCodecs,
-                ),
               },
               defaultPlexStreamSettings,
               (legacyObjValue, defaultObjValue) => {
