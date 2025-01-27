@@ -36,7 +36,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
-import _, { fill, map } from 'lodash-es';
+import { fill, isEqual, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -77,10 +77,6 @@ export default function MediaSourceSettingsPage() {
     if (streamSettings) {
       reset({
         ...streamSettings,
-        streamPath:
-          streamSettings.streamPath === 'plex'
-            ? 'network'
-            : streamSettings.streamPath,
       });
     }
   }, [streamSettings, reset]);
@@ -106,18 +102,6 @@ export default function MediaSourceSettingsPage() {
   ) => {
     updatePlexStreamingSettingsMutation.mutate({
       ...streamSettings,
-      audioCodecs: streamSettings.audioCodecs
-        .toString()
-        .replace(/\s*,\s*/g, ',') //remove white spaces before/after comma
-        .trim() // remove trailing whitespaces
-        .split(',')
-        .filter((value) => value.trim() !== ''), // handle empty value after commas
-      videoCodecs: streamSettings.videoCodecs
-        .toString()
-        .replace(/\s*,\s*/g, ',') //remove white spaces before/after comma
-        .trim() // remove trailing whitespaces
-        .split(',')
-        .filter((value) => value.trim() !== ''), // handle empty value after commas
     });
   };
 
@@ -330,7 +314,7 @@ export default function MediaSourceSettingsPage() {
             justifyContent="left"
             sx={{ mt: 2, flexGrow: 1 }}
           >
-            {!_.isEqual(defaultValues, defaultPlexStreamSettings) && (
+            {!isEqual(defaultValues, defaultPlexStreamSettings) && (
               <Button
                 variant="outlined"
                 onClick={() => {
