@@ -62,18 +62,6 @@ import { LegacyLibraryMigrator } from './libraryMigrator.ts';
 import { LegacyMetadataBackfiller } from './metadataBackfill.ts';
 import { JSONArray, JSONObject, tryParseResolution } from './migrationUtil.ts';
 
-// Mapping from the old web UI
-const maxAudioChannelsOptions = [
-  { oldValue: '1', newValue: '1.0' },
-  { oldValue: '2', newValue: '2.0' },
-  { oldValue: '3', newValue: '2.1' },
-  { oldValue: '4', newValue: '4.0' },
-  { oldValue: '5', newValue: '5.0' },
-  { oldValue: '6', newValue: '5.1' },
-  { oldValue: '7', newValue: '6.1' },
-  { oldValue: '8', newValue: '7.1' },
-];
-
 export type CustomShow = {
   id: string;
   name: string;
