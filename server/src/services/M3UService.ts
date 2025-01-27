@@ -16,16 +16,16 @@ import { FileCacheService } from './FileCacheService.ts';
  */
 @injectable()
 export class M3uService {
-  private static cacheKey = 'channels.m3u';
+  private fileCacheService!: FileCacheService;
+  private static cacheKey: string = 'channels.m3u';
   private static lock = new Mutex();
 
   #logger = LoggerFactory.child({ className: this.constructor.name });
 
   // TODO figure out a better way to manage interdependencies of 'services'
-  constructor(
-    @inject(FileCacheService) private fileCacheService: FileCacheService,
-    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-  ) {}
+  constructor(@inject(KEYS.ChannelDB) private channelDB: IChannelDB) {
+    this.fileCacheService = new FileCacheService();
+  }
 
   async getChannelsM3U(host: string): Promise<string> {
     return await M3uService.lock.runExclusive(async () =>

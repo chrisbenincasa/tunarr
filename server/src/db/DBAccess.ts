@@ -1,6 +1,8 @@
 import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Database } from 'bun:sqlite';
+import { BunSqliteDialect } from 'kysely-bun-sqlite';
+// import { Database } from '@db/sqlite';
 import dayjs from 'dayjs';
 import {
   CamelCasePlugin,
@@ -8,12 +10,12 @@ import {
   Migrator,
   ParseJSONResultsPlugin,
 } from 'kysely';
-import { BunSqliteDialect } from 'kysely-bun-sqlite';
 import { findIndex, isError, last, map, once, slice } from 'lodash-es';
 import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
+// import { DenoSqliteDialect } from './dialect/DenoSqliteDialect.ts';
 import type { DB } from './schema/db.ts';
 
 const MigrationTableName = 'migrations';
@@ -33,6 +35,9 @@ export const initDatabaseAccess = once((dbName: string) => {
     dialect: new BunSqliteDialect({
       database: new Database(dbName),
     }),
+    // dialect: new DenoSqliteDialect({
+    //   database: new Database(dbName),
+    // }),
     log: (event) => {
       switch (event.level) {
         case 'query':

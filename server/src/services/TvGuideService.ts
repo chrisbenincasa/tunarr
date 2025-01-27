@@ -48,11 +48,11 @@ import {
 import * as syncRetry from 'retry';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import {
+import type {
   ChannelWithPrograms,
   ChannelWithRelations,
   ChannelWithPrograms as RawChannel,
-} from '../db/schema/derivedTypes.js';
+} from '../db/schema/derivedTypes.ts';
 import {
   deepCopy,
   groupByUniqProp,

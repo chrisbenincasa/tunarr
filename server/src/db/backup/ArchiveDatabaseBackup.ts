@@ -12,6 +12,7 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { dbOptions } from '../../globals.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
@@ -90,7 +91,10 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     archive.pipe(outStream);
 
     const sqlBackup = new SqliteDatabaseBackup();
-    const sqlBackupFile = await sqlBackup.backup(path.join(tempDir, 'db.db'));
+    const sqlBackupFile = await sqlBackup.backup(
+      dbOptions().dbName,
+      path.join(tempDir, 'db.db'),
+    );
 
     archive
       .file(sqlBackupFile, { name: 'db.db' })

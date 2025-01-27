@@ -21,7 +21,7 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
-import { PassThrough } from 'stream';
+import { PassThrough } from 'node:stream';
 import { z } from 'zod';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (

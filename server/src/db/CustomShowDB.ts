@@ -17,7 +17,10 @@ import {
   AllProgramJoins,
   withCustomShowPrograms,
 } from './programQueryHelpers.ts';
-import { NewCustomShow, NewCustomShowContent } from './schema/CustomShow.ts';
+import type {
+  NewCustomShow,
+  NewCustomShowContent,
+} from './schema/CustomShow.ts';
 import { programExternalIdString } from './schema/Program.ts';
 
 @injectable()

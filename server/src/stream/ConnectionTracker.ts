@@ -2,10 +2,9 @@ import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { StreamConnectionDetails } from '@tunarr/types/api';
-import { type Timer } from '@types/bun';
 import dayjs from 'dayjs';
-import events from 'events';
 import { isEmpty, isUndefined, keys } from 'lodash-es';
+import events from 'node:events';
 
 type ConnectionTrackerEvents = {
   cleanup: () => void;

@@ -3,7 +3,6 @@ import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
 import axios, { AxiosHeaders } from 'axios';
-import { createHash } from 'crypto';
 import dayjs from 'dayjs';
 import type { HttpHeader } from 'fastify/types/utils.d.ts';
 import {
@@ -16,7 +15,8 @@ import {
   omitBy,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import type stream from 'stream';
+import { createHash } from 'node:crypto';
+import type stream from 'node:stream';
 import { z } from 'zod';
 import {
   ProgramSourceType,

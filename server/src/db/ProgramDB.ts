@@ -94,10 +94,10 @@ import {
 } from './schema/ProgramGrouping.ts';
 import { NewProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
 import { DB } from './schema/db.ts';
-import {
+import type {
   ProgramGroupingWithExternalIds,
   ProgramWithRelations,
-} from './schema/derivedTypes.js';
+} from './schema/derivedTypes.ts';
 
 type ValidatedContentProgram = MarkRequired<
   ContentProgram,

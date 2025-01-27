@@ -2,8 +2,8 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { Result } from '@/types/result.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { NewLineTransformStream } from '@/util/streams.js';
-import { spawn } from 'child_process';
-import { Writable } from 'stream';
+import { spawn } from 'node:child_process';
+import { Writable } from 'node:stream';
 
 export type PtsAndDuration = {
   pts: number;

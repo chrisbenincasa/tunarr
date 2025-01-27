@@ -5,7 +5,7 @@ import type { Maybe, Nullable } from '@/types/util.js';
 import type { FfmpegLogLevel } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { isNil, merge } from 'lodash-es';
-import path from 'path';
+import path from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
 import type { OutputFormat } from '../constants.ts';
 import {

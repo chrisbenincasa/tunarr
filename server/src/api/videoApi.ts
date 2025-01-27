@@ -9,7 +9,7 @@ import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNil, isNumber } from 'lodash-es';
 import * as fsSync from 'node:fs';
-import { Readable } from 'stream';
+import { Readable } from 'node:stream';
 import { z } from 'zod';
 
 const FfmpegPlaylistQuerySchema = z.object({

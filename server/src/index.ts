@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';
 import {

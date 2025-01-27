@@ -1,4 +1,4 @@
-import { createRequire } from 'module';
+import { createRequire } from 'node:module';
 import { isNonEmptyString } from './index.js';
 const require = createRequire(import.meta.url);
 

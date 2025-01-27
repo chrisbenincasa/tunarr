@@ -57,7 +57,7 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
@@ -106,10 +106,10 @@ import {
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
-import {
+import type {
   ChannelWithRelations,
   ChannelWithPrograms as RawChannelWithPrograms,
-} from './schema/derivedTypes.js';
+} from './schema/derivedTypes.ts';
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").

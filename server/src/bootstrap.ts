@@ -1,6 +1,6 @@
 import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
 import {
   initDatabaseAccess,

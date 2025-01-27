@@ -7,3 +7,6 @@ streams/
 *.log
 **/web/
 *.zip
+
+src/generated/**
+!src/generated/.gitkeep

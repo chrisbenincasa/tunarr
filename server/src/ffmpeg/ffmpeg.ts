@@ -22,7 +22,7 @@ import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
-import path from 'path';
+import path from 'node:path';
 import type { DeepReadonly, DeepRequired } from 'ts-essentials';
 import type { StreamDetails, StreamSource } from '../stream/types.js';
 import {

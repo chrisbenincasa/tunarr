@@ -25,7 +25,7 @@ import {
   omitBy,
   values,
 } from 'lodash-es';
-import type stream from 'stream';
+import type stream from 'node:stream';
 import z from 'zod';
 import {
   ProgramSourceType,

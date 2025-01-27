@@ -10,9 +10,9 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type { Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
-import events from 'events';
 import { isUndefined } from 'lodash-es';
-import { PassThrough } from 'stream';
+import events from 'node:events';
+import { PassThrough } from 'node:stream';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
 import {
   attempt,

@@ -5,9 +5,9 @@ import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration
 import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
 import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';
 import { KEYS } from '@/types/inject.js';
-import { AsyncLocalStorage } from 'async_hooks';
 import { inject, injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
@@ -35,7 +35,7 @@ export class ServerContext {
   @inject(KEYS.SettingsDB) public settings: ISettingsDB;
 
   @inject(FillerDB) public fillerDB!: FillerDB;
-  @inject(FileCacheService) public fileCache: FileCacheService;
+  public fileCache: FileCacheService = new FileCacheService();
   public cacheImageService: CacheImageService;
   @inject(EventService) public eventService: EventService;
   @inject(TVGuideService) public guideService: TVGuideService;

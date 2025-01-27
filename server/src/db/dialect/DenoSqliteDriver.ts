@@ -1,0 +1,71 @@
+import { type Database } from '@db/sqlite';
+import { Mutex } from 'async-mutex';
+import {
+  CompiledQuery,
+  type DatabaseConnection,
+  type Driver,
+  type QueryResult,
+  type TransactionSettings,
+} from 'kysely';
+import { type DenoSqliteDialectConfig } from './DenoSqliteDialect.ts';
+
+export class DenoSqliteDriver implements Driver {
+  private lock = new Mutex();
+  private connection?: DenoSqliteConnection;
+
+  constructor(private config: DenoSqliteDialectConfig) {}
+
+  async init(): Promise<void> {
+    this.connection = new DenoSqliteConnection(this.config.database);
+    if (this.config.onCreateConnection) {
+      await this.config.onCreateConnection(this.connection);
+    }
+  }
+
+  async acquireConnection(): Promise<DatabaseConnection> {
+    await this.lock.acquire();
+    return this.connection!;
+  }
+
+  // TODO implement isolation level if necessary
+  async beginTransaction(
+    connection: DatabaseConnection,
+    _settings: TransactionSettings,
+  ): Promise<void> {
+    await connection.executeQuery(CompiledQuery.raw('begin'));
+  }
+
+  async commitTransaction(connection: DatabaseConnection): Promise<void> {
+    await connection.executeQuery(CompiledQuery.raw('commit'));
+  }
+
+  async rollbackTransaction(connection: DatabaseConnection): Promise<void> {
+    await connection.executeQuery(CompiledQuery.raw('rollback'));
+  }
+
+  releaseConnection(): Promise<void> {
+    return Promise.resolve(this.lock.release());
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async destroy(): Promise<void> {
+    this.config.database?.close();
+  }
+}
+
+class DenoSqliteConnection implements DatabaseConnection {
+  constructor(private db: Database) {}
+
+  executeQuery<R>(compiledQuery: CompiledQuery): Promise<QueryResult<R>> {
+    const { sql, parameters } = compiledQuery;
+    const stmt = this.db.prepare(sql);
+    return Promise.resolve({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      rows: stmt.all(parameters as any) as R[],
+    });
+  }
+
+  streamQuery<R>(): AsyncIterableIterator<QueryResult<R>> {
+    throw new Error('Method not implemented.');
+  }
+}

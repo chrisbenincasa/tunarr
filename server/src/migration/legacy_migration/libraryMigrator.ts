@@ -4,7 +4,6 @@ import type { NewFillerShowContent } from '@/db/schema/FillerShow.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
-import fs from 'fs/promises';
 import {
   chunk,
   compact,
@@ -18,7 +17,8 @@ import {
   sortBy,
   uniqBy,
 } from 'lodash-es';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {
   ProgramUpsertFields,
   withCustomShowPrograms,

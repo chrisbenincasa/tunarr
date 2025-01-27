@@ -10,9 +10,9 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
-import { createReadStream, promises as fsPromises } from 'fs';
 import { isEmpty, isError, isNil } from 'lodash-es';
-import path from 'path';
+import { createReadStream, promises as fsPromises } from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import {
   isEdgeBuild,

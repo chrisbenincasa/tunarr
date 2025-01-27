@@ -21,7 +21,7 @@ import {
   trim,
 } from 'lodash-es';
 import NodeCache from 'node-cache';
-import { format } from 'util';
+import { format } from 'node:util';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { attempt, isNonEmptyString, parseIntOrNull } from '../util/index.ts';
 import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';

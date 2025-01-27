@@ -42,6 +42,12 @@
     "lint-staged": {},
     "lint": {
       "dependsOn": ["lint-staged"]
+    },
+    "make-web-vfs": {},
+    "dev": {
+      "persistent": true,
+      "cache": false,
+      "dependsOn": ["make-web-vfs"]
     }
   }
 }

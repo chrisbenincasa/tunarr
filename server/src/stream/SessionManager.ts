@@ -34,7 +34,7 @@ import {
 } from './hls/HlsSlowerSession.js';
 
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { KEYS } from '@/types/inject.js';
 import { ifDefined } from '@/util/index.js';

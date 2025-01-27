@@ -15,7 +15,7 @@ import type { FastifyReply } from 'fastify';
 import { isNil, isNumber, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { PassThrough } from 'stream';
+import { PassThrough } from 'node:stream';
 import { v4 } from 'uuid';
 import z from 'zod';
 

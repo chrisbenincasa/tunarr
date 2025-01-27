@@ -5,7 +5,7 @@ import { inject, injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
-import path from 'path';
+import path from 'node:path';
 import { DeepPartial } from 'ts-essentials';
 import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
 import {

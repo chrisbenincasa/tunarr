@@ -6,7 +6,7 @@ import util from 'node:util';
 
 type CacheEntry = {
   t0: number;
-  timer?: NodeJS.Timeout | null;
+  timer?: Timer | null;
   lineupItem?: StreamLineupItem;
 };
 

@@ -48,6 +48,7 @@ await Bun.build({
   plugins: [
     bunPluginPino({
       transports: ['pino-pretty', 'pino-roll'],
+      logging: 'quiet',
     }),
   ],
 });

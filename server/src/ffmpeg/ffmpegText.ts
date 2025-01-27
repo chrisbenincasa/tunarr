@@ -1,8 +1,8 @@
 import { globalOptions } from '@/globals.js';
 import type { FfmpegSettings } from '@tunarr/types';
-import type { ChildProcessWithoutNullStreams } from 'child_process';
-import { spawn } from 'child_process';
-import events from 'events';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import events from 'node:events';
 import type { DeepReadonly } from 'ts-essentials';
 
 export class FfmpegText extends events.EventEmitter {
