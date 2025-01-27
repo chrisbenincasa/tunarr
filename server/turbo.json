@@ -39,6 +39,10 @@
     "make-exec:macos": {
       "dependsOn": ["make-exec-base"]
     },
+    "make-exec-bun": {
+      "dependsOn": ["^bundle", "@tunarr/web#bundle"],
+      "outputs": ["dist/**"]
+    },
     "lint-staged": {},
     "lint": {
       "dependsOn": ["lint-staged"]

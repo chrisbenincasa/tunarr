@@ -21,7 +21,7 @@ import { commands } from './cli/commands.ts';
 dayjs.extend(duration);
 dayjs.extend(dayjsMod);
 
-yargs(hideBin(process.argv))
+await yargs(hideBin(process.argv))
   .scriptName('tunarr')
   .option('log_level', {
     type: 'string',

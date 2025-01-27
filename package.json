@@ -12,8 +12,7 @@
     "lint-staged": "lint-staged",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
-    "preinstall": "npx only-allow pnpm",
-    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky install"
+    "preinstall": "npx only-allow pnpm"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.7",

@@ -12,7 +12,7 @@ import * as tar from 'tar';
 import unzip from 'unzip-stream';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import serverPackage from '../package.json';
+import serverPackage from '../package.json' with { type: 'json' };
 
 const NODE_VERSION = '22.13.0';
 const LINUX_TARGET = `linux-x64`;

@@ -6,7 +6,6 @@ import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
 import fpStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
-// import { BunFile } from 'bun';
 import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
@@ -37,7 +36,7 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
-// import webImports from './generated/web-imports.js';
+import webImports from './generated/web-imports.js';
 import {
   type ServerOptions,
   initializeSingletons,
