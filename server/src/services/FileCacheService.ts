@@ -16,10 +16,7 @@ export class FileCacheService {
   });
 
   constructor(
-    public cachePath: string = path.join(
-      serverOptions().databaseDirectory,
-      'cache',
-    ),
+    public cachePath: string = join(serverOptions().databaseDirectory, 'cache'),
     private enableInMemoryCache: boolean = true,
   ) {}
 

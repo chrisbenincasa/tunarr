@@ -18,7 +18,6 @@ RUN <<EOF
 curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.0"
 EOF
 RUN ln -s ~/.bun/bin/bun /usr/bin/bun
-RUN which bun
 
 # Install musl for native node bindings (sqlite)
 #RUN apt-get update --fix-missing
@@ -100,8 +99,8 @@ FROM sources AS build-full-stack
 # Install deps
 RUN which bun
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/server
-RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
+# RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/server
+RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo make-exec-bun -- --target linux-x64
 
 ### Begin server run ###
 FROM ffmpeg-base AS server

@@ -15,7 +15,7 @@
     "bundle_old": "dotenv -- tsx scripts/bundle.ts",
     "bundle": "dotenv -- bun run ./scripts/bundle-bun.ts",
     "make-web-vfs": "bun run scripts/make-web-vfs",
-    "clean": "rimraf ./build/",
+    "clean": "rimraf ./build/ ./dist/",
     "debug": "dotenv -e .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk ./src",
     "dev": "dotenv -e .env.development -- bun --watch run src/index.ts",
     "kysely": "dotenv -e .env.development -- kysely",
