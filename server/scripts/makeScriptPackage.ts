@@ -74,7 +74,7 @@ for (const target of args.target) {
       process.env.TUNARR_EDGE_BUILD === 'true' &&
       !isEmpty(process.env.TUNARR_BUILD)
     ) {
-      version = process.env.TUNARR_BUILD;
+      version = process.env.TUNARR_BUILD!;
     }
 
     console.log(
@@ -114,7 +114,7 @@ for (const target of args.target) {
     });
 
     const outputArchive = createWriteStream(
-      `./dist/tunarr-${target}-${serverPackage.version}.zip`,
+      `./dist/tunarr-${target}-${version}.zip`,
     );
     const archive = archiver('zip');
     const outStreamEnd = new Promise((resolve, reject) => {
