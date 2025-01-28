@@ -108,7 +108,7 @@ jobs:
         run: |
           touch server/.env
           echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> server/.env
-          echo TUNARR_EDGE_BUILD=true
+          echo TUNARR_EDGE_BUILD=true >> server/.env
           cat server/.env
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
@@ -128,7 +128,7 @@ jobs:
           tag_name: edge
           prerelease: true
           files: |
-            ./server/build/tunarr-${{ matrix.os.binary_name }}.zip*
+            ./server/build/tunarr-${{ matrix.os.binary_name }}*
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Upload Binaries
