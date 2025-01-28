@@ -1,6 +1,6 @@
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import Database from 'bun:sqlite';
-// import { Database } from '@db/sqlite';
+// import Database from 'bun:sqlite';
+import { Database } from '@db/sqlite';
 import { wait } from '../../util/index.ts';
 
 export class SqliteDatabaseBackup {

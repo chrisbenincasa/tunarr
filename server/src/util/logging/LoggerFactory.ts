@@ -1,7 +1,7 @@
-import type { SettingsDB } from '@/db/SettingsDB.js';
-import type { Maybe, TupleToUnion } from '@/types/util.js';
-import { getDefaultLogLevel } from '@/util/defaults.js';
-import { isNonEmptyString, isProduction } from '@/util/index.js';
+import type { SettingsDB } from '@/db/SettingsDB.ts';
+import type { Maybe, TupleToUnion } from '@/types/util.ts';
+import { getDefaultLogLevel } from '@/util/defaults.ts';
+import { isNonEmptyString, isProduction } from '@/util/index.ts';
 import {
   forEach,
   isEmpty,
@@ -12,6 +12,7 @@ import {
   trim,
 } from 'lodash-es';
 import path, { join } from 'node:path';
+import process from 'node:process';
 import type { Bindings, MultiStreamRes, StreamEntry } from 'pino';
 import {
   levels,
@@ -63,11 +64,11 @@ export type GetChildLoggerArgs = {
 } & Bindings;
 
 class LoggerFactoryImpl {
-  private settingsDB: SettingsDB;
+  private settingsDB?: SettingsDB;
   private rootLogger: PinoLogger<ExtraLogLevels>;
   private initialized = false;
   private children: Record<string, Logger> = {};
-  private currentStreams: MultiStreamRes<LogLevels>;
+  private currentStreams?: MultiStreamRes<LogLevels>;
 
   constructor() {
     // This ensures we always have a logger with the default configuration.
@@ -193,8 +194,10 @@ class LoggerFactoryImpl {
 
   private get systemSettingsLogLevel() {
     if (!isUndefined(this.settingsDB)) {
-      return this.settingsDB.systemSettings().logging
-        .logLevel as LevelWithSilent;
+      return (
+        (this.settingsDB?.systemSettings().logging
+          .logLevel as LevelWithSilent) ?? 'info'
+      );
     } else {
       return getDefaultLogLevel();
     }

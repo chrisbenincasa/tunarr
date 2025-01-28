@@ -1,0 +1,9 @@
+{
+  "workspace": ["./server", "./shared", "./types"],
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "nodeModulesDir": "auto",
+  "unstable": ["sloppy-imports"]
+}

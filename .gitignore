@@ -9,7 +9,6 @@ web/public/bundle.js
 package-lock.json
 
 config/
-.vscode/
 build/
 log.txt
 *.db

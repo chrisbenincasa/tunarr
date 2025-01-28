@@ -7,7 +7,7 @@ import type {
   SixtyRange,
 } from 'cron-parser';
 import parser from 'cron-parser';
-import CronExpression from 'cron-parser/lib/expression';
+import CronExpression from 'cron-parser/lib/expression.js';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { range, reduce } from 'lodash-es';

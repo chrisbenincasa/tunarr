@@ -1,27 +1,27 @@
-import {
+import { createExternalId } from '@/index.ts';
+import { nullToUndefined, seq } from '@/util/index.ts';
+import { parsePlexGuid } from '@/util/plexUtil.ts';
+import type {
   ContentProgram,
   ExternalId,
   MultiExternalId,
   SingleExternalId,
 } from '@tunarr/types';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import {
+import type { JellyfinItem } from '@tunarr/types/jellyfin';
+import type {
   PlexEpisode,
   PlexMovie,
   PlexMusicTrack,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import {
-  ContentProgramOriginalProgram,
+  type ContentProgramOriginalProgram,
   ContentProgramTypeSchema,
   ExternalSourceTypeSchema,
-  SingleExternalIdType,
+  type SingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { compact, find, first, isError, isNil } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { createExternalId } from '../index.js';
-import { nullToUndefined, seq } from '../util/index.js';
-import { parsePlexGuid } from '../util/plexUtil.js';
 
 type MediaSourceDetails = { id: string; name: string };
 

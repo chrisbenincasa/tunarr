@@ -3,16 +3,21 @@ import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
+import type {
+  ChannelWithPrograms,
+  ChannelWithRelations,
+  ChannelWithPrograms as RawChannel,
+} from '@/db/schema/derivedTypes.d.ts';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
-import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import { KEYS } from '@/types/inject.ts';
+import { Maybe } from '@/types/util.ts';
 import { Timer } from '@/util/Timer.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import { devAssert } from '@/util/debug.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
-import { makeLocalUrl } from '@/util/serverUtil.js';
-import throttle from '@/util/throttle.js';
+import { makeLocalUrl } from '@/util/serverUtil.ts';
+import throttle from '@/util/throttle.ts';
 import constants from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -21,10 +26,12 @@ import {
   ChannelProgram,
   TvGuideProgram,
 } from '@tunarr/types';
+// @deno-types="npm:@types/async-retry"
 import retry from 'async-retry';
 import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import duration, { type Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
+// @deno-types="npm:@types/lodash-es"
 import {
   compact,
   filter,
@@ -44,15 +51,11 @@ import {
   reduce,
   uniq,
   values,
-} from 'lodash-es';
-import * as syncRetry from 'retry';
+} from 'npm:lodash-es';
+// @deno-types="npm:@types/retry"
+import * as syncRetry from 'npm:retry';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import type {
-  ChannelWithPrograms,
-  ChannelWithRelations,
-  ChannelWithPrograms as RawChannel,
-} from '../db/schema/derivedTypes.ts';
 import {
   deepCopy,
   groupByUniqProp,
@@ -115,7 +118,7 @@ export class TVGuideService {
   // usage for no benefit. They are not used outside of guide
   // generation.
   private accumulateTable: Record<string, number[]> = {};
-  private channelsById: Record<string, ChannelWithLineup>;
+  private channelsById: Record<string, ChannelWithLineup> = {};
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,

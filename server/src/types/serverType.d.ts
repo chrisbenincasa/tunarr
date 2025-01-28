@@ -10,7 +10,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify/types/request.d.ts';
 import type { FastifySchema } from 'fastify/types/schema.d.ts';
 import type { ResolveFastifyRequestType } from 'fastify/types/type-provider.d.ts';
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { z } from 'zod';
 
 export type ServerType = FastifyInstance<

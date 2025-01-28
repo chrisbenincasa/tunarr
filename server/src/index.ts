@@ -1,12 +1,13 @@
-import { bootstrapTunarr } from '@/bootstrap.js';
-import { setGlobalOptions } from '@/globals.js';
+import { bootstrapTunarr } from '@/bootstrap.ts';
+import { setGlobalOptions } from '@/globals.ts';
+import '@/types/inject.ts';
 import {
   getDefaultDatabaseDirectory,
   getDefaultLogLevel,
-} from '@/util/defaults.js';
-import type { LogLevels } from '@/util/logging/LoggerFactory.js';
-import { ValidLogLevels } from '@/util/logging/LoggerFactory.js';
-import { getTunarrVersion } from '@/util/version.js';
+} from '@/util/defaults.ts';
+import type { LogLevels } from '@/util/logging/LoggerFactory.ts';
+import { ValidLogLevels } from '@/util/logging/LoggerFactory.ts';
+import { getTunarrVersion } from '@/util/version.ts';
 import { dayjsMod } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';

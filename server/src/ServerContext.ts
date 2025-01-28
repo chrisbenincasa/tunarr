@@ -1,29 +1,29 @@
-import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.js';
-import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
-import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';
-import { KEYS } from '@/types/inject.js';
-import { inject, injectable } from 'inversify';
-import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { inject, injectable } from 'npm:inversify';
+import { isUndefined } from 'npm:lodash-es';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
+import type { IChannelDB } from './db/interfaces/IChannelDB.ts';
+import type { IProgramDB } from './db/interfaces/IProgramDB.ts';
+import type { ISettingsDB } from './db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
+import { LegacyDbMigrator } from './migration/legacy_migration/legacyDbMigration.ts';
+import { ChannelLineupMigrator } from './migration/lineups/ChannelLineupMigrator.ts';
 import { EventService } from './services/EventService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
-import { HealthCheckService } from './services/HealthCheckService.js';
+import { HealthCheckService } from './services/HealthCheckService.ts';
 import { M3uService } from './services/M3UService.ts';
-import { OnDemandChannelService } from './services/OnDemandChannelService.js';
+import { OnDemandChannelService } from './services/OnDemandChannelService.ts';
 import { TVGuideService } from './services/TvGuideService.ts';
-import { CacheImageService } from './services/cacheImageService.js';
-import { ChannelCache } from './stream/ChannelCache.js';
-import { SessionManager } from './stream/SessionManager.js';
-import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
+import type { CacheImageService } from './services/cacheImageService.ts';
+import { ChannelCache } from './stream/ChannelCache.ts';
+import { SessionManager } from './stream/SessionManager.ts';
+import { StreamProgramCalculator } from './stream/StreamProgramCalculator.ts';
+import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
+import { KEYS } from './types/inject.ts';
 
 @injectable()
 export class ServerContext {

@@ -84,6 +84,9 @@ importers:
 
   server:
     dependencies:
+      '@db/sqlite':
+        specifier: npm:@jsr/db__sqlite@^0.12.0
+        version: '@jsr/db__sqlite@0.12.0'
       '@fastify/cors':
         specifier: ^10.0.1
         version: 10.0.1
@@ -102,6 +105,9 @@ importers:
       '@scalar/fastify-api-reference':
         specifier: ^1.25.106
         version: 1.25.106
+      '@std/uuid':
+        specifier: npm:@jsr/std__uuid@^1.0.4
+        version: '@jsr/std__uuid@1.0.4'
       '@tunarr/playlist':
         specifier: ^1.1.0
         version: 1.1.0
@@ -111,6 +117,9 @@ importers:
       '@tunarr/types':
         specifier: workspace:*
         version: link:../types
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       archiver:
         specifier: ^7.0.1
         version: 7.0.1
@@ -205,8 +214,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       uuid:
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^11.0.5
+        version: 11.0.5
       yargs:
         specifier: ^17.7.2
         version: 17.7.2
@@ -247,9 +256,6 @@ importers:
       '@types/unzip-stream':
         specifier: ^0.3.4
         version: 0.3.4
-      '@types/uuid':
-        specifier: ^9.0.6
-        version: 9.0.6
       '@types/yargs':
         specifier: ^17.0.29
         version: 17.0.29
@@ -1886,6 +1892,45 @@ packages:
   '@jsdevtools/ono@7.1.3':
     resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
 
+  '@jsr/db__sqlite@0.12.0':
+    resolution: {integrity: sha512-nTMYOzEl8oFhtPS90tAdMbpYTec7/brHtlVLt8afAsNLX+z1FkEIWljxqJS8UDzN23wCTsNXL96NArqBaJRy9A==, tarball: https://npm.jsr.io/~/11/@jsr/db__sqlite/0.12.0.tgz}
+
+  '@jsr/denosaurs__plug@1.0.6':
+    resolution: {integrity: sha512-3sRBjWs6Str1+5w8Lj5t4dDNxUJB6RWJaxAf1e04CHwbbPBbyzrzKs2iammkGlEra8yL2RO70+c8x0/52as6XA==, tarball: https://npm.jsr.io/~/11/@jsr/denosaurs__plug/1.0.6.tgz}
+
+  '@jsr/std__assert@0.217.0':
+    resolution: {integrity: sha512-kCGfcXX8lMcZHWrCgFhbdpNloB50MkLwHdRZvZKjZK424F9g+M742jkTDLMOJmwkDoEqFKyNVrGhPtspS4+NvQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/0.217.0.tgz}
+
+  '@jsr/std__assert@0.221.0':
+    resolution: {integrity: sha512-Y+nGzU7AiBuMGt9i7lwADiJ5ZpSwYr1f3ee3dnUIkUF9BuzX+sMJf6v2QGYDOOfo1EdNZCslQZlj3x62mwnw9w==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/0.221.0.tgz}
+
+  '@jsr/std__bytes@1.0.4':
+    resolution: {integrity: sha512-3RJxZsSHd9AhTIbJDYDigSTlElYkkU/NilUHtgLGxlXgNPxmb+wapntsxmgqQACsykhdCOUSW9SH/NinTBJ/XQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__bytes/1.0.4.tgz}
+
+  '@jsr/std__crypto@1.0.3':
+    resolution: {integrity: sha512-B/4PCckQfbfVMyQvG2I15QbN4vfx1S0tXKstpSlzuSmVwGmAOT/DLCtrbrAKlMiJBN4Zb53KaAJQm8VgkZ+bDg==, tarball: https://npm.jsr.io/~/11/@jsr/std__crypto/1.0.3.tgz}
+
+  '@jsr/std__encoding@0.221.0':
+    resolution: {integrity: sha512-fWvwcY1zzMTPt97PVRwHaM5Vyh27NsAeX6yxy9YSLbXjDnW6zjMGmQC5qJqDAz7d8IWq/uUTPZ+A1kr1ps2eUA==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/0.221.0.tgz}
+
+  '@jsr/std__fmt@0.217.0':
+    resolution: {integrity: sha512-AM33Cr/V3St3Cj5O4QQe4aMKGyzL9eYz+mOC58BmqxgeZwFbvSC06DzM2DS3ixcsAnwH2kYMXHpCBax0sT9q8Q==, tarball: https://npm.jsr.io/~/11/@jsr/std__fmt/0.217.0.tgz}
+
+  '@jsr/std__fmt@0.221.0':
+    resolution: {integrity: sha512-PErSfwKu1c9yl0a4J1U3f6PR1eZFU451Meok3d4i6OnuM8YCwqndfK/KzdIr7eYykkvB2ln/6JnF/wV37zil4A==, tarball: https://npm.jsr.io/~/11/@jsr/std__fmt/0.221.0.tgz}
+
+  '@jsr/std__fs@0.221.0':
+    resolution: {integrity: sha512-abz06JVR6M2YduJXDnsw3mHzUix85gpJquLbNUAjPe74XYH19BP85beNKH+xNQDYrRaQSN9zCIaQvg2Dmd+csQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__fs/0.221.0.tgz}
+
+  '@jsr/std__path@0.217.0':
+    resolution: {integrity: sha512-KoqEpZX9CE8zyyr4+X6AROOGYv95AysnJni2E5g9pqG+IGUUuNjOC3yRTvHnsB5tJ6uQs6DwET5chIdUPcylIQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__path/0.217.0.tgz}
+
+  '@jsr/std__path@0.221.0':
+    resolution: {integrity: sha512-O8iaP3yhg7nBXkoFsJS8KtL3kLESehM04YbkHEmW3hT93f1citXvR1chYVr7tlSyAcQSzc9WVvcLlX/T19XNhA==, tarball: https://npm.jsr.io/~/11/@jsr/std__path/0.221.0.tgz}
+
+  '@jsr/std__uuid@1.0.4':
+    resolution: {integrity: sha512-RWkXF1HOwT+KdJnRUIeBtCm1yTHN+imb48ktQdm3vbHfRR8j9HwQTc42s4VNpYQsVrXC1j8MSGWMOmxy3/JY/g==, tarball: https://npm.jsr.io/~/11/@jsr/std__uuid/1.0.4.tgz}
+
   '@liuli-util/fs-extra@0.1.0':
     resolution: {integrity: sha512-eaAyDyMGT23QuRGbITVY3SOJff3G9ekAAyGqB9joAnTBmqvFN+9a1FazOdO70G6IUqgpKV451eBHYSRcOJ/FNQ==}
 
@@ -2735,6 +2780,9 @@ packages:
 
   '@types/unzip-stream@0.3.4':
     resolution: {integrity: sha512-ud0vtsNRF+joUCyvNMyo0j5DKX2Lh/im+xVgRzBEsfHhQYZ+i4fKTveova9XxLzt6Jl6G0e/0mM4aC0gqZYSnA==}
+
+  '@types/uuid@10.0.0':
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/uuid@9.0.6':
     resolution: {integrity: sha512-BT2Krtx4xaO6iwzwMFUYvWBWkV2pr37zD68Vmp1CDV196MzczBRxuEpD6Pr395HAgebC/co7hOphs53r8V7jew==}
@@ -4017,9 +4065,6 @@ packages:
   es-iterator-helpers@1.2.1:
     resolution: {integrity: sha512-uDn+FE1yrDzyC0pCo961B2IHbdM8y/ACZsKD4dG6WqrjV53BADjwa7D+1aom2rsNVfLyDgU/eigvlJGJ08OQ4w==}
     engines: {node: '>= 0.4'}
-
-  es-module-lexer@1.5.4:
-    resolution: {integrity: sha512-MVNK56NiMrOwitFB7cqDwq0CQutbw+0BvLshJSse0MUNU+y1FC3bUS/AQg7oUng+/wKrrki7JfmwtVHkVfPLlw==}
 
   es-module-lexer@1.6.0:
     resolution: {integrity: sha512-qqnD1yMU6tk/jnaMosogGySTZP8YtUgAffA9nMN+E/rjxcfRQ6IEk7IiozUjgxKoFHBGjTLnrHB/YC45r/59EQ==}
@@ -6766,9 +6811,6 @@ packages:
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
-  tinyexec@0.3.1:
-    resolution: {integrity: sha512-WiCJLEECkO18gwqIp6+hJg0//p23HXp4S+gGtAKu3mI2F2/sXC4FvHvXvB0zJVVaTPhx1/tOwdbRsa1sOBIKqQ==}
-
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
@@ -7153,6 +7195,10 @@ packages:
 
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
+
+  uuid@11.0.5:
+    resolution: {integrity: sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==}
+    hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
@@ -8830,6 +8876,54 @@ snapshots:
 
   '@jsdevtools/ono@7.1.3': {}
 
+  '@jsr/db__sqlite@0.12.0':
+    dependencies:
+      '@jsr/denosaurs__plug': 1.0.6
+      '@jsr/std__path': 0.217.0
+
+  '@jsr/denosaurs__plug@1.0.6':
+    dependencies:
+      '@jsr/std__encoding': 0.221.0
+      '@jsr/std__fmt': 0.221.0
+      '@jsr/std__fs': 0.221.0
+      '@jsr/std__path': 0.221.0
+
+  '@jsr/std__assert@0.217.0':
+    dependencies:
+      '@jsr/std__fmt': 0.217.0
+
+  '@jsr/std__assert@0.221.0':
+    dependencies:
+      '@jsr/std__fmt': 0.221.0
+
+  '@jsr/std__bytes@1.0.4': {}
+
+  '@jsr/std__crypto@1.0.3': {}
+
+  '@jsr/std__encoding@0.221.0': {}
+
+  '@jsr/std__fmt@0.217.0': {}
+
+  '@jsr/std__fmt@0.221.0': {}
+
+  '@jsr/std__fs@0.221.0':
+    dependencies:
+      '@jsr/std__assert': 0.221.0
+      '@jsr/std__path': 0.221.0
+
+  '@jsr/std__path@0.217.0':
+    dependencies:
+      '@jsr/std__assert': 0.217.0
+
+  '@jsr/std__path@0.221.0':
+    dependencies:
+      '@jsr/std__assert': 0.221.0
+
+  '@jsr/std__uuid@1.0.4':
+    dependencies:
+      '@jsr/std__bytes': 1.0.4
+      '@jsr/std__crypto': 1.0.3
+
   '@liuli-util/fs-extra@0.1.0':
     dependencies:
       '@types/fs-extra': 9.0.13
@@ -9611,6 +9705,8 @@ snapshots:
     dependencies:
       '@types/node': 22.10.7
 
+  '@types/uuid@10.0.0': {}
+
   '@types/uuid@9.0.6': {}
 
   '@types/ws@8.5.13':
@@ -10007,7 +10103,7 @@ snapshots:
     dependencies:
       '@vitest/spy': 2.1.8
       estree-walker: 3.0.3
-      magic-string: 0.30.14
+      magic-string: 0.30.17
     optionalDependencies:
       vite: 5.4.1(@types/node@22.10.7)
 
@@ -10067,7 +10163,7 @@ snapshots:
   '@vitest/snapshot@2.1.8':
     dependencies:
       '@vitest/pretty-format': 2.1.8
-      magic-string: 0.30.14
+      magic-string: 0.30.17
       pathe: 1.1.2
 
   '@vitest/snapshot@3.0.3':
@@ -11357,8 +11453,6 @@ snapshots:
       internal-slot: 1.1.0
       iterator.prototype: 1.1.4
       safe-array-concat: 1.1.3
-
-  es-module-lexer@1.5.4: {}
 
   es-module-lexer@1.6.0: {}
 
@@ -14447,8 +14541,6 @@ snapshots:
 
   tinybench@2.9.0: {}
 
-  tinyexec@0.3.1: {}
-
   tinyexec@0.3.2: {}
 
   tinypool@0.8.4: {}
@@ -14878,6 +14970,8 @@ snapshots:
       is-typed-array: 1.1.15
       which-typed-array: 1.1.18
 
+  uuid@11.0.5: {}
+
   uuid@9.0.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
@@ -14928,8 +15022,8 @@ snapshots:
   vite-node@2.1.8(@types/node@22.10.7):
     dependencies:
       cac: 6.7.14
-      debug: 4.3.7
-      es-module-lexer: 1.5.4
+      debug: 4.4.0
+      es-module-lexer: 1.6.0
       pathe: 1.1.2
       vite: 5.4.1(@types/node@22.10.7)
     transitivePeerDependencies:
@@ -15067,13 +15161,13 @@ snapshots:
       '@vitest/spy': 2.1.8
       '@vitest/utils': 2.1.8
       chai: 5.1.2
-      debug: 4.3.7
+      debug: 4.4.0
       expect-type: 1.1.0
-      magic-string: 0.30.14
+      magic-string: 0.30.17
       pathe: 1.1.2
       std-env: 3.8.0
       tinybench: 2.9.0
-      tinyexec: 0.3.1
+      tinyexec: 0.3.2
       tinypool: 1.0.2
       tinyrainbow: 1.2.0
       vite: 5.4.1(@types/node@22.10.7)

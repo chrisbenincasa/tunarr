@@ -1,0 +1,29 @@
+{
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/build/**": true,
+        "**/dist/**": true,
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.preferences.importModuleSpecifierEnding": "js",
+    "eslint.useFlatConfig": true,
+    "eslint.options": {
+        "overrideConfigFile": "./eslint.config.js"
+    },
+    "deno.enable": true,
+    "deno.enablePaths": [
+        "./server",
+        "./types",
+        "./shared"
+    ],
+    "deno.disablePaths": [
+        "./server/dist",
+        "./server/build",
+        "./server/scripts",
+        "./server/node_modules"
+    ],
+    "eslint.enable": false
+}

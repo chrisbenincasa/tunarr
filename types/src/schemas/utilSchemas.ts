@@ -1,6 +1,6 @@
+import { constructZodLiteralUnionType } from '@/schemas/util.ts';
+import type { TupleToUnion } from '@/util.ts';
 import { z } from 'zod';
-import { TupleToUnion } from '../util.js';
-import { constructZodLiteralUnionType } from './util.js';
 
 // Should match the DB schema...
 export const ExternalIdType = [

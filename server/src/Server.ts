@@ -36,7 +36,7 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
-import webImports from './generated/web-imports.js';
+// import webImports from './generated/web-imports.js';
 import {
   type ServerOptions,
   initializeSingletons,

@@ -1,8 +1,3 @@
-import type {
-  GetChildLoggerArgs,
-  Logger,
-} from '@/util/logging/LoggerFactory.js';
-
 const KEYS = {
   GlobalOptions: Symbol.for('GlobalOptions'),
   ServerOptions: Symbol.for('ServerOptions'),
@@ -39,7 +34,5 @@ const KEYS = {
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 };
-
-export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;
 
 export { KEYS };

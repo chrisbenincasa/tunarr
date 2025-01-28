@@ -1,18 +1,18 @@
-import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { Resolution, TranscodeConfig } from '@tunarr/types';
-import { injectable } from 'inversify';
-import { Kysely } from 'kysely';
-import { omit } from 'lodash-es';
-import { v4 } from 'uuid';
-import { TranscodeConfigNotFoundError } from '../types/errors.ts';
+import { TranscodeConfigNotFoundError } from '@/types/errors.ts';
+import { booleanToNumber } from '@/util/sqliteUtil.ts';
+import type { Resolution, TranscodeConfig } from '@tunarr/types';
+import { injectable } from 'npm:inversify';
+import type { Kysely } from 'npm:kysely';
+import { omit } from 'npm:lodash-es';
+import { v4 } from 'npm:uuid';
 import { Result } from '../types/result.ts';
 import { getDatabase } from './DBAccess.ts';
-import {
+import type {
   NewTranscodeConfig,
   TranscodeConfig as TranscodeConfigDAO,
   TranscodeConfigUpdate,
 } from './schema/TranscodeConfig.ts';
-import { DB } from './schema/db.ts';
+import type { DB } from './schema/db.ts';
 
 @injectable()
 export class TranscodeConfigDB {

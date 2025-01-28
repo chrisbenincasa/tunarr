@@ -1,25 +1,27 @@
-import {
+/// <reference types="npm:@types/node" />
+import type {
   ISettingsDB,
   ReadableFfmpegSettings,
-} from '@/db/interfaces/ISettingsDB.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
-import { isProduction } from '@/util/index.js';
-import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+} from '@/db/interfaces/ISettingsDB.ts';
+import type { TypedEventEmitter } from '@/types/eventEmitter.ts';
+import { getDefaultLogDirectory, getDefaultLogLevel } from '@/util/defaults.ts';
+import { isProduction } from '@/util/index.ts';
+import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.ts';
 import {
-  FfmpegSettings,
-  HdhrSettings,
+  type FfmpegSettings,
+  type HdhrSettings,
   LoggingSettingsSchema,
-  PlexStreamSettings,
-  SystemSettings,
+  type PlexStreamSettings,
+  type SystemSettings,
   SystemSettingsSchema,
-  XmlTvSettings,
+  type XmlTvSettings,
   defaultFfmpegSettings,
   defaultHdhrSettings,
   defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
 import {
-  BackupSettings,
+  type BackupSettings,
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
@@ -27,17 +29,13 @@ import {
 } from '@tunarr/types/schemas';
 import { injectable } from 'inversify';
 import { merge } from 'lodash-es';
-import { Low } from 'lowdb';
-import events from 'node:events';
+import type { Low } from 'lowdb';
+import * as events from 'node:events';
 import path from 'node:path';
 import { setImmediate } from 'node:timers';
-import { DeepPartial, DeepReadonly } from 'ts-essentials';
+import type { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import {
-  getDefaultLogDirectory,
-  getDefaultLogLevel,
-} from '../util/defaults.ts';
 
 // Version 1 -> 2: slot show ids changed to be the program_grouping ID
 //   rather than the show name.

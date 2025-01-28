@@ -1,7 +1,7 @@
+import { ResolutionSchema } from '@/schemas/miscSchemas.ts';
+import { ScheduleSchema } from '@/schemas/utilSchemas.ts';
+import type { Tag, TupleToUnion } from '@/util.ts';
 import z from 'zod';
-import { Tag, TupleToUnion } from '../util.js';
-import { ResolutionSchema } from './miscSchemas.js';
-import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
   programmingHours: z.number().default(12),

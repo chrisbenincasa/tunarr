@@ -1,21 +1,22 @@
-import { attempt } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Database } from 'bun:sqlite';
-import { BunSqliteDialect } from 'kysely-bun-sqlite';
-// import { Database } from '@db/sqlite';
-import dayjs from 'dayjs';
+import { attempt } from '@/util/index.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+// import { Database } from 'bun:sqlite';
+// import { BunSqliteDialect } from 'kysely-bun-sqlite';
+import { Database } from 'jsr:@db/sqlite';
+import dayjs from 'npm:dayjs';
 import {
   CamelCasePlugin,
   Kysely,
   Migrator,
   ParseJSONResultsPlugin,
-} from 'kysely';
-import { findIndex, isError, last, map, once, slice } from 'lodash-es';
+} from 'npm:kysely';
+import { findIndex, isError, last, map, once, slice } from 'npm:lodash-es';
 import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
 // import { DenoSqliteDialect } from './dialect/DenoSqliteDialect.ts';
+import { DenoSqliteDialect } from './dialect/DenoSqliteDialect.ts';
 import type { DB } from './schema/db.ts';
 
 const MigrationTableName = 'migrations';
@@ -32,12 +33,12 @@ export const initDatabaseAccess = once((dbName: string) => {
     //     timeout: 5000,
     //   }),
     // }),
-    dialect: new BunSqliteDialect({
-      database: new Database(dbName),
-    }),
-    // dialect: new DenoSqliteDialect({
+    // dialect: new BunSqliteDialect({
     //   database: new Database(dbName),
     // }),
+    dialect: new DenoSqliteDialect({
+      database: new Database(dbName),
+    }),
     log: (event) => {
       switch (event.level) {
         case 'query':
