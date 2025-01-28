@@ -5,6 +5,7 @@ import retry from 'async-retry';
 import axios from 'axios';
 import { createWriteStream, existsSync } from 'fs';
 import fs from 'fs/promises';
+import { isEmpty } from 'lodash-es';
 import os from 'os';
 import path from 'path';
 import stream from 'stream';
@@ -68,8 +69,16 @@ for (const target of args.target) {
 
     const NODE_URL = `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${nodeBuild}.${ext}`;
 
+    let version = serverPackage.version;
+    if (
+      process.env.TUNARR_EDGE_BUILD === 'true' &&
+      !isEmpty(process.env.TUNARR_BUILD)
+    ) {
+      version = process.env.TUNARR_BUILD;
+    }
+
     console.log(
-      `Creating Tunarr executable archive: ./dist/tunarr-${target}-${serverPackage.version}.zip`,
+      `Creating Tunarr executable archive: ./dist/tunarr-${target}-${version}.zip`,
     );
 
     const tmp = await fs.mkdtemp(
