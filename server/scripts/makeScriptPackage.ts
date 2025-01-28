@@ -69,11 +69,9 @@ for (const target of args.target) {
 
     const NODE_URL = `https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${nodeBuild}.${ext}`;
 
+    const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
     let version = serverPackage.version;
-    if (
-      process.env.TUNARR_EDGE_BUILD === 'true' &&
-      !isEmpty(process.env.TUNARR_BUILD)
-    ) {
+    if (isEdgeBuild && !isEmpty(process.env.TUNARR_BUILD)) {
       version = process.env.TUNARR_BUILD!;
     }
 
@@ -114,7 +112,9 @@ for (const target of args.target) {
     });
 
     const outputArchive = createWriteStream(
-      `./dist/tunarr-${target}-${version}.zip`,
+      isEdgeBuild
+        ? `./dist/tunarr-${target}.zip`
+        : `./dist/tunarr-${target}-${version}.zip`,
     );
     const archive = archiver('zip');
     const outStreamEnd = new Promise((resolve, reject) => {
