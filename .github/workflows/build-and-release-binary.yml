@@ -128,7 +128,7 @@ jobs:
           tag_name: edge
           prerelease: true
           files: |
-            ./server/build/tunarr-${{ matrix.os.binary_name }}*
+            ./server/dist/tunarr-${{ matrix.os.binary_name }}*
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Upload Binaries
