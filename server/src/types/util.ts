@@ -2,6 +2,8 @@ import { DeepNonNullable, StrictExclude } from 'ts-essentials';
 
 export type Maybe<T> = T | undefined;
 
+export const None = undefined;
+
 export type Nullable<T> = T | null;
 
 export type Nilable<T> = Maybe<T> | Nullable<T>;

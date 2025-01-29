@@ -26,6 +26,7 @@ export const VaapiProfiles = {
   Vc1Advanced: 'VAProfileVC1Advanced',
   HevcMain: 'VAProfileHEVCMain',
   HevcMain10: 'VAProfileHEVCMain10',
+  HevcMain12: 'VAProfileHEVCMain12',
   Vp9Profile0: 'VAProfileVP9Profile0',
   Vp9Profile1: 'VAProfileVP9Profile1',
   Vp9Profile2: 'VAProfileVP9Profile2',
@@ -200,44 +201,60 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
     pixelFormat: Maybe<PixelFormat>,
   ) {
     const bitDepth = pixelFormat?.bitDepth ?? 8;
-    return match([videoFormat, bitDepth])
-      .with([VideoFormats.H264, 10], () => undefined)
-      .with([VideoFormats.H264, P._], () =>
-        find(
-          this.entrypoints,
-          (ep) =>
-            (ep.profile === VaapiProfiles.H264Main &&
-              ep.entrypoint === VaapiEntrypoint.Encode) ||
-            ep.entrypoint === VaapiEntrypoint.EncodeLowPower,
-        ),
-      )
-      .with([VideoFormats.Hevc, 10], () =>
-        find(
-          this.entrypoints,
-          (ep) =>
-            (ep.profile === VaapiProfiles.HevcMain10 &&
-              ep.entrypoint === VaapiEntrypoint.Encode) ||
-            ep.entrypoint === VaapiEntrypoint.EncodeLowPower,
-        ),
-      )
-      .with([VideoFormats.Hevc, 10], () =>
-        find(
-          this.entrypoints,
-          (ep) =>
-            (ep.profile === VaapiProfiles.HevcMain &&
-              ep.entrypoint === VaapiEntrypoint.Encode) ||
-            ep.entrypoint === VaapiEntrypoint.EncodeLowPower,
-        ),
-      )
-      .with([VideoFormats.Mpeg1Video, P._], () =>
-        find(
-          this.entrypoints,
-          (ep) =>
-            (ep.profile === VaapiProfiles.Mpeg2Main &&
-              ep.entrypoint === VaapiEntrypoint.Encode) ||
-            ep.entrypoint === VaapiEntrypoint.EncodeLowPower,
-        ),
-      )
-      .otherwise(() => undefined);
+    return (
+      match([videoFormat, bitDepth])
+        .with([VideoFormats.H264, 10], () => undefined)
+        .with([VideoFormats.H264, P._], () =>
+          find(
+            this.entrypoints,
+            (ep) =>
+              ep.profile === VaapiProfiles.H264Main &&
+              (ep.entrypoint === VaapiEntrypoint.Encode ||
+                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
+          ),
+        )
+        // Add support for main12 profile
+        // .with([VideoFormats.Hevc, P.union(8, 10)], () =>
+        //   find(
+        //     this.entrypoints,
+        //     (ep) =>
+        //       ep.profile === VaapiProfiles.HevcMain10 &&
+        //       (ep.entrypoint === VaapiEntrypoint.Encode ||
+        //         ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
+        //   ),
+        // )
+        // Check for main10 specifically with 10-bit output, even though
+        // HEVC main10 can support 8-10 bits. We will probably wantn to change
+        // this if we start to also check profile compatibility
+        // 8-bit HEVC output will be handled below.
+        .with([VideoFormats.Hevc, 10], () =>
+          find(
+            this.entrypoints,
+            (ep) =>
+              ep.profile === VaapiProfiles.HevcMain10 &&
+              (ep.entrypoint === VaapiEntrypoint.Encode ||
+                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
+          ),
+        )
+        .with([VideoFormats.Hevc, 8], () =>
+          find(
+            this.entrypoints,
+            (ep) =>
+              ep.profile === VaapiProfiles.HevcMain &&
+              (ep.entrypoint === VaapiEntrypoint.Encode ||
+                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
+          ),
+        )
+        .with([VideoFormats.Mpeg1Video, P._], () =>
+          find(
+            this.entrypoints,
+            (ep) =>
+              ep.profile === VaapiProfiles.Mpeg2Main &&
+              (ep.entrypoint === VaapiEntrypoint.Encode ||
+                ep.entrypoint === VaapiEntrypoint.EncodeLowPower),
+          ),
+        )
+        .otherwise(() => undefined)
+    );
   }
 }
