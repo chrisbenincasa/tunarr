@@ -16,7 +16,6 @@ await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
   recursive: true,
 });
 
-
 const args = await yargs(hideBin(process.argv))
   .scriptName('tunarr-make-exec')
   .option('target', {
@@ -40,11 +39,11 @@ const args = await yargs(hideBin(process.argv))
 for (const arch of args.target) {
   let name = 'tunarr';
   if (args.includeVersion) {
-    name += `-${serverPackage.version}`
+    name += `-${serverPackage.version}`;
   }
   name += `-${arch}`;
   if (arch.startsWith('windows')) {
-    name += '.exe'
+    name += '.exe';
   }
   const process = Bun.spawnSync([
     'bun',
@@ -55,10 +54,15 @@ for (const arch of args.target) {
     ...(args.sourcemap ? ['--sourcemap'] : []),
     'src/index.ts',
     '--outfile',
-    `dist/bin/${name}`
+    `dist/bin/${name}`,
   ]);
 
   if (process.success) {
-    console.info(`Successfully built ${name}`)
+    console.info(`Successfully built dist/bin/${name}`);
+  } else {
+    console.error(`Failed to build dist/bin/${name}`, process.exitCode);
+    for (const line of process.stderr.toString('utf-8').split('\n')) {
+      console.error(line);
+    }
   }
 }

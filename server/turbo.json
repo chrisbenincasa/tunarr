@@ -21,7 +21,7 @@
       "dependsOn": ["^build"]
     },
     "make-exec": {
-      "dependsOn": ["^bundle", "@tunarr/web#bundle"],
+      "dependsOn": ["^bundle", "@tunarr/web#bundle", "make-web-vfs"],
       "outputs": ["dist/**"]
     },
     "lint-staged": {},
