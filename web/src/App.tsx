@@ -283,14 +283,14 @@ export function Root({ children }: { children?: React.ReactNode }) {
     () => [
       {
         name: 'XMLTV',
-        path: `${actualBackendUri}/api/xmltv.xml`,
+        path: '/api/xmltv.xml',
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
       },
       {
         name: 'M3U',
-        path: `${actualBackendUri}/api/channels.m3u`,
+        path: '/api/channels.m3u',
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
