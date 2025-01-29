@@ -12,11 +12,11 @@ const ALL_TARGETS = [
   'macos-arm64',
 ];
 
-const isEdgeBuild =
-  process.env['TUNARR_EDGE_BUILD'] ===
-  (await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
-    recursive: true,
-  }));
+const isEdgeBuild = process.env['TUNARR_EDGE_BUILD'] === 'true';
+
+await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
+  recursive: true,
+});
 
 const args = await yargs(hideBin(process.argv))
   .scriptName('tunarr-make-exec')
