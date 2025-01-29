@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.7](https://github.com/chrisbenincasa/tunarr/compare/v0.18.6...v0.18.7) (2025-01-29)
+
+
+### Bug Fixes
+
+* fix remote watermark local file caching ([d726d51](https://github.com/chrisbenincasa/tunarr/commit/d726d51b96c2ed7cb0994a0ea429bdd0f4630748))
+* properly create tunarr database directory on first run ([db97e57](https://github.com/chrisbenincasa/tunarr/commit/db97e574c5aeffae769b3f00bfb4942f74771a30))
+* properly detect capability to encode 8-bit HEVC from vainfo ([b645c88](https://github.com/chrisbenincasa/tunarr/commit/b645c88c23726a700acf91862619d3cd8fdaefc3))
+* properly inject program converter to programdb ([cfc3127](https://github.com/chrisbenincasa/tunarr/commit/cfc31271e05a38b61836f4b5c2528339f8232ad7))
+* use revision instead of last version for binary edge builds ([0025bc6](https://github.com/chrisbenincasa/tunarr/commit/0025bc6cd6c8872b867b3cde90748f740b81a0a2))
+
 ## [0.18.6](https://github.com/chrisbenincasa/tunarr/compare/v0.18.5...v0.18.6) (2025-01-25)
 
 
