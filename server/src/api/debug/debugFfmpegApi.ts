@@ -69,8 +69,6 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
         FfmpegStreamFactory.name,
       )(transcodeConfig, channel, channel.streamMode);
 
-      console.log(channel.watermark);
-
       const session = await ffmpeg.createStreamSession({
         ...streamDetails,
         duration: dayjs.duration({ seconds: 30 }),

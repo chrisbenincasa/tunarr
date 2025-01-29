@@ -74,7 +74,6 @@ export class FfmpegVersionHealthCheck implements HealthCheck {
   private isVersionValid(version: FfmpegVersionResult, app: string) {
     const versionString = version.versionString;
 
-    console.log(version);
     // Try to use the parsed major/minor versions first
     if (!isNil(version.majorVersion) && !isNil(version.minorVersion)) {
       const result = match([version.majorVersion, version.minorVersion])

@@ -271,9 +271,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         ),
       );
 
-      console.log(result);
-
-      return res.send();
+      return res.send(result);
     },
   );
 

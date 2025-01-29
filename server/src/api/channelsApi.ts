@@ -375,8 +375,6 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         () => req.serverCtx.channelDB.loadCondensedLineup(req.params.id),
       );
 
-      console.log('hello');
-
       if (isNil(newLineup)) {
         return res.status(500).send();
       }

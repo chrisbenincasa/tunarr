@@ -47,6 +47,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
+  #isFirstTranscode = true;
 
   constructor(
     channel: ChannelWithTranscodeConfig,
@@ -118,6 +119,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       if (transcodeBuffer <= 60) {
         const realtime = transcodeBuffer >= 30;
         await this.transcode(realtime);
+        this.#isFirstTranscode = false;
       } else {
         // trim and delete
         await this.trimPlaylistAndDeleteSegments();
@@ -144,7 +146,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private async transcode(realtime: boolean) {
-    const ptsOffset = await this.getPtsOffset();
+    const ptsOffset = this.#isFirstTranscode ? 0 : await this.getPtsOffset();
 
     const lineupItemResult = await this.programCalculator.getCurrentLineupItem({
       allowSkip: true,
@@ -259,7 +261,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     const lastSegment = await this.getLastSegment();
 
     if (!lastSegment) {
-      this.logger.warn('No last segment found');
+      if (!this.#isFirstTranscode) {
+        this.logger.debug('No last segment found. Starting with PTS offset 0.');
+      }
       return 0;
     }
 

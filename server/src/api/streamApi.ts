@@ -117,7 +117,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       const mode = req.query.streamMode ?? channel.streamMode;
       const token = req.query.token ?? v4();
 
-      console.log(mode);
       const sessionResult =
         await req.serverCtx.sessionManager.getOrCreateConcatSession(
           channel.uuid,

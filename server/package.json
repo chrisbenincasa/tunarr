@@ -14,7 +14,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "bundle": "dotenv -- bun run ./scripts/bundle.ts",
     "make-web-vfs": "bun run scripts/make-web-vfs",
-    "clean": "rimraf ./build/ ./dist/",
+    "clean": "rimraf --glob ./build/ ./dist/ ./src/generated/web-imports.ts ./src/generated/web-imports.js",
     "debug": "dotenv -e .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-brk ./src",
     "dev": "dotenv -e .env.development -- bun --watch run src/index.ts",
     "kysely": "dotenv -e .env.development -- kysely",

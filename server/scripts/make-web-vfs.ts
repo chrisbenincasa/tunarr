@@ -13,11 +13,11 @@ await fs.cp(path.resolve(process.cwd(), '../web/dist'), './src/generated/web', {
 const moduleString = await makeVfs.getVirtualFilesystemModuleFromDirPath({
   dirPath: 'src/generated/web',
   contentFormat: 'import-bunfile',
-  targetPath: 'src/generated/web-imports.ts',
+  targetPath: 'src/generated/web-imports.js',
 });
 
 console.log(moduleString);
 
-await Bun.file('./src/generated/web-imports.ts').write(moduleString);
+await Bun.file('./src/generated/web-imports.js').write(moduleString);
 
 console.log('Successfully wrote ./src/generated/web-imports.js');

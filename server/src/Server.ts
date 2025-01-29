@@ -503,7 +503,6 @@ export class Server {
             schedule.gracefulShutdown(),
             new Promise<boolean>((resolve) => {
               setTimeout(() => {
-                console.log('here!');
                 resolve(false);
               }, 1000);
             }).then(() => {
@@ -537,7 +536,9 @@ export class Server {
       round(performance.now() - start, 2),
     );
     this.logger.info(
-      `HTTP server listening on host:port: http://${host}:${this.serverOptions.port}`,
+      `HTTP server listening on host:port: http://${
+        host === '0.0.0.0' ? '*' : host
+      }:${this.serverOptions.port}`,
     );
 
     const hdhrSettings = this.serverContext.settings.hdhrSettings();
