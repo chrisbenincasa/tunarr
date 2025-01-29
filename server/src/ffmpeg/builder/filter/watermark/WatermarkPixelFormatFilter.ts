@@ -1,8 +1,8 @@
 import { isNonEmptyString } from '@/util/index.js';
-import { Watermark } from '@tunarr/types';
+import type { Watermark } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { FfmpegState } from '../../state/FfmpegState.ts';
+import type { FfmpegState } from '../../state/FfmpegState.ts';
 import { FilterOption } from '../FilterOption.ts';
 
 export class WatermarkPixelFormatFilter extends FilterOption {

@@ -1,6 +1,9 @@
-import { ServerContext } from '@/ServerContext.js';
-import { ExtraLogLevels, LogLevels } from '@/util/logging/LoggerFactory.js';
-import { LevelWithSilent } from 'pino';
+import type { ServerContext } from '@/ServerContext.js';
+import type {
+  ExtraLogLevels,
+  LogLevels,
+} from '@/util/logging/LoggerFactory.js';
+import type { LevelWithSilent } from 'pino';
 
 declare module 'fastify' {
   interface FastifyRequest {

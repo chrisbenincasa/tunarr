@@ -1,5 +1,5 @@
 import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import os from 'node:os';
 

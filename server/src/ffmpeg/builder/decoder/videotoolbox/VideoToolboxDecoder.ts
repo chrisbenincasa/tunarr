@@ -1,6 +1,6 @@
 import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
-import { MediaStream } from '../../MediaStream.ts';
-import { InputSource } from '../../input/InputSource.ts';
+import type { MediaStream } from '../../MediaStream.ts';
+import type { InputSource } from '../../input/InputSource.ts';
 
 export class VideoToolboxDecoder extends BaseDecoder {
   readonly name: string = '';

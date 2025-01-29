@@ -1,13 +1,13 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import { CachedImage } from '@/db/schema/CachedImage.js';
+import type { CachedImage } from '@/db/schema/CachedImage.ts';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
-import crypto from 'crypto';
 import { FastifyReply } from 'fastify';
-import { createWriteStream, promises as fs } from 'fs';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { isString, isUndefined } from 'lodash-es';
-import stream from 'stream';
+import crypto from 'node:crypto';
+import { createWriteStream, promises as fs } from 'node:fs';
+import stream from 'node:stream';
 import { FileCacheService } from './FileCacheService.ts';
 
 /**
@@ -22,11 +22,11 @@ export class CacheImageService {
     className: this.constructor.name,
   });
 
-  private cacheService: FileCacheService;
+  private cacheService!: FileCacheService;
   private imageCacheFolder: string;
 
-  constructor(@inject(FileCacheService) fileCacheService: FileCacheService) {
-    this.cacheService = fileCacheService;
+  constructor() {
+    this.cacheService = new FileCacheService();
     this.imageCacheFolder = 'images';
   }
 

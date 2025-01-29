@@ -1,6 +1,6 @@
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable, multiInject } from 'inversify';
 import { find, round } from 'lodash-es';
 import Fixer from './fixer.js';

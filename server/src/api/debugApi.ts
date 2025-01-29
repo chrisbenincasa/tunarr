@@ -1,9 +1,7 @@
 import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import { getDatabase } from '@/db/DBAccess.js';
-import {
-  ArchiveDatabaseBackupFactory,
-  ArchiveDatabaseBackupKey,
-} from '@/db/backup/ArchiveDatabaseBackup.js';
+import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
+import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
@@ -18,7 +16,7 @@ import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '@/types/DateTimeRange.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { enumValues } from '@/util/enumUtil.js';
 import { ifDefined } from '@/util/index.js';
 import { container } from '../container.ts';

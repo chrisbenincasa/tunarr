@@ -1,20 +1,20 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import type { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
 import { VideoToolboxDecoder } from '@/ffmpeg/builder/decoder/videotoolbox/VideoToolboxDecoder.js';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { VideoToolboxHardwareAccelerationOption } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxHardwareAccelerationOption.js';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { Nullable } from '@/types/util.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { Nullable } from '@/types/util.js';
 import { match } from 'ts-pattern';
 import {
   VideoToolboxH264Encoder,

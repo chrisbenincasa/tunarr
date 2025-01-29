@@ -1,5 +1,6 @@
-import { CompiledQuery, Kysely, sql } from 'kysely';
-import {
+import type { Kysely } from 'kysely';
+import { CompiledQuery, sql } from 'kysely';
+import type {
   ProgramExternalIdSourceType,
   WithCreatedAt,
   WithUpdatedAt,

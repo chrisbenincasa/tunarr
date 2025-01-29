@@ -1,8 +1,8 @@
 import { container } from '@/container.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
-import { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { Nilable } from '@/types/util.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import type { Nilable } from '@/types/util.js';
 import { isNil } from 'lodash-es';
 import { z } from 'zod';
 

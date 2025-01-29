@@ -1,22 +1,21 @@
 import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.js';
-import { Maybe, Nilable } from '@/types/util.js';
+import type { Maybe, Nilable } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
-import {
+import type {
   PlexDvr,
   PlexDvrsResponse,
-  PlexGenericMediaContainerResponseSchema,
   PlexMedia,
-  PlexMediaContainerResponseSchema,
   PlexResource,
 } from '@tunarr/types/plex';
 import {
-  AxiosRequestConfig,
-  RawAxiosRequestHeaders,
-  isAxiosError,
-} from 'axios';
+  PlexGenericMediaContainerResponseSchema,
+  PlexMediaContainerResponseSchema,
+} from '@tunarr/types/plex';
+import type { AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
+import { isAxiosError } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 import {
   first,
@@ -28,14 +27,13 @@ import {
   map,
   reject,
 } from 'lodash-es';
-import {
+import type {
   PlexMediaContainer,
   PlexMediaContainerResponse,
 } from '../../types/plexApiTypes.js';
+import type { QueryErrorResult, QueryResult } from '../BaseApiClient.js';
 import {
   BaseApiClient,
-  QueryErrorResult,
-  QueryResult,
   isQueryError,
   isQuerySuccess,
 } from '../BaseApiClient.js';

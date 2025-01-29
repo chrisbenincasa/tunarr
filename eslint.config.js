@@ -17,7 +17,6 @@ export default tseslint.config(
       '**/*.config.ts',
       '**/*.ignore.ts',
       '**/*.test.ts', // Ignore test files for now, until we fix up tsconfig files
-      'server/src/migrations/**/*.ts', // Ignore DB migration files
     ],
   },
   {
@@ -26,6 +25,12 @@ export default tseslint.config(
     },
     rules: {
       'unused-imports/no-unused-imports': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          fixStyle: 'inline-type-imports',
+        },
+      ],
     },
   },
   eslint.configs.recommended,

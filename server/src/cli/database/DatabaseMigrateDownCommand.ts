@@ -1,6 +1,6 @@
 import { getMigrator } from '@/db/DBAccess.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { CommandModule } from 'yargs';
+import type { CommandModule } from 'yargs';
 import { isWrongMigrationDirection } from './databaseCommandUtil.ts';
 
 interface DatabaseMigrateDownCommandArgs {
@@ -15,7 +15,7 @@ export const DatabaseMigrateDownCommand: CommandModule<
   describe: 'Undo the last run or specificed migration',
   builder: (yargs) =>
     yargs.positional('migrationName', { demandOption: false, type: 'string' }),
-  // eslint-disable-next-line @typescript-eslint/require-await
+
   handler: async (args) => {
     const migrator = getMigrator();
     if (await isWrongMigrationDirection(args.migrationName, 'down', migrator)) {

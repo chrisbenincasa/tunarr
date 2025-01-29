@@ -1,11 +1,12 @@
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { TunarrEvent } from '@tunarr/types';
-import EventEmitter from 'events';
 import { FastifyInstance } from 'fastify';
 import { injectable } from 'inversify';
 import { isString } from 'lodash-es';
-import { Readable } from 'stream';
+import EventEmitter from 'node:events';
+import { Readable } from 'node:stream';
+import { setInterval } from 'node:timers';
 import { v4 } from 'uuid';
 
 type Events = {
@@ -25,7 +26,7 @@ export class EventService {
     caller: import.meta,
     className: this.constructor.name,
   });
-  private _heartbeat: NodeJS.Timeout;
+  private _heartbeat: Timer;
 
   constructor() {
     this._heartbeat = setInterval(() => {

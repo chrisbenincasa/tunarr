@@ -1,4 +1,4 @@
-import { Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 import { columnExists } from './util.ts';
 
 export default {

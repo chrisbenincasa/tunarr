@@ -1,4 +1,4 @@
-import { interfaces } from 'inversify';
+import type { interfaces } from 'inversify';
 
 export function bindFactoryFunc<
   Func extends (...args: Params) => Ret,

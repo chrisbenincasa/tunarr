@@ -1,8 +1,9 @@
-import { ExcludeByValueType, Nullable } from '@/types/util.js';
+import type { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isEmpty, isNull, merge } from 'lodash-es';
-import { AnyFunction, MarkOptional } from 'ts-essentials';
-import { PixelFormat } from './format/PixelFormat.ts';
-import { DataProps, FrameSize, StreamKind } from './types.ts';
+import type { AnyFunction, MarkOptional } from 'ts-essentials';
+import type { PixelFormat } from './format/PixelFormat.ts';
+import type { DataProps, StreamKind } from './types.ts';
+import { FrameSize } from './types.ts';
 
 export type MediaStream = {
   index: number;

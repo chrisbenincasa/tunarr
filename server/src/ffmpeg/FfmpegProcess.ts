@@ -1,15 +1,16 @@
-import { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
+import type { TypedEventEmitter } from '@/types/eventEmitter.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import { isNull, isUndefined } from 'lodash-es';
-import { ChildProcessByStdio, exec, spawn } from 'node:child_process';
+import type { ChildProcessByStdio } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
 import events from 'node:events';
 import os from 'node:os';
 import path from 'node:path';
-import stream from 'node:stream';
+import type stream from 'node:stream';
 
 export type FfmpegEvents = {
   // Emitted when the process ended with a code === 0, i.e. it exited

@@ -1,6 +1,6 @@
-import { Lineup } from '@/db/derived_types/Lineup.js';
+import type { Lineup } from '@/db/derived_types/Lineup.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import {
+import type {
   ShowProgrammingRandomSlot,
   ShowProgrammingTimeSlot,
 } from '@tunarr/types/api';

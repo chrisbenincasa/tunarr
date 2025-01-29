@@ -1,4 +1,4 @@
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isEmpty } from 'lodash-es';
 
 /**

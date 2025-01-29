@@ -2,7 +2,7 @@ import {
   ContentProgramTypeSchema,
   ResolutionSchema,
 } from '@tunarr/types/schemas';
-import { ColumnType } from 'kysely';
+import type { ColumnType } from 'kysely';
 import { z } from 'zod';
 
 export interface WithCreatedAt {

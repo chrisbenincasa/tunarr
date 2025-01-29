@@ -12,8 +12,7 @@
     "lint-staged": "lint-staged",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
-    "preinstall": "npx only-allow pnpm",
-    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky install"
+    "preinstall": "npx only-allow pnpm"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.7",
@@ -22,8 +21,8 @@
     "@commitlint/types": "^19.0.3",
     "@eslint/eslintrc": "^3.0.2",
     "@eslint/js": "^9.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.19.0",
-    "@typescript-eslint/parser": "^8.19.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
     "esbuild": "^0.21.5",
     "eslint": "9.17.0",
     "eslint-plugin-react": "^7.37.3",

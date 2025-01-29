@@ -1,5 +1,5 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
-import { Maybe, TupleToUnion } from '@/types/util.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
+import type { Maybe, TupleToUnion } from '@/types/util.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { isNonEmptyString, isProduction } from '@/util/index.js';
 import {
@@ -12,17 +12,16 @@ import {
   trim,
 } from 'lodash-es';
 import path, { join } from 'node:path';
+import type { Bindings, MultiStreamRes, StreamEntry } from 'pino';
 import {
-  Bindings,
-  MultiStreamRes,
-  StreamEntry,
   levels,
   pino,
   symbols,
   type LevelWithSilent,
   type Logger as PinoLogger,
 } from 'pino';
-import pretty, { PrettyOptions } from 'pino-pretty';
+import type { PrettyOptions } from 'pino-pretty';
+import pretty from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
 
 export const LogConfigEnvVars = {
@@ -224,7 +223,7 @@ class LoggerFactoryImpl {
       singleLine: true,
       ignore: 'pid,hostname',
       customLevels: {
-        http: 15,
+        http: 25,
       },
       customColors: {
         http: 'blue',

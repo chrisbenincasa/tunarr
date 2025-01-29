@@ -1,20 +1,22 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
-import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import type { SettingsDB } from '@/db/SettingsDB.js';
+import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { globalOptions, registerSingletonInitializer } from '@/globals.js';
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { FindChild } from '@tunarr/types';
+import type { FindChild } from '@tunarr/types';
 import { forEach, isBoolean, isEmpty, isNil, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { SettingsDBFactory } from '../db/SettingsDBFactory.js';
-import { BaseApiClient, RemoteMediaSourceOptions } from './BaseApiClient.js';
-import {
-  JellyfinApiClient,
-  JellyfinApiClientOptions,
-} from './jellyfin/JellyfinApiClient.js';
-import { PlexApiClient, PlexApiOptions } from './plex/PlexApiClient.js';
+import type {
+  BaseApiClient,
+  RemoteMediaSourceOptions,
+} from './BaseApiClient.js';
+import type { JellyfinApiClientOptions } from './jellyfin/JellyfinApiClient.js';
+import { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
+import type { PlexApiOptions } from './plex/PlexApiClient.js';
+import { PlexApiClient } from './plex/PlexApiClient.js';
 
 type TypeToClient = [
   [typeof MediaSourceType.Plex, PlexApiClient],

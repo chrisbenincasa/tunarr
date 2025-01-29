@@ -24,7 +24,9 @@
         "strictNullChecks": true,
         "types": [
             "vitest/globals",
-            "vitest/importMeta"
+            "vitest/importMeta",
+            "@types/bun",
+            "./src/generated/web-imports.d.ts"
         ],
         "noEmit": true,
         "declaration": true,
@@ -38,11 +40,13 @@
             ]
         },
         "rewriteRelativeImportExtensions": true,
+        "skipLibCheck": true
     },
     "include": [
         "./src/**/*.ts",
         "./scripts/**/*.ts",
         "./tests/**/*.ts",
+        "./src/generated/web-imports.js"
     ],
     "exclude": [
         "./build/**/*",

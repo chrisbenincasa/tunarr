@@ -1,5 +1,5 @@
 import { DateTimeRange } from '@/types/DateTimeRange.js';
-import { RouterPluginCallback } from '@/types/serverType.js';
+import type { RouterPluginCallback } from '@/types/serverType.js';
 import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';

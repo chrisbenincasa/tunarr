@@ -3,8 +3,8 @@ import { injectable } from 'inversify';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
 } from './HealthCheck.ts';

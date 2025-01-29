@@ -1,6 +1,7 @@
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { Resolution, TupleToUnion, defaultFfmpegSettings } from '@tunarr/types';
-import {
+import type { Resolution, TupleToUnion } from '@tunarr/types';
+import { defaultFfmpegSettings } from '@tunarr/types';
+import type {
   Generated,
   Insertable,
   JSONColumnType,
@@ -8,8 +9,8 @@ import {
   Updateable,
 } from 'kysely';
 import { v4 } from 'uuid';
-import { ReadableFfmpegSettings } from '../interfaces/ISettingsDB.ts';
-import { WithUuid } from './base.ts';
+import type { ReadableFfmpegSettings } from '../interfaces/ISettingsDB.ts';
+import type { WithUuid } from './base.ts';
 
 export const HardwareAccelerationModes = [
   'none',

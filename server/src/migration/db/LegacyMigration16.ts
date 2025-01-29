@@ -1,4 +1,5 @@
-import { CompiledQuery, Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
+import { CompiledQuery } from 'kysely';
 
 export default {
   async up(db: Kysely<unknown>): Promise<void> {

@@ -1,7 +1,7 @@
 import { ProgramMinterFactory } from '@/db/converters/ProgramMinter.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ProgramType } from '@/db/schema/Program.js';
-import { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
+import type { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -9,7 +9,7 @@ import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurations
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

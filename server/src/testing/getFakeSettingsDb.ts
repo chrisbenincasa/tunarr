@@ -1,7 +1,9 @@
-import { SettingsFile, getSettings } from '@/db/SettingsDB.js';
-import { GlobalOptions, globalOptions, setGlobalOptions } from '@/globals.js';
+import type { SettingsFile } from '@/db/SettingsDB.js';
+import { getSettings } from '@/db/SettingsDB.js';
+import type { GlobalOptions } from '@/globals.js';
+import { globalOptions, setGlobalOptions } from '@/globals.js';
 import tmp from 'tmp';
-import { DeepPartial } from 'ts-essentials';
+import type { DeepPartial } from 'ts-essentials';
 
 function createTmpDir(tmpOpts?: tmp.DirOptions) {
   return new Promise<string>((resolve, reject) => {

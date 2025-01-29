@@ -1,5 +1,5 @@
-import { Insertable, Selectable, Updateable } from 'kysely';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
+import type { Insertable, Selectable, Updateable } from 'kysely';
+import type { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export const ProgramGroupingType: Readonly<
   Record<Capitalize<ProgramGroupingType>, ProgramGroupingType>

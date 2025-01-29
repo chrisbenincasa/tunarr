@@ -1,8 +1,8 @@
 import { createExternalId } from '@tunarr/shared';
-import { TupleToUnion } from '@tunarr/types';
-import { Insertable, Selectable, Updateable } from 'kysely';
-import { MediaSourceType } from './MediaSource.ts';
-import { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
+import type { TupleToUnion } from '@tunarr/types';
+import type { Insertable, Selectable, Updateable } from 'kysely';
+import type { MediaSourceType } from './MediaSource.ts';
+import type { WithCreatedAt, WithUpdatedAt, WithUuid } from './base.ts';
 
 export const ProgramTypes = ['movie', 'episode', 'track'] as const;
 export const ProgramType = {

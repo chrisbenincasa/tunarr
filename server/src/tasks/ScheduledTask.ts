@@ -1,10 +1,12 @@
-import { Maybe } from '@/types/util.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Maybe } from '@/types/util.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
-import { interfaces } from 'inversify';
+import type { interfaces } from 'inversify';
 import { isDate } from 'lodash-es';
-import schedule, { RecurrenceRule } from 'node-schedule';
-import { Task } from './Task.js';
+import type { RecurrenceRule } from 'node-schedule';
+import schedule from 'node-schedule';
+import type { Task } from './Task.js';
 
 type ScheduleRule = RecurrenceRule | Date | string | number;
 

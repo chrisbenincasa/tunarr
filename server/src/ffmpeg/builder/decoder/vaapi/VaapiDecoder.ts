@@ -3,7 +3,7 @@ import {
   PixelFormatNv12,
   PixelFormatVaapi,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '../../types.ts';
 
 export class VaapiDecoder extends BaseDecoder {

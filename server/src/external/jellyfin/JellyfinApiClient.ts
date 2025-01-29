@@ -1,20 +1,23 @@
 import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.js';
-import { Maybe, Nilable } from '@/types/util.js';
+import type { Maybe, Nilable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
-import {
-  JellyfinAuthenticationResult,
+import type {
   JellyfinItem,
   JellyfinItemFields,
   JellyfinItemKind,
   JellyfinItemSortBy,
+} from '@tunarr/types/jellyfin';
+import {
+  JellyfinAuthenticationResult,
   JellyfinLibraryItemsResponse,
   JellyfinLibraryResponse,
   JellyfinSystemInfo,
   JellyfinUser,
 } from '@tunarr/types/jellyfin';
-import axios, { AxiosRequestConfig, isAxiosError } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import {
   find,
   isBoolean,
@@ -27,13 +30,12 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod';
-import {
-  BaseApiClient,
+import type {
   QueryErrorResult,
   QueryResult,
   RemoteMediaSourceOptions,
-  isQueryError,
 } from '../BaseApiClient.js';
+import { BaseApiClient, isQueryError } from '../BaseApiClient.js';
 
 const RequiredLibraryFields = [
   'Path',

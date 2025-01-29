@@ -1,8 +1,11 @@
-import { Maybe } from '@/types/util.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import PQueue, { Options, Queue, QueueAddOptions } from 'p-queue';
+import type { Maybe } from '@/types/util.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Options, Queue, QueueAddOptions } from 'p-queue';
+import PQueue from 'p-queue';
 import { v4 } from 'uuid';
-import { AnonymousTask, Task } from './Task.js';
+import type { Task } from './Task.js';
+import { AnonymousTask } from './Task.js';
 
 export class TaskQueue {
   #logger: Logger;

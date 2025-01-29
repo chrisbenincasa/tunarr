@@ -1,5 +1,5 @@
-import assert from 'assert';
 import { isFunction } from 'lodash-es';
+import assert from 'node:assert';
 import { isDev } from './index.ts';
 
 export function devAssert(condition: boolean | (() => boolean)) {

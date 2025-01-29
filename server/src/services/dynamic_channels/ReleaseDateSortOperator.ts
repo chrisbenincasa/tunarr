@@ -1,6 +1,6 @@
 import { isContentItem } from '@/db/derived_types/Lineup.js';
-import { ChannelAndLineup } from '@/types/internal.js';
-import { ReleaseDateSortOrderOperation } from '@tunarr/types/api';
+import type { ChannelAndLineup } from '@/types/internal.js';
+import type { ReleaseDateSortOrderOperation } from '@tunarr/types/api';
 import { filter, isNull, sortBy } from 'lodash-es';
 import { LineupCreatorContext } from './LineupCreatorContext.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';

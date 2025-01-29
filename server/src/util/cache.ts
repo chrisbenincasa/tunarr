@@ -1,5 +1,5 @@
 import { isUndefined } from 'lodash-es';
-import NodeCache from 'node-cache';
+import type NodeCache from 'node-cache';
 
 export async function cacheGetOrSet<T = unknown>(
   cache: NodeCache,

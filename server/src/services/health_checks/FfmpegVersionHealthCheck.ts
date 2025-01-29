@@ -1,4 +1,4 @@
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { FfmpegInfo, FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
 import { KEYS } from '@/types/inject.js';
 import { fileExists } from '@/util/fsUtil.js';
@@ -6,8 +6,8 @@ import { inject, injectable } from 'inversify';
 import { every, isNil, some } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
-  HealthCheck,
-  HealthCheckResult,
+  type HealthCheck,
+  type HealthCheckResult,
   HealthyHealthCheckResult,
   healthCheckResult,
 } from './HealthCheck.ts';

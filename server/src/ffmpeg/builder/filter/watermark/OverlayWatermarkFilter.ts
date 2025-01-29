@@ -1,8 +1,8 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
-import { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import { FrameSize } from '@/ffmpeg/builder/types.js';
-import { Watermark } from '@tunarr/types';
+import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameSize } from '@/ffmpeg/builder/types.js';
+import type { Watermark } from '@tunarr/types';
 
 export class OverlayWatermarkFilter extends FilterOption {
   public readonly affectsFrameState: boolean = true;

@@ -1,9 +1,7 @@
-import { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
-import {
-  HardwareAccelerationMode,
-  TranscodeConfig,
-} from '@/db/schema/TranscodeConfig.js';
-import {
+import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import type {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
 } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';

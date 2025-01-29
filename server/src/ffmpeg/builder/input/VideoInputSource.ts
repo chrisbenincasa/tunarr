@@ -1,9 +1,6 @@
-import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
-import {
-  InputSource,
-  InputSourceContinuity,
-  StreamSource,
-} from './InputSource.ts';
+import type { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import type { InputSourceContinuity, StreamSource } from './InputSource.ts';
+import { InputSource } from './InputSource.ts';
 
 export class VideoInputSource<
   StreamType extends VideoStream = VideoStream,

@@ -1,4 +1,4 @@
-import {
+import type {
   CaseWhenBuilder,
   ExpressionBuilder,
   UpdateQueryBuilder,
@@ -6,19 +6,16 @@ import {
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
-import { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
+import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import { getDatabase } from './DBAccess.ts';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
-import { ProgramType, ProgramTable as RawProgram } from './schema/Program.ts';
-import {
-  ProgramExternalId,
-  ProgramExternalIdFieldsWithAlias,
-} from './schema/ProgramExternalId.ts';
+import type { ProgramTable as RawProgram } from './schema/Program.ts';
+import { ProgramType } from './schema/Program.ts';
+import type { ProgramExternalId } from './schema/ProgramExternalId.ts';
+import { ProgramExternalIdFieldsWithAlias } from './schema/ProgramExternalId.ts';
 import type { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping.ts';
-import {
-  ProgramGroupingExternalId,
-  ProgramGroupingExternalIdFieldsWithAlias,
-} from './schema/ProgramGroupingExternalId.ts';
+import type { ProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
+import { ProgramGroupingExternalIdFieldsWithAlias } from './schema/ProgramGroupingExternalId.ts';
 import type { DB } from './schema/db.ts';
 
 type ProgramGroupingFields<Alias extends string = 'programGrouping'> =

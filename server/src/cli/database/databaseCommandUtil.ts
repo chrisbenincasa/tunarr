@@ -1,6 +1,6 @@
-import { Maybe } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { Migrator } from 'kysely';
+import type { Migrator } from 'kysely';
 import { isNil, isUndefined } from 'lodash-es';
 
 export async function isWrongMigrationDirection(

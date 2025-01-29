@@ -1,5 +1,5 @@
-import { Channel } from '@/db/schema/Channel.js';
-import { DynamicContentConfigSource } from '@tunarr/types/api';
+import type { Channel } from '@/db/schema/Channel.js';
+import type { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 
 const locks: Record<DynamicContentConfigSource['type'], Mutex> = {

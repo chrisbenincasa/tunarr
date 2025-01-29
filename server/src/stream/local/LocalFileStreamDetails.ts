@@ -1,20 +1,19 @@
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
-import { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import type { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.js';
+import type { Maybe, Nullable } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { filter, find, isEmpty, map } from 'lodash-es';
-import { NonEmptyArray } from 'ts-essentials';
-import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
-import {
+import type { NonEmptyArray } from 'ts-essentials';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import type {
   AudioStreamDetails,
-  FileStreamSource,
-  HttpStreamSource,
   ProgramStreamResult,
   VideoStreamDetails,
 } from '../types.ts';
+import { FileStreamSource, HttpStreamSource } from '../types.ts';
 
 export class LocalFileStreamDetails {
   private logger = LoggerFactory.child({ className: this.constructor.name });

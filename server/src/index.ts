@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';
 import {
   getDefaultDatabaseDirectory,
   getDefaultLogLevel,
 } from '@/util/defaults.js';
-import { LogLevels, ValidLogLevels } from '@/util/logging/LoggerFactory.js';
+import type { LogLevels } from '@/util/logging/LoggerFactory.js';
+import { ValidLogLevels } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { dayjsMod } from '@tunarr/shared/util';
+import chalk from 'chalk';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +22,32 @@ import { commands } from './cli/commands.ts';
 dayjs.extend(duration);
 dayjs.extend(dayjsMod);
 
-yargs(hideBin(process.argv))
+function printBanner() {
+  console.log(
+    `
+${chalk.blue(' _____')} ${chalk.green('_   _')}${chalk.yellow(
+      ' _  _ ',
+    )}${chalk.magentaBright('  _   ')}${chalk.red('___ ')}${chalk.cyan('___ ')}
+${chalk.blue('|_   _|')}${chalk.green(' | | | ')}${chalk.yellow(
+      '\\| |',
+    )}${chalk.magentaBright(' /_\\ ')}${chalk.red('| _ \\')}${chalk.cyan(
+      ' _ \\',
+    )}
+${chalk.blue('  | | ')}${chalk.green('| |_| |')}${chalk.yellow(
+      ' .` |',
+    )}${chalk.magentaBright('/ _ \\')}${chalk.red('|   /')}${chalk.cyan('   /')}
+${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
+      '|_|\\_/',
+    )}${chalk.magentaBright('_/ \\_\\')}${chalk.red('_|_\\')}${chalk.cyan(
+      '_|_\\',
+    )}
+\n\t  ${getTunarrVersion()}
+`,
+    // serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
+  );
+}
+
+await yargs(hideBin(process.argv))
   .scriptName('tunarr')
   .option('log_level', {
     type: 'string',
@@ -49,7 +75,11 @@ yargs(hideBin(process.argv))
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
-  .middleware([(opts) => setGlobalOptions(opts), () => bootstrapTunarr()])
+  .middleware([
+    () => printBanner(),
+    (opts) => setGlobalOptions(opts),
+    () => bootstrapTunarr(),
+  ])
   .version(getTunarrVersion())
   .command(commands)
   .help()

@@ -1,6 +1,6 @@
-import { ExcludeByValueType, TupleToUnion } from '@/types/util.js';
-import { Resolution } from '@tunarr/types';
-import { AnyFunction } from 'ts-essentials';
+import type { ExcludeByValueType, TupleToUnion } from '@/types/util.js';
+import type { Resolution } from '@tunarr/types';
+import type { AnyFunction } from 'ts-essentials';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 

@@ -1,20 +1,20 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
-import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import dayjs from '@/util/dayjs.js';
-import { Watermark } from '@tunarr/types';
+import type { Watermark } from '@tunarr/types';
 import { filter, first, isEmpty, isNull, some } from 'lodash-es';
 import { WatermarkFadeFilter } from '../../filter/watermark/WatermarkFadeFilter.ts';
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
-import { HasFilterOption } from '../../types/PipelineStep.ts';
+import type { HasFilterOption } from '../../types/PipelineStep.ts';
 import {
   BasePipelineBuilder,
   isVideoPipelineContext,

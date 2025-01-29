@@ -1,5 +1,5 @@
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
 const HdhrLineupSchema = z.object({

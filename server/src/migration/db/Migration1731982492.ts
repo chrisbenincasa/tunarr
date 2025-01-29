@@ -1,5 +1,6 @@
-import { CustomShowContent } from '@/db/schema/CustomShow.js';
-import { CompiledQuery, Kysely, Migration } from 'kysely';
+import type { CustomShowContent } from '@/db/schema/CustomShow.js';
+import type { Kysely, Migration } from 'kysely';
+import { CompiledQuery } from 'kysely';
 
 type DBTemp = {
   customShowContentTmp: CustomShowContent;

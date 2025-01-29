@@ -1,13 +1,11 @@
 import { container } from '@/container.js';
-import { setServerOptions } from '@/globals.js';
-import { Server } from '@/Server.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { getDefaultServerPort } from '@/util/defaults.js';
 import { isNonEmptyString, isProduction } from '@/util/index.js';
-import { getTunarrVersion } from '@/util/version.js';
-import chalk from 'chalk';
-import { ArgumentsCamelCase, CommandModule } from 'yargs';
-import { GlobalArgsType } from './types.ts';
+import type { ArgumentsCamelCase, CommandModule } from 'yargs';
+import { setServerOptions } from '../globals.ts';
+import { Server } from '../Server.ts';
+import type { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {
   port: number;
@@ -44,35 +42,8 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
       },
     },
   },
-  handler: async (args: ArgumentsCamelCase<ServerArgsType>) => {
-    const serverOpts = setServerOptions(args);
-
-    console.log(
-      `
-${chalk.blue(' _____')} ${chalk.green('_   _')}${chalk.yellow(
-        ' _  _ ',
-      )}${chalk.magentaBright('  _   ')}${chalk.red('___ ')}${chalk.cyan(
-        '___ ',
-      )}
-${chalk.blue('|_   _|')}${chalk.green(' | | | ')}${chalk.yellow(
-        '\\| |',
-      )}${chalk.magentaBright(' /_\\ ')}${chalk.red('| _ \\')}${chalk.cyan(
-        ' _ \\',
-      )}
-${chalk.blue('  | | ')}${chalk.green('| |_| |')}${chalk.yellow(
-        ' .` |',
-      )}${chalk.magentaBright('/ _ \\')}${chalk.red('|   /')}${chalk.cyan(
-        '   /',
-      )}
-${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
-        '|_|\\_/',
-      )}${chalk.magentaBright('_/ \\_\\')}${chalk.red('_|_\\')}${chalk.cyan(
-        '_|_\\',
-      )}
-\n\t  ${getTunarrVersion()}
-`,
-      serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
-    );
+  handler: async (opts: ArgumentsCamelCase<ServerArgsType>) => {
+    setServerOptions(opts);
     await container.get(Server).initAndRun();
   },
 };

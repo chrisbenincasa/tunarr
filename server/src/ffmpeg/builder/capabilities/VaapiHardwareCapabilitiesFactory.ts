@@ -1,5 +1,5 @@
-import { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
+import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
 import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
 import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.js';

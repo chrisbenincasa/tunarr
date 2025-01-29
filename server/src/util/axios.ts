@@ -1,6 +1,7 @@
-import { AxiosInstance, InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { isAxiosError } from 'axios';
 import querystring from 'node:querystring';
-import { Logger } from './logging/LoggerFactory.ts';
+import type { Logger } from './logging/LoggerFactory.ts';
 
 type AxiosConfigWithMetadata = InternalAxiosRequestConfig & {
   metadata: {
@@ -23,7 +24,6 @@ export function configureAxiosLogging(instance: AxiosInstance, logger: Logger) {
   };
 
   instance.interceptors.request.use((req) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     (req as AxiosConfigWithMetadata).metadata = {
       startTime: new Date().getTime(),
     };

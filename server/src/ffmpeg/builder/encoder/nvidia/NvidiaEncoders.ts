@@ -1,6 +1,6 @@
 import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
-import { Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 
 export class NvidiaHevcEncoder extends VideoEncoder {

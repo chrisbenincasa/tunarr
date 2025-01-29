@@ -1,10 +1,9 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import { NewCustomShowContent } from '@/db/schema/CustomShow.js';
-import { NewFillerShowContent } from '@/db/schema/FillerShow.js';
+import type { NewCustomShowContent } from '@/db/schema/CustomShow.js';
+import type { NewFillerShowContent } from '@/db/schema/FillerShow.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
-import fs from 'fs/promises';
 import {
   chunk,
   compact,
@@ -18,7 +17,8 @@ import {
   sortBy,
   uniqBy,
 } from 'lodash-es';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {
   ProgramUpsertFields,
   withCustomShowPrograms,
@@ -31,10 +31,9 @@ import {
   mapAsyncSeq,
   mapToObj,
 } from '../../util/index.ts';
-import { CustomShow } from './legacyDbMigration.ts';
+import type { CustomShow } from './legacyDbMigration.ts';
+import type { JSONArray, JSONObject } from './migrationUtil.ts';
 import {
-  JSONArray,
-  JSONObject,
   convertRawProgram,
   createProgramEntity,
   uniqueProgramId,

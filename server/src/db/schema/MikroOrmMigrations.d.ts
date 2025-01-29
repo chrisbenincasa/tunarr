@@ -1,4 +1,4 @@
-import { Generated, Selectable } from 'kysely';
+import type { Generated, Selectable } from 'kysely';
 
 export interface MikroOrmMigrationsTable {
   executedAt: Generated<number>; // Timestamp

@@ -1,6 +1,6 @@
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';

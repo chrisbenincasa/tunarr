@@ -1,28 +1,31 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import { OutputFormat } from '@/ffmpeg/builder/constants.js';
+import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
-import { ConcatSession, ConcatSessionFactory } from '@/stream/ConcatSession.js';
-import { ConcatStream, ConcatStreamFactory } from '@/stream/ConcatStream.js';
+import type { ConcatSessionFactory } from '@/stream/ConcatSession.js';
+import { ConcatSession } from '@/stream/ConcatSession.js';
+import type { ConcatStreamFactory } from '@/stream/ConcatStream.js';
+import { ConcatStream } from '@/stream/ConcatStream.js';
 import { OfflineProgramStream } from '@/stream/OfflineProgramStream.js';
-import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import { ProgramStream } from '@/stream/ProgramStream.js';
+import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
+import type { ProgramStream } from '@/stream/ProgramStream.js';
 import { SessionManager } from '@/stream/SessionManager.js';
 import { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
-import {
-  HlsSession,
+import type {
   HlsSessionProvider,
   HlsSlowerSessionProvider,
 } from '@/stream/hls/HlsSession.js';
+import { HlsSession } from '@/stream/hls/HlsSession.js';
 import { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.js';
 import { JellyfinStreamDetails } from '@/stream/jellyfin/JellyfinStreamDetails.js';
 import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.js';
 import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import { KEYS } from '@/types/inject.js';
-import { ContainerModule, interfaces } from 'inversify';
-import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import type { interfaces } from 'inversify';
+import { ContainerModule } from 'inversify';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 
 export type ProgramStreamFactoryType = (

@@ -1,6 +1,6 @@
 import { DefaultChannelIcon } from '@/db/schema/base.js';
-import { ChannelAndLineup } from '@/types/internal.js';
-import { Channel } from '@tunarr/types';
+import type { ChannelAndLineup } from '@/types/internal.js';
+import type { Channel } from '@tunarr/types';
 import { filter } from 'lodash-es';
 import {
   isDefined,

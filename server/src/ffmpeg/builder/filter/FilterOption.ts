@@ -1,5 +1,5 @@
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import {
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type {
   FilterOptionPipelineStep,
   HasFilterOption,
 } from '../types/PipelineStep.ts';

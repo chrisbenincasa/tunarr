@@ -1,8 +1,8 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.js';
-import { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
+import type { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
 import { Av1Decoder } from '@/ffmpeg/builder/decoder/Av1Decoder.js';
-import { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
+import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
 import { H264Decoder } from '@/ffmpeg/builder/decoder/H264Decoder.js';
 import { HevcDecoder } from '@/ffmpeg/builder/decoder/HevcDecoder.js';
 import { ImplicitDecoder } from '@/ffmpeg/builder/decoder/ImplicitDecoder.js';
@@ -10,10 +10,8 @@ import { Mpeg2Decoder } from '@/ffmpeg/builder/decoder/Mpeg2Decoder.js';
 import { Mpeg4Decoder } from '@/ffmpeg/builder/decoder/Mpeg4Decoder.js';
 import { RawVideoDecoder } from '@/ffmpeg/builder/decoder/RawVideoDecoder.js';
 import { Vc1Decoder } from '@/ffmpeg/builder/decoder/Vc1Decoder.js';
-import {
-  AudioEncoder,
-  VideoEncoder,
-} from '@/ffmpeg/builder/encoder/BaseEncoder.js';
+import type { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
+import { AudioEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { AudioPadFilter } from '@/ffmpeg/builder/filter/AudioPadFilter.js';
 import { AudioFirstPtsFilter } from '@/ffmpeg/builder/filter/AudioResampleFilter.js';
@@ -21,10 +19,10 @@ import { ComplexFilter } from '@/ffmpeg/builder/filter/ComplexFilter.js';
 import { FilterChain } from '@/ffmpeg/builder/filter/FilterChain.js';
 import { LoopFilter } from '@/ffmpeg/builder/filter/LoopFilter.js';
 import { RealtimeFilter } from '@/ffmpeg/builder/filter/RealtimeFilter.js';
-import { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
-import { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
-import { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
+import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
+import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
+import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { HlsConcatOutputFormat } from '@/ffmpeg/builder/options/HlsConcatOutputFormat.js';
 import { HlsOutputFormat } from '@/ffmpeg/builder/options/HlsOutputFormat.js';
 import { LogLevelOption } from '@/ffmpeg/builder/options/LogLevelOption.js';
@@ -36,20 +34,21 @@ import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/Infinite
 import { ReadrateInputOption } from '@/ffmpeg/builder/options/input/ReadrateInputOption.js';
 import { StreamSeekInputOption } from '@/ffmpeg/builder/options/input/StreamSeekInputOption.js';
 import { UserAgentInputOption } from '@/ffmpeg/builder/options/input/UserAgentInputOption.js';
-import { AudioState } from '@/ffmpeg/builder/state/AudioState.js';
-import { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { AudioState } from '@/ffmpeg/builder/state/AudioState.js';
+import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import {
+import type {
   IPipelineStep,
   PipelineStep,
 } from '@/ffmpeg/builder/types/PipelineStep.js';
-import { Nilable, Nullable } from '@/types/util.js';
+import type { Nilable, Nullable } from '@/types/util.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
-import { Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { filter, first, isNil, isNull, isUndefined } from 'lodash-es';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
   OutputFormatTypes,
@@ -103,7 +102,7 @@ import {
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption.ts';
 import { Pipeline } from './Pipeline.ts';
-import { PipelineBuilder } from './PipelineBuilder.ts';
+import type { PipelineBuilder } from './PipelineBuilder.ts';
 
 // Args passed to each setter -- we use an object here so we
 // 1. can deconstruct args in each implementor to use only what we need

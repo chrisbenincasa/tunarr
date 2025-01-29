@@ -1,6 +1,7 @@
 import { container } from '@/container.js';
+import webImports from '@/generated/web-imports.js';
 import { KEYS } from '@/types/inject.js';
-import { ServerType } from '@/types/serverType.js';
+import type { ServerType } from '@/types/serverType.js';
 import { getTunarrVersion } from '@/util/version.js';
 import cors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
@@ -16,7 +17,8 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
-import { RouteOptions } from 'fastify/types/route.js';
+import type { FastifyReply } from 'fastify/types/reply.js';
+import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
@@ -27,7 +29,7 @@ import {
   values,
 } from 'lodash-es';
 import schedule from 'node-schedule';
-import path, { dirname } from 'path';
+import path, { dirname } from 'node:path';
 import 'reflect-metadata';
 import { z } from 'zod';
 import { HdhrApiRouter } from './api/hdhrApi.js';
@@ -36,7 +38,7 @@ import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
 import {
-  ServerOptions,
+  type ServerOptions,
   initializeSingletons,
   serverOptions,
 } from './globals.js';
@@ -46,7 +48,7 @@ import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
-import { Logger, RootLogger } from './util/logging/LoggerFactory.js';
+import { type Logger, RootLogger } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -395,31 +397,52 @@ export class Server {
       .register(streamApi)
       // Serve the webapp
       .register(
-        async (f) => {
-          // For assets that exist...
-          await f.register(fpStatic, {
-            root: path.join(currentDirectory, 'web'),
-            schemaHide: true,
+        (f, _, done) => {
+          function sendIndex(res: FastifyReply) {
+            return res
+              .header('content-type', webImports['index.html'].type)
+              .header('content-length', webImports['index.html'].size)
+              .send(webImports['index.html'].stream());
+          }
+
+          f.route({
+            method: ['HEAD', 'GET'],
+            schema: {
+              hide: true,
+            },
+            config: {
+              disableRequestLogging: true,
+            },
+            url: '/*',
+            handler: async (req, res) => {
+              const rawPath = req.url.replace('/web/', '');
+              if (rawPath in webImports) {
+                const file = webImports[rawPath];
+                if (file) {
+                  return res
+                    .header('content-type', file.type)
+                    .header('content-length', file.size)
+                    .send(file.stream());
+                } else {
+                  return sendIndex(res);
+                }
+              }
+            },
           });
+
           // Make it work with just '/web' and not '/web/;
           f.get(
             '/',
             { schema: { hide: true }, config: { disableRequestLogging: true } },
-            async (_, res) => {
-              return res.sendFile(
-                'index.html',
-                path.join(currentDirectory, 'web'),
-              );
-            },
+            async (_, res) => sendIndex(res),
           );
           // client side routing 'hack'. This makes navigating to other client-side
           // routes work as expected.
           f.setNotFoundHandler(async (_, res) => {
-            return res.sendFile(
-              'index.html',
-              path.join(currentDirectory, 'web'),
-            );
+            return sendIndex(res);
           });
+
+          done();
         },
         { prefix: '/web' },
       )

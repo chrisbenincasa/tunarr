@@ -7,3 +7,7 @@ streams/
 *.log
 **/web/
 *.zip
+
+src/generated/**
+!src/generated/web-imports.d.ts
+!src/generated/.gitkeep

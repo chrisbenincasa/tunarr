@@ -4,7 +4,9 @@
     "topo": {
       "dependsOn": ["^topo"]
     },
-    "clean": {},
+    "clean": {
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["build/**", "dist/**"]

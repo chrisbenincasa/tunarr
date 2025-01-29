@@ -1,7 +1,7 @@
-import { Lineup } from '@/db/derived_types/Lineup.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { Migration } from '@/migration/Migration.js';
+import type { Lineup } from '@/db/derived_types/Lineup.js';
+import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type { Migration } from '@/migration/Migration.js';
 
 export abstract class ChannelLineupMigration<
   From extends number,

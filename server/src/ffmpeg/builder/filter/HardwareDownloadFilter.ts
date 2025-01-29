@@ -1,4 +1,4 @@
-import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { PixelFormatVaapi } from '../format/PixelFormat.ts';
 import { FrameDataLocation } from '../types.ts';
 import { FilterOption } from './FilterOption.ts';

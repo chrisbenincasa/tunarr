@@ -1,6 +1,6 @@
 import { getDatabase } from '@/db/DBAccess.js';
-import { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { NewCachedImage } from '@/db/schema/CachedImage.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import type { NewCachedImage } from '@/db/schema/CachedImage.ts';
 import {
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,
@@ -14,7 +14,7 @@ import { AnonymousTask } from '@/tasks/Task.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { attempt } from '@/util/index.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import {
   FfmpegSettings,
@@ -33,7 +33,6 @@ import {
   SupportedVideoFormats,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import fs from 'fs/promises';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
@@ -46,7 +45,8 @@ import {
   mergeWith,
   sortBy,
 } from 'lodash-es';
-import path, { dirname, join } from 'path';
+import fs from 'node:fs/promises';
+import path, { dirname, join } from 'node:path';
 import { v4 } from 'uuid';
 import { z } from 'zod';
 import { Settings, defaultXmlTvSettings } from '../../db/SettingsDB.ts';

@@ -6,7 +6,7 @@ import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.js';
 import { ProgramDao } from '@/db/schema/Program.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
 import { Maybe } from '@/types/util.js';
-import { Logger } from '@/util/logging/LoggerFactory.js';
+import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
   Channel as ApiChannel,
@@ -30,7 +30,7 @@ import {
   values,
 } from 'lodash-es';
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'node:path';
 import { v4 } from 'uuid';
 import {
   ContentItem,
@@ -43,7 +43,7 @@ import {
 
 import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import { inject, injectable } from 'inversify';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { type IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   emptyStringToUndefined,

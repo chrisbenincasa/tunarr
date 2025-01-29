@@ -1,6 +1,6 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
-import { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
@@ -57,7 +57,7 @@ import {
 } from 'lodash-es';
 import { Low } from 'lowdb';
 import fs from 'node:fs/promises';
-import { join } from 'path';
+import { join } from 'node:path';
 import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
@@ -106,10 +106,10 @@ import {
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
-import {
+import type {
   ChannelWithRelations,
   ChannelWithPrograms as RawChannelWithPrograms,
-} from './schema/derivedTypes.js';
+} from './schema/derivedTypes.ts';
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").

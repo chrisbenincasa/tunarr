@@ -1,6 +1,6 @@
-import { Insertable, Selectable } from 'kysely';
-import { MarkRequired } from 'ts-essentials';
-import {
+import type { Insertable, Selectable } from 'kysely';
+import type { MarkRequired } from 'ts-essentials';
+import type {
   ProgramExternalIdSourceType,
   WithCreatedAt,
   WithUpdatedAt,
