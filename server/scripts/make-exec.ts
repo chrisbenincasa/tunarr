@@ -12,9 +12,11 @@ const ALL_TARGETS = [
   'macos-arm64',
 ];
 
-await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
-  recursive: true,
-});
+const isEdgeBuild =
+  process.env['TUNARR_EDGE_BUILD'] ===
+  (await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
+    recursive: true,
+  }));
 
 const args = await yargs(hideBin(process.argv))
   .scriptName('tunarr-make-exec')
@@ -38,7 +40,7 @@ const args = await yargs(hideBin(process.argv))
 
 for (const arch of args.target) {
   let name = 'tunarr';
-  if (args.includeVersion) {
+  if (args.includeVersion && !isEdgeBuild) {
     name += `-${serverPackage.version}`;
   }
   name += `-${arch}`;
@@ -49,8 +51,12 @@ for (const arch of args.target) {
     'bun',
     'build',
     '--compile',
+    '--minify-whitespace',
+    '--minify-syntax',
     '--asset-naming',
     '[name].[ext]',
+    '--env',
+    `'TUNARR_*'`,
     ...(args.sourcemap ? ['--sourcemap'] : []),
     'src/index.ts',
     '--outfile',

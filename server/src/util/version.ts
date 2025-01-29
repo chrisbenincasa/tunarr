@@ -1,15 +1,6 @@
 import tunarrPackage from '../../package.json' with { type: 'json' };
 import { isNonEmptyString } from './index.js';
 
-// const loadPackageVersion = (path: string) => {
-//   try {
-//     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-//     return require(path).version as string;
-//   } catch {
-//     return;
-//   }
-// };
-
 let tunarrVersion: string;
 export const getTunarrVersion = () => {
   if (!tunarrVersion) {
@@ -18,13 +9,6 @@ export const getTunarrVersion = () => {
 
     // Attempt to set for dev. This is relative to the shared package
     tunarrVersion = tunarrPackage.version ?? '';
-
-    // Attempt to set in prod. This is the root package.json that gets copied
-    // over at build time. In theory, it has the same value as the shared/package.json
-    // always.
-    // if (tunarrVersion === '') {
-    //   tunarrVersion = loadPackageVersion('./package.json') ?? '';
-    // }
 
     if (isNonEmptyString(tunarrBuild) && isEdge) {
       tunarrVersion += `-${tunarrBuild}`;
