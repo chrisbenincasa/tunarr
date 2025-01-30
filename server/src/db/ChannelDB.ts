@@ -70,7 +70,6 @@ import {
   run,
 } from '../util/index.ts';
 import { getDatabase } from './DBAccess.ts';
-import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import {
   ContentItem,
@@ -87,6 +86,7 @@ import {
   PageParams,
   UpdateChannelLineupRequest,
 } from './interfaces/IChannelDB.ts';
+import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import {
   AllProgramGroupingFields,
   MinimalProgramGroupingFields,
@@ -442,7 +442,8 @@ export class ChannelDB implements IChannelDB {
         await tx
           .updateTable('channel')
           .where('channel.uuid', '=', id)
-          .limit(1)
+          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
           .set(update)
           .executeTakeFirstOrThrow();
 
@@ -509,7 +510,8 @@ export class ChannelDB implements IChannelDB {
       await getDatabase()
         .deleteFrom('channel')
         .where('uuid', '=', channelId)
-        .limit(1)
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
         .executeTakeFirstOrThrow();
 
       // Best effort remove references to this channel
@@ -616,7 +618,8 @@ export class ChannelDB implements IChannelDB {
           await tx
             .updateTable('channel')
             .where('channel.uuid', '=', id)
-            .limit(1)
+            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+            // .limit(1)
             .set({
               startTime,
               duration: sumBy(lineup, typedProperty('durationMs')),

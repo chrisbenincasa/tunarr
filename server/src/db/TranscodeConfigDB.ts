@@ -173,7 +173,8 @@ export class TranscodeConfigDB {
           await tx
             .deleteFrom('transcodeConfig')
             .where('uuid', '=', id)
-            .limit(1)
+            // TODO: Blocked in https://github.com/oven-sh/bun/issues/16909
+            // .limit(1)
             .execute();
           return;
         }
@@ -191,7 +192,8 @@ export class TranscodeConfigDB {
             .updateTable('transcodeConfig')
             .set('isDefault', 1)
             .where('uuid', '=', newDefaultConfig.uuid)
-            .limit(1)
+            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+            // .limit(1)
             .execute();
           await tx
             .updateTable('channel')
@@ -202,7 +204,8 @@ export class TranscodeConfigDB {
         await tx
           .deleteFrom('transcodeConfig')
           .where('uuid', '=', id)
-          .limit(1)
+          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
           .execute();
       });
   }

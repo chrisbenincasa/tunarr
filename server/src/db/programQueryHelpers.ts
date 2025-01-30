@@ -1,3 +1,4 @@
+import { type TupleToUnion } from '@tunarr/types';
 import type {
   CaseWhenBuilder,
   ExpressionBuilder,
@@ -269,19 +270,32 @@ type ProgramUpsertFields = StrictExclude<
   'excluded.uuid' | 'excluded.createdAt'
 >;
 
-const ProgramUpsertIgnoreFields: ProgramField[] = [
+const ProgramUpsertIgnoreFields = [
   'program.uuid',
   'program.createdAt',
   'program.tvShowUuid',
   'program.albumUuid',
   'program.artistUuid',
   'program.seasonUuid',
-];
+] as const;
+
+type KnownProgramUpsertFields = StrictExclude<
+  TupleToUnion<typeof AllProgramFields>,
+  TupleToUnion<typeof ProgramUpsertIgnoreFields>
+>;
 
 export const ProgramUpsertFields: ProgramUpsertFields[] =
-  AllProgramFields.filter((f) => !ProgramUpsertIgnoreFields.includes(f)).map(
-    (v) => v.replace('program.', 'excluded.'),
-  ) as ProgramUpsertFields[];
+  AllProgramFields.filter(
+    (f): f is KnownProgramUpsertFields =>
+      !(ProgramUpsertIgnoreFields as ReadonlyArray<ProgramField>).includes(f),
+  ).map(
+    (v) =>
+      v.replace('program.', 'excluded.') as Replace<
+        typeof v,
+        'program',
+        'excluded'
+      >,
+  );
 
 export type WithProgramsOptions = {
   joins?: Partial<ProgramJoins>;

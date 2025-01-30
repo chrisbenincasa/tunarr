@@ -6,6 +6,7 @@ import type { Adapter } from 'lowdb';
 import { TextFile } from 'lowdb/node';
 import type { PathLike } from 'node:fs';
 import type { z } from 'zod';
+import { BunFileAdapter } from './BunFileAdapter.ts';
 
 export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   implements Adapter<Out>
@@ -15,12 +16,12 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     className: this.constructor.name,
   });
   private path: PathLike;
-  private adapter: TextFile;
 
   constructor(
     private schema: T,
     filename: PathLike,
     private defaultValue: Nullable<Out> = null,
+    private adapter: Adapter<string> = new BunFileAdapter(filename),
   ) {
     this.schema = schema;
     this.path = filename;

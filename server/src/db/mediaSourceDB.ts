@@ -121,7 +121,8 @@ export class MediaSourceDB {
     await getDatabase()
       .deleteFrom('mediaSource')
       .where('uuid', '=', id)
-      .limit(1)
+      // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+      // .limit(1)
       .execute();
 
     let reports: Report[];
@@ -162,7 +163,8 @@ export class MediaSourceDB {
         updatedAt: +dayjs(),
       })
       .where('uuid', '=', server.id)
-      .limit(1)
+      // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+      // .limit(1)
       .executeTakeFirst();
 
     const report = await this.fixupProgramReferences(id, s.type, s);

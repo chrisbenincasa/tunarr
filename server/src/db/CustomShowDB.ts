@@ -119,7 +119,8 @@ export class CustomShowDB {
       await getDatabase()
         .updateTable('customShow')
         .where('uuid', '=', show.uuid)
-        .limit(1)
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
         .set({ name: updateRequest.name })
         .execute();
     }

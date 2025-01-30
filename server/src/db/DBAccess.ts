@@ -1,7 +1,7 @@
 import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Database } from 'bun:sqlite';
-import { BunSqliteDialect } from 'kysely-bun-sqlite';
+import { BunSqliteDialect } from './dialect/BunSqliteDialect.ts';
 // import { Database } from '@db/sqlite';
 import dayjs from 'dayjs';
 import {
@@ -27,17 +27,11 @@ const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
 export const initDatabaseAccess = once((dbName: string) => {
   _directDbAccess = new Kysely<DB>({
-    // dialect: new SqliteDialect({
-    //   database: new Sqlite(dbName, {
-    //     timeout: 5000,
-    //   }),
-    // }),
     dialect: new BunSqliteDialect({
-      database: new Database(dbName),
+      database: new Database(dbName, {
+        strict: true,
+      }),
     }),
-    // dialect: new DenoSqliteDialect({
-    //   database: new Database(dbName),
-    // }),
     log: (event) => {
       switch (event.level) {
         case 'query':

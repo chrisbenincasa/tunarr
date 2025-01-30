@@ -35,7 +35,8 @@ export class AddPlexServerIdsFixer extends Fixer {
               clientIdentifier: matchingServer.clientIdentifier,
             })
             .where('uuid', '=', server.uuid)
-            .limit(1)
+            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+            // .limit(1)
             .executeTakeFirst();
         }
       }

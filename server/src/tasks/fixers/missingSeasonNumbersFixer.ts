@@ -8,7 +8,7 @@ import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
-import { groupByUniqPropAndMap, wait } from '@/util/index.js';
+import { groupByUniqPropAndMap, isDefined, wait } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
@@ -227,12 +227,15 @@ export class MissingSeasonNumbersFixer extends Fixer {
       }
 
       const plexSeason = first(plexResult.Metadata)!;
-      await getDatabase()
-        .updateTable('programGrouping')
-        .set({ index: plexSeason.index })
-        .where('uuid', '=', season.uuid)
-        .limit(1)
-        .execute();
+      if (isDefined(plexSeason.index)) {
+        await getDatabase()
+          .updateTable('programGrouping')
+          .set({ index: plexSeason.index })
+          .where('uuid', '=', season.uuid)
+          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
+          .execute();
+      }
     }
   }
 

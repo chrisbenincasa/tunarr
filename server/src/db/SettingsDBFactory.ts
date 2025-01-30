@@ -7,7 +7,8 @@ import { Low, LowSync } from 'lowdb';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { DeepPartial } from 'ts-essentials';
-import { SchemaBackedDbAdapter } from './SchemaBackedJsonDBAdapter.ts';
+import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
+import { SyncSchemaBackedDbAdapter } from './json/SyncSchemaBackedJSONDBAdapter.ts';
 import {
   CURRENT_VERSION,
   SettingsDB,
@@ -15,7 +16,6 @@ import {
   SettingsFileSchema,
   defaultSettings,
 } from './SettingsDB.ts';
-import { SyncSchemaBackedDbAdapter } from './SyncSchemaBackedJSONDBAdapter.ts';
 
 @injectable()
 export class SettingsDBFactory {
