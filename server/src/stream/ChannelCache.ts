@@ -1,5 +1,5 @@
-import { InMemoryCachedDbAdapter } from '@/db/InMemoryCachedDbAdapter.js';
-import { SchemaBackedDbAdapter } from '@/db/SchemaBackedJsonDBAdapter.js';
+import { InMemoryCachedDbAdapter } from '@/db/json/InMemoryCachedDbAdapter.js';
+import { SchemaBackedDbAdapter } from '@/db/json/SchemaBackedJsonDBAdapter.js';
 import { globalOptions } from '@/globals.js';
 import { isDefined } from '@/util/index.js';
 import constants from '@tunarr/shared/constants';

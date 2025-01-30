@@ -207,8 +207,10 @@ export class FillerDB {
         );
 
         forEach(values(fillersByChannel), (cfs) => {
-          const removedWeight = find(cfs, (cf) => cf.fillerShowUuid === id)
-            ?.weight;
+          const removedWeight = find(
+            cfs,
+            (cf) => cf.fillerShowUuid === id,
+          )?.weight;
           if (isUndefined(removedWeight)) {
             return;
           }
@@ -283,7 +285,8 @@ export class FillerDB {
         await tx
           .deleteFrom('fillerShow')
           .where('uuid', '=', id)
-          .limit(1)
+          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
           .execute();
       });
 

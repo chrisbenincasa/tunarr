@@ -15,16 +15,15 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     className: this.constructor.name,
   });
   private path: PathLike;
-  private adapter: TextFileSync;
 
   constructor(
     private schema: T,
     filename: PathLike,
     private defaultValue: Nullable<Out> = null,
+    private adapter: SyncAdapter<string> = new TextFileSync(filename),
   ) {
     this.schema = schema;
     this.path = filename;
-    this.adapter = new TextFileSync(filename);
   }
 
   read(): Nullable<Out> {

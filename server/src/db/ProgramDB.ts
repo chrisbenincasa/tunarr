@@ -426,7 +426,8 @@ export class ProgramDB implements IProgramDB {
               '=',
               oldExternalId.sourceType,
             )
-            .limit(1)
+            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+            // .limit(1)
             .execute();
         }
         await tx

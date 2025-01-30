@@ -240,6 +240,6 @@ export class ProgramGroupingMinter {
       artistUuid: null,
       showUuid: null,
       year: item.parent.year,
-    };
+    } satisfies NewProgramGrouping;
   }
 }
