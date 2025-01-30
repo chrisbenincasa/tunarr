@@ -15,7 +15,7 @@ export class SqliteDatabaseBackup {
     await wait();
 
     try {
-      conn.exec(`VACCUM INTO '${outFile}'`);
+      conn.exec(`VACUUM INTO '${outFile}'`);
     } catch (e) {
       this.#logger.error(e, 'Error while backing up database!');
     } finally {
