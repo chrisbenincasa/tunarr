@@ -22,6 +22,7 @@ import {
   filter,
   get,
   isBoolean,
+  isEmpty,
   isUndefined,
   keys,
   map,
@@ -193,7 +194,7 @@ export class LegacyChannelMigrator {
           .execute((tx) =>
             tx
               .insertInto('program')
-              .values(map(c, 'program'))
+              .values(c)
               .onConflict((oc) =>
                 oc
                   .columns(['sourceType', 'externalSourceId', 'externalKey'])
@@ -245,25 +246,29 @@ export class LegacyChannelMigrator {
           .where('channelCustomShows.channelUuid', '=', channelEntity.uuid)
           .execute();
         // Update associations from custom show <-> channel
-        await tx
-          .insertInto('channelCustomShows')
-          .values(
-            map(customShowRefs, (cs) => ({
-              customShowUuid: cs,
-              channelUuid: channelEntity.uuid,
-            })),
-          )
-          .execute();
+        if (customShowRefs.length > 0) {
+          await tx
+            .insertInto('channelCustomShows')
+            .values(
+              map(customShowRefs, (cs) => ({
+                customShowUuid: cs,
+                channelUuid: channelEntity.uuid,
+              })),
+            )
+            .execute();
+        }
         // Associate the programs with the channel
-        await tx
-          .insertInto('channelPrograms')
-          .values(
-            map(values(dbProgramById), (id) => ({
-              programUuid: id.uuid,
-              channelUuid: channelEntity.uuid,
-            })),
-          )
-          .execute();
+        if (!isEmpty(dbProgramById)) {
+          await tx
+            .insertInto('channelPrograms')
+            .values(
+              map(values(dbProgramById), (id) => ({
+                programUuid: id.uuid,
+                channelUuid: channelEntity.uuid,
+              })),
+            )
+            .execute();
+        }
       });
 
     this.logger.debug('Saving channel lineup %s', channelEntity.uuid);

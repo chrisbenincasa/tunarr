@@ -1,4 +1,4 @@
-import { serverOptions } from '@/globals.js';
+import { globalOptions } from '@/globals.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import NodeCache from 'node-cache';
@@ -16,7 +16,7 @@ export class FileCacheService {
   });
 
   constructor(
-    public cachePath: string = join(serverOptions().databaseDirectory, 'cache'),
+    public cachePath: string = join(globalOptions().databaseDirectory, 'cache'),
     private enableInMemoryCache: boolean = true,
   ) {}
 

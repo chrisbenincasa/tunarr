@@ -8,7 +8,7 @@ import {
 } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
-import { globalOptions } from './globals.js';
+import { type GlobalOptions, globalOptions } from './globals.js';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 
@@ -27,10 +27,8 @@ export async function migrateFromPreAlphaDefaultDb(targetDir: string) {
  * subdirectories
  * @returns True if an existing database directory was found
  */
-async function initDbDirectories() {
+async function initDbDirectories(opts: GlobalOptions) {
   // Early init, have to use the non-settings-based root Logger
-  const opts = globalOptions();
-
   for (const subpaths of [
     ['channel-lineups'],
     ['images'],
@@ -51,9 +49,9 @@ async function initDbDirectories() {
 }
 
 export async function bootstrapTunarr(
+  opts: GlobalOptions = globalOptions(),
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
-  const opts = globalOptions();
   const hasTunarrDb = await fileExists(opts.databaseDirectory);
   if (!hasTunarrDb) {
     RootLogger.info(`Existing database at ${opts.databaseDirectory} not found`);
@@ -61,7 +59,7 @@ export async function bootstrapTunarr(
     await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
   }
 
-  const settingsDb = new SettingsDBFactory(globalOptions()).get(
+  const settingsDb = new SettingsDBFactory(opts).get(
     undefined,
     initialSettings,
   );
@@ -71,8 +69,8 @@ export async function bootstrapTunarr(
     await settingsDb.flush();
   }
 
-  await initDbDirectories();
-  initDatabaseAccess(path.join(globalOptions().databaseDirectory, 'db.db'));
+  await initDbDirectories(opts);
+  initDatabaseAccess(path.join(opts.databaseDirectory, 'db.db'));
   await syncMigrationTablesIfNecessary();
   LoggerFactory.initialize(settingsDb);
 }

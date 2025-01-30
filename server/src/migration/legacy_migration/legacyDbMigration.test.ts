@@ -1,73 +1,54 @@
-import { Channel } from '@/entities/Channel.js';
-import { CustomShow } from '@/entities/CustomShow.js';
-import dbConfig from '@/mikro-orm.prod.config.js';
-import { MikroORM, RequestContext } from '@mikro-orm/better-sqlite';
-import fs from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { file } from 'bun';
+import { expect, test } from 'bun:test';
+import { map } from 'lodash-es';
 import { fileURLToPath } from 'node:url';
-import { inspect } from 'node:util';
 import tmp from 'tmp-promise';
-import { afterAll, beforeAll, describe, test } from 'vitest';
-import { migrateChannel, migratePrograms } from './LegacyChannelMigrator.ts';
-import { migrateCustomShows } from './libraryMigrator.ts';
+import { afterAll, beforeAll, describe } from 'vitest';
+import { bootstrapTunarr } from '../../bootstrap.ts';
+import { container } from '../../container.ts';
+import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { setGlobalOptions } from '../../globals.ts';
+import { KEYS } from '../../types/inject.ts';
+import { typedProperty } from '../../types/path.ts';
+import { LegacyChannelMigrator } from './LegacyChannelMigrator.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const resourcesPath = resolve(__dirname, '../resources/test');
-
-let orm: MikroORM;
+// Make this a fixture
+let dbResult: tmp.DirectoryResult;
 
 beforeAll(async () => {
-  orm = await MikroORM.init({
-    ...dbConfig,
-    debug: false,
-    dbName: ':memory:',
+  dbResult = await tmp.dir({ unsafeCleanup: true });
+  setGlobalOptions({
+    database: dbResult.path,
+    force_migration: false,
+    log_level: 'debug',
+    verbose: 0,
   });
-  await orm.schema.createSchema();
+  await bootstrapTunarr();
 });
 
 afterAll(async () => {
-  await orm.close();
+  await dbResult?.cleanup();
 });
 
 describe('Legacy DB Migration', () => {
   test('channel migration', async () => {
-    const tmpDir = await tmp.dir();
-    const channelPath = join(
-      resourcesPath,
-      'legacy-migration',
-      'channels',
-      '1.json',
+    const channelPath = fileURLToPath(
+      import.meta.resolve('@/resources/test/legacy-migration/channels/1.json'),
     );
 
-    await RequestContext.create(orm.em, async () => {
-      await migrateChannel(channelPath);
-      await migratePrograms(channelPath);
-    });
+    const legacyFileContents = await file(channelPath).json();
+    const durations = map(legacyFileContents['programs'], 'duration');
 
-    const allChannels = await orm.em.fork().repo(Channel).findAll();
-
-    const lineup = await fs.readFile(
-      join(tmpDir.path, `${allChannels[0]!.uuid}.json`),
-      'utf-8',
+    const migrator = container.get<LegacyChannelMigrator>(
+      LegacyChannelMigrator,
     );
-    console.log(inspect(JSON.parse(lineup)));
+    const { entity: channel } = await migrator.migrateChannel(channelPath);
+    await migrator.migratePrograms(channelPath);
 
-    await fs.rm(tmpDir.path, { recursive: true, force: true });
-  });
-
-  test('custom show migration', async () => {
-    const customShowPath = join(resourcesPath, 'legacy-migration');
-
-    await RequestContext.create(orm.em, async () => {
-      await migrateCustomShows(customShowPath, 'custom-shows');
-    });
-
-    const allCustomShows = await orm.em
-      .fork()
-      .repo(CustomShow)
-      .findAll({ populate: ['*', 'content.*'] });
-
-    console.log(inspect(allCustomShows));
+    const channelDB = container.get<IChannelDB>(KEYS.ChannelDB);
+    const selectedChannel = await channelDB.getChannel(channel.uuid);
+    expect(selectedChannel).not.toBeNull();
+    const lineup = await channelDB.loadLineup(channel.uuid);
+    expect(map(lineup.items, typedProperty('durationMs'))).toEqual(durations);
   });
 });
