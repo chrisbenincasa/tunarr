@@ -53,6 +53,8 @@ for (const arch of args.target) {
     '--compile',
     '--minify-whitespace',
     '--minify-syntax',
+    '--target',
+    `bun-${arch}`,
     '--asset-naming',
     '[name].[ext]',
     '--env',
