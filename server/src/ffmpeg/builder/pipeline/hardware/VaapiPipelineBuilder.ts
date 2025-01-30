@@ -447,4 +447,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     return currentState;
   }
+
+  protected isIntelBasedHwAccel(): boolean {
+    const vaapiDriver = this.ffmpegState.vaapiDriver ?? '';
+    return (
+      (this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Vaapi ||
+        this.ffmpegState.encoderHwAccelMode ===
+          HardwareAccelerationMode.Vaapi) &&
+      !vaapiDriver.startsWith('radeon')
+    );
+  }
 }

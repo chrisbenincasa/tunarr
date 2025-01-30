@@ -434,7 +434,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     return currentState;
   }
 
-  protected getIsIntelQsvOrVaapi(): boolean {
+  protected isIntelBasedHwAccel(): boolean {
     return (
       this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv ||
       this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Qsv

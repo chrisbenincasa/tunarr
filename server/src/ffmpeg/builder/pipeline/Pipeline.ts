@@ -12,15 +12,14 @@ export class Pipeline {
   constructor(
     public steps: PipelineStep[],
     public inputs: PipelineInputs,
+    private isIntelBasedHwAccel: boolean,
   ) {}
 
   getCommandArgs(): string[] {
     return this.#commandGenerator.generateArgs(
-      this.inputs.videoInput,
-      this.inputs.audioInput,
-      this.inputs.watermarkInput,
-      this.inputs.concatInput,
+      this.inputs,
       this.steps,
+      this.isIntelBasedHwAccel,
     );
   }
 

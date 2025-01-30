@@ -20,6 +20,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
     private audioInputSource: Nullable<AudioInputSource>,
     private watermarkInputSource: Nullable<WatermarkInputSource>,
     private filterChain: FilterChain,
+    private isIntelHwAccel: boolean,
   ) {}
 
   readonly affectsFrameState: boolean = false;
@@ -37,7 +38,10 @@ export class ComplexFilter implements FilterOptionPipelineStep {
 
     if (!isNull(this.audioInputSource)) {
       // TODO: use audio as a separate input with vaapi/qsv
-      if (!distinctPaths.includes(this.audioInputSource.path)) {
+      if (
+        !distinctPaths.includes(this.audioInputSource.path) ||
+        this.isIntelHwAccel
+      ) {
         distinctPaths.push(this.audioInputSource.path);
       }
     }

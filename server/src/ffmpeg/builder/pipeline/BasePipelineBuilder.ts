@@ -227,12 +227,16 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
     pipelineSteps.push(MpegTsOutputFormatOption(), PipeProtocolOutputOption());
 
-    return new Pipeline(pipelineSteps, {
-      videoInput: null,
-      audioInput: null,
-      concatInput: input,
-      watermarkInput: null,
-    });
+    return new Pipeline(
+      pipelineSteps,
+      {
+        videoInput: null,
+        audioInput: null,
+        concatInput: input,
+        watermarkInput: null,
+      },
+      false,
+    );
   }
 
   hlsWrap(input: ConcatInputSource, state: FfmpegState) {
@@ -267,12 +271,16 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       PipeProtocolOutputOption(),
     );
 
-    return new Pipeline(pipelineSteps, {
-      videoInput: null,
-      audioInput: null,
-      concatInput: input,
-      watermarkInput: null,
-    });
+    return new Pipeline(
+      pipelineSteps,
+      {
+        videoInput: null,
+        audioInput: null,
+        concatInput: input,
+        watermarkInput: null,
+      },
+      false,
+    );
   }
 
   build(ffmpegState: FfmpegState, desiredState: FrameState): Pipeline {
@@ -369,6 +377,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.buildVideoPipeline();
     }
 
+    if (
+      !this.concatInputSource &&
+      this.ffmpegState.outputFormat.type !== OutputFormatTypes.Nut
+    ) {
+      this.context.isIntelVaapiOrQsv = this.isIntelBasedHwAccel();
+    }
+
     if (isNull(this.audioInputSource)) {
       this.context.pipelineSteps.push(new CopyAudioEncoder());
     } else if (this.audioInputSource.streams.length > 0) {
@@ -417,6 +432,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         this.audioInputSource,
         this.watermarkInputSource,
         this.context.filterChain,
+        this.context.isIntelVaapiOrQsv,
       ),
     );
 
@@ -424,12 +440,16 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.pipelineSteps.push(new CopyAudioEncoder());
     }
 
-    return new Pipeline(this.pipelineSteps, {
-      videoInput: this.videoInputSource,
-      audioInput: this.audioInputSource,
-      watermarkInput: this.watermarkInputSource,
-      concatInput: this.concatInputSource,
-    });
+    return new Pipeline(
+      this.pipelineSteps,
+      {
+        videoInput: this.videoInputSource,
+        audioInput: this.audioInputSource,
+        watermarkInput: this.watermarkInputSource,
+        concatInput: this.concatInputSource,
+      },
+      this.context.isIntelVaapiOrQsv,
+    );
   }
 
   protected get ffmpegState() {
@@ -768,7 +788,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
   }
 
-  protected getIsIntelQsvOrVaapi() {
+  protected isIntelBasedHwAccel() {
     return false;
   }
 }

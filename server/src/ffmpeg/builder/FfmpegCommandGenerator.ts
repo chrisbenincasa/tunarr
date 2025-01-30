@@ -1,13 +1,9 @@
-import type { Nullable } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
 import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
 import type { Dictionary } from 'ts-essentials';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';
 import { ComplexFilter } from './filter/ComplexFilter.ts';
-import type { AudioInputSource } from './input/AudioInputSource.ts';
-import type { ConcatInputSource } from './input/ConcatInputSource.ts';
-import type { VideoInputSource } from './input/VideoInputSource.ts';
-import type { WatermarkInputSource } from './input/WatermarkInputSource.ts';
+import { type PipelineInputs } from './pipeline/PipelineInputs.ts';
 import type { PipelineStep } from './types/PipelineStep.ts';
 import {
   isFilterOption,
@@ -30,11 +26,9 @@ export class FfmpegCommandGenerator {
   }
 
   generateArgs(
-    videoInputSource: Nullable<VideoInputSource>,
-    audioInputSource: Nullable<AudioInputSource>,
-    watermarkInputSource: Nullable<WatermarkInputSource>,
-    concatInputSource: Nullable<ConcatInputSource>,
+    { videoInput, audioInput, watermarkInput, concatInput }: PipelineInputs,
     steps: PipelineStep[],
+    isIntelBasedHwAccel: boolean,
   ): string[] {
     const args = [
       ...flatMap(filter(steps, isGlobalOption), (step) => step.options()),
@@ -42,39 +36,26 @@ export class FfmpegCommandGenerator {
 
     const includedPaths = new Set<string>();
 
-    if (videoInputSource) {
-      includedPaths.add(videoInputSource.path);
-      args.push(
-        ...videoInputSource.getInputOptions(),
-        '-i',
-        videoInputSource.path,
-      );
+    if (videoInput) {
+      includedPaths.add(videoInput.path);
+      args.push(...videoInput.getInputOptions(), '-i', videoInput.path);
     }
 
-    if (audioInputSource && !includedPaths.has(audioInputSource.path)) {
-      includedPaths.add(audioInputSource.path);
-      args.push(
-        ...audioInputSource.getInputOptions(),
-        '-i',
-        audioInputSource.path,
-      );
+    if (
+      audioInput &&
+      (!includedPaths.has(audioInput.path) || isIntelBasedHwAccel)
+    ) {
+      includedPaths.add(audioInput.path);
+      args.push(...audioInput.getInputOptions(), '-i', audioInput.path);
     }
 
-    if (watermarkInputSource && !includedPaths.has(watermarkInputSource.path)) {
-      includedPaths.add(watermarkInputSource.path);
-      args.push(
-        ...watermarkInputSource.getInputOptions(),
-        '-i',
-        watermarkInputSource.path,
-      );
+    if (watermarkInput && !includedPaths.has(watermarkInput.path)) {
+      includedPaths.add(watermarkInput.path);
+      args.push(...watermarkInput.getInputOptions(), '-i', watermarkInput.path);
     }
 
-    if (concatInputSource) {
-      args.push(
-        ...concatInputSource.getInputOptions(),
-        '-i',
-        concatInputSource.path,
-      );
+    if (concatInput) {
+      args.push(...concatInput.getInputOptions(), '-i', concatInput.path);
     }
 
     args.push(
