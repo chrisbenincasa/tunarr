@@ -1,8 +1,6 @@
 import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Database } from 'bun:sqlite';
-import { BunSqliteDialect } from './dialect/BunSqliteDialect.ts';
-// import { Database } from '@db/sqlite';
 import dayjs from 'dayjs';
 import {
   CamelCasePlugin,
@@ -15,7 +13,7 @@ import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
-// import { DenoSqliteDialect } from './dialect/DenoSqliteDialect.ts';
+import { BunSqliteDialect } from './dialect/BunSqliteDialect.ts';
 import type { DB } from './schema/db.ts';
 
 const MigrationTableName = 'migrations';

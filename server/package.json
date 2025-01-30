@@ -22,8 +22,8 @@
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- bun run src/index.ts fixer",
     "tunarr": "dotenv -e .env.development -- bun run src/index.ts",
-    "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

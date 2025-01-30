@@ -1,25 +1,22 @@
-import { ProgramDB } from '@/db/ProgramDB.js';
+import { beforeAll, describe, mock, test } from 'bun:test';
 import {
   initDatabaseAccess,
   syncMigrationTablesIfNecessary,
 } from '../../db/DBAccess.ts';
-import { JellyfinItemFinder } from './JellyfinItemFinder.ts';
 
 beforeAll(async () => {
   initDatabaseAccess(':memory:');
   await syncMigrationTablesIfNecessary();
 });
 
-vi.mock(import('./JellyfinApiClient.ts'), () => {
-  const JellyfinApiClient = vi.fn();
+mock.module('./JellyfinApiClient.ts', () => {
+  const JellyfinApiClient = mock(() => {});
   JellyfinApiClient.prototype;
   return { JellyfinApiClient };
 });
 
 describe('JellyfinItemFinder', () => {
   test('finds item', async () => {
-    const programDB = new ProgramDB();
-    const finder = new JellyfinItemFinder(programDB);
-    console.log(await programDB.getProgramById('Hello'));
+    // TODO:
   });
 });

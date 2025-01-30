@@ -1,6 +1,11 @@
 import { bootstrapTunarr } from '@/bootstrap.js';
-import { setGlobalOptions } from '@/globals.js';
+import { globalOptions, setGlobalOptions } from '@/globals.js';
 import tmp from 'tmp';
+import { container } from '../../container.ts';
+import { TranscodeConfig } from '../../db/schema/TranscodeConfig.ts';
+import { HttpStreamSource } from '../../stream/types.ts';
+import { KEYS } from '../../types/inject.ts';
+import { FfmpegVersionResult } from '../ffmpegInfo.ts';
 import { FfmpegCommandGenerator } from './FfmpegCommandGenerator.ts';
 import { AudioStream, StillImageStream, VideoStream } from './MediaStream.ts';
 import { VideoFormats } from './constants.ts';
@@ -29,7 +34,7 @@ beforeAll(async () => {
     force_migration: false,
     log_level: 'debug',
   });
-  await bootstrapTunarr({
+  await bootstrapTunarr(globalOptions(), {
     system: {
       logging: {
         logLevel: 'debug',
@@ -58,8 +63,8 @@ describe('FfmpegCommandGenerator', () => {
       profile: 'main',
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
-      isAnamorphic: false,
       sampleAspectRatio: null,
+      displayAspectRatio: '4/3',
     });
 
     const audioState = AudioState.create({
@@ -88,18 +93,18 @@ describe('FfmpegCommandGenerator', () => {
     const generator = new FfmpegCommandGenerator();
 
     const videoInputFile = new VideoInputSource(
-      'https://192-168-0-154.e381701a32034bfdb5e2650ff7248a45.plex.direct:32400/library/parts/29136/1662060068/file.mkv?X-Plex-Token=jYWk_2udyfr8yAK_C3vR',
+      new HttpStreamSource('http://fakesource.com/video'),
       [videoStream],
     );
 
     const audioInputFile = new AudioInputSource(
-      videoInputFile.path,
+      videoInputFile.source,
       [AudioStream.create({ index: 1, codec: 'flac', channels: 6 })],
       audioState,
     );
 
     const watermarkInputFile = new WatermarkInputSource(
-      'http://localhost:8000/images/tunarr.png',
+      new HttpStreamSource('http://localhost:8000/images/tunarr.png'),
       StillImageStream.create({
         index: 0,
         frameSize: FrameSize.create({ width: 19, height: -1 }),
@@ -115,17 +120,21 @@ describe('FfmpegCommandGenerator', () => {
       },
     );
 
-    const builder = await new PipelineBuilderFactory()
-      .builder()
+    const config: TranscodeConfig = {};
+    const builder = await container
+      .get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory)(config)
       .setHardwareAccelerationMode('vaapi')
       .setVideoInputSource(videoInputFile)
       .setAudioInputSource(audioInputFile)
       .setWatermarkInputSource(watermarkInputFile)
       .build();
 
-    const steps = builder.build(
+    const pipeline = builder.build(
       FfmpegState.create({
-        version: '6.0-6ubuntu1.1',
+        version: {
+          versionString: '7.0.1',
+          isUnknown: false,
+        } satisfies FfmpegVersionResult,
         vaapiDevice: '/dev/dri/renderD128',
       }),
       desiredState,
@@ -135,7 +144,8 @@ describe('FfmpegCommandGenerator', () => {
       videoInputFile,
       audioInputFile,
       watermarkInputFile,
-      steps,
+      null,
+      pipeline.steps,
     );
 
     console.log(result.join(' '));
