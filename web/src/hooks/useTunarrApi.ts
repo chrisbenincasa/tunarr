@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { TunarrApiContext } from '../components/TunarrApiContext';
+import { TunarrApiContext } from '../context/TunarrApiContext';
 
 export const useTunarrApi = () => {
   return useContext(TunarrApiContext);

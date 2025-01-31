@@ -9,58 +9,16 @@ import {
   LiveTv as SortTVIcon,
 } from '@mui/icons-material';
 import { Button, ButtonGroup, MenuItem, Tooltip } from '@mui/material';
-import Menu, { MenuProps } from '@mui/material/Menu';
-import { alpha, styled } from '@mui/material/styles';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
+import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuffle.ts';
 import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
 import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
+import { strings } from '../../strings.ts';
+import { StyledMenu } from '../base/StyledMenu.tsx';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
-
-const StyledMenu = styled((props: MenuProps) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{
-      vertical: 'bottom',
-      horizontal: 'right',
-    }}
-    transformOrigin={{
-      vertical: 'top',
-      horizontal: 'right',
-    }}
-    {...props}
-  />
-))(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: 6,
-    marginTop: theme.spacing(1),
-    minWidth: 180,
-    color:
-      theme.palette.mode === 'light'
-        ? 'rgb(55, 65, 81)'
-        : theme.palette.grey[300],
-    boxShadow:
-      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
-    '& .MuiMenu-list': {
-      padding: '4px 0',
-    },
-    '& .MuiMenuItem-root': {
-      '& .MuiSvgIcon-root': {
-        fontSize: 18,
-        color: theme.palette.text.secondary,
-        marginRight: theme.spacing(1.5),
-      },
-      '&:active': {
-        backgroundColor: alpha(
-          theme.palette.primary.main,
-          theme.palette.action.selectedOpacity,
-        ),
-      },
-    },
-  },
-}));
 
 type SortOption =
   | 'random'
@@ -86,6 +44,7 @@ export function ChannelProgrammingSort() {
   const releaseDateSort = useReleaseDateSort();
   const cyclicShuffle = useCyclicShuffle();
   const episodeSort = useEpisodeNumberSort();
+  const { blockShuffle, canUsePerfectSync } = useBlockShuffle();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -125,7 +84,7 @@ export function ChannelProgrammingSort() {
               setSort(sort === 'alpha-asc' ? 'alpha-desc' : 'alpha-asc');
             }}
           >
-            Alphabetically {sort === 'alpha-asc' ? '(asc)' : '(desc)'}
+            A-Z {sort === 'alpha-asc' ? '(asc)' : '(desc)'}
           </Button>
         )}
         {(sort === 'release-asc' || sort === 'release-desc') && (
@@ -165,22 +124,11 @@ export function ChannelProgrammingSort() {
         )}
       </ButtonGroup>
 
-      <StyledMenu
-        id="demo-customized-menu"
-        MenuListProps={{
-          'aria-labelledby': 'demo-customized-button',
-        }}
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-      >
+      <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem divider disabled>
           Sort By...
         </MenuItem>
-        <Tooltip
-          title="Completely randomizes the order of programs."
-          placement="right"
-        >
+        <Tooltip title={strings.SHUFFLE_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -193,10 +141,7 @@ export function ChannelProgrammingSort() {
           </MenuItem>
         </Tooltip>
 
-        <Tooltip
-          title="Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately."
-          placement="right"
-        >
+        <Tooltip title={strings.CYCLIC_SHUFFLE_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -210,10 +155,7 @@ export function ChannelProgrammingSort() {
           </MenuItem>
         </Tooltip>
 
-        <Tooltip
-          title="Sorts alphabetically by program title"
-          placement="right"
-        >
+        <Tooltip title={strings.ALPHA_SORT_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -227,10 +169,7 @@ export function ChannelProgrammingSort() {
           </MenuItem>
         </Tooltip>
 
-        <Tooltip
-          title="Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
-          placement="right"
-        >
+        <Tooltip title={strings.RELEASE_SORT_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -243,10 +182,7 @@ export function ChannelProgrammingSort() {
             Release Date
           </MenuItem>
         </Tooltip>
-        <Tooltip
-          title="Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
-          placement="right"
-        >
+        <Tooltip title={strings.EPISODE_SORT_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -259,10 +195,7 @@ export function ChannelProgrammingSort() {
             Sort TV Shows
           </MenuItem>
         </Tooltip>
-        <Tooltip
-          title="Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
-          placement="right"
-        >
+        <Tooltip title={strings.BLOCK_SHUFFLE_TOOLTIP} placement="right">
           <MenuItem
             disableRipple
             onClick={() => {
@@ -279,6 +212,8 @@ export function ChannelProgrammingSort() {
       <AddBlockShuffleModal
         open={addBlockShuffleModalOpen}
         onClose={() => setAddBlockShuffleModalOpen(false)}
+        blockShuffle={blockShuffle}
+        canUsePerfectSync={canUsePerfectSync}
       />
     </>
   );

@@ -1,13 +1,13 @@
 import {
-  DataTag,
-  DefinedInitialDataOptions,
+  type DataTag,
+  type DefinedInitialDataOptions,
   useQueries,
   useSuspenseQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { CustomProgram, CustomShow } from '@tunarr/types';
-import { ApiClient } from '../external/api.ts';
-import { ZodiosAliasReturnType } from '../types/index.ts';
+import { type CustomProgram, type CustomShow } from '@tunarr/types';
+import { type ApiClient } from '../external/api.ts';
+import { type ZodiosAliasReturnType } from '../types/index.ts';
 import { makeQueryOptions } from './useQueryHelpers.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 

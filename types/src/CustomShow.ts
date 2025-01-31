@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { type z } from 'zod';
 import {
-  CustomShowProgrammingSchema,
-  CustomShowSchema,
+  type CustomShowProgrammingSchema,
+  type CustomShowSchema,
 } from './schemas/customShowsSchema.js';
 
 type Alias<T> = T & { _?: never };

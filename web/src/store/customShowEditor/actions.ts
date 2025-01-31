@@ -1,17 +1,22 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
-import { CustomShow, CustomShowProgramming } from '@tunarr/types';
-import { findIndex, forEach, inRange, map, merge } from 'lodash-es';
+import { seq } from '@tunarr/shared/util';
+import {
+  type ContentProgram,
+  type CustomProgram,
+  type CustomShow,
+} from '@tunarr/types';
+import { findIndex, forEach, inRange, merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { zipWithIndex } from '../../helpers/util.ts';
-import { AddedMedia } from '../../types/index.ts';
+import { type AddedMedia } from '../../types/index.ts';
 import useStore from '../index.ts';
 
 export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
-      const allNewPrograms = map(programs, (item) =>
+      const allNewPrograms = seq.collect(programs, (item) =>
         match(item)
           .with({ type: 'plex', media: P.select() }, (plexItem) =>
             ApiProgramMinter.mintProgram(
@@ -25,11 +30,7 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
               { program: jfItem, sourceType: 'jellyfin' },
             ),
           )
-          .with(
-            { type: 'custom-show', program: P.select() },
-            (program) => program,
-          )
-          .exhaustive(),
+          .otherwise(() => null),
       );
 
       customShowEditor.programList = customShowEditor.programList.concat(
@@ -40,15 +41,27 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
 
 export const setCurrentCustomShow = (
   show: CustomShow,
-  programs: CustomShowProgramming,
+  programs: CustomProgram[],
 ) =>
   useStore.setState(({ customShowEditor }) => {
     customShowEditor.currentEntity = show;
     customShowEditor.originalEntity = show;
     customShowEditor.dirty.programs = false;
-    const zippedPrograms = zipWithIndex(programs);
+    // These come in order; unwrap to get the content programs underneath
+    // The frontend manages the order from here on out.
+    const unwrappedPrograms = seq.collect(programs, ({ program }) => program);
+    const zippedPrograms = zipWithIndex(unwrappedPrograms);
     customShowEditor.originalProgramList = [...zippedPrograms];
     customShowEditor.programList = [...zippedPrograms];
+  });
+
+export const setCurrentCustomShowProgramming = (
+  programming: ContentProgram[],
+) =>
+  useStore.setState(({ customShowEditor }) => {
+    const programs = zipWithIndex(programming);
+    customShowEditor.dirty.programs = true;
+    customShowEditor.programList = [...programs];
   });
 
 export const moveProgramInCustomShow = (
@@ -84,4 +97,10 @@ export const updateCurrentCustomShow = (show: Partial<CustomShow>) =>
 export const clearCurrentCustomShow = () =>
   useStore.setState((state) => {
     state.customShowEditor = emptyEntityEditor();
+  });
+
+export const resetCustomShowProgramming = () =>
+  useStore.setState(({ customShowEditor }) => {
+    customShowEditor.programList = customShowEditor.originalProgramList;
+    customShowEditor.dirty.programs = false;
   });

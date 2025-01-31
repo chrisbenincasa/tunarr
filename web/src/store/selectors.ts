@@ -1,8 +1,11 @@
-import { CondensedChannelProgram, ContentProgram } from '@tunarr/types';
+import {
+  type CondensedChannelProgram,
+  type ContentProgram,
+} from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
-import { UIChannelProgram, UIIndex } from '../types/index.ts';
-import useStore, { State } from './index.ts';
+import { type UIChannelProgram, type UIIndex } from '../types/index.ts';
+import useStore, { type State } from './index.ts';
 
 const materializeProgramList = (
   lineup: (CondensedChannelProgram & UIIndex)[],

@@ -1,20 +1,20 @@
-import { Nullable } from '@/types/util';
-import { Theme } from '@mui/material';
-import { MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
+import { type Nullable } from '@/types/util';
+import { type Theme } from '@mui/material';
+import { type MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
 import type {
   GenGroupedSubtypeMapping,
   PerTypeCallback,
 } from '@tunarr/shared/types';
 import { applyOrValue, applyOrValueNoRest } from '@tunarr/shared/util';
 import {
-  ChannelProgram,
-  FlexProgram,
-  Resolution,
-  TvGuideProgram,
+  type ChannelProgram,
+  type FlexProgram,
+  type Resolution,
+  type TvGuideProgram,
 } from '@tunarr/types';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexMedia } from '@tunarr/types/plex';
-import dayjs, { Dayjs } from 'dayjs';
+import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { type PlexMedia } from '@tunarr/types/plex';
+import dayjs, { type Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
   attempt,
@@ -33,9 +33,9 @@ import {
   trim,
   zipWith,
 } from 'lodash-es';
-import { Path, PathValue } from 'react-hook-form';
-import { SelectedMedia } from '../store/programmingSelector/store';
-import { AddedMedia, UIChannelProgram } from '../types';
+import { type Path, type PathValue } from 'react-hook-form';
+import { type SelectedMedia } from '../store/programmingSelector/store';
+import { type AddedMedia, type UIChannelProgram, type UIIndex } from '../types';
 
 dayjs.extend(duration);
 
@@ -135,7 +135,7 @@ export const channelProgramUniqueId = (program: ChannelProgram): string => {
 export const zipWithIndex = <T extends object>(
   seq: readonly T[],
   start: number = 0,
-): (T & { originalIndex: number })[] => {
+): (T & UIIndex)[] => {
   return zipWith(seq, range(0, seq.length), (s, i) => ({
     ...s,
     originalIndex: start + i,

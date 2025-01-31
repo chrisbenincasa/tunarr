@@ -23,8 +23,8 @@ import {
 } from '@tunarr/types/schemas';
 import {
   Zodios,
-  ZodiosInstance,
-  ZodiosOptions,
+  type ZodiosInstance,
+  type ZodiosOptions,
   makeApi,
   makeErrors,
   parametersBuilder,

@@ -1,15 +1,18 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
-import { UICondensedChannelProgram, UIIndex } from '@/types/index.ts';
+import { type UICondensedChannelProgram, type UIIndex } from '@/types/index.ts';
 import {
-  Channel,
-  CondensedChannelProgram,
-  ContentProgram,
-  CustomProgram,
-  CustomShow,
-  FillerList,
+  type Channel,
+  type CondensedChannelProgram,
+  type ContentProgram,
+  type CustomProgram,
+  type CustomShow,
+  type FillerList,
 } from '@tunarr/types';
-import { DynamicContentConfig, LineupSchedule } from '@tunarr/types/api';
-import { StateCreator } from 'zustand';
+import {
+  type DynamicContentConfig,
+  type LineupSchedule,
+} from '@tunarr/types/api';
+import { type StateCreator } from 'zustand';
 
 export type HasId = { id: string };
 
@@ -23,7 +26,7 @@ export interface ProgrammingEditorState<
   // The working entity - edits should be made directly here
   currentEntity?: EntityType;
   // The programs in the state they were when we fetched them
-  // This can be used to reset the state of the editor and
+  // This can be used to reset the state of the editor ands
   // start over changes without having to close/enter the page
   originalProgramList: (ProgramType & UIIndex)[];
   // The actively edited list
@@ -54,7 +57,7 @@ export interface EditorsState {
   channelEditor: ChannelEditorState;
   customShowEditor: ProgrammingEditorState<
     CustomShow,
-    ContentProgram | CustomProgram // You cannot add Flex to custom shows
+    ContentProgram // Custom shows contain content only
   >;
   fillerListEditor: ProgrammingEditorState<
     FillerList,

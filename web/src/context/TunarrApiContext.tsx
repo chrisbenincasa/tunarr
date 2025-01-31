@@ -1,9 +1,9 @@
-import { ReactNode, createContext, useEffect } from 'react';
-import { createApiClient } from '../external/api';
-import useStore from '../store/index.ts';
-import { useSettings } from '../store/settings/selectors';
-import { QueryClient } from '@tanstack/react-query';
+import { type QueryClient } from '@tanstack/react-query';
 import { isUndefined } from 'lodash-es';
+import { type ReactNode, createContext, useEffect } from 'react';
+import { createApiClient } from '../external/api.ts';
+import useStore from '../store/index.ts';
+import { useSettings } from '../store/settings/selectors.ts';
 
 // HACK ALERT
 // Read zustand state out-of-band here (i.e. not in a hook) because we

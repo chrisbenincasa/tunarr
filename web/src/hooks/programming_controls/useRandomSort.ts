@@ -1,12 +1,22 @@
 import { shuffle } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
-import { materializedProgramListSelector } from '../../store/selectors.ts';
+import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
+import {
+  useChannelEditorLazy,
+  useCustomShowEditor,
+} from '../../store/selectors.ts';
 
 export function useRandomSort() {
-  const programs = useStore(materializedProgramListSelector);
+  const { materializeNewProgramList } = useChannelEditorLazy();
 
-  return function () {
-    setCurrentLineup(shuffle(programs), true);
+  return () => {
+    setCurrentLineup(shuffle(materializeNewProgramList()), true);
+  };
+}
+
+export function useCustomShowRandomSort() {
+  const { programList } = useCustomShowEditor();
+  return () => {
+    setCurrentCustomShowProgramming(shuffle(programList));
   };
 }

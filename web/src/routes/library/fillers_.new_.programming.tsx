@@ -1,6 +1,7 @@
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentFillerList } from '@/store/fillerListEditor/action';
 import { createFileRoute } from '@tanstack/react-router';
+import { ProgrammingSelectionContext } from '../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute('/library/fillers/new/programming')({
   component: FillerProgrammingSelectorPage,
@@ -9,9 +10,16 @@ export const Route = createFileRoute('/library/fillers/new/programming')({
 function FillerProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
   return (
-    <ProgrammingSelectorPage
-      onAddSelectedMedia={addMediaToCurrentFillerList}
-      onAddMediaSuccess={() => navigate({ to: '..' })}
-    />
+    <ProgrammingSelectionContext.Provider
+      value={{
+        onAddSelectedMedia: addMediaToCurrentFillerList,
+        onAddMediaSuccess: () => {
+          navigate({ to: '..' }).catch(console.error);
+        },
+        entityType: 'filler-list',
+      }}
+    >
+      <ProgrammingSelectorPage />
+    </ProgrammingSelectionContext.Provider>
   );
 }

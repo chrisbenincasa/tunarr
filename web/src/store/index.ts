@@ -3,24 +3,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import {
-  EditorsState,
+  type EditorsState,
   createChannelEditorState,
 } from './channelEditor/store.ts';
 import {
-  PlexMetadataState,
+  type PlexMetadataState,
   createPlexMetadataState,
 } from './plexMetadata/store.ts';
 import {
-  ProgrammingListingsState,
+  type ProgrammingListingsState,
   createProgrammingListingsState,
 } from './programmingSelector/store.ts';
 import {
-  PersistedSettingsState,
-  SettingsState,
+  type PersistedSettingsState,
+  type SettingsState,
   createSettingsSlice,
 } from './settings/store.ts';
 import {
-  ThemeEditorState,
+  type ThemeEditorState,
   createThemeEditorState,
 } from './themeEditor/store.ts';
 

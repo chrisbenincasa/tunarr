@@ -29,12 +29,15 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { JellyfinServerSettings, PlexServerSettings } from '@tunarr/types';
+import {
+  type JellyfinServerSettings,
+  type PlexServerSettings,
+} from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { MarkOptional } from 'ts-essentials';
+import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
 
 type Props = {
@@ -413,6 +416,10 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
               />
               <FormHelperText sx={{ ml: '14px', mt: -1, flexBasis: '100%' }}>
                 Enter your Jellyfin password to generate a new access token.
+                <br />
+                <strong>NOTE:</strong> These are never saved to the Tunarr DB.
+                Instead they are sent to Jellyfin to exchange for a session
+                token.
               </FormHelperText>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -423,21 +430,8 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
             <Controller
               control={control}
               name="accessToken"
-              rules={
-                {
-                  // required: true,
-                  // minLength: 1,
-                }
-              }
               render={({ field, fieldState: { error } }) => (
-                <FormControl
-                  sx={{ m: 1 }}
-                  fullWidth
-                  variant="outlined"
-                  // disabled={
-                  //   // isNonEmptyString(username) && isNonEmptyString(password)
-                  // }
-                >
+                <FormControl sx={{ m: 1 }} fullWidth variant="outlined">
                   <InputLabel htmlFor="access-token">Access Token </InputLabel>
                   <OutlinedInput
                     id="access-token"

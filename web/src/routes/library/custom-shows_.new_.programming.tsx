@@ -1,6 +1,7 @@
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
+import { ProgrammingSelectionContext } from '../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute('/library/custom-shows/new/programming')({
   component: CustomShowProgrammingSelectorPage,
@@ -9,9 +10,16 @@ export const Route = createFileRoute('/library/custom-shows/new/programming')({
 function CustomShowProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
   return (
-    <ProgrammingSelectorPage
-      onAddSelectedMedia={addMediaToCurrentCustomShow}
-      onAddMediaSuccess={() => navigate({ to: '..' })}
-    />
+    <ProgrammingSelectionContext.Provider
+      value={{
+        onAddSelectedMedia: addMediaToCurrentCustomShow,
+        onAddMediaSuccess: () => {
+          navigate({ to: '..' }).catch(console.error);
+        },
+        entityType: 'custom-show',
+      }}
+    >
+      <ProgrammingSelectorPage />
+    </ProgrammingSelectionContext.Provider>
   );
 }
