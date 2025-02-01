@@ -1,3 +1,4 @@
+import Changelog from '@/assets/CHANGELOG.md?raw';
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import PaddedPaper from '@/components/base/PaddedPaper';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -19,7 +20,7 @@ import {
   Box,
   Button,
   IconButton,
-  IconButtonProps,
+  type IconButtonProps,
   LinearProgress,
   Link,
   Stack,
@@ -33,6 +34,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { compact, isEmpty, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import Markdown from 'react-markdown';
 import { match } from 'ts-pattern';
 
 const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
@@ -291,6 +293,37 @@ export const StatusPage = () => {
               </TableBody>
             </Table>
           )}
+        </PaddedPaper>
+        <PaddedPaper sx={{ maxHeight: 400, overflowY: 'scroll' }}>
+          <Markdown
+            components={{
+              h1: ({ children }) => (
+                <Typography variant="h4" gutterBottom>
+                  {children}
+                </Typography>
+              ),
+              h2: ({ children }) => (
+                <Typography variant="h5" gutterBottom>
+                  {children}
+                </Typography>
+              ),
+              h3: ({ children }) => (
+                <Typography variant="h6" gutterBottom>
+                  {children}
+                </Typography>
+              ),
+              text: ({ children }) => (
+                <Typography variant="body1">{children}</Typography>
+              ),
+              a: ({ children, href }) => (
+                <Link href={href} target="_blank">
+                  {children}
+                </Link>
+              ),
+            }}
+          >
+            {Changelog}
+          </Markdown>
         </PaddedPaper>
       </Stack>
     </Box>

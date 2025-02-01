@@ -46,6 +46,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
+    "react-markdown": "^9.0.3",
     "react-window": "^1.8.9",
     "ts-pattern": "^5.4.0",
     "usehooks-ts": "^2.14.0",
