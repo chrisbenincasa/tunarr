@@ -92,7 +92,9 @@ const namedRoutes: Route[] = [
     name: 'New',
   },
   {
-    matcher: /^\/library\/custom-shows\/programming\/add$/g,
+    matcher: new RegExp(
+      `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
+    ),
     name: 'Add Programming',
   },
 ];

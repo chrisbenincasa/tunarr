@@ -1,7 +1,7 @@
 import JellyfinLogo from '@/assets/jellyfin.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
-import { SelectedMedia } from '@/store/programmingSelector/store.ts';
+import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
 import {
   KeyboardArrowLeft,
   KeyboardArrowRight,
@@ -24,28 +24,23 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import { find, first, groupBy, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
-import { ReactNode, useEffect, useState } from 'react';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { type ReactNode, useEffect, useState } from 'react';
+import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
 import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
-import { AddedMedia } from '../../types/index.ts';
 import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
 
 type Props = {
-  onAddSelectedMedia: (media: AddedMedia[]) => void;
-  onAddMediaSuccess: () => void;
   selectAllEnabled?: boolean;
   isOpen: boolean;
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
 export default function SelectedProgrammingList({
-  onAddSelectedMedia,
-  onAddMediaSuccess,
   isOpen,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
@@ -330,8 +325,6 @@ export default function SelectedProgrammingList({
             {selectedMedia.length}):
           </Typography>
           <AddSelectedMediaButton
-            onAdd={onAddSelectedMedia}
-            onSuccess={onAddMediaSuccess}
             buttonText={`Add ${pluralize('Item', selectedMedia.length)}`}
             variant="contained"
             color={'primary'}

@@ -7,8 +7,8 @@ import { RouterProvider } from '@tanstack/react-router';
 import { SnackbarProvider } from 'notistack';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { TunarrApiProvider } from './components/TunarrApiContext.tsx';
 import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
+import { TunarrApiProvider } from './context/TunarrApiContext.tsx';
 import { router } from './main.tsx';
 import { queryClient } from './queryClient.ts';
 

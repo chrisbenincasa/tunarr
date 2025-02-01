@@ -1,24 +1,24 @@
 /// <reference types="vite-plugin-svgr/client" />
 
-import { EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
+import { type EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import {
-  ChannelProgram,
-  CondensedChannelProgram,
-  CondensedContentProgram,
-  ContentProgram,
-  CustomProgram,
-  FlexProgram,
-  Program,
-  RedirectProgram,
+  type ChannelProgram,
+  type CondensedChannelProgram,
+  type CondensedContentProgram,
+  type ContentProgram,
+  type CustomProgram,
+  type FlexProgram,
+  type Program,
+  type RedirectProgram,
 } from '@tunarr/types';
-import { ApiOf } from '@zodios/core';
+import { type ApiOf } from '@zodios/core';
 import {
-  ZodiosAliases,
-  ZodiosQueryParamsByAlias,
-  ZodiosResponseByAlias,
+  type ZodiosAliases,
+  type ZodiosQueryParamsByAlias,
+  type ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
 import { type ApiClient } from '../external/api.ts';
-import { EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
+import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
 
 // A program that may or may not exist in the DB yet
 export type EphemeralProgram = Omit<Program, 'id'>;

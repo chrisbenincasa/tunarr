@@ -1,3 +1,4 @@
+import { Delete, Edit } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { IconButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -7,18 +8,17 @@ import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { type CustomShow } from '@tunarr/types';
+import {
+  MaterialReactTable,
+  type MRT_ColumnDef,
+  type MRT_Row,
+  useMaterialReactTable,
+} from 'material-react-table';
+import { useCallback, useMemo } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { CustomShow } from '@tunarr/types';
-import { Edit, Delete } from '@mui/icons-material';
-import {
-  MRT_Row,
-  MRT_ColumnDef,
-  useMaterialReactTable,
-  MaterialReactTable,
-} from 'material-react-table';
-import { useCallback, useMemo } from 'react';
 
 export default function CustomShowsPage() {
   const apiClient = useTunarrApi();
@@ -42,7 +42,6 @@ export default function CustomShowsPage() {
         <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
           <Tooltip title="Edit" placement="top">
             <IconButton
-              color="primary"
               to={`/library/custom-shows/${show.id}/edit`}
               component={Link}
             >
@@ -50,10 +49,7 @@ export default function CustomShowsPage() {
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" placement="top">
-            <IconButton
-              color="error"
-              onClick={() => deleteShowMutation.mutate(show.id)}
-            >
+            <IconButton onClick={() => deleteShowMutation.mutate(show.id)}>
               <Delete />
             </IconButton>
           </Tooltip>

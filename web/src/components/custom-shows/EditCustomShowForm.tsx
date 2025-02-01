@@ -4,11 +4,12 @@ import useStore from '@/store';
 import {
   clearCurrentCustomShow,
   moveProgramInCustomShow,
+  resetCustomShowProgramming,
   updateCurrentCustomShow,
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
-import { UICustomShowProgram } from '@/types';
-import { Tv } from '@mui/icons-material';
+import { type UICustomShowProgram } from '@/types';
+import { Tv, Undo } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -21,10 +22,11 @@ import {
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { CustomShow } from '@tunarr/types';
+import { type CustomShow } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import ChannelProgrammingList from '../channel_config/ChannelProgrammingList';
+import { CustomShowSortToolsMenu } from './CustomShowSortToolsMenu.tsx';
 
 type CustomShowForm = {
   id?: string;
@@ -127,24 +129,35 @@ export function EditCustomShowsForm({
         />
         <Divider />
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ flex: 1 }}>
               Programming
             </Typography>
-            <Tooltip
-              title="Add TV Shows or Movies to custom show"
-              placement="right"
-            >
-              <Button
-                disableRipple
-                component="button"
-                onClick={() => navToProgramming()}
-                startIcon={<Tv />}
-                variant="contained"
-              >
-                Add Media
-              </Button>
-            </Tooltip>
+            <Stack direction="row" spacing={2}>
+              <CustomShowSortToolsMenu />
+              {customShowProgrammingChanged && (
+                <Tooltip title="Reset programming to most recently saved state">
+                  <Button
+                    variant="contained"
+                    startIcon={<Undo />}
+                    onClick={() => resetCustomShowProgramming()}
+                  >
+                    Reset
+                  </Button>
+                </Tooltip>
+              )}
+              <Tooltip title="Add programming to custom show" placement="top">
+                <Button
+                  disableRipple
+                  component="button"
+                  onClick={() => navToProgramming()}
+                  startIcon={<Tv />}
+                  variant="contained"
+                >
+                  Add Media
+                </Button>
+              </Tooltip>
+            </Stack>
           </Box>
           <Paper>
             <ChannelProgrammingList

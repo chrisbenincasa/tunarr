@@ -12,7 +12,7 @@ import useStore from '@/store';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { setCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
 import { setCurrentFillerList } from '@/store/fillerListEditor/action.ts';
-import { RouterContext } from '@/types/RouterContext';
+import { type RouterContext } from '@/types/RouterContext';
 import { notFound } from '@tanstack/react-router';
 
 export type ChannelArgs = {
@@ -108,7 +108,6 @@ export async function preloadCustomShowAndProgramming({
   // Set state
   const currentShow = useStore.getState().customShowEditor.currentEntity;
   if (currentShow?.id !== customShow.id) {
-    console.log('srtting');
     setCurrentCustomShow(customShow, programming);
   }
 

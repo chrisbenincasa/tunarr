@@ -6,7 +6,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Tunarr } from './Tunarr.tsx';
-import { getApiClient } from './components/TunarrApiContext.tsx';
+import { getApiClient } from './context/TunarrApiContext.tsx';
 import './helpers/dayjs.ts';
 import './index.css';
 import { queryClient } from './queryClient.ts';

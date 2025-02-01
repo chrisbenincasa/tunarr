@@ -14,15 +14,20 @@ import {
   values,
 } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
+import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { materializedProgramListSelector } from '../../store/selectors.ts';
 import {
-  UIChannelProgram,
-  UIContentProgram,
-  UICustomProgram,
+  materializedProgramListSelector,
+  useCustomShowEditor,
+} from '../../store/selectors.ts';
+import {
+  type UIChannelProgram,
+  type UIContentProgram,
+  type UICustomProgram,
   isUIContentProgram,
   isUICustomProgram,
 } from '../../types/index.ts';
+import { type Maybe } from '../../types/util.ts';
 import { removeDuplicatePrograms } from './useRemoveDuplicates.ts';
 
 export type BlockShuffleProgramCount = number;
@@ -80,8 +85,30 @@ export function useBlockShuffle() {
   return {
     canUsePerfectSync: (blockSize: number) =>
       canUsePerfectSync(programs, blockSize),
-    blockShuffle: (options: BlockShuffleConfig | null) =>
-      blockShuffle(programs, options),
+    blockShuffle: (options: BlockShuffleConfig | null) => {
+      const alternatingShows = blockShuffle(programs, options);
+      if (alternatingShows) {
+        setCurrentLineup(alternatingShows, true);
+      }
+    },
+  };
+}
+
+export function useCustomShowBlockShuffle() {
+  const { programList } = useCustomShowEditor();
+  return {
+    canUsePerfectSync: (blockSize: number) =>
+      canUsePerfectSync(programList, blockSize),
+    blockShuffle: (options: BlockShuffleConfig | null) => {
+      const alternatingShows = blockShuffle(programList, options);
+      if (alternatingShows) {
+        // We know there shouldn't be any custom programs in here, but we'll unwrap
+        // just to appease the typechecker.
+        setCurrentCustomShowProgramming(
+          alternatingShows.filter(isUIContentProgram),
+        );
+      }
+    },
   };
 }
 
@@ -103,7 +130,7 @@ function groupProgram(program: UIContentProgram | UICustomProgram) {
 function blockShuffle(
   programs: UIChannelProgram[],
   options: BlockShuffleConfig | null,
-) {
+): Maybe<Array<UICustomProgram | UIContentProgram>> {
   if (isEmpty(programs)) {
     return;
   }
@@ -160,13 +187,13 @@ function blockShuffle(
     flatMap(chunks, (chunk) => (i < chunk.length ? [...chunk[i]] : [])),
   );
 
-  setCurrentLineup(alternatingShows, true);
+  return alternatingShows;
 }
 
 function getPerfectSyncChunks(
-  groupByShow: Record<string, (UIChannelProgram | UICustomProgram)[]>,
+  groupByShow: Record<string, Array<UIContentProgram | UICustomProgram>>,
   blockSize: number,
-) {
+): [Record<string, Array<UIContentProgram | UICustomProgram>[]>, number] {
   const programCountArr = map(values(groupByShow), (programs) => {
     if (programs.length % blockSize === 0) {
       return programs.length / blockSize;
@@ -193,10 +220,10 @@ function getPerfectSyncChunks(
 }
 
 function getSimpleChunks(
-  groupByShow: Record<string, (UIChannelProgram | UICustomProgram)[]>,
+  groupByShow: Record<string, Array<UIContentProgram | UICustomProgram>>,
   blockSize: number,
   loopBlocks: boolean,
-) {
+): [Record<string, Array<UIContentProgram | UICustomProgram>[]>, number] {
   const maxLength = max(Object.values(groupByShow).map((a) => a.length)) ?? 0;
   return [
     mapValues(groupByShow, (programs) => {

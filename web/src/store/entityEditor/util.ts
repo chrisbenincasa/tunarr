@@ -1,7 +1,10 @@
-import { CondensedChannelProgram } from '@tunarr/types';
-import { Draft } from 'immer';
+import { type CondensedChannelProgram } from '@tunarr/types';
+import { type Draft } from 'immer';
 import { isSet, reject } from 'lodash-es';
-import { HasId, ProgrammingEditorState } from '../channelEditor/store';
+import {
+  type HasId,
+  type ProgrammingEditorState,
+} from '../channelEditor/store';
 import useStore from '../index.ts';
 
 export function deleteProgramAtIndex<T extends HasId>(

@@ -11,8 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { tag } from '@tunarr/types';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
+import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { type PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
 import {
   capitalize,
   chain,
@@ -30,6 +30,7 @@ import {
 } from '../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
+import { useProgrammingSelectionContext } from '../../hooks/useProgrammingSelectionContext.ts';
 import useStore from '../../store/index.ts';
 import {
   addKnownMediaForJellyfinServer,
@@ -80,8 +81,8 @@ type Props = {
   initialLibraryId?: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ProgrammingSelector(_: Props) {
+  const { entityType } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
   const selectedServer = useStore((s) => s.currentMediaSource);
@@ -357,7 +358,7 @@ export default function ProgrammingSelector(_: Props) {
                     {capitalize(server.type)}: {server.name}
                   </MenuItem>
                 ))}
-                {customShows.length > 0 && (
+                {entityType !== 'custom-show' && customShows.length > 0 && (
                   <MenuItem value="custom-shows">Custom Shows</MenuItem>
                 )}
               </Select>

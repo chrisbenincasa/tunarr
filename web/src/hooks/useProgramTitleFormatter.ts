@@ -1,7 +1,7 @@
 import { betterHumanize } from '@/helpers/dayjs';
 import { isNonEmptyString } from '@/helpers/util';
 import { forProgramType } from '@tunarr/shared/util';
-import { ChannelProgram, CustomShow } from '@tunarr/types';
+import { type ChannelProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isNil, join, negate, reject } from 'lodash-es';
 import { useCallback, useMemo } from 'react';

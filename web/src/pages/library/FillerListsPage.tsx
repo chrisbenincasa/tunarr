@@ -18,11 +18,11 @@ import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { FillerList } from '@tunarr/types';
+import { type FillerList } from '@tunarr/types';
 import { find } from 'lodash-es';
 import {
-  MRT_ColumnDef,
-  MRT_Row,
+  type MRT_ColumnDef,
+  type MRT_Row,
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';

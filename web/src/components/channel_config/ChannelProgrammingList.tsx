@@ -20,25 +20,25 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { Channel, ChannelProgram } from '@tunarr/types';
-import dayjs, { Dayjs } from 'dayjs';
+import { type Channel, type ChannelProgram } from '@tunarr/types';
+import dayjs, { type Dayjs } from 'dayjs';
 import { findIndex, isString, isUndefined, map, sumBy } from 'lodash-es';
-import React, { CSSProperties, useCallback, useState } from 'react';
+import React, { type CSSProperties, useCallback, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   FixedSizeList,
-  FixedSizeListProps,
-  ListChildComponentProps,
+  type FixedSizeListProps,
+  type ListChildComponentProps,
 } from 'react-window';
-import { MarkRequired } from 'ts-essentials';
+import { type MarkRequired } from 'ts-essentials';
 import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
 import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
-import useStore, { State } from '../../store/index.ts';
+import useStore, { type State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 import {
-  UIChannelProgram,
-  UIFlexProgram,
-  UIRedirectProgram,
+  type UIChannelProgram,
+  type UIFlexProgram,
+  type UIRedirectProgram,
 } from '../../types/index.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';

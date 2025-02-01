@@ -2,7 +2,7 @@ import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
-import { JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
+import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
 import {
   AddCircle,
   CheckBoxOutlineBlank,
@@ -20,8 +20,8 @@ import {
 } from '@mui/material';
 import { nullToUndefined } from '@tunarr/shared/util';
 import {
-  JellyfinCollectionType,
-  JellyfinItemKind,
+  type JellyfinCollectionType,
+  type JellyfinItemKind,
 } from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
@@ -33,12 +33,9 @@ import {
   addPlexSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { AddedMedia } from '../../types/index.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 
 type Props = {
-  onAddSelectedMedia: (media: AddedMedia[]) => void;
-  onAddMediaSuccess: () => void;
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
   onSelectionModalClose?: () => void;
   selectAllEnabled?: boolean;
@@ -64,8 +61,6 @@ function collectionTypeToItemTypes(
 }
 
 export default function SelectedProgrammingActions({
-  onAddSelectedMedia,
-  onAddMediaSuccess,
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
 }: Props) {
@@ -83,10 +78,7 @@ export default function SelectedProgrammingActions({
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const snackbar = useSnackbar();
-  const { addSelectedItems, isLoading } = useAddSelectedItems(
-    onAddSelectedMedia,
-    onAddMediaSuccess,
-  );
+  const { addSelectedItems, isLoading } = useAddSelectedItems();
   const removeAllItems = useCallback(() => {
     clearSelectedMedia();
   }, []);

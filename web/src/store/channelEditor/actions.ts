@@ -2,12 +2,12 @@ import { forAddedMediaType, unwrapNil } from '@/helpers/util.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import {
-  Channel,
-  ChannelProgram,
-  CondensedChannelProgram,
-  CondensedChannelProgramming,
+  type Channel,
+  type ChannelProgram,
+  type CondensedChannelProgram,
+  type CondensedChannelProgramming,
 } from '@tunarr/types';
-import { Draft } from 'immer';
+import { type Draft } from 'immer';
 import {
   chain,
   extend,
@@ -23,9 +23,13 @@ import {
   tail,
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { AddedMedia, UIChannelProgram, UIIndex } from '../../types/index.ts';
+import {
+  type AddedMedia,
+  type UIChannelProgram,
+  type UIIndex,
+} from '../../types/index.ts';
 import useStore from '../index.ts';
-import { ChannelEditorState, initialChannelEditorState } from './store.ts';
+import { type ChannelEditorState, initialChannelEditorState } from './store.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {

@@ -1,16 +1,16 @@
 import {
-  DefaultError,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UseQueryOptions,
-  UseQueryResult,
-  UseSuspenseQueryResult,
+  type DefaultError,
+  type QueryClient,
+  type QueryFunction,
+  type QueryKey,
+  type UseQueryOptions,
+  type UseQueryResult,
+  type UseSuspenseQueryResult,
   useQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { getApiClient } from '../components/TunarrApiContext';
-import { ApiClient } from '../external/api';
+import { getApiClient } from '../context/TunarrApiContext';
+import { type ApiClient } from '../external/api';
 
 type ApiQueryOptions<
   TQueryFnData = unknown,

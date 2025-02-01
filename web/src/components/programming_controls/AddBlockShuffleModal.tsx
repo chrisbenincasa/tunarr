@@ -23,10 +23,7 @@ import {
 } from '@mui/material';
 import { CalendarIcon } from '@mui/x-date-pickers';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  BlockShuffleConfig,
-  useBlockShuffle,
-} from '../../hooks/programming_controls/useBlockShuffle';
+import { type BlockShuffleConfig } from '../../hooks/programming_controls/useBlockShuffle';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -35,11 +32,18 @@ import {
 type AddBlockShuffleModalProps = {
   open: boolean;
   onClose: () => void;
+  // Kinda gnarly but we have to pass these
+  // down for now
+  blockShuffle: (opts: BlockShuffleConfig | null) => void;
+  canUsePerfectSync: (size: number) => boolean;
 };
 
-const AddBlockShuffleModal = ({ open, onClose }: AddBlockShuffleModalProps) => {
-  const { blockShuffle, canUsePerfectSync } = useBlockShuffle();
-
+const AddBlockShuffleModal = ({
+  open,
+  onClose,
+  blockShuffle,
+  canUsePerfectSync,
+}: AddBlockShuffleModalProps) => {
   const { control, watch, getValues } = useForm<BlockShuffleConfig>({
     defaultValues: {
       shuffleType: 'Fixed',
