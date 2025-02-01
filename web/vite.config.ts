@@ -2,10 +2,7 @@ import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
 import { defineConfig } from 'vite';
-import { plugin as mdPlugin } from 'vite-plugin-markdown';
 import svgr from 'vite-plugin-svgr';
-
-console.log(mdPlugin);
 
 // https://vitejs.dev/config/
 export default defineConfig({
