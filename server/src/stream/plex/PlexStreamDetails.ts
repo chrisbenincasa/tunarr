@@ -202,6 +202,11 @@ export class PlexStreamDetails {
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
+      this.logger.debug(
+        'Plex server %s configured to use "direct" streaming. Attempting to load program at %s',
+        server.name,
+        filePath,
+      );
       streamSource = {
         type: 'file',
         path: replace(
@@ -210,27 +215,40 @@ export class PlexStreamDetails {
           streamSettings.pathReplaceWith,
         ),
       };
-    } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
-      streamSource = {
-        type: 'file',
-        path: filePath,
-      };
     } else {
-      let path = details.serverPath ?? item.plexFilePath;
-
-      if (isNonEmptyString(path)) {
-        path = path.startsWith('/') ? path : `/${path}`;
-
-        streamSource = new HttpStreamSource(
-          `${trimEnd(server.uri, '/')}${path}?X-Plex-Token=${
-            server.accessToken
-          }`,
+      const existsAtPath =
+        isNonEmptyString(filePath) && (await fileExists(filePath));
+      if (existsAtPath) {
+        this.logger.debug(
+          'Plex server %s configured for "network" streaming, but found file located at %s. Using file on disk.',
+          server.name,
+          filePath,
         );
-        // streamUrl = this.getPlexTranscodeStreamUrl(
-        //   `/library/metadata/${item.externalKey}`,
-        // );
+        streamSource = {
+          type: 'file',
+          path: filePath,
+        };
       } else {
-        throw new Error('Could not resolve stream URL');
+        let path = details.serverPath ?? item.plexFilePath;
+        this.logger.debug(
+          'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
+          path,
+        );
+
+        if (isNonEmptyString(path)) {
+          path = path.startsWith('/') ? path : `/${path}`;
+
+          streamSource = new HttpStreamSource(
+            `${trimEnd(server.uri, '/')}${path}?X-Plex-Token=${
+              server.accessToken
+            }`,
+          );
+          // streamUrl = this.getPlexTranscodeStreamUrl(
+          //   `/library/metadata/${item.externalKey}`,
+          // );
+        } else {
+          throw new Error('Could not resolve stream URL');
+        }
       }
     }
 
@@ -281,8 +299,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-            ? 'progressive'
-            : 'unknown',
+              ? 'progressive'
+              : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,
@@ -358,8 +376,6 @@ export class PlexStreamDetails {
       const placeholderThumbPath = isPlexMusicTrack(media)
         ? media.parentThumb ?? media.grandparentThumb ?? media.thumb
         : media.thumb;
-
-      // streamDetails.placeholderImage =
 
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
