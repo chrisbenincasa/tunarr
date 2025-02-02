@@ -109,8 +109,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             .optional()
             .default(true)
             .transform((p) => (p ? 1 : 0)),
-          proxy: TruthyQueryParam.default(false),
+          method: z.enum(['proxy', 'redirect']).catch('proxy'),
           useShowPoster: TruthyQueryParam.default(false),
+          type: z.enum(['program', 'grouping']).catch('program'),
         }),
       },
     },
@@ -121,25 +122,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       // Alternatively, we could introduce a query param to narrow this down...
 
       const [program, grouping] = await Promise.all([
-        // em
-        //   .repo(Program)
-        //   .findOne(
-        //     { uuid: req.params.id },
-        //     { populate: ['album.externalRefs', 'tvShow.externalRefs'] },
-        //   ),
         req.serverCtx.programDB.getProgramById(req.params.id),
         req.serverCtx.programDB.getProgramGrouping(req.params.id),
-        // em
-        //   .repo(ProgramGrouping)
-        //   .findOne({ uuid: req.params.id }, { populate: ['externalRefs'] }),
       ]);
-      // const program = await em.repo(Program).findOne({ uuid: req.params.id });
       if (isNil(program) && isNil(grouping)) {
-        return res.status(404).send();
+        return res.status(404).send('ID not found');
       }
 
       const handleResult = async (mediaSource: MediaSource, result: string) => {
-        if (req.query.proxy) {
+        if (req.query.method === 'proxy') {
           try {
             const proxyRes = await axios.request<stream.Readable>({
               url: result,
@@ -287,7 +278,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               mediaSource,
               PlexApiClient.getThumbUrl({
                 uri: mediaSource.uri,
-                itemKey: source.externalSourceId,
+                itemKey: source.externalKey,
                 accessToken: mediaSource.accessToken,
                 height: req.query.height,
                 width: req.query.width,
@@ -299,7 +290,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               mediaSource,
               JellyfinApiClient.getThumbUrl({
                 uri: mediaSource.uri,
-                itemKey: source.externalSourceId,
+                itemKey: source.externalKey,
                 accessToken: mediaSource.accessToken,
                 height: req.query.height,
                 width: req.query.width,

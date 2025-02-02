@@ -11,6 +11,7 @@ import {
 } from '@iptv/xmltv';
 import { TvGuideProgram, isContentProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
+import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
@@ -143,6 +144,10 @@ export class XmlTvWriter {
         ];
       }
 
+      if (program.date) {
+        partial.date ??= dayjs(program.date).toDate();
+      }
+
       const seasonNumber = program.parent?.index ?? program.seasonNumber;
       const episodeNumber = program.index ?? program.episodeNumber;
       if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
@@ -163,12 +168,7 @@ export class XmlTvWriter {
       }
 
       if (isNonEmptyString(program.id)) {
-        // Disable this for now...
-        // if (xmlSettings.enableImageCache === true) {
-        //   const imgUrl = await cacheImageService.registerImageOnDatabase(icon);
-        //   icon = `{{host}}/cache/images/${imgUrl}`;
-        // }
-        const query = ['proxy=true'];
+        const query: string[] = [];
         const useShowPoster =
           this.settingsDB.xmlTvSettings().useShowPoster ?? false;
         if (
@@ -178,9 +178,26 @@ export class XmlTvWriter {
         ) {
           query.push(`useShowPoster=${useShowPoster}`);
         }
+
+        let idToUse = program.id;
+        if (
+          program.subtype === 'track' &&
+          isNonEmptyString(program.parent?.id)
+        ) {
+          idToUse = program.parent?.id;
+        }
+
+        partial.image = [
+          {
+            _value: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
+              '&amp;',
+            )}`,
+            size: 3,
+          },
+        ];
         partial.icon = [
           {
-            src: `{{host}}/api/programs/${program.id}/thumb?${query.join(
+            src: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
               '&amp;',
             )}`,
           },
