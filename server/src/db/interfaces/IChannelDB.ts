@@ -47,7 +47,7 @@ export interface IChannelDB {
 
   getChannelFallbackPrograms(uuid: string): Promise<ProgramDao[]>;
 
-  saveChannel(createReq: SaveChannelRequest): Promise<ChannnelAndLineup>;
+  createChannel(createReq: SaveChannelRequest): Promise<ChannnelAndLineup>;
 
   deleteChannel(
     channelId: string,

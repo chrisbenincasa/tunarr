@@ -1,5 +1,6 @@
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import {
+  FileCopy,
   Dvr as ProgrammingIcon,
   TextSnippet,
   PlayArrow as WatchIcon,
@@ -12,7 +13,7 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
-  MenuProps,
+  type MenuProps,
   Tooltip,
   Typography,
   alpha,
@@ -21,8 +22,8 @@ import {
   useTheme,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
-import dayjs, { Dayjs } from 'dayjs';
+import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
+import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
@@ -249,22 +250,23 @@ export function TvGuide({ channelId, start, end }: Props) {
         </MenuItem>
         <MenuItem
           disableRipple
-          onClick={() => {
-            copyToClipboard(channelMenu.id!).catch(console.error);
-            setAnchorEl(null);
-          }}
-        >
-          <EditIcon />
-          Copy Channel ID
-        </MenuItem>
-        <MenuItem
-          disableRipple
           to={`/channels/${channelMenu.id}/programming`}
           component={RouterLink}
         >
           <ProgrammingIcon />
           Modify Programing
         </MenuItem>
+        <MenuItem
+          disableRipple
+          onClick={() => {
+            copyToClipboard(channelMenu.id!).catch(console.error);
+            setAnchorEl(null);
+          }}
+        >
+          <FileCopy />
+          Copy Channel ID
+        </MenuItem>
+
         <MenuItem
           disableRipple
           to={`/channels/${channelMenu.id}/watch`}

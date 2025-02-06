@@ -26,9 +26,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Menu,
   MenuItem,
-  MenuProps,
   SvgIcon,
   Toolbar,
   Tooltip,
@@ -36,19 +34,15 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import {
-  ThemeProvider,
-  alpha,
-  createTheme,
-  styled,
-} from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Outlet, Link as RouterLink } from '@tanstack/react-router';
-import { isEmpty, isNull, isUndefined } from 'lodash-es';
-import React, { ReactNode, useCallback, useMemo, useState } from 'react';
+import { Outlet, Link as RouterLink, useMatches } from '@tanstack/react-router';
+import { isEmpty, isNull, isUndefined, last } from 'lodash-es';
+import React, { type ReactNode, useCallback, useMemo, useState } from 'react';
 import './App.css';
 import TunarrLogo from './components/TunarrLogo.tsx';
 import VersionFooter from './components/VersionFooter.tsx';
+import { StyledMenu } from './components/base/StyledMenu.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useVersion } from './hooks/useVersion.ts';
@@ -65,51 +59,10 @@ interface NavItem {
   copyToClipboard?: boolean;
 }
 
-const StyledMenu = styled((props: MenuProps) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{
-      vertical: 'bottom',
-      horizontal: 'right',
-    }}
-    transformOrigin={{
-      vertical: 'top',
-      horizontal: 'right',
-    }}
-    {...props}
-  />
-))(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: 6,
-    marginTop: theme.spacing(1),
-    minWidth: 180,
-    color:
-      theme.palette.mode === 'light'
-        ? 'rgb(55, 65, 81)'
-        : theme.palette.grey[300],
-    boxShadow:
-      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
-    '& .MuiMenu-list': {
-      padding: '4px 0',
-    },
-    '& .MuiMenuItem-root': {
-      '& .MuiSvgIcon-root': {
-        fontSize: 18,
-        color: theme.palette.text.secondary,
-        marginRight: theme.spacing(1.5),
-      },
-      '&:active': {
-        backgroundColor: alpha(
-          theme.palette.primary.main,
-          theme.palette.action.selectedOpacity,
-        ),
-      },
-    },
-  },
-}));
-
 export function Root({ children }: { children?: React.ReactNode }) {
   useServerEventsSnackbar();
+  const routerState = useMatches({ select: (matches) => last(matches) });
+  console.log(routerState);
   const [open, setOpen] = useState(false);
 
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
@@ -477,6 +430,11 @@ export function Root({ children }: { children?: React.ReactNode }) {
                       <ListItemButton
                         to={item.path}
                         key={item.name}
+                        selected={
+                          item.path === '/'
+                            ? item.path === routerState?.fullPath
+                            : `${item.path}/` === routerState?.fullPath
+                        }
                         component={RouterLink}
                       >
                         {item.icon && (

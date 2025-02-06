@@ -6,7 +6,7 @@ import {
   setChannelPaginationState,
   setChannelTableColumnModel,
 } from '@/store/settings/actions.ts';
-import { Maybe } from '@/types/util.ts';
+import { type Maybe } from '@/types/util.ts';
 import {
   Check,
   Close,
@@ -14,6 +14,7 @@ import {
   MoreVert,
   Settings,
   Stop,
+  Tv,
   PlayArrow as WatchIcon,
 } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -42,16 +43,23 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
-import { PaginationState, VisibilityState } from '@tanstack/react-table';
-import { Channel, ChannelIcon, TranscodeConfig } from '@tunarr/types';
-import { ChannelSessionsResponse } from '@tunarr/types/api';
+import {
+  type PaginationState,
+  type VisibilityState,
+} from '@tanstack/react-table';
+import {
+  type Channel,
+  type ChannelIcon,
+  type TranscodeConfig,
+} from '@tunarr/types';
+import { type ChannelSessionsResponse } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { find, isEmpty, map, trimEnd } from 'lodash-es';
 import {
-  MRT_Row,
   MaterialReactTable,
   useMaterialReactTable,
-  type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
+  type MRT_ColumnDef,
+  type MRT_Row,
 } from 'material-react-table';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
@@ -339,6 +347,9 @@ export default function ChannelsPage() {
   }) => {
     return (
       <>
+        <IconButton>
+          <Tv />
+        </IconButton>
         {renderChannelMenu(channel)}
         {!mediumViewport && (
           <Tooltip title="Edit Channel Settings" placement="top">
@@ -481,7 +492,7 @@ export default function ChannelsPage() {
     }),
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        size: mediumViewport ? 60 : 100,
+        size: mediumViewport ? 60 : 140,
         grow: false,
         Header: '',
         visibleInShowHideMenu: false,

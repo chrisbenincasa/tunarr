@@ -345,7 +345,7 @@ export class ChannelDB implements IChannelDB {
     return result?.programs ?? [];
   }
 
-  async saveChannel(createReq: SaveChannelRequest) {
+  async createChannel(createReq: SaveChannelRequest) {
     const existing = await this.getChannel(createReq.number);
     if (!isNil(existing)) {
       throw new Error(

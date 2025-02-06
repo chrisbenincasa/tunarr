@@ -437,7 +437,7 @@ export class LegacyChannelMigrator {
       channelEntity = updatedChannel;
     } else {
       const id = v4();
-      const { channel: newChannel } = await this.channelDB.saveChannel({
+      const { channel: newChannel } = await this.channelDB.createChannel({
         id: id,
         duration: channel.duration,
         disableFillerOverlay: channel.disableFillerOverlay,

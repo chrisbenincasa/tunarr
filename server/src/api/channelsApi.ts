@@ -150,7 +150,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const inserted = await attempt(() =>
-        req.serverCtx.channelDB.saveChannel(req.body),
+        req.serverCtx.channelDB.createChannel(req.body),
       );
       if (isError(inserted)) {
         return res.status(500).send(inserted);
