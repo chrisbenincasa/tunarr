@@ -14,6 +14,7 @@ import {
   Error,
   Info,
   QuestionMark,
+  Refresh,
   Warning,
 } from '@mui/icons-material';
 import {
@@ -31,9 +32,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { compact, isEmpty, map, reject } from 'lodash-es';
+import { compact, isEmpty, map, reject, take } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Markdown from 'react-markdown';
 import { match } from 'ts-pattern';
 
@@ -79,12 +80,16 @@ type RunFixerArgs = {
   fixerId: string;
 };
 
+const ChunkedChangelog = Changelog.split(/(?=\n##\s)/g);
+
 export const StatusPage = () => {
   const { backendUri } = useSettings();
   const systemSettings = useSystemSettings();
   const systemHealthQuery = useSystemHealthChecks();
   const xmlTvLink = useXmlTvLink();
   const m3uLink = useM3ULink();
+  const [changlogPending, startChangelogTransition] = useTransition();
+  const [changelogLinesVisible, setChangelogLinesVisible] = useState(6);
 
   const [runningFixers, setRunningFixers] = useState<Set<string>>(new Set());
   const apiClient = useTunarrApi();
@@ -295,35 +300,65 @@ export const StatusPage = () => {
           )}
         </PaddedPaper>
         <PaddedPaper sx={{ maxHeight: 400, overflowY: 'scroll' }}>
-          <Markdown
-            components={{
-              h1: ({ children }) => (
-                <Typography variant="h4" gutterBottom>
-                  {children}
-                </Typography>
+          <Box>
+            {map(
+              take(ChunkedChangelog, changelogLinesVisible),
+              (chunk, idx) => (
+                <Markdown
+                  key={`chunk_${idx}`}
+                  components={{
+                    h1: ({ children }) => (
+                      <Typography variant="h4" gutterBottom>
+                        {children}
+                      </Typography>
+                    ),
+                    h2: ({ children }) => (
+                      <Typography variant="h5" gutterBottom>
+                        {children}
+                      </Typography>
+                    ),
+                    h3: ({ children }) => (
+                      <Typography variant="h6" gutterBottom>
+                        {children}
+                      </Typography>
+                    ),
+                    text: ({ children }) => (
+                      <Typography variant="body1">{children}</Typography>
+                    ),
+                    a: ({ children, href }) => (
+                      <Link href={href} target="_blank">
+                        {children}
+                      </Link>
+                    ),
+                  }}
+                >
+                  {chunk}
+                </Markdown>
               ),
-              h2: ({ children }) => (
-                <Typography variant="h5" gutterBottom>
-                  {children}
-                </Typography>
-              ),
-              h3: ({ children }) => (
-                <Typography variant="h6" gutterBottom>
-                  {children}
-                </Typography>
-              ),
-              text: ({ children }) => (
-                <Typography variant="body1">{children}</Typography>
-              ),
-              a: ({ children, href }) => (
-                <Link href={href} target="_blank">
-                  {children}
-                </Link>
-              ),
+            )}
+          </Box>
+          {changlogPending && <LinearProgress />}
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              py: 2,
             }}
           >
-            {Changelog}
-          </Markdown>
+            <Button
+              variant="contained"
+              startIcon={<Refresh />}
+              onClick={() =>
+                startChangelogTransition(() =>
+                  setChangelogLinesVisible((prev) => prev + 10),
+                )
+              }
+              disabled={changelogLinesVisible >= ChunkedChangelog.length}
+            >
+              Load More
+            </Button>
+          </Box>
         </PaddedPaper>
       </Stack>
     </Box>

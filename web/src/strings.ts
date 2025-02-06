@@ -9,4 +9,6 @@ export const strings = {
     'Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule.',
   RELEASE_SORT_TOOLTIP:
     'Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.',
+  FFMPEG_MISSING:
+    'FFMPEG not found. For all features to work, we recommend installing FFMPEG 6.1+ or update your FFMPEG executable path in settings.',
 };

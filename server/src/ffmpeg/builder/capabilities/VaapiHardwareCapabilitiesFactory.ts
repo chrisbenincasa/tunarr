@@ -3,13 +3,13 @@ import type { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabil
 import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
 import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.js';
-import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { attempt, isLinux, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isEmpty, isError, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
+import { VainfoProcessHelper } from './VainfoProcessHelper.ts';
 
 export class VaapiHardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
@@ -40,8 +40,8 @@ export class VaapiHardwareCapabilitiesFactory
     const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
+        ? '/dev/dri/renderD128'
+        : undefined;
 
     if (isUndefined(vaapiDevice) || isEmpty(vaapiDevice)) {
       this.logger.error('Cannot detect VAAPI capabilities without a device');
@@ -58,15 +58,7 @@ export class VaapiHardwareCapabilitiesFactory
       VaapiHardwareCapabilitiesFactory.vaInfoCacheKey(vaapiDevice, driver),
       async () => {
         const result = await attempt(() =>
-          new ChildProcessHelper().getStdout(
-            'vainfo',
-            ['--display', 'drm', '--device', vaapiDevice, '-a'],
-            false,
-            isNonEmptyString(driver)
-              ? { LIBVA_DRIVER_NAME: driver }
-              : undefined,
-            false,
-          ),
+          new VainfoProcessHelper().getVainfoOutput('drm', vaapiDevice, driver),
         );
 
         if (isError(result)) {
