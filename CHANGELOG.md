@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.18.8](https://github.com/chrisbenincasa/tunarr/compare/v0.18.7...v0.18.8) (2025-02-07)
+
+
+### Features
+
+* add basic sorting tools for custom shows ([#1079](https://github.com/chrisbenincasa/tunarr/issues/1079)) ([24e9e37](https://github.com/chrisbenincasa/tunarr/commit/24e9e37a38462d933c966aa7142cc7daad385578))
+* add separate system page with new system debug page ([#1084](https://github.com/chrisbenincasa/tunarr/issues/1084)) ([03f6b78](https://github.com/chrisbenincasa/tunarr/commit/03f6b786108926c3d53f0bcfad55b20aefcda67e))
+* show changelog on main page ([#1081](https://github.com/chrisbenincasa/tunarr/issues/1081)) ([cee2c78](https://github.com/chrisbenincasa/tunarr/commit/cee2c7837c196564eca0a81d332c03b2cfc38e91))
+
+
+### Bug Fixes
+
+* attach image to xmltv program entries ([d039d45](https://github.com/chrisbenincasa/tunarr/commit/d039d451db45af76cd9de176f1f4130c80ce1fbd))
+* disable limit on update/delete queries ([#1077](https://github.com/chrisbenincasa/tunarr/issues/1077)) ([2b37fe0](https://github.com/chrisbenincasa/tunarr/commit/2b37fe0304c6501d7401315c1e90e080625ff801))
+* fix copyToClipboard for xmltv/m3u links (again) ([ff08303](https://github.com/chrisbenincasa/tunarr/commit/ff08303f2bfbd6e7a8b5c0e090f7e2facb595cc5))
+* fix typo in vacuum for new sqlite backup method ([d648e1e](https://github.com/chrisbenincasa/tunarr/commit/d648e1e1554d0a5fc644845b07fc60e82ae0115b))
+* use fps_mode instead of vsync when specifying frame rate ([3198481](https://github.com/chrisbenincasa/tunarr/commit/31984812892f480769e63054c647e125d61f80ed))
+
 ## [0.18.7](https://github.com/chrisbenincasa/tunarr/compare/v0.18.6...v0.18.7) (2025-01-29)
 
 
