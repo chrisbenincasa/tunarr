@@ -4,7 +4,7 @@
 
 Create and configure live TV channels from media on your Plex & Jellyfin servers.
 
-Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u Url with any 3rd party IPTV player app.
+Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u URL with any IPTV player app (we love [UHF](https://www.uhfapp.com/) and [Tivimate](https://tivimate.com/)).
 
 <p align="center">
 <img src="./design/tunarr-guide.png">
@@ -24,15 +24,16 @@ Tunarr has the following goals:
 
 - Modernize the stack, both backend and frontend
 - Provide an migration path for existing users
-- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on Node 20.11.1, which offers [non-trivial performance improvements](https://blog.rafaelgss.dev/state-of-nodejs-performance-2023) over previous versions)
+- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on [Bun](https://bun.sh/) 1.2.0, which offers serious performance improvements over Node in various areas)
 - Modernize and "prettify" the Web UI
 - And of course, **Add a ton great new features!**
 
 ## Features
 
 - **NEW** Jellyfin library support!
-- **NEW** Stream your channels directly in the [browser using HLS](https://github.com/chrisbenincasa/tunarr/pull/116)
+- **NEW** Stream your channels directly in the [browser](https://github.com/chrisbenincasa/tunarr/pull/116)
 - **NEW** Complete rewrite of streaming pipeline, offering better stability and improved performance
+- **NEW** New and more powerful scheduling options!
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
 - **NEW** Scheduled, configurable backups - never lose your channels and configuration!
@@ -59,11 +60,21 @@ Tunarr has the following goals:
 
 ## Development
 
-[pnpm](https://pnpm.io), [turbo](https://turbo.build/), and [vite](https://vitejs.dev/) are used for package management and development. More details on the development environment, setup, and contributing to come!
+At a high level, [pnpm](https://pnpm.io) is Tunarr's package manager and [turbo](https://turbo.build/) is used for task running in the repo.
+
+### Server
+
+Tunarr server runs on [Bun](https://bun.sh/).
+
+### Web
+
+[vite](https://vitejs.dev/) is used for web dev and bundling.
 
 ### Start dev servers
 
-Run from the root of the project:
+1. Install Bun
+
+2. Run from the root of the project:
 
 ```
 pnpm turbo dev
