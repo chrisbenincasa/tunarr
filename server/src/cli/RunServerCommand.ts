@@ -5,6 +5,7 @@ import { isNonEmptyString, isProduction } from '@/util/index.js';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import { setServerOptions } from '../globals.ts';
 import { Server } from '../Server.ts';
+import { StartupService } from '../services/StartupService.ts';
 import type { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {
@@ -44,6 +45,7 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
   },
   handler: async (opts: ArgumentsCamelCase<ServerArgsType>) => {
     setServerOptions(opts);
+    await container.get(StartupService).runStartupServices();
     await container.get(Server).initAndRun();
   },
 };

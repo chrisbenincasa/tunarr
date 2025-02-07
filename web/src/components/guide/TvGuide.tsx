@@ -12,7 +12,7 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
-  MenuProps,
+  type MenuProps,
   Tooltip,
   Typography,
   alpha,
@@ -21,8 +21,8 @@ import {
   useTheme,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { ChannelLineup, TvGuideProgram } from '@tunarr/types';
-import dayjs, { Dayjs } from 'dayjs';
+import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
+import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
@@ -613,29 +613,39 @@ export function TvGuide({ channelId, start, end }: Props) {
             <Box
               sx={{
                 position: 'absolute',
-                width: '2px',
-                background: theme.palette.primary.main,
-                zIndex: 10,
-                height: '100%',
                 left: `${progress}%`,
-                top: '-2px',
                 transition: 'left 0.5s linear',
+                height: '100%',
+                zIndex: 10,
               }}
             >
               <Box
                 sx={{
                   position: 'relative',
-                  left: '-25px',
                   background: theme.palette.primary.main,
                   color: theme.palette.primary.contrastText,
-                  width: '50px',
+                  minWidth: '50px',
+                  width: 'max-content',
+                  px: 1,
                   borderRadius: '5px',
                   fontSize: '14px',
                   textAlign: 'center',
+                  zIndex: 2,
                 }}
               >
                 {currentTime}
               </Box>
+              <Box
+                sx={{
+                  position: 'relative',
+                  top: '-18px',
+                  width: '2px',
+                  background: theme.palette.primary.main,
+                  height: '100%',
+                  mt: '-2px',
+                  mx: 'auto',
+                }}
+              ></Box>
             </Box>
           )}
         </Box>

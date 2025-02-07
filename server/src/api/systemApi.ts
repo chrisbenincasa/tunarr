@@ -1,3 +1,4 @@
+import { VainfoProcessHelper } from '@/ffmpeg/builder/capabilities/VainfoProcessHelper.js';
 import { serverOptions } from '@/globals.js';
 import { scheduleBackupJobs } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -13,9 +14,14 @@ import {
 } from '@tunarr/types/api';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import { BackupSettingsSchema } from '@tunarr/types/schemas';
-import { isUndefined } from 'lodash-es';
+import { identity, isError, isUndefined, map } from 'lodash-es';
 import type { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
+import { container } from '../container.ts';
+import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
+import { SystemDevicesService } from '../services/SystemDevicesService.ts';
+import { Result } from '../types/result.ts';
+import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -154,6 +160,77 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       return res.send(
         req.serverCtx.settings.backup as Writable<BackupSettings>,
       );
+    },
+  );
+
+  fastify.get(
+    '/system/debug/nvidia',
+    {
+      schema: {
+        hide: true,
+      },
+    },
+    async (req, res) => {
+      const result = await Promise.all([
+        new NvidiaGpuDetectionHelper()
+          .getGpuFromFfmpeg(
+            req.serverCtx.settings.ffmpegSettings().ffmpegExecutablePath,
+          )
+          .then((res) =>
+            res.either(
+              (gpu) => JSON.stringify(gpu, undefined, 4),
+              (err) => err.message,
+            ),
+          ),
+        (
+          await Result.attemptAsync(() =>
+            new ChildProcessHelper().getStdout(
+              'nvidia-smi',
+              [],
+              true,
+              {},
+              false,
+            ),
+          )
+        ).either(identity, (err) => err.message),
+      ]);
+
+      return res.send(result.join('\n\n'));
+    },
+  );
+
+  fastify.get(
+    '/system/debug/vaapi',
+    {
+      schema: {
+        hide: true,
+      },
+    },
+    async (_, res) => {
+      const devicesService = container.get(SystemDevicesService);
+
+      const vainfoHelper = new VainfoProcessHelper();
+      const results: string[] = [];
+
+      await Promise.all(
+        map(devicesService.getDevices() ?? [], async (device) => {
+          const result = await vainfoHelper.getVainfoOutput(
+            'drm',
+            device,
+            null,
+            false,
+          );
+
+          results.push(`Device [${device}]`);
+          if (isError(result)) {
+            results.push(result.message);
+          } else {
+            results.push(result);
+          }
+        }),
+      );
+
+      return res.type('text').send(results.join('\n'));
     },
   );
 

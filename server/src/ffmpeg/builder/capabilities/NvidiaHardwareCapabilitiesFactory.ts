@@ -8,19 +8,12 @@ import { NvidiaHardwareCapabilities } from '@/ffmpeg/builder/capabilities/Nvidia
 import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import {
-  attempt,
-  drop,
-  isEmpty,
-  isError,
-  map,
-  nth,
-  reject,
-  split,
-  trim,
-} from 'lodash-es';
+import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
+import { drop, isEmpty, map, nth, reject, split, trim } from 'lodash-es';
 import NodeCache from 'node-cache';
+import { KEYS } from '../../../types/inject.ts';
+import { Result } from '../../../types/result.ts';
 
 const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
 const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
@@ -43,36 +36,81 @@ export class NvidiaHardwareCapabilitiesFactory
   constructor(private settings: ReadableFfmpegSettings) {}
 
   async getCapabilities(): Promise<BaseFfmpegHardwareCapabilities> {
-    const result = await attempt(async () => {
-      const out = await cacheGetOrSet(
-        NvidiaHardwareCapabilitiesFactory.cache,
-        NvidiaHardwareCapabilitiesFactory.makeCacheKey(
-          this.settings.ffmpegExecutablePath,
-          'capabilities',
-        ),
-        () =>
-          new ChildProcessHelper().getStdout(
+    return await cacheGetOrSet(
+      NvidiaHardwareCapabilitiesFactory.cache,
+      NvidiaHardwareCapabilitiesFactory.makeCacheKey(
+        this.settings.ffmpegExecutablePath,
+        'capabilities',
+      ),
+      async () => {
+        const nvidiaGpuResult =
+          await new NvidiaGpuDetectionHelper().getGpuFromFfmpeg(
             this.settings.ffmpegExecutablePath,
-            [
-              '-hide_banner',
-              '-f',
-              'lavfi',
-              '-i',
-              'nullsrc',
-              '-c:v',
-              'h264_nvenc',
-              '-gpu',
-              'list',
-              '-f',
-              'null',
-              '-',
-            ],
-            true,
-          ),
+          );
+
+        if (nvidiaGpuResult.isFailure()) {
+          this.logger.warn(
+            nvidiaGpuResult.error,
+            'Error while attempting to determine Nvidia hardware capabilities',
+          );
+          return new NoHardwareCapabilities();
+        }
+
+        const nvidiaGpu = nvidiaGpuResult.get();
+
+        if (!nvidiaGpu) {
+          this.logger.warn(
+            'Could not parse ffmepg output for Nvidia capabilities',
+          );
+          return new NoHardwareCapabilities();
+        }
+
+        return new NvidiaHardwareCapabilities(
+          nvidiaGpu.model,
+          nvidiaGpu.architecture,
+        );
+      },
+    );
+  }
+
+  private get logger() {
+    return NvidiaHardwareCapabilitiesFactory.logger;
+  }
+}
+
+@injectable()
+export class NvidiaGpuDetectionHelper {
+  constructor(
+    @inject(KEYS.Logger)
+    private logger: Logger = LoggerFactory.child({
+      className: NvidiaGpuDetectionHelper.name,
+    }),
+  ) {}
+
+  async getGpuFromFfmpeg(ffmpegExecutablePath: string) {
+    return Result.attemptAsync(async () => {
+      const processOutput = await new ChildProcessHelper().getStdout(
+        ffmpegExecutablePath,
+        [
+          '-hide_banner',
+          '-f',
+          'lavfi',
+          '-i',
+          'nullsrc',
+          '-c:v',
+          'h264_nvenc',
+          '-gpu',
+          'list',
+          '-f',
+          'null',
+          '-',
+        ],
+        true,
       );
 
-      const lines = reject(map(drop(split(out, '\n'), 1), trim), (s) =>
-        isEmpty(s),
+      const lines = reject(
+        map(drop(split(processOutput, '\n'), 1), trim),
+        (s) => isEmpty(s),
       );
 
       for (const line of lines) {
@@ -85,26 +123,15 @@ export class NvidiaHardwareCapabilitiesFactory
           this.logger.debug(
             `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
           );
-          return new NvidiaHardwareCapabilities(model, archNum);
+
+          return {
+            model,
+            architecture: archNum,
+          };
         }
       }
 
-      this.logger.warn('Could not parse ffmepg output for Nvidia capabilities');
-      return new NoHardwareCapabilities();
+      return;
     });
-
-    if (isError(result)) {
-      this.logger.warn(
-        result,
-        'Error while attempting to determine Nvidia hardware capabilities',
-      );
-      return new NoHardwareCapabilities();
-    }
-
-    return result;
-  }
-
-  private get logger() {
-    return NvidiaHardwareCapabilitiesFactory.logger;
   }
 }

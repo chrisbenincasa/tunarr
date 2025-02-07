@@ -1,4 +1,4 @@
-import { StatusPage } from '@/pages/StatusPage';
+import { StatusPage } from '@/pages/system/StatusPage';
 import { setShowWelcome } from '@/store/themeEditor/actions';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 

@@ -242,6 +242,20 @@ const duplicateTranscodeConfig = makeEndpoint({
   ],
 });
 
+const vainfoDebugEndpoint = makeEndpoint({
+  method: 'get',
+  alias: 'getVaapiDebugInfo',
+  path: '/api/system/debug/vaapi',
+  response: z.string(),
+});
+
+const nvidiaDebugEndpoint = makeEndpoint({
+  method: 'get',
+  alias: 'getNvidiaDebugInfo',
+  path: '/api/system/debug/nvidia',
+  response: z.string(),
+});
+
 export const endpoints = [
   getMediaSourcesEndpoint,
   createMediaSourceEndpoint,
@@ -267,4 +281,6 @@ export const endpoints = [
   updateTranscodeConfig,
   deleteTranscodeConfig,
   duplicateTranscodeConfig,
+  vainfoDebugEndpoint,
+  nvidiaDebugEndpoint,
 ] as const;

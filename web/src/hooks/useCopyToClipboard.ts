@@ -39,15 +39,17 @@ export const useCopyToClipboard = () => {
   return useCallback(
     async (text: string, successText?: string, errorText?: string) => {
       const popSuccessSnack = () => {
-        if (isNonEmptyString(successText)) {
-          snackbar.enqueueSnackbar(successText, { variant: 'success' });
-        }
+        const text = isNonEmptyString(successText)
+          ? successText
+          : 'Copied to clipboard!';
+        snackbar.enqueueSnackbar(text, { variant: 'success' });
       };
 
       const popErrorSnack = () => {
-        if (isNonEmptyString(errorText)) {
-          snackbar.enqueueSnackbar(errorText, { variant: 'error' });
-        }
+        const text = isNonEmptyString(errorText)
+          ? errorText
+          : 'Error copying to clipboard!';
+        snackbar.enqueueSnackbar(text, { variant: 'error' });
       };
 
       if (!window.isSecureContext && ref.current) {
@@ -97,4 +99,12 @@ export const useCopyToClipboard = () => {
     },
     [browser, snackbar],
   );
+};
+
+export const useCopyToClipboardSync = () => {
+  const copyToClipboard = useCopyToClipboard();
+
+  return (...params: Parameters<typeof copyToClipboard>) => {
+    copyToClipboard(...params).catch(console.error);
+  };
 };

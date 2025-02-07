@@ -80,6 +80,10 @@ export abstract class Result<T, E extends Error = Error> {
       return f();
     }
   }
+
+  either<U>(onSuccess: (data: T) => U, onError: (err: E) => U): U {
+    return this.isSuccess() ? onSuccess(this._data!) : onError(this._error!);
+  }
 }
 
 export class Success<T, E extends Error = Error> extends Result<T, E> {
@@ -105,6 +109,7 @@ export class Failure<T, E extends Error = Error> extends Result<T, E> {
   }
 
   get(): T {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw this._error;
   }
 
