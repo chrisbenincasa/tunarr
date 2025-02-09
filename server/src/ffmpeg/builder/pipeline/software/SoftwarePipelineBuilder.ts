@@ -41,6 +41,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       currentState = this.setScale(currentState);
       currentState = this.setPad(currentState);
       currentState = this.setWatermark(currentState);
+      this.setStillImageLoop();
     }
 
     if (!this.hasVideoEncoderPipelineStep()) {

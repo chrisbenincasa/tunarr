@@ -2,7 +2,7 @@ import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { first, isNull, isUndefined } from 'lodash-es';
-import type { Dictionary } from 'ts-essentials';
+import type { Dictionary, NonEmptyArray } from 'ts-essentials';
 import type { PixelFormat } from '../ffmpeg/builder/format/PixelFormat.ts';
 import {
   KnownPixelFormats,
@@ -11,19 +11,27 @@ import {
   PixelFormatYuv420P10Le,
 } from '../ffmpeg/builder/format/PixelFormat.ts';
 
+type StreamMusicMetadata = {
+  artistName: string;
+  trackName: string;
+  albumName: string;
+};
+
 export type StreamDetails = {
   duration?: Duration;
   // This is the total bitrate
   bitrate?: number;
 
   // If defined, there is at least one video stream
-  videoDetails?: [VideoStreamDetails, ...VideoStreamDetails[]];
-  audioDetails?: [AudioStreamDetails, ...AudioStreamDetails[]];
+  videoDetails?: NonEmptyArray<VideoStreamDetails>;
+  audioDetails?: NonEmptyArray<AudioStreamDetails>;
 
   audioOnly?: boolean;
   placeholderImage?: StreamSource;
   serverPath?: string;
   directFilePath?: string;
+
+  musicMetadata?: StreamMusicMetadata;
 };
 
 export type VideoStreamDetails = {

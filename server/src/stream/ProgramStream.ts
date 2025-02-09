@@ -49,7 +49,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   }
 
   async setup(
-    opts?: Partial<StreamOptions>,
+    opts: Partial<StreamOptions> = {},
   ): Promise<Result<FfmpegTranscodeSession>> {
     if (this.isInitialized()) {
       return Result.success(this._transcodeSession);
@@ -86,7 +86,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
   protected shutdownInternal(): void {}
 
   protected abstract setupInternal(
-    opts?: Partial<StreamOptions>,
+    opts: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>>;
 
   get transcodeSession() {

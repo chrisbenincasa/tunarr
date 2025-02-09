@@ -299,8 +299,8 @@ export class PlexStreamDetails {
           videoStream.scanType === 'interlaced'
             ? 'interlaced'
             : videoStream.scanType === 'progressive'
-              ? 'progressive'
-              : 'unknown',
+            ? 'progressive'
+            : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.frameRate,
@@ -358,6 +358,14 @@ export class PlexStreamDetails {
       audioDetails: isEmpty(audioStreamDetails)
         ? undefined
         : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+      musicMetadata:
+        media.type === 'track'
+          ? {
+              albumName: media.parentTitle ?? '',
+              artistName: media.grandparentTitle,
+              trackName: media.title,
+            }
+          : undefined,
     };
 
     if (

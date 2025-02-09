@@ -442,7 +442,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       new FrameState({
         isAnamorphic: false,
         scaledSize,
-        paddedSize, // TODO
+        paddedSize,
         videoBitrate: playbackParams.videoBitrate,
         videoBufferSize: playbackParams.videoBufferSize,
         pixelFormat: playbackParams.pixelFormat, //match(), TODO: Make this customizable...

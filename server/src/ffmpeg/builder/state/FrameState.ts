@@ -24,6 +24,7 @@ export const DefaultFrameState: Omit<
   deinterlace: false,
   pixelFormat: null,
   bitDepth: 8,
+  displayTrackInfo: true,
 };
 
 export class FrameState {
@@ -42,6 +43,7 @@ export class FrameState {
   frameDataLocation: FrameDataLocation;
   deinterlace: boolean;
   pixelFormat: Nullable<PixelFormat>;
+  displayTrackInfo: boolean;
 
   constructor(
     fields: MarkOptional<FrameStateFields, keyof typeof DefaultFrameState>,
