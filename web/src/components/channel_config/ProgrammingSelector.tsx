@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { capitalize, find, isEmpty, isUndefined, map } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useProgrammingSelectionContext } from '../../hooks/useProgrammingSelectionContext.ts';
@@ -21,6 +21,7 @@ import {
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
+import { LibraryProgramGrid } from '../library/LibraryProgramGrid.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
@@ -48,10 +49,12 @@ export const ProgrammingSelector = ({
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
   const navigate = Route.useNavigate();
+  const [useSyncedSources, setUseSyncedSources] = useState(true);
+  const selectedImportedLibrary =
+    selectedLibrary?.type === Imported ? selectedLibrary.view : undefined;
   const viewingCustomShows = mediaSource === 'custom-shows';
 
   useEffect(() => {
-    console.log('105');
     const server =
       !isUndefined(mediaSources) && !isEmpty(mediaSources)
         ? (find(mediaSources, ({ id }) => id === initialMediaSourceId) ??
@@ -128,6 +131,21 @@ export const ProgrammingSelector = ({
               }
             />
           );
+        case Imported:
+          return (
+            <Box sx={{ mt: 2 }}>
+              <LibraryProgramGrid
+                library={{
+                  ...selectedLibrary.view,
+                  mediaSource: selectedServer!,
+                }}
+                disableProgramSelection={false}
+                toggleOrSetSelectedProgramsDrawer={
+                  toggleOrSetSelectedProgramsDrawer
+                }
+              />
+            </Box>
+          );
       }
     }
 
@@ -161,6 +179,35 @@ export const ProgrammingSelector = ({
       return;
     }
 
+    // if (useSyncedSources) {
+    //   const libraries = selectedServer.libraries.filter((lib) => lib.enabled);
+    //   if (libraries.length === 0) {
+    //     return;
+    //   }
+
+    //   const items = libraries.map((lib) => {
+    //     return (
+    //       <MenuItem key={lib.id} value={lib.id}>
+    //         {lib.name}
+    //       </MenuItem>
+    //     );
+    //   });
+
+    //   return (
+    //     <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+    //       <InputLabel>Library</InputLabel>
+    //       <Select
+    //         label="Library"
+    //         value={selectedImportedLibrary?.id ?? libraries[0].id}
+    //         onChange={(e) => onLibraryChange(e.target.value)}
+    //       >
+    //         {items}
+    //       </Select>
+    //     </FormControl>
+    //   );
+    // }
+
+    const libraryPicker: React.ReactNode = null;
     switch (selectedServer.type) {
       case Plex: {
         return <PlexLibrarySelector initialLibraryId={initialLibraryId} />;
@@ -172,6 +219,8 @@ export const ProgrammingSelector = ({
         return <EmbyLibrarySelector initialLibraryId={initialLibraryId} />;
       }
     }
+
+    return <>{libraryPicker}</>;
   };
 
   const hasAnySources = !isEmpty(mediaSources) || !isEmpty(customShows);

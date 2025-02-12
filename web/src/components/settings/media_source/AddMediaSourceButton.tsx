@@ -45,6 +45,11 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
     setManualAddPopoverRef(null);
   };
 
+  const handleDiscoverPlexServers = () => {
+    discoverPlexServers();
+    closeManualAddButtonMenu();
+  };
+
   const handleOpenMediaSourceDialog = (source: MediaSourceType) => {
     switch (source) {
       case 'plex':
@@ -85,7 +90,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
           },
         }}
       >
-        <MenuItem onClick={discoverPlexServers}>
+        <MenuItem onClick={() => handleDiscoverPlexServers()}>
           <ListItemIcon>
             <SvgIcon>
               <PlexIcon />

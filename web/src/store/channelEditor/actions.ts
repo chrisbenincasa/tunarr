@@ -287,6 +287,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
             ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
           )
           .with({ type: 'custom-show' }, ({ program }) => program.duration ?? 0)
+          .with({ type: 'imported' }, ({ media }) => media.duration)
           .exhaustive(),
       );
 
@@ -315,6 +316,13 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
           )
           .with(
             { type: 'custom-show', program: P.select() },
+            (program) => program,
+          )
+          .with(
+            {
+              type: 'imported',
+              media: P.select(),
+            },
             (program) => program,
           )
           .exhaustive(),

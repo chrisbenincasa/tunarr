@@ -130,6 +130,10 @@ const namedRoutes: Route[] = [
     matcher: entityPageMatcher('settings/ffmpeg', ''),
     name: 'Edit Transcode Config',
   },
+  {
+    matcher: entityPageMatcher('library', ''),
+    name: 'Search',
+  },
 ];
 
 export const useGetRouteDetails = () => {

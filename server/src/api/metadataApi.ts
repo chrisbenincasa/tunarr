@@ -58,7 +58,9 @@ const thumbOptsSchema = z.object({
 
 const ExternalMetadataQuerySchema = z.object({
   id: externalIdSchema,
-  asset: z.enum(['thumb', 'external-link', 'image']),
+  asset: z.enum(['image', 'external-link', 'thumb']),
+  imageType: z.enum(['poster', 'background']).default('poster'),
+
   mode: z.enum(['json', 'redirect', 'proxy']),
   cache: TruthyQueryParam.optional().default(true),
   thumbOptions: z
@@ -66,7 +68,6 @@ const ExternalMetadataQuerySchema = z.object({
     .transform((s) => JSON.parse(s) as unknown)
     .pipe(thumbOptsSchema)
     .optional(),
-  imageType: z.enum(['poster', 'background']).default('poster'),
 });
 
 type ExternalMetadataQuery = z.infer<typeof ExternalMetadataQuerySchema>;
@@ -237,7 +238,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     }
 
     if (query.asset === 'thumb' || query.asset === 'image') {
-      return jellyfinClient.getThumbUrl(query.id.externalItemId);
+      return jellyfinClient.getThumbUrl(
+        query.id.externalItemId,
+        query.imageType === 'poster' ? 'Thumb' : 'Primary',
+      );
     } else if (query.asset === 'external-link') {
       return jellyfinClient.getExternalUrl(query.id.externalItemId);
     }
@@ -256,7 +260,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     }
 
     if (query.asset === 'thumb' || query.asset === 'image') {
-      return embyClient.getThumbUrl(query.id.externalItemId);
+      return embyClient.getThumbUrl(
+        query.id.externalItemId,
+        query.imageType === 'poster' ? 'Thumb' : 'Primary',
+      );
     } else if (query.asset === 'external-link') {
       return embyClient.getExternalUrl(query.id.externalItemId);
     }

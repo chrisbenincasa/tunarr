@@ -1,8 +1,7 @@
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { TruthyQueryParam } from '@/types/schemas.js';
+import { mediaSourceParamsSchema, TruthyQueryParam } from '@/types/schemas.js';
 import { isDefined, nullToUndefined } from '@/util/index.js';
 import { JellyfinLoginRequest } from '@tunarr/types/api';
 import type { JellyfinCollectionType } from '@tunarr/types/jellyfin';
@@ -20,10 +19,6 @@ import type {
   RouterPluginCallback,
   ZodFastifyRequest,
 } from '../types/serverType.js';
-
-const mediaSourceParams = z.object({
-  mediaSourceId: z.string(),
-});
 
 const ValidJellyfinCollectionTypes: JellyfinCollectionType[] = [
   'movies',
@@ -77,7 +72,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/:mediaSourceId/user_libraries',
     {
       schema: {
-        params: mediaSourceParams,
+        params: mediaSourceParamsSchema,
       },
     },
     (req, res) =>
@@ -89,14 +84,13 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
         const response = await api.getUserViews();
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
         const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
-          ...response.data,
-          Items: filter(response.data.Items, (library) => {
-            // Mixed collections don't have this set
+          ...response.get(),
+          Items: filter(response.get().Items, (library) => {
             if (!library.CollectionType) {
               return true;
             }
@@ -111,43 +105,43 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
       }),
   );
 
-fastify.get(
-  '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
-  {
-    schema: {
-      params: mediaSourceParams.extend({
-        libraryId: z.string(),
-      }),
-      querystring: z.object({
-        includeItemTypes: z.string().optional(),
-      }),
+  fastify.get(
+    '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
+    {
+      schema: {
+        params: mediaSourceParamsSchema.extend({
+          libraryId: z.string(),
+        }),
+        querystring: z.object({
+          includeItemTypes: z.string().optional(),
+        }),
+      },
     },
-  },
-  (req, res) =>
-    withJellyfinMediaSource(req, res, async (mediaSource) => {
-      const api =
-        await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
-          mediaSource,
+    (req, res) =>
+      withJellyfinMediaSource(req, res, async (mediaSource) => {
+        const api =
+          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+            mediaSource,
+          );
+
+        const response = await api.getGenres(
+          req.params.libraryId,
+          req.query.includeItemTypes,
         );
 
-      const response = await api.getGenres(
-        req.params.libraryId,
-        req.query.includeItemTypes,
-      );
+        if (response.isFailure()) {
+          throw response.error;
+        }
 
-      if (isQueryError(response)) {
-        throw new Error(response.message);
-      }
-
-      return res.send(response.data);
-    }),
-);
+        return res.send(response.get());
+      }),
+  );
 
   fastify.get(
     '/jellyfin/:mediaSourceId/libraries/:libraryId/items',
     {
       schema: {
-        params: mediaSourceParams.extend({
+        params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
         querystring: z.object({
@@ -222,17 +216,17 @@ fastify.get(
             : ['SortName', 'ProductionYear'],
         );
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 
   async function withJellyfinMediaSource<
     Req extends ZodFastifyRequest<{
-      params: typeof mediaSourceParams;
+      params: typeof mediaSourceParamsSchema;
     }>,
   >(
     req: Req,

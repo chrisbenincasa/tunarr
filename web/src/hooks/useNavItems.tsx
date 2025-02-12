@@ -68,7 +68,7 @@ export const useNavItems = () => {
       },
       { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
       {
-        name: 'Library',
+        name: 'Media',
         path: '/library',
         icon: <VideoLibrary />,
         children: [

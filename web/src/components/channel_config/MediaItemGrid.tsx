@@ -49,6 +49,7 @@ export interface GridItemProps<ItemType> {
   moveModal: (index: number, item: ItemType) => void;
   depth: number;
   ref: ForwardedRef<HTMLDivElement>;
+  disableSelection?: boolean;
 }
 
 export interface ListItemProps<ItemType> {

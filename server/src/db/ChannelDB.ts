@@ -99,8 +99,6 @@ import {
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
-  AllProgramGroupingFields,
-  MinimalProgramGroupingFields,
   withFallbackPrograms,
   withMusicArtistAlbums,
   withProgramExternalIds,
@@ -121,6 +119,10 @@ import {
 } from './schema/Channel.ts';
 import { programExternalIdString, ProgramType } from './schema/Program.ts';
 import { ProgramGroupingType } from './schema/ProgramGrouping.ts';
+import {
+  AllProgramGroupingFields,
+  MinimalProgramGroupingFields,
+} from './schema/ProgramGrouping.ts';
 import {
   ChannelSubtitlePreferences,
   NewChannelSubtitlePreference,

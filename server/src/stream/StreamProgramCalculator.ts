@@ -23,6 +23,7 @@ import {
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
+import { WrappedError } from '../types/errors.ts';
 import { isNonEmptyString, nullToUndefined } from '../util/index.js';
 import { ChannelCache } from './ChannelCache.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
@@ -50,7 +51,7 @@ export type GetCurrentLineupItemRequest = {
   sessionToken?: string;
 };
 
-export class StreamProgramCalculatorError extends Error {
+export class StreamProgramCalculatorError extends WrappedError {
   constructor(
     public type: 'channel_not_found' | 'ffmpeg_missing' | 'no_current_program',
     message?: string,
@@ -235,11 +236,13 @@ export class StreamProgramCalculator {
         const msg =
           "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
         this.logger.error(msg);
-        return Result.failure(new Error(msg));
+        return Result.forError(new Error(msg));
       }
 
       if (currentProgram.program.type === 'redirect') {
-        return Result.failure(new Error('Unable to resolve program redirects'));
+        return Result.forError(
+          new Error('Unable to resolve program redirects'),
+        );
       }
 
       lineupItem = await this.createLineupItem(

@@ -33,7 +33,7 @@ function extractChildCount(media: PlexMedia) {
   return match(media)
     .with({ type: P.union('season', 'playlist') }, (s) => s.leafCount ?? 0)
     .with({ type: P.union('show') }, (s) => s.childCount)
-    .with({ type: 'collection' }, (c) => parseInt(c.childCount))
+    .with({ type: 'collection' }, (c) => c.childCount)
     .otherwise(() => 0);
 }
 
@@ -124,7 +124,8 @@ export const PlexGridItem = memo(
           } else {
             const query = new URLSearchParams({
               mode: 'proxy',
-              asset: 'thumb',
+              asset: 'image',
+              imageType: 'poster',
               id: createExternalId('plex', server.name, getRatingKey(item)),
               // Commenting this out for now as temporary solution for image loading issue
               // thumbOptions: JSON.stringify({ width: 480, height: 720 }),

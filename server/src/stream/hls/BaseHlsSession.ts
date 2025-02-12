@@ -2,7 +2,7 @@ import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { SessionOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
-import { isNodeError, isNonEmptyString } from '@/util/index.js';
+import { isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -122,7 +122,7 @@ export abstract class BaseHlsSession<
 
           if (workingDirectoryFiles.isFailure()) {
             const e = workingDirectoryFiles.error;
-            if (isNodeError(e) && e.code === 'ENOENT') {
+            if (e.nodeErrorCode() === 'ENOENT') {
               this.logger.debug("Session working directory doesn't exist yet!");
               throw e; // Retry
             } else if (this.state === 'error') {
@@ -165,7 +165,7 @@ export abstract class BaseHlsSession<
     } catch (e) {
       this.logger.error(e, 'Error starting stream after retrying');
       this.state = 'error';
-      return Result.failure(
+      return Result.forError(
         isError(e) ? e : new Error(isString(e) ? e : 'Unknown error'),
       );
     }

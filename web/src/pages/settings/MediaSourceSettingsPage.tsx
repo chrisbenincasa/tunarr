@@ -1,6 +1,5 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
-import { MediaSourceTableRow } from '@/components/settings/media_source/MediaSourceTableRow';
 import {
   CheckboxFormController,
   TypedController,
@@ -10,7 +9,7 @@ import {
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
-import { HelpOutline } from '@mui/icons-material';
+import { Delete, Edit, Refresh, VideoLibrary } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -20,33 +19,40 @@ import {
   Grid,
   IconButton,
   InputLabel,
+  Link,
   MenuItem,
   Select,
-  Skeleton,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PlexStreamSettings } from '@tunarr/types';
+import type { MediaSourceSettings, PlexStreamSettings } from '@tunarr/types';
 import { defaultPlexStreamSettings } from '@tunarr/types';
-import { fill, isEqual, map } from 'lodash-es';
+import { capitalize, isEqual } from 'lodash-es';
+import type { MRT_ColumnDef } from 'material-react-table';
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+} from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
+import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
+import { JellyfinServerEditDialog } from '../../components/settings/media_source/JelllyfinServerEditDialog.tsx';
+import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
+import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
+import type { Nullable } from '../../types/util.ts';
 
 const supportedPaths = [
   { value: 'network', string: 'Network' },
   { value: 'direct', string: 'Direct' },
 ];
+
+type RefreshLibrariesMutationArgs = { mediaSourceId: string };
 
 export default function MediaSourceSettingsPage() {
   const apiClient = useTunarrApi();
@@ -61,6 +67,11 @@ export default function MediaSourceSettingsPage() {
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 
   const snackbar = useSnackbar();
+
+  const [editingMediaSource, setEditingMediaSource] =
+    useState<Nullable<MediaSourceSettings>>(null);
+  const [editingMediaSourceLibraries, setEditingMediaSourceLibraries] =
+    useState<Nullable<MediaSourceSettings>>(null);
 
   const {
     reset,
@@ -99,6 +110,13 @@ export default function MediaSourceSettingsPage() {
     },
   });
 
+  const refreshLibrariesMutation = useMutation({
+    mutationFn: ({ mediaSourceId }: RefreshLibrariesMutationArgs) =>
+      apiClient.refreshMediaLibraries(undefined, {
+        params: { mediaSourceId },
+      }),
+  });
+
   const updatePlexStreamSettings: SubmitHandler<PlexStreamSettings> = (
     streamSettings,
   ) => {
@@ -107,77 +125,104 @@ export default function MediaSourceSettingsPage() {
     });
   };
 
+  const columns = useMemo<MRT_ColumnDef<MediaSourceSettings>[]>(() => {
+    return [
+      {
+        header: 'Type',
+        id: 'type',
+        accessorFn: ({ type }) => capitalize(type),
+        size: 100,
+        grow: false,
+        enableSorting: false,
+      },
+      {
+        header: 'Name',
+        accessorKey: 'name',
+        size: 150,
+        grow: false,
+      },
+      {
+        header: 'URL',
+        accessorKey: 'uri',
+        Cell: ({ cell }) => (
+          <Link href={cell.getValue<string>()} target="_blank">
+            {cell.getValue<string>()}
+          </Link>
+        ),
+        grow: true,
+      },
+      {
+        header: 'Healthy?',
+        id: 'isHealthy',
+        Cell: ({ row }) => (
+          <MediaSourceHealthyTableCell mediaSource={row.original} />
+        ),
+        enableSorting: false,
+        grow: false,
+        size: 150,
+      },
+    ];
+  }, []);
+
+  const table = useMaterialReactTable({
+    data: servers,
+    columns: columns,
+    enableRowActions: true,
+    layoutMode: 'grid',
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        grow: true,
+        Header: '',
+        visibleInShowHideMenu: false,
+        muiTableBodyCellProps: {
+          sx: {
+            flexDirection: 'row',
+          },
+          align: 'right',
+        },
+      },
+    },
+    renderRowActions: ({ row }) => {
+      return (
+        <>
+          <Tooltip title="Edit Media Source" placement="top">
+            <IconButton onClick={() => setEditingMediaSource(row.original)}>
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Refresh Libraries" placement="top">
+            <IconButton
+              onClick={() =>
+                refreshLibrariesMutation.mutate({
+                  mediaSourceId: row.original.id,
+                })
+              }
+            >
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit Libraries" placement="top">
+            <IconButton
+              onClick={() => setEditingMediaSourceLibraries(row.original)}
+            >
+              <VideoLibrary />
+            </IconButton>
+          </Tooltip>
+          <IconButton
+          // onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Delete />
+          </IconButton>
+        </>
+      );
+    },
+    positionActionsColumn: 'last',
+  });
+
   // This is messy, lets consider getting rid of combine, it probably isnt useful here
   if (serversError || streamsError) {
-    return <h1>XML: {(serversError ?? streamsError)!.message}</h1>;
+    return <h1>Error: {(serversError ?? streamsError)!.message}</h1>;
   }
-
-  const getTableRows = () => {
-    return map(servers, (server) => {
-      return <MediaSourceTableRow key={server.id} server={server} />;
-    });
-  };
-
-  const getSkeletonTableRows = (numRows: number) => {
-    return [...fill(Array(numRows), null)].map((_, index) => (
-      <TableRow key={index}>
-        <TableCell component="th" scope="row">
-          <Skeleton animation="wave" variant="text" />
-        </TableCell>
-        <TableCell>
-          <Skeleton animation="wave" variant="text" />
-        </TableCell>
-        <TableCell>
-          <Skeleton animation="wave" variant="text" />
-        </TableCell>
-        <TableCell>
-          <Skeleton animation="wave" variant="text" />
-        </TableCell>
-      </TableRow>
-    ));
-  };
-
-  const renderServersTable = () => {
-    return (
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Type</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>URL</TableCell>
-              <TableCell align="center" sx={{ minWidth: 125 }}>
-                Healthy?
-                <Tooltip
-                  placement="top"
-                  componentsProps={{
-                    popper: {
-                      sx: { textAlign: 'center' },
-                    },
-                  }}
-                  title={
-                    <span>
-                      The connection to the media source
-                      <br />
-                      from the Tunarr server.
-                    </span>
-                  }
-                >
-                  <IconButton size="small" edge="end">
-                    <HelpOutline sx={{ opacity: 0.75 }} />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-              <TableCell sx={{ minWidth: 125 }}></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {serversPending ? getSkeletonTableRows(2) : getTableRows()}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
 
   const renderPathReplacements = () => {
     return (
@@ -248,7 +293,7 @@ export default function MediaSourceSettingsPage() {
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
-          {renderServersTable()}
+          <MaterialReactTable table={table} />
         </Box>
         <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
           Streaming Options
@@ -356,6 +401,32 @@ export default function MediaSourceSettingsPage() {
             </Button>
           </Stack>
         </Stack>
+        {editingMediaSource?.type === 'plex' && (
+          <PlexServerEditDialog
+            open
+            onClose={() => setEditingMediaSource(null)}
+            server={editingMediaSource}
+          />
+        )}
+        {editingMediaSource?.type === 'jellyfin' && (
+          <JellyfinServerEditDialog
+            open
+            onClose={() => setEditingMediaSource(null)}
+            server={editingMediaSource}
+          />
+        )}
+        {editingMediaSource?.type === 'emby' && (
+          <EmbyServerEditDialog
+            open
+            onClose={() => setEditingMediaSource(null)}
+            server={editingMediaSource}
+          />
+        )}
+        <EditMediaSourceLibrariesDialog
+          open={!!editingMediaSourceLibraries}
+          mediaSource={editingMediaSourceLibraries}
+          onClose={() => setEditingMediaSourceLibraries(null)}
+        />
       </Box>
     </Box>
   );

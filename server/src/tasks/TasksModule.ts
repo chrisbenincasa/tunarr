@@ -34,11 +34,14 @@ import type {
   UpdatePlexPlayStatusScheduleRequest,
 } from './plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
+import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.ts';
+import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import type {
   SubtitleExtractorTaskFactory,
   SubtitleExtractorTaskRequest,
 } from './SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+import type { Task } from './Task.ts';
 
 export type ReconcileProgramDurationsTaskFactory = (
   request?: ReconcileProgramDurationsTaskRequest,
@@ -64,6 +67,11 @@ const TasksModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<CleanupSessionsTask>>(
     CleanupSessionsTask.KEY,
   ).toAutoFactory(CleanupSessionsTask);
+
+  bind(ScanLibrariesTask).toSelf();
+  bind<interfaces.Factory<ScanLibrariesTask>>(
+    ScanLibrariesTask.KEY,
+  ).toAutoFactory(ScanLibrariesTask);
 
   bind<
     interfaces.Factory<
@@ -155,6 +163,10 @@ const TasksModule = new ContainerModule((bind) => {
         req,
       ),
   );
+
+  bind<RefreshMediaSourceLibraryTask>(RefreshMediaSourceLibraryTask).toSelf();
+
+  bind<Task>(KEYS.StartupTasks).toService(RefreshMediaSourceLibraryTask);
 });
 
 export { TasksModule };

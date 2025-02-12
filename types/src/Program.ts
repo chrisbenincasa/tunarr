@@ -1,8 +1,15 @@
 import type z from 'zod/v4';
 import type {
+  Episode,
   FillerProgramSchema,
+  ItemSchema,
+  Movie,
   MusicAlbumContentProgramSchema,
   MusicArtistContentProgramSchema,
+  ProgramGroupingSchema,
+  Season,
+  Show,
+  TerminalProgramSchema,
   TvSeasonContentProgramSchema,
   TvShowContentProgramSchema,
 } from './schemas/programmingSchema.js';
@@ -107,3 +114,26 @@ export type CondensedChannelProgramming = z.infer<
 >;
 
 export type ExternalId = z.infer<typeof ExternalIdSchema>;
+
+export type Movie = z.infer<typeof Movie>;
+export type Episode = z.infer<typeof Episode>;
+export type Show = z.infer<typeof Show>;
+export type Season = z.infer<typeof Season>;
+export type Program2 = Movie | Episode;
+// TODO: better names!!!
+export type ProgramLike = z.infer<typeof ItemSchema>;
+export type ProgramGrouping = z.infer<typeof ProgramGroupingSchema>;
+export type TerminalProgram = z.infer<typeof TerminalProgramSchema>;
+
+export function getChildItemType(typ: ProgramGrouping['type']) {
+  switch (typ) {
+    case 'show':
+      return 'season';
+    case 'season':
+      return 'episode';
+    case 'album':
+      return 'track';
+    case 'artist':
+      return 'album';
+  }
+}

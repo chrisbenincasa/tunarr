@@ -3,7 +3,7 @@ import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { type MouseEventHandler, useCallback, useState } from 'react';
 import { match } from 'ts-pattern';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { enumerateEmbyItem } from '../../helpers/embyUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
@@ -89,6 +89,28 @@ export const useAddSelectedItems = () => {
             )();
 
             return map(items, (item) => ({ media: item, type: Emby }));
+          })
+          .with({ type: Imported }, async (selected) => {
+            const media = knownMedia.getMediaOfType(
+              selected.serverId,
+              selected.id,
+              Imported,
+            );
+            if (!media) return [];
+            // switch (media.type) {
+            //   case 'movie':
+            //   case 'show':
+            //   case 'season':
+            //   case 'episode':
+            // }
+            const results = await apiClient.getProgramDescendants({
+              params: { id: selected.id },
+            });
+
+            return results.map((program) => ({
+              media: program,
+              type: Imported,
+            }));
           })
           .with({ type: 'custom-show' }, (selected) => {
             return Promise.resolve(

@@ -23,6 +23,7 @@ export const JellyfinItemFields = z.enum([
   'MediaSourceCount',
   'MediaSources',
   'OriginalTitle',
+  'OfficialRating',
   'Overview',
   'ParentId',
   'Path',
@@ -292,11 +293,14 @@ export const JellyfinJoinItem = z.object({
 });
 
 export const JellyfinPerson = JellyfinJoinItem.extend({
+  Id: z.string(),
   Role: z.string().nullable().optional(),
   Type: z.string().nullable().optional(),
   PrimaryImageTag: z.string().nullable().optional(),
   ImageBlurHashes: JellyfinImageBlurHashes.nullable().optional(),
 });
+
+export type JellyfinPerson = z.infer<typeof JellyfinPerson>;
 
 export const JellyfinChapter = z.object({
   StartPositionTicks: z.number().positive(),
@@ -625,6 +629,8 @@ const MediaSourceInfo = z
   })
   .partial();
 
+export type JellyfinMediaSourceInfo = z.infer<typeof MediaSourceInfo>;
+
 export const JellyfinItem = z.object({
   Name: z.string().nullable().optional(),
   OriginalTitle: z.string().nullable().optional(),
@@ -688,7 +694,7 @@ export const JellyfinItem = z.object({
   IsFolder: z.boolean().nullable().optional(),
   ParentId: z.string().nullable().optional(),
   Type: JellyfinItemKind,
-  // People: z.array(BaseItemPerson).nullable().optional(),
+  People: z.array(JellyfinPerson).nullable().optional(),
   Studios: z.array(NameGuidPair).nullable().optional(),
   GenreItems: z.array(NameGuidPair).nullable().optional(),
   ParentLogoItemId: z.string().nullable().optional(),

@@ -24,6 +24,7 @@ import {
 } from 'lodash-es';
 import schedule from 'node-schedule';
 import path, { dirname } from 'node:path';
+import pm2 from 'pm2';
 import 'reflect-metadata';
 import { z } from 'zod/v4';
 import { HdhrApiRouter } from './api/hdhrApi.js';
@@ -40,6 +41,7 @@ import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
+import { Task } from './tasks/Task.ts';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
 import { fileExists } from './util/fsUtil.js';
@@ -86,6 +88,7 @@ export class Server {
 
     // TODO: Use injector
     initializeSingletons(this.serverContext);
+
     await this.serverContext.m3uService.clearCache();
     await this.serverContext.channelLineupMigrator.run();
 
@@ -135,6 +138,9 @@ export class Server {
 
     scheduleJobs(this.serverContext);
     await this.serverContext.fixerRunner.runFixers();
+    await Promise.all(
+      container.getAll<Task>(KEYS.StartupTasks).map((task) => task.run()),
+    );
     await initPersistentStreamCache();
 
     const updateXMLPromise = GlobalScheduler.runScheduledJobNow(
@@ -471,6 +477,8 @@ export class Server {
           'Received exit signal %s, attempting graceful shutdown',
           signal,
         );
+
+        pm2.disconnect();
 
         const t = new Date().getTime();
 

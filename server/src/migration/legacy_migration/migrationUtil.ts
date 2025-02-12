@@ -140,6 +140,7 @@ export function createProgramEntity(
       originalAirDate: program.date,
       rating: program.rating,
       year: program.year,
+      // canonicalId: new PlexMediaCanonicalizer().getCanonicalId()
     } satisfies NewProgramDao;
   }
 

@@ -34,9 +34,7 @@ import { v4 } from 'uuid';
 import { z } from 'zod/v4';
 import {
   BaseApiClient,
-  isQueryError,
   type ApiClientOptions,
-  type QueryErrorResult,
   type QueryResult,
 } from '../BaseApiClient.ts';
 
@@ -285,12 +283,8 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
       },
     );
 
-    if (isQueryError(result)) {
-      return result;
-    }
-
-    return this.makeSuccessResult(
-      find(result.data.Items, (item) => item.Id === itemId),
+    return result.mapPure(({ Items }) =>
+      find(Items, (item) => item.Id === itemId),
     );
   }
 
@@ -345,7 +339,7 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
     mediaItemId: string,
     streamIndex: number,
     subtitleFormat: string,
-  ) {
+  ): Promise<QueryResult<string>> {
     const subtitlesResult = await this.doGet<string>({
       url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/Stream.${subtitleFormat}`,
     });
@@ -421,9 +415,9 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
     return `${opts.uri}/Items/${opts.itemKey}/Images/Primary`;
   }
 
-  protected override preRequestValidate(
+  protected override preRequestValidate<T>(
     req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
+  ): Maybe<QueryResult<T>> {
     if (isEmpty(this.options.accessToken)) {
       return this.makeErrorResult('no_access_token', 'No Emby token provided.');
     }

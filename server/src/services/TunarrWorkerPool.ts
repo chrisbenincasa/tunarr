@@ -128,7 +128,11 @@ export class TunarrWorkerPool implements IWorkerPool {
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
 
-  constructor(@inject(KEYS.Logger) private logger: Logger) {}
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(TunarrSubprocessService)
+    private subprocessService: TunarrSubprocessService,
+  ) {}
 
   start() {
     if (this.#state !== 'pending') {
@@ -220,7 +224,7 @@ export class TunarrWorkerPool implements IWorkerPool {
     }
 
     this.logger.info(`Starting worker ${idx}`);
-    const worker = TunarrSubprocessService.createWorker();
+    const worker = this.subprocessService.createWorker();
 
     this.#pool[idx] = {
       worker,

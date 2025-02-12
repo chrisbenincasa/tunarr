@@ -44,13 +44,15 @@
   "devDependencies": {
     "@types/lodash-es": "4.17.9",
     "@types/node": "22.10.7",
+    "chevrotain": "^11.0.3",
     "rimraf": "^5.0.5",
-    "ts-essentials": "^9.4.1",
+    "ts-essentials": "^9.4.2",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
+    "chevrotain": "^11.0.3",
     "ts-pattern": "^5.4.0"
   }
 }

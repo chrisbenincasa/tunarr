@@ -1,6 +1,7 @@
 import type { TupleToUnion } from '@tunarr/types';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { Updateable } from 'kysely';
 import { type Insertable, type Selectable } from 'kysely';
 import type { StrictOmit } from 'ts-essentials';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
@@ -80,3 +81,61 @@ export type JellyfinMediaSource = SpecificMediaSourceType<
 export type EmbyMediaSource = SpecificMediaSourceType<
   typeof MediaSourceType.Emby
 >;
+
+export const MediaLibraryTypes = [
+  'movies',
+  'shows',
+  'music_videos',
+  'other_videos',
+  'tracks',
+] as const;
+
+export type MediaLibraryType = TupleToUnion<typeof MediaLibraryTypes>;
+
+export const MediaSourceLibrary = sqliteTable(
+  'media_source_library',
+  {
+    uuid: text().primaryKey().notNull(),
+    name: text().notNull(),
+    mediaType: text({ enum: MediaLibraryTypes }).notNull(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, { onDelete: 'cascade' })
+      .notNull(),
+    lastScannedAt: integer({ mode: 'timestamp_ms' }),
+    externalKey: text().notNull(),
+    enabled: integer({ mode: 'boolean' }).default(false).notNull(),
+  },
+  (table) => [
+    check(
+      'media_type_check',
+      inArray(table.mediaType, table.mediaType.enumValues).inlineParams(),
+    ),
+  ],
+);
+
+export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
+  'enabled',
+  'externalKey',
+  'lastScannedAt',
+  'mediaSourceId',
+  'mediaType',
+  'uuid',
+  'name',
+];
+
+export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;
+export type MediaSourceLibrary = Selectable<MediaSourceLibraryTable>;
+export type NewMediaSourceLibrary = Insertable<MediaSourceLibraryTable>;
+export type MediaSourceLibraryUpdate = Updateable<MediaSourceLibraryTable>;
+
+export const MediaSourceLibraryReplacePath = sqliteTable(
+  'media_source_library_replace_path',
+  {
+    uuid: text().primaryKey().notNull(),
+    serverPath: text().notNull(),
+    localPath: text().notNull(),
+    mediaSourceId: text()
+      .notNull()
+      .references(() => MediaSource.uuid, { onDelete: 'cascade' }),
+  },
+);

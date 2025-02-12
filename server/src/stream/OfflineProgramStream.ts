@@ -89,9 +89,9 @@ export class OfflineProgramStream extends ProgramStream {
       return Result.success(ff);
     } catch (err) {
       if (isError(err)) {
-        return Result.failure(err);
+        return Result.forError(err);
       } else {
-        return Result.failure(
+        return Result.forError(
           new Error(
             'Error when attempting to play offline screen: ' +
               JSON.stringify(err),

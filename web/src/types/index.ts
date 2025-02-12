@@ -8,7 +8,6 @@ import {
   type ContentProgram,
   type CustomProgram,
   type FlexProgram,
-  type Program,
   type RedirectProgram,
 } from '@tunarr/types';
 import { type ApiOf } from '@tunarr/zodios-core';
@@ -21,15 +20,7 @@ import type { MarkRequired } from 'ts-essentials';
 import { type ApiClient } from '../external/api.ts';
 import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';
 import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
-import type { Emby } from './MediaSource';
-
-// A program that may or may not exist in the DB yet
-export type EphemeralProgram = Omit<Program, 'id'>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PreloadedData<T extends (...args: any[]) => any> = Awaited<
-  ReturnType<ReturnType<T>>
->;
+import type { Emby, Imported, Jellyfin, Plex } from './MediaSource';
 
 // The expanded type of our API
 type ApiType = ApiOf<ApiClient>;
@@ -133,18 +124,23 @@ export type AddedCustomShowProgram = {
 };
 
 export type AddedPlexMedia = {
-  type: 'plex';
+  type: Plex;
   media: EnrichedPlexMedia;
 };
 
 export type AddedJellyfinMedia = {
-  type: 'jellyfin';
+  type: Jellyfin;
   media: EnrichedJellyfinItem;
 };
 
 export type AddedEmbyMedia = {
   type: Emby;
   media: EnrichedEmbyItem;
+};
+
+export type AddedImportedMedia = {
+  type: Imported;
+  media: ContentProgram;
 };
 
 /**
@@ -154,7 +150,8 @@ export type AddedMedia =
   | AddedPlexMedia
   | AddedJellyfinMedia
   | AddedEmbyMedia
-  | AddedCustomShowProgram;
+  | AddedCustomShowProgram
+  | AddedImportedMedia;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type Prettify<Type> = Type extends Function

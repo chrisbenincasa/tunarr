@@ -16,6 +16,7 @@ import {
   SystemSettingsSchema,
   XmlTvSettings,
   defaultFfmpegSettings,
+  defaultGlobalMediaSourceSettings,
   defaultHdhrSettings,
   defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
@@ -23,6 +24,8 @@ import {
 import {
   BackupSettings,
   FfmpegSettingsSchema,
+  GlobalMediaSourceSettings,
+  GlobalMediaSourceSettingsSchema,
   HdhrSettingsSchema,
   PlexStreamSettingsSchema,
   XmlTvSettingsSchema,
@@ -56,6 +59,7 @@ export const SettingsSchema = z.object({
   xmltv: XmlTvSettingsSchema,
   plexStream: PlexStreamSettingsSchema,
   ffmpeg: FfmpegSettingsSchema,
+  mediaSource: GlobalMediaSourceSettingsSchema,
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -96,6 +100,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     xmltv: defaultXmlTvSettings(dbBasePath),
     plexStream: defaultPlexStreamSettings,
     ffmpeg: defaultFfmpegSettings,
+    mediaSource: defaultGlobalMediaSourceSettings,
   },
   system: {
     backup: {
@@ -173,6 +178,10 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
 
   systemSettings(): DeepReadonly<SystemSettings> {
     return this.db.data.system;
+  }
+
+  globalMediaSourceSettings(): DeepReadonly<GlobalMediaSourceSettings> {
+    return this.db.data.settings.mediaSource;
   }
 
   updateFfmpegSettings(ffmpegSettings: FfmpegSettings) {

@@ -106,11 +106,34 @@ export const FfmpegSettingsSchema = z.object({
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });
 
-const mediaSourceId = z.custom<MediaSourceId>((val) => {
+export const mediaSourceId = z.custom<MediaSourceId>((val) => {
   return typeof val === 'string';
 });
 
 export type MediaSourceId = Tag<string, 'mediaSourceId'>;
+
+export const MediaSourceType = z.enum(['plex', 'jellyfin', 'emby']);
+
+const BaseMediaSourceLibrarySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  mediaType: z.enum([
+    'movies',
+    'shows',
+    'tracks',
+    'other_videos',
+    'music_videos',
+  ]),
+  lastScannedAt: z.number().optional(),
+  externalKey: z.string(),
+  type: MediaSourceType,
+  enabled: z.boolean(),
+  isLocked: z.boolean(),
+});
+
+export const MediaSourceLibrarySchema = BaseMediaSourceLibrarySchema.extend({
+  mediaSource: z.lazy(() => BaseMediaSourceSettingsSchema),
+});
 
 const BaseMediaSourceSettingsSchema = z.object({
   id: mediaSourceId,
@@ -119,10 +142,11 @@ const BaseMediaSourceSettingsSchema = z.object({
   accessToken: z.string(),
   userId: z.string().nullable(),
   username: z.string().nullable(),
+  libraries: z.array(BaseMediaSourceLibrarySchema),
 });
 
 export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
-  type: z.literal('plex'),
+  type: z.literal(MediaSourceType.enum.plex),
   sendGuideUpdates: z.boolean(),
   sendChannelUpdates: z.boolean(),
   index: z.number(),
@@ -155,6 +179,14 @@ export const HdhrSettingsSchema = z.object({
   autoDiscoveryEnabled: z.boolean().default(true),
   tunerCount: z.number().default(2),
 });
+
+export const GlobalMediaSourceSettingsSchema = z.object({
+  rescanIntervalHours: z.number().nonnegative().default(6),
+});
+
+export type GlobalMediaSourceSettings = z.infer<
+  typeof GlobalMediaSourceSettingsSchema
+>;
 
 export const FileBackupOutputSchema = z.object({
   type: z.literal('file'),

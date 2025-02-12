@@ -41,14 +41,23 @@ export const CacheSettingsSchema = z.object({
 
 export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
 
+export const SearchServerSettingsSchema = z.object({
+  maxIndexingMemory: z.number().optional(),
+  snapshotIntervalHours: z.number().default(4),
+});
+
 export const ServerSettingsSchema = z.object({
   port: z.number().min(1).max(65535).optional().default(8000),
+  searchSettings: SearchServerSettingsSchema,
 });
 
 export type ServerSettings = z.infer<typeof ServerSettingsSchema>;
 
 export const DefaultServerSettings = {
   port: 8000,
+  searchSettings: {
+    snapshotIntervalHours: 4,
+  },
 } satisfies ServerSettings;
 
 export const SystemSettingsSchema = z.object({

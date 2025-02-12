@@ -1,6 +1,5 @@
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { EmbyApiClient } from '@/external/emby/EmbyApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { isDefined, nullToUndefined } from '@/util/index.js';
@@ -89,13 +88,13 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
         const response = await api.getUserViews();
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
         const sanitizedResponse: EmbyLibraryItemsResponseType = {
-          ...response.data,
-          Items: filter(response.data.Items, (library) => {
+          ...response.get(),
+          Items: filter(response.get().Items, (library) => {
             // Mixed collections don't have this set
             if (!library.CollectionType) {
               return true;
@@ -193,11 +192,11 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : ['SortName', 'ProductionYear'],
         );
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 

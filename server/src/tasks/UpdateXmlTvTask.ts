@@ -14,7 +14,7 @@ import { Logger } from '@/util/logging/LoggerFactory.js';
 import { type Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 import { Task, TaskMetadata } from './Task.js';
@@ -33,7 +33,7 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
-    @inject(MediaSourceApiFactory)
+    @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(LineupCreator) private lineupCreator: LineupCreator,
   ) {

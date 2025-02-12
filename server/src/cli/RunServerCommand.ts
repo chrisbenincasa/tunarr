@@ -21,6 +21,7 @@ export type ServerArgsType = GlobalArgsType & {
   printRoutes: boolean;
   admin: boolean;
   trustProxy: boolean;
+  searchPort?: number;
 };
 
 export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
@@ -46,6 +47,9 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
       type: 'boolean',
       default: () =>
         getBooleanEnvVar(TUNARR_ENV_VARS.TRUST_PROXY_ENV_VAR, false),
+    },
+    searchPort: {
+      type: 'number',
     },
   },
   handler: async (

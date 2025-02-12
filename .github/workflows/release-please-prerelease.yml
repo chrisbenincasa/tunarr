@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Ref to build pre-release from"
+        required: true
+        default: 'dev'
   push:
     branches:
       - media-scanner
@@ -18,6 +23,6 @@ jobs:
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          config-file: release-please-config.json
+          config-file: release-please-config-prerelease.json
           manifest-file: .release-please-manifest.json
-          target-branch: ${{ github.ref_name }}
+          target-branch: ${{ inputs.base_ref || github.ref_name }}

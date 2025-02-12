@@ -1,9 +1,11 @@
 import type { ApiClient } from '@/external/api.ts';
+import type { DataTag } from '@tanstack/react-query';
 import {
   queryOptions,
   useQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
+import type { MediaSourceSettings } from '@tunarr/types';
 import { apiQueryOptions, useApiSuspenseQuery } from './useApiQuery.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 
@@ -19,9 +21,14 @@ export const useFfmpegSettings = () =>
     queryFn: (apiClient) => apiClient.getFfmpegSettings(),
   });
 
+export const MediaSourcesQueryKey = ['settings', 'media-sources'] as DataTag<
+  ['settings', 'media-sources'],
+  MediaSourceSettings[]
+>;
+
 export const useMediaSources = () =>
   useApiSuspenseQuery({
-    queryKey: ['settings', 'media-sources'],
+    queryKey: MediaSourcesQueryKey,
     queryFn: (apiClient) => apiClient.getMediaSources(),
   });
 
@@ -44,7 +51,7 @@ export const usePlexSettings = () => {
   return useQueries({
     queries: [
       {
-        queryKey: ['settings', 'media-sources'],
+        queryKey: MediaSourcesQueryKey,
         queryFn: () => apiClient.getMediaSources(),
       },
       {

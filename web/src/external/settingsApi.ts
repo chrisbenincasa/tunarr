@@ -3,6 +3,7 @@ import {
   EmbyLoginRequest,
   InsertMediaSourceRequestSchema,
   JellyfinLoginRequest,
+  ScanProgressSchema,
   SystemSettingsResponseSchema,
   UpdateMediaSourceRequestSchema,
   UpdateSystemSettingsRequestSchema,
@@ -11,6 +12,7 @@ import {
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
   HealthCheckSchema,
+  MediaSourceLibrarySchema,
   MediaSourceSettingsSchema,
   PlexStreamSettingsSchema,
   TranscodeConfigSchema,
@@ -56,6 +58,88 @@ const deleteMediaSourceEndpoint = makeEndpoint({
     .addBody(z.null())
     .build(),
   alias: 'deleteMediaSource',
+  response: z.void(),
+});
+
+const getMediaLibraries = makeEndpoint({
+  method: 'get',
+  path: '/api/media-sources/:mediaSourceId/libraries',
+  parameters: parametersBuilder()
+    .addPaths({
+      mediaSourceId: z.string(),
+    })
+    .build(),
+  alias: 'getMediaLibraries',
+  response: z.array(MediaSourceLibrarySchema),
+});
+
+const getMediaLibrary = makeEndpoint({
+  method: 'get',
+  path: '/api/media-libraries/:libraryId',
+  parameters: parametersBuilder()
+    .addPaths({
+      libraryId: z.string(),
+    })
+    .build(),
+  alias: 'getMediaLibrary',
+  response: MediaSourceLibrarySchema,
+});
+
+const getMediaLibraryStatus = makeEndpoint({
+  method: 'get',
+  path: '/api/media-libraries/:libraryId/status',
+  parameters: parametersBuilder()
+    .addPaths({
+      libraryId: z.string(),
+    })
+    .build(),
+  alias: 'getMediaLibraryStatus',
+  response: ScanProgressSchema,
+});
+
+const updateMediaLibraryEndpoint = makeEndpoint({
+  method: 'put',
+  path: '/api/media-sources/:mediaSourceId/libraries/:libraryId',
+  parameters: parametersBuilder()
+    .addPaths({
+      mediaSourceId: z.string(),
+      libraryId: z.string(),
+    })
+    .addBody(
+      z.object({
+        enabled: z.boolean(),
+      }),
+    )
+    .build(),
+  alias: 'updateMediaLibrary',
+  response: MediaSourceLibrarySchema,
+});
+
+const refreshAllMediaSourceLibraries = makeEndpoint({
+  method: 'post',
+  path: '/api/media-sources/:mediaSourceId/libraries/all/refresh',
+  parameters: parametersBuilder()
+    .addPaths({
+      mediaSourceId: z.string(),
+    })
+    .build(),
+  alias: 'refreshMediaLibraries',
+  status: 202,
+  response: z.void(),
+});
+
+const refreshMediaSourceLibrary = makeEndpoint({
+  method: 'post',
+  path: '/api/media-sources/:mediaSourceId/libraries/:libraryId/refresh',
+  parameters: parametersBuilder()
+    .addPaths({
+      mediaSourceId: z.string(),
+      libraryId: z.string(),
+    })
+    .addParameter('forceScan', 'Query', z.boolean().optional())
+    .build(),
+  alias: 'refreshMediaLibrary',
+  status: 202,
   response: z.void(),
 });
 
@@ -307,4 +391,10 @@ export const endpoints = [
   vainfoDebugEndpoint,
   nvidiaDebugEndpoint,
   envDebugEndpoint,
+  getMediaLibraries,
+  updateMediaLibraryEndpoint,
+  refreshAllMediaSourceLibraries,
+  refreshMediaSourceLibrary,
+  getMediaLibrary,
+  getMediaLibraryStatus,
 ] as const;

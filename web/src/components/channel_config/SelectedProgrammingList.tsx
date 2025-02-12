@@ -3,6 +3,7 @@ import JellyfinLogo from '@/assets/jellyfin.svg';
 import PlexLogo from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import type { ImportedLibrarySelectedMedia } from '@/store/programmingSelector/store.ts';
 import {
   type EmbySelectedMedia,
   type JellyfinSelectedMedia,
@@ -32,7 +33,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { pluralizeWithCount, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
@@ -92,7 +93,7 @@ const PlexSelectedProgramListItem = ({
         (coll) =>
           (secondary = `${coll.title} (${coll.childCount} ${pluralize(
             'item',
-            parseInt(coll.childCount),
+            coll.childCount,
           )})`),
       )
       .with(
@@ -272,6 +273,95 @@ const EmbySelectedProgramListItem = ({
   );
 };
 
+const ImportedProgramListItem = ({
+  selected,
+  knownMedia,
+  listChildProps,
+  mediaSourcesById,
+}: SelectedProgramListItemProps<ImportedLibrarySelectedMedia>) => {
+  const media = knownMedia.getMediaOfType(
+    selected.serverId,
+    selected.id,
+    Imported,
+  );
+
+  if (!media) {
+    return;
+  }
+
+  let icon: string | undefined;
+  switch (mediaSourcesById[selected.serverId].type) {
+    case 'plex':
+      icon = PlexLogo;
+      break;
+    case 'jellyfin':
+      icon = JellyfinLogo;
+      break;
+    case 'emby':
+      icon = EmbyLogo;
+      break;
+  }
+
+  let secondary: ReactNode = null;
+  switch (media?.type) {
+    case 'show':
+      secondary = `${media.childCount ?? 0} ${pluralize(
+        'season',
+        media.childCount ?? 0,
+      )}, ${media.grandchildCount ?? 0} total ${pluralize(
+        'episode',
+        media.grandchildCount ?? 0,
+      )}`;
+      break;
+    case 'movie':
+      secondary = `Movie${media.year ? ', ' + media.year : ''}`;
+      break;
+  }
+  // if (media.Type === 'CollectionFolder') {
+  //   // TODO: Show the size
+  //   title = `Media - ${media.Name}`;
+  // } else if (media.Type === 'Series') {
+  //   secondary = `${media.ChildCount ?? 0} ${pluralize(
+  //     'season',
+  //     media.ChildCount ?? 0,
+  //   )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+  //     'episode',
+  //     media.RecursiveItemCount ?? 0,
+  //   )}`;
+  // } else if (media.Type === 'Season') {
+  //   secondary = `${media.SeriesName} - ${media.Name} (${
+  //     media.ChildCount ?? 0
+  //   } ${pluralize('episode', media.ChildCount ?? 0)})`;
+  // } else if (media.Type === 'Movie') {
+  //   secondary = `Movie${
+  //     media.ProductionYear ? ', ' + media.ProductionYear : ''
+  //   }`;
+  // }
+
+  return (
+    <ListItem
+      {...listChildProps}
+      divider
+      sx={{ px: 1 }}
+      dense
+      key={selected.id}
+    >
+      <Tooltip
+        placement="left"
+        title={mediaSourcesById[selected.serverId]?.name ?? ''}
+      >
+        <Box component="img" src={icon} width={30} sx={{ pr: 1 }} />
+      </Tooltip>
+      <ListItemText primary={media?.title ?? ''} secondary={secondary} />
+      <ListItemIcon sx={{ minWidth: 40 }}>
+        <IconButton onClick={() => removeSelectedMedia([selected])}>
+          <RemoveIcon />
+        </IconButton>
+      </ListItemIcon>
+    </ListItem>
+  );
+};
+
 export default function SelectedProgrammingList({
   isOpen,
   toggleOrSetSelectedProgramsDrawer,
@@ -306,6 +396,7 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
+      case Imported:
         return `${item.type}.${item.serverId}.${item.id}`;
       case 'custom-show':
         return `custom_${item.customShowId}_${index}`;
@@ -336,6 +427,15 @@ export default function SelectedProgrammingList({
       case Emby:
         return (
           <EmbySelectedProgramListItem
+            knownMedia={knownMedia}
+            listChildProps={props}
+            selected={selected}
+            mediaSourcesById={mediaSourcesById}
+          />
+        );
+      case Imported:
+        return (
+          <ImportedProgramListItem
             knownMedia={knownMedia}
             listChildProps={props}
             selected={selected}

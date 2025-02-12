@@ -23,6 +23,7 @@ import { HdhrService } from './services/HDHRService.ts';
 import { HealthCheckService } from './services/HealthCheckService.js';
 import { M3uService } from './services/M3UService.ts';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
+import { MeilisearchService } from './services/SearchService.ts';
 import { TVGuideService } from './services/TvGuideService.ts';
 import { CacheImageService } from './services/cacheImageService.js';
 import { ChannelCache } from './stream/ChannelCache.js';
@@ -73,6 +74,9 @@ export class ServerContext {
 
   @inject(KEYS.WorkerPool)
   public readonly workerPool: IWorkerPool;
+
+  @inject(MeilisearchService)
+  public readonly searchService!: MeilisearchService;
 }
 
 export class ServerRequestContext {

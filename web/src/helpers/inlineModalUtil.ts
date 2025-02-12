@@ -14,6 +14,7 @@ export function getImagesPerRow(
   imageWidth: number,
 ): number {
   if (imageWidth <= 0 || containerWidth <= 0) {
+    console.log('bail', imageWidth, containerWidth);
     return containerWidth > 0 ? estimateNumberOfColumns(containerWidth) : 8; // some default value
   }
 

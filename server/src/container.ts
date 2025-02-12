@@ -27,11 +27,16 @@ import { Container, ContainerModule } from 'inversify';
 import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
+import { ExternalApiModule } from './external/ExternalApiModule.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import { EntityMutex } from './services/EntityMutex.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
+import { MediaSourceLibraryRefresher } from './services/MediaSourceLibraryRefresher.js';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
+import { MeilisearchService } from './services/SearchService.ts';
+import { ServicesModule } from './services/ServicesModule.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
@@ -83,6 +88,7 @@ const RootModule = new ContainerModule((bind) => {
   >(() => (timeout?: number) => new MutexMap(timeout));
 
   container.bind(MediaSourceApiFactory).toSelf().inSingletonScope();
+
   // If we need lazy init...
   // container
   //   .bind<MediaSourceApiFactory>(KEYS.MediaSourceApiFactory)
@@ -97,6 +103,12 @@ const RootModule = new ContainerModule((bind) => {
     );
 
   bind(StartupService).toSelf().inSingletonScope();
+  container
+    .bind<
+      interfaces.Factory<MediaSourceLibraryRefresher>
+    >(KEYS.MediaSourceLibraryRefresher)
+    .toAutoFactory(MediaSourceLibraryRefresher);
+
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();
   bind(HdhrService).toSelf().inSingletonScope();
@@ -116,6 +128,9 @@ const RootModule = new ContainerModule((bind) => {
   bind<interfaces.AutoFactory<IWorkerPool>>(
     KEYS.WorkerPoolFactory,
   ).toAutoFactory(KEYS.WorkerPool);
+  bind(EntityMutex).toSelf().inSingletonScope();
+  bind(MeilisearchService).toSelf().inSingletonScope();
+  bind(KEYS.SearchService).toService(MeilisearchService);
 });
 
 container.load(RootModule);
@@ -127,5 +142,7 @@ container.load(FixerModule);
 container.load(FFmpegModule);
 container.load(FfmpegPipelineBuilderModule);
 container.load(DynamicChannelsModule);
+container.load(ServicesModule);
+container.load(ExternalApiModule);
 
 export { container };

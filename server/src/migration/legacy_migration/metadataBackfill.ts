@@ -197,7 +197,7 @@ export class LegacyMetadataBackfiller {
           '/library/metadata/' + externalKey,
         );
 
-        if (isNil(plexResult) || plexResult.Metadata.length < 1) {
+        if (isNil(plexResult?.Metadata) || plexResult.Metadata.length < 1) {
           this.logger.warn(
             'Found no result for key %s in plex server %s',
             externalKey,

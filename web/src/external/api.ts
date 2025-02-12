@@ -6,7 +6,10 @@ import {
   CreateFillerListRequestSchema,
   PagedResult,
   ProgramChildrenResult,
+  ProgramSearchRequest,
+  ProgramSearchResponse,
   RandomSlotScheduleSchema,
+  SearchFilterQuerySchema,
   SlotScheduleResult,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
@@ -47,6 +50,7 @@ import { z } from 'zod/v4';
 import { embyEndpoints } from './embyApi.ts';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import { jellyfinEndpoints } from './jellyfinApi.ts';
+import { plexEndpoints } from './plexApi.ts';
 import { endpoints as settingsEndpoints } from './settingsApi.ts';
 
 export const api = makeApi([
@@ -544,7 +548,35 @@ export const api = makeApi([
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: z.unknown(), // TODO: fill this in
   },
+  {
+    method: 'post',
+    path: '/api/programs/search',
+    alias: 'searchPrograms',
+    parameters: parametersBuilder().addBody(ProgramSearchRequest).build(),
+    response: ProgramSearchResponse,
+  },
+  {
+    method: 'post',
+    path: '/api/programs/facets/:facetName',
+    alias: 'getProgramFacets',
+    parameters: parametersBuilder()
+      .addPath('facetName', z.string())
+      .addQueries({
+        libraryId: z.string().uuid().optional(),
+        facetQuery: z.string().optional(),
+      })
+      .addBody(
+        z.object({
+          filter: SearchFilterQuerySchema.optional(),
+        }),
+      )
+      .build(),
+    response: z.object({
+      facetValues: z.record(z.string(), z.number()),
+    }),
+  },
   ...settingsEndpoints,
+  ...plexEndpoints,
   ...jellyfinEndpoints,
   ...embyEndpoints,
 ]);

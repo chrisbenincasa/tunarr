@@ -1,8 +1,7 @@
-import { ProgramMinterFactory } from '@/db/converters/ProgramMinter.js';
+import { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import type { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
@@ -11,7 +10,12 @@ import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, run } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { inject, injectable } from 'inversify';
+import {
+  inject,
+  injectable,
+  interfaces,
+  LazyServiceIdentifier,
+} from 'inversify';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { container } from '../../container.ts';
@@ -29,9 +33,11 @@ export class JellyfinItemFinder {
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(MediaSourceApiFactory)
+    @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
+    @inject(KEYS.ProgramDaoMinterFactory)
+    private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
   ) {}
 
   async findForProgramAndUpdate(programId: string) {
@@ -53,7 +59,7 @@ export class JellyfinItemFinder {
       (eid) => eid.sourceType === ProgramExternalIdType.JELLYFIN,
     );
 
-    const minter = ProgramMinterFactory.create();
+    const minter = this.programMinterFactory();
     const newExternalId = minter.mintJellyfinExternalIdForApiItem(
       program.externalSourceId,
       program.uuid,
@@ -136,7 +142,7 @@ export class JellyfinItemFinder {
 
     // If we can locate the item on JF, there is no problem.
     const existingItem = await jfClient.getItem(program.externalKey);
-    if (!isQueryError(existingItem) && isDefined(existingItem.data)) {
+    if (existingItem.isSuccess() && isDefined(existingItem.get())) {
       this.logger.error(
         existingItem,
         'Item exists on Jellyfin - no need to find a new match',
@@ -190,22 +196,24 @@ export class JellyfinItemFinder {
           opts,
         );
 
-        if (queryResult.type === 'success') {
-          return find(queryResult.data.Items, (match) =>
-            some(
-              match.ProviderIds,
-              (val, key) =>
-                programExternalIdTypeFromJellyfinProvider(key) === type &&
-                val === idsBySourceType[type].externalKey,
-            ),
-          );
-        } else {
-          this.logger.error(
-            { error: queryResult },
-            'Error while querying items on Jellyfin',
-          );
-        }
+        return queryResult.either(
+          (data) => {
+            return find(data.Items, (match) =>
+              some(
+                match.ProviderIds,
+                (val, key) =>
+                  programExternalIdTypeFromJellyfinProvider(key) === type &&
+                  val === idsBySourceType[type].externalKey,
+              ),
+            );
+          },
+          (err) => {
+            this.logger.error(err, 'Error while querying items on Jellyfin');
+            return undefined;
+          },
+        );
       }
+
       return;
     };
 

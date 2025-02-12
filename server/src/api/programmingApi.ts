@@ -2,13 +2,24 @@ import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.j
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import { AllProgramGroupingFields } from '@/db/schema/ProgramGrouping.ts';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { ifDefined, isNonEmptyString } from '@/util/index.js';
+import {
+  groupByUniqAndMap,
+  ifDefined,
+  isNonEmptyString,
+} from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { BasicIdParamSchema, ProgramChildrenResult } from '@tunarr/types/api';
+import {
+  BasicIdParamSchema,
+  ProgramChildrenResult,
+  ProgramSearchRequest,
+  ProgramSearchResponse,
+  SearchFilterQuerySchema,
+} from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
 import type { HttpHeader } from 'fastify/types/utils.js';
@@ -33,11 +44,14 @@ import {
 } from '../db/custom_types/ProgramSourceType.ts';
 import {
   AllProgramFields,
-  AllProgramGroupingFields,
   selectProgramsBuilder,
 } from '../db/programQueryHelpers.ts';
+import type { ProgramSearchDocument } from '../services/SearchService.ts';
+import { decodeCaseSensitiveId } from '../services/SearchService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import type { Path } from '../types/path.ts';
+import type { Maybe } from '../types/util.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -62,12 +76,226 @@ const BatchLookupExternalProgrammingSchema = z.object({
     }),
 });
 
+function isProgramGroupingType(typ: ProgramType | ProgramGroupingType) {
+  switch (typ) {
+    case 'show':
+    case 'season':
+    case 'artist':
+    case 'album':
+      return true;
+    default:
+      return false;
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
     className: 'ProgrammingApi',
   });
+
+  fastify.post(
+    '/programs/search',
+    {
+      schema: {
+        body: ProgramSearchRequest,
+        response: {
+          200: ProgramSearchResponse,
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await req.serverCtx.searchService.search('programs', {
+        query: req.body.query.query,
+        filter: req.body.query.filter,
+        paging: {
+          offset: req.body.page ?? 1,
+          limit: req.body.limit ?? 20,
+        },
+        libraryId: req.body.libraryId,
+        // TODO not a great cast...
+        restrictSearchTo: req.body.query
+          .restrictSeachTo as Path<ProgramSearchDocument>[],
+      });
+
+      const groupingIds = result.hits
+        .filter((hit) => isProgramGroupingType(hit.type))
+        .map((hit) => hit.id);
+      const groupingCounts =
+        await req.serverCtx.programDB.getProgramGroupingChildCounts(
+          groupingIds,
+        );
+
+      const results = result.hits.map((program) => {
+        let childCount: Maybe<number>;
+        let grandchildCount: Maybe<number>;
+        if (isProgramGroupingType(program.type)) {
+          const counts = groupingCounts[program.id];
+          childCount = counts?.childCount;
+          grandchildCount = counts?.grandchildCount;
+          // const foundGrouping = groupings[program.id];
+          // childCount = foundGrouping
+        }
+        console.log(program.externalIds);
+
+        const baseProgram = {
+          ...program,
+          identifiers: program.externalIds.map((eid) => ({
+            id: eid.id,
+            sourceId: isNonEmptyString(eid.sourceId)
+              ? decodeCaseSensitiveId(eid.sourceId)
+              : undefined,
+            type: eid.source,
+          })),
+          year: program.originalReleaseYear,
+          uuid: program.id,
+          type: program.type,
+          libraryId: decodeCaseSensitiveId(program.libraryId),
+          mediaSourceId: decodeCaseSensitiveId(program.mediaSourceId),
+          childCount,
+          grandchildCount,
+        }; // satisfies ProgramLike;
+
+        return baseProgram;
+      });
+
+      return res.serializer(JSON.stringify).send({
+        results,
+        page: result.page,
+        totalHits: result.totalHits,
+        totalPages: result.totalPages,
+      });
+    },
+  );
+
+  // fastify.get(
+  //   '/programs/:id/children',
+  //   {
+  //     schema: {
+  //       params: z.object({
+  //         id: z.string().uuid(),
+  //       }),
+  //       response: {
+  //         200: z.array(ContentProgramSchema),
+  //         404: z.void(),
+  //       },
+  //     },
+  //   },
+  //   async (req, res) => {
+  //     const grouping = await req.serverCtx.programDB.getProgramGrouping(
+  //       req.params.id,
+  //     );
+  //     if (isNil(grouping)) {
+  //       const program = await req.serverCtx.programDB.getProgramById(
+  //         req.params.id,
+  //       );
+  //       if (program) {
+  //         return res.send([
+  //           req.serverCtx.programConverter.convertProgramWithExternalIds(
+  //             program,
+  //           ),
+  //         ]);
+  //       }
+
+  //       return res.status(404).send();
+  //     }
+
+  //     const programs =
+  //       await req.serverCtx.programDB.getProgramGroupingDescendants(
+  //         req.params.id,
+  //         grouping.type,
+  //       );
+
+  //     const apiPrograms = programs.map((program) =>
+  //       req.serverCtx.programConverter.convertProgramWithExternalIds(program),
+  //     );
+
+  //     return res.send(apiPrograms);
+  //   },
+  // );
+
+  fastify.get(
+    '/programs/facets/:facetName',
+    {
+      schema: {
+        params: z.object({
+          facetName: z.string(),
+        }),
+        querystring: z.object({
+          facetQuery: z.string().optional(),
+          libraryId: z.string().uuid().optional(),
+        }),
+        response: {
+          200: z.object({
+            facetValues: z.record(z.string(), z.number()),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const facetResult = await req.serverCtx.searchService.facetSearch(
+        'programs',
+        {
+          facetQuery: req.query.facetQuery,
+          facetName: req.params.facetName,
+          libraryId: req.query.libraryId,
+        },
+      );
+
+      console.log(facetResult);
+
+      return res.send({
+        facetValues: groupByUniqAndMap(
+          facetResult.facetHits,
+          'value',
+          (hit) => hit.count,
+        ),
+      });
+    },
+  );
+
+  fastify.post(
+    '/programs/facets/:facetName',
+    {
+      schema: {
+        params: z.object({
+          facetName: z.string(),
+        }),
+        querystring: z.object({
+          facetQuery: z.string().optional(),
+          libraryId: z.string().uuid().optional(),
+        }),
+        body: z.object({
+          filter: SearchFilterQuerySchema.optional(),
+        }),
+        response: {
+          200: z.object({
+            facetValues: z.record(z.string(), z.number()),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const facetResult = await req.serverCtx.searchService.facetSearch(
+        'programs',
+        {
+          facetQuery: req.query.facetQuery,
+          facetName: req.params.facetName,
+          libraryId: req.query.libraryId,
+          filter: req.body.filter,
+        },
+      );
+
+      return res.send({
+        facetValues: groupByUniqAndMap(
+          facetResult.facetHits,
+          'value',
+          (hit) => hit.count,
+        ),
+      });
+    },
+  );
 
   fastify.get(
     '/programs/:id',

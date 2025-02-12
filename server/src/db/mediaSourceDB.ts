@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import {
   chunk,
   first,
+  isEmpty,
   isNil,
   isUndefined,
   keys,
@@ -21,20 +22,28 @@ import { v4 } from 'uuid';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
+import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
+import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import {
   withProgramChannels,
   withProgramCustomShows,
   withProgramFillerShows,
 } from './programQueryHelpers.ts';
 import { DB } from './schema/db.ts';
+import { MediaSourceWithLibraries } from './schema/derivedTypes.js';
 import {
   EmbyMediaSource,
   JellyfinMediaSource,
   MediaSource,
+  MediaSourceFields,
+  MediaSourceLibrary,
+  MediaSourceLibraryColumns,
+  MediaSourceLibraryUpdate,
   MediaSourceType,
+  NewMediaSourceLibrary,
   PlexMediaSource,
 } from './schema/MediaSource.ts';
 
@@ -59,15 +68,44 @@ export class MediaSourceDB {
     @inject(KEYS.MediaSourceApiFactory)
     private mediaSourceApiFactory: () => MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.MediaSourceLibraryRefresher)
+    private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
   ) {}
 
-  async getAll(): Promise<MediaSource[]> {
-    return this.db.selectFrom('mediaSource').selectAll().execute();
-  }
-
-  async getById(id: string) {
+  async getAll(): Promise<MediaSourceWithLibraries[]> {
     return this.db
       .selectFrom('mediaSource')
+      .select((eb) =>
+        jsonArrayFrom(
+          eb
+            .selectFrom('mediaSourceLibrary')
+            .whereRef(
+              'mediaSourceLibrary.mediaSourceId',
+              '=',
+              'mediaSource.uuid',
+            )
+            .select(MediaSourceLibraryColumns),
+        ).as('libraries'),
+      )
+      .selectAll()
+      .execute();
+  }
+
+  async getById(id: string): Promise<Maybe<MediaSourceWithLibraries>> {
+    return this.db
+      .selectFrom('mediaSource')
+      .select((eb) =>
+        jsonArrayFrom(
+          eb
+            .selectFrom('mediaSourceLibrary')
+            .whereRef(
+              'mediaSourceLibrary.mediaSourceId',
+              '=',
+              'mediaSource.uuid',
+            )
+            .select(MediaSourceLibraryColumns),
+        ).as('libraries'),
+      )
       .selectAll()
       .where('mediaSource.uuid', '=', id)
       .executeTakeFirst();
@@ -87,6 +125,30 @@ export class MediaSourceDB {
       .selectAll()
       .where((eb) => eb.or([eb('uuid', '=', id), eb('name', '=', id)]))
       .executeTakeFirst();
+  }
+
+  async getLibrary(id: string) {
+    return (
+      this.db
+        .selectFrom('mediaSourceLibrary')
+        .where('uuid', '=', id)
+        .select((eb) =>
+          jsonObjectFrom(
+            eb
+              .selectFrom('mediaSource')
+              .whereRef(
+                'mediaSource.uuid',
+                '=',
+                'mediaSourceLibrary.mediaSourceId',
+              )
+              .select(MediaSourceFields),
+          ).as('mediaSource'),
+        )
+        .selectAll()
+        // Should be safe before of referential integrity of foreign keys
+        .$narrowType<{ mediaSource: MediaSource }>()
+        .executeTakeFirst()
+    );
   }
 
   async findByType(
@@ -275,7 +337,61 @@ export class MediaSourceDB {
       .returning('uuid')
       .executeTakeFirstOrThrow();
 
+    await this.mediaSourceLibraryRefresher().refreshMediaSource(newServer.uuid);
+
     return newServer?.uuid;
+  }
+
+  async updateLibraries(updates: MediaSourceLibrariesUpdate) {
+    return this.db.transaction().execute(async (tx) => {
+      if (!isEmpty(updates.addedLibraries)) {
+        await tx
+          .insertInto('mediaSourceLibrary')
+          .values(updates.addedLibraries)
+          .execute();
+      }
+
+      if (updates.updatedLibraries.length) {
+        // TODO;
+      }
+
+      if (updates.deletedLibraries.length) {
+        await tx
+          .deleteFrom('mediaSourceLibrary')
+          .where(
+            'uuid',
+            'in',
+            updates.deletedLibraries.map((lib) => lib.uuid),
+          )
+          .execute();
+      }
+    });
+  }
+
+  async setLibraryEnabled(
+    mediaSourceId: string,
+    libraryId: string,
+    enabled: boolean,
+  ) {
+    return this.db
+      .updateTable('mediaSourceLibrary')
+      .set({
+        enabled: booleanToNumber(enabled),
+      })
+      .where('mediaSourceLibrary.mediaSourceId', '=', mediaSourceId)
+      .where('uuid', '=', libraryId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+  }
+
+  setLibraryLastScannedTime(libraryId: string, lastScannedAt: dayjs.Dayjs) {
+    return this.db
+      .updateTable('mediaSourceLibrary')
+      .set({
+        lastScannedAt: +lastScannedAt,
+      })
+      .where('uuid', '=', libraryId)
+      .executeTakeFirstOrThrow();
   }
 
   private async fixupProgramReferences(
@@ -399,3 +515,9 @@ export class MediaSourceDB {
     return [...channelReports, ...fillerReports, ...customShowReports];
   }
 }
+
+export type MediaSourceLibrariesUpdate = {
+  addedLibraries: NewMediaSourceLibrary[];
+  updatedLibraries: MediaSourceLibraryUpdate[];
+  deletedLibraries: MediaSourceLibrary[];
+};

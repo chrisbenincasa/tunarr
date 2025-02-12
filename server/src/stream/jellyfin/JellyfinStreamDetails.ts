@@ -1,7 +1,6 @@
 import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
@@ -12,7 +11,7 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { seq } from '@tunarr/shared/util';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import {
   attempt,
   filter,
@@ -21,7 +20,6 @@ import {
   isEmpty,
   isError,
   isNull,
-  isUndefined,
   map,
   orderBy,
   replace,
@@ -60,7 +58,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(JellyfinItemFinder) private jellyfinItemFinder: JellyfinItemFinder,
-    @inject(MediaSourceApiFactory)
+    @inject(new LazyServiceIdentifier(() => MediaSourceApiFactory))
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(ExternalSubtitleDownloader)
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
@@ -91,10 +89,17 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
 
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);
 
-    if (isQueryError(itemMetadataResult)) {
-      this.logger.error(itemMetadataResult, 'Error getting Jellyfin stream');
+    if (itemMetadataResult.isFailure()) {
+      this.logger.error(
+        itemMetadataResult.error,
+        'Error getting Jellyfin stream',
+      );
       return null;
-    } else if (isUndefined(itemMetadataResult.data)) {
+    }
+
+    const itemMetadata = itemMetadataResult.get();
+
+    if (!itemMetadata) {
       this.logger.error(
         'Jellyfin item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
         item.externalKey,
@@ -115,8 +120,6 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
 
       return null;
     }
-
-    const itemMetadata = itemMetadataResult.data;
 
     const details = await this.getItemStreamDetails(item, itemMetadata);
 
@@ -372,7 +375,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
   }
 }
 
-function extractIsAnamorphic(
+export function extractIsAnamorphic(
   width: number,
   height: number,
   aspectRatioString: string,

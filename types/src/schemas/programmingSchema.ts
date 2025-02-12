@@ -10,7 +10,13 @@ import {
   PlexMovieSchema,
   PlexMusicTrackSchema,
 } from '../plex/index.js';
-import { ChannelIconSchema, ExternalIdSchema } from './utilSchemas.js';
+import { ResolutionSchema } from './miscSchemas.js';
+import { MediaSourceType } from './settingsSchemas.js';
+import {
+  ChannelIconSchema,
+  ExternalIdSchema,
+  ExternalIdSourceType,
+} from './utilSchemas.js';
 
 export const ProgramTypeSchema = z.union([
   z.literal('movie'),
@@ -297,3 +303,211 @@ export const CondensedChannelProgrammingSchema = z.object({
   schedule: LineupScheduleSchema.optional(),
   dynamicContentConfig: DynamicContentConfigSchema.optional(),
 });
+
+//
+// New stuff
+//
+
+const NamedEntity = z.object({
+  name: z.string(),
+});
+
+const ActorSchema = NamedEntity;
+const WriterSchema = NamedEntity;
+const DirectorSchema = NamedEntity;
+const GenreSchema = NamedEntity;
+const StudioSchema = NamedEntity;
+
+const HasMediaSourceAndLibraryId = z.object({
+  mediaSourceId: z.string(),
+  libraryId: z.string(),
+});
+
+const WithSummaryMetadata = z.object({
+  summary: z.string().nullable(),
+  plot: z.string().nullable(),
+  tagline: z.string().nullable(),
+});
+
+const IdentifierSchema = z.object({
+  id: z.string(),
+  sourceId: z.string().optional(),
+  type: ExternalIdSourceType,
+});
+
+const BaseItem = z
+  .object({
+    uuid: z.string().uuid(),
+    canonicalId: z.string(),
+    // TODO: break out gropuing types to separate schema
+    type: z.enum([
+      ...ContentProgramTypeSchema.options,
+      'show',
+      'season',
+      'album',
+      'artist',
+    ]),
+    identifiers: z.array(IdentifierSchema),
+    title: z.string(),
+  })
+  .merge(HasMediaSourceAndLibraryId);
+
+const BaseMediaLocation = z.object({
+  path: z.string(),
+});
+
+const LocalMediaLocation = BaseMediaLocation.extend({
+  type: z.literal('local'),
+});
+
+const MediaSourceMediaLocation = BaseMediaLocation.extend({
+  type: z.literal('remote'),
+  sourceType: MediaSourceType,
+  externalKey: z.string(),
+});
+
+const MediaLocation = LocalMediaLocation.or(MediaSourceMediaLocation);
+
+const MediaStreamType = z.enum([
+  'video',
+  'audio',
+  'subtitles',
+  'attachment',
+  'external_subtitles',
+]);
+
+const MediaStream = z.object({
+  index: z.number(),
+  codec: z.string(),
+  profile: z.string(),
+  streamType: MediaStreamType,
+  languageCodeISO6392: z.string().optional(),
+  // TODO: consider breaking stream out to a union for each subtype
+  channels: z.number().optional(),
+  title: z.string().optional(),
+  default: z.boolean().optional(),
+  hasAttachedPicture: z.boolean().optional(),
+  pixelFormat: z.string().optional(),
+  bitDepth: z.number().optional(),
+  fileName: z.string().optional(),
+  mimeType: z.string().optional(),
+  selected: z.boolean().optional(),
+});
+
+const MediaItem = z.object({
+  streams: z.array(MediaStream),
+  duration: z.number().nonnegative(),
+  sampleAspectRatio: z.string(),
+  displayAspectRatio: z.string(),
+  frameRate: z.number().or(z.string()).optional(),
+  resolution: ResolutionSchema,
+  locations: z.array(MediaLocation),
+});
+
+const BaseProgram = BaseItem.extend({
+  type: ContentProgramTypeSchema,
+  title: z.string(),
+  originalTitle: z.string().nullable(),
+  year: z.number().positive().nullable(),
+  releaseDate: z.number().positive().nullable(),
+  mediaItem: MediaItem,
+  actors: z.array(ActorSchema).optional(),
+  writers: z.array(WriterSchema).optional(),
+  directors: z.array(DirectorSchema).optional(),
+  genres: z.array(GenreSchema).optional(),
+  studios: z.array(StudioSchema).optional(),
+  duration: z.number(),
+});
+
+export const Movie = BaseProgram.extend({
+  type: z.literal('movie'),
+  rating: z.string().nullable(),
+}).and(WithSummaryMetadata);
+
+const BaseProgramGrouping = BaseItem.merge(WithSummaryMetadata).extend({
+  // e.g. for shows => seasons, seasons => episodes
+  childCount: z.number().nonnegative().optional(),
+  // e.g. for shows, this is episodes
+  grandchildCount: z.number().nonnegative().optional(),
+});
+
+export const Show = BaseProgramGrouping.extend({
+  type: z.literal('show'),
+  genres: z.array(GenreSchema),
+  actors: z.array(ActorSchema),
+  studios: z.array(StudioSchema),
+  year: z.number().positive().nullable(),
+});
+
+export const Season = BaseProgramGrouping.extend({
+  type: z.literal('season'),
+  studios: z.array(StudioSchema),
+  index: z.number().nonnegative(),
+  year: z.number().positive().nullable(),
+  show: Show.optional(),
+});
+
+export const Episode = BaseProgram.extend({
+  type: z.literal('episode'),
+  episodeNumber: z.number().nonnegative(),
+  summary: z.string().nullable(),
+  season: Season.optional(),
+});
+
+export const MusicArtist = BaseProgramGrouping.extend({
+  type: z.literal('artist'),
+});
+
+export const MusicAlbum = BaseProgramGrouping.extend({
+  type: z.literal('album'),
+  year: z.number().positive().nullable(),
+  artist: MusicArtist.optional(),
+});
+
+export const MusicTrack = BaseProgram.extend({
+  type: z.literal('track'),
+  trackNumber: z.number().positive(),
+  album: MusicAlbum.optional(),
+});
+
+export const MusicVideo = BaseProgram.extend({
+  type: z.literal('music_video'),
+});
+
+export const OtherVideo = BaseProgram.extend({
+  type: z.literal('other_video'),
+});
+
+const HasMediaSourceInfo = z.object({
+  sourceType: MediaSourceType,
+  externalKey: z.string(),
+});
+
+const PlexMixin = HasMediaSourceInfo.extend({
+  sourceType: z.literal(MediaSourceType.enum.plex),
+});
+
+const PlexMovie = Movie.and(PlexMixin);
+
+export type PlexMovie = z.infer<typeof PlexMovie>;
+
+export const ItemSchema = z.union([
+  Movie,
+  Episode,
+  Season,
+  Show,
+  MusicTrack,
+  MusicAlbum,
+  MusicArtist,
+  MusicVideo,
+  OtherVideo,
+]);
+
+export const ProgramGroupingSchema = z.union([
+  Show,
+  Season,
+  MusicArtist,
+  MusicAlbum,
+]);
+
+export const TerminalProgramSchema = z.union([Movie, Episode, MusicTrack]);

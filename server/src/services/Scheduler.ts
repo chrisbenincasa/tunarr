@@ -29,6 +29,7 @@ import {
 import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { ScanLibrariesTask } from '../tasks/ScanLibrariesTask.ts';
 import type { SubtitleExtractorTaskFactory } from '../tasks/SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 
@@ -245,6 +246,20 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       {
         runAtStartup: true,
       },
+    ),
+  );
+
+  GlobalScheduler.scheduleTask(
+    ScanLibrariesTask.ID,
+    new ScheduledTask(
+      ScanLibrariesTask.name,
+      hoursCrontab(
+        serverContext.settings.globalMediaSourceSettings().rescanIntervalHours,
+      ),
+      container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
+        ScanLibrariesTask.KEY,
+      ),
+      [],
     ),
   );
 

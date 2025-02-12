@@ -1,3 +1,14 @@
+// Do we really need to pull in ts-essentials for this?
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export type Prettify<Type> = Type extends Function
+  ? Type
+  : Extract<
+      {
+        [Key in keyof Type]: Type[Key];
+      },
+      Type
+    >;
+
 // TODO: we used to use a unique symbol here, but there are some problems
 // with portability. But is that something we really need to care about?
 // In theory, a tagged type could be manually created with this setup...

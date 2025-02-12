@@ -3,10 +3,8 @@ import type { Maybe, Nilable } from '@/types/util.ts';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
 import type { PlexServerSettings } from '@tunarr/types';
-import type { PlexLibraryCollections } from '@tunarr/types/plex';
 import { flatten, isNil, reject, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
@@ -28,18 +26,16 @@ export const usePlexCollectionsInfinite = (
         'collections',
       ],
       queryFn: ({ pageParam }) => {
-        const plexQuery = new URLSearchParams({
-          'X-Plex-Container-Start': pageParam.toString(),
-          'X-Plex-Container-Size': pageSize.toString(),
+        return apiClient.getPlexLibraryCollections({
+          params: {
+            mediaSourceId: plexServer!.id,
+            libraryId: currentLibrary!.library.key,
+          },
+          queries: {
+            offset: pageParam,
+            limit: pageSize,
+          },
         });
-
-        return fetchPlexPath<PlexLibraryCollections>(
-          apiClient,
-          plexServer!.id,
-          `/library/sections/${
-            currentLibrary?.library.key
-          }/collections?${plexQuery.toString()}`,
-        )();
       },
       enabled:
         enabled &&
@@ -48,13 +44,15 @@ export const usePlexCollectionsInfinite = (
         currentLibrary.library.type !== 'artist',
       initialPageParam: 0,
       getNextPageParam: (res, all, last) => {
-        const total = sumBy(all, (page) => page.size);
-        if (total >= (res.totalSize ?? res.size)) {
+        const total = sumBy(all, (page) => page.MediaContainer.size);
+        if (
+          total >= (res.MediaContainer.totalSize ?? res.MediaContainer.size)
+        ) {
           return null;
         }
 
         // Next offset is the last + how many items we got back.
-        return last + res.size;
+        return last + res.MediaContainer.size;
       },
     });
   }, [apiClient, currentLibrary, enabled, pageSize, plexServer]);

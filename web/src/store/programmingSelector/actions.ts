@@ -1,5 +1,6 @@
 import { type Maybe } from '@/types/util.ts';
 import { forPlexMedia } from '@tunarr/shared/util';
+import type { ProgramLike } from '@tunarr/types';
 import {
   type EmbyServerSettings,
   type JellyfinServerSettings,
@@ -18,7 +19,7 @@ import { type MediaSourceId } from '@tunarr/types/schemas';
 import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import {
   buildPlexFilterKey,
   buildPlexSortKey,
@@ -26,6 +27,7 @@ import {
 import { groupSelectedMedia } from '../../helpers/util';
 import {
   type Emby as EmbyT,
+  type Imported as ImportedT,
   type Jellyfin as JellyfinT,
   type Plex as PlexT,
   type TypedKey,
@@ -89,7 +91,8 @@ export const addKnownMediaForServer = (
   media:
     | TypedKey<PlexLibrarySection[] | PlexMedia[], PlexT, 'items'>
     | TypedKey<JellyfinItem[], JellyfinT, 'items'>
-    | TypedKey<EmbyItem[], EmbyT, 'items'>,
+    | TypedKey<EmbyItem[], EmbyT, 'items'>
+    | TypedKey<ProgramLike[], ImportedT, 'items'>,
   parentId?: string,
 ) =>
   useStore.setState((state) => {
@@ -123,6 +126,13 @@ export const addKnownMediaForServer = (
           byGuid[item.Id] = { type: media.type, item };
         }
         break;
+      case Imported:
+        for (const item of media.items) {
+          // TODO: do we need to separate groupings here because they
+          // are in a different ID page?
+          byGuid[item.uuid] = { type: media.type, item };
+        }
+        break;
     }
 
     // known media is an overwrite operation, not dealing with
@@ -150,6 +160,9 @@ export const addKnownMediaForServer = (
         break;
       case Emby:
         ids = map(media.items, 'Id');
+        break;
+      case Imported:
+        ids = map(media.items, (i) => i.uuid);
         break;
     }
 
@@ -193,14 +206,18 @@ export const addKnownMediaForEmbyServer = (
   parentId?: string,
 ) => addKnownMediaForServer(serverId, { type: Emby, items: media }, parentId);
 
+export const addKnownMediaFromLibrary = (
+  serverId: MediaSourceId,
+  media: ProgramLike[],
+  parentId?: string,
+) =>
+  addKnownMediaForServer(serverId, { type: Imported, items: media }, parentId);
+
 const plexChildCount = forPlexMedia({
   default: 1,
   season: (s) => s.leafCount,
   show: (s) => s.leafCount,
-  collection: (s) => {
-    const num = parseInt(s.childCount);
-    return isNaN(num) ? 1 : num;
-  },
+  collection: (s) => s.childCount,
 });
 
 export const addPlexSelectedMedia = (

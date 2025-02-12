@@ -1,14 +1,13 @@
+import type { MediaSourceLibrary, ProgramLike } from '@tunarr/types';
 import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
 import { type PlexSearch } from '@tunarr/types/api';
 import { type EmbyItem } from '@tunarr/types/emby';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
-import {
-  type PlexLibrarySection,
-  type PlexMedia,
-  type PlexPlaylists,
-} from '@tunarr/types/plex';
+import type { PlexMetadataResponse, PlexPlaylist } from '@tunarr/types/plex';
+import { type PlexLibrarySection, type PlexMedia } from '@tunarr/types/plex';
 import { type MediaSourceId } from '@tunarr/types/schemas';
 import { type StateCreator } from 'zustand';
+import type { Imported } from '../../types/MediaSource';
 import {
   type Emby,
   type ItemUuid,
@@ -35,6 +34,11 @@ export type JellyfinSelectedMedia = Typed<
 
 export type EmbySelectedMedia = Typed<ExternalSourceSelectedMedia, Emby>;
 
+export type ImportedLibrarySelectedMedia = Typed<
+  ExternalSourceSelectedMedia,
+  Imported
+>;
+
 export type ExternalSourceSelectedMedia = {
   serverId: MediaSourceId;
   // This is needed for "legacy" reasons right now
@@ -47,7 +51,8 @@ export type SelectedMedia =
   | PlexSelectedMedia
   | JellyfinSelectedMedia
   | EmbySelectedMedia
-  | CustomShowSelectedMedia;
+  | CustomShowSelectedMedia
+  | ImportedLibrarySelectedMedia;
 
 export const PlexMediaSourceLibraryViewType = {
   Library: 'library' as const,
@@ -64,7 +69,7 @@ export type PlexMediaSourceLibraryView = {
 
 export type PlexMediaSourcePlaylistsView = {
   type: 'playlists';
-  playlists: PlexPlaylists;
+  playlists: PlexMetadataResponse<PlexPlaylist>;
 };
 
 type TypedView<T, Type> = TypedKey<T, Type, 'view'>;
@@ -82,10 +87,16 @@ export type CustomShowView = {
   type: 'custom-show';
 };
 
+export type ImportedMediaSourceLibraryView = TypedView<
+  MediaSourceLibrary,
+  Imported
+>;
+
 export type MediaSourceView =
   | PlexMediaSourceView
   | JellyfinMediaSourceView
   | EmbyMediaSourceView
+  | ImportedMediaSourceLibraryView
   | CustomShowView;
 
 type TypedItem<T, Type> = TypedKey<T, Type, 'item'>;
@@ -95,7 +106,8 @@ export type MediaGenre = TypedItem<string, Jellyfin | Plex | Emby>;
 export type MediaItems =
   | TypedItem<PlexLibrarySection | PlexMedia, Plex>
   | TypedItem<JellyfinItem, Jellyfin>
-  | TypedItem<EmbyItem, Emby>;
+  | TypedItem<EmbyItem, Emby>
+  | TypedItem<ProgramLike, Imported>;
 
 export type KnownMediaMap = Record<MediaSourceId, Record<ItemUuid, MediaItems>>;
 

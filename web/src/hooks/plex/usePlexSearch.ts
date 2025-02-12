@@ -164,7 +164,6 @@ const usePlexItemsInfiniteQueryOptions = (
   const plexQueryFn = usePlexSearchQueryFn();
 
   return useMemo(() => {
-    console.log('here');
     const key = [
       'plex-search',
       plexServer?.name,

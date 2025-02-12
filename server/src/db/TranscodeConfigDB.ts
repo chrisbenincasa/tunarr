@@ -4,7 +4,7 @@ import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { omit } from 'lodash-es';
 import { v4 } from 'uuid';
-import { TranscodeConfigNotFoundError } from '../types/errors.ts';
+import { TranscodeConfigNotFoundError, WrappedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import {
@@ -85,7 +85,9 @@ export class TranscodeConfigDB {
 
   async duplicateConfig(
     id: string,
-  ): Promise<Result<TranscodeConfigDAO, TranscodeConfigNotFoundError | Error>> {
+  ): Promise<
+    Result<TranscodeConfigDAO, TranscodeConfigNotFoundError | WrappedError>
+  > {
     const baseConfig = await this.getById(id);
     if (!baseConfig) {
       return Result.failure(new TranscodeConfigNotFoundError(id));

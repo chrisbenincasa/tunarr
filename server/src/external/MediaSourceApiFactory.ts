@@ -14,14 +14,11 @@ import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
-import {
-  isQueryError,
-  type ApiClientOptions,
-  type BaseApiClient,
-} from './BaseApiClient.js';
+import { type ApiClientOptions, type BaseApiClient } from './BaseApiClient.js';
 import { EmbyApiClient } from './emby/EmbyApiClient.ts';
 import { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
-import { PlexApiClient } from './plex/PlexApiClient.js';
+import { MediaSourceApiClientFactory } from './MediaSourceApiClient.ts';
+import { PlexApiClient, PlexApiClientFactory } from './plex/PlexApiClient.js';
 
 type TypeToClient = [
   [typeof MediaSourceType.Plex, PlexApiClient],
@@ -45,6 +42,10 @@ export class MediaSourceApiFactory {
     @inject(new LazyServiceIdentifier(() => MediaSourceDB))
     private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
+    @inject(KEYS.PlexApiClientFactory)
+    private plexApiClientFactory: PlexApiClientFactory,
+    @inject(KEYS.JellyfinApiClientFactory)
+    private jellyfinApiClientFactory: MediaSourceApiClientFactory<JellyfinApiClient>,
   ) {
     this.#requestCacheEnabled =
       settings.systemSettings().cache?.enablePlexRequestCache ?? false;
@@ -87,7 +88,7 @@ export class MediaSourceApiFactory {
             });
         }
       }
-      return new JellyfinApiClient({ ...opts, userId });
+      return this.jellyfinApiClientFactory({ ...opts, userId });
     });
   }
 
@@ -150,7 +151,7 @@ export class MediaSourceApiFactory {
     const key = `${opts.url}|${opts.accessToken}`;
     return cacheGetOrSet(MediaSourceApiFactory.cache, key, () => {
       return Promise.resolve(
-        new PlexApiClient({
+        this.plexApiClientFactory({
           ...opts,
           enableRequestCache: this.requestCacheEnabledForServer(opts.name),
         }),
@@ -160,7 +161,7 @@ export class MediaSourceApiFactory {
 
   async getPlexApiClientByName(name: string) {
     return this.getTypedByName(MediaSourceType.Plex, name, (mediaSource) => {
-      const client = new PlexApiClient({
+      const client = this.plexApiClientFactory({
         ...mediaSource,
         url: mediaSource.uri,
         enableRequestCache: this.requestCacheEnabledForServer(mediaSource.name),
@@ -176,15 +177,12 @@ export class MediaSourceApiFactory {
   }
 
   async getJellyfinApiClientByName(name: string, userId?: string) {
-    return this.getTypedByName(
-      MediaSourceType.Jellyfin,
-      name,
-      (opts) =>
-        new JellyfinApiClient({
-          ...opts,
-          url: opts.uri,
-          userId: opts.userId ?? userId ?? null,
-        }),
+    return this.getTypedByName(MediaSourceType.Jellyfin, name, (opts) =>
+      this.jellyfinApiClientFactory({
+        ...opts,
+        url: opts.uri,
+        userId: opts.userId ?? userId ?? null,
+      }),
     );
   }
 
@@ -273,14 +271,16 @@ export class MediaSourceApiFactory {
   ) {
     this.logger.debug('Attempting to backfill Plex user');
     const result = await Result.attemptAsync(async () => {
-      const user = await client.getUser();
-      if (isQueryError(user)) {
-        throw new Error(user.message);
+      const userResult = await client.getUser();
+      if (userResult.isFailure()) {
+        throw userResult.error;
       }
 
+      const user = userResult.get();
+
       await this.mediaSourceDB.setMediaSourceUserInfo(mediaSourceId, {
-        userId: user.data.id?.toString(),
-        username: user.data.username,
+        userId: user.id?.toString(),
+        username: user.username,
       });
     });
     if (result.isFailure()) {

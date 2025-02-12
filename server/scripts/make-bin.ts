@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import stream from 'node:stream';
 import { format } from 'node:util';
+import { rimraf } from 'rimraf';
 import * as tar from 'tar';
 import tmp from 'tmp-promise';
 import yargs from 'yargs';
@@ -73,9 +74,17 @@ const args = await yargs(hideBin(process.argv))
     type: 'boolean',
     default: true,
   })
+  .option('clean', {
+    type: 'boolean',
+    default: false,
+  })
   .parseAsync();
 
 !(await fileExists('./bin')) && (await fs.mkdir('./bin'));
+
+if (args.clean) {
+  await rimraf('./bin/tunarr*', { glob: true });
+}
 
 (await fileExists('./dist/web')) &&
   (await fs.rm('./dist/web', { recursive: true }));
@@ -86,6 +95,12 @@ const args = await yargs(hideBin(process.argv))
 await fs.cp(path.resolve(process.cwd(), '../web/dist'), './dist/web', {
   recursive: true,
 });
+
+await fs.cp(
+  path.resolve(process.cwd(), './src/migration/db/sql'),
+  './dist/sql',
+  { recursive: true },
+);
 
 const originalWorkingDir = process.cwd();
 

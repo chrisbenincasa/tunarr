@@ -67,16 +67,16 @@ export class ExternalSubtitleDownloader {
     if (!(await fileExists(fullPath))) {
       const subtitlesRes = await getSubtitlesCb({ extension: ext });
 
-      if (subtitlesRes.type === 'error') {
+      if (subtitlesRes.isFailure()) {
         this.logger.warn(
           'Error while requesting external subtitle stream from Jellyfin: %s',
-          subtitlesRes.message ?? '',
+          subtitlesRes.error.message ?? '',
         );
         return;
       }
 
       try {
-        await fs.writeFile(fullPath, subtitlesRes.data);
+        await fs.writeFile(fullPath, subtitlesRes.get());
         return fullPath;
       } catch (e) {
         this.logger.warn(e);

@@ -1,7 +1,9 @@
 export { mod as dayjsMod } from './dayjsExtensions.js';
 export * from './plexSearchUtil.js';
+export * as search from './searchUtil.js';
 export * as seq from './seq.js';
-import type { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram, ProgramLike } from '@tunarr/types';
+import type { SearchFilterValueNode, StringOperators } from '@tunarr/types/api';
 import type { PlexMedia } from '@tunarr/types/plex';
 import { isNull, isString } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
@@ -169,4 +171,36 @@ export function romanNumeralToNumber(input: string): number {
 
 export function isNonEmptyString(s: unknown): s is string {
   return isString(s) && s.length > 0;
+}
+
+export function createTypeSearchField(
+  type: ProgramLike['type'],
+  op?: StringOperators,
+): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'type',
+      name: 'Type',
+      op: op ?? '=',
+      type: 'string',
+      value: [type],
+    },
+  };
+}
+
+export function createParentFilterSearchField(
+  parentId: string,
+  op?: StringOperators,
+): SearchFilterValueNode {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'parent.id',
+      name: '',
+      op: op ?? '=',
+      type: 'string',
+      value: [parentId],
+    },
+  };
 }

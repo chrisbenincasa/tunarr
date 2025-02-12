@@ -14,7 +14,6 @@ export const jellyfinEndpoints = [
     parameters: parametersBuilder()
       .addPath('mediaSourceId', z.string())
       .build(),
-    // response: JellyfinLibraryResponse,
     response: JellyfinLibraryItemsResponse,
     alias: 'getJellyfinUserLibraries',
   }),
