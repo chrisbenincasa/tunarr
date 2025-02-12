@@ -21,9 +21,12 @@ import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
 import { HealthCheckService } from './services/HealthCheckService.js';
 import { M3uService } from './services/M3UService.ts';
+import { MediaSourceLibraryRefresher } from './services/MediaSourceLibraryRefresher.ts';
+import { MeilisearchService } from './services/MeilisearchService.ts';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { TVGuideService } from './services/TvGuideService.ts';
 import { CacheImageService } from './services/cacheImageService.js';
+import { MediaSourceScanCoordinator } from './services/scanner/MediaSourceScanCoordinator.ts';
 import { ChannelCache } from './stream/ChannelCache.js';
 import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
@@ -69,6 +72,15 @@ export class ServerContext {
 
   @inject(KEYS.WorkerPool)
   public readonly workerPool: IWorkerPool;
+
+  @inject(MeilisearchService)
+  public readonly searchService!: MeilisearchService;
+
+  @inject(MediaSourceScanCoordinator)
+  public readonly mediaSourceScanCoordinator: MediaSourceScanCoordinator;
+
+  @inject(MediaSourceLibraryRefresher)
+  public readonly mediaSourceLibraryRefresher: MediaSourceLibraryRefresher;
 }
 
 export class ServerRequestContext {

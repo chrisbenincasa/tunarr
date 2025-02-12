@@ -28,7 +28,7 @@ export class RandomSlotDurationSpecMigration extends ChannelLineupMigration<
 
     const slots = schema['schedule']['slots'] as Json;
     if (!isArray(slots)) {
-      this.logger.warn('Malformed slot schedule: %O', slots);
+      this.logger.warn('Malformed slot schedule: %s', JSON.stringify(slots));
       return Promise.resolve();
     }
 

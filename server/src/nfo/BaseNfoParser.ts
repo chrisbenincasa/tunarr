@@ -21,12 +21,12 @@ export abstract class BaseNfoParser<MediaTypeSchema extends z4.$ZodType>
     return [];
   }
 
-  parse(content: string): Promise<Result<z4.output<MediaTypeSchema>, Error>> {
+  parse(content: string): Promise<Result<z4.output<MediaTypeSchema>>> {
     const jObj = this.parser.parse(content) as unknown;
     const result = z4.safeParse(this.schema, jObj);
 
     if (result.error) {
-      return Promise.resolve(Result.failure(result.error));
+      return Promise.resolve(Result.forError(result.error));
     }
 
     return Promise.resolve(Result.success(result.data));

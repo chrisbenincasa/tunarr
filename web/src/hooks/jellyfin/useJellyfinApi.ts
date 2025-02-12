@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
+import { addKnownMediaForServer } from '@/store/programmingSelector/actions.ts';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -71,11 +71,7 @@ export const useJellyfinLibraryItems = (
     useCallback(
       (result) => {
         if (result.status === 'success') {
-          addKnownMediaForJellyfinServer(
-            mediaSourceId,
-            result.data.Items,
-            parentId,
-          );
+          addKnownMediaForServer(mediaSourceId, result.data.result, parentId);
         }
       },
       [mediaSourceId, parentId],
@@ -140,19 +136,15 @@ export const useInfiniteJellyfinLibraryItems = (
         enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
         initialPageParam: { offset: 0, pageSize: lastFetchSize },
         getNextPageParam: (res, all, { offset: lastOffset }) => {
-          const total = sumBy(all, (page) => page.Items.length);
-          if (total >= (res.TotalRecordCount ?? res.Items.length)) {
+          const total = sumBy(all, (page) => page.result.length);
+          if (total >= (res.total ?? res.result.length)) {
             return;
           }
 
           // Next offset is the last + how many items we got back.
           return {
-            offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
-            pageSize: getChunkSize(
-              res.TotalRecordCount,
-              initialChunkSize,
-              bufferSize,
-            ),
+            offset: (lastOffset + res.result.length) % res.total,
+            pageSize: getChunkSize(res.total, initialChunkSize, bufferSize),
           };
         },
         refetchOnWindowFocus: false,
@@ -177,8 +169,8 @@ export const useInfiniteJellyfinLibraryItems = (
     useCallback(
       (result) => {
         if (result.status === 'success') {
-          const allItems = flatMap(result.data.pages, (page) => page.Items);
-          addKnownMediaForJellyfinServer(mediaSourceId, allItems, parentId);
+          const allItems = flatMap(result.data.pages, (page) => page.result);
+          addKnownMediaForServer(mediaSourceId, allItems, parentId);
         }
       },
       [mediaSourceId, parentId],

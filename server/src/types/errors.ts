@@ -1,6 +1,33 @@
 import { isError, isString } from 'lodash-es';
+import { isNodeError } from '../util/index.ts';
 
-export abstract class TypedError extends Error {
+const WrappedErrorTag = Symbol('wrappedError');
+
+// Extend Error but allow different hierarchies of typed errors
+export abstract class WrappedError extends Error {
+  [WrappedErrorTag] = true;
+  cause?: Error;
+
+  static fromError(e: Error): WrappedError {
+    return new (class extends WrappedError {
+      cause?: Error | undefined = e;
+    })();
+  }
+
+  static forMessage(msg: string): WrappedError {
+    return this.fromError(new Error(msg));
+  }
+
+  nodeErrorCode(): NodeJS.ErrnoException['code'] {
+    return isNodeError(this.cause) ? this.cause?.code : undefined;
+  }
+}
+
+export function isWrappedError(e: unknown): e is WrappedError {
+  return Object.getOwnPropertySymbols(e).includes(WrappedErrorTag);
+}
+
+export abstract class TypedError extends WrappedError {
   readonly type: KnownErrorTypes;
 
   static fromError(e: Error): TypedError {

@@ -1,15 +1,12 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { find, first, isNil, sortBy } from 'lodash-es';
+import { find, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Emby } from '../../../helpers/constants.ts';
-import { sortEmbyLibraries } from '../../../helpers/embyUtil.ts';
+import { sortJellyfinLibraries } from '../../../helpers/jellyfinUtil.ts';
 import { useEmbyUserLibraries } from '../../../hooks/emby/useEmbyApi.ts';
-import { Route } from '../../../routes/channels_/$channelId/programming/add.tsx';
+import { useProgrammingSelectionContext } from '../../../hooks/useProgrammingSelectionContext.ts';
 import useStore from '../../../store/index.ts';
-import {
-  addKnownMediaForEmbyServer,
-  setProgrammingListLibrary,
-} from '../../../store/programmingSelector/actions.ts';
+import { setProgrammingListLibrary } from '../../../store/programmingSelector/actions.ts';
 import { useKnownMedia } from '../../../store/programmingSelector/selectors.ts';
 
 type Props = {
@@ -17,78 +14,83 @@ type Props = {
 };
 
 export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { onLibraryChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const knownMedia = useKnownMedia();
-  const navigate = Route.useNavigate();
-
-  const selectedEmbyLibrary =
-    selectedLibrary?.type === Emby ? selectedLibrary.view : undefined;
 
   const { data: embyLibraries } = useEmbyUserLibraries(
     selectedServer?.id ?? '',
     selectedServer?.type === Emby,
   );
 
+  const selectedEmbyLibrary =
+    selectedLibrary?.type === Emby ? selectedLibrary.view : undefined;
+
   useEffect(() => {
     if (selectedServer?.type === Emby && embyLibraries) {
       if (
-        embyLibraries.Items.length > 0 &&
+        embyLibraries.length > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Emby)
       ) {
+        const validLibraries = embyLibraries;
+        const view =
+          find(validLibraries, ({ uuid: id }) => id === initialLibraryId) ??
+          sortBy(validLibraries, sortJellyfinLibraries)[0];
+
         setProgrammingListLibrary({
           type: Emby,
-          view:
-            find(embyLibraries.Items, ({ Id }) => Id === initialLibraryId) ??
-            first(sortBy(embyLibraries.Items, sortEmbyLibraries))!,
+          view,
         });
+        onLibraryChange(view.externalId);
       }
-      addKnownMediaForEmbyServer(selectedServer.id, embyLibraries.Items);
+      // addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
     }
-  }, [embyLibraries, initialLibraryId, selectedLibrary, selectedServer]);
+  }, [
+    initialLibraryId,
+    embyLibraries,
+    selectedLibrary,
+    selectedServer,
+    onLibraryChange,
+  ]);
 
-  const onLibraryChange = useCallback(
+  const handleLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (!selectedServer) {
         return;
       }
-
-      const view = knownMedia.getMediaOfType(
-        selectedServer.id,
-        libraryUuid,
-        Emby,
-      );
+      const view = embyLibraries?.find((lib) => lib.externalId === libraryUuid);
       if (view) {
-        setProgrammingListLibrary({ type: Emby, view });
-        navigate({
-          search: {
-            mediaSourceId: selectedServer.id,
-            libraryId: view.Id,
-          },
-        }).catch(console.error);
+        setProgrammingListLibrary({
+          type: Emby,
+          view,
+        });
+        onLibraryChange(view.externalId);
       }
     },
-    [knownMedia, navigate, selectedServer],
+    [knownMedia, selectedServer],
   );
 
   return (
     !isNil(embyLibraries) &&
-    embyLibraries.Items.length > 0 &&
+    embyLibraries.length > 0 &&
     selectedEmbyLibrary && (
-      <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-        <InputLabel>Library</InputLabel>
-        <Select
-          label="Library"
-          value={selectedEmbyLibrary.Id}
-          onChange={(e) => onLibraryChange(e.target.value)}
-        >
-          {sortBy(embyLibraries.Items, sortEmbyLibraries).map((lib) => (
-            <MenuItem key={lib.Id} value={lib.Id}>
-              {lib.Name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <>
+        <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+          <InputLabel>Library</InputLabel>
+          <Select
+            label="Library"
+            value={selectedEmbyLibrary.uuid}
+            onChange={(e) => handleLibraryChange(e.target.value)}
+          >
+            {sortBy(embyLibraries, sortJellyfinLibraries).map((lib) => (
+              <MenuItem key={lib.externalId} value={lib.uuid}>
+                {lib.title}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </>
     )
   );
 };

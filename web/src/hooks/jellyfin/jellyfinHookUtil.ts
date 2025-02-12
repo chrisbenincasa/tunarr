@@ -1,18 +1,19 @@
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
 import { sequentialPromises } from '@/helpers/util.ts';
-import {
-  isJellyfinVirtualFolder,
-  type JellyfinItem,
-  type TunarrAmendedJellyfinVirtualFolder,
-} from '@tunarr/types/jellyfin';
+import type { Library, ProgramOrFolder, TerminalProgram } from '@tunarr/types';
+import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
+import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
 import { getJellyfinLibraryItems } from '../../generated/sdk.gen.ts';
+import type { Nullable } from '../../types/util.ts';
 
 export type EnrichedJellyfinItem = JellyfinItem & {
   // The internal Tunarr ID of the media source
   serverId: string;
-  // This is the Plex server name that the info was retrieved from
+  // This is the server name that the info was retrieved from
   serverName: string;
+  // The internal Tunarr ID of the media library,
+  libraryId: string;
   // If we found an existing reference to this item on the server, we add it here
   id?: string;
   showId?: string;
@@ -21,38 +22,48 @@ export type EnrichedJellyfinItem = JellyfinItem & {
 
 export const enumerateJellyfinItem = (
   serverId: string,
-  serverName: string,
-  initialItem: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
-): (() => Promise<EnrichedJellyfinItem[]>) => {
-  const seen = new Map<string, JellyfinItem[]>();
+  initialItem: ProgramOrFolder | Library,
+): Promise<TerminalProgram[]> => {
+  const seen = new Map<string, (ProgramOrFolder | Library)[]>();
 
-  return async function () {
+  return (async function () {
     async function loopInner(
-      item: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
-    ): Promise<EnrichedJellyfinItem[]> {
-      if (
-        !isJellyfinVirtualFolder(item) &&
-        JellyfinTerminalTypes.has(item.Type)
-      ) {
+      item: ProgramOrFolder | Library,
+      parent: Nullable<ProgramOrFolder | Library>,
+      acc: TerminalProgram[],
+    ): Promise<TerminalProgram[]> {
+      if (isTerminalItemType(item)) {
         // Only reliable way to filter out programs that were deleted
         // from disk but not updated in JF
-        if (item.RunTimeTicks && item.RunTimeTicks > 0) {
-          return [{ ...item, serverName, serverId }];
-        } else {
-          return [];
+        if (item.duration <= 0) {
+          return acc;
         }
+
+        if (parent?.type === 'season' && item.type === 'episode') {
+          item.season = parent;
+        } else if (parent?.type === 'album' && item.type === 'track') {
+          item.album = parent;
+        }
+
+        acc.push(item);
+        return acc;
       } else {
-        const id = isJellyfinVirtualFolder(item) ? item.ItemId : item.Id;
-        if (seen.has(id)) {
-          return sequentialPromises(seen.get(id) ?? [], loopInner).then(
-            flattenDeep,
-          );
+        if (seen.has(item.uuid)) {
+          return sequentialPromises(seen.get(item.uuid) ?? [], (next) =>
+            loopInner(next, item, acc),
+          ).then(flattenDeep);
+        }
+
+        if (parent?.type === 'show' && item.type === 'season') {
+          item.show = parent;
+        } else if (parent?.type === 'artist' && item.type === 'album') {
+          item.artist = parent;
         }
 
         return getJellyfinLibraryItems({
           path: {
             mediaSourceId: serverId,
-            libraryId: id,
+            libraryId: item.externalId,
           },
           query: {
             itemTypes: [...JellyfinTerminalTypes],
@@ -60,38 +71,15 @@ export const enumerateJellyfinItem = (
           },
           throwOnError: true,
         }) // TODO: Use p-queue here to parallelize a bit
-          .then((result) => sequentialPromises(result.data.Items, loopInner))
+          .then((result) =>
+            sequentialPromises(result.data.result, (program) =>
+              loopInner(program, item, acc),
+            ),
+          )
           .then(flattenDeep);
       }
     }
 
-    const res = await loopInner(initialItem);
-    // const externalIds = res.map((m) =>
-    //   createExternalId('plex', serverName, m.ratingKey),
-    // );
-
-    // This is best effort - if the user saves these IDs later, the upsert
-    // logic should figure out what is new/existing
-    try {
-      // const existingIdsByExternalId =
-      //   await apiClient.batchGetProgramsByExternalIds({ externalIds });
-      // return map(res, (media) => {
-      //   // const existing =
-      //   //   existingIdsByExternalId[
-      //   //     createExternalId('plex', serverName, media.ratingKey)
-      //   //   ];
-      //   return {
-      //     ...media,
-      //     // id: existing?.id,
-      //     // showId: existing?.showId,
-      //     // seasonId: existing?.seasonId,
-      //   };
-      // });
-      return res;
-    } catch (e) {
-      console.error('Unable to retrieve IDs in batch', e);
-    }
-
-    return res;
-  };
+    return await loopInner(initialItem, null, []);
+  })();
 };

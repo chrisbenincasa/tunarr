@@ -1,4 +1,4 @@
-import { type TupleToUnion } from '@tunarr/types';
+import { type Tag, type TupleToUnion } from '@tunarr/types';
 import {
   ContentProgramTypeSchema,
   ResolutionSchema,
@@ -120,3 +120,6 @@ export const ChannelOfflineSettingsSchema = z.object({
 export type ChannelOfflineSettings = z.infer<
   typeof ChannelOfflineSettingsSchema
 >;
+
+export type MediaSourceId = Tag<string, 'mediaSourceId'>;
+export type MediaSourceName = Tag<string, 'mediaSourceName'>;

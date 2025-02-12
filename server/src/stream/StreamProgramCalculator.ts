@@ -24,6 +24,7 @@ import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
+import { WrappedError } from '../types/errors.ts';
 import { isNonEmptyString, nullToUndefined } from '../util/index.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
@@ -50,7 +51,7 @@ export type GetCurrentLineupItemRequest = {
   sessionToken?: string;
 };
 
-export class StreamProgramCalculatorError extends Error {
+export class StreamProgramCalculatorError extends WrappedError {
   constructor(
     public type: 'channel_not_found' | 'ffmpeg_missing' | 'no_current_program',
     message?: string,
@@ -237,11 +238,13 @@ export class StreamProgramCalculator {
         const msg =
           "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
         this.logger.error(msg);
-        return Result.failure(new Error(msg));
+        return Result.forError(new Error(msg));
       }
 
       if (currentProgram.program.type === 'redirect') {
-        return Result.failure(new Error('Unable to resolve program redirects'));
+        return Result.forError(
+          new Error('Unable to resolve program redirects'),
+        );
       }
 
       lineupItem = await this.createLineupItem(
@@ -400,7 +403,7 @@ export class StreamProgramCalculator {
               eid.sourceType === ProgramExternalIdType.EMBY,
           );
 
-          if (externalInfo && isNonEmptyString(externalInfo.externalSourceId)) {
+          if (externalInfo && isNonEmptyString(externalInfo.mediaSourceId)) {
             const mediaSourceType = match(externalInfo.sourceType)
               .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
               .with(
@@ -418,7 +421,7 @@ export class StreamProgramCalculator {
               plexFilePath: nullToUndefined(externalInfo.externalFilePath),
               externalKey: externalInfo.externalKey,
               filePath: nullToUndefined(externalInfo.directFilePath),
-              externalSourceId: externalInfo.externalSourceId,
+              externalSourceId: externalInfo.mediaSourceId,
               contentDuration: backingItem.duration,
               duration: lineupItem.durationMs,
               programId: backingItem.uuid,
@@ -560,10 +563,17 @@ export class StreamProgramCalculator {
 
         const externalInfos = await this.programDB.getProgramExternalIds(
           filler.uuid,
-          [ProgramExternalIdType.PLEX, ProgramExternalIdType.JELLYFIN],
+          [
+            ProgramExternalIdType.PLEX,
+            ProgramExternalIdType.JELLYFIN,
+            ProgramExternalIdType.EMBY,
+          ],
         );
 
-        if (!isEmpty(externalInfos)) {
+        if (
+          !isEmpty(externalInfos) &&
+          isNonEmptyString(first(externalInfos)?.mediaSourceId)
+        ) {
           const externalInfo = first(externalInfos)!;
           streamDuration = Math.max(
             1,
@@ -584,7 +594,7 @@ export class StreamProgramCalculator {
             contentDuration: filler.duration,
             duration: program.duration,
             programId: filler.uuid,
-            externalSourceId: externalInfo.externalSourceId!,
+            externalSourceId: externalInfo.mediaSourceId!,
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
             programBeginMs: program.programBeginMs,

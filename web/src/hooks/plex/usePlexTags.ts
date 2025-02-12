@@ -1,16 +1,21 @@
 import { useCurrentPlexMediaSourceAndLibraryView } from '@/store/programmingSelector/selectors.ts';
 import { useQuery } from '@tanstack/react-query';
-import type { PlexTagResult } from '@tunarr/types/plex';
-import { plexQueryOptions } from './plexHookUtil.ts';
+import { getApiPlexByMediaSourceIdTagsOptions } from '../../generated/@tanstack/react-query.gen.ts';
 
 export const usePlexTags = (key: string) => {
   const [selectedServer, selectedLibrary] =
     useCurrentPlexMediaSourceAndLibraryView();
-  const path = selectedLibrary
-    ? `/library/sections/${selectedLibrary.library.key}/${key}`
-    : '';
 
-  return useQuery<PlexTagResult>({
-    ...plexQueryOptions(selectedServer?.id ?? '', path),
+  return useQuery({
+    ...getApiPlexByMediaSourceIdTagsOptions({
+      path: {
+        mediaSourceId: selectedServer?.id ?? '',
+      },
+      query: {
+        libraryKey: selectedLibrary?.library.externalId ?? '',
+        itemKey: key,
+      },
+    }),
+    enabled: !!selectedServer && !!selectedLibrary,
   });
 };

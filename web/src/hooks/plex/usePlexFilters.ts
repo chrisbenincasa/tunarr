@@ -1,21 +1,23 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { plexQueryOptions } from '@/hooks/plex/plexHookUtil.ts';
 import useStore from '@/store/index.ts';
 import { setPlexMetadataFilters } from '@/store/plexMetadata/actions.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
 import type { Maybe } from '@/types/util.ts';
 import { useQuery } from '@tanstack/react-query';
-import type { PlexFiltersResponse } from '@tunarr/types/plex';
 import { useEffect } from 'react';
+import { getApiPlexByMediaSourceIdFiltersOptions } from '../../generated/@tanstack/react-query.gen.ts';
 
 export const usePlexFilters = (serverId: Maybe<string>, plexKey: string) => {
-  const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
-  const query = useQuery<PlexFiltersResponse>({
-    ...plexQueryOptions(
-      serverId ?? '',
-      key,
-      isNonEmptyString(serverId) && plexKey.length > 0,
-    ),
+  const query = useQuery({
+    ...getApiPlexByMediaSourceIdFiltersOptions({
+      path: {
+        mediaSourceId: serverId ?? '',
+      },
+      query: {
+        key: plexKey,
+      },
+    }),
+    enabled: isNonEmptyString(serverId) && plexKey.length > 0,
     staleTime: 1000 * 60 * 60 * 60,
   });
 
@@ -45,7 +47,7 @@ export const useSelectedLibraryPlexFilters = () => {
   return usePlexFilters(
     selectedServer?.id,
     selectedLibrary?.view.type === 'library'
-      ? selectedLibrary?.view.library.key
+      ? selectedLibrary?.view.library.externalId
       : '',
   );
 };

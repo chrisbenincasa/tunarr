@@ -72,7 +72,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       });
 
       ffmpeg.on('error', (err) => {
-        logger.error('FFMPEG ERROR', err);
+        logger.error(err, 'FFMPEG ERROR');
         buffer.push(null);
         void res.status(500).send('FFMPEG ERROR');
         return;
@@ -114,7 +114,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         done();
       },
       onError(req, _, e) {
-        logger.error(e, 'Error on /stream: %s. %O', req.raw.url);
+        logger.error(e, 'Error on /stream: %s', req.raw.url);
       },
     },
     async (req, res) => {
@@ -155,9 +155,9 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       if (rawStreamResult.type === 'error') {
         logger.error(
-          'Error starting stream! Message: %s, Error: %O',
-          rawStreamResult.message,
           rawStreamResult.error ?? null,
+          'Error starting stream! Message: %s',
+          rawStreamResult.message,
         );
         return res
           .status(rawStreamResult.httpStatus)

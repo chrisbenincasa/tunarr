@@ -77,7 +77,7 @@ export class SubtitleStreamPicker {
         if (stream.languageCodeISO6392 !== pref.languageCode) {
           this.logger.debug(
             'Skipping subtitle index %d, not a language match',
-            stream.index,
+            stream.index ?? -1,
           );
           continue;
         }
@@ -86,13 +86,13 @@ export class SubtitleStreamPicker {
         if (pref.filterType === 'forced' && !stream.forced) {
           this.logger.debug(
             'Skipping subtitle index %d, wanted forced',
-            stream.index,
+            stream.index ?? -1,
           );
           continue;
         } else if (pref.filterType === 'default' && !stream.default) {
           this.logger.debug(
             'Skipping subtitle index %d, wanted default',
-            stream.index,
+            stream.index ?? -1,
           );
           continue;
         }
@@ -101,7 +101,7 @@ export class SubtitleStreamPicker {
         if (!pref.allowExternal && stream.type === 'external') {
           this.logger.debug(
             'Skipping subtitle index %d, disallowed external',
-            stream.index,
+            stream.index ?? -1,
           );
           continue;
         }
@@ -109,7 +109,7 @@ export class SubtitleStreamPicker {
         if (!pref.allowImageBased && isImageBasedSubtitle(stream.codec)) {
           this.logger.debug(
             'Skipping subtitle index %d, disallowed image-based',
-            stream.index,
+            stream.index ?? -1,
           );
           continue;
         }
@@ -150,9 +150,9 @@ export class SubtitleStreamPicker {
 
     if (!filePath) {
       this.logger.debug(
-        'Unsupported subtitle codec at index %d: %s',
-        stream.index,
-        stream.codec,
+        'Unsupported subtitle codec at index %d: codec = %s',
+        stream.index ?? -1,
+        stream.codec ?? 'unkonwn',
       );
       return;
     }
@@ -161,7 +161,7 @@ export class SubtitleStreamPicker {
     if (!(await fileExists(fullPath))) {
       this.logger.debug(
         'Subtitle stream at index %d has not been extracted yet.',
-        stream.index,
+        stream.index ?? -1,
       );
       return;
     }

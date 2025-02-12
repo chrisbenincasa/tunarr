@@ -1,19 +1,52 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
+import type {
+  MediaSource,
+  MediaSourceLibrary,
+} from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import type { ProgramGrouping as ProgramGroupingDao } from '@/db/schema/ProgramGrouping.js';
+import {
+  AllProgramGroupingFields,
+  ProgramGroupingType,
+} from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { ifDefined, isNonEmptyString } from '@/util/index.js';
+import {
+  groupByUniq,
+  groupByUniqAndMap,
+  ifDefined,
+  isNonEmptyString,
+} from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { BasicIdParamSchema, ProgramChildrenResult } from '@tunarr/types/api';
+import { seq } from '@tunarr/shared/util';
+import {
+  tag,
+  type Episode,
+  type Movie,
+  type MusicAlbum,
+  type MusicArtist,
+  type MusicTrack,
+  type ProgramGrouping,
+  type Season,
+  type Show,
+  type TerminalProgram,
+} from '@tunarr/types';
+import {
+  BasicIdParamSchema,
+  ProgramChildrenResult,
+  ProgramSearchRequest,
+  ProgramSearchResponse,
+  SearchFilterQuerySchema,
+} from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
+import dayjs from 'dayjs';
 import type { HttpHeader } from 'fastify/types/utils.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
+  compact,
   every,
   find,
   first,
@@ -25,19 +58,33 @@ import {
   values,
 } from 'lodash-es';
 import type stream from 'node:stream';
+import { match } from 'ts-pattern';
 import z from 'zod/v4';
 import { container } from '../container.ts';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
+import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
 import {
   AllProgramFields,
-  AllProgramGroupingFields,
   selectProgramsBuilder,
 } from '../db/programQueryHelpers.ts';
+import type { MediaSourceId } from '../db/schema/base.ts';
+import type {
+  MediaSourceWithLibraries,
+  ProgramWithRelations,
+} from '../db/schema/derivedTypes.js';
+import type {
+  ProgramGroupingSearchDocument,
+  ProgramSearchDocument,
+  TerminalProgramSearchDocument,
+} from '../services/MeilisearchService.ts';
+import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import type { Path } from '../types/path.ts';
+import type { Maybe } from '../types/util.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -62,12 +109,480 @@ const BatchLookupExternalProgrammingSchema = z.object({
     }),
 });
 
+function isProgramGroupingDocument(
+  doc: ProgramSearchDocument,
+): doc is ProgramGroupingSearchDocument {
+  switch (doc.type) {
+    case 'show':
+    case 'season':
+    case 'artist':
+    case 'album':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function convertProgramSearchResult(
+  doc: TerminalProgramSearchDocument,
+  program: ProgramWithRelations,
+  mediaSource: MediaSourceWithLibraries,
+  mediaLibrary: MediaSourceLibrary,
+): TerminalProgram {
+  if (!program.canonicalId) {
+    throw new Error('');
+  }
+
+  const externalId = doc.externalIds.find(
+    (eid) => eid.source === mediaSource.type,
+  )?.id;
+  if (!externalId) {
+    throw new Error('');
+  }
+
+  const base = {
+    mediaSourceId: mediaSource.uuid,
+    libraryId: mediaLibrary.uuid,
+    externalLibraryId: mediaLibrary.externalKey,
+    releaseDate: doc.originalReleaseDate,
+    releaseDateString: doc.originalReleaseDate
+      ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
+      : null,
+    externalId,
+    sourceType: mediaSource.type,
+  };
+
+  const identifiers = doc.externalIds.map((eid) => ({
+    id: eid.id,
+    sourceId: isNonEmptyString(eid.sourceId)
+      ? decodeCaseSensitiveId(eid.sourceId)
+      : undefined,
+    type: eid.source,
+  }));
+
+  const uuid = doc.id;
+  const year =
+    doc.originalReleaseYear ??
+    (doc.originalReleaseDate && doc.originalReleaseDate > 0
+      ? dayjs(doc.originalReleaseDate).year()
+      : null);
+  const releaseDate =
+    doc.originalReleaseDate && doc.originalReleaseDate > 0
+      ? doc.originalReleaseDate
+      : null;
+
+  const result = match(doc)
+    .returnType<TerminalProgram | null>()
+    .with(
+      { type: 'episode' },
+      (ep) =>
+        ({
+          ...ep,
+          ...base,
+          uuid,
+          originalTitle: null,
+          year,
+          releaseDate,
+          identifiers,
+          episodeNumber: ep.index ?? 0,
+          canonicalId: program.canonicalId!,
+          // mediaItem: {
+          //   displayAspectRatio: '',
+          //   duration: doc.duration,
+          //   resolution: {
+          //     widthPx: doc.videoWidth ?? 0,
+          //     heightPx: doc.videoHeight ?? 0,
+          //   },
+          //   sampleAspectRatio: '',
+
+          // },
+        }) satisfies Episode,
+    )
+    .with(
+      { type: 'movie' },
+      (movie) =>
+        ({
+          ...movie,
+          ...base,
+          identifiers,
+          uuid,
+          originalTitle: null,
+          year,
+          releaseDate,
+          canonicalId: program.canonicalId!,
+        }) satisfies Movie,
+    )
+    .with(
+      { type: 'track' },
+      (track) =>
+        ({
+          ...track,
+          ...base,
+          identifiers,
+          uuid,
+          originalTitle: null,
+          year,
+          releaseDate,
+          canonicalId: program.canonicalId!,
+          trackNumber: doc.index ?? 0,
+        }) satisfies MusicTrack,
+    )
+    .otherwise(() => null);
+
+  if (!result) {
+    throw new Error('');
+  }
+
+  return result;
+}
+
+function convertProgramGroupingSearchResult(
+  doc: ProgramGroupingSearchDocument,
+  grouping: ProgramGroupingDao,
+  childCounts: Maybe<ProgramGroupingChildCounts>,
+  mediaSource: MediaSourceWithLibraries,
+  mediaLibrary: MediaSourceLibrary,
+) {
+  if (!grouping.canonicalId) {
+    throw new Error('');
+  }
+
+  const childCount = childCounts?.childCount;
+  const grandchildCount = childCounts?.grandchildCount;
+
+  const identifiers = doc.externalIds.map((eid) => ({
+    id: eid.id,
+    sourceId: isNonEmptyString(eid.sourceId)
+      ? decodeCaseSensitiveId(eid.sourceId)
+      : undefined,
+    type: eid.source,
+  }));
+
+  const uuid = doc.id;
+  const studios = doc?.studio?.map(({ name }) => ({ name })) ?? [];
+
+  const externalId = doc.externalIds.find(
+    (eid) => eid.source === mediaSource.type,
+  )?.id;
+  if (!externalId) {
+    throw new Error('');
+  }
+
+  const base = {
+    mediaSourceId: mediaSource.uuid,
+    libraryId: mediaLibrary.uuid,
+    externalLibraryId: mediaLibrary.externalKey,
+    releaseDate: doc.originalReleaseDate,
+    releaseDateString: doc.originalReleaseDate
+      ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
+      : null,
+    externalId,
+    sourceType: mediaSource.type,
+  };
+
+  const result = match(doc)
+    .returnType<ProgramGrouping>()
+    .with(
+      { type: 'season' },
+      (season) =>
+        ({
+          ...season,
+          ...base,
+          identifiers,
+          uuid,
+          canonicalId: grouping.canonicalId!,
+          studios,
+          year: doc.originalReleaseYear,
+          index: doc.index ?? 0,
+          childCount,
+          grandchildCount,
+        }) satisfies Season,
+    )
+    .with(
+      { type: 'show' },
+      (show) =>
+        ({
+          ...show,
+          ...base,
+          identifiers,
+          uuid,
+          canonicalId: grouping.canonicalId!,
+          studios,
+          year: doc.originalReleaseYear,
+          childCount,
+          grandchildCount,
+        }) satisfies Show,
+    )
+    .with(
+      { type: 'album' },
+      (album) =>
+        ({
+          ...album,
+          ...base,
+          identifiers,
+          uuid,
+          canonicalId: grouping.canonicalId!,
+          // studios,
+          year: doc.originalReleaseYear,
+          childCount,
+          grandchildCount,
+        }) satisfies MusicAlbum,
+    )
+    .with(
+      { type: 'artist' },
+      (artist) =>
+        ({
+          ...artist,
+          ...base,
+          identifiers,
+          uuid,
+          canonicalId: grouping.canonicalId!,
+          childCount,
+          grandchildCount,
+        }) satisfies MusicArtist,
+    )
+    .exhaustive();
+
+  return result;
+}
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
     className: 'ProgrammingApi',
   });
+
+  fastify.post(
+    '/programs/search',
+    {
+      schema: {
+        body: ProgramSearchRequest,
+        response: {
+          200: ProgramSearchResponse,
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await req.serverCtx.searchService.search('programs', {
+        query: req.body.query.query,
+        filter: req.body.query.filter,
+        paging: {
+          offset: req.body.page ?? 1,
+          limit: req.body.limit ?? 20,
+        },
+        libraryId: req.body.libraryId,
+        // TODO not a great cast...
+        restrictSearchTo: req.body.query
+          .restrictSearchTo as Path<ProgramSearchDocument>[],
+      });
+
+      const [programIds, groupingIds] = result.hits.reduce(
+        (acc, curr) => {
+          const [programs, groupings] = acc;
+          if (isProgramGroupingDocument(curr)) {
+            groupings.push(curr.id);
+          } else {
+            programs.push(curr.id);
+          }
+          return acc;
+        },
+        [[], []] as [string[], string[]],
+      );
+
+      const allMediaSources = await req.serverCtx.mediaSourceDB.getAll();
+      const allMediaSourcesById = groupByUniq(
+        allMediaSources,
+        (ms) => ms.uuid as string,
+      );
+      const allLibrariesById = groupByUniq(
+        allMediaSources.flatMap((ms) => ms.libraries),
+        (lib) => lib.uuid,
+      );
+
+      const [programs, groupings, groupingCounts] = await Promise.all([
+        req.serverCtx.programDB
+          .getProgramsByIds(programIds)
+          .then((res) => groupByUniq(res, (p) => p.uuid)),
+        req.serverCtx.programDB.getProgramGroupings(groupingIds),
+        req.serverCtx.programDB.getProgramGroupingChildCounts(groupingIds),
+      ]);
+
+      const results = seq.collect(result.hits, (program) => {
+        const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
+        const mediaSource = allMediaSourcesById[mediaSourceId];
+        if (!mediaSource) {
+          console.log('no media src');
+          return;
+        }
+        const libraryId = decodeCaseSensitiveId(program.libraryId);
+        const library = allLibrariesById[libraryId];
+        if (!library) {
+          console.log('no library');
+          return;
+        }
+
+        if (isProgramGroupingDocument(program) && groupings[program.id]) {
+          return convertProgramGroupingSearchResult(
+            program,
+            groupings[program.id],
+            groupingCounts[program.id],
+            mediaSource,
+            library,
+          );
+        } else if (
+          !isProgramGroupingDocument(program) &&
+          programs[program.id]
+        ) {
+          return convertProgramSearchResult(
+            program,
+            programs[program.id],
+            mediaSource,
+            library,
+          );
+        }
+
+        console.log('here');
+
+        return;
+      });
+
+      return res.send({
+        results,
+        page: result.page,
+        totalHits: result.totalHits,
+        totalPages: result.totalPages,
+      });
+    },
+  );
+
+  fastify.get(
+    '/programs/:id/descendants',
+    {
+      schema: {
+        params: z.object({
+          id: z.uuid(),
+        }),
+        response: {
+          200: z.array(ContentProgramSchema),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const grouping = await req.serverCtx.programDB.getProgramGrouping(
+        req.params.id,
+      );
+      if (isNil(grouping)) {
+        const program = await req.serverCtx.programDB.getProgramById(
+          req.params.id,
+        );
+        if (program) {
+          return res.send(
+            compact([
+              req.serverCtx.programConverter.convertProgramWithExternalIds(
+                program,
+              ),
+            ]),
+          );
+        }
+
+        return res.status(404).send();
+      }
+
+      const programs =
+        await req.serverCtx.programDB.getProgramGroupingDescendants(
+          req.params.id,
+          grouping.type,
+        );
+
+      const apiPrograms = seq.collect(programs, (program) =>
+        req.serverCtx.programConverter.convertProgramWithExternalIds(program),
+      );
+
+      return res.send(apiPrograms);
+    },
+  );
+
+  fastify.get(
+    '/programs/facets/:facetName',
+    {
+      schema: {
+        params: z.object({
+          facetName: z.string(),
+        }),
+        querystring: z.object({
+          facetQuery: z.string().optional(),
+          libraryId: z.string().uuid().optional(),
+        }),
+        response: {
+          200: z.object({
+            facetValues: z.record(z.string(), z.number()),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const facetResult = await req.serverCtx.searchService.facetSearch(
+        'programs',
+        {
+          facetQuery: req.query.facetQuery,
+          facetName: req.params.facetName,
+          libraryId: req.query.libraryId,
+        },
+      );
+
+      return res.send({
+        facetValues: groupByUniqAndMap(
+          facetResult.facetHits,
+          'value',
+          (hit) => hit.count,
+        ),
+      });
+    },
+  );
+
+  fastify.post(
+    '/programs/facets/:facetName',
+    {
+      schema: {
+        params: z.object({
+          facetName: z.string(),
+        }),
+        querystring: z.object({
+          facetQuery: z.string().optional(),
+          libraryId: z.string().uuid().optional(),
+        }),
+        body: z.object({
+          filter: SearchFilterQuerySchema.optional(),
+        }),
+        response: {
+          200: z.object({
+            facetValues: z.record(z.string(), z.number()),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const facetResult = await req.serverCtx.searchService.facetSearch(
+        'programs',
+        {
+          facetQuery: req.query.facetQuery,
+          facetName: req.params.facetName,
+          libraryId: req.query.libraryId,
+          filter: req.body.filter,
+        },
+      );
+
+      return res.send({
+        facetValues: groupByUniqAndMap(
+          facetResult.facetHits,
+          'value',
+          (hit) => hit.count,
+        ),
+      });
+    },
+  );
 
   fastify.get(
     '/programs/:id',
@@ -111,11 +626,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
       if (!program) {
         return res.status(404).send('Program not found');
+      } else if (!program.mediaSourceId) {
+        return res
+          .status(404)
+          .send('Program has no associated media source ID');
       }
 
       const server = await req.serverCtx.mediaSourceDB.findByType(
         program.sourceType,
-        program.mediaSourceId ?? program.externalSourceId,
+        program.mediaSourceId,
       );
 
       if (!server) {
@@ -184,6 +703,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: ProgramChildrenResult,
+          400: z.void(),
           404: z.void(),
         },
       },
@@ -202,7 +722,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           grouping.type,
           req.query,
         );
-        const result = results.map((program) =>
+        const result = seq.collect(results, (program) =>
           req.serverCtx.programConverter.programDaoToContentProgram(
             program,
             program.externalIds,
@@ -215,6 +735,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             type: grouping.type === 'album' ? 'track' : 'episode',
             programs: result,
           },
+          size: result.length,
         });
       } else if (grouping.type === 'artist') {
         const { total, results } = await req.serverCtx.programDB.getChildren(
@@ -225,7 +746,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const result = results.map((program) =>
           req.serverCtx.programConverter.programGroupingDaoToDto(program),
         );
-        return res.send({ total, result: { type: 'album', programs: result } });
+        return res.send({
+          total,
+          result: { type: 'album', programs: result },
+          size: result.length,
+        });
       } else if (grouping.type === 'show') {
         const { total, results } = await req.serverCtx.programDB.getChildren(
           req.params.id,
@@ -238,6 +763,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.send({
           total,
           result: { type: 'season', programs: result },
+          size: result.length,
         });
       }
 
@@ -283,6 +809,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const handleResult = async (mediaSource: MediaSource, result: string) => {
         if (req.query.method === 'proxy') {
           try {
+            logger.debug('Proxying response to %s', result);
             const proxyRes = await axios.request<stream.Readable>({
               url: result,
               responseType: 'stream',
@@ -317,14 +844,17 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.redirect(result, 302).send();
       };
 
-      if (!isNil(program)) {
-        const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
+      if (!isNil(program?.mediaSourceId)) {
+        const mediaSource = await req.serverCtx.mediaSourceDB.findByType(
           program.sourceType,
-          program.externalSourceId,
+          program.mediaSourceId,
         );
 
         if (isNil(mediaSource)) {
-          return res.status(404).send();
+          logger.error('No media source: %O', program);
+          return res
+            .status(404)
+            .send(`No media source for id/name ${program.externalSourceId}`);
         }
 
         let keyToUse = program.externalKey;
@@ -418,14 +948,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
         const mediaSource = await (isNonEmptyString(source.mediaSourceId)
           ? req.serverCtx.mediaSourceDB.getById(source.mediaSourceId)
-          : req.serverCtx.mediaSourceDB.getByExternalId(
-              // This was asserted above
-              source.sourceType as 'plex' | 'jellyfin',
-              source.externalSourceId,
-            ));
+          : null);
 
         if (isNil(mediaSource)) {
-          return res.status(404).send();
+          return res
+            .status(404)
+            .send(
+              `Could not find media source with id ${source.externalSourceId}`,
+            );
         }
 
         switch (mediaSource.type) {
@@ -475,6 +1005,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           200: z.object({ url: z.string() }),
           302: z.void(),
           404: z.void(),
+          405: z.void(),
         },
       },
     },
@@ -501,7 +1032,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const server = find(
         mediaSources,
         (source) =>
-          source.uuid === externalId.externalSourceId ||
+          source.uuid === externalId.mediaSourceId ||
           source.name === externalId.externalSourceId,
       );
 
@@ -552,11 +1083,12 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           200: ContentProgramSchema,
           400: z.object({ message: z.string() }),
           404: z.void(),
+          500: z.string(),
         },
       },
     },
     async (req, res) => {
-      const [sourceType, ,] = req.params.externalId;
+      const [sourceType, rawServerId, id] = req.params.externalId;
       const sourceTypeParsed = programSourceTypeFromString(sourceType);
       if (isUndefined(sourceTypeParsed)) {
         return res
@@ -565,7 +1097,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const result = await req.serverCtx.programDB.lookupByExternalIds(
-        new Set([req.params.externalId]),
+        new Set([[sourceType, tag(rawServerId), id]]),
       );
       const program = first(values(result));
 
@@ -573,7 +1105,18 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      return res.send(program);
+      const converted =
+        req.serverCtx.programConverter.programDaoToContentProgram(program);
+
+      if (!converted) {
+        return res
+          .status(500)
+          .send(
+            'Could not convert program. It might be missing a mediaSourceId',
+          );
+      }
+
+      return res.send(converted);
     },
   );
 
@@ -590,8 +1133,24 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
+      const ids = req.body.externalIds
+        .values()
+        .map(
+          ([source, sourceId, id]) =>
+            [source, tag<MediaSourceId>(sourceId), id] as const,
+        )
+        .toArray();
+      const results = await req.serverCtx.programDB.lookupByExternalIds(
+        new Set(ids),
+      );
+
       return res.send(
-        await req.serverCtx.programDB.lookupByExternalIds(req.body.externalIds),
+        groupByUniq(
+          seq.collect(results, (p) =>
+            req.serverCtx.programConverter.programDaoToContentProgram(p),
+          ),
+          (p) => p.id,
+        ),
       );
     },
   );

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `program_source_type_media_source_external_key_unique` ON `program` (`source_type`,`media_source_id`,`external_key`);

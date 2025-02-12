@@ -78,6 +78,7 @@ import {
   isDefined,
   isNonEmptyString,
   mapReduceAsyncSeq,
+  programExternalIdString,
   run,
 } from '../util/index.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
@@ -99,8 +100,6 @@ import {
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
-  AllProgramGroupingFields,
-  MinimalProgramGroupingFields,
   withFallbackPrograms,
   withMusicArtistAlbums,
   withProgramExternalIds,
@@ -119,8 +118,12 @@ import {
   NewChannelProgram,
   Channel as RawChannel,
 } from './schema/Channel.ts';
-import { programExternalIdString, ProgramType } from './schema/Program.ts';
-import { ProgramGroupingType } from './schema/ProgramGrouping.ts';
+import { ProgramType } from './schema/Program.ts';
+import {
+  AllProgramGroupingFields,
+  MinimalProgramGroupingFields,
+  ProgramGroupingType,
+} from './schema/ProgramGrouping.ts';
 import {
   ChannelSubtitlePreferences,
   NewChannelSubtitlePreference,
@@ -1389,7 +1392,9 @@ export class ChannelDB implements IChannelDB {
           externalIdsByProgramId[program.uuid] ?? [],
         );
 
-        ret[converted.id] = converted;
+        if (converted) {
+          ret[converted.id] = converted;
+        }
       });
 
       return ret;

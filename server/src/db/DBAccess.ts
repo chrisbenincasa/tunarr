@@ -68,7 +68,7 @@ class Connection {
           case 'query':
             if (process.env['DATABASE_DEBUG_LOGGING']) {
               this.logger.debug(
-                'Query: %O (%d ms)',
+                'Query: %s (%d ms)',
                 event.query.sql,
                 event.queryDurationMillis,
               );
@@ -77,7 +77,7 @@ class Connection {
           case 'error':
             this.logger.error(
               event.error,
-              'Query error: %O\n%O',
+              'Query error: %s\n%O',
               event.query.sql,
               event.query.parameters,
             );

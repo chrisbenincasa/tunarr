@@ -3,11 +3,10 @@ import type { Maybe, Nilable } from '@/types/util.ts';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
 import type { PlexServerSettings } from '@tunarr/types';
-import type { PlexLibraryCollections } from '@tunarr/types/plex';
 import { flatten, isNil, reject, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { fetchPlexPath } from '../../helpers/plexUtil.ts';
-import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
+import { getApiPlexByMediaSourceIdLibrariesByLibraryIdCollections } from '../../generated/sdk.gen.ts';
+import { addKnownMediaForServer } from '../../store/programmingSelector/actions.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
 
 export const usePlexCollectionsInfinite = (
@@ -21,31 +20,35 @@ export const usePlexCollectionsInfinite = (
       queryKey: [
         'plex',
         plexServer?.id,
-        currentLibrary?.library.key,
+        currentLibrary?.library.externalId,
         'collections',
+        'infinite',
       ],
-      queryFn: ({ pageParam }) => {
-        const plexQuery = new URLSearchParams({
-          'X-Plex-Container-Start': pageParam.toString(),
-          'X-Plex-Container-Size': pageSize.toString(),
-        });
-
-        return fetchPlexPath<PlexLibraryCollections>(
-          plexServer!.id,
-          `/library/sections/${
-            currentLibrary?.library.key
-          }/collections?${plexQuery.toString()}`,
-        )();
+      queryFn: async (ctx) => {
+        const { pageParam } = ctx;
+        const result =
+          await getApiPlexByMediaSourceIdLibrariesByLibraryIdCollections({
+            path: {
+              mediaSourceId: plexServer!.id,
+              libraryId: currentLibrary!.library.externalId,
+            },
+            query: {
+              offset: pageParam,
+              limit: pageSize,
+            },
+            throwOnError: true,
+          });
+        return result.data;
       },
       enabled:
         enabled &&
         !isNil(plexServer) &&
         !isNil(currentLibrary) &&
-        currentLibrary.library.type !== 'artist',
+        currentLibrary.library.childType !== 'artist',
       initialPageParam: 0,
       getNextPageParam: (res, all, last) => {
         const total = sumBy(all, (page) => page.size);
-        if (total >= (res.totalSize ?? res.size)) {
+        if (total >= (res.total ?? res.size)) {
           return null;
         }
 
@@ -65,11 +68,10 @@ export const usePlexCollectionsInfinite = (
           const results = flatten(
             seq.collect(
               reject(result.data.pages, (page) => page.size === 0),
-              (page) => page.Metadata,
+              (page) => page.result,
             ),
           );
-
-          addKnownMediaForPlexServer(plexServer!.id, results);
+          addKnownMediaForServer(plexServer!.id, results);
         }
       },
       [plexServer],

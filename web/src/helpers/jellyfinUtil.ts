@@ -1,4 +1,4 @@
-import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
+import type { Library } from '@tunarr/types';
 import {
   type JellyfinCollectionType,
   type JellyfinItem,
@@ -42,26 +42,15 @@ export const JellyfinTerminalTypes = new Set<JellyfinItemKind>([
   'MusicVideo',
 ]) as ReadonlySet<JellyfinItemKind>;
 
-export const sortJellyfinLibraries = (
-  item: TunarrAmendedJellyfinVirtualFolder,
-) => {
-  if (item.CollectionType) {
-    switch (item.CollectionType) {
-      case 'tvshows':
+export const sortJellyfinLibraries = (item: Library) => {
+  if (item.childType) {
+    switch (item.childType) {
+      case 'show':
         return 0;
-      case 'movies':
-      case 'music':
+      case 'movie':
+      case 'artist':
         return 1;
-      case 'unknown':
-      case 'musicvideos':
-      case 'trailers':
-      case 'homevideos':
-      case 'boxsets':
-      case 'books':
-      case 'photos':
-      case 'livetv':
-      case 'playlists':
-      case 'folders':
+      default:
         return 2;
     }
   }

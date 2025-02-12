@@ -3,12 +3,14 @@ import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { type MouseEventHandler, useCallback, useState } from 'react';
 import { match } from 'ts-pattern';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { enumerateEmbyItem } from '../../helpers/embyUtil.ts';
+import { getApiProgramsByIdDescendants } from '../../generated/sdk.gen.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { enumerateEmbyItem2 } from '../../helpers/embyUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
+import type { AddedPlexMedia } from '../../types/index.ts';
 import { type AddedMedia } from '../../types/index.ts';
 import { useProgrammingSelectionContext } from '../useProgrammingSelectionContext.ts';
 
@@ -29,7 +31,7 @@ export const useAddSelectedItems = () => {
           .returnType<Promise<AddedMedia[]>>()
           .with({ type: Plex }, async (selected) => {
             const media = knownMedia.getMediaOfType(
-              selected.serverId,
+              selected.mediaSource.id,
               selected.id,
               Plex,
             );
@@ -39,17 +41,13 @@ export const useAddSelectedItems = () => {
             }
 
             return map(
-              await enumeratePlexItem(
-                selected.serverId,
-                selected.serverName,
-                media,
-              )(),
-              (item) => ({ media: item, type: Plex }),
+              await enumeratePlexItem(selected.mediaSource, media),
+              (item) => ({ media: item, type: Plex }) satisfies AddedPlexMedia,
             );
           })
           .with({ type: Jellyfin }, async (selected) => {
             const media = knownMedia.getMediaOfType(
-              selected.serverId,
+              selected.mediaSource.id,
               selected.id,
               Jellyfin,
             );
@@ -59,16 +57,15 @@ export const useAddSelectedItems = () => {
             }
 
             const items = await enumerateJellyfinItem(
-              selected.serverId,
-              selected.serverName,
+              selected.mediaSource.id,
               media,
-            )();
+            );
 
             return map(items, (item) => ({ media: item, type: Jellyfin }));
           })
           .with({ type: Emby }, async (selected) => {
             const media = knownMedia.getMediaOfType(
-              selected.serverId,
+              selected.mediaSource.id,
               selected.id,
               Emby,
             );
@@ -77,13 +74,36 @@ export const useAddSelectedItems = () => {
               return [];
             }
 
-            const items = await enumerateEmbyItem(
-              selected.serverId,
-              selected.serverName,
+            const items = await enumerateEmbyItem2(
+              selected.mediaSource.id,
               media,
-            )();
+            );
 
             return map(items, (item) => ({ media: item, type: Emby }));
+          })
+          .with({ type: Imported }, async (selected) => {
+            const media = knownMedia.getMediaOfType(
+              selected.mediaSource.id,
+              selected.id,
+              Imported,
+            );
+
+            if (!media) {
+              console.warn('Media not found in local map', selected);
+              return [];
+            }
+
+            const { data } = await getApiProgramsByIdDescendants({
+              path: {
+                id: selected.id,
+              },
+              throwOnError: true,
+            });
+
+            return data.map((program) => ({
+              media: program,
+              type: Imported,
+            }));
           })
           .with({ type: 'custom-show' }, (selected) => {
             return Promise.resolve(

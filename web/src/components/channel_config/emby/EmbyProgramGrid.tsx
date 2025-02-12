@@ -1,32 +1,30 @@
 import { Box } from '@mui/material';
-import { type MediaSourceSettings } from '@tunarr/types';
-import type {
-  EmbyItem,
-  EmbyItemKind,
-  EmbyItemSortBy,
-  EmbyLibraryItemsResponse,
-} from '@tunarr/types/emby';
+import { ProgramOrFolder, type MediaSourceSettings } from '@tunarr/types';
+import { PagedResult } from '@tunarr/types/api';
+import type { EmbyItemKind, EmbyItemSortBy } from '@tunarr/types/emby';
 import { isEmpty, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
-import { match } from 'ts-pattern';
-import { embyChildType, extractEmbyId } from '../../../helpers/embyUtil.ts';
+import { match, P } from 'ts-pattern';
 import { estimateNumberOfColumns } from '../../../helpers/util.ts';
 import { useProgramHierarchy } from '../../../hooks/channel_config/useProgramHierarchy.ts';
 import { useInfiniteEmbyLibraryItems } from '../../../hooks/emby/useEmbyApi.ts';
 import useStore from '../../../store/index.ts';
 import type { EmbyMediaSourceView } from '../../../store/programmingSelector/store.ts';
+import { LibraryListViewBreadcrumbs } from '../../library/LibraryListViewBreadcrumbs.tsx';
+import {
+  isTerminalItemType,
+  ProgramGridItem,
+} from '../../library/ProgramGridItem.tsx';
+import { ProgramListItem } from '../../library/ProgramListItem.tsx';
 import type { GridItemProps, NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid } from '../MediaItemGrid.tsx';
 import { MediaItemList } from '../MediaItemList.tsx';
-import { EmbyGridItem } from './EmbyGridItem.tsx';
-import { EmbyListItem } from './EmbyListItem.tsx';
-import { EmbyListViewBreadcrumbs } from './EmbyListViewBreadcrumbs.tsx';
 
 type Props = {
   selectedServer: MediaSourceSettings;
   selectedLibrary: EmbyMediaSourceView;
-  parentContext: EmbyItem[];
+  parentContext: ProgramOrFolder[];
   alphanumericFilter: string | null;
   depth?: number;
 };
@@ -42,7 +40,9 @@ export const EmbyProgramGrid = ({
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [columns, setColumns] = useState(8);
   const [bufferSize, setBufferSize] = useState(0);
-  const programHierarchy = useProgramHierarchy(extractEmbyId);
+  const programHierarchy = useProgramHierarchy(
+    useCallback((item: ProgramOrFolder) => item.uuid, []),
+  );
 
   // This is sort of confusing. The grid view is rendered recursively
   // so we pass parentContext through props, while the list view uses
@@ -51,14 +51,22 @@ export const EmbyProgramGrid = ({
     last(parentContext) ?? last(programHierarchy.parentContext);
   const itemTypes: EmbyItemKind[] = useMemo(() => {
     if (!isEmpty(currentParentContext)) {
-      return embyChildType(currentParentContext) ?? [];
-    } else if (selectedLibrary?.view.CollectionType) {
-      switch (selectedLibrary.view.CollectionType) {
-        case 'movies':
+      return match(currentParentContext)
+        .returnType<EmbyItemKind[]>()
+        .when(isTerminalItemType, () => [])
+        .with({ type: 'album' }, () => ['Audio'])
+        .with({ type: 'artist' }, () => ['MusicAlbum'])
+        .with({ type: 'season' }, () => ['Episode'])
+        .with({ type: 'show' }, () => ['Season'])
+        .with({ type: P.union('collection', 'folder', 'playlist') }, () => [])
+        .exhaustive();
+    } else if (selectedLibrary?.view.childType) {
+      switch (selectedLibrary.view.childType) {
+        case 'movie':
           return ['Movie'];
-        case 'tvshows':
+        case 'show':
           return ['Series'];
-        case 'music':
+        case 'artist':
           return ['MusicArtist'];
         default:
           return [];
@@ -66,18 +74,18 @@ export const EmbyProgramGrid = ({
     }
 
     return [];
-  }, [currentParentContext, selectedLibrary.view.CollectionType]);
+  }, [currentParentContext, selectedLibrary.view.childType]);
 
   const sortBy = useMemo(() => {
-    return match(selectedLibrary?.view.CollectionType)
+    return match(selectedLibrary?.view.childType)
       .returnType<NonEmptyArray<EmbyItemSortBy>>()
-      .with('homevideos', () => ['IsFolder', 'SortName'])
+      .with('other_video', () => ['IsFolder', 'SortName'])
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
-  }, [selectedLibrary?.view.CollectionType]);
+  }, [selectedLibrary?.view.childType]);
 
   const itemsQuery = useInfiniteEmbyLibraryItems(
     selectedServer?.id ?? '',
-    currentParentContext?.Id ?? selectedLibrary?.view.Id ?? '',
+    currentParentContext?.externalId ?? selectedLibrary?.view.externalId ?? '',
     itemTypes,
     true,
     columns * 4, // grab 4 rows
@@ -91,7 +99,7 @@ export const EmbyProgramGrid = ({
       sortBy,
       recursive: true,
       artistType:
-        selectedLibrary?.view.CollectionType === 'music'
+        selectedLibrary?.view.childType === 'artist'
           ? ['AlbumArtist']
           : undefined,
     },
@@ -108,13 +116,13 @@ export const EmbyProgramGrid = ({
       const numberOfFetches = itemsQuery.data?.pages.length || 1;
       const previousFetch = itemsQuery.data?.pages[numberOfFetches - 1];
       const prevNumberOfColumns =
-        itemsQuery.data?.pages[numberOfFetches - 1].TotalRecordCount;
+        itemsQuery.data?.pages[numberOfFetches - 1].total;
 
       // Calculate total number of fetched items so far
       // Take total records, subtract current offset and last fetch #
       //itemsQuery.data?.pages[numberOfFetches-1].TotalRecordCount - (
       const currentTotalSize =
-        previousFetch.Items.length + (previousFetch.StartIndex || 0);
+        previousFetch.result.length + (previousFetch.offset ?? 0);
 
       // Calculate total items that don't fill an entire row
       const leftOvers = currentTotalSize % numberOfColumns;
@@ -130,22 +138,22 @@ export const EmbyProgramGrid = ({
   }, [itemContainer, itemsQuery.data]);
 
   const getPageDataSize = useCallback(
-    (page: EmbyLibraryItemsResponse) => ({
-      total: page.TotalRecordCount,
-      size: page.Items.length,
+    (page: PagedResult<ProgramOrFolder[]>) => ({
+      total: page.total,
+      size: page.size,
     }),
     [],
   );
 
   const extractItems = useCallback(
-    (page: EmbyLibraryItemsResponse) => page.Items,
+    (page: PagedResult<ProgramOrFolder[]>) => page.result,
     [],
   );
 
-  const getItemKey = useCallback((item: EmbyItem) => item.Id, []);
+  const getItemKey = useCallback((item: ProgramOrFolder) => item.uuid, []);
 
   const renderNestedGrid = useCallback(
-    (props: NestedGridProps<EmbyItem>) => {
+    (props: NestedGridProps<ProgramOrFolder>) => {
       return (
         <EmbyProgramGrid
           {...props}
@@ -160,8 +168,8 @@ export const EmbyProgramGrid = ({
   );
 
   const renderGridItem = useCallback(
-    (props: GridItemProps<EmbyItem>) => (
-      <EmbyGridItem key={props.item.Id} {...props} />
+    (props: GridItemProps<ProgramOrFolder>) => (
+      <ProgramGridItem key={props.item.uuid} {...props} />
     ),
     [],
   );
@@ -181,17 +189,17 @@ export const EmbyProgramGrid = ({
         />
       ) : (
         <>
-          <EmbyListViewBreadcrumbs {...programHierarchy} />
+          <LibraryListViewBreadcrumbs {...programHierarchy} />
           <MediaItemList
             infiniteQuery={itemsQuery}
             getPageDataSize={(page) => ({
-              total: page.TotalRecordCount,
-              size: page.Items.length,
+              total: page.total,
+              size: page.result.length,
             })}
-            extractItems={(page) => page.Items}
+            extractItems={(page) => page.result}
             renderListItem={({ item, index, style }) => (
-              <EmbyListItem
-                key={item.Id}
+              <ProgramListItem
+                key={item.uuid}
                 item={item}
                 index={index}
                 style={style}

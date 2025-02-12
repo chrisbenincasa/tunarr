@@ -8,6 +8,7 @@ import { ContainerModule } from 'inversify';
 import type { Kysely } from 'kysely';
 import { DBAccess } from './DBAccess.ts';
 import { FillerDB } from './FillerListDB.ts';
+import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
 import type { DB } from './schema/db.ts';
 
 const DBModule = new ContainerModule((bind) => {
@@ -21,6 +22,11 @@ const DBModule = new ContainerModule((bind) => {
     KEYS.Database,
   );
   bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
+
+  bind(ProgramDaoMinter).toSelf();
+  bind<interfaces.AutoFactory<ProgramDaoMinter>>(
+    KEYS.ProgramDaoMinterFactory,
+  ).toAutoFactory<ProgramDaoMinter>(ProgramDaoMinter);
 });
 
 export { DBModule as dbContainer };

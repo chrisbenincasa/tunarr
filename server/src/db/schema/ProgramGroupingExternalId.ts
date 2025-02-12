@@ -10,9 +10,10 @@ import type { Insertable, Selectable } from 'kysely';
 import { omit } from 'lodash-es';
 import type { StrictOmit } from 'ts-essentials';
 import type { MarkNotNilable } from '../../types/util.ts';
+import type { MediaSourceId, MediaSourceName } from './base.ts';
 import { ProgramExternalIdSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import { MediaSource } from './MediaSource.ts';
+import { MediaSource, MediaSourceLibrary } from './MediaSource.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
 export const ProgramGroupingExternalId = sqliteTable(
@@ -23,10 +24,12 @@ export const ProgramGroupingExternalId = sqliteTable(
     updatedAt: integer(),
     externalFilePath: text(),
     externalKey: text().notNull(),
-    externalSourceId: text(),
-    mediaSourceId: text().references(() => MediaSource.uuid, {
-      onDelete: 'cascade',
-    }),
+    externalSourceId: text().$type<MediaSourceName>(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, {
+        onDelete: 'cascade',
+      })
+      .$type<MediaSourceId>(),
     groupUuid: text()
       .notNull()
       .references(() => ProgramGrouping.uuid, {
@@ -34,6 +37,9 @@ export const ProgramGroupingExternalId = sqliteTable(
         onUpdate: 'cascade',
       }),
     sourceType: text({ enum: ProgramExternalIdSourceTypes }).notNull(),
+    libraryId: text().references(() => MediaSourceLibrary.uuid, {
+      onDelete: 'cascade',
+    }),
   },
   (table) => [
     index('program_grouping_group_uuid_index').on(table.groupUuid),
@@ -63,7 +69,7 @@ export type NewSingleOrMultiProgramGroupingExternalId =
     > & { type: 'multi' });
 
 export function toInsertableProgramGroupingExternalId(
-  eid: NewSingleOrMultiProgramGroupingExternalId,
+  eid: NewProgramGroupingExternalId | NewSingleOrMultiProgramGroupingExternalId,
 ): NewProgramGroupingExternalId {
   return omit(eid, 'type') satisfies NewProgramGroupingExternalId;
 }
@@ -74,13 +80,13 @@ export type ProgramGroupingExternalIdFields<
 
 export const ProgramGroupingExternalIdKeys: (keyof ProgramGroupingExternalId)[] =
   [
-    // 'createdAt',
+    'createdAt',
     'externalFilePath',
     'externalKey',
     'externalSourceId',
     'sourceType',
     'groupUuid',
-    // 'updatedAt',
+    'updatedAt',
     'uuid',
   ];
 

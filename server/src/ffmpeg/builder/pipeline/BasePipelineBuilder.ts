@@ -158,10 +158,7 @@ export class PipelineBuilderContext {
     merge(this, props);
   }
 
-  isSubtitleOverlay(): this is MarkRequired<
-    PipelineBuilderContext,
-    'subtitleStream'
-  > {
+  isSubtitleOverlay(): boolean {
     return (
       (this.subtitleStream?.isImageBased &&
         this.subtitleStream?.method === SubtitleMethods.Burn) ??
@@ -169,10 +166,7 @@ export class PipelineBuilderContext {
     );
   }
 
-  isSubtitleTextContext(): this is MarkRequired<
-    PipelineBuilderContext,
-    'subtitleStream'
-  > {
+  isSubtitleTextContext(): boolean {
     return (
       (this.subtitleStream &&
         !this.subtitleStream.isImageBased &&
@@ -524,7 +518,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.desiredState.videoFormat !== VideoFormats.Copy
     ) {
       this.decoder = this.setupDecoder();
-      this.logger.debug('Setup decoder: %O', this.decoder);
+      if (this.decoder) {
+        this.logger.debug('Setup decoder: %O', this.decoder);
+      }
     }
 
     this.setRealtime();

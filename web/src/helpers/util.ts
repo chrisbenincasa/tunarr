@@ -318,3 +318,16 @@ export function pluralizeWithCount(
 ) {
   return `${count ?? 0} ${pluralize(word, count ?? undefined, inclusive)}`;
 }
+// Stupid shim - get rid of this once we use a newer ES setting
+export function difference<T>(
+  l: ReadonlySet<T> | Set<T>,
+  r: ReadonlySet<T> | Set<T>,
+): Set<T> {
+  const out = new Set<T>();
+  for (const e of l) {
+    if (!r.has(e)) out.add(e);
+  }
+  return out;
+}
+
+export const noop = () => {};

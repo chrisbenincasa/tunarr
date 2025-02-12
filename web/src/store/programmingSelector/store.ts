@@ -1,14 +1,14 @@
+import type {
+  Library,
+  MediaSourceLibrary,
+  Playlist,
+  ProgramOrFolder,
+} from '@tunarr/types';
 import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
+import type { SearchRequest } from '@tunarr/types/api';
 import { type PlexSearch } from '@tunarr/types/api';
-import { type EmbyItem } from '@tunarr/types/emby';
-import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
-import {
-  type PlexLibrarySection,
-  type PlexMedia,
-  type PlexPlaylists,
-} from '@tunarr/types/plex';
 import { type StateCreator } from 'zustand';
+import type { Imported } from '../../types/MediaSource';
 import {
   type Emby,
   type ItemUuid,
@@ -17,6 +17,7 @@ import {
   type Typed,
   type TypedKey,
 } from '../../types/MediaSource';
+import type { Nullable } from '../../types/util.ts';
 
 export type PlexSelectedMedia = Typed<ExternalSourceSelectedMedia, Plex>;
 
@@ -35,10 +36,14 @@ export type JellyfinSelectedMedia = Typed<
 
 export type EmbySelectedMedia = Typed<ExternalSourceSelectedMedia, Emby>;
 
+export type ImportedLibrarySelectedMedia = Typed<
+  ExternalSourceSelectedMedia,
+  Imported
+>;
+
 export type ExternalSourceSelectedMedia = {
-  serverId: string;
-  // This is needed for "legacy" reasons right now
-  serverName: string;
+  mediaSource: MediaSourceSettings;
+  libraryId: string;
   id: ItemUuid;
   childCount?: number;
 };
@@ -47,7 +52,8 @@ export type SelectedMedia =
   | PlexSelectedMedia
   | JellyfinSelectedMedia
   | EmbySelectedMedia
-  | CustomShowSelectedMedia;
+  | CustomShowSelectedMedia
+  | ImportedLibrarySelectedMedia;
 
 export const PlexMediaSourceLibraryViewType = {
   Library: 'library' as const,
@@ -58,13 +64,13 @@ export type PlexMediaSourceLibrarySubview = 'collections' | 'playlists';
 
 export type PlexMediaSourceLibraryView = {
   type: 'library';
-  library: PlexLibrarySection;
+  library: Library;
   subview?: PlexMediaSourceLibrarySubview;
 };
 
 export type PlexMediaSourcePlaylistsView = {
   type: 'playlists';
-  playlists: PlexPlaylists;
+  playlists: Playlist[];
 };
 
 type TypedView<T, Type> = TypedKey<T, Type, 'view'>;
@@ -74,31 +80,31 @@ export type PlexMediaSourceView = TypedView<
   Plex
 >;
 
-export type JellyfinMediaSourceView = TypedView<
-  TunarrAmendedJellyfinVirtualFolder,
-  Jellyfin
->;
+export type JellyfinMediaSourceView = TypedView<Library, Jellyfin>;
 
-export type EmbyMediaSourceView = TypedView<EmbyItem, Emby>;
+export type EmbyMediaSourceView = TypedView<Library, Emby>;
 
 export type CustomShowView = {
   type: 'custom-show';
 };
 
+export type ImportedMediaSourceLibraryView = TypedView<
+  MediaSourceLibrary,
+  Imported
+>;
+
 export type MediaSourceView =
   | PlexMediaSourceView
   | JellyfinMediaSourceView
   | EmbyMediaSourceView
+  | ImportedMediaSourceLibraryView
   | CustomShowView;
 
 type TypedItem<T, Type> = TypedKey<T, Type, 'item'>;
 
 export type MediaGenre = TypedItem<string, Jellyfin | Plex | Emby>;
 
-export type MediaItems =
-  | TypedItem<PlexLibrarySection | PlexMedia, Plex>
-  | TypedItem<JellyfinItem | TunarrAmendedJellyfinVirtualFolder, Jellyfin>
-  | TypedItem<EmbyItem, Emby>;
+export type MediaItems = ProgramOrFolder | Library;
 
 export type KnownMediaMap = Record<string, Record<ItemUuid, MediaItems>>;
 
@@ -116,6 +122,7 @@ export interface ProgrammingListingsState {
   plexSearch: PlexSearch & {
     urlFilter?: string; // Validated PlexFilter ready to be used as a request query param
   };
+  currentSearchRequest: Nullable<SearchRequest>;
 }
 
 export const createProgrammingListingsState: StateCreator<
@@ -125,4 +132,5 @@ export const createProgrammingListingsState: StateCreator<
   selectedMedia: [],
   contentHierarchyByServer: {},
   plexSearch: {},
+  currentSearchRequest: null,
 });

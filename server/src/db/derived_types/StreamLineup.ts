@@ -3,10 +3,12 @@
 // active streaming session
 
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { tag } from '@tunarr/types';
 import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
 import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod/v4';
 import type { EmbyT, JellyfinT } from '../../types/internal.ts';
+import type { MediaSourceId } from '../schema/base.ts';
 import type { ProgramType } from '../schema/Program.ts';
 
 const baseStreamLineupItemSchema = z.object({
@@ -125,7 +127,7 @@ const BaseContentBackedStreamLineupItemSchema =
     programId: z.uuid(),
     // These are taken from the Program DB entity
     plexFilePath: z.string().optional(),
-    externalSourceId: z.string(),
+    externalSourceId: z.string().transform((s) => tag<MediaSourceId>(s)),
     filePath: z.string().optional(),
     externalKey: z.string(),
     programType: ContentProgramTypeSchema,

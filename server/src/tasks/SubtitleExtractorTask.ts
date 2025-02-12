@@ -11,7 +11,7 @@ import { MinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { MediaSource } from '../db/schema/MediaSource.ts';
+import { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { HttpReconnectOptions } from '../ffmpeg/builder/options/input/HttpReconnectOptions.ts';
 import { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
@@ -144,8 +144,7 @@ export class SubtitleExtractorTask extends Task {
         const mediaSource = mediaSources.find(
           (ms) =>
             ms.uuid === program.externalSourceId ||
-            ms.name === program.externalSourceName ||
-            ms.name === program.externalSourceId,
+            ms.name === program.externalSourceName,
         );
         if (!mediaSource) {
           // log
@@ -159,7 +158,7 @@ export class SubtitleExtractorTask extends Task {
 
   private async handleProgram(
     program: ContentGuideProgram,
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceWithLibraries,
   ) {
     const stream = await this.streamDetailsFetcher.getStream({
       server: mediaSource,

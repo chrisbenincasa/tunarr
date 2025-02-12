@@ -27,6 +27,7 @@ export class TunarrWorker {
     @inject(SlotSchedulerService)
     private slotSchedulerService: SlotSchedulerService,
   ) {
+    // How many tasks the worker pool can handle simultaneously
     // TODO: Make this configurable
     this.#queue = new PQueue({
       concurrency: 2,

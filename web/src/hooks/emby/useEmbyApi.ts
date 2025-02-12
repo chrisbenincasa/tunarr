@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { addKnownMediaForEmbyServer } from '@/store/programmingSelector/actions.ts';
+import { addKnownMediaForServer } from '@/store/programmingSelector/actions.ts';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -64,11 +64,7 @@ export const useEmbyLibraryItems = (
     useCallback(
       (result) => {
         if (result.status === 'success') {
-          addKnownMediaForEmbyServer(
-            mediaSourceId,
-            result.data.Items,
-            parentId,
-          );
+          addKnownMediaForServer(mediaSourceId, result.data.result, parentId);
         }
       },
       [mediaSourceId, parentId],
@@ -138,19 +134,15 @@ export const useInfiniteEmbyLibraryItems = (
         enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
         initialPageParam: { offset: 0, pageSize: lastFetchSize },
         getNextPageParam: (res, all, { offset: lastOffset }) => {
-          const total = sumBy(all, (page) => page.Items.length);
-          if (total >= (res.TotalRecordCount ?? res.Items.length)) {
+          const total = sumBy(all, (page) => page.size);
+          if (total >= (res.total ?? res.size)) {
             return null;
           }
 
           // Next offset is the last + how many items we got back.
           return {
-            offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
-            pageSize: getChunkSize(
-              res.TotalRecordCount,
-              initialChunkSize,
-              bufferSize,
-            ),
+            offset: (lastOffset + res.size) % res.total,
+            pageSize: getChunkSize(res.total, initialChunkSize, bufferSize),
           };
         },
         refetchOnWindowFocus: false,
@@ -175,8 +167,8 @@ export const useInfiniteEmbyLibraryItems = (
     useCallback(
       (result) => {
         if (result.status === 'success') {
-          const allItems = flatMap(result.data.pages, (page) => page.Items);
-          addKnownMediaForEmbyServer(mediaSourceId, allItems, parentId);
+          const allItems = flatMap(result.data.pages, (page) => page.result);
+          addKnownMediaForServer(mediaSourceId, allItems, parentId);
         }
       },
       [mediaSourceId, parentId],

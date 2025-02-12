@@ -1,4 +1,5 @@
 import SelectedProgrammingList from '@/components/channel_config/SelectedProgrammingList.tsx';
+import { SearchRequest } from '@tunarr/types/api';
 import { useCallback, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
@@ -8,13 +9,14 @@ import { ProgrammingSelector } from '../../components/channel_config/Programming
 type Props = {
   initialMediaSourceId?: string;
   initialLibraryId?: string;
+  initialSearchRequest?: SearchRequest;
 };
 
 export default function ProgrammingSelectorPage({
   initialMediaSourceId,
   initialLibraryId,
+  initialSearchRequest,
 }: Props) {
-  console.log('render top');
   const [open, setOpen] = useState(false);
 
   const toggleDrawer = useCallback((open: boolean) => {
@@ -28,6 +30,7 @@ export default function ProgrammingSelectorPage({
         <ProgrammingSelector
           initialMediaSourceId={initialMediaSourceId}
           initialLibraryId={initialLibraryId}
+          initialSearchRequest={initialSearchRequest}
           toggleOrSetSelectedProgramsDrawer={toggleDrawer}
         />
 

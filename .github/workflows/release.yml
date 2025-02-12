@@ -61,3 +61,4 @@ jobs:
           echo ${{ steps.semantic.outputs.new_release_minor_version }}
           echo ${{ steps.semantic.outputs.new_release_patch_version }}
           echo ${{ steps.semantic.outputs.new_release_prerelease_version }}
+          echo ${{ steps.semantic.outputs.new_release_git_tag }}

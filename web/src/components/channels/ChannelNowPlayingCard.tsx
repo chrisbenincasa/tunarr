@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { createExternalId } from '@tunarr/shared';
+import { tag } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isUndefined } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -115,7 +116,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       asset: 'image',
       id: createExternalId(
         program.externalSourceType,
-        program.externalSourceId,
+        tag(program.externalSourceId),
         id ?? '',
       ),
       imageType: smallViewport ? 'poster' : 'background',

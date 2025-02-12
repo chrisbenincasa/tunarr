@@ -69,7 +69,10 @@ export class ChannelLineupMigrator {
       lineup === null ||
       isArray(lineup)
     ) {
-      this.logger.warn('Got invalid lineup JSON: %O. Expected object.', lineup);
+      this.logger.warn(
+        'Got invalid lineup JSON: %s. Expected object.',
+        JSON.stringify(lineup),
+      );
       return;
     }
 
@@ -126,7 +129,7 @@ export class ChannelLineupMigrator {
       this.logger.info(
         'Successfully migrated channel %s from lineup version %d to %d',
         channelId,
-        version,
+        version ?? -1,
         currVersion,
       );
     } catch (e) {

@@ -2,43 +2,55 @@ import { zipWithIndex } from '@/helpers/util.ts';
 import useStore from '@/store/index.ts';
 import type { AddedMedia } from '@/types/index.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
-import type { FillerList, FillerListProgramming } from '@tunarr/types';
-import { map, merge } from 'lodash-es';
+import { seq } from '@tunarr/shared/util';
+import type {
+  ContentProgram,
+  CustomProgram,
+  FillerList,
+  FillerListProgramming,
+} from '@tunarr/types';
+import { merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 
 export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
   useStore.setState(({ fillerListEditor }) => {
     if (fillerListEditor.currentEntity && programs.length > 0) {
       fillerListEditor.dirty.programs = true;
-      const convertedPrograms = map(programs, (item) =>
-        match(item)
-          .with({ type: 'plex', media: P.select() }, (plexItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: plexItem.serverId, name: plexItem.serverName },
-              { program: plexItem, sourceType: 'plex' },
-            ),
-          )
-          .with({ type: 'jellyfin', media: P.select() }, (jfItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: jfItem.serverId, name: jfItem.serverName },
-              { program: jfItem, sourceType: 'jellyfin' },
-            ),
-          )
-          .with({ type: 'emby', media: P.select() }, (embyItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: embyItem.serverId, name: embyItem.serverName },
-              { program: embyItem, sourceType: 'emby' },
-            ),
+      const allNewPrograms = seq.collect(programs, (item) => {
+        const result = match(item)
+          .returnType<ContentProgram | CustomProgram | null>()
+          // There might be a way to consolidate these in a type-safe way, but I'm
+          // not sure right now.
+          .with(
+            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
+            (item) => ApiProgramMinter.mintProgram2(item),
           )
           .with(
             { type: 'custom-show', program: P.select() },
             (program) => program,
           )
-          .exhaustive(),
-      );
+          .with(
+            {
+              type: Imported,
+              media: P.select(),
+            },
+            (program) => program,
+          )
+          .exhaustive();
+
+        if (!result) {
+          console.warn(
+            'Could not successfully convert item to API representation. This implies data was missing and the item was omitted to protect invariants. Please report this!',
+            item,
+          );
+        }
+
+        return result;
+      });
 
       fillerListEditor.programList = fillerListEditor.programList.concat(
-        zipWithIndex(convertedPrograms, fillerListEditor.programList.length),
+        zipWithIndex(allNewPrograms, fillerListEditor.programList.length),
       );
     }
   });

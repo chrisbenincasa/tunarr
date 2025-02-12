@@ -1,8 +1,29 @@
 import type z from 'zod/v4';
 import type {
+  Collection,
+  Episode,
+  EpisodeWithHierarchy,
   FillerProgramSchema,
+  Folder,
+  IdentifierSchema,
+  ItemOrFolder,
+  ItemSchema,
+  Library,
+  Movie,
+  MusicAlbum,
   MusicAlbumContentProgramSchema,
+  MusicArtist,
   MusicArtistContentProgramSchema,
+  MusicTrack,
+  MusicTrackWithHierarchy,
+  MusicVideo,
+  OtherVideo,
+  Playlist,
+  ProgramGroupingSchema,
+  Season,
+  Show,
+  StructuralProgramGroupingSchema,
+  TerminalProgramSchema,
   TvSeasonContentProgramSchema,
   TvShowContentProgramSchema,
 } from './schemas/programmingSchema.js';
@@ -107,3 +128,85 @@ export type CondensedChannelProgramming = z.infer<
 >;
 
 export type ExternalId = z.infer<typeof ExternalIdSchema>;
+export type Identifier = z.infer<typeof IdentifierSchema>;
+
+// Specific types
+export type Movie = z.infer<typeof Movie>;
+export type Episode = z.infer<typeof Episode>;
+export type EpisodeWithHierarchy = z.infer<typeof EpisodeWithHierarchy>;
+export type Show = z.infer<typeof Show>;
+export type Season = z.infer<typeof Season>;
+export type MusicTrack = z.infer<typeof MusicTrack>;
+export type MusicAlbum = z.infer<typeof MusicAlbum>;
+export type MusicArtist = z.infer<typeof MusicArtist>;
+export type MusicTrackWithHierarchy = z.infer<typeof MusicTrackWithHierarchy>;
+export type MusicVideo = z.infer<typeof MusicVideo>;
+export type OtherVideo = z.infer<typeof OtherVideo>;
+
+export type ProgramLike = z.infer<typeof ItemSchema>;
+export type ProgramGrouping = z.infer<typeof ProgramGroupingSchema>;
+export type TerminalProgram = z.infer<typeof TerminalProgramSchema>;
+export type StructuralProgramGrouping = z.infer<
+  typeof StructuralProgramGroupingSchema
+>;
+export type ProgramOrFolder = z.infer<typeof ItemOrFolder>;
+export type Folder = z.infer<typeof Folder>;
+export type Collection = z.infer<typeof Collection>;
+export type Playlist = z.infer<typeof Playlist>;
+export type Library = z.infer<typeof Library>;
+
+export function isEpisodeWithHierarchy(
+  f: TerminalProgram,
+): f is EpisodeWithHierarchy {
+  return f.type === 'episode' && !!f.season && !!f.season?.show;
+}
+
+export function isMusicTrackWithHierarchy(
+  f: TerminalProgram,
+): f is MusicTrackWithHierarchy {
+  return f.type === 'track' && !!f.album && !!f.album?.artist;
+}
+
+export function getChildItemType(typ: ProgramOrFolder['type']) {
+  switch (typ) {
+    case 'show':
+      return 'season';
+    case 'season':
+      return 'episode';
+    case 'album':
+      return 'track';
+    case 'artist':
+      return 'album';
+    default:
+      return 'item';
+  }
+}
+
+export function getChildCount(input: ProgramOrFolder): number | undefined {
+  switch (input.type) {
+    case 'movie':
+    case 'episode':
+    case 'track':
+    case 'music_video':
+    case 'other_video':
+      return undefined;
+    case 'show':
+    case 'season':
+    case 'album':
+    case 'artist':
+    case 'folder':
+    case 'collection':
+    case 'playlist':
+      return input.childCount;
+  }
+}
+
+export function isTerminalItemType(program: ProgramOrFolder | Library) {
+  return (
+    program.type === 'movie' ||
+    program.type === 'music_video' ||
+    program.type === 'episode' ||
+    program.type === 'track' ||
+    program.type === 'other_video'
+  );
+}

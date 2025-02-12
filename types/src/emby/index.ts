@@ -351,6 +351,9 @@ export type EmbyItem = z.infer<typeof EmbyItemSchema>;
 
 export const EmbyItemSchema = z
   .object({
+    // TEMP
+    // TODO: REMOVE
+    tunarrLibraryId: z.string().optional(),
     Name: z.string(),
     OriginalTitle: z.string(),
     ServerId: z.string(),
@@ -767,6 +770,7 @@ export const EmbyLibrary = z.object({
   CollectionType: EmbyCollectionType,
   ItemId: z.string(),
   LibraryOptions: EmbyLibraryOptions,
+  Locations: z.array(z.string()),
 });
 
 export type EmbyLibrary = z.infer<typeof EmbyLibrary>;

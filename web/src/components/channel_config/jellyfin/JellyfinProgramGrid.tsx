@@ -1,19 +1,11 @@
 import { Box } from '@mui/material';
-import type { MediaSourceSettings } from '@tunarr/types';
-import type {
-  JellyfinItem,
-  JellyfinItemKind,
-  JellyfinItemSortBy,
-  JellyfinLibraryItemsResponse,
-} from '@tunarr/types/jellyfin';
+import { type MediaSourceSettings, type ProgramOrFolder } from '@tunarr/types';
+import { PagedResult } from '@tunarr/types/api';
+import { JellyfinItemKind, JellyfinItemSortBy } from '@tunarr/types/jellyfin';
 import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import {
-  extractJellyfinItemId,
-  jellyfinChildType,
-} from '../../../helpers/jellyfinUtil.ts';
 import {
   estimateNumberOfColumns,
   isNonEmptyString,
@@ -23,17 +15,20 @@ import { useInfiniteJellyfinLibraryItems } from '../../../hooks/jellyfin/useJell
 import useStore from '../../../store/index.ts';
 import type { JellyfinMediaSourceView } from '../../../store/programmingSelector/store.ts';
 import type { Nullable } from '../../../types/util.ts';
+import { LibraryListViewBreadcrumbs } from '../../library/LibraryListViewBreadcrumbs.tsx';
+import {
+  isTerminalItemType,
+  ProgramGridItem,
+} from '../../library/ProgramGridItem.tsx';
+import { ProgramListItem } from '../../library/ProgramListItem.tsx';
 import type { GridItemProps, NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid } from '../MediaItemGrid.tsx';
 import { MediaItemList } from '../MediaItemList.tsx';
-import { JellyfinGridItem } from './JellyfinGridItem.tsx';
-import { JellyfinListItem } from './JellyfinListItem.tsx';
-import { JellyfinListViewBreadcrumbs } from './JellyfinListViewBreadcrumbs.tsx';
 
 type Props = {
   selectedServer: MediaSourceSettings;
   selectedLibrary: JellyfinMediaSourceView;
-  parentContext?: Nullable<JellyfinItem>;
+  parentContext?: Nullable<ProgramOrFolder>;
   depth?: number;
 };
 
@@ -47,7 +42,9 @@ export const JellyfinProgramGrid = ({
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const [columns, setColumns] = useState(8);
   const [bufferSize, setBufferSize] = useState(0);
-  const programHierarchy = useProgramHierarchy(extractJellyfinItemId);
+  const programHierarchy = useProgramHierarchy(
+    useCallback((p: ProgramOrFolder) => p.uuid, []),
+  );
   const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
     null,
   );
@@ -59,14 +56,22 @@ export const JellyfinProgramGrid = ({
 
   const itemTypes: JellyfinItemKind[] = useMemo(() => {
     if (!isEmpty(currentParentContext)) {
-      return jellyfinChildType(currentParentContext) ?? [];
-    } else if (selectedLibrary?.view.CollectionType) {
-      switch (selectedLibrary.view.CollectionType) {
-        case 'movies':
+      return match(currentParentContext)
+        .returnType<JellyfinItemKind[]>()
+        .when(isTerminalItemType, () => [])
+        .with({ type: 'album' }, () => ['Audio'])
+        .with({ type: 'artist' }, () => ['MusicAlbum'])
+        .with({ type: 'season' }, () => ['Episode'])
+        .with({ type: 'show' }, () => ['Season'])
+        .with({ type: P.union('collection', 'folder', 'playlist') }, () => [])
+        .exhaustive();
+    } else if (selectedLibrary?.view.childType) {
+      switch (selectedLibrary.view.childType) {
+        case 'movie':
           return ['Movie'];
-        case 'tvshows':
+        case 'show':
           return ['Series'];
-        case 'music':
+        case 'artist':
           return ['MusicArtist'];
         default:
           return [];
@@ -74,20 +79,20 @@ export const JellyfinProgramGrid = ({
     }
 
     return [];
-  }, [currentParentContext, selectedLibrary.view.CollectionType]);
+  }, [currentParentContext, selectedLibrary.view.childType]);
 
   const sortBy = useMemo(() => {
-    return match(selectedLibrary?.view.CollectionType)
+    return match(selectedLibrary?.view.childType)
       .returnType<NonEmptyArray<JellyfinItemSortBy>>()
-      .with('homevideos', () => ['IsFolder', 'SortName'])
+      .with('other_video', () => ['IsFolder', 'SortName'])
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
-  }, [selectedLibrary?.view.CollectionType]);
+  }, [selectedLibrary?.view.childType]);
 
   const genre = useStore((s) => s.currentMediaGenre);
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id,
-    currentParentContext?.Id ?? selectedLibrary?.view.ItemId ?? '',
+    currentParentContext?.externalId ?? selectedLibrary?.view.externalId ?? '',
     itemTypes,
     /**enabled= */ isUndefined(depth) ||
       depth === 0 ||
@@ -102,12 +107,13 @@ export const JellyfinProgramGrid = ({
             ? alphanumericFilter.toUpperCase()
             : undefined,
         sortBy,
-        recursive: match(selectedLibrary?.view.CollectionType)
-          .with(P.union('tvshows', 'movies', 'folders'), () => true)
+        recursive: match(selectedLibrary?.view.childType)
+          .with(P.union('show', 'movie'), () => true)
+          .with(P.nullish, () => true)
           .otherwise(() => false),
         genres: genre,
       }),
-      [alphanumericFilter, genre, selectedLibrary?.view.CollectionType, sortBy],
+      [alphanumericFilter, genre, selectedLibrary?.view.childType, sortBy],
     ),
   );
 
@@ -122,13 +128,13 @@ export const JellyfinProgramGrid = ({
       const numberOfFetches = jellyfinItemsQuery.data?.pages.length || 1;
       const previousFetch = jellyfinItemsQuery.data?.pages[numberOfFetches - 1];
       const prevNumberOfColumns =
-        jellyfinItemsQuery.data?.pages[numberOfFetches - 1].TotalRecordCount;
+        jellyfinItemsQuery.data?.pages[numberOfFetches - 1].total;
 
       // Calculate total number of fetched items so far
       // Take total records, subtract current offset and last fetch #
       //jellyfinItemsQuery.data?.pages[numberOfFetches-1].TotalRecordCount - (
       const currentTotalSize =
-        previousFetch.Items.length + (previousFetch.StartIndex || 0);
+        previousFetch.result.length + (previousFetch.offset ?? 0);
 
       // Calculate total items that don't fill an entire row
       const leftOvers = currentTotalSize % numberOfColumns;
@@ -144,22 +150,22 @@ export const JellyfinProgramGrid = ({
   }, [itemContainer, jellyfinItemsQuery.data]);
 
   const getPageDataSize = useCallback(
-    (page: JellyfinLibraryItemsResponse) => ({
-      total: page.TotalRecordCount,
-      size: page.Items.length,
+    (page: PagedResult<ProgramOrFolder[]>) => ({
+      total: page.total,
+      size: page.result.length,
     }),
     [],
   );
 
   const extractItems = useCallback(
-    (page: JellyfinLibraryItemsResponse) => page.Items,
+    (page: PagedResult<ProgramOrFolder[]>) => page.result,
     [],
   );
 
-  const getItemKey = useCallback((item: JellyfinItem) => item.Id, []);
+  const getItemKey = useCallback((item: ProgramOrFolder) => item.uuid, []);
 
   const renderNestedGrid = useCallback(
-    (props: NestedGridProps<JellyfinItem>) => {
+    (props: NestedGridProps<ProgramOrFolder>) => {
       return (
         <JellyfinProgramGrid
           {...props}
@@ -173,8 +179,9 @@ export const JellyfinProgramGrid = ({
   );
 
   const renderGridItem = useCallback(
-    (props: GridItemProps<JellyfinItem>) => (
-      <JellyfinGridItem key={props.item.Id} {...props} />
+    (props: GridItemProps<ProgramOrFolder>) => (
+      <ProgramGridItem key={props.item.uuid} {...props} />
+      // <JellyfinGridItem key={props.item.Id} {...props} />
     ),
     [],
   );
@@ -195,17 +202,17 @@ export const JellyfinProgramGrid = ({
         />
       ) : (
         <>
-          <JellyfinListViewBreadcrumbs {...programHierarchy} />
+          <LibraryListViewBreadcrumbs {...programHierarchy} />
           <MediaItemList
             infiniteQuery={jellyfinItemsQuery}
             getPageDataSize={(page) => ({
-              total: page.TotalRecordCount,
-              size: page.Items.length,
+              total: page.total,
+              size: page.result.length,
             })}
-            extractItems={(page) => page.Items}
+            extractItems={(page) => page.result}
             renderListItem={({ item, index, style }) => (
-              <JellyfinListItem
-                key={item.Id}
+              <ProgramListItem
+                key={item.uuid}
                 item={item}
                 index={index}
                 style={style}

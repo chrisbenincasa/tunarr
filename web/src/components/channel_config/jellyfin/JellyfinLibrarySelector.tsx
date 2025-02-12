@@ -1,6 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { capitalize, find, isEmpty, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Jellyfin } from '../../../helpers/constants.ts';
@@ -9,10 +8,9 @@ import {
   useJellyfinGenres,
   useJellyfinUserLibraries,
 } from '../../../hooks/jellyfin/useJellyfinApi.ts';
-import { Route } from '../../../routes/channels_/$channelId/programming/add.tsx';
+import { useProgrammingSelectionContext } from '../../../hooks/useProgrammingSelectionContext.ts';
 import useStore from '../../../store/index.ts';
 import {
-  addKnownMediaForJellyfinServer,
   setProgrammingGenre,
   setProgrammingListLibrary,
 } from '../../../store/programmingSelector/actions.ts';
@@ -23,9 +21,9 @@ type Props = {
 };
 
 export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
+  const { onLibraryChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
-  const navigate = Route.useNavigate();
   const knownMedia = useKnownMedia();
   const selectedGenre = useStore((s) => s.currentMediaGenre);
 
@@ -39,7 +37,7 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
 
   const { data: jellyfinGenres } = useJellyfinGenres(
     selectedServer?.id ?? '',
-    selectedJellyfinLibrary?.ItemId ?? '',
+    selectedJellyfinLibrary?.externalId ?? '',
     selectedServer?.type === Jellyfin && !!selectedJellyfinLibrary,
   );
 
@@ -49,53 +47,53 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
         jellyfinLibraries.length > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Jellyfin)
       ) {
+        const validLibraries = jellyfinLibraries;
         const view =
-          find(
-            jellyfinLibraries,
-            ({ ItemId: id }) => id === initialLibraryId,
-          ) ?? sortBy(jellyfinLibraries, sortJellyfinLibraries)[0];
+          find(validLibraries, ({ uuid: id }) => id === initialLibraryId) ??
+          sortBy(validLibraries, sortJellyfinLibraries)[0];
+
         setProgrammingListLibrary({
           type: Jellyfin,
           view,
         });
-        navigate({
-          search: {
-            libraryId: view.ItemId,
-            mediaSourceId: selectedServer.id,
-          },
-        }).catch(console.error);
+        onLibraryChange(view.externalId);
       }
-      addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
+      // addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
     }
   }, [
     initialLibraryId,
     jellyfinLibraries,
-    navigate,
     selectedLibrary,
     selectedServer,
+    onLibraryChange,
   ]);
 
-  const onLibraryChange = useCallback(
+  const handleLibraryChange = useCallback(
     (libraryUuid: string) => {
       if (!selectedServer) {
         return;
       }
-      const view = knownMedia.getMediaOfType(
-        selectedServer.id,
-        libraryUuid,
-        Jellyfin,
+      // const view = knownMedia.getMediaOfType(
+      //   selectedServer.id,
+      //   libraryUuid,
+      //   Jellyfin,
+      // );
+      const view = jellyfinLibraries?.find(
+        (lib) => lib.externalId === libraryUuid,
       );
-      if (view && isJellyfinVirtualFolder(view)) {
-        setProgrammingListLibrary({ type: Jellyfin, view });
-        navigate({
-          search: {
-            mediaSourceId: selectedServer.id,
-            libraryId: view.ItemId,
-          },
-        }).catch(console.error);
+      if (
+        view
+        // isJellyfinVirtualFolder(view) &&
+        // isNonEmptyString(view)
+      ) {
+        setProgrammingListLibrary({
+          type: Jellyfin,
+          view,
+        });
+        onLibraryChange(view.externalId);
       }
     },
-    [knownMedia, navigate, selectedServer],
+    [knownMedia, selectedServer],
   );
 
   const renderGenreChoices = () => {
@@ -139,12 +137,12 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
           <InputLabel>Library</InputLabel>
           <Select
             label="Library"
-            value={selectedJellyfinLibrary.ItemId}
-            onChange={(e) => onLibraryChange(e.target.value)}
+            value={selectedJellyfinLibrary.uuid}
+            onChange={(e) => handleLibraryChange(e.target.value)}
           >
             {sortBy(jellyfinLibraries, sortJellyfinLibraries).map((lib) => (
-              <MenuItem key={lib.ItemId} value={lib.ItemId}>
-                {lib.Name}
+              <MenuItem key={lib.externalId} value={lib.uuid}>
+                {lib.title}
               </MenuItem>
             ))}
           </Select>

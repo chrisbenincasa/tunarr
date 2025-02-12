@@ -9,6 +9,7 @@ import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { injectable } from 'inversify';
 import { RecurrenceRule } from 'node-schedule';
+import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
 import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 
 export type UpdatePlexPlayStatusScheduleRequest = {
@@ -47,7 +48,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
 
   constructor(
     private mediaSourceApiFactory: MediaSourceApiFactory,
-    private plexServer: MediaSource,
+    private plexServer: MediaSourceWithLibraries,
     private request: UpdatePlexPlayStatusScheduleRequest,
     public sessionId: string,
   ) {
@@ -120,7 +121,7 @@ class UpdatePlexPlayStatusTask extends Task {
 
   constructor(
     private mediaSourceApiFactory: MediaSourceApiFactory,
-    private plexServer: MediaSource,
+    private plexServer: MediaSourceWithLibraries,
     private request: UpdatePlexPlayStatusInvocation,
   ) {
     super(

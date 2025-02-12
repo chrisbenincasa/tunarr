@@ -1,8 +1,10 @@
-import type { PlexMedia } from '@tunarr/types/plex';
+import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import { ProgramOrFolder } from '@tunarr/types';
+import { PagedResult } from '@tunarr/types/api';
 import { last } from 'lodash-es';
+import { useCallback } from 'react';
 import { match, P } from 'ts-pattern';
 import { Plex } from '../../../helpers/constants.ts';
-import { getPlexPageDataSize } from '../../../helpers/plexUtil.ts';
 import type { ProgramHierarchyHookReturn } from '../../../hooks/channel_config/useProgramHierarchy.ts';
 import { usePlexCollectionsInfinite } from '../../../hooks/plex/usePlexCollections.ts';
 import { usePlexPlaylistsInfinite } from '../../../hooks/plex/usePlexPlaylists.ts';
@@ -12,14 +14,14 @@ import {
   useCurrentMediaSource,
   useCurrentMediaSourceView,
 } from '../../../store/programmingSelector/selectors.ts';
+import { LibraryListViewBreadcrumbs } from '../../library/LibraryListViewBreadcrumbs.tsx';
+import { ProgramListItem } from '../../library/ProgramListItem.tsx';
 import { MediaItemList } from '../MediaItemList.tsx';
-import { PlexListItem } from './PlexListItem.tsx';
-import { PlexListViewBreadcrumbs } from './PlexListViewBreadcrumbs.tsx';
 
 const RowsToLoad = 20;
 
 export const PlexProgrammingListView = (
-  props: ProgramHierarchyHookReturn<PlexMedia>,
+  props: ProgramHierarchyHookReturn<ProgramOrFolder>,
 ) => {
   const selectedServer = useCurrentMediaSource(Plex);
   const selectedLibrary = useCurrentMediaSourceView(Plex);
@@ -45,7 +47,7 @@ export const PlexProgrammingListView = (
     RowsToLoad + bufferSize,
     currentParentContext
       ? {
-          parentId: currentParentContext.ratingKey,
+          parentId: currentParentContext.externalId,
           type: currentParentContext.type,
         }
       : undefined,
@@ -55,7 +57,7 @@ export const PlexProgrammingListView = (
     selectedServer,
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     RowsToLoad + bufferSize,
-    subview === 'collections',
+    subview === 'collections' && !currentParentContext,
   );
 
   const plexPlaylistsQuery = usePlexPlaylistsInfinite(
@@ -63,12 +65,17 @@ export const PlexProgrammingListView = (
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     RowsToLoad + bufferSize,
     // selectedLibrary?.view.type === 'library',
-    // subview === 'playlists',
+    subview === 'playlists' && !currentParentContext,
   );
 
-  const query = currentParentContext
+  const query: UseInfiniteQueryResult<
+    InfiniteData<PagedResult<ProgramOrFolder[]>>
+  > = currentParentContext
     ? plexSearchQuery
     : match(subview)
+        .returnType<
+          UseInfiniteQueryResult<InfiniteData<PagedResult<ProgramOrFolder[]>>>
+        >()
         .with('collections', () => plexCollectionsQuery)
         .with('playlists', () => plexPlaylistsQuery)
         .with(P.nullish, () => plexSearchQuery)
@@ -76,18 +83,25 @@ export const PlexProgrammingListView = (
 
   return (
     <>
-      <PlexListViewBreadcrumbs
+      <LibraryListViewBreadcrumbs
         clearParentContext={clearParentContext}
         parentContext={parentContext}
         popParentContextToIndex={popParentContextToIndex}
+        pushParentContext={pushParentContext}
       />
       <MediaItemList
         infiniteQuery={query}
-        getPageDataSize={getPlexPageDataSize}
-        extractItems={(page) => page.Metadata ?? []}
+        getPageDataSize={useCallback(
+          (res: PagedResult<ProgramOrFolder[]>) => ({
+            size: res.size,
+            total: res.total,
+          }),
+          [],
+        )}
+        extractItems={(page) => page.result ?? []}
         renderListItem={({ item, style }) => (
-          <PlexListItem
-            key={item.guid}
+          <ProgramListItem
+            key={item.uuid}
             item={item}
             onPushParent={pushParentContext}
             style={style}

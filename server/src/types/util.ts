@@ -34,7 +34,18 @@ export type MarkNullable<Type, Keys extends keyof Type = keyof Type> = {
   [Key in StrictExclude<keyof Type, Keys>]: Type[Key];
 };
 
-export type NonEmptyArray<T> = [T, ...T[]];
+export type MarkRequiredNotNull<
+  Type,
+  Keys extends keyof Type,
+> = MarkNonNullable<MarkRequired<Type, Keys>, Keys>;
+export type Replace<
+  T extends string,
+  S extends string,
+  D extends string,
+  A extends string = '',
+> = T extends `${infer L}${S}${infer R}`
+  ? Replace<R, S, D, `${A}${L}${D}`>
+  : `${A}${T}`;
 
 export type MarkNotNilable<Type, Keys extends keyof Type> = MarkNonNullable<
   MarkRequired<Type, Keys>,

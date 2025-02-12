@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import {
   chunk,
   first,
+  isEmpty,
   isNil,
   isUndefined,
   keys,
@@ -21,21 +22,34 @@ import { v4 } from 'uuid';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { inject, injectable } from 'inversify';
+import { retag, tag } from '@tunarr/types';
+import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
+import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
+import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
+import { withLibraries } from './mediaSourceQueryHelpers.ts';
 import {
   withProgramChannels,
   withProgramCustomShows,
   withProgramFillerShows,
 } from './programQueryHelpers.ts';
+import { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { DB } from './schema/db.ts';
 import {
   EmbyMediaSource,
   JellyfinMediaSource,
-  MediaSource,
-  MediaSourceType,
+  MediaSourceWithLibraries,
   PlexMediaSource,
+} from './schema/derivedTypes.js';
+import {
+  MediaSource,
+  MediaSourceFields,
+  MediaSourceLibrary,
+  MediaSourceLibraryUpdate,
+  MediaSourceType,
+  MediaSourceUpdate,
+  NewMediaSourceLibrary,
 } from './schema/MediaSource.ts';
 
 type Report = {
@@ -59,68 +73,79 @@ export class MediaSourceDB {
     @inject(KEYS.MediaSourceApiFactory)
     private mediaSourceApiFactory: () => MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.MediaSourceLibraryRefresher)
+    private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
   ) {}
 
-  async getAll(): Promise<MediaSource[]> {
-    return this.db.selectFrom('mediaSource').selectAll().execute();
-  }
-
-  async getById(id: string) {
+  async getAll(): Promise<MediaSourceWithLibraries[]> {
     return this.db
       .selectFrom('mediaSource')
+      .select(withLibraries)
+      .selectAll()
+      .execute();
+  }
+
+  async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithLibraries>> {
+    return this.db
+      .selectFrom('mediaSource')
+      .select(withLibraries)
       .selectAll()
       .where('mediaSource.uuid', '=', id)
       .executeTakeFirst();
   }
 
-  async getByName(name: string) {
-    return this.db
-      .selectFrom('mediaSource')
-      .selectAll()
-      .where('mediaSource.name', '=', name)
-      .executeTakeFirst();
-  }
-
-  async getByIdOrName(id: string) {
-    return this.db
-      .selectFrom('mediaSource')
-      .selectAll()
-      .where((eb) => eb.or([eb('uuid', '=', id), eb('name', '=', id)]))
-      .executeTakeFirst();
+  async getLibrary(id: string) {
+    return (
+      this.db
+        .selectFrom('mediaSourceLibrary')
+        .where('uuid', '=', id)
+        .select((eb) =>
+          jsonObjectFrom(
+            eb
+              .selectFrom('mediaSource')
+              .whereRef(
+                'mediaSource.uuid',
+                '=',
+                'mediaSourceLibrary.mediaSourceId',
+              )
+              .select(MediaSourceFields),
+          ).as('mediaSource'),
+        )
+        .selectAll()
+        // Should be safe before of referential integrity of foreign keys
+        .$narrowType<{ mediaSource: MediaSource }>()
+        .executeTakeFirst()
+    );
   }
 
   async findByType(
     type: typeof MediaSourceType.Plex,
-    nameOrId: string,
+    nameOrId: MediaSourceId,
   ): Promise<PlexMediaSource | undefined>;
   async findByType(
     type: typeof MediaSourceType.Jellyfin,
-    nameOrId: string,
+    nameOrId: MediaSourceId,
   ): Promise<JellyfinMediaSource | undefined>;
   async findByType(
     type: typeof MediaSourceType.Emby,
-    nameOrId: string,
+    nameOrId: MediaSourceId,
   ): Promise<EmbyMediaSource | undefined>;
   async findByType(
     type: MediaSourceType,
-    nameOrId: string,
-  ): Promise<MediaSource | undefined>;
-  async findByType(type: MediaSourceType): Promise<MediaSource[]>;
+    nameOrId: MediaSourceId,
+  ): Promise<MediaSourceWithLibraries | undefined>;
+  async findByType(type: MediaSourceType): Promise<MediaSourceWithLibraries[]>;
   async findByType(
     type: MediaSourceType,
-    nameOrId?: string,
-  ): Promise<MediaSource[] | Maybe<MediaSource>> {
+    nameOrId?: MediaSourceId,
+  ): Promise<MediaSourceWithLibraries[] | Maybe<MediaSourceWithLibraries>> {
     const found = await this.db
       .selectFrom('mediaSource')
       .selectAll()
+      .select(withLibraries)
       .where('mediaSource.type', '=', type)
       .$if(isNonEmptyString(nameOrId), (qb) =>
-        qb.where((eb) =>
-          eb.or([
-            eb('mediaSource.name', '=', nameOrId!),
-            eb('mediaSource.uuid', '=', nameOrId!),
-          ]),
-        ),
+        qb.where('mediaSource.uuid', '=', retag<MediaSourceId>(nameOrId!)),
       )
       .execute();
 
@@ -131,26 +156,7 @@ export class MediaSourceDB {
     }
   }
 
-  async getByExternalId(
-    sourceType: MediaSourceType,
-    nameOrClientId: string,
-  ): Promise<Maybe<MediaSource>> {
-    return this.db
-      .selectFrom('mediaSource')
-      .selectAll()
-      .where((eb) =>
-        eb.and([
-          eb('type', '=', sourceType),
-          eb.or([
-            eb('name', '=', nameOrClientId),
-            eb('clientIdentifier', '=', nameOrClientId),
-          ]),
-        ]),
-      )
-      .executeTakeFirst();
-  }
-
-  async deleteMediaSource(id: string) {
+  async deleteMediaSource(id: MediaSourceId) {
     const deletedServer = await this.getById(id);
     if (isNil(deletedServer)) {
       throw new Error(`MediaSource not found: ${id}`);
@@ -185,7 +191,7 @@ export class MediaSourceDB {
   async updateMediaSource(server: UpdateMediaSourceRequest) {
     const id = server.id;
 
-    const mediaSource = await this.getById(id);
+    const mediaSource = await this.getById(tag(id));
 
     if (isNil(mediaSource)) {
       throw new Error("Server doesn't exist.");
@@ -199,7 +205,7 @@ export class MediaSourceDB {
     await this.db
       .updateTable('mediaSource')
       .set({
-        name: server.name,
+        name: tag<MediaSourceName>(server.name),
         uri: trimEnd(server.uri, '/'),
         accessToken: server.accessToken,
         sendGuideUpdates: booleanToNumber(sendGuideUpdates),
@@ -208,8 +214,8 @@ export class MediaSourceDB {
         // This allows clearing the values
         userId: server.userId,
         username: server.username,
-      })
-      .where('uuid', '=', server.id)
+      } satisfies MediaSourceUpdate)
+      .where('uuid', '=', tag<MediaSourceId>(server.id))
       // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
       // .limit(1)
       .executeTakeFirst();
@@ -217,7 +223,7 @@ export class MediaSourceDB {
     this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
 
     const report = await this.fixupProgramReferences(
-      id,
+      tag(id),
       mediaSource.type,
       mediaSource,
     );
@@ -226,7 +232,7 @@ export class MediaSourceDB {
   }
 
   async setMediaSourceUserInfo(
-    mediaSourceId: string,
+    mediaSourceId: MediaSourceId,
     info: MediaSourceUserInfo,
   ) {
     if (isNonEmptyString(info.userId) && isNonEmptyString(info.username)) {
@@ -244,7 +250,9 @@ export class MediaSourceDB {
   }
 
   async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
-    const name = isUndefined(server.name) ? 'plex' : server.name;
+    const name = tag<MediaSourceName>(
+      isUndefined(server.name) ? 'plex' : server.name,
+    );
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
     const sendChannelUpdates =
@@ -260,7 +268,7 @@ export class MediaSourceDB {
       .insertInto('mediaSource')
       .values({
         ...server,
-        uuid: v4(),
+        uuid: tag<MediaSourceId>(v4()),
         name,
         uri: trimEnd(server.uri, '/'),
         sendChannelUpdates: sendChannelUpdates ? 1 : 0,
@@ -275,11 +283,65 @@ export class MediaSourceDB {
       .returning('uuid')
       .executeTakeFirstOrThrow();
 
+    await this.mediaSourceLibraryRefresher().refreshMediaSource(newServer.uuid);
+
     return newServer?.uuid;
   }
 
+  async updateLibraries(updates: MediaSourceLibrariesUpdate) {
+    return this.db.transaction().execute(async (tx) => {
+      if (!isEmpty(updates.addedLibraries)) {
+        await tx
+          .insertInto('mediaSourceLibrary')
+          .values(updates.addedLibraries)
+          .execute();
+      }
+
+      if (updates.updatedLibraries.length) {
+        // TODO;
+      }
+
+      if (updates.deletedLibraries.length) {
+        await tx
+          .deleteFrom('mediaSourceLibrary')
+          .where(
+            'uuid',
+            'in',
+            updates.deletedLibraries.map((lib) => lib.uuid),
+          )
+          .execute();
+      }
+    });
+  }
+
+  async setLibraryEnabled(
+    mediaSourceId: MediaSourceId,
+    libraryId: string,
+    enabled: boolean,
+  ) {
+    return this.db
+      .updateTable('mediaSourceLibrary')
+      .set({
+        enabled: booleanToNumber(enabled),
+      })
+      .where('mediaSourceLibrary.mediaSourceId', '=', mediaSourceId)
+      .where('uuid', '=', libraryId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+  }
+
+  setLibraryLastScannedTime(libraryId: string, lastScannedAt: dayjs.Dayjs) {
+    return this.db
+      .updateTable('mediaSourceLibrary')
+      .set({
+        lastScannedAt: +lastScannedAt,
+      })
+      .where('uuid', '=', libraryId)
+      .executeTakeFirstOrThrow();
+  }
+
   private async fixupProgramReferences(
-    serverName: string,
+    serverId: MediaSourceId,
     serverType: MediaSourceType,
     newServer?: MediaSource,
   ) {
@@ -292,7 +354,7 @@ export class MediaSourceDB {
       .selectFrom('program')
       .selectAll()
       .where('sourceType', '=', serverType)
-      .where('externalSourceId', '=', serverName)
+      .where('mediaSourceId', '=', serverId)
       .select(withProgramChannels)
       .select(withProgramFillerShows)
       .select(withProgramCustomShows)
@@ -334,7 +396,7 @@ export class MediaSourceDB {
           .length,
     );
 
-    const isUpdate = newServer && newServer.uuid !== serverName;
+    const isUpdate = newServer && newServer.uuid !== serverId;
     if (!isUpdate) {
       // Remove all associations of this program
       // TODO: See if we can just get this automatically with foreign keys...
@@ -399,3 +461,9 @@ export class MediaSourceDB {
     return [...channelReports, ...fillerReports, ...customShowReports];
   }
 }
+
+export type MediaSourceLibrariesUpdate = {
+  addedLibraries: NewMediaSourceLibrary[];
+  updatedLibraries: MediaSourceLibraryUpdate[];
+  deletedLibraries: MediaSourceLibrary[];
+};

@@ -74,6 +74,8 @@ export const WorkerErrorReply = z.object({
   requestId: z.string(),
 });
 
+export type WorkerErrorReply = z.infer<typeof WorkerErrorReply>;
+
 export const WorkerStatusReply = z.object({
   type: z.literal('status'),
   status: z.enum(['healthy']),
@@ -120,6 +122,8 @@ export const WorkerMessage = z.discriminatedUnion('type', [
   WorkerEvent,
   WorkerReply,
 ]);
+
+export type WorkerMessage = z.infer<typeof WorkerMessage>;
 
 export const WorkerRequestToResponse = {
   status: WorkerStatusReply,

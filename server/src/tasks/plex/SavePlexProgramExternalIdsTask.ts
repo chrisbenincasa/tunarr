@@ -1,6 +1,5 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Task } from '@/tasks/Task.js';
@@ -48,12 +47,12 @@ export class SavePlexProgramExternalIdsTask extends Task {
     let chosenId: Maybe<MinimalProgramExternalId> = undefined;
     let api: Maybe<PlexApiClient>;
     for (const id of plexIds) {
-      if (!isNonEmptyString(id.externalSourceId)) {
+      if (!isNonEmptyString(id.mediaSourceId)) {
         continue;
       }
 
-      api = await this.mediaSourceApiFactory.getPlexApiClientByName(
-        id.externalSourceId,
+      api = await this.mediaSourceApiFactory.getPlexApiClientById(
+        id.mediaSourceId,
       );
 
       if (isDefined(api)) {
@@ -68,15 +67,16 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const metadataResult = await api.getItemMetadata(chosenId.externalKey);
 
-    if (isQueryError(metadataResult)) {
+    if (metadataResult.isFailure()) {
       this.logger.error(
+        metadataResult.error,
         'Error querying Plex for item %s',
         chosenId.externalKey,
       );
       return;
     }
 
-    const metadata = metadataResult.data as PlexTerminalMedia;
+    const metadata = metadataResult.get() as PlexTerminalMedia;
 
     const eids = seq.collect(metadata.Guid, (guid) =>
       mintExternalIdForPlexGuid(guid.id, program.uuid),

@@ -11,8 +11,8 @@ import { exec, spawn } from 'node:child_process';
 import events from 'node:events';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { WritableOptions } from 'node:stream';
-import stream from 'node:stream';
+import type stream from 'node:stream';
+import { LastNBytesStream } from '../util/LastNBytesStream.ts';
 
 export type FfmpegEvents = {
   // Emitted when the process ended with a code === 0, i.e. it exited
@@ -256,54 +256,5 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
   get args() {
     return this.ffmpegArgs;
-  }
-}
-
-type LastNBytesStreamOpts = WritableOptions & {
-  bufSizeBytes?: number;
-};
-
-class LastNBytesStream extends stream.Writable {
-  public bufSizeBytes!: number;
-  #bytesWritten = 0;
-  #buf: Buffer;
-
-  constructor(options?: LastNBytesStreamOpts) {
-    super(options);
-    this.bufSizeBytes = options?.bufSizeBytes ?? 1024;
-    this.#buf = Buffer.alloc(this.bufSizeBytes);
-  }
-
-  _write(
-    chunk: Buffer,
-    _encoding: BufferEncoding,
-    callback: (error?: Error | null) => void,
-  ): void {
-    const chunkLength = chunk.length;
-    if (chunkLength >= this.bufSizeBytes) {
-      // If the chunk is larger than or equal to the buffer, just take the last 1KB
-      chunk.copy(this.#buf, 0, chunkLength - this.bufSizeBytes, chunkLength);
-      this.#bytesWritten = this.bufSizeBytes;
-    } else {
-      // If the chunk is smaller, shift existing buffer content and append
-      const remainingSpace = this.bufSizeBytes - this.#bytesWritten;
-
-      if (chunkLength <= remainingSpace) {
-        // Chunk fits in the remaining space
-        chunk.copy(this.#buf, this.#bytesWritten);
-        this.#bytesWritten += chunkLength;
-      } else {
-        // Chunk doesn't fit completely, overwrite from the beginning
-        chunk.copy(this.#buf, this.#bytesWritten, 0, remainingSpace);
-        chunk.copy(this.#buf, 0, remainingSpace, chunkLength);
-        this.#bytesWritten = this.bufSizeBytes;
-      }
-    }
-
-    callback();
-  }
-
-  getLastN() {
-    return this.#buf.subarray(0, this.#bytesWritten);
   }
 }

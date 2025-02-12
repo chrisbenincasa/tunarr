@@ -1,9 +1,10 @@
+import type { Tag } from '@tunarr/types';
 import {
+  tag,
   type ExternalId,
   type MultiExternalId,
   type SingleExternalId,
 } from '@tunarr/types';
-import { type PlexMedia } from '@tunarr/types/plex';
 import {
   type ExternalIdType,
   type SingleExternalIdType,
@@ -11,12 +12,14 @@ import {
 export { ApiProgramMinter } from './services/ApiProgramMinter.js';
 export { mod as dayjsMod } from './util/dayjsExtensions.js';
 
+export type MediaSourceId = Tag<string, 'mediaSourceId'>;
+
 // TODO replace first arg with shared type
 export function createExternalId(
   sourceType: ExternalIdType, //StrictExclude<ExternalIdType, SingleExternalIdType>,
-  sourceId: string,
+  sourceId: MediaSourceId,
   itemId: string,
-): `${string}|${string}|${string}` {
+): `${string}|${MediaSourceId}|${string}` {
   return `${sourceType}|${sourceId}|${itemId}`;
 }
 
@@ -28,7 +31,7 @@ export function createGlobalExternalIdString(
 }
 
 export function createExternalIdFromMulti(multi: MultiExternalId) {
-  return createExternalId(multi.source, multi.sourceId, multi.id);
+  return createExternalId(multi.source, tag(multi.sourceId), multi.id);
 }
 
 export function createExternalIdFromGlobal(global: SingleExternalId) {
@@ -39,27 +42,15 @@ export function createExternalIdFromGlobal(global: SingleExternalId) {
 // types in createExternalId
 export function containsMultiExternalId(
   ids: ExternalId[],
-  targetId: `${string}|${string}|${string}`,
+  targetId: `${string}|${MediaSourceId}|${string}`,
 ) {
   for (const id of ids) {
     if (id.type === 'single') {
       continue;
     }
-    if (createExternalId(id.source, id.sourceId, id.id) === targetId) {
+    if (createExternalId(id.source, tag(id.sourceId), id.id) === targetId) {
       return id;
     }
   }
   return null;
-}
-
-export function createExternalPlexMediaId(
-  serverName: string,
-  m: PlexMedia,
-): MultiExternalId {
-  return {
-    type: 'multi',
-    source: 'plex',
-    sourceId: serverName,
-    id: m.ratingKey,
-  };
 }

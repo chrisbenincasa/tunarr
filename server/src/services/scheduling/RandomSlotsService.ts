@@ -1,4 +1,5 @@
 import dayjs from '@/util/dayjs.js';
+import { dayjsMod } from '@tunarr/shared';
 import constants from '@tunarr/shared/constants';
 import type {
   ChannelProgram,
@@ -59,6 +60,7 @@ export const random = new Random(MersenneTwister19937.autoSeed());
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
+dayjs.extend(dayjsMod);
 
 class ScheduleContext {
   #startTime: dayjs.Dayjs;

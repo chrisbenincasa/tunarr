@@ -25,7 +25,7 @@ import {
   tail,
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import {
   type AddedMedia,
   type UIChannelProgram,
@@ -277,48 +277,46 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       channelEditor.dirty.programs = true;
       const addedDuration = sumBy(programs, (program) =>
         match(program)
-          .with({ type: Plex }, ({ media }) => media.duration ?? 0)
           .with(
-            { type: Jellyfin },
-            ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
-          )
-          .with(
-            { type: Emby },
-            ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
+            { type: P.union(Plex, Jellyfin, Emby) },
+            ({ media }) => media.duration ?? 0,
           )
           .with({ type: 'custom-show' }, ({ program }) => program.duration ?? 0)
+          .with({ type: 'imported' }, ({ media }) => media.duration)
           .exhaustive(),
       );
 
       // Convert any external program types to our internal representation
-      const allNewPrograms = map(programs, (item) =>
-        match(item)
+      const allNewPrograms = seq.collect(programs, (item) => {
+        const result = match(item)
           // There might be a way to consolidate these in a type-safe way, but I'm
           // not sure right now.
-          .with({ type: Plex, media: P.select() }, (plexItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: plexItem.serverId, name: plexItem.serverName },
-              { program: plexItem, sourceType: Plex },
-            ),
-          )
-          .with({ type: Jellyfin, media: P.select() }, (jfItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: jfItem.serverId, name: jfItem.serverName },
-              { program: jfItem, sourceType: Jellyfin },
-            ),
-          )
-          .with({ type: Emby, media: P.select() }, (embyItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: embyItem.serverId, name: embyItem.serverName },
-              { program: embyItem, sourceType: Emby },
-            ),
+          .with(
+            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
+            (item) => ApiProgramMinter.mintProgram2(item),
           )
           .with(
             { type: 'custom-show', program: P.select() },
             (program) => program,
           )
-          .exhaustive(),
-      );
+          .with(
+            {
+              type: Imported,
+              media: P.select(),
+            },
+            (program) => program,
+          )
+          .exhaustive();
+
+        if (!result) {
+          console.warn(
+            'Could not successfully convert item to API representation. This implies data was missing and the item was omitted to protect invariants. Please report this!',
+            item,
+          );
+        }
+
+        return result;
+      });
 
       const oldDuration = channelEditor.currentEntity.duration;
       const newDuration = oldDuration + addedDuration;

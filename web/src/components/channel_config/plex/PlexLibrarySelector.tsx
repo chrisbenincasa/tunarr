@@ -1,5 +1,4 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { isPlexDirectory } from '@tunarr/types/plex';
 import { find, isNil, map } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Plex } from '../../../helpers/constants.ts';
@@ -10,7 +9,7 @@ import {
 import { Route } from '../../../routes/channels_/$channelId/programming/add.tsx';
 import useStore from '../../../store/index.ts';
 import {
-  addKnownMediaForPlexServer,
+  addKnownMediaForServer,
   setProgrammingListLibrary,
 } from '../../../store/programmingSelector/actions.ts';
 import { useKnownMedia } from '../../../store/programmingSelector/selectors.ts';
@@ -43,14 +42,14 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
       if (libraryUuid === 'playlists' && plexPlaylists) {
         setProgrammingListLibrary({
           type: Plex,
-          view: { type: 'playlists', playlists: plexPlaylists },
+          view: { type: 'playlists', playlists: plexPlaylists.result },
         });
         return;
       }
 
       const library = knownMedia.getPlexMedia(selectedServer.id, libraryUuid);
 
-      if (library && isPlexDirectory(library)) {
+      if (library?.type === 'library') {
         setProgrammingListLibrary({
           type: Plex,
           view: { type: 'library', library },
@@ -61,6 +60,8 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
             libraryId: library.uuid,
           },
         }).catch(console.error);
+      } else {
+        console.warn('Not found in local store', libraryUuid);
       }
     },
     [knownMedia, navigate, plexPlaylists, selectedServer],
@@ -68,28 +69,26 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
 
   useEffect(() => {
     if (selectedServer && plexLibraryChildren) {
-      addKnownMediaForPlexServer(selectedServer.id, [
-        ...plexLibraryChildren.Directory,
-      ]);
+      addKnownMediaForServer(selectedServer.id, [...plexLibraryChildren]);
 
       if (
-        plexLibraryChildren.size > 0 &&
+        plexLibraryChildren.length > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Plex)
       ) {
         const initialLibrary = find(
-          plexLibraryChildren?.Directory,
-          ({ uuid }) => uuid === initialLibraryId,
+          plexLibraryChildren,
+          ({ externalId }) => externalId === initialLibraryId,
         );
         setProgrammingListLibrary({
           type: Plex,
           view: {
             type: 'library',
-            library: initialLibrary ?? plexLibraryChildren.Directory[0],
+            library: initialLibrary ?? plexLibraryChildren[0],
           },
         });
         navigate({
           search: {
-            libraryId: plexLibraryChildren.Directory[0].uuid,
+            libraryId: plexLibraryChildren[0].externalId,
             mediaSourceId: selectedServer.id,
           },
         }).catch(console.error);
@@ -108,11 +107,11 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
 
   const hasLibraries =
     !isNil(plexLibraryChildren) &&
-    plexLibraryChildren.size > 0 &&
+    plexLibraryChildren.length > 0 &&
     selectedPlexLibrary;
 
-  const libraryMenuItems = map(plexLibraryChildren?.Directory, (dir) => (
-    <MenuItem key={dir.key} value={dir.uuid}>
+  const libraryMenuItems = map(plexLibraryChildren, (dir) => (
+    <MenuItem key={dir.externalId} value={dir.uuid}>
       {dir.title}
     </MenuItem>
   ));

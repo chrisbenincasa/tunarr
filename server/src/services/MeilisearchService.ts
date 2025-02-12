@@ -1,0 +1,1198 @@
+import { seq } from '@tunarr/shared/util';
+import { FindChild, tag, Tag, TupleToUnion } from '@tunarr/types';
+import { SearchFilter } from '@tunarr/types/api';
+import {
+  ExternalIdType,
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+} from '@tunarr/types/schemas';
+import { Mutex } from 'async-mutex';
+import retry from 'async-retry';
+import base32 from 'base32';
+import dayjs from 'dayjs';
+import type { ProcessInfo } from 'find-process';
+import findProcess from 'find-process';
+import { inject, injectable } from 'inversify';
+import { find, isEmpty, isNull, isString } from 'lodash-es';
+import { EnqueuedTaskObject, MeiliSearch, Settings, Task } from 'meilisearch';
+import { createWriteStream } from 'node:fs';
+import fs from 'node:fs/promises';
+import net from 'node:net';
+import path from 'node:path';
+import { isMainThread } from 'node:worker_threads';
+import { match, P } from 'ts-pattern';
+import serverPackage from '../../package.json' with { type: 'json' };
+import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import { ProgramType } from '../db/schema/Program.ts';
+import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
+import { ServerOptions } from '../globals.ts';
+import { KEYS } from '../types/inject.ts';
+import {
+  AlbumWithArtist,
+  Episode,
+  EpisodeWithAncestors2,
+  HasMediaSourceAndLibraryId,
+  MediaSourceEpisode,
+  MediaSourceMusicAlbum,
+  MediaSourceMusicTrack,
+  MediaSourceSeason,
+  Movie,
+  MusicAlbum,
+  MusicArtist,
+  MusicTrack,
+  MusicTrackWithAncestors,
+  Season,
+  SeasonWithShow,
+  Show,
+} from '../types/Media.ts';
+import { Path } from '../types/path.ts';
+import { Result } from '../types/result.ts';
+import { Maybe, Nullable } from '../types/util.ts';
+import {
+  ChildProcessHelper,
+  ChildProcessWrapper,
+} from '../util/ChildProcessHelper.ts';
+import {
+  getBooleanEnvVar,
+  getEnvVar,
+  getNumericEnvVar,
+  TUNARR_ENV_VARS,
+} from '../util/env.ts';
+import { fileExists } from '../util/fsUtil.ts';
+import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
+import { ISearchService } from './ISearchService.ts';
+
+type FlattenArrayTypes<T> = {
+  [K in keyof T]: T[K] extends Array<unknown> ? T[K][0] : T[K];
+};
+
+interface BaseDocument {
+  id: string;
+}
+
+interface TunarrSearchIndex<Type extends BaseDocument> {
+  name: string;
+  primaryKey: string;
+  filterable: Path<FlattenArrayTypes<Type>>[];
+  sortable: Path<FlattenArrayTypes<Type>>[];
+  caseSensitiveFilters?: Path<FlattenArrayTypes<Type>>[];
+}
+
+type SingleCaseString = Tag<string, 'caseSensitiveString'>;
+
+type GenericTunarrSearchIndex = {
+  name: string;
+  primaryKey: string;
+  filterable: string[];
+  sortable: string[];
+  caseSensitiveFilters?: string[];
+};
+
+const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
+  name: 'programs' as const,
+  primaryKey: 'id',
+  filterable: [
+    'duration',
+    'externalIds.source',
+    'externalIds.sourceId',
+    'externalIds.id',
+    'title',
+    'type',
+    'genres.name',
+    'actors.name',
+    'director.name',
+    'writer.name',
+    'rating',
+    'originalReleaseDate',
+    'originalReleaseYear',
+    'externalIdsMerged',
+    'grandparent.id',
+    'grandparent.type',
+    'grandparent.title',
+    'grandparent.externalIdsMerged',
+    'parent.id',
+    'parent.type',
+    'parent.title',
+    'parent.externalIdsMerged',
+    'mediaSourceId',
+    'libraryId',
+    'tags',
+  ],
+  sortable: [
+    'title',
+    'duration',
+    'originalReleaseDate',
+    'originalReleaseYear',
+    'index',
+  ],
+  caseSensitiveFilters: [
+    'grandparent.id',
+    'parent.id',
+    'libraryId',
+    'mediaSourceId',
+    'externalIds.sourceId',
+  ],
+} satisfies TunarrSearchIndex<ProgramSearchDocument>;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const AllIndexes = [ProgramsIndex] as const;
+
+const IndexesByName = {
+  programs: ProgramsIndex,
+} as const satisfies Record<
+  TupleToUnion<typeof AllIndexes>['name'],
+  GenericTunarrSearchIndex
+>;
+
+type IndexTypeByName<IndexName extends keyof typeof IndexesByName> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (typeof IndexesByName)[IndexName] extends TunarrSearchIndex<any>
+    ? (typeof IndexesByName)[IndexName]
+    : never;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IndexDocumentType<IndexTypeT extends TunarrSearchIndex<any>> =
+  IndexTypeT extends TunarrSearchIndex<infer DocumentType>
+    ? DocumentType
+    : never;
+
+type IndexDocumentTypeByName<IndexName extends keyof typeof IndexesByName> =
+  (typeof IndexesByName)[IndexName] extends TunarrSearchIndex<
+    infer IndexInferred
+  >
+    ? IndexInferred extends Record<string, unknown>
+      ? IndexInferred
+      : Record<string, unknown>
+    : Record<string, unknown>;
+
+type ExternalIdSubDoc = {
+  id: string;
+  source: ExternalIdType;
+  sourceId?: SingleCaseString;
+};
+
+type MergedExternalId = `${ExternalIdType}|${string}|${string}`;
+type MergedGroupingExternalId<GroupingType extends ProgramGroupingType> =
+  `${GroupingType}_${MergedExternalId}`;
+
+type ProgramGroupingDenormDocument<GroupingType extends ProgramGroupingType> = {
+  id: SingleCaseString;
+  type: GroupingType;
+  title: string;
+  index?: number;
+  year?: number;
+  externalIds: ExternalIdSubDoc[];
+  externalIdsMerged: MergedGroupingExternalId<GroupingType>[];
+};
+
+type ProgramParentTypeLookup = [
+  [typeof ProgramType.Episode, typeof ProgramGroupingType.Season],
+  [typeof ProgramType.Track, typeof ProgramGroupingType.Album],
+  [typeof ProgramGroupingType.Season, typeof ProgramGroupingType.Show],
+  [typeof ProgramGroupingType.Album, typeof ProgramGroupingType.Artist],
+];
+
+type StringName = {
+  name: string;
+};
+
+type Actor = StringName;
+type Writer = StringName;
+type Director = StringName;
+type Studio = StringName;
+
+type BaseProgramSearchDocument = {
+  id: string;
+  externalIds: ExternalIdSubDoc[];
+  externalIdsMerged: MergedExternalId[];
+  mediaSourceId: SingleCaseString;
+  libraryId: SingleCaseString;
+  title: string;
+  titleReverse: string;
+  rating: Nullable<string>;
+  summary: Nullable<string>;
+  plot: Nullable<string>;
+  tagline: Nullable<string>;
+  originalReleaseDate: Nullable<number>;
+  originalReleaseYear: Nullable<number>;
+  index?: number;
+  genres: StringName[];
+  actors: Actor[];
+  writer: Writer[];
+  director: Director[];
+  studio?: Studio[];
+  tags: string[];
+};
+
+export type TerminalProgramSearchDocument<
+  Type extends ProgramType = ProgramType,
+> = BaseProgramSearchDocument & {
+  type: Type;
+
+  duration: number;
+
+  parent?: ProgramGroupingDenormDocument<
+    FindChild<Type, ProgramParentTypeLookup>
+  >;
+  grandparent?: ProgramGroupingDenormDocument<
+    FindChild<FindChild<Type, ProgramParentTypeLookup>, ProgramParentTypeLookup>
+  >;
+
+  // Stream details
+  videoCodec?: string;
+  videoBitDepth?: number;
+  videoDynamicRange?: 'sdr' | 'hdr';
+  videoHeight?: number;
+  videoWidth?: number;
+  audioCodec?: string;
+  audioChannels?: number;
+};
+
+export type ProgramSearchDocument =
+  | TerminalProgramSearchDocument
+  | ProgramGroupingSearchDocument;
+
+export type ProgramGroupingSearchDocument<
+  Type extends ProgramGroupingType = ProgramGroupingType,
+> = BaseProgramSearchDocument & {
+  type: Type;
+  parent?: ProgramGroupingDenormDocument<
+    FindChild<Type, ProgramParentTypeLookup>
+  >;
+  grandparent?: ProgramGroupingDenormDocument<
+    FindChild<FindChild<Type, ProgramParentTypeLookup>, ProgramParentTypeLookup>
+  >;
+};
+
+export type ProgramGroupingDocumentTypes = {
+  [K in ProgramGroupingType]: ProgramGroupingSearchDocument<K>;
+};
+
+type SearchRequest<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TargetIndex extends TunarrSearchIndex<any>,
+  DocumentType extends Record<string, unknown> = IndexDocumentType<TargetIndex>,
+> = {
+  //TODO  Make these typesafe against the target index.
+  query?: string | null;
+  filter?: SearchFilter | null;
+  restrictSearchTo?: Path<DocumentType>[];
+  facets?: TargetIndex['filterable'][number][] | null;
+  libraryId?: string | null;
+  paging: {
+    offset: number;
+    limit: number;
+  };
+};
+
+export type FacetSearchRequest = {
+  facetName: string;
+  facetQuery?: string;
+  filter?: SearchFilter;
+  libraryId?: string;
+};
+
+@injectable()
+export class MeilisearchService implements ISearchService {
+  private mutex = new Mutex();
+  private started = false;
+  private proc?: ChildProcessWrapper;
+  private port: number;
+  #client: MeiliSearch;
+
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,
+  ) {}
+
+  getPort() {
+    return this.port;
+  }
+
+  async start() {
+    return await this.mutex.runExclusive(async () => {
+      if (this.started) {
+        return;
+      }
+
+      // Check for update.
+      // Only run updates on start of the main tunarr thread
+      if ((await fileExists(this.dbPath)) && isMainThread) {
+        const indexVersion = await this.getMeilisearchVersion();
+
+        if (indexVersion === serverPackage.meilisearch.version) {
+          this.logger.debug(
+            'Index version matches package version. No update necessary',
+          );
+        } else {
+          // TODO: Do snapshot and migrate search server
+        }
+      }
+
+      this.port =
+        getNumericEnvVar(TUNARR_ENV_VARS.SEARCH_PORT) ??
+        this.serverOptions.searchPort ??
+        (await getAvailablePort());
+
+      // Main thread in charge
+      if (isMainThread) {
+        this.logger.info('Starting Meilisearch service...');
+
+        const processInfo: ProcessInfo[] = await findProcess.default(
+          'port',
+          this.port,
+        );
+
+        // There should really only be one, but OK.
+        if (processInfo.length > 0 && processInfo[0].name === 'meilisearch') {
+          this.logger.debug(
+            'Killing existing Meilisearch service on port %d',
+            this.port,
+          );
+          process.kill(processInfo[0].pid);
+
+          await retry(async () => {
+            const results = await findProcess.default(
+              'pid',
+              processInfo[0].pid,
+            );
+            if (results.length > 0) {
+              throw new Error('Meilisearch process is not dead yet...');
+            }
+          });
+        }
+
+        const args = [
+          '--http-addr',
+          `localhost:${this.port}`,
+          '--db-path',
+          `${this.dbPath}`,
+          '--no-analytics',
+        ];
+
+        const indexingRamSetting =
+          getEnvVar(TUNARR_ENV_VARS.SEARCH_MAX_RAM) ??
+          this.settingsDB.systemSettings().server.searchSettings
+            .maxIndexingMemory;
+        if (indexingRamSetting) {
+          args.push('--max-indexing-memory', `${indexingRamSetting}`);
+        }
+
+        args.push(
+          '--schedule-snapshot',
+          dayjs
+            .duration({
+              hours:
+                this.settingsDB.systemSettings().server.searchSettings
+                  .snapshotIntervalHours,
+            })
+            .asMinutes()
+            .toFixed(0),
+          '--snapshot-dir',
+          this.snapshotPath,
+        );
+
+        if (
+          !isWindows() &&
+          getBooleanEnvVar(TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY)
+        ) {
+          args.push('--experimental-reduce-indexing-memory-usage');
+        }
+
+        const searchServerLogFile = path.join(
+          this.settingsDB.systemSettings().logging.logsDirectory,
+          'meilisearch.log',
+        );
+
+        if (await fileExists(searchServerLogFile)) {
+          await fs.truncate(searchServerLogFile);
+        }
+
+        this.proc = await this.childProcessHelper.spawn(
+          getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH) ??
+            path.join(process.cwd(), 'bin', 'meilisearch'),
+          args,
+          {
+            maxAttempts: 3,
+          },
+        );
+        const outStream = createWriteStream(searchServerLogFile);
+        this.proc.process?.stdout.pipe(outStream);
+        this.proc.process?.stderr.pipe(outStream);
+      }
+
+      this.started = true;
+
+      const client = this.client();
+      await retry(async () => {
+        const result = await client.health();
+        this.logger.debug('Got health result from Meilisearch: %O', result);
+      });
+
+      return;
+    });
+  }
+
+  async restart() {
+    // if (this.proc?.pm_id) {
+    //   const id = this.proc.pm_id;
+    //   return new Promise((resolve, reject) => {
+    //     pm2.restart(id, (err) => {
+    //       if (err) reject(err);
+    //       resolve(void 0);
+    //     });
+    //   });
+    // }
+    // return Promise.resolve();
+  }
+
+  stop() {
+    this.proc?.kill();
+    // return new Promise((resolve, reject) => {
+    //   if (this.proc) {
+    //     if (isDefined(this.proc.pm_id)) {
+    //       pm2.stop(this.proc.pm_id ?? 'meilisearch', (err) => {
+    //         if (err) reject(err);
+    //         resolve(void 0);
+    //       });
+    //     } else {
+    //       reject(new Error('Process had '));
+    //     }
+    //   }
+    // });
+  }
+
+  async getMeilisearchVersion(): Promise<Maybe<string>> {
+    const versionPath = path.join(this.dbPath, 'VERSION');
+    return fs
+      .readFile(versionPath)
+      .then((buf) => {
+        const version = buf.toString('utf-8').trim();
+        this.logger.debug('Found Meilisearch index at version: %s', version);
+        return version;
+      })
+      .catch((e) => {
+        this.logger.debug(
+          e,
+          'Did not find existing Meilisearch VERSION file at %s',
+          versionPath,
+        );
+        return undefined;
+      });
+  }
+
+  client() {
+    if (!this.started) {
+      throw new Error('Service was not started yet');
+    }
+    if (!this.#client) {
+      this.#client = new MeiliSearch({ host: `http://localhost:${this.port}` });
+    }
+
+    return this.#client;
+  }
+
+  async sync() {
+    await this.client().httpRequest.patch('/experimental-features', {
+      containsFilter: true,
+    });
+
+    const existingIndexes = await this.client().getIndexes();
+
+    const processes: Promise<void>[] = [];
+
+    // Programs index
+    const existingProgramsIndex = existingIndexes.results.find(
+      (index) => index.uid === ProgramsIndex.name,
+    );
+
+    if (existingProgramsIndex) {
+      this.logger.debug(
+        'Programs index already exists. Ensuring it is up-to-date',
+      );
+
+      processes.push(this.syncIndexSettings(ProgramsIndex));
+    } else {
+      this.logger.debug('Creating programs index');
+      const task = await this.client().createIndex(ProgramsIndex.name, {
+        primaryKey: ProgramsIndex.primaryKey,
+      });
+
+      processes.push(
+        this.waitForTaskResult(task.taskUid).then(() =>
+          this.syncIndexSettings(ProgramsIndex),
+        ),
+      );
+    }
+
+    await Promise.all(processes);
+  }
+
+  async indexMovie(programs: (Movie & HasMediaSourceAndLibraryId)[]) {
+    if (isEmpty(programs)) {
+      return;
+    }
+
+    await this.client()
+      .index<ProgramSearchDocument>(ProgramsIndex.name)
+      .addDocumentsInBatches(
+        programs.map((p) => this.convertProgramToSearchDocument(p)),
+        100,
+      );
+  }
+
+  async indexShow(show: Show & HasMediaSourceAndLibraryId) {
+    const externalIds = show.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const document: ProgramGroupingSearchDocument<'show'> = {
+      id: show.uuid,
+      originalReleaseDate: null,
+      originalReleaseYear: show.year,
+      summary: show.summary,
+      plot: show.plot,
+      tagline: show.tagline,
+      title: show.title,
+      titleReverse: show.title.split('').reverse().join(''),
+      rating: show.rating,
+      genres: show.genres,
+      actors: show.actors,
+      director: [],
+      libraryId: encodeCaseSensitiveId(show.libraryId),
+      mediaSourceId: encodeCaseSensitiveId(show.mediaSourceId),
+      type: ProgramGroupingType.Show,
+      writer: [],
+      externalIds,
+      externalIdsMerged: show.identifiers.map(
+        (eid) =>
+          `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+      ),
+      tags: show.tags,
+    };
+
+    await this.client()
+      .index<
+        ProgramGroupingSearchDocument<typeof ProgramGroupingType.Show>
+      >(ProgramsIndex.name)
+      .addDocuments([document]);
+  }
+
+  async indexSeason<ShowT extends Show = Show>(
+    season: SeasonWithShow<MediaSourceSeason, ShowT>,
+  ) {
+    const externalIds = season.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const showEids = season.show.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const document: ProgramGroupingDocumentTypes['season'] = {
+      id: season.uuid,
+      originalReleaseDate: null,
+      originalReleaseYear: season.year,
+      summary: season.summary,
+      plot: season.plot,
+      tagline: season.tagline,
+      title: season.title,
+      titleReverse: season.title.split('').reverse().join(''),
+      director: [],
+      rating: null,
+      actors: [],
+      genres: [],
+      studio: season.studios,
+      libraryId: encodeCaseSensitiveId(season.libraryId),
+      mediaSourceId: encodeCaseSensitiveId(season.mediaSourceId),
+      type: ProgramGroupingType.Season,
+      writer: [],
+      externalIds,
+      externalIdsMerged: season.identifiers.map(
+        (eid) =>
+          `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+      ),
+      tags: season.tags,
+      parent: {
+        id: encodeCaseSensitiveId(season.show.uuid),
+        externalIds: showEids ?? [],
+        type: ProgramGroupingType.Show,
+        externalIdsMerged: showEids.map(
+          (eid) =>
+            `${season.show.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<
+              typeof ProgramGroupingType.Show
+            >,
+        ),
+        title: season.show.title,
+        year: season.show.year ?? undefined,
+      } satisfies ProgramGroupingDenormDocument<
+        typeof ProgramGroupingType.Show
+      >,
+    };
+
+    await this.client()
+      .index<ProgramGroupingDocumentTypes['season']>(ProgramsIndex.name)
+      .addDocuments([document]);
+  }
+
+  async indexEpisodes<
+    ShowT extends Show = Show,
+    SeasonT extends Season<ShowT> = Season<ShowT>,
+  >(programs: EpisodeWithAncestors2<MediaSourceEpisode, ShowT, SeasonT>[]) {
+    if (isEmpty(programs)) return;
+
+    const episodeDocuments = programs.map((program) => {
+      const document = this.convertProgramToSearchDocument(program);
+      const seasonEids = program.season.identifiers.map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }));
+
+      const showEids = program.season.show.identifiers.map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }));
+
+      document.parent = {
+        id: encodeCaseSensitiveId(program.season.uuid),
+        externalIds: seasonEids ?? [],
+        type: program.season.type,
+        externalIdsMerged: seasonEids.map(
+          (eid) =>
+            `${program.season.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'season'>,
+        ),
+        title: program.season.title,
+        year: program.season.year ?? undefined,
+      } satisfies ProgramGroupingDenormDocument<
+        typeof ProgramGroupingType.Season
+      >;
+
+      document.grandparent = {
+        id: encodeCaseSensitiveId(program.season.show.uuid),
+        type: program.season.show.type,
+        externalIds: showEids,
+        externalIdsMerged: showEids.map(
+          (eid) =>
+            `${program.season.show.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'show'>,
+        ),
+        title: program.season.show.title,
+        year: program.season.show.year ?? undefined,
+      };
+      return document;
+    });
+
+    await this.client()
+      .index<TerminalProgramSearchDocument<'episode'>>(ProgramsIndex.name)
+      .addDocumentsInBatches(episodeDocuments, 100);
+  }
+
+  async indexMusicArtist(artist: MusicArtist & HasMediaSourceAndLibraryId) {
+    const externalIds = artist.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const document: ProgramGroupingDocumentTypes['artist'] = {
+      id: artist.uuid,
+      originalReleaseDate: null,
+      originalReleaseYear: null,
+      summary: artist.summary,
+      plot: artist.plot,
+      tagline: artist.tagline,
+      title: artist.title,
+      titleReverse: artist.title.split('').reverse().join(''),
+      rating: null,
+      genres: artist.genres ?? [],
+      actors: [],
+      director: [],
+      libraryId: encodeCaseSensitiveId(artist.libraryId),
+      mediaSourceId: encodeCaseSensitiveId(artist.mediaSourceId),
+      type: ProgramGroupingType.Artist,
+      writer: [],
+      externalIds,
+      externalIdsMerged: artist.identifiers.map(
+        (eid) =>
+          `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+      ),
+      tags: artist.tags,
+    };
+
+    await this.client()
+      .index<ProgramGroupingDocumentTypes['artist']>(ProgramsIndex.name)
+      .addDocuments([document]);
+  }
+
+  async indexMusicAlbum<ArtistT extends MusicArtist = MusicArtist>(
+    album: AlbumWithArtist<MediaSourceMusicAlbum, ArtistT>,
+  ) {
+    const externalIds = album.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const artistEids = album.artist.identifiers.map((eid) => ({
+      id: eid.id,
+      source: eid.type,
+      sourceId: eid.sourceId ? encodeCaseSensitiveId(eid.sourceId) : undefined,
+    }));
+
+    const document: ProgramGroupingDocumentTypes['album'] = {
+      id: album.uuid,
+      originalReleaseDate: null,
+      originalReleaseYear: album.year,
+      summary: album.summary,
+      plot: album.plot,
+      tagline: album.tagline,
+      title: album.title,
+      titleReverse: album.title.split('').reverse().join(''),
+      director: [],
+      rating: null,
+      actors: [],
+      genres: album.genres ?? [],
+      studio: album.studios,
+      libraryId: encodeCaseSensitiveId(album.libraryId),
+      mediaSourceId: encodeCaseSensitiveId(album.mediaSourceId),
+      type: ProgramGroupingType.Album,
+      writer: [],
+      externalIds,
+      externalIdsMerged: album.identifiers.map(
+        (eid) =>
+          `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+      ),
+      tags: album.tags,
+      parent: {
+        id: encodeCaseSensitiveId(album.artist.uuid),
+        externalIds: artistEids ?? [],
+        type: ProgramGroupingType.Artist,
+        externalIdsMerged: artistEids.map(
+          (eid) =>
+            `${album.artist.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<
+              typeof ProgramGroupingType.Artist
+            >,
+        ),
+        title: album.artist.title,
+      } satisfies ProgramGroupingDenormDocument<
+        typeof ProgramGroupingType.Artist
+      >,
+    };
+
+    await this.client()
+      .index<ProgramGroupingDocumentTypes['album']>(ProgramsIndex.name)
+      .addDocuments([document]);
+  }
+
+  async indexMusicTracks<
+    ArtistT extends MusicArtist,
+    AlbumT extends MusicAlbum<ArtistT> = MusicAlbum<ArtistT>,
+  >(tracks: MusicTrackWithAncestors<MediaSourceMusicTrack, ArtistT, AlbumT>[]) {
+    if (isEmpty(tracks)) return;
+
+    const episodeDocuments = tracks.map((program) => {
+      const document = this.convertProgramToSearchDocument(program);
+      const seasonEids = program.album.identifiers.map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }));
+
+      const showEids = program.album.artist.identifiers.map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }));
+
+      document.parent = {
+        id: encodeCaseSensitiveId(program.album.uuid),
+        externalIds: seasonEids ?? [],
+        type: program.album.type,
+        externalIdsMerged: seasonEids.map(
+          (eid) =>
+            `${program.album.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'album'>,
+        ),
+        title: program.album.title,
+        year: program.album.year ?? undefined,
+      } satisfies ProgramGroupingDenormDocument<
+        typeof ProgramGroupingType.Album
+      >;
+
+      document.grandparent = {
+        id: encodeCaseSensitiveId(program.album.artist.uuid),
+        type: program.album.artist.type,
+        externalIds: showEids,
+        externalIdsMerged: showEids.map(
+          (eid) =>
+            `${program.album.artist.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'artist'>,
+        ),
+        title: program.album.artist.title,
+      };
+      return document;
+    });
+
+    await this.client()
+      .index<TerminalProgramSearchDocument<'track'>>(ProgramsIndex.name)
+      .addDocumentsInBatches(episodeDocuments, 100);
+  }
+
+  async search<
+    IndexName extends keyof typeof IndexesByName,
+    IndexDocumentTypeT extends Record<
+      string,
+      unknown
+    > = IndexDocumentTypeByName<IndexName>,
+  >(indexName: IndexName, request: SearchRequest<IndexTypeByName<IndexName>>) {
+    const index = IndexesByName[indexName];
+    let filter: Maybe<string>;
+    if (request.filter) {
+      filter = this.buildFilterExpression(index, request.filter);
+    }
+
+    if (
+      isNonEmptyString(request.libraryId) &&
+      index.filterable.includes('libraryId')
+    ) {
+      const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
+      if (isNonEmptyString(filter)) {
+        filter += ` AND libraryId = "${encodedLibraryId}"`;
+      } else {
+        filter = `libraryId = "${encodedLibraryId}"`;
+      }
+    }
+
+    const req = {
+      filter,
+      page: request.paging?.offset,
+      limit: request.paging?.limit,
+      attributesToSearchOn: request.restrictSearchTo ?? undefined,
+      facets: request.facets ?? undefined,
+    };
+
+    this.logger.debug(
+      'Issuing search: query = %s, filter: %O (parsed: %O)',
+      request.query,
+      request.filter ?? {},
+      req,
+    );
+
+    return this.client()
+      .index<IndexDocumentTypeT>(index.name)
+      .search(request.query, req);
+  }
+
+  async facetSearch<IndexName extends keyof typeof IndexesByName>(
+    indexName: IndexName,
+    request: FacetSearchRequest,
+  ) {
+    const index = IndexesByName[indexName];
+
+    let filter: Maybe<string>;
+    if (request.filter) {
+      filter = this.buildFilterExpression(index, request.filter);
+    }
+
+    if (
+      isNonEmptyString(request.libraryId) &&
+      index.filterable.includes('libraryId')
+    ) {
+      const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
+      if (isNonEmptyString(filter)) {
+        filter += ` AND libraryId = "${encodedLibraryId}"`;
+      } else {
+        filter = `libraryId = "${encodedLibraryId}"`;
+      }
+    }
+
+    this.logger.debug(
+      'Issuing facet search: (query = %s) filter = %O (parsed: %s)',
+      request.facetQuery,
+      request.filter ?? {},
+      filter,
+    );
+
+    return this.client()
+      .index(index.name)
+      .searchForFacetValues({
+        facetName: request.facetName,
+        facetQuery: request.facetQuery,
+        filter,
+        attributesToSearchOn: request.facetQuery ? [request.facetName] : null,
+        sort: [request.facetName],
+      });
+  }
+
+  private buildFilterExpression(
+    index: GenericTunarrSearchIndex,
+    query: SearchFilter,
+    buf: string = '',
+  ) {
+    let v: string = '';
+    switch (query.type) {
+      case 'op': {
+        if (query.children.length === 0) {
+          return buf;
+        }
+
+        const op = query.op.toUpperCase();
+        const children = query.children.map((q) =>
+          this.buildFilterExpression(index, q),
+        );
+        v = children.join(` ${op} `);
+        break;
+      }
+      case 'value': {
+        const maybeOpAndValue = match(query.fieldSpec)
+          .with(
+            { type: P.union('facted_string', 'string'), value: P.array() },
+            ({ value }) => {
+              value = seq.collect(value, (v) =>
+                isNonEmptyString(v) ? v : null,
+              );
+              if (value.length === 0) {
+                return null;
+              } else if (value.length === 1) {
+                const v = index.caseSensitiveFilters?.includes(
+                  query.fieldSpec.key,
+                )
+                  ? encodeCaseSensitiveId(value[0])
+                  : value[0];
+                const op =
+                  query.fieldSpec.op.trim().toLowerCase() === 'in'
+                    ? '='
+                    : query.fieldSpec.op.trim();
+                return `${op.toUpperCase()} '${v}'`;
+              } else {
+                const v = index.caseSensitiveFilters?.includes(
+                  query.fieldSpec.key,
+                )
+                  ? value.map(encodeCaseSensitiveId)
+                  : value;
+                return `IN [${v.map((_) => `'${_}'`).join(', ')}]`;
+              }
+            },
+          )
+          .with(
+            { type: P.union('date', 'numeric'), value: [P.number, P.number] },
+            ({ value }) => {
+              return `${value[0]} TO ${value[1]}`;
+            },
+          )
+          .with(
+            { type: P.union('date', 'numeric'), value: P.number },
+            ({ value, op }) => `${op.toUpperCase()} ${value}`,
+          )
+          .otherwise(() => null);
+
+        if (!maybeOpAndValue) {
+          break;
+        }
+
+        v = `${query.fieldSpec.key} ${maybeOpAndValue}`;
+        break;
+      }
+    }
+
+    if (isNonEmptyString(v)) {
+      return isNonEmptyString(buf) ? `${buf} ${v}` : v;
+    }
+
+    return buf;
+  }
+
+  private convertProgramToSearchDocument<
+    ProgramT extends (Movie | Episode | MusicTrack) &
+      HasMediaSourceAndLibraryId,
+  >(
+    program: ProgramT,
+  ): TerminalProgramSearchDocument<NoInfer<ProgramT['type']>> {
+    const validEids = program.identifiers
+      .map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }))
+      .filter((eid) => {
+        if (
+          isValidMultiExternalIdType(eid.source) &&
+          isNonEmptyString(eid.sourceId)
+        ) {
+          return true;
+        } else if (
+          isValidSingleExternalIdType(eid.source) &&
+          isEmpty(eid.sourceId)
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+    if (isEmpty(validEids)) {
+      this.logger.warn('No external ids for item id %s', program.uuid);
+    }
+
+    console.log(validEids);
+
+    const mergedExternalIds = validEids.map(
+      (eid) =>
+        `${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+    );
+
+    const width = program.mediaItem?.resolution?.widthPx;
+    const height = program.mediaItem?.resolution?.heightPx;
+    const videoStream = find(program.mediaItem?.streams, {
+      streamType: 'video',
+    });
+    const audioStream = find(program.mediaItem?.streams, {
+      streamType: 'audio',
+    });
+
+    let summary: string | null;
+    switch (program.type) {
+      case 'movie':
+      case 'episode':
+        summary = program.summary;
+        break;
+      case 'track':
+        summary = null;
+        break;
+    }
+
+    let rating: string | null;
+    switch (program.type) {
+      case 'movie':
+        rating = program.rating;
+        break;
+      case 'episode':
+        rating = program.season?.show?.rating ?? null;
+        break;
+      case 'track':
+        rating = null;
+        break;
+    }
+
+    return {
+      id: program.uuid,
+      duration: program.duration,
+      externalIds: validEids,
+      externalIdsMerged: mergedExternalIds,
+      originalReleaseDate: Result.attempt(() => dayjs(program.releaseDate))
+        .map((_) => _.valueOf())
+        .getOrElse(() => null),
+      originalReleaseYear: program.year,
+      summary,
+      plot: null,
+      tagline: program.type === 'movie' ? program.tagline : null,
+      title: program.title,
+      titleReverse: program.title.split('').reverse().join(''),
+      type: program.type,
+      index: program.type === 'episode' ? program.episodeNumber : undefined,
+      rating,
+      genres: program.genres ?? [],
+      actors: program.actors ?? [],
+      director: program.directors ?? [],
+      writer: program.writers ?? [],
+      tags: program.tags,
+      mediaSourceId: encodeCaseSensitiveId(program.mediaSourceId),
+      libraryId: encodeCaseSensitiveId(program.libraryId),
+      videoWidth: width,
+      videoHeight: height,
+      videoCodec: videoStream?.codec,
+      videoBitDepth: videoStream?.bitDepth,
+      audioCodec: audioStream?.codec,
+      audioChannels: audioStream?.channels,
+    } satisfies TerminalProgramSearchDocument<typeof program.type>;
+  }
+
+  private async syncIndexSettings(index: GenericTunarrSearchIndex) {
+    const programsIndex = this.client().index(index.name);
+
+    const settings: Settings = {
+      filterableAttributes: index.filterable,
+      sortableAttributes: index.sortable,
+    };
+
+    const task = await programsIndex.updateSettings(settings);
+
+    return this.waitForTaskResult(task.taskUid);
+  }
+
+  private async waitForTaskResult(
+    taskId: number,
+    canceledIsOk: boolean = false,
+  ) {
+    let status: EnqueuedTaskObject['status'] = 'enqueued';
+    let task: Task;
+    do {
+      task = await this.client().getTask(taskId);
+      status = task.status;
+      await wait(500);
+    } while (
+      status !== 'canceled' &&
+      status !== 'failed' &&
+      status !== 'succeeded'
+    );
+
+    if (status === 'succeeded' || (canceledIsOk && status === 'canceled')) {
+      return;
+    }
+
+    throw new Error(
+      `Task ${taskId} ended with status ${status}: ${task.error?.code} ${task?.error?.message}`,
+    );
+  }
+
+  private get dbPath() {
+    return path.join(this.serverOptions.databaseDirectory, 'data.ms');
+  }
+
+  private get snapshotPath() {
+    return path.join(this.serverOptions.databaseDirectory, 'ms-snapshots');
+  }
+}
+
+async function getAvailablePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, () => {
+      const addr = server.address();
+      server.close(() => {
+        if (isString(addr) || isNull(addr)) {
+          reject(new Error('Server was not open on a port'));
+        } else {
+          resolve(addr.port);
+        }
+      });
+    });
+  });
+}
+
+function encodeCaseSensitiveId(id: string): SingleCaseString {
+  return tag(base32.encode(id));
+}
+
+export function decodeCaseSensitiveId(id: SingleCaseString): string {
+  return base32.decode(id);
+}

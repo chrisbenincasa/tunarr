@@ -7,6 +7,7 @@ import {
   isCustomProgram,
   isFlexProgram,
   isRedirectProgram,
+  tag,
 } from '@tunarr/types';
 import { forEach, reject, some } from 'lodash-es';
 import { useCallback } from 'react';
@@ -67,7 +68,7 @@ export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
 
     const externalIds = seq.collect(p.externalIds, (id) => {
       if (id.type === 'multi') {
-        return createExternalId(id.source, id.sourceId, id.id);
+        return createExternalId(id.source, tag(id.sourceId), id.id);
       }
       return;
     });

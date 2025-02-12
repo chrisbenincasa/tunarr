@@ -1,6 +1,7 @@
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { tag } from '@tunarr/types';
 import axios, { AxiosHeaders } from 'axios';
 import dayjs from 'dayjs';
 import type { FastifyReply } from 'fastify';
@@ -22,6 +23,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
+import type { MediaSourceId } from '../db/schema/base.ts';
 import { getServerContext } from '../ServerContext.ts';
 
 const externalIdSchema = z
@@ -46,7 +48,7 @@ const externalIdSchema = z
     const [sourceType, sourceId, itemId] = val.split('|', 3);
     return {
       externalSourceType: programSourceTypeFromString(sourceType)!,
-      externalSourceId: sourceId,
+      externalSourceId: tag<MediaSourceId>(sourceId),
       externalItemId: itemId,
     };
   });
@@ -58,7 +60,9 @@ const thumbOptsSchema = z.object({
 
 const ExternalMetadataQuerySchema = z.object({
   id: externalIdSchema,
-  asset: z.enum(['thumb', 'external-link', 'image']),
+  asset: z.enum(['image', 'external-link', 'thumb']),
+  imageType: z.enum(['poster', 'background']).default('poster'),
+
   mode: z.enum(['json', 'redirect', 'proxy']),
   cache: TruthyQueryParam.optional().default(true),
   thumbOptions: z
@@ -66,7 +70,6 @@ const ExternalMetadataQuerySchema = z.object({
     .transform((s) => JSON.parse(s) as unknown)
     .pipe(thumbOptsSchema)
     .optional(),
-  imageType: z.enum(['poster', 'background']).default('poster'),
 });
 
 type ExternalMetadataQuery = z.infer<typeof ExternalMetadataQuerySchema>;
@@ -192,7 +195,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     res: FastifyReply,
   ) {
     const plexApi =
-      await getServerContext().mediaSourceApiFactory.getPlexApiClientByName(
+      await getServerContext().mediaSourceApiFactory.getPlexApiClientById(
         query.id.externalSourceId,
       );
 
@@ -209,7 +212,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         imageType: query.imageType,
       });
     } else if (query.asset === 'external-link') {
-      const server = await getServerContext().mediaSourceDB.getByIdOrName(
+      const server = await getServerContext().mediaSourceDB.getById(
         query.id.externalSourceId,
       );
       if (!server || isNil(server.clientIdentifier)) {
@@ -228,7 +231,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   async function handleJellyfinItem(query: ExternalMetadataQuery) {
     const jellyfinClient =
-      await getServerContext().mediaSourceApiFactory.getJellyfinApiClientByName(
+      await getServerContext().mediaSourceApiFactory.getJellyfinApiClientById(
         query.id.externalSourceId,
       );
 
@@ -237,7 +240,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     }
 
     if (query.asset === 'thumb' || query.asset === 'image') {
-      return jellyfinClient.getThumbUrl(query.id.externalItemId);
+      return jellyfinClient.getThumbUrl(
+        query.id.externalItemId,
+        query.imageType === 'poster' ? 'Primary' : 'Thumb',
+      );
     } else if (query.asset === 'external-link') {
       return jellyfinClient.getExternalUrl(query.id.externalItemId);
     }
@@ -247,7 +253,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
   async function handleEmbyItem(query: ExternalMetadataQuery) {
     const embyClient =
-      await getServerContext().mediaSourceApiFactory.getEmbyApiClientByName(
+      await getServerContext().mediaSourceApiFactory.getEmbyApiClientById(
         query.id.externalSourceId,
       );
 
@@ -256,7 +262,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     }
 
     if (query.asset === 'thumb' || query.asset === 'image') {
-      return embyClient.getThumbUrl(query.id.externalItemId);
+      return embyClient.getThumbUrl(
+        query.id.externalItemId,
+        query.imageType === 'poster' ? 'Thumb' : 'Primary',
+      );
     } else if (query.asset === 'external-link') {
       return embyClient.getExternalUrl(query.id.externalItemId);
     }

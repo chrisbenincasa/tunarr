@@ -1,5 +1,6 @@
 import type { Func } from '@/types/func.js';
-import type { Nilable, Try } from '@/types/util.js';
+import type { MarkNonNullable, Nilable, Try } from '@/types/util.js';
+import { createExternalId } from '@tunarr/shared';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -32,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { format, inspect } from 'node:util';
 import { isPromise } from 'node:util/types';
 import type { DeepReadonly, DeepWritable, NonEmptyArray } from 'ts-essentials';
+import type { NewProgramDao, ProgramDao } from '../db/schema/Program.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from './env.ts';
 
 dayjs.extend(duration);
@@ -587,4 +589,23 @@ export function caughtErrorToError(e: unknown): Error {
   } else {
     return new Error(inspect(e));
   }
+}
+
+export function inTuple<Arr extends readonly string[], S extends string>(
+  arr: Arr,
+  typ: S,
+): boolean {
+  for (const value of arr) {
+    if (value === typ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function programExternalIdString(
+  p: MarkNonNullable<ProgramDao, 'mediaSourceId'> | NewProgramDao,
+) {
+  return createExternalId(p.sourceType, p.mediaSourceId, p.externalKey);
 }

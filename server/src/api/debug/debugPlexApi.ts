@@ -2,6 +2,7 @@ import { container } from '@/container.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { tag } from '@tunarr/types';
 import { z } from 'zod/v4';
 
 export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
@@ -22,14 +23,14 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
     async (req, res) => {
       const mediaSource = await req.serverCtx.mediaSourceDB.findByType(
         'plex',
-        req.query.mediaSource,
+        tag(req.query.mediaSource),
       );
       if (!mediaSource) {
         return res.status(400).send('No media source');
       }
 
       const program = await req.serverCtx.programDB.lookupByExternalId({
-        externalSourceId: mediaSource.name,
+        externalSourceId: mediaSource.uuid,
         externalKey: req.query.key,
         sourceType: ProgramSourceType.PLEX,
       });
@@ -38,16 +39,23 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
         return res.status(400).send('No program');
       }
 
+      const contentProgram =
+        req.serverCtx.programConverter.programDaoToContentProgram(program);
+
+      if (!contentProgram) {
+        return res.status(500).send();
+      }
+
       const streamDetails = await container.get(PlexStreamDetails).getStream({
         server: mediaSource,
         lineupItem: {
-          ...program,
-          programId: program.id!,
+          ...contentProgram,
+          programId: contentProgram.id,
           externalKey: req.query.key,
-          programType: program.subtype,
+          programType: contentProgram.subtype,
           externalSource: 'plex',
-          duration: program.duration,
-          externalFilePath: program.serverFilePath,
+          duration: contentProgram.duration,
+          externalFilePath: contentProgram.serverFilePath,
         },
       });
 

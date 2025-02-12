@@ -35,7 +35,8 @@
   "main": "index.ts",
   "dependencies": {
     "@tunarr/types": "workspace:*",
-    "dayjs": "^1.11.10",
+    "chevrotain": "^11.0.3",
+    "dayjs": "^1.11.14",
     "lodash-es": "^4.17.21",
     "random-js": "2.1.0",
     "tslib": "^2.6.2",
@@ -47,7 +48,7 @@
     "@types/node": "22.10.7",
     "@vitest/coverage-v8": "^3.2.4",
     "rimraf": "^5.0.5",
-    "ts-essentials": "^9.4.1",
+    "ts-essentials": "^9.4.2",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"

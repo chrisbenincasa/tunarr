@@ -49,12 +49,14 @@ export interface GridItemProps<ItemType> {
   moveModal: (index: number, item: ItemType) => void;
   depth: number;
   ref: ForwardedRef<HTMLDivElement>;
+  disableSelection?: boolean;
 }
 
 export interface ListItemProps<ItemType> {
   item: ItemType;
   index: number;
   style?: React.CSSProperties;
+  disableSelection?: boolean;
 }
 
 export type RenderGridItem<ItemType> = ComponentType<GridItemProps<ItemType>>;
@@ -290,7 +292,6 @@ export function MediaItemGrid<PageDataType, ItemType>(
   }, [data?.pages, getPageDataSize, scrollParams.max, depth]);
 
   const maybeTriggerFetchNext = useCallback(() => {
-    console.log('maybe trigger');
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage().catch(console.error);
     }

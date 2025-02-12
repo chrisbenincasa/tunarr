@@ -1,38 +1,28 @@
+import type { Nullable } from '@/types/util.ts';
 import { type Maybe } from '@/types/util.ts';
-import { forPlexMedia } from '@tunarr/shared/util';
+import type { Library, MediaSourceType, ProgramOrFolder } from '@tunarr/types';
 import {
+  getChildCount,
   type EmbyServerSettings,
   type JellyfinServerSettings,
   type MediaSourceSettings,
   type PlexServerSettings,
 } from '@tunarr/types';
+import type { SearchRequest } from '@tunarr/types/api';
 import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
-import { type EmbyItem } from '@tunarr/types/emby';
-import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
-import {
-  isJellyfinVirtualFolder,
-  type JellyfinItem,
-} from '@tunarr/types/jellyfin';
-import {
-  isPlexDirectory,
-  type PlexLibrarySection,
-  type PlexMedia,
-} from '@tunarr/types/plex';
-import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
+
+import { groupBy, has, isArray, map, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
+import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
 import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import {
   buildPlexFilterKey,
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';
 import { groupSelectedMedia } from '../../helpers/util';
-import {
-  type Emby as EmbyT,
-  type Jellyfin as JellyfinT,
-  type Plex as PlexT,
-  type TypedKey,
-} from '../../types/MediaSource';
+
+import type { PlexSelectedMedia } from './store';
 import {
   type EmbySelectedMedia,
   type JellyfinSelectedMedia,
@@ -79,38 +69,13 @@ export const clearProgrammingListLibrary = () =>
     state.currentMediaSourceView = undefined;
   });
 
-function plexItemUniqueId(item: PlexLibrarySection | PlexMedia): string {
-  if (isPlexDirectory(item)) {
-    return item.uuid;
-  } else {
-    return item.guid;
-  }
-}
-
-function jellyfinItemUniqueId(
-  item: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
-): string {
-  if (isJellyfinVirtualFolder(item)) {
-    return item.ItemId;
-  } else {
-    return item.Id;
-  }
-}
-
 export const addKnownMediaForServer = (
   serverId: string,
-  media:
-    | TypedKey<PlexLibrarySection[] | PlexMedia[], PlexT, 'items'>
-    | TypedKey<
-        JellyfinItem[] | TunarrAmendedJellyfinVirtualFolder[],
-        JellyfinT,
-        'items'
-      >
-    | TypedKey<EmbyItem[], EmbyT, 'items'>,
+  items: (ProgramOrFolder | Library)[],
   parentId?: string,
 ) =>
   useStore.setState((state) => {
-    if (media.items.length === 0) {
+    if (items.length === 0) {
       return state;
     }
 
@@ -120,27 +85,31 @@ export const addKnownMediaForServer = (
     }
 
     const byGuid: Record<string, MediaItems> = {};
-    switch (media.type) {
-      case Plex: {
-        for (const item of media.items) {
-          if (isUndefined(item)) {
-            continue;
-          }
-          byGuid[plexItemUniqueId(item)] = { type: media.type, item };
-        }
-        break;
-      }
-      case Jellyfin:
-        for (const item of media.items) {
-          byGuid[jellyfinItemUniqueId(item)] = { type: media.type, item };
-        }
-        break;
-      case Emby:
-        for (const item of media.items) {
-          byGuid[item.Id] = { type: media.type, item };
-        }
-        break;
+    for (const item of items) {
+      byGuid[item.uuid] = item;
     }
+    // switch (items.type) {
+    //   case Plex: {
+    //     break;
+    //   }
+    //   case Jellyfin:
+    //     for (const item of items.items) {
+    //       byGuid[item.externalId] = { type: items.type, item };
+    //     }
+    //     break;
+    //   case Emby:
+    //     for (const item of items.items) {
+    //       byGuid[item.Id] = { type: items.type, item };
+    //     }
+    //     break;
+    //   case Imported:
+    //     for (const item of items.items) {
+    //       // TODO: do we need to separate groupings here because they
+    //       // are in a different ID page?
+    //       byGuid[item.uuid] = { type: items.type, item };
+    //     }
+    //     break;
+    // }
 
     // known media is an overwrite operation, not dealing with
     // lists here. we always want the most up-to-date view of
@@ -157,18 +126,7 @@ export const addKnownMediaForServer = (
       hierarchy = state.contentHierarchyByServer[serverId];
     }
 
-    let ids: string[];
-    switch (media.type) {
-      case Plex:
-        ids = map(media.items, plexItemUniqueId);
-        break;
-      case Jellyfin:
-        ids = map(media.items, jellyfinItemUniqueId);
-        break;
-      case Emby:
-        ids = map(media.items, 'Id');
-        break;
-    }
+    const ids = items.map((item) => item.uuid);
 
     ids.forEach((id) => {
       if (!has(state.contentHierarchyByServer[serverId], id)) {
@@ -191,115 +149,97 @@ export const addKnownMediaForServer = (
     return state;
   });
 
-export const addKnownMediaForPlexServer = (
-  serverId: string,
-  media: PlexLibrarySection[] | PlexMedia[],
-  parentId?: string,
-) => addKnownMediaForServer(serverId, { type: Plex, items: media }, parentId);
-
-export const addKnownMediaForJellyfinServer = (
-  serverId: string,
-  media: JellyfinItem[] | TunarrAmendedJellyfinVirtualFolder[],
-  parentId?: string,
-) =>
-  addKnownMediaForServer(serverId, { type: Jellyfin, items: media }, parentId);
-
-export const addKnownMediaForEmbyServer = (
-  serverId: string,
-  media: EmbyItem[],
-  parentId?: string,
-) => addKnownMediaForServer(serverId, { type: Emby, items: media }, parentId);
-
-const plexChildCount = forPlexMedia({
-  default: 1,
-  season: (s) => s.leafCount,
-  show: (s) => s.leafCount,
-  collection: (s) => {
-    const num = parseInt(s.childCount);
-    return isNaN(num) ? 1 : num;
-  },
-});
-
 export const addPlexSelectedMedia = (
   server: PlexServerSettings,
-  media: (PlexLibrarySection | PlexMedia)[],
+  libraryId: string,
+  media: ProgramOrFolder[],
 ) =>
   useStore.setState((state) => {
-    const newSelectedMedia: SelectedMedia[] = map(media, (m) => ({
-      type: Plex,
-      serverId: server.id,
-      serverName: server.name,
-      id: isPlexDirectory(m) ? m.uuid : m.guid,
-      childCount: isPlexDirectory(m) ? 1 : plexChildCount(m),
-    }));
+    const newSelectedMedia: SelectedMedia[] = map(
+      media,
+      (m) =>
+        ({
+          type: Plex,
+          mediaSource: server,
+          id: m.externalId,
+          childCount: isTerminalItemType(m) ? 0 : m.childCount,
+          libraryId,
+        }) satisfies PlexSelectedMedia,
+    );
+
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
   });
 
 export const addJellyfinSelectedMedia = (
   server: JellyfinServerSettings,
-  media: JellyfinItem | JellyfinItem[],
+  media: ProgramOrFolder | ProgramOrFolder[],
 ) =>
   useStore.setState((state) => {
-    state.selectedMedia = [
-      ...state.selectedMedia,
-      ...(isArray(media)
-        ? map(
-            media,
-            (m) =>
-              ({
-                type: Jellyfin,
-                serverId: server.id,
-                serverName: server.name,
-                id: m.Id,
-                childCount: m.ChildCount ?? 0,
-              }) satisfies JellyfinSelectedMedia,
-          )
-        : [
-            {
-              type: Jellyfin,
-              serverId: server.id,
-              serverName: server.name,
-              id: media.Id,
-              childCount: media.ChildCount ?? 0,
-            } satisfies JellyfinSelectedMedia,
-          ]),
-    ];
+    const newMedia = (isArray(media) ? media : [media]).map((m) => {
+      return {
+        type: Jellyfin,
+        mediaSource: server,
+        libraryId: m.libraryId,
+        id: m.uuid,
+        childCount: getChildCount(m) ?? 0,
+      } satisfies JellyfinSelectedMedia;
+    });
+
+    state.selectedMedia = [...state.selectedMedia, ...newMedia];
   });
 
 export const addEmbySelectedMedia = (
   server: EmbyServerSettings,
-  media: EmbyItem | EmbyItem[],
+  media: ProgramOrFolder | ProgramOrFolder[],
 ) =>
   useStore.setState((state) => {
-    state.selectedMedia = [
-      ...state.selectedMedia,
-      ...(isArray(media)
-        ? map(
-            media,
-            (m) =>
-              ({
-                type: Emby,
-                serverId: server.id,
-                serverName: server.name,
-                id: m.Id,
-                childCount: m.ChildCount ?? 0,
-              }) satisfies EmbySelectedMedia,
-          )
-        : [
-            {
-              type: Emby,
-              serverId: server.id,
-              serverName: server.name,
-              id: media.Id,
-              childCount: media.ChildCount ?? 0,
-            } satisfies EmbySelectedMedia,
-          ]),
-    ];
+    const newMedia = (isArray(media) ? media : [media]).map((m) => {
+      return {
+        type: Emby,
+        mediaSource: server,
+        libraryId: m.libraryId,
+        id: m.uuid,
+        childCount: getChildCount(m) ?? 0,
+      } satisfies EmbySelectedMedia;
+    });
+
+    state.selectedMedia = [...state.selectedMedia, ...newMedia];
   });
 
 export const addSelectedMedia = (media: SelectedMedia | SelectedMedia[]) =>
   useStore.setState((state) => {
     state.selectedMedia = state.selectedMedia.concat(media);
+  });
+
+type MediaSourceSelectedMedia = {
+  sourceType: MediaSourceType;
+  mediaSourceId: string;
+  id: string;
+};
+
+export const removeMediaSourceSelectedMedia = (
+  media: MediaSourceSelectedMedia[],
+) =>
+  useStore.setState((state) => {
+    const grouped = groupBy(media, (m) => m.sourceType);
+
+    state.selectedMedia = reject(
+      state.selectedMedia,
+      (media: SelectedMedia) => {
+        switch (media.type) {
+          case 'plex':
+          case 'jellyfin':
+          case 'emby':
+            return some(grouped[media.type], {
+              id: media.id,
+              mediaSourceId: media.mediaSource.id,
+            });
+          case 'imported':
+          case 'custom-show':
+            return false;
+        }
+      },
+    );
   });
 
 export const removeSelectedMedia = (media: SelectedMedia[]) =>
@@ -311,11 +251,13 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
         .with({ type: 'custom-show' }, (cs) =>
           some(grouped['custom-show'], { customShowId: cs.customShowId }),
         )
-        .otherwise((srcMedia) =>
-          some(grouped[srcMedia.type], {
-            serverId: srcMedia.serverId,
-            id: srcMedia.id,
-          }),
+        .otherwise(
+          (srcMedia) =>
+            grouped[srcMedia.type]?.some(
+              (target) =>
+                target.mediaSource.id === srcMedia.mediaSource.id &&
+                target.id === srcMedia.id,
+            ) ?? false,
         );
     };
 
@@ -327,7 +269,8 @@ export const removePlexSelectedMedia = (serverId: string, ids: string[]) =>
     const idsSet = new Set([...ids]);
     state.selectedMedia = reject(
       state.selectedMedia,
-      (m) => m.type === Plex && m.serverId === serverId && idsSet.has(m.id),
+      (m) =>
+        m.type === Plex && m.mediaSource.id === serverId && idsSet.has(m.id),
     );
   });
 
@@ -371,4 +314,9 @@ export const setPlexSort = (plexSort: PlexSort | undefined) =>
         ...(state.plexSearch.limit ? [`limit=${state.plexSearch.limit}`] : []),
       ].join('&'),
     };
+  });
+
+export const setSearchRequest = (request: Nullable<SearchRequest>) =>
+  useStore.setState((state) => {
+    state.currentSearchRequest = request;
   });

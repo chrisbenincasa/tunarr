@@ -1,8 +1,15 @@
+import { injectable } from 'inversify';
 import { Worker, type WorkerOptions } from 'node:worker_threads';
+import { container } from '../container.ts';
+import { serverOptions } from '../globals.ts';
 import { isDev } from '../util/index.ts';
+import { MeilisearchService } from './MeilisearchService.ts';
 
+@injectable()
 export class TunarrSubprocessService {
-  static createWorker(opts: WorkerOptions = {}) {
+  constructor() {}
+
+  createWorker(opts: WorkerOptions = {}) {
     return new TsWorker(process.argv[1], {
       ...opts,
       argv: ['--hide_banner', 'start-worker'],
@@ -12,10 +19,16 @@ export class TunarrSubprocessService {
 
 class TsWorker extends Worker {
   constructor(filename: string, options: WorkerOptions = {}) {
+    options.workerData ??= {
+      serverOptions: {
+        ...serverOptions(),
+        searchPort: container
+          .get<MeilisearchService>(MeilisearchService)
+          .getPort(),
+      },
+    };
+
     if (isDev) {
-      options.workerData ??= {};
-      // options.workerData.__ts_worker_filename = filename.toString();
-      // super(new URL('./worker.mjs', import.meta.url), options);
       super(
         `import('tsx/esm/api').then(({ register }) => { register(); import('${new URL(filename, import.meta.url).toString()}') })`,
         {

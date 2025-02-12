@@ -11,6 +11,7 @@ import type { Insertable, Selectable } from 'kysely';
 import { omit } from 'lodash-es';
 import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import type { MarkNotNilable } from '../../types/util.ts';
+import type { MediaSourceId, MediaSourceName } from './base.ts';
 import { ProgramExternalIdSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource } from './MediaSource.ts';
@@ -25,10 +26,12 @@ export const ProgramExternalId = sqliteTable(
     directFilePath: text(),
     externalFilePath: text(),
     externalKey: text().notNull(),
-    externalSourceId: text(),
-    mediaSourceId: text().references(() => MediaSource.uuid, {
-      onDelete: 'cascade',
-    }),
+    externalSourceId: text().$type<MediaSourceName>(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, {
+        onDelete: 'cascade',
+      })
+      .$type<MediaSourceId>(),
     programUuid: text()
       .notNull()
       .references(() => Program.uuid, { onDelete: 'cascade' }),
@@ -94,6 +97,7 @@ export const ProgramExternalIdKeys: (keyof ProgramExternalId)[] = [
   'externalSourceId',
   'programUuid',
   'sourceType',
+  'mediaSourceId',
   // 'updatedAt',
   'uuid',
 ];

@@ -1,4 +1,16 @@
+import type {
+  EpisodeWithHierarchy,
+  Identifier,
+  Movie,
+  MusicTrackWithHierarchy,
+  MusicVideo,
+  OtherVideo,
+  TerminalProgram,
+} from '@tunarr/types';
 import {
+  isEpisodeWithHierarchy,
+  isMusicTrackWithHierarchy,
+  tag,
   type ContentProgram,
   type ExternalId,
   type MultiExternalId,
@@ -6,395 +18,241 @@ import {
 } from '@tunarr/types';
 import { type EmbyItem } from '@tunarr/types/emby';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { type PlexTerminalMedia } from '@tunarr/types/plex';
 import {
-  type PlexEpisode,
-  type PlexMovie,
-  type PlexMusicTrack,
-  type PlexTerminalMedia,
-} from '@tunarr/types/plex';
-import {
-  type ContentProgramOriginalProgram,
   ContentProgramTypeSchema,
-  ExternalSourceTypeSchema,
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+  type ContentProgramOriginalProgram,
   type SingleExternalIdType,
 } from '@tunarr/types/schemas';
-import { compact, find, first, isError, isNil } from 'lodash-es';
-import type { StrictOmit } from 'ts-essentials';
-import { P, match } from 'ts-pattern';
+import dayjs from 'dayjs';
+import { compact, isNil } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { createExternalId } from '../index.js';
-import { nullToUndefined, seq } from '../util/index.js';
+import { isNonEmptyString, seq } from '../util/index.js';
 import { parsePlexGuid } from '../util/plexUtil.js';
-
-type MediaSourceDetails = { id: string; name: string };
 
 export class ApiProgramMinter {
   private constructor() {}
-  /**
-   * Creates an non-persisted, ephemeral ContentProgram for the given
-   * EnrichedPlexMedia. These are handed off to the server to persist
-   * to the database (if they don't already exist). They are also useful
-   * in order to deal with a common type for programming throughout other
-   * parts of the UI
-   */
-  static mintProgram(
-    mediaSource: { id: string; name: string },
-    program: ContentProgramOriginalProgram,
-  ): ContentProgram {
-    const ret = match(program)
-      .with(
-        { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) => this.mintFromPlexMovie(mediaSource, movie),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'episode' } },
-        ({ program: episode }) =>
-          this.mintFromPlexEpisode(mediaSource, episode),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) => this.mintFromPlexMusicTrack(mediaSource, track),
-      )
-      .with(
-        {
-          sourceType: 'jellyfin',
-          program: {
-            Type: P.union('Movie', 'Audio', 'Episode', 'Video', 'MusicVideo'),
-          },
-        },
-        ({ program }) => this.mintProgramForJellyfinItem(mediaSource, program),
-      )
-      .with(
-        {
-          sourceType: 'emby',
-          program: {
-            Type: P.union('Movie', 'Audio', 'Episode', 'Video', 'MusicVideo'),
-          },
-        },
-        ({ program }) => this.mintProgramForEmbyItem(mediaSource, program),
-      )
-      .otherwise(() => new Error('Unexpected program type'));
-    if (isError(ret)) {
-      throw ret;
+
+  static mintProgram2(item: TerminalProgram): ContentProgram | null {
+    switch (item.type) {
+      case 'movie':
+        return this.mintForMovie(item);
+      case 'episode': {
+        if (!isEpisodeWithHierarchy(item)) {
+          return null;
+        }
+        return this.mintForEpisode(item);
+      }
+      case 'track':
+        if (!isMusicTrackWithHierarchy(item)) {
+          return null;
+        }
+        return this.mintForTrack(item);
+      case 'other_video':
+        return this.mintForOtherVideo(item);
+      case 'music_video':
+        return this.mintForMusicVideo(item);
     }
-    return ret;
   }
 
-  private static mintFromPlexMovie(
-    server: MediaSourceDetails,
-    plexMovie: PlexMovie,
-  ): ContentProgram {
-    const id = createExternalId('plex', server.name, plexMovie.ratingKey);
-    const file = first(first(plexMovie.Media)?.Part ?? []);
+  private static mintForMovie(movie: Movie): ContentProgram {
+    const id = createExternalId(
+      movie.sourceType,
+      tag(movie.mediaSourceId),
+      movie.externalId,
+    );
     return {
       type: 'content',
-      externalSourceType: 'plex',
-      externalSourceId: server.id,
-      externalSourceName: server.name,
-      date: plexMovie.originallyAvailableAt,
-      duration: plexMovie.duration ?? 0,
-      serverFileKey: file?.key,
-      serverFilePath: file?.file,
-      externalKey: plexMovie.ratingKey,
-      rating: plexMovie.contentRating,
-      summary: plexMovie.summary,
-      title: plexMovie.title,
+      externalSourceType: movie.sourceType,
+      externalSourceId: movie.mediaSourceId,
+      externalSourceName: '',
+      date: movie.releaseDateString ?? undefined,
+      duration: movie.duration ?? 0,
+      externalKey: movie.externalId,
+      rating: movie.rating ?? undefined,
+      summary: movie.summary ?? undefined,
+      title: movie.title,
       subtype: 'movie',
       persisted: false,
-      externalIds: this.mintExternalIdsForPlex(server.name, plexMovie),
+      externalIds: identifiersToExternalIds(movie.identifiers),
       uniqueId: id,
       id,
+      canonicalId: movie.canonicalId,
+      libraryId: movie.libraryId,
     };
   }
 
-  private static mintFromPlexEpisode(
-    server: MediaSourceDetails,
-    plexEpisode: PlexEpisode,
-  ): ContentProgram {
-    const id = createExternalId('plex', server.name, plexEpisode.ratingKey);
-    const file = first(first(plexEpisode.Media)?.Part ?? []);
+  private static mintForMusicVideo(musicVideo: MusicVideo): ContentProgram {
+    const id = createExternalId(
+      musicVideo.sourceType,
+      tag(musicVideo.mediaSourceId),
+      musicVideo.externalId,
+    );
     return {
-      date: plexEpisode.originallyAvailableAt,
-      duration: plexEpisode.duration ?? 0,
-      index: plexEpisode.index,
-      externalKey: plexEpisode.ratingKey,
-      externalSourceName: server.name,
-      externalSourceId: server.id,
-      externalSourceType: ExternalSourceTypeSchema.enum.plex,
+      type: 'content',
+      externalSourceType: musicVideo.sourceType,
+      externalSourceId: musicVideo.mediaSourceId,
+      externalSourceName: '',
+      date: musicVideo.releaseDateString ?? undefined,
+      duration: musicVideo.duration ?? 0,
+      externalKey: musicVideo.externalId,
+      // rating: musicVideo.rating ?? undefined,
+      // summary: musicVideo.summary ?? undefined,
+      title: musicVideo.title,
+      subtype: 'movie',
+      persisted: false,
+      externalIds: identifiersToExternalIds(musicVideo.identifiers),
+      uniqueId: id,
+      id,
+      canonicalId: musicVideo.canonicalId,
+      libraryId: musicVideo.libraryId,
+    };
+  }
+
+  private static mintForOtherVideo(otherVideo: OtherVideo): ContentProgram {
+    const id = createExternalId(
+      otherVideo.sourceType,
+      tag(otherVideo.mediaSourceId),
+      otherVideo.externalId,
+    );
+    return {
+      type: 'content',
+      externalSourceType: otherVideo.sourceType,
+      externalSourceId: otherVideo.mediaSourceId,
+      externalSourceName: '',
+      date: otherVideo.releaseDateString ?? undefined,
+      duration: otherVideo.duration ?? 0,
+      externalKey: otherVideo.externalId,
+      // rating: otherVideo.rating ?? undefined,
+      // summary: otherVideo.summary ?? undefined,
+      title: otherVideo.title,
+      subtype: 'movie',
+      persisted: false,
+      externalIds: identifiersToExternalIds(otherVideo.identifiers),
+      uniqueId: id,
+      id,
+      canonicalId: otherVideo.canonicalId,
+      libraryId: otherVideo.libraryId,
+    };
+  }
+
+  private static mintForEpisode(episode: EpisodeWithHierarchy): ContentProgram {
+    const id = createExternalId(
+      episode.sourceType,
+      tag(episode.mediaSourceId),
+      episode.externalId,
+    );
+
+    const season = episode.season;
+    const show = season.show;
+
+    return {
+      date: episode.releaseDate
+        ? dayjs(episode.releaseDate).format()
+        : undefined,
+      duration: episode.duration ?? 0,
+      index: episode.episodeNumber,
+      externalKey: episode.externalId,
+      externalSourceName: '',
+      externalSourceId: episode.mediaSourceId,
+      externalSourceType: episode.sourceType,
       parent: {
-        title: plexEpisode.parentTitle,
-        index: plexEpisode.parentIndex,
-        externalKey: plexEpisode.parentRatingKey,
-        guids: plexEpisode.parentGuid ? [plexEpisode.parentGuid] : [],
-        type: 'season',
-        // summary:
-        externalIds: compact([
-          plexEpisode.parentRatingKey
-            ? ({
-                type: 'multi',
-                id: plexEpisode.parentRatingKey,
-                source: 'plex',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-          plexEpisode.parentGuid
-            ? ({
-                type: 'single',
-                id: plexEpisode.parentGuid,
-                source: 'plex-guid',
-              } satisfies SingleExternalId)
-            : null,
+        title: season.title,
+        index: season.index,
+        externalKey: season.externalId,
+        // Plex-specific
+        guids: compact([
+          season.identifiers.find(({ type }) => type === 'plex-guid')?.id,
         ]),
+        type: 'season',
+        summary: season.summary ?? undefined,
+        externalIds: identifiersToExternalIds(season.identifiers),
+        year: season.year ?? undefined,
       },
       grandparent: {
-        title: plexEpisode.grandparentTitle,
-        externalKey: plexEpisode.grandparentRatingKey,
-        guids: plexEpisode.grandparentGuid ? [plexEpisode.grandparentGuid] : [],
-        type: 'show',
-        externalIds: compact([
-          plexEpisode.grandparentRatingKey
-            ? ({
-                type: 'multi',
-                id: plexEpisode.grandparentRatingKey,
-                source: 'plex',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-          plexEpisode.grandparentGuid
-            ? ({
-                type: 'single',
-                id: plexEpisode.grandparentGuid,
-                source: 'plex-guid',
-              } satisfies SingleExternalId)
-            : null,
+        title: show.title,
+        externalKey: show.externalId,
+        guids: compact([
+          show.identifiers.find(({ type }) => type === 'plex-guid')?.id,
         ]),
+        type: 'show',
+        externalIds: identifiersToExternalIds(show.identifiers),
+        summary: show.summary ?? undefined,
+        year: show.year ?? undefined,
       },
-      rating: plexEpisode.contentRating,
-      seasonNumber: plexEpisode.parentIndex,
-      serverFilePath: file?.file,
+      rating: show.rating ?? undefined,
+      seasonNumber: season.index,
+      // serverFilePath: file?.file,
       subtype: ContentProgramTypeSchema.enum.episode,
-      summary: plexEpisode.summary,
-      title: plexEpisode.title,
+      summary: episode.summary ?? undefined,
+      title: episode.title,
       type: 'content',
-      externalIds: this.mintExternalIdsForPlex(server.name, plexEpisode),
+      externalIds: identifiersToExternalIds(episode.identifiers),
       persisted: false,
       id: id,
       uniqueId: id,
+      canonicalId: episode.canonicalId,
+      libraryId: episode.libraryId,
     };
   }
 
-  private static mintFromPlexMusicTrack(
-    server: MediaSourceDetails,
-    plexTrack: PlexMusicTrack,
-  ): ContentProgram {
-    const id = createExternalId('plex', server.name, plexTrack.ratingKey);
-    const file = first(first(plexTrack.Media)?.Part ?? []);
-    return {
-      duration: plexTrack.duration ?? 0,
-      index: plexTrack.index,
-      externalKey: plexTrack.ratingKey,
-      externalSourceName: server.name,
-      externalSourceType: ExternalSourceTypeSchema.enum.plex,
-      parent: {
-        title: plexTrack.parentTitle,
-        index: plexTrack.parentIndex,
-        externalKey: plexTrack.parentRatingKey,
-        guids: plexTrack.parentGuid ? [plexTrack.parentGuid] : [],
-        type: 'album',
-        year: plexTrack.parentYear,
-        externalIds: compact([
-          plexTrack.parentRatingKey
-            ? ({
-                type: 'multi',
-                id: plexTrack.parentRatingKey,
-                source: 'plex',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-          plexTrack.parentGuid
-            ? ({
-                type: 'single',
-                id: plexTrack.parentGuid,
-                source: 'plex-guid',
-              } satisfies SingleExternalId)
-            : null,
-        ]),
-      },
-      grandparent: {
-        title: plexTrack.grandparentTitle,
-        externalKey: plexTrack.grandparentRatingKey,
-        guids: plexTrack.grandparentGuid ? [plexTrack.grandparentGuid] : [],
-        type: 'artist',
-        externalIds: compact([
-          plexTrack.grandparentRatingKey
-            ? ({
-                type: 'multi',
-                id: plexTrack.grandparentRatingKey,
-                source: 'plex',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-          plexTrack.grandparentGuid
-            ? ({
-                type: 'single',
-                id: plexTrack.grandparentGuid,
-                source: 'plex-guid',
-              } satisfies SingleExternalId)
-            : null,
-        ]),
-      },
-      seasonNumber: plexTrack.parentIndex,
-      serverFilePath: file?.file,
-      subtype: ContentProgramTypeSchema.enum.track,
-      summary: plexTrack.summary,
-      title: plexTrack.title,
-      type: 'content',
-      externalIds: this.mintExternalIdsForPlex(server.name, plexTrack),
-      persisted: false,
-      uniqueId: id,
-      id,
-      externalSourceId: server.id,
-    };
-  }
+  private static mintForTrack(track: MusicTrackWithHierarchy): ContentProgram {
+    const id = createExternalId(
+      track.sourceType,
+      tag(track.mediaSourceId),
+      track.externalId,
+    );
 
-  private static mintProgramForJellyfinItem(
-    server: MediaSourceDetails,
-    item: Omit<JellyfinItem, 'Type'> & {
-      Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo';
-    },
-  ): ContentProgram {
-    const id = createExternalId('jellyfin', server.name, item.Id);
-    const parentIdentifier = item.ParentId ?? item.SeasonId ?? item.AlbumId;
-    const grandparentIdentifier = item.SeriesId ?? item.AlbumArtist;
-    return {
-      externalSourceType: ExternalSourceTypeSchema.enum.jellyfin,
-      date: nullToUndefined(item.PremiereDate),
-      duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: server.id,
-      externalKey: item.Id,
-      rating: nullToUndefined(item.OfficialRating),
-      summary: nullToUndefined(item.Overview),
-      title: item.Name ?? '',
-      type: 'content',
-      subtype: match(item.Type)
-        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
-        .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
-        .with('Video', () => ContentProgramTypeSchema.enum.other_video)
-        .with('Episode', () => ContentProgramTypeSchema.enum.episode)
-        .with('Audio', () => ContentProgramTypeSchema.enum.track)
-        .exhaustive(),
-      year: nullToUndefined(item.ProductionYear),
-      parent: {
-        type: item.Type === 'Episode' ? 'season' : 'album',
-        title: nullToUndefined(item.SeasonName ?? item.Album),
-        index: nullToUndefined(item.ParentIndexNumber),
-        externalKey: nullToUndefined(parentIdentifier),
-        externalIds: compact([
-          parentIdentifier
-            ? ({
-                type: 'multi',
-                id: parentIdentifier,
-                source: 'jellyfin',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-        ]),
-      },
-      grandparent: {
-        type: item.Type === 'Episode' ? 'show' : 'artist',
-        title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
-        externalKey:
-          item.SeriesId ??
-          find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id,
-        externalIds: compact([
-          grandparentIdentifier
-            ? ({
-                type: 'multi',
-                id: grandparentIdentifier,
-                source: 'jellyfin',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-        ]),
-      },
-      seasonNumber: nullToUndefined(item.ParentIndexNumber),
-      episodeNumber: nullToUndefined(item.IndexNumber),
-      index: nullToUndefined(item.IndexNumber),
-      externalIds: this.mintExternalIdsForJellyfin(server.name, item),
-      uniqueId: id,
-      id,
-      externalSourceName: server.name,
-      persisted: false,
-    };
-  }
+    const album = track.album;
+    const artist = album.artist;
 
-  private static mintProgramForEmbyItem(
-    server: MediaSourceDetails,
-    item: StrictOmit<EmbyItem, 'Type'> & {
-      Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo';
-    },
-  ): ContentProgram {
-    const id = createExternalId('emby', server.name, item.Id);
-    const parentIdentifier = item.ParentId ?? item.SeasonId ?? item.AlbumId;
-    const grandparentIdentifier = item.SeriesId ?? item.AlbumArtist;
     return {
-      externalSourceType: ExternalSourceTypeSchema.enum.emby,
-      date: nullToUndefined(item.PremiereDate),
-      duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: server.id,
-      externalKey: item.Id,
-      rating: nullToUndefined(item.OfficialRating),
-      summary: nullToUndefined(item.Overview),
-      title: item.Name ?? '',
-      type: 'content',
-      subtype: match(item.Type)
-        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
-        .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
-        .with('Video', () => ContentProgramTypeSchema.enum.other_video)
-        .with('Episode', () => ContentProgramTypeSchema.enum.episode)
-        .with('Audio', () => ContentProgramTypeSchema.enum.track)
-        .exhaustive(),
-      year: nullToUndefined(item.ProductionYear),
+      date: track.releaseDate ? dayjs(track.releaseDate).format() : undefined,
+      duration: track.duration ?? 0,
+      index: track.trackNumber,
+      externalKey: track.externalId,
+      externalSourceName: '',
+      externalSourceId: track.mediaSourceId,
+      externalSourceType: track.sourceType,
       parent: {
-        type: item.Type === 'Episode' ? 'season' : 'album',
-        title: nullToUndefined(item.SeasonName ?? item.Album),
-        index: nullToUndefined(item.ParentIndexNumber),
-        externalKey: nullToUndefined(parentIdentifier),
-        externalIds: compact([
-          parentIdentifier
-            ? ({
-                type: 'multi',
-                id: parentIdentifier,
-                source: 'emby',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
+        title: album.title,
+        index: album.index,
+        externalKey: album.externalId,
+        // Plex-specific
+        guids: compact([
+          album.identifiers.find(({ type }) => type === 'plex-guid')?.id,
         ]),
+        type: 'season',
+        summary: album.summary ?? undefined,
+        externalIds: identifiersToExternalIds(album.identifiers),
+        year: album.year ?? undefined,
       },
       grandparent: {
-        type: item.Type === 'Episode' ? 'show' : 'artist',
-        title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
-        externalKey:
-          item.SeriesId ??
-          find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id?.toString(),
-        externalIds: compact([
-          grandparentIdentifier
-            ? ({
-                type: 'multi',
-                id: grandparentIdentifier,
-                source: 'emby',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
+        title: artist.title,
+        externalKey: artist.externalId,
+        guids: compact([
+          artist.identifiers.find(({ type }) => type === 'plex-guid')?.id,
         ]),
+        type: 'show',
+        externalIds: identifiersToExternalIds(artist.identifiers),
+        summary: artist.summary ?? undefined,
       },
-      seasonNumber: nullToUndefined(item.ParentIndexNumber),
-      episodeNumber: nullToUndefined(item.IndexNumber),
-      index: nullToUndefined(item.IndexNumber),
-      externalIds: this.mintExternalIdsForEmby(server.name, item),
-      uniqueId: id,
-      id,
-      externalSourceName: server.name,
+      // rating: artist.rating ?? undefined,
+      seasonNumber: album.index,
+      // serverFilePath: file?.file,
+      subtype: ContentProgramTypeSchema.enum.episode,
+      // summary: track.summary ?? undefined,
+      title: track.title,
+      type: 'content',
+      externalIds: identifiersToExternalIds(track.identifiers),
       persisted: false,
+      id: id,
+      uniqueId: id,
+      canonicalId: track.canonicalId,
+      libraryId: track.libraryId,
     };
   }
 
@@ -539,4 +397,24 @@ export class ApiProgramMinter {
 
     return [ratingId, ...externalGuids];
   }
+}
+
+function identifiersToExternalIds(identifiers: Identifier[]): ExternalId[] {
+  return seq.collect(identifiers, (id) => {
+    if (isValidMultiExternalIdType(id.type) && isNonEmptyString(id.sourceId)) {
+      return {
+        type: 'multi',
+        sourceId: id.sourceId,
+        source: id.type,
+        id: id.id,
+      } satisfies MultiExternalId;
+    } else if (isValidSingleExternalIdType(id.type)) {
+      return {
+        type: 'single',
+        id: id.id,
+        source: id.type,
+      } satisfies SingleExternalId;
+    }
+    return;
+  });
 }

@@ -1,6 +1,7 @@
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
+import { noop } from 'lodash-es';
 import { ProgrammingSelectionContext } from '../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute('/library/custom-shows/new/programming')({
@@ -17,6 +18,9 @@ function CustomShowProgrammingSelectorPage() {
           navigate({ to: '..' }).catch(console.error);
         },
         entityType: 'custom-show',
+        onMediaSourceChange: noop,
+        onLibraryChange: noop,
+        onSearchChange: noop,
       }}
     >
       <ProgrammingSelectorPage />

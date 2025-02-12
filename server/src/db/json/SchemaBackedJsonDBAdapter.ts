@@ -34,7 +34,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
     });
 
     if (data === null && this.defaultValue === null) {
-      this.logger.debug('Unexpected null data at %s; %O', this.path, data);
+      this.logger.debug('Unexpected null data at %s', this.path.toString());
       return null;
     }
 
@@ -55,8 +55,8 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
       }
 
       this.logger.error(
-        `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
         parseResult.error,
+        `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
       );
       return null;
     }
@@ -74,7 +74,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
     }
 
     // eslint can't seem to handle this but TS compiler gets it right.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
     return parseResult.data;
   }
 

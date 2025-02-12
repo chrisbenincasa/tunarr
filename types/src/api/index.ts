@@ -17,6 +17,7 @@ import {
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+  ItemOrFolder,
   MusicAlbumContentProgramSchema,
   TvSeasonContentProgramSchema,
 } from '../schemas/programmingSchema.js';
@@ -30,9 +31,11 @@ import {
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
+import { SearchRequestSchema } from './search.js';
 
 export * from './Scheduling.js';
 export * from './plexSearch.js';
+export * from './search.js';
 
 export const IdPathParamSchema = z.object({
   id: z.string(),
@@ -42,8 +45,17 @@ export function PagedResult<T extends z.ZodType>(schema: T) {
   return z.object({
     total: z.number(),
     result: schema,
+    size: z.number(),
+    offset: z.number().optional(),
   });
 }
+
+export type PagedResult<T> = {
+  total: number;
+  result: T;
+  size: number;
+  offset?: number;
+};
 
 export const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
@@ -176,9 +188,9 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
     sendChannelUpdates: true,
     sendGuideUpdates: true,
     clientIdentifier: true,
-  }),
-  JellyfinServerSettingsSchema,
-  EmbyServerSettingsSchema,
+  }).omit({ libraries: true }),
+  JellyfinServerSettingsSchema.omit({ libraries: true }),
+  EmbyServerSettingsSchema.omit({ libraries: true }),
 ]);
 
 export type UpdateMediaSourceRequest = z.infer<
@@ -202,9 +214,9 @@ export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
     sendGuideUpdates: true,
     index: true,
     clientIdentifier: true,
-  }).omit({ id: true }),
-  JellyfinServerSettingsSchema.omit({ id: true }),
-  EmbyServerSettingsSchema.omit({ id: true }),
+  }).omit({ id: true, libraries: true }),
+  JellyfinServerSettingsSchema.omit({ id: true, libraries: true }),
+  EmbyServerSettingsSchema.omit({ id: true, libraries: true }),
 ]);
 
 export type InsertMediaSourceRequest = z.infer<
@@ -375,3 +387,46 @@ export const ProgramChildrenResult = PagedResult(
       }),
     ),
 );
+
+export const UpdateMediaSourceLibraryRequest = z.object({
+  enabled: z.boolean(),
+});
+
+export const ProgramSearchRequest = z.object({
+  query: SearchRequestSchema,
+  restrictSeachTo: z.array(z.string()).optional(),
+  libraryId: z.string().optional(), // Limit search to a specific library
+  page: z.number().optional(),
+  limit: z.number().optional(),
+});
+
+export const ProgramSearchResponse = z.object({
+  results: z.array(ItemOrFolder),
+  page: z.number(),
+  totalPages: z.number(),
+  totalHits: z.number(),
+});
+
+export type ProgramSearchResponse = z.infer<typeof ProgramSearchResponse>;
+
+const NotScanningSchema = z.object({
+  state: z.literal('not_scanning'),
+});
+
+const InProgressScanSchema = z.object({
+  state: z.literal('in_progress'),
+  startedAt: z.number(), // timestamp
+  percentComplete: z.number().min(0).max(100),
+});
+
+const QueuedProgressScanSchema = z.object({
+  state: z.literal('queued'),
+});
+
+export const ScanProgressSchema = z.discriminatedUnion('state', [
+  InProgressScanSchema,
+  NotScanningSchema,
+  QueuedProgressScanSchema,
+]);
+
+export type ScanProgress = z.infer<typeof ScanProgressSchema>;

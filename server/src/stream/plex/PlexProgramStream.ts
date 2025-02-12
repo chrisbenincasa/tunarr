@@ -58,7 +58,7 @@ export class PlexProgramStream extends ProgramStream {
   ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
     if (!isPlexBackedLineupItem(lineupItem)) {
-      return Result.failure(
+      return Result.forError(
         new Error(
           'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
         ),
@@ -71,7 +71,7 @@ export class PlexProgramStream extends ProgramStream {
     );
 
     if (isNil(server)) {
-      return Result.failure(
+      return Result.forError(
         new Error(
           `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
         ),
@@ -100,14 +100,14 @@ export class PlexProgramStream extends ProgramStream {
       },
     });
     if (isNull(stream)) {
-      return Result.failure(
+      return Result.forError(
         new Error('Unable to retrieve stream details from Plex'),
       );
     }
 
     if (this.killed) {
       this.logger.warn('Plex stream was killed already, returning');
-      return Result.failure(new Error('Plex stream was killed already'));
+      return Result.forError(new Error('Plex stream was killed already'));
     }
 
     const streamStats = stream.streamDetails;
@@ -137,7 +137,7 @@ export class PlexProgramStream extends ProgramStream {
     });
 
     if (isUndefined(transcodeSession)) {
-      return Result.failure(new Error('Unable to create ffmpeg process'));
+      return Result.forError(new Error('Unable to create ffmpeg process'));
     }
 
     if (plexSettings.updatePlayStatus) {

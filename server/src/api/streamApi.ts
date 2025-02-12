@@ -12,7 +12,7 @@ import type { StreamConnectionDetails } from '@tunarr/types/api';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { FastifyReply } from 'fastify';
-import { isNil, isNumber, isUndefined } from 'lodash-es';
+import { isArray, isNil, isNumber, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -27,7 +27,14 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(error, '%s %s', req.routeOptions.method, req.routeOptions.url);
+    logger.error(
+      error,
+      '%s %s',
+      isArray(req.routeOptions.method)
+        ? req.routeOptions.method.join(', ')
+        : req.routeOptions.method,
+      req.routeOptions.url,
+    );
     done();
   });
 

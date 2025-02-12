@@ -25,7 +25,7 @@ import {
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import type { ChannelProgram } from '@tunarr/types';
-import { isContentProgram } from '@tunarr/types';
+import { isContentProgram, tag } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { capitalize, compact, find, isUndefined } from 'lodash-es';
@@ -252,7 +252,7 @@ export default function ProgramDetailsDialog({
             if (isNonEmptyString(p.parent?.externalKey)) {
               key = createExternalId(
                 p.externalSourceType,
-                p.externalSourceName,
+                tag(p.externalSourceId),
                 p.parent?.externalKey,
               );
             }

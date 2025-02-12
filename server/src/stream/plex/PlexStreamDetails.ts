@@ -1,8 +1,7 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { PlexMediaSource } from '@/db/schema/MediaSource.js';
-import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
+import type { PlexMediaSource } from '@/db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
@@ -106,8 +105,8 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       item.externalKey,
     );
 
-    if (isQueryError(itemMetadataResult)) {
-      if (itemMetadataResult.code === 'not_found') {
+    if (itemMetadataResult.isFailure()) {
+      if (itemMetadataResult.error.type === 'not_found') {
         this.logger.debug(
           'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
           item.externalKey,
@@ -130,14 +129,14 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
             },
           );
 
-          if (isQuerySuccess(byGuidResult)) {
-            if (byGuidResult.data.MediaContainer.size > 0) {
+          if (byGuidResult.isSuccess()) {
+            if (byGuidResult.get().MediaContainer.size > 0) {
               this.logger.debug(
                 'Found %d matching items in library. Using the first',
-                byGuidResult.data.MediaContainer.size,
+                byGuidResult.get().MediaContainer.size,
               );
               const metadata = first(
-                byGuidResult.data.MediaContainer.Metadata,
+                byGuidResult.get().MediaContainer.Metadata,
               )!;
 
               const newRatingKey = metadata.ratingKey;
@@ -201,7 +200,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       return null;
     }
 
-    const itemMetadata = itemMetadataResult.data;
+    const itemMetadata = itemMetadataResult.get();
 
     if (!isTerminalItem(itemMetadata)) {
       this.logger.warn(
@@ -228,7 +227,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       details.serverPath !== item.externalFilePath
     ) {
       this.programDB
-        .updateProgramPlexRatingKey(item.programId, server.name, {
+        .updateProgramPlexRatingKey(item.programId, server.uuid, {
           externalKey: item.externalKey,
           externalFilePath: details.serverPath,
           directFilePath: details.directFilePath ?? null,

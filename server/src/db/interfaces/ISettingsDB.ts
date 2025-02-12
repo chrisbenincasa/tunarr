@@ -10,7 +10,10 @@ import type {
   SystemSettings,
   XmlTvSettings,
 } from '@tunarr/types';
-import type { BackupSettings } from '@tunarr/types/schemas';
+import type {
+  BackupSettings,
+  GlobalMediaSourceSettings,
+} from '@tunarr/types/schemas';
 import type { DeepReadonly } from 'ts-essentials';
 import type { TypedEventEmitter } from '../../types/eventEmitter.ts';
 
@@ -31,6 +34,8 @@ export interface ISettingsDB extends TypedEventEmitter<SettingsChangeEvents> {
   plexSettings(): DeepReadonly<PlexStreamSettings>;
 
   ffmpegSettings(): ReadableFfmpegSettings;
+
+  globalMediaSourceSettings(): DeepReadonly<GlobalMediaSourceSettings>;
 
   ffprobePath: string;
 
@@ -54,6 +59,7 @@ export interface ISettingsDB extends TypedEventEmitter<SettingsChangeEvents> {
 
   flush(): Promise<void>;
 }
+
 export type ReadableFfmpegSettings = DeepReadonly<FfmpegSettings>;
 export type SettingsChangeEvents = {
   change(): void;

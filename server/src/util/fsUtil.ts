@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
-import { isNodeError } from './index.js';
 import path from 'node:path';
+import { isNodeError } from './index.js';
 
 export async function fileExists(path: string) {
   try {
@@ -28,5 +28,24 @@ export async function copyDirectoryContents(src: string, dest: string) {
     } else {
       await fs.copyFile(srcPath, destPath);
     }
+  }
+}
+
+export async function walkDirectory(dirPath: string) {
+  try {
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item.name);
+
+      if (item.isDirectory()) {
+        await walkDirectory(itemPath); // Recursively call for subdirectories
+      } else if (item.isFile()) {
+        console.log(`File found: ${itemPath}`);
+        // Perform operations on the file
+      }
+    }
+  } catch (err) {
+    console.error(`Error walking directory ${dirPath}:`, err);
   }
 }

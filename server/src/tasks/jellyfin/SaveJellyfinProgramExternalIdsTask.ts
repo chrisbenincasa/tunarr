@@ -1,5 +1,4 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { Task } from '@/tasks/Task.js';
@@ -53,12 +52,12 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
     let chosenId: Maybe<MinimalProgramExternalId> = undefined;
     let api: Maybe<JellyfinApiClient>;
     for (const id of jellyfinIds) {
-      if (!isNonEmptyString(id.externalSourceId)) {
+      if (!isNonEmptyString(id.mediaSourceId)) {
         continue;
       }
 
-      api = await this.mediaSourceApiFactory.getJellyfinApiClientByName(
-        id.externalSourceId,
+      api = await this.mediaSourceApiFactory.getJellyfinApiClientById(
+        id.mediaSourceId,
       );
 
       if (isDefined(api)) {
@@ -73,7 +72,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
 
     const metadataResult = await api.getItem(chosenId.externalKey);
 
-    if (isQueryError(metadataResult)) {
+    if (metadataResult.isFailure()) {
       this.logger.error(
         'Error querying Jellyfin for item %s',
         chosenId.externalKey,
@@ -81,7 +80,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
       return;
     }
 
-    const metadata = metadataResult.data;
+    const metadata = metadataResult.get();
 
     const eids = compact(
       map(metadata?.ProviderIds, (id, provider) => {
