@@ -16,8 +16,6 @@ const moduleString = await makeVfs.getVirtualFilesystemModuleFromDirPath({
   targetPath: 'src/generated/web-imports.js',
 });
 
-console.log(moduleString);
-
 await Bun.file('./src/generated/web-imports.js').write(moduleString);
 
 console.log('Successfully wrote ./src/generated/web-imports.js');

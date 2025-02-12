@@ -32,8 +32,10 @@ EOF
 # Install pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
-RUN corepack enable
+# RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
+RUN npm install -g corepack@latest
+RUN corepack enable && corepack enable pnpm
+RUN pnpm --version
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
 ENTRYPOINT [ "/tunarr/tunarr-linux-x64" ]
@@ -49,6 +51,7 @@ COPY shared/ ./shared
 COPY types ./types
 COPY web ./web
 COPY patches ./patches
+COPY CHANGELOG.md CHANGELOG.md
 
 # Dev container
 FROM ffmpeg-base AS dev

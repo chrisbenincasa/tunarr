@@ -14,29 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Use Latest Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable && corepack enable pnpm
+          pnpm --version
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-
-      - uses: pnpm/action-setup@v3
-        name: Install pnpm
-        with:
-          version: 9.12.3
-          run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
