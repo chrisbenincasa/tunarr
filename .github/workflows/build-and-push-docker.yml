@@ -46,6 +46,7 @@ jobs:
           - base_tag: '7.0'
             platform: linux/amd64
             suffix:
+            target: linux-x64
 
           - base_tag: '7.0'
             platform: linux/amd64
@@ -55,6 +56,7 @@ jobs:
           - base_tag: 7.0-nvidia
             platform: linux/amd64
             suffix: -nvidia
+            target: linux-x64
 
           - base_tag: 7.0-nvidia
             platform: linux/amd64
@@ -64,6 +66,7 @@ jobs:
           - base_tag: 7.0-vaapi
             platform: linux/amd64
             suffix: -vaapi
+            target: linux-x64
 
           - base_tag: 7.0-vaapi
             platform: linux/amd64
@@ -73,10 +76,11 @@ jobs:
           - base_tag: 7.0-arm64
             platform: linux/arm64
             suffix: -arm64
+            target: linux-arm64
 
-          - base_tag: 7.0-arm
-            platform: linux/arm/v7
-            suffix: -arm
+          # - base_tag: 7.0-arm
+          #   platform: linux/arm/v7
+          #   suffix: -arm
 
     steps:
       - uses: actions/checkout@v4
@@ -151,7 +155,7 @@ jobs:
             base_image_tag=${{ matrix.builds.base_tag }}
             is_edge_build=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'schedule'}}
             tunarr_build="${{ env.TUNARR_VERSION }}"
-            exec_target="${{ matrix.builds.baseline }}"
+            exec_target="${{ matrix.builds.target }}"
           target: full-stack
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
