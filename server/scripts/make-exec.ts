@@ -6,11 +6,14 @@ import serverPackage from '../package.json' with { type: 'json' };
 
 const ALL_TARGETS = [
   'linux-x64',
+  'linux-x64-baseline',
   'linux-arm64',
   'windows-x64',
+  'windows-x64-baseline',
   'macos-x64',
+  'macos-x64-baseline',
   'macos-arm64',
-];
+] as const;
 
 const isEdgeBuild = process.env['TUNARR_EDGE_BUILD'] === 'true';
 
@@ -36,6 +39,10 @@ const args = await yargs(hideBin(process.argv))
     type: 'boolean',
     default: true,
   })
+  .option('strip-baseline-name', {
+    type: 'boolean',
+    default: false,
+  })
   .parseAsync();
 
 for (const arch of args.target) {
@@ -47,6 +54,11 @@ for (const arch of args.target) {
   if (arch.startsWith('windows')) {
     name += '.exe';
   }
+
+  if (args.stripBaselineName) {
+    name = name.replaceAll('-baseline', '');
+  }
+
   const process = Bun.spawnSync([
     'bun',
     'build',

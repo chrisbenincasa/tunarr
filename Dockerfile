@@ -74,6 +74,7 @@ FROM sources AS build-server
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 ARG is_edge_build
 ARG tunarr_build
+ARG exec_target=linux-x64
 # Build common modules
 RUN <<EOF
 touch server/.env
@@ -82,7 +83,8 @@ echo TUNARR_EDGE_BUILD=${is_edge_build} >> server/.env
 cat server/.env
 EOF
 # Build and bundle
-RUN pnpm turbo --filter=@tunarr/server make-exec -- --target linux-x64 --no-include-version
+RUN echo "Building target: ${exec_target}"
+RUN pnpm turbo --filter=@tunarr/server make-exec -- --target ${exec_target} --no-include-version
 ### End server build ###
 
 ### Begin server web ###
@@ -93,11 +95,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm turbo --filter=@tunarr/web bundle
 
 FROM sources AS build-full-stack
+ARG exec_target=linux-x64
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Bundle web in a separate task
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
-RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo make-exec -- --target linux-x64 --no-include-version
+RUN echo "Building target: ${exec_target}"
+RUN pnpm turbo --filter=@tunarr/server make-exec -- --target ${exec_target} --no-include-version --strip-baseline-name
 
 ### Begin server run ###
 FROM ffmpeg-base AS server
