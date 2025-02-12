@@ -1,9 +1,12 @@
 import { faker } from '@faker-js/faker';
+import { tag } from '@tunarr/types';
 import { MultiExternalIdType } from '@tunarr/types/schemas';
 import type { Channel } from '../../db/schema/Channel.ts';
 import type { ProgramDao } from '../../db/schema/Program.ts';
 import { ProgramTypes } from '../../db/schema/Program.ts';
 import type { MinimalProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
+import type { MediaSourceName } from '../../db/schema/base.ts';
+import { type MediaSourceId } from '../../db/schema/base.ts';
 import type { ProgramWithExternalIds } from '../../db/schema/derivedTypes.js';
 
 export function createChannel(overrides?: Partial<Channel>): Channel {
@@ -23,7 +26,8 @@ export function createFakeMultiExternalId(): MinimalProgramExternalId {
   return {
     sourceType: typ,
     externalKey: faker.string.alphanumeric(),
-    externalSourceId: faker.string.uuid(),
+    externalSourceId: tag<MediaSourceName>(faker.string.alphanumeric()),
+    mediaSourceId: tag<MediaSourceId>(faker.string.uuid()),
   } satisfies MinimalProgramExternalId;
 }
 
@@ -38,7 +42,6 @@ export function createFakeProgram(
     externalIds: [createFakeMultiExternalId()],
     type: faker.helpers.arrayElement(ProgramTypes),
     summary: faker.lorem.sentences(),
-
     ...(overrides ?? {}),
   } satisfies ProgramWithExternalIds;
 }

@@ -290,6 +290,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
         params: IdPathParamSchema,
         response: {
           200: z.void(),
+          404: z.void(),
         },
       },
     },

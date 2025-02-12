@@ -2,6 +2,7 @@ import { preloadCustomShowAndProgramming } from '@/helpers/routeLoaders.ts';
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage.tsx';
 import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
 import { createFileRoute } from '@tanstack/react-router';
+import { noop } from 'ts-essentials';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute(
@@ -25,6 +26,9 @@ function CustomShowProgrammingSelectorPage() {
           }).catch(console.error);
         },
         entityType: 'custom-show',
+        onMediaSourceChange: noop,
+        onLibraryChange: noop,
+        onSearchChange: noop,
       }}
     >
       <ProgrammingSelectorPage />

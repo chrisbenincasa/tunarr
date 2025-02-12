@@ -4,6 +4,7 @@ import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined, isNodeError } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { type TupleToUnion } from '@tunarr/types';
 import type { MediaSourceUnhealthyStatus } from '@tunarr/types/api';
 import type {
   AxiosHeaderValue,
@@ -11,54 +12,75 @@ import type {
   AxiosRequestConfig,
 } from 'axios';
 import axios, { isAxiosError } from 'axios';
-import { isError, isString } from 'lodash-es';
+import type { Duration } from 'dayjs/plugin/duration.js';
+import { has, isError, isString } from 'lodash-es';
+import PQueue from 'p-queue';
+import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod/v4';
+import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import { WrappedError } from '../types/errors.ts';
+import { Result } from '../types/result.ts';
 
 export type ApiClientOptions = {
-  name: string;
-  mediaSourceUuid?: string;
-  accessToken: string;
-  url: string;
-  userId: string | null;
-  username: string | null;
+  mediaSource: StrictOmit<
+    MediaSourceWithLibraries,
+    | 'createdAt'
+    | 'updatedAt'
+    | 'clientIdentifier'
+    | 'index'
+    | 'sendChannelUpdates'
+    | 'sendGuideUpdates'
+  >;
   extraHeaders?: {
     [key: string]: AxiosHeaderValue;
   };
   enableRequestCache?: boolean;
+  queueOpts?: {
+    concurrency: number;
+    interval: Duration;
+  };
 };
 
-export type QuerySuccessResult<T> = {
-  type: 'success';
-  data: T;
+export type RemoteMediaSourceOptions = ApiClientOptions & {
+  apiKey: string;
 };
 
-type QueryErrorCode =
-  | 'not_found'
-  | 'no_access_token'
-  | 'parse_error'
-  | 'generic_request_error';
+const QueryErrorCodes = [
+  'not_found',
+  'no_access_token',
+  'parse_error',
+  'generic_request_error',
+] as const;
+type QueryErrorCode = TupleToUnion<typeof QueryErrorCodes>;
 
-export type QueryErrorResult = {
-  type: 'error';
-  code: QueryErrorCode;
-  message?: string;
-};
+export abstract class QueryError extends WrappedError {
+  readonly type: QueryErrorCode;
 
-export type QueryResult<T> = QuerySuccessResult<T> | QueryErrorResult;
+  static isQueryError(e: unknown): e is QueryError {
+    return (
+      has(e, 'type') &&
+      isString(e.type) &&
+      QueryErrorCodes.some((x) => x === e.type)
+    );
+  }
 
-export function isQueryError(x: QueryResult<unknown>): x is QueryErrorResult {
-  return x.type === 'error';
+  static genericQueryError(message?: string): QueryError {
+    return this.create('generic_request_error', message);
+  }
+
+  static create(type: QueryErrorCode, message?: string): QueryError {
+    return new (class extends QueryError {
+      type = type;
+    })(message);
+  }
 }
 
-export function isQuerySuccess<T>(
-  x: QueryResult<T>,
-): x is QuerySuccessResult<T> {
-  return x.type === 'success';
-}
+export type QueryResult<T> = Result<T, QueryError>;
 
 export abstract class BaseApiClient<
   OptionsType extends ApiClientOptions = ApiClientOptions,
 > {
+  private queue?: PQueue;
   protected logger: Logger;
   protected axiosInstance: AxiosInstance;
   protected redacter?: AxiosRequestRedacter;
@@ -66,12 +88,13 @@ export abstract class BaseApiClient<
   constructor(protected options: OptionsType) {
     this.logger = LoggerFactory.child({
       className: this.constructor.name,
-      serverName: options.name,
+      serverName: options.mediaSource.name,
     });
 
-    const url = options.url.endsWith('/')
-      ? options.url.slice(0, options.url.length - 1)
-      : options.url;
+    const url = options.mediaSource.uri.endsWith('/')
+      ? options.mediaSource.uri.slice(0, options.mediaSource.uri.length - 1)
+      : options.mediaSource.uri;
+    this.options.mediaSource.uri = url;
 
     this.axiosInstance = axios.create({
       baseURL: url,
@@ -81,7 +104,18 @@ export abstract class BaseApiClient<
       },
     });
 
+    if (options.queueOpts) {
+      this.queue = new PQueue({
+        concurrency: options.queueOpts.concurrency,
+        interval: options.queueOpts.interval.asMilliseconds(),
+      });
+    }
+
     configureAxiosLogging(this.axiosInstance, this.logger);
+  }
+
+  setApiClientOptions(opts: OptionsType) {
+    this.options = opts;
   }
 
   async doTypeCheckedGet<T extends z.ZodType, Out = z.infer<T>>(
@@ -120,28 +154,23 @@ export abstract class BaseApiClient<
     return this.makeErrorResult('parse_error');
   }
 
-  protected preRequestValidate(
+  protected preRequestValidate<T>(
     _req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
+  ): Maybe<QueryResult<T>> {
     return;
   }
 
-  protected makeErrorResult(
-    code: QueryErrorCode,
+  protected makeErrorResult<T>(
+    type: QueryErrorCode,
     message?: string,
-  ): QueryErrorResult {
-    return {
-      type: 'error',
-      code,
-      message,
-    };
+  ): QueryResult<T> {
+    return Result.failure<T, QueryError>(
+      QueryError.create(type, message ?? 'Unknown Error'),
+    );
   }
 
-  protected makeSuccessResult<T>(data: T): QuerySuccessResult<T> {
-    return {
-      type: 'success',
-      data,
-    };
+  protected makeSuccessResult<T>(data: T): QueryResult<T> {
+    return Result.success<T, QueryError>(data);
   }
 
   doGet<T>(req: Omit<AxiosRequestConfig, 'method'>) {
@@ -162,13 +191,17 @@ export abstract class BaseApiClient<
 
   getFullUrl(path: string): string {
     const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${this.options.url}${sanitizedPath}`);
+    const url = new URL(`${this.options.mediaSource.uri}${sanitizedPath}`);
     return url.toString();
   }
 
   protected async doRequest<T>(req: AxiosRequestConfig): Promise<T> {
     try {
-      const response = await this.axiosInstance.request<T>(req);
+      const response = await (this.queue
+        ? this.queue.add(() => this.axiosInstance.request<T>(req), {
+            throwOnTimeout: true,
+          })
+        : this.axiosInstance.request<T>(req));
       return response.data;
     } catch (error) {
       if (isAxiosError(error)) {
@@ -185,7 +218,7 @@ export abstract class BaseApiClient<
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           this.logger.warn(
-            'API client response error: path: %O, status %d, params: %O, data: %O, headers: %O',
+            'API client response error: path: %s, status %d, params: %O, data: %O, headers: %O',
             error.config?.url ?? '',
             status,
             error.config?.params ?? {},
@@ -214,7 +247,7 @@ export abstract class BaseApiClient<
         // At this point we have no idea what the object is... attempt to log
         // and just return a generic error. Something is probably fatally wrong
         // at this point.
-        this.logger.error('Unknown error type thrown: %O', error);
+        this.logger.error(error, 'Unknown error type thrown: %O');
         throw new Error('Unknown error', { cause: error });
       }
     }
@@ -244,5 +277,11 @@ export abstract class BaseApiClient<
     }
 
     return status;
+  }
+
+  protected findMatchingLibrary(externalLibraryId: string) {
+    return this.options.mediaSource.libraries.find(
+      (lib) => lib.externalKey === externalLibraryId,
+    );
   }
 }

@@ -4,6 +4,7 @@ import { container } from '../../container.ts';
 import { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { CleanupSessionsTask } from '../../tasks/CleanupSessionsTask.ts';
 import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.ts';
+import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { ScheduleDynamicChannelsTask } from '../../tasks/ScheduleDynamicChannelsTask.ts';
 import {
@@ -104,6 +105,20 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       ),
     );
 
+    GlobalScheduler.scheduleTask(
+      ScanLibrariesTask.ID,
+      new ScheduledTask(
+        ScanLibrariesTask.name,
+        hoursCrontab(
+          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
+        ),
+        container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
+          ScanLibrariesTask.KEY,
+        ),
+        [],
+      ),
+    );
+
     scheduleBackupJobs(this.settingsDB.backup);
 
     forEach(
@@ -117,9 +132,9 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
           .runNow(true)
           .catch((e) =>
             LoggerFactory.root.error(
+              e,
               'Error running job %s at startup',
               job.name,
-              e,
             ),
           );
       },

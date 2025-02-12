@@ -8,7 +8,10 @@ import type {
 } from './Channel.ts';
 import type { CustomShowContentTable, CustomShowTable } from './CustomShow.js';
 import type { FillerShowContentTable, FillerShowTable } from './FillerShow.js';
-import type { MediaSourceTable } from './MediaSource.ts';
+import type {
+  MediaSourceLibraryTable,
+  MediaSourceTable,
+} from './MediaSource.ts';
 import type { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
 import type { ProgramTable } from './Program.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.ts';
@@ -34,6 +37,7 @@ export interface DB {
   fillerShow: FillerShowTable;
   fillerShowContent: FillerShowContentTable;
   mediaSource: MediaSourceTable;
+  mediaSourceLibrary: MediaSourceLibraryTable;
   program: ProgramTable;
   programExternalId: ProgramExternalIdTable;
   programGrouping: ProgramGroupingTable;

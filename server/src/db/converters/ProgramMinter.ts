@@ -5,33 +5,89 @@ import type {
   NewSingleOrMultiExternalId,
 } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
-import type { ContentProgram } from '@tunarr/types';
+import { tag, type ContentProgram } from '@tunarr/types';
 import type { JellyfinItem } from '@tunarr/types/jellyfin';
 import type {
+  PlexMovie as ApiPlexMovie,
   PlexEpisode,
-  PlexMovie,
+  PlexMedia,
   PlexMusicTrack,
+  PlexTerminalMedia,
 } from '@tunarr/types/plex';
-import type { ContentProgramOriginalProgram } from '@tunarr/types/schemas';
+import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+  type ContentProgramOriginalProgram,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { find, first, isError } from 'lodash-es';
+import { inject, injectable } from 'inversify';
+import { find, first, head, isError } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
-import type { NewProgramDao as NewRawProgram } from '../schema/Program.ts';
+import { Canonicalizer } from '../../services/Canonicalizer.ts';
+import {
+  MediaSourceEpisode,
+  MediaSourceMovie,
+  MediaSourceMusicTrack,
+} from '../../types/Media.ts';
+import { KEYS } from '../../types/inject.ts';
+import { Maybe } from '../../types/util.ts';
+import { parsePlexGuid } from '../../util/externalIds.ts';
+import { isNonEmptyString } from '../../util/index.ts';
+import { Logger } from '../../util/logging/LoggerFactory.ts';
+import { MediaSource, MediaSourceLibrary } from '../schema/MediaSource.ts';
+import type {
+  NewProgramDao,
+  NewProgramDao as NewRawProgram,
+} from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
+import { MediaSourceId, MediaSourceName } from '../schema/base.ts';
+import {
+  NewEpisodeProgram,
+  NewMovieProgram,
+  NewMusicTrack,
+  NewProgramWithExternalIds,
+} from '../schema/derivedTypes.js';
+
+// type MovieMintRequest =
+//   | { sourceType: 'plex'; program: PlexMovie }
+//   | { sourceType: 'jellyfin'; program: SpecificJellyfinType<'Movie'> }
+//   | { sourceType: 'emby'; program: SpecificEmbyType<'Movie'> };
+
+// type EpisodeMintRequest =
+//   | { sourceType: 'plex'; program: PlexEpisode }
+//   | { sourceType: 'jellyfin'; program: SpecificJellyfinType<'Episode'> }
+//   | { sourceType: 'emby'; program: SpecificEmbyType<'Episode'> };
 
 /**
  * Generates Program DB entities for Plex media
  */
-class ProgramDaoMinter {
-  contentProgramDtoToDao(program: ContentProgram): NewRawProgram {
+@injectable()
+export class ProgramDaoMinter {
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.PlexCanonicalizer)
+    private plexProgramCanonicalizer: Canonicalizer<PlexMedia>,
+    @inject(KEYS.JellyfinCanonicalizer)
+    private jellyfinCanonicalizer: Canonicalizer<JellyfinItem>,
+  ) {}
+
+  contentProgramDtoToDao(program: ContentProgram): Maybe<NewRawProgram> {
+    if (!isNonEmptyString(program.canonicalId)) {
+      this.logger.warn('Program missing canonical ID on upsert: %O', program);
+      return;
+    } else if (!isNonEmptyString(program.libraryId)) {
+      this.logger.warn('Program missing library ID on upsert: %O', program);
+      return;
+    }
+
     const now = +dayjs();
     return {
       uuid: v4(),
       sourceType: program.externalSourceType,
       // Deprecated
-      externalSourceId: program.externalSourceName,
-      mediaSourceId: program.externalSourceId,
+      externalSourceId: tag(program.externalSourceName),
+      mediaSourceId: tag(program.externalSourceId),
       externalKey: program.externalKey,
       originalAirDate: program.date ?? null,
       duration: program.duration,
@@ -50,30 +106,40 @@ class ProgramDaoMinter {
       grandparentExternalKey: program.grandparent?.externalKey,
       createdAt: now,
       updatedAt: now,
+      canonicalId: program.canonicalId,
+      libraryId: program.libraryId,
     };
   }
 
   mint(
-    serverName: string,
-    serverId: string,
+    mediaSource: MediaSource,
+    library: MediaSourceLibrary,
     program: ContentProgramOriginalProgram,
-  ): NewRawProgram {
+  ): NewProgramWithExternalIds {
     const ret = match(program)
-      .with(
-        { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) =>
-          this.mintProgramForPlexMovie(serverName, serverId, movie),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'episode' } },
-        ({ program: episode }) =>
-          this.mintProgramForPlexEpisode(serverName, serverId, episode),
-      )
-      .with(
-        { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) =>
-          this.mintProgramForPlexTrack(serverName, serverId, track),
-      )
+      .with({ sourceType: 'plex' }, ({ program }) => {
+        const dao = match(program)
+          .with({ type: 'movie' }, (movie) =>
+            this.mintProgramForPlexMovie(mediaSource, library, movie),
+          )
+          .with({ type: 'episode' }, (ep) =>
+            this.mintProgramForPlexEpisode(mediaSource, library, ep),
+          )
+          .with({ type: 'track' }, (track) =>
+            this.mintProgramForPlexTrack(mediaSource, library, track),
+          )
+          .exhaustive();
+        const externalIds = this.mintPlexExternalIdsFromApiItem(
+          mediaSource.name,
+          mediaSource.uuid,
+          dao,
+          program,
+        );
+        return {
+          ...dao,
+          externalIds,
+        } satisfies NewProgramWithExternalIds;
+      })
       .with(
         {
           sourceType: 'jellyfin',
@@ -88,8 +154,7 @@ class ProgramDaoMinter {
             ),
           },
         },
-        ({ program }) =>
-          this.mintProgramForJellyfinItem(serverName, serverId, program),
+        ({ program }) => this.mintProgramForJellyfinItem(mediaSource, program),
       )
       .otherwise(() => new Error('Unexpected program type'));
     if (isError(ret)) {
@@ -98,11 +163,219 @@ class ProgramDaoMinter {
     return ret;
   }
 
+  mintMovie(
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
+    movie: MediaSourceMovie,
+  ): NewMovieProgram {
+    const programId = v4();
+    const now = +dayjs();
+
+    return {
+      uuid: programId,
+      sourceType: movie.sourceType,
+      externalKey: movie.externalKey,
+      originalAirDate: dayjs(movie.releaseDate)?.format(),
+      duration: movie.duration,
+      // filePath: file?.file ?? null,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      // plexRatingKey: plexMovie.ratingKey,
+      // plexFilePath: file?.key ?? null,
+      rating: movie.rating,
+      summary: movie.summary,
+      title: movie.title,
+      type: ProgramType.Movie,
+      year: movie.year,
+      createdAt: now,
+      updatedAt: now,
+      canonicalId: movie.canonicalId,
+      externalIds: seq.collect(movie.identifiers, (id) => {
+        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+          return {
+            type: 'single',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+          } satisfies NewSingleOrMultiExternalId;
+        } else if (isValidMultiExternalIdType(id.type)) {
+          const isMediaSourceId = id.type === mediaSource.type;
+          // This stinks
+          const location = isMediaSourceId
+            ? find(movie.mediaItem?.locations, { sourceType: mediaSource.type })
+            : null;
+          return {
+            type: 'multi',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+            externalSourceId: mediaSource.name, // legacy
+            mediaSourceId: mediaSource.uuid, // new
+            // TODO
+            directFilePath: location?.path,
+            externalFilePath:
+              location?.type === 'remote' ? location.externalKey : null,
+            // externalFilePath
+          } satisfies NewSingleOrMultiExternalId;
+        }
+
+        return;
+      }),
+    };
+  }
+
+  mintEpisode(
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
+    episode: MediaSourceEpisode,
+  ): NewEpisodeProgram {
+    const programId = v4();
+    const now = +dayjs();
+
+    return {
+      uuid: programId,
+      sourceType: episode.sourceType,
+      externalKey: episode.externalKey,
+      originalAirDate: dayjs(episode.releaseDate).format(),
+      duration: episode.duration,
+      // filePath: file?.file ?? null,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      // plexRatingKey: plexMovie.ratingKey,
+      // plexFilePath: file?.key ?? null,
+      rating: null,
+      summary: episode.summary,
+      title: episode.title,
+      type: ProgramType.Episode,
+      year: episode.year,
+      createdAt: now,
+      updatedAt: now,
+      canonicalId: episode.canonicalId,
+      externalIds: seq.collect(episode.identifiers, (id) => {
+        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+          return {
+            type: 'single',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+          } satisfies NewSingleOrMultiExternalId;
+        } else if (isValidMultiExternalIdType(id.type)) {
+          const isMediaSourceId = id.type === mediaSource.type;
+          // This stinks
+          const location = isMediaSourceId
+            ? find(episode.mediaItem?.locations, {
+                sourceType: mediaSource.type,
+              })
+            : null;
+          return {
+            type: 'multi',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+            externalSourceId: mediaSource.name, // legacy
+            mediaSourceId: mediaSource.uuid, // new
+            // TODO
+            directFilePath: location?.path,
+            externalFilePath:
+              location?.type === 'remote' ? location.externalKey : null,
+            // externalFilePath
+          } satisfies NewSingleOrMultiExternalId;
+        }
+
+        return;
+      }),
+    };
+  }
+
+  mintMusicTrack(
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
+    track: MediaSourceMusicTrack,
+  ): NewMusicTrack {
+    const programId = v4();
+    const now = +dayjs();
+
+    return {
+      uuid: programId,
+      sourceType: track.sourceType,
+      externalKey: track.externalKey,
+      originalAirDate: dayjs(track.releaseDate)?.format(),
+      duration: track.duration,
+      // filePath: file?.file ?? null,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      // plexRatingKey: plexMovie.ratingKey,
+      // plexFilePath: file?.key ?? null,
+      rating: null,
+      summary: null,
+      title: track.title,
+      type: ProgramType.Track,
+      year: track.year,
+      createdAt: now,
+      updatedAt: now,
+      canonicalId: track.canonicalId,
+      externalIds: seq.collect(track.identifiers, (id) => {
+        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+          return {
+            type: 'single',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+          } satisfies NewSingleOrMultiExternalId;
+        } else if (isValidMultiExternalIdType(id.type)) {
+          const isMediaSourceId = id.type === mediaSource.type;
+          // This stinks
+          const location = isMediaSourceId
+            ? find(track.mediaItem?.locations, {
+                sourceType: mediaSource.type,
+              })
+            : null;
+          return {
+            type: 'multi',
+            externalKey: id.id,
+            programUuid: programId,
+            sourceType: id.type,
+            uuid: v4(),
+            createdAt: now,
+            updatedAt: now,
+            externalSourceId: mediaSource.name, // legacy
+            mediaSourceId: mediaSource.uuid, // new
+            // TODO
+            directFilePath: location?.path,
+            externalFilePath:
+              location?.type === 'remote' ? location.externalKey : null,
+            // externalFilePath
+          } satisfies NewSingleOrMultiExternalId;
+        }
+
+        return;
+      }),
+    };
+  }
+
   private mintProgramForPlexMovie(
-    serverName: string,
-    serverId: string,
-    plexMovie: PlexMovie,
-  ): NewRawProgram {
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
+    plexMovie: ApiPlexMovie,
+  ): NewProgramDao {
     const file = first(first(plexMovie.Media)?.Part ?? []);
     return {
       uuid: v4(),
@@ -110,8 +383,9 @@ class ProgramDaoMinter {
       originalAirDate: plexMovie.originallyAvailableAt ?? null,
       duration: plexMovie.duration ?? 0,
       filePath: file?.file ?? null,
-      externalSourceId: serverName,
-      mediaSourceId: serverId,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
       externalKey: plexMovie.ratingKey,
       plexRatingKey: plexMovie.ratingKey,
       plexFilePath: file?.key ?? null,
@@ -122,25 +396,26 @@ class ProgramDaoMinter {
       year: plexMovie.year ?? null,
       createdAt: +dayjs(),
       updatedAt: +dayjs(),
+      canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexMovie),
     };
   }
 
   private mintProgramForJellyfinItem(
-    serverName: string,
-    serverId: string,
+    mediaSource: MediaSource,
     item: Omit<JellyfinItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
     },
-  ): NewRawProgram {
-    return {
-      uuid: v4(),
+  ): NewProgramWithExternalIds {
+    const id = v4();
+    const dao: NewProgramDao = {
+      uuid: id,
       createdAt: +dayjs(),
       updatedAt: +dayjs(),
       sourceType: ProgramSourceType.JELLYFIN,
       originalAirDate: item.PremiereDate,
-      duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: serverName,
-      mediaSourceId: serverId,
+      duration: Math.ceil((item.RunTimeTicks ?? 0) / 10_000),
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
       externalKey: item.Id,
       rating: item.OfficialRating,
       summary: item.Overview,
@@ -161,14 +436,27 @@ class ProgramDaoMinter {
       grandparentExternalKey:
         item.SeriesId ??
         find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id,
+      canonicalId: this.jellyfinCanonicalizer.getCanonicalId(item),
     };
+
+    const externalIds = this.mintAllJellyfinExternalIdForApiItem(
+      mediaSource.name,
+      mediaSource.uuid,
+      dao,
+      item,
+    );
+
+    return {
+      ...dao,
+      externalIds,
+    } satisfies NewProgramWithExternalIds;
   }
 
   private mintProgramForPlexEpisode(
-    serverName: string,
-    serverId: string,
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
     plexEpisode: PlexEpisode,
-  ): NewRawProgram {
+  ): NewProgramDao {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
     return {
       uuid: v4(),
@@ -178,8 +466,9 @@ class ProgramDaoMinter {
       originalAirDate: plexEpisode.originallyAvailableAt,
       duration: plexEpisode.duration ?? 0,
       filePath: file?.file,
-      externalSourceId: serverName,
-      mediaSourceId: serverId,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
       externalKey: plexEpisode.ratingKey,
       plexRatingKey: plexEpisode.ratingKey,
       plexFilePath: file?.key,
@@ -194,12 +483,13 @@ class ProgramDaoMinter {
       episode: plexEpisode.index,
       parentExternalKey: plexEpisode.parentRatingKey,
       grandparentExternalKey: plexEpisode.grandparentRatingKey,
+      canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexEpisode),
     };
   }
 
   private mintProgramForPlexTrack(
-    serverName: string,
-    serverId: string,
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
     plexTrack: PlexMusicTrack,
   ): NewRawProgram {
     const file = first(first(plexTrack.Media)?.Part ?? []);
@@ -210,8 +500,9 @@ class ProgramDaoMinter {
       sourceType: ProgramSourceType.PLEX,
       duration: plexTrack.duration ?? 0,
       filePath: file?.file,
-      externalSourceId: serverName,
-      mediaSourceId: serverId,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
       externalKey: plexTrack.ratingKey,
       plexRatingKey: plexTrack.ratingKey,
       plexFilePath: file?.key,
@@ -227,12 +518,13 @@ class ProgramDaoMinter {
       grandparentExternalKey: plexTrack.grandparentRatingKey,
       albumName: plexTrack.parentTitle,
       artistName: plexTrack.grandparentTitle,
+      canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexTrack),
     };
   }
 
   mintExternalIds(
-    serverName: string,
-    serverId: string,
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
     programId: string,
     program: ContentProgram,
   ): NewSingleOrMultiExternalId[] {
@@ -250,8 +542,8 @@ class ProgramDaoMinter {
   }
 
   mintPlexExternalIds(
-    serverName: string,
-    serverId: string,
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
     programId: string,
     program: ContentProgram,
   ): NewSingleOrMultiExternalId[] {
@@ -310,25 +602,66 @@ class ProgramDaoMinter {
     return ids;
   }
 
-  mintJellyfinExternalIdForApiItem(
-    serverName: string,
-    programId: string,
-    media: JellyfinItem,
-  ) {
-    return {
-      uuid: v4(),
-      createdAt: +dayjs(),
-      updatedAt: +dayjs(),
-      externalKey: media.Id,
-      sourceType: ProgramExternalIdType.JELLYFIN,
-      programUuid: programId,
-      externalSourceId: serverName,
-    } satisfies NewProgramExternalId;
+  mintPlexExternalIdsFromApiItem(
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
+    program: NewProgramDao,
+    plexEntity: PlexTerminalMedia,
+  ): NewSingleOrMultiExternalId[] {
+    const now = +dayjs();
+    const file = first(first(plexEntity.Media)?.Part ?? []);
+
+    const ids: NewSingleOrMultiExternalId[] = [
+      {
+        type: 'multi',
+        uuid: v4(),
+        createdAt: now,
+        updatedAt: now,
+        externalKey: program.externalKey,
+        sourceType: ProgramExternalIdType.PLEX,
+        programUuid: program.uuid,
+        externalSourceId: serverName,
+        mediaSourceId: serverId,
+        externalFilePath: file?.key,
+        directFilePath: file?.file,
+      } satisfies NewSingleOrMultiExternalId,
+    ];
+
+    if (plexEntity.guid) {
+      ids.push({
+        type: 'single',
+        uuid: v4(),
+        createdAt: now,
+        updatedAt: now,
+        externalKey: plexEntity.guid,
+        sourceType: ProgramExternalIdType.PLEX_GUID,
+        programUuid: program.uuid,
+      });
+    }
+
+    ids.push(
+      ...seq
+        .collect(plexEntity.Guid, ({ id }) => parsePlexGuid(id))
+        .map(
+          (eid) =>
+            ({
+              type: 'single',
+              uuid: v4(),
+              createdAt: now,
+              updatedAt: now,
+              externalKey: eid.externalKey,
+              sourceType: eid.sourceType,
+              programUuid: program.uuid,
+            }) satisfies NewSingleOrMultiExternalId,
+        ),
+    );
+
+    return ids;
   }
 
   mintJellyfinExternalIds(
-    serverName: string,
-    serverId: string,
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
     programId: string,
     program: ContentProgram,
   ) {
@@ -373,9 +706,75 @@ class ProgramDaoMinter {
     return ids;
   }
 
+  mintJellyfinExternalIdForApiItem(
+    serverName: MediaSourceName,
+    programId: string,
+    media: JellyfinItem,
+  ) {
+    return {
+      uuid: v4(),
+      createdAt: +dayjs(),
+      updatedAt: +dayjs(),
+      externalKey: media.Id,
+      sourceType: ProgramExternalIdType.JELLYFIN,
+      programUuid: programId,
+      externalSourceId: serverName,
+    } satisfies NewProgramExternalId;
+  }
+
+  mintAllJellyfinExternalIdForApiItem(
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
+    program: NewProgramDao,
+    entity: JellyfinItem,
+  ) {
+    const now = +dayjs();
+    const ids: NewSingleOrMultiExternalId[] = [
+      {
+        type: 'multi',
+        uuid: v4(),
+        createdAt: now,
+        updatedAt: now,
+        externalKey: program.externalKey,
+        sourceType: ProgramExternalIdType.JELLYFIN,
+        programUuid: program.uuid,
+        externalSourceId: serverName,
+        mediaSourceId: serverId,
+        directFilePath: head(entity.MediaSources)?.Path,
+      },
+    ];
+
+    ids.push(
+      ...seq.collectMapValues(entity.ProviderIds, (value, source) => {
+        if (!value) {
+          return;
+        }
+
+        switch (source) {
+          case 'tmdb':
+          case 'imdb':
+          case 'tvdb':
+            return {
+              type: 'single',
+              uuid: v4(),
+              createdAt: now,
+              updatedAt: now,
+              externalKey: value,
+              sourceType: source,
+              programUuid: program.uuid,
+            } satisfies NewSingleOrMultiExternalId;
+          default:
+            return null;
+        }
+      }),
+    );
+
+    return ids;
+  }
+
   mintEmbyExternalIds(
-    serverName: string,
-    serverId: string,
+    serverName: MediaSourceName,
+    serverId: MediaSourceId,
     programId: string,
     program: ContentProgram,
   ) {
@@ -418,11 +817,5 @@ class ProgramDaoMinter {
     );
 
     return ids;
-  }
-}
-
-export class ProgramMinterFactory {
-  static create(): ProgramDaoMinter {
-    return new ProgramDaoMinter();
   }
 }

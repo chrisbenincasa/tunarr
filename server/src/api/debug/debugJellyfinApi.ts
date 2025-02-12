@@ -1,10 +1,15 @@
 import { container } from '@/container.js';
-import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
+import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import type { Nilable } from '@/types/util.js';
+import { tag } from '@tunarr/types';
 import { isNil } from 'lodash-es';
+import { v4 } from 'uuid';
 import { z } from 'zod/v4';
+import { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { MediaSourceApiClientFactory } from '../../external/MediaSourceApiClient.ts';
+import { KEYS } from '../../types/inject.ts';
 
 export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -23,12 +28,19 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const client = new JellyfinApiClient({
-        url: req.query.uri,
-        accessToken: req.query.apiKey,
-        userId: req.query.userId ?? null,
-        name: 'debug',
-        username: null,
+      const client = container.get<
+        MediaSourceApiClientFactory<JellyfinApiClient>
+      >(KEYS.JellyfinApiClientFactory)({
+        mediaSource: {
+          uri: req.query.uri,
+          accessToken: req.query.apiKey,
+          userId: req.query.userId ?? null,
+          name: tag('debug'),
+          uuid: tag(v4()),
+          username: null,
+          libraries: [],
+          type: 'jellyfin',
+        },
       });
 
       await res.send(await client.getUserLibraries());
@@ -54,12 +66,19 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const client = new JellyfinApiClient({
-        url: req.query.uri,
-        accessToken: req.query.apiKey,
-        name: 'debug',
-        userId: null,
-        username: null,
+      const client = container.get<
+        MediaSourceApiClientFactory<JellyfinApiClient>
+      >(KEYS.JellyfinApiClientFactory)({
+        mediaSource: {
+          uri: req.query.uri,
+          accessToken: req.query.apiKey,
+          name: tag('debug'),
+          uuid: tag(v4()),
+          userId: null,
+          username: null,
+          libraries: [],
+          type: 'jellyfin',
+        },
       });
 
       let pageParams: Nilable<{ offset: number; limit: number }> = null;
@@ -68,7 +87,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       }
 
       await res.send(
-        await client.getItems(req.query.parentId, [], [], pageParams),
+        await client.getRawItems(req.query.parentId, [], [], pageParams),
       );
     },
   );
@@ -87,6 +106,56 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       const finder = container.get(JellyfinItemFinder);
       const match = await finder.findForProgramId(req.params.id);
       return res.status(match ? 200 : 404).send(match);
+    },
+  );
+
+  fastify.get(
+    '/jellyfin/:libraryId/enumerate',
+    {
+      schema: {
+        params: z.object({
+          libraryId: z.string(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const library = await req.serverCtx.mediaSourceDB.getLibrary(
+        req.params.libraryId,
+      );
+
+      if (!library) {
+        return res.status(404).send();
+      }
+
+      if (library.mediaSource.type !== MediaSourceType.Jellyfin) {
+        return res.status(400).send();
+      }
+
+      const jfClient =
+        await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+          { ...library.mediaSource, libraries: [library] },
+        );
+
+      switch (library.mediaType) {
+        case 'movies':
+          for await (const movie of jfClient.getMovieLibraryContents(
+            library.externalKey,
+          )) {
+            console.log(movie);
+          }
+          break;
+        case 'shows': {
+          for await (const series of jfClient.getTvShowLibraryContents(
+            library.externalKey,
+          )) {
+            console.log(series);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      return res.send();
     },
   );
 };

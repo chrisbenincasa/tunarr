@@ -1,5 +1,6 @@
 import { Mutex, MutexInterface, withTimeout } from 'async-mutex';
 import { injectable } from 'inversify';
+import { Maybe } from '../types/util.ts';
 import { isDefined } from './index.ts';
 
 /**
@@ -28,5 +29,9 @@ export class MutexMap {
 
   async runWithLockId<T>(id: string, cb: () => Promise<T>): Promise<T> {
     return (await this.getOrCreateLock(id)).runExclusive(cb);
+  }
+
+  getLockSync(id: string): Maybe<MutexInterface> {
+    return this.#keyedLocks[id];
   }
 }

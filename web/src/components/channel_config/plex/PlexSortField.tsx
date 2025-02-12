@@ -34,7 +34,7 @@ export function PlexSortField() {
     plexFilterMetadata?.Type,
     (t) =>
       selectedLibrary?.view.type === 'library' &&
-      t.type === selectedLibrary?.view.library.type,
+      t.type === selectedLibrary?.view.library.childType,
   );
 
   useEffect(() => {

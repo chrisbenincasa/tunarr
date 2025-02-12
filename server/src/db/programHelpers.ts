@@ -1,7 +1,7 @@
 import { isNonEmptyString } from '@/util/index.js';
 import { createExternalId } from '@tunarr/shared';
 import type { ContentProgram, CustomProgram } from '@tunarr/types';
-import { isContentProgram, isCustomProgram } from '@tunarr/types';
+import { isContentProgram, isCustomProgram, tag } from '@tunarr/types';
 import { reduce } from 'lodash-es';
 
 // Takes a listing of programs and makes a mapping of a unique identifier,
@@ -21,14 +21,14 @@ export function createPendingProgramIndexMap(
         // TODO handle other types of programs
       } else if (
         isContentProgram(p) &&
-        isNonEmptyString(p.externalSourceName) &&
+        isNonEmptyString(p.externalSourceId) &&
         isNonEmptyString(p.externalSourceType) &&
         isNonEmptyString(p.externalKey)
       ) {
         acc[
           createExternalId(
             p.externalSourceType,
-            p.externalSourceName,
+            tag(p.externalSourceId),
             p.externalKey,
           )
         ] = idx++;

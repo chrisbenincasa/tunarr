@@ -2,10 +2,12 @@ import { seq } from '@tunarr/shared/util';
 import { DirectedGraph } from 'graphology';
 import * as dag from 'graphology-dag';
 import { inject, injectable, multiInject } from 'inversify';
+import { isMainThread } from 'node:worker_threads';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
+import { MeilisearchService } from './MeilisearchService.ts';
 import { IStartupTask } from './startup/IStartupTask.ts';
 
 @injectable()
@@ -18,6 +20,8 @@ export class StartupService {
     @inject(KEYS.WorkerPool)
     private workerPool: IWorkerPool,
     @multiInject(KEYS.StartupTask) private startupTasks: IStartupTask[],
+    @inject(MeilisearchService)
+    public readonly searchService: MeilisearchService,
   ) {}
 
   async runStartupServices() {
@@ -62,7 +66,12 @@ export class StartupService {
 
       await Promise.all(this.taskPromsies);
 
-      this.workerPool.start();
+      await this.searchService.start();
+      await this.searchService.sync();
+
+      if (isMainThread) {
+        this.workerPool.start();
+      }
     }
   }
 

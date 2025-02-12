@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { blue, green, orange, pink, purple } from '@mui/material/colors';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import { type SlotFiller, type TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -282,10 +283,7 @@ export const TimeSlotTable = () => {
             case 'show':
             case 'custom-show':
             case 'filler':
-              return originalRow.order
-                .split('_')
-                .map((x) => capitalize(x))
-                .join(' ');
+              return prettifySnakeCaseString(originalRow.order);
           }
         },
         id: 'programOrder',

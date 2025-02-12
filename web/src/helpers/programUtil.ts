@@ -1,6 +1,10 @@
 import { createExternalId } from '@tunarr/shared';
-import type { ChannelProgram, ContentProgram } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { tag, type ChannelProgram, type ContentProgram } from '@tunarr/types';
+import type { SearchRequest } from '@tunarr/types/api';
 import { match, P } from 'ts-pattern';
+import { postApiProgramsSearch } from '../generated/sdk.gen.ts';
+import type { Nullable } from '../types/util.ts';
 
 function getGrandparentExternalId(program: ContentProgram) {
   const sourceType = program.externalSourceType;
@@ -16,7 +20,7 @@ function getGrandparentExternalId(program: ContentProgram) {
 
   return createExternalId(
     grandparentId.source,
-    grandparentId.sourceId,
+    tag(grandparentId.sourceId),
     grandparentId.id,
   );
 }
@@ -40,4 +44,36 @@ export function getProgramGroupingKey(program: ChannelProgram): string {
     .with({ type: 'flex' }, () => 'flex')
     .with({ type: 'filler' }, (program) => `filler.${program.fillerListId}`)
     .exhaustive();
+}
+
+export async function enumerateSyncedItems(
+  libraryId: string,
+  searchRequest: Nullable<SearchRequest>,
+) {
+  const results: ProgramOrFolder[] = [];
+  const loop = async (page: number = 1): Promise<ProgramOrFolder[]> => {
+    const result = await postApiProgramsSearch({
+      body: {
+        libraryId,
+        query: {
+          query: searchRequest?.query,
+          filter: searchRequest?.filter,
+          restrictSearchTo: searchRequest?.restrictSearchTo,
+        },
+        limit: 50,
+        page,
+      },
+      throwOnError: true,
+    });
+
+    if (result.data.results.length === 0) {
+      return results;
+    }
+
+    results.push(...result.data.results);
+
+    return loop(page + 1);
+  };
+
+  return loop();
 }

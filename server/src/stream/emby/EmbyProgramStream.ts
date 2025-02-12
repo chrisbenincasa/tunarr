@@ -54,7 +54,7 @@ export class EmbyProgramStream extends ProgramStream {
   ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
     if (!isEmnyBackedLineupItem(lineupItem)) {
-      return Result.failure(
+      return Result.forError(
         new Error(
           'Lineup item is not backed by a media source: ' +
             JSON.stringify(lineupItem),
@@ -68,7 +68,7 @@ export class EmbyProgramStream extends ProgramStream {
     );
 
     if (isNil(server)) {
-      return Result.failure(
+      return Result.forError(
         new Error(
           `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
         ),
@@ -92,13 +92,13 @@ export class EmbyProgramStream extends ProgramStream {
       },
     });
     if (isNull(stream)) {
-      return Result.failure(
+      return Result.forError(
         new Error('Unable to retrieve stream details from Emby'),
       );
     }
 
     if (this.killed) {
-      return Result.failure(new Error('Stream was killed already, returning'));
+      return Result.forError(new Error('Stream was killed already, returning'));
     }
 
     const streamStats = stream.streamDetails;
@@ -129,7 +129,7 @@ export class EmbyProgramStream extends ProgramStream {
     });
 
     if (isUndefined(ffmpegOutStream)) {
-      return Result.failure(new Error('Unable to spawn ffmpeg'));
+      return Result.forError(new Error('Unable to spawn ffmpeg'));
     }
 
     return Result.success(ffmpegOutStream);

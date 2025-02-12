@@ -1,14 +1,24 @@
 import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.js';
-import type { Maybe, Nilable } from '@/types/util.js';
-import { caughtErrorToError, isNonEmptyString } from '@/util/index.js';
+import type { Maybe, Nilable, Nullable } from '@/types/util.js';
+import {
+  attemptSync,
+  caughtErrorToError,
+  isNonEmptyString,
+  nullToUndefined,
+  parseIntOrNull,
+} from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
-import type { MediaSourceStatus } from '@tunarr/types/api';
+import { seq } from '@tunarr/shared/util';
+import type { Folder, Library } from '@tunarr/types';
+import type { MediaSourceStatus, PagedResult } from '@tunarr/types/api';
 import type {
-  JellyfinItem,
+  JellyfinItem as ApiJellyfinItem,
   JellyfinItemFields,
   JellyfinItemKind,
   JellyfinItemSortBy,
+  JellyfinMediaSourceInfo,
+  JellyfinVirtualFolder,
 } from '@tunarr/types/jellyfin';
 import {
   JellyfinAuthenticationResult,
@@ -18,24 +28,65 @@ import {
 } from '@tunarr/types/jellyfin';
 import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
+import dayjs from 'dayjs';
 import {
   find,
+  forEach,
+  groupBy,
   isBoolean,
   isEmpty,
+  isError,
   isNil,
+  isNull,
   isNumber,
   mapValues,
   omitBy,
+  orderBy,
   union,
 } from 'lodash-es';
+import type { NonEmptyArray } from 'ts-essentials';
+import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import type { ProgramType } from '../../db/schema/Program.ts';
+import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
+import type { Canonicalizer } from '../../services/Canonicalizer.ts';
+import { extractIsAnamorphic } from '../../stream/jellyfin/JellyfinStreamDetails.ts';
+import type {
+  JellyfinEpisode as ApiJellyfinEpisode,
+  JellyfinMovie as ApiJellyfinMovie,
+  JellyfinMusicAlbum as ApiJellyfinMusicAlbum,
+  JellyfinMusicArtist as ApiJellyfinMusicArtist,
+  JellyfinMusicTrack as ApiJellyfinMusicTrack,
+  JellyfinMusicVideo as ApiJellyfinMusicVideo,
+  JellyfinOtherVideo as ApiJellyfinOtherVideo,
+  JellyfinSeason as ApiJellyfinSeason,
+  JellyfinSeries as ApiJellyfinSeries,
+  SpecificJellyfinType,
+} from '../../types/JellyfinTypes.ts';
+import { isJellyfinType } from '../../types/JellyfinTypes.ts';
+import type {
+  Identifier,
+  JellyfinEpisode,
+  JellyfinItem,
+  JellyfinMovie,
+  JellyfinMusicAlbum,
+  JellyfinMusicArtist,
+  JellyfinMusicTrack,
+  JellyfinMusicVideo,
+  JellyfinOtherVideo,
+  JellyfinSeason,
+  JellyfinShow,
+  MediaItem,
+  MediaStream,
+  NamedEntity,
+} from '../../types/Media.ts';
+import { Result } from '../../types/result.ts';
 import {
+  QueryError,
   type ApiClientOptions,
-  BaseApiClient,
-  isQueryError,
-  type QueryErrorResult,
   type QueryResult,
 } from '../BaseApiClient.js';
+import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
 
 const RequiredLibraryFields = [
   'Path',
@@ -50,7 +101,9 @@ const RequiredLibraryFields = [
   'OfficialRating',
   'ProviderIds',
   'Chapters',
-];
+  'MediaStreams',
+  'MediaSources',
+] satisfies JellyfinItemFields[];
 
 function getJellyfinAuthorization(
   apiKey: Maybe<string>,
@@ -84,18 +137,37 @@ export type JellyfinGetItemsQuery = {
   hasImdbId?: boolean;
   hasTmdbId?: boolean;
   hasTvdbId?: boolean;
+  contributingArtistIds?: string[];
+  excludeItemIds?: string[];
+  albumArtistIds?: string[];
 };
 
-export class JellyfinApiClient extends BaseApiClient {
+type JellyfinItemTypes = {
+  [ProgramType.Movie]: JellyfinMovie;
+  [ProgramGroupingType.Show]: JellyfinShow;
+  [ProgramGroupingType.Season]: JellyfinSeason;
+  [ProgramType.Episode]: JellyfinEpisode;
+  [ProgramGroupingType.Artist]: JellyfinMusicArtist;
+  [ProgramGroupingType.Album]: JellyfinMusicAlbum;
+  [ProgramType.Track]: JellyfinMusicTrack;
+};
+
+export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   protected redacter = new JellyfinRequestRedacter();
 
-  constructor(options: ApiClientOptions) {
+  constructor(
+    private canonicalizer: Canonicalizer<ApiJellyfinItem>,
+    options: ApiClientOptions,
+  ) {
     super({
       ...options,
       extraHeaders: {
         ...options.extraHeaders,
         Accept: 'application/json',
-        Authorization: getJellyfinAuthorization(options.accessToken, undefined),
+        Authorization: getJellyfinAuthorization(
+          options.mediaSource.accessToken,
+          undefined,
+        ),
       },
     });
   }
@@ -148,7 +220,7 @@ export class JellyfinApiClient extends BaseApiClient {
         this.doGet({
           url: '/Users/Me',
           params: {
-            userId: this.options.userId,
+            userId: this.options.mediaSource.userId,
           },
         }),
         this.doGet({
@@ -179,14 +251,17 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doTypeCheckedGet('/System/Info', JellyfinSystemInfo);
   }
 
-  async getUserLibraries() {
-    return this.doTypeCheckedGet(
+  async getUserLibraries(): Promise<QueryResult<Library[]>> {
+    const result = await this.doTypeCheckedGet(
       '/Library/VirtualFolders',
       JellyfinVirtualFolderResponse,
     );
+    return result.mapPure((data) =>
+      data.map((lib) => this.virtualFolderToLibrary(lib)),
+    );
   }
 
-  async getUserViews() {
+  async getUserViewsRaw() {
     return this.doTypeCheckedGet(
       '/Library/VirtualFolders',
       JellyfinVirtualFolderResponse,
@@ -209,13 +284,102 @@ export class JellyfinApiClient extends BaseApiClient {
     );
   }
 
-  async getItem(
+  async getUserViews() {
+    const result = await this.getUserViewsRaw();
+
+    return result.mapPure((data) =>
+      data.map((lib) => this.virtualFolderToLibrary(lib)),
+    );
+  }
+
+  private virtualFolderToLibrary(lib: JellyfinVirtualFolder): Library {
+    return {
+      type: 'library',
+      externalId: lib.ItemId,
+      locations: lib.LibraryOptions.PathInfos.map((path) => ({
+        type: 'local',
+        path: path.Path,
+      })),
+      sourceType: 'jellyfin',
+      title: lib.Name,
+      uuid: v4(),
+      childType: match(lib.CollectionType)
+        .returnType<Folder['childType']>()
+        .with('movies', () => 'movie')
+        .with('musicvideos', () => 'music_video')
+        .with('tvshows', () => 'show')
+        .with('music', () => 'artist')
+        .with('homevideos', () => 'other_video')
+        .otherwise(() => undefined),
+    } satisfies Library;
+  }
+
+  async getMovie(itemId: string, extraFields: JellyfinItemFields[] = []) {
+    return this.getItemOfType(
+      itemId,
+      'Movie',
+      (movie) => this.jellyfinApiMovieInjection(movie),
+      extraFields,
+    );
+  }
+
+  async getEpisode(itemId: string, extraFields: JellyfinItemFields[] = []) {
+    return this.getItemOfType(
+      itemId,
+      'Episode',
+      (ep) => this.jellyfinApiEpisodeInjection(ep),
+      extraFields,
+    );
+  }
+
+  async getMusicTrack(
     itemId: string,
+  ): Promise<QueryResult<JellyfinMusicTrack>> {
+    return this.getItemOfType(itemId, 'Audio', (track) =>
+      this.jellyfinApiMusicTrackInjection(track),
+    );
+  }
+
+  private async getItemOfType<ItemTypeT extends JellyfinItemKind, OutType>(
+    itemId: string,
+    itemType: ItemTypeT,
+    converter: (item: SpecificJellyfinType<ItemTypeT>) => Nullable<OutType>,
     extraFields: JellyfinItemFields[] = [],
-  ): Promise<QueryResult<Maybe<JellyfinItem>>> {
-    const result = await this.getItems(
+  ): Promise<QueryResult<OutType>> {
+    return this.getItem(itemId, itemType, extraFields).then((result) => {
+      return result.flatMap((item) => {
+        if (!item) {
+          return this.makeErrorResult(
+            'not_found',
+            `Could not find Jellyfin item with ID = ${itemId} of type ${itemType}`,
+          );
+        }
+
+        if (!isJellyfinType(item, itemType)) {
+          return this.makeErrorResult(
+            'generic_request_error',
+            `Expected item of type ${itemType} for Jellyfin item ${itemId}, but got ${item.Type}`,
+          );
+        }
+
+        return Result.attempt(() => converter(item)).ifNil(
+          QueryError.create(
+            'generic_request_error',
+            `Could not convert Jellyfin item with id = ${itemId}`,
+          ),
+        );
+      });
+    });
+  }
+
+  async getItem<ItemTypeT extends JellyfinItemKind>(
+    itemId: string,
+    itemType: ItemTypeT | null = null,
+    extraFields: JellyfinItemFields[] = [],
+  ): Promise<QueryResult<Maybe<ApiJellyfinItem>>> {
+    const result = await this.getRawItems(
       null,
-      null,
+      itemType ? [itemType] : null,
       ['MediaStreams', 'MediaSources', ...extraFields],
       { offset: 0, limit: 1 },
       {
@@ -223,16 +387,46 @@ export class JellyfinApiClient extends BaseApiClient {
       },
     );
 
-    if (isQueryError(result)) {
-      return result;
-    }
-
-    return this.makeSuccessResult(
-      find(result.data.Items, (item) => item.Id === itemId),
-    );
+    return result.mapPure((data) => {
+      return find(data.Items, (item) => item.Id === itemId);
+    });
   }
 
   async getItems(
+    parentId: Nilable<string>,
+    itemTypes: Nilable<JellyfinItemKind[]> = null,
+    extraFields: JellyfinItemFields[] = [],
+    pageParams: Nilable<{ offset: number; limit: number }> = null,
+    extraParams: JellyfinGetItemsQuery = {},
+    sortBy: [JellyfinItemSortBy, ...JellyfinItemSortBy[]] = [
+      'SortName',
+      'ProductionYear',
+    ],
+  ): Promise<QueryResult<PagedResult<JellyfinItem[]>>> {
+    const result = await this.getRawItems(
+      parentId,
+      itemTypes,
+      extraFields,
+      pageParams,
+      extraParams,
+      sortBy,
+    );
+
+    return result.mapPure((data) => {
+      const out = seq.collect(data.Items, (item) =>
+        this.jelllyfinApiItemInjection(item),
+      );
+
+      return {
+        total: data.TotalRecordCount,
+        result: out,
+        size: out.length,
+        offset: data.StartIndex ?? undefined,
+      };
+    });
+  }
+
+  async getRawItems(
     parentId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: JellyfinItemFields[] = [],
@@ -246,7 +440,7 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
       params: omitBy(
         {
-          userId: this.options.userId,
+          userId: this.options.mediaSource.userId,
           parentId: parentId,
           fields: union(extraFields, RequiredLibraryFields).join(','),
           startIndex: pageParams?.offset,
@@ -261,10 +455,51 @@ export class JellyfinApiClient extends BaseApiClient {
             ids: extraParams.ids?.join(','),
             genres: extraParams.genres?.join('|'),
           },
+          contributingArtistIds: extraParams.contributingArtistIds?.join(','),
+          excludeItemIds: extraParams.excludeItemIds?.join(','),
+          albumArtistIds: extraParams.albumArtistIds?.join(','),
         },
         (v) => isNil(v) || (!isNumber(v) && isEmpty(v)),
       ),
     });
+  }
+
+  async getAlbumArtists(
+    userId: Nilable<string>,
+    parentId: Nilable<string>,
+    extraFields: JellyfinItemFields[] = [],
+    pageParams: Nilable<{ offset: number; limit: number }> = null,
+    extraParams: JellyfinGetItemsQuery = {},
+    sortBy: NonEmptyArray<JellyfinItemSortBy> = ['SortName'],
+  ): Promise<QueryResult<JellyfinLibraryItemsResponse>> {
+    return this.doTypeCheckedGet(
+      '/Artists/AlbumArtists',
+      JellyfinLibraryItemsResponse,
+      {
+        params: omitBy(
+          {
+            userId: userId ?? this.options.mediaSource.userId,
+            parentId: parentId,
+            fields: union(extraFields, RequiredLibraryFields).join(','),
+            startIndex: pageParams?.offset,
+            limit: pageParams?.limit,
+            // These will be configurable eventually
+            sortOrder: 'Ascending',
+            sortBy: sortBy.join(','),
+            recursive: extraParams.recursive?.toString() ?? 'true',
+            // includeItemTypes: itemTypes ? itemTypes.join(',') : undefined,
+            ...{
+              ...mapValues(extraParams, (v) =>
+                isBoolean(v) ? v.toString() : v,
+              ),
+              ids: extraParams.ids?.join(','),
+              genres: extraParams.genres?.join('|'),
+            },
+          },
+          (v) => isNil(v) || (!isNumber(v) && isEmpty(v)),
+        ),
+      },
+    );
   }
 
   async getSubtitles(
@@ -278,7 +513,7 @@ export class JellyfinApiClient extends BaseApiClient {
       const subtitlesResult = await this.doGet<string>({
         url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
         params: {
-          userId: this.options.userId,
+          userId: this.options.mediaSource.userId,
         },
       });
 
@@ -289,13 +524,230 @@ export class JellyfinApiClient extends BaseApiClient {
     }
   }
 
-  getThumbUrl(id: string) {
+  getMovieLibraryContents(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinMovie> {
+    return this.getChildContents(
+      parentId,
+      'Movie',
+      (movie) => this.jellyfinApiMovieInjection(movie),
+      [],
+      {},
+      pageSize,
+    );
+  }
+
+  getTvShowLibraryContents(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinShow> {
+    return this.getChildContents(
+      parentId,
+      'Series',
+      (show) => this.jellyfinApiShowInjection(show),
+      ['Overview'],
+      {},
+      pageSize,
+    );
+  }
+
+  getShowSeasons(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinSeason> {
+    return this.getChildContents(
+      parentId,
+      'Season',
+      (season) => this.jellyfinApiSeasonInjection(season),
+      ['Overview'],
+      {},
+      pageSize,
+    );
+  }
+
+  async getShow(externalKey: string): Promise<QueryResult<JellyfinShow>> {
+    return this.getItemOfType(externalKey, 'Series', (series) =>
+      this.jellyfinApiShowInjection(series),
+    );
+  }
+
+  async getSeason(externalKey: string): Promise<QueryResult<JellyfinSeason>> {
+    return this.getItemOfType(externalKey, 'Season', (season) =>
+      this.jellyfinApiSeasonInjection(season),
+    );
+  }
+
+  getSeasonEpisodes(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinEpisode> {
+    return this.getChildContents(
+      parentId,
+      'Episode',
+      (ep) => this.jellyfinApiEpisodeInjection(ep),
+      [],
+      {},
+      pageSize,
+    );
+  }
+
+  getMusicLibraryContents(
+    libraryId: string,
+    pageSize: number,
+  ): AsyncIterable<JellyfinMusicArtist> {
+    return this.getChildContents(
+      libraryId,
+      'MusicArtist',
+      (artist) => this.jellyfinApiMusicArtistInjection(artist),
+      [],
+      {},
+      pageSize,
+      (page) =>
+        this.getAlbumArtists(
+          null,
+          libraryId,
+          [],
+          {
+            offset: page * pageSize,
+            limit: pageSize,
+          },
+          {},
+        ),
+    );
+  }
+
+  getArtistAlbums(
+    artistKey: string,
+    pageSize: number,
+  ): AsyncIterable<JellyfinMusicAlbum> {
+    return this.getChildContents(
+      artistKey,
+      'MusicAlbum',
+      (album) => this.jellyfinApiMusicAlbumInjection(album),
+      [],
+      {
+        recursive: true,
+      },
+      pageSize,
+      (page) =>
+        this.getRawItems(
+          null,
+          ['MusicAlbum'],
+          [],
+          {
+            offset: page * pageSize,
+            limit: pageSize,
+          },
+          {
+            albumArtistIds: [artistKey],
+          },
+        ),
+    );
+  }
+
+  getAlbumTracks(
+    albumKey: string,
+    pageSize: number,
+  ): AsyncIterable<JellyfinMusicTrack> {
+    return this.getChildContents(
+      albumKey,
+      'Audio',
+      (track) => this.jellyfinApiMusicTrackInjection(track),
+      [],
+      {
+        recursive: true,
+      },
+      pageSize,
+    );
+  }
+
+  private async *getChildContents<ItemTypeT extends JellyfinItemKind, OutType>(
+    parentId: string,
+    itemType: ItemTypeT,
+    converter: (item: SpecificJellyfinType<ItemTypeT>) => Nullable<OutType>,
+    extraFields: JellyfinItemFields[] = [],
+    extraParams: JellyfinGetItemsQuery = {},
+    pageSize: number = 50,
+    getter: (
+      page: number,
+    ) => Promise<QueryResult<JellyfinLibraryItemsResponse>> = (page) =>
+      this.getRawItems(
+        parentId,
+        [itemType],
+        extraFields,
+        {
+          offset: page * pageSize,
+          limit: pageSize,
+        },
+        extraParams,
+      ),
+  ): AsyncIterable<OutType> {
+    const count = await this.getChildItemCount(parentId, itemType);
+    if (count.isFailure()) {
+      return count;
+    }
+
+    const totalPages = Math.ceil(count.get() / pageSize);
+
+    for (let page = 0; page <= totalPages; page++) {
+      const chunkResult = await getter(page);
+
+      if (chunkResult.isFailure()) {
+        throw chunkResult.error;
+      }
+
+      for (const item of chunkResult.get().Items ?? []) {
+        if (isJellyfinType(item, itemType)) {
+          const convertedResult = Result.attempt(() => converter(item));
+          if (convertedResult.isFailure()) {
+            this.logger.error(
+              convertedResult.error,
+              'Failure converting Jellyfin item %s',
+              item.Id,
+            );
+            continue;
+          }
+          const converted = convertedResult.get();
+          if (converted) {
+            yield converted;
+          }
+        }
+      }
+    }
+
+    return;
+  }
+
+  async getChildItemCount(parentId: string, itemType: JellyfinItemKind) {
+    const endpoint =
+      itemType === 'MusicArtist' ? '/Artists/AlbumArtists' : '/Items';
+    return this.doTypeCheckedGet(endpoint, JellyfinLibraryItemsResponse, {
+      params: {
+        userId: this.options.mediaSource.userId,
+        parentId,
+        startIndex: 0,
+        limit: 0,
+        recursive: true,
+      },
+    }).then((_) => _.map((response) => response.TotalRecordCount));
+  }
+
+  getThumbUrl(
+    id: string,
+    imageType:
+      | 'Primary'
+      | 'Art'
+      | 'Thumb'
+      | 'Banner'
+      | 'Screenshot' = 'Primary',
+  ) {
     // Naive impl for now...
-    return `${this.options.url}/Items/${id}/Images/Primary`;
+    return `${this.options.mediaSource.uri}/Items/${id}/Images/${imageType}`;
   }
 
   getExternalUrl(id: string) {
-    return `${this.options.url}/web/#/details?id=${id}`;
+    return `${this.options.mediaSource.uri}/web/#/details?id=${id}`;
   }
 
   async getGenres(
@@ -306,7 +758,7 @@ export class JellyfinApiClient extends BaseApiClient {
       return this.doTypeCheckedGet('/Genres', JellyfinLibraryItemsResponse, {
         params: {
           parentId,
-          userId: this.options.userId,
+          userId: this.options.mediaSource.userId,
           includeItemTypes,
           recursive: true,
         },
@@ -321,11 +773,11 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doPost({
       url: '/Sessions/Playing',
       params: {
-        userId: this.options.userId,
+        userId: this.options.mediaSource.userId,
       },
       headers: {
         Authorization: getJellyfinAuthorization(
-          this.options.accessToken,
+          this.options.mediaSource.accessToken,
           deviceId,
         ),
       },
@@ -342,7 +794,7 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doPost({
       url: `/UserItems/${itemId}/UserData`,
       params: {
-        userId: this.options.userId,
+        userId: this.options.mediaSource.userId,
       },
       data: {
         PlaybackPositionTicks: elapsedMs * 10000,
@@ -359,11 +811,11 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doPost({
       url: `/Sessions/Playing/${isStopped ? 'Stopped' : 'Progress'}`,
       params: {
-        userId: this.options.userId,
+        userId: this.options.mediaSource.userId,
       },
       headers: {
         Authorization: getJellyfinAuthorization(
-          this.options.accessToken,
+          this.options.mediaSource.accessToken,
           deviceId,
         ),
       },
@@ -387,10 +839,10 @@ export class JellyfinApiClient extends BaseApiClient {
     return `${opts.uri}/Items/${opts.itemKey}/Images/Primary`;
   }
 
-  protected override preRequestValidate(
+  protected override preRequestValidate<T>(
     req: AxiosRequestConfig,
-  ): Maybe<QueryErrorResult> {
-    if (isEmpty(this.options.accessToken)) {
+  ): Maybe<QueryResult<T>> {
+    if (isEmpty(this.options.mediaSource.accessToken)) {
       return this.makeErrorResult(
         'no_access_token',
         'No Jellyfin token provided.',
@@ -398,4 +850,769 @@ export class JellyfinApiClient extends BaseApiClient {
     }
     return super.preRequestValidate(req);
   }
+
+  private jelllyfinApiItemInjection(item: ApiJellyfinItem) {
+    return match(item)
+      .returnType<JellyfinItem | Folder | null>()
+      .with({ Type: 'Movie' }, (m) => this.jellyfinApiMovieInjection(m))
+      .with({ Type: 'Series' }, (m) => this.jellyfinApiShowInjection(m))
+      .with({ Type: 'Season' }, (m) => this.jellyfinApiSeasonInjection(m))
+      .with({ Type: 'Episode' }, (m) => this.jellyfinApiEpisodeInjection(m))
+      .with({ Type: 'MusicArtist' }, (a) =>
+        this.jellyfinApiMusicArtistInjection(a),
+      )
+      .with({ Type: 'MusicAlbum' }, (a) =>
+        this.jellyfinApiMusicAlbumInjection(a),
+      )
+      .with({ Type: 'Audio' }, (a) => this.jellyfinApiMusicTrackInjection(a))
+      .with({ Type: 'MusicVideo' }, (mv) =>
+        this.jellyfinApiMusicVideoInjection(mv),
+      )
+      .with({ Type: 'Video' }, (v) => this.jellyfinApiOtherVideoInjection(v))
+      .with(
+        {
+          Type: P.union(
+            'Folder',
+            'CollectionFolder',
+            'AggregateFolder',
+            'UserRootFolder',
+          ),
+        },
+        (f) => ({
+          type: 'folder',
+          externalId: f.Id,
+          title: f.Name ?? '',
+          uuid: v4(),
+          childCount: f.ChildCount ?? undefined,
+          mediaSourceId: this.options.mediaSource.uuid,
+          libraryId: '',
+          sourceType: 'jellyfin',
+          childType: match(f.CollectionType)
+            .returnType<Folder['childType']>()
+            .with('movies', () => 'movie')
+            .with('musicvideos', () => 'music_video')
+            .with('tvshows', () => 'show')
+            .with('music', () => 'artist')
+            .otherwise(() => undefined),
+        }),
+      )
+      .otherwise(() => null);
+  }
+
+  private jellyfinApiMovieInjection(
+    movie: ApiJellyfinMovie,
+  ): Nullable<JellyfinMovie> {
+    if (isEmpty(movie.Name)) {
+      this.logger.warn(
+        'Jellyfin movie ID = %s missing title. Skipping',
+        movie.Id,
+      );
+      return null;
+    }
+
+    const people = getJellyfinItemPersonMap(movie);
+    const parsedReleaseDate = isNonEmptyString(movie.PremiereDate)
+      ? attemptSync(() => dayjs(movie.PremiereDate))
+      : null;
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      movie,
+      movie.MediaSources ?? [],
+    );
+
+    if (!movie.RunTimeTicks || movie.RunTimeTicks <= 0) {
+      return null;
+    }
+
+    if (!mediaItem) {
+      return null;
+    }
+
+    return {
+      uuid: v4(),
+      canonicalId: this.canonicalizer.getCanonicalId(movie),
+      title: movie.Name!,
+      originalTitle: movie.OriginalTitle ?? null,
+      year: movie.ProductionYear ?? null,
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: movie.PremiereDate ?? null,
+      actors: people['actor'] ?? [],
+      writers: people['writer'] ?? [],
+      directors: people['director'] ?? [],
+      genres:
+        movie.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      studios: seq.collect(movie.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      plot: movie.Overview ?? null,
+      rating: movie.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      tagline: find(movie.Taglines, isNonEmptyString) ?? null,
+      tags: movie.Tags?.filter(isNonEmptyString) ?? [],
+      summary: null,
+      type: 'movie',
+      externalKey: movie.Id,
+      mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        movie,
+        this.options.mediaSource.uuid,
+      ),
+      mediaSourceId: this.options.mediaSource.uuid,
+      externalLibraryId: '',
+      libraryId: '', // We can't know this at this point...
+      duration: movie.RunTimeTicks / 10_000,
+      externalId: movie.Id,
+    };
+  }
+
+  private jellyfinApiMediaSourcesInjection(
+    item: ApiJellyfinItem,
+    sources: JellyfinMediaSourceInfo[],
+  ): Maybe<MediaItem> {
+    if (sources.length === 0) {
+      this.logger.warn('Empty media sources!');
+      return;
+    }
+
+    const source = find(sources, { Protocol: 'File' }) ?? sources[0];
+
+    if (isEmpty(source.MediaStreams)) {
+      this.logger.warn('No media streams!');
+      return;
+    }
+
+    let streamIndexOffset = 0;
+    const ordered = orderBy(
+      source.MediaStreams,
+      (stream) => stream.Index,
+      'asc',
+    );
+    for (const stream of ordered) {
+      if (stream.IsExternal) {
+        streamIndexOffset++;
+      } else {
+        break;
+      }
+    }
+
+    const videoStream = find(source.MediaStreams, { Type: 'Video' });
+    if (!videoStream) {
+      return;
+    }
+
+    const width = videoStream.Width ?? 1;
+    const height = videoStream.Height ?? 1;
+    const isAnamorphic =
+      videoStream.IsAnamorphic ??
+      (isNonEmptyString(videoStream.AspectRatio) &&
+      videoStream.AspectRatio.includes(':')
+        ? extractIsAnamorphic(width, height, videoStream.AspectRatio)
+        : false);
+
+    const videoMediaStream: MediaStream = {
+      streamType: 'video',
+      index: Math.max(0, (videoStream.Index ?? 0) - streamIndexOffset),
+      codec: videoStream.Codec ?? 'unknown',
+      profile: (videoStream.Profile ?? '')?.toLowerCase(),
+      bitDepth: nullToUndefined(videoStream.BitDepth),
+      default: videoStream.IsDefault,
+      fileName: nullToUndefined(videoStream.Path),
+      pixelFormat: nullToUndefined(videoStream.PixelFormat),
+      selected: videoStream.IsForced,
+    };
+
+    const audioMediaStreams: MediaStream[] =
+      source.MediaStreams?.filter((stream) => stream.Type === 'Audio').map(
+        (audioStream) => {
+          return {
+            streamType: 'audio',
+            codec: audioStream.Codec ?? 'unknown',
+            profile: (audioStream.Profile ?? '').toLowerCase(),
+            channels: audioStream.Channels ?? 2,
+            selected: audioStream.IsForced,
+            languageCodeISO6392: nullToUndefined(audioStream.Language),
+            index: Math.max(0, (audioStream.Index ?? 0) - streamIndexOffset),
+          };
+        },
+      ) ?? [];
+
+    const subtitleStreams: MediaStream[] =
+      source.MediaStreams?.filter((stream) => stream.Type === 'Subtitle').map(
+        (subStream) => {
+          return {
+            streamType: subStream.IsExternal
+              ? 'external_subtitles'
+              : 'subtitles',
+            codec: (subStream.Codec ?? '').toLowerCase(),
+            profile: (subStream.Profile ?? '')?.toLowerCase(),
+            default: subStream.IsDefault,
+            selected: subStream.IsForced,
+            languageCodeISO6392: nullToUndefined(subStream.Language),
+            index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
+          };
+        },
+      ) ?? [];
+
+    return {
+      displayAspectRatio: videoStream.AspectRatio ?? '',
+      sampleAspectRatio: isAnamorphic ? '0:0' : '1:1',
+      duration: +dayjs.duration(Math.ceil((source.RunTimeTicks ?? 0) / 10_000)),
+      frameRate: videoStream.RealFrameRate?.toFixed(2),
+      locations: [
+        {
+          type: 'remote',
+          sourceType: 'jellyfin',
+          externalKey: item.Id,
+          path: source.Path ?? '',
+        },
+      ],
+      streams: [videoMediaStream, ...audioMediaStreams, ...subtitleStreams],
+      resolution: {
+        widthPx: width,
+        heightPx: height,
+      },
+    };
+  }
+
+  private jellyfinApiShowInjection(
+    series: ApiJellyfinSeries,
+  ): Nullable<JellyfinShow> {
+    if (isEmpty(series.Name)) {
+      this.logger.warn(
+        'Jellyfin movie ID = %s missing title. Skipping',
+        series.Id,
+      );
+      return null;
+    }
+
+    const people = getJellyfinItemPersonMap(series);
+
+    const parsedReleaseDate = isNonEmptyString(series.PremiereDate)
+      ? attemptSync(() => dayjs(series.PremiereDate))
+      : null;
+
+    return {
+      uuid: v4(),
+      externalId: series.Id,
+      canonicalId: this.canonicalizer.getCanonicalId(series),
+      title: series.Name!,
+      // originalTitle: series.OriginalTitle ?? null,
+      year: series.ProductionYear ?? null,
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: series.PremiereDate ?? null,
+      mediaSourceId: this.options.mediaSource.uuid,
+      libraryId: '', // We can't know this at this point...
+      actors: people['actor'] ?? [],
+      // Consider adding this
+      // writers: people['writer'] ?? [],
+      genres:
+        series.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      studios: seq.collect(series.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      plot: series.Overview ?? null,
+      rating: series.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      tagline: find(series.Taglines, isNonEmptyString) ?? null,
+      tags: series.Tags?.filter(isNonEmptyString) ?? [],
+      summary: null,
+      type: 'show',
+      externalKey: series.Id,
+      // mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        series,
+        this.options.mediaSource.uuid,
+      ),
+      externalLibraryId: '',
+      childCount: series.ChildCount ?? undefined,
+    };
+  }
+
+  private jellyfinApiSeasonInjection(
+    season: ApiJellyfinSeason,
+  ): Nullable<JellyfinSeason> {
+    const parsedReleaseDate = isNonEmptyString(season.PremiereDate)
+      ? attemptSync(() => dayjs(season.PremiereDate))
+      : null;
+    return {
+      uuid: v4(),
+      externalId: season.Id,
+      canonicalId: this.canonicalizer.getCanonicalId(season),
+      title: season.Name!,
+      // originalTitle: season.OriginalTitle ?? null,
+      year: season.ProductionYear ?? null,
+      mediaSourceId: this.options.mediaSource.uuid,
+      libraryId: '', // We can't know this at this point...
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: season.PremiereDate ?? null,
+      // actors: people['actor'] ?? [],
+      // Consider adding this
+      // writers: people['writer'] ?? [],
+      // genres:
+      //   season.Genres?.map((genre) => ({
+      //     name: genre,
+      //   })) ?? [],
+      studios: seq.collect(season.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      plot: season.Overview ?? null,
+      // rating: season.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      tagline: find(season.Taglines, isNonEmptyString) ?? null,
+      tags: season.Tags?.filter(isNonEmptyString) ?? [],
+      summary: null,
+      type: 'season',
+      externalKey: season.Id,
+      // mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        season,
+        this.options.mediaSource.uuid,
+      ),
+      index:
+        season.IndexNumber ?? getSeasonNumberFromPath(season.Path ?? '') ?? 0,
+      externalLibraryId: '',
+      childCount: season.ChildCount ?? undefined,
+    };
+  }
+
+  private jellyfinApiEpisodeInjection(
+    episode: ApiJellyfinEpisode,
+  ): Nullable<JellyfinEpisode> {
+    if (isEmpty(episode.Name)) {
+      this.logger.warn(
+        'Jellyfin episode ID = %s missing title. Skipping',
+        episode.Id,
+      );
+      return null;
+    }
+
+    const people = getJellyfinItemPersonMap(episode);
+    const parsedReleaseDate = isNonEmptyString(episode.PremiereDate)
+      ? attemptSync(() => dayjs(episode.PremiereDate))
+      : null;
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      episode,
+      episode.MediaSources ?? [],
+    );
+
+    if (!episode.RunTimeTicks || episode.RunTimeTicks <= 0) {
+      return null;
+    }
+
+    if (!mediaItem) {
+      return null;
+    }
+
+    return {
+      uuid: v4(),
+      externalId: episode.Id,
+      canonicalId: this.canonicalizer.getCanonicalId(episode),
+      title: episode.Name!,
+      originalTitle: episode.OriginalTitle ?? null,
+      year: episode.ProductionYear ?? null,
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: episode.PremiereDate ?? null,
+      mediaSourceId: this.options.mediaSource.uuid,
+      libraryId: '', // We can't know this at this point...
+      actors: people['actor'] ?? [],
+      writers: people['writer'] ?? [],
+      directors: people['director'] ?? [],
+      genres:
+        episode.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      studios: seq.collect(episode.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      // plot: episode.Overview ?? null,
+      episodeNumber: episode.IndexNumber ?? 0,
+      // rating: episode.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      // tagline: find(episode.Taglines, isNonEmptyString) ?? null,
+      tags: episode.Tags?.filter(isNonEmptyString) ?? [],
+      summary: null,
+      type: 'episode',
+      externalKey: episode.Id,
+      mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        episode,
+        this.options.mediaSource.uuid,
+      ),
+      duration: episode.RunTimeTicks / 10_000,
+      externalLibraryId: '',
+    };
+  }
+
+  private jellyfinApiMusicArtistInjection(artist: ApiJellyfinMusicArtist) {
+    return {
+      title: artist.Name ?? '',
+      canonicalId: this.canonicalizer.getCanonicalId(artist),
+      externalKey: artist.Id,
+      genres:
+        artist.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      identifiers: collectJellyfinItemIdentifiers(
+        artist,
+        this.options.mediaSource.uuid,
+      ),
+      plot: null,
+      sourceType: 'jellyfin',
+      summary: null,
+      tagline: null,
+      tags: artist.Tags ?? [],
+      type: 'artist',
+      uuid: v4(),
+      externalLibraryId: '',
+      libraryId: '',
+      mediaSourceId: this.options.mediaSource.uuid,
+      childCount: artist.ChildCount ?? undefined,
+      externalId: artist.Id,
+    } satisfies JellyfinMusicArtist;
+  }
+
+  private jellyfinApiMusicAlbumInjection(
+    album: ApiJellyfinMusicAlbum,
+  ): JellyfinMusicAlbum {
+    return {
+      type: 'album',
+      externalId: album.Id,
+      title: album.Name ?? '',
+      canonicalId: this.canonicalizer.getCanonicalId(album),
+      externalKey: album.Id,
+      genres:
+        album.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      identifiers: collectJellyfinItemIdentifiers(
+        album,
+        this.options.mediaSource.uuid,
+      ),
+      plot: null,
+      sourceType: 'jellyfin',
+      summary: null,
+      tagline: null,
+      tags: album.Tags ?? [],
+      uuid: v4(),
+      year: null,
+      releaseDate: album.PremiereDate
+        ? dayjs(album.PremiereDate)?.valueOf()
+        : null,
+      releaseDateString: album.PremiereDate ?? null,
+      studios: seq.collect(album.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      externalLibraryId: '',
+      libraryId: '',
+      mediaSourceId: this.options.mediaSource.uuid,
+      childCount: album.ChildCount ?? undefined,
+    };
+  }
+
+  private jellyfinApiMusicTrackInjection(
+    track: ApiJellyfinMusicTrack,
+  ): Nullable<JellyfinMusicTrack> {
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      track,
+      track.MediaSources ?? [],
+    );
+    if (!mediaItem) {
+      return null;
+    }
+
+    if (!track.RunTimeTicks || track.RunTimeTicks <= 0) {
+      return null;
+    }
+
+    return {
+      uuid: v4(),
+      canonicalId: this.canonicalizer.getCanonicalId(track),
+      title: track.Name ?? '',
+      actors: [],
+      directors: [],
+      externalKey: track.Id,
+      genres: [],
+      tags: track.Tags?.filter(isNonEmptyString) ?? [],
+      year: track.ProductionYear ?? null,
+      originalTitle: null,
+      releaseDate: isNonEmptyString(track.PremiereDate)
+        ? dayjs(track.PremiereDate).valueOf()
+        : null,
+      mediaSourceId: this.options.mediaSource.uuid,
+      libraryId: '', // We can't know this at this point...
+      identifiers: collectJellyfinItemIdentifiers(
+        track,
+        this.options.mediaSource.uuid,
+      ),
+      mediaItem,
+      sourceType: 'jellyfin',
+      type: 'track',
+      studios: [],
+      trackNumber: track.IndexNumber ?? 0,
+      writers:
+        seq.collect(track.AlbumArtists, ({ Name, Id }) =>
+          isNonEmptyString(Name)
+            ? {
+                name: Name,
+                externalId: Id,
+              }
+            : null,
+        ) ?? [],
+      duration: track.RunTimeTicks / 10_000,
+      externalLibraryId: '',
+      releaseDateString: track.PremiereDate ?? null,
+      externalId: track.Id,
+    } satisfies JellyfinMusicTrack;
+  }
+
+  private jellyfinApiMusicVideoInjection(
+    video: ApiJellyfinMusicVideo,
+  ): Nullable<JellyfinMusicVideo> {
+    if (isEmpty(video.Name)) {
+      this.logger.warn(
+        'Jellyfin video ID = %s missing title. Skipping',
+        video.Id,
+      );
+      return null;
+    }
+
+    const people = getJellyfinItemPersonMap(video);
+    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
+      ? attemptSync(() => dayjs(video.PremiereDate))
+      : null;
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      video,
+      video.MediaSources ?? [],
+    );
+
+    if (!video.RunTimeTicks || video.RunTimeTicks <= 0) {
+      return null;
+    }
+
+    if (!mediaItem) {
+      return null;
+    }
+
+    return {
+      uuid: v4(),
+      canonicalId: this.canonicalizer.getCanonicalId(video),
+      title: video.Name!,
+      originalTitle: video.OriginalTitle ?? null,
+      year: video.ProductionYear ?? null,
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: video.PremiereDate ?? null,
+      actors: people['actor'] ?? [],
+      writers: people['writer'] ?? [],
+      directors: people['director'] ?? [],
+      genres:
+        video.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      studios: seq.collect(video.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      // plot: video.Overview ?? null,
+      // rating: video.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      // tagline: find(video.Taglines, isNonEmptyString) ?? null,
+      tags: video.Tags?.filter(isNonEmptyString) ?? [],
+      // summary: null,
+      type: 'music_video',
+      externalKey: video.Id,
+      mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        video,
+        this.options.mediaSource.uuid,
+      ),
+      mediaSourceId: this.options.mediaSource.uuid,
+      externalLibraryId: '',
+      libraryId: '', // We can't know this at this point...
+      duration: video.RunTimeTicks / 10_000,
+      externalId: video.Id,
+    };
+  }
+
+  private jellyfinApiOtherVideoInjection(
+    video: ApiJellyfinOtherVideo,
+  ): Nullable<JellyfinOtherVideo> {
+    if (isEmpty(video.Name)) {
+      this.logger.warn(
+        'Jellyfin video ID = %s missing title. Skipping',
+        video.Id,
+      );
+      return null;
+    }
+
+    const people = getJellyfinItemPersonMap(video);
+    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
+      ? attemptSync(() => dayjs(video.PremiereDate))
+      : null;
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      video,
+      video.MediaSources ?? [],
+    );
+
+    if (!video.RunTimeTicks || video.RunTimeTicks <= 0) {
+      return null;
+    }
+
+    if (!mediaItem) {
+      return null;
+    }
+
+    return {
+      uuid: v4(),
+      canonicalId: this.canonicalizer.getCanonicalId(video),
+      title: video.Name!,
+      originalTitle: video.OriginalTitle ?? null,
+      year: video.ProductionYear ?? null,
+      releaseDate: isError(parsedReleaseDate)
+        ? null
+        : (parsedReleaseDate?.valueOf() ?? null),
+      releaseDateString: video.PremiereDate ?? null,
+      actors: people['actor'] ?? [],
+      writers: people['writer'] ?? [],
+      directors: people['director'] ?? [],
+      genres:
+        video.Genres?.map((genre) => ({
+          name: genre,
+        })) ?? [],
+      studios: seq.collect(video.Studios, (studio) => {
+        if (isNonEmptyString(studio.Name)) {
+          return { name: studio.Name };
+        }
+        return;
+      }),
+      // plot: video.Overview ?? null,
+      // rating: video.OfficialRating ?? null,
+      sourceType: 'jellyfin',
+      // tagline: find(video.Taglines, isNonEmptyString) ?? null,
+      tags: video.Tags?.filter(isNonEmptyString) ?? [],
+      // summary: null,
+      type: 'other_video',
+      externalKey: video.Id,
+      mediaItem,
+      identifiers: collectJellyfinItemIdentifiers(
+        video,
+        this.options.mediaSource.uuid,
+      ),
+      mediaSourceId: this.options.mediaSource.uuid,
+      externalLibraryId: '',
+      libraryId: '', // We can't know this at this point...
+      duration: video.RunTimeTicks / 10_000,
+      externalId: video.Id,
+    };
+  }
+}
+
+type JellyfinApiPersonType = 'Actor' | 'Writer' | 'Director';
+type LowercasedPersonType = Lowercase<JellyfinApiPersonType>;
+type PersonMapping = Partial<
+  Record<LowercasedPersonType, (NamedEntity & { role?: string })[]>
+>;
+
+function getJellyfinItemPersonMap(item: ApiJellyfinItem): PersonMapping {
+  const mapping: PersonMapping = {};
+  forEach(
+    groupBy(item.People, (p) => p.Type?.toLowerCase()),
+    (people, key) => {
+      switch (key) {
+        case 'actor':
+        case 'writer':
+        case 'director': {
+          mapping[key] = people.map((person) => ({
+            name: person.Name,
+            role: person.Role ?? undefined,
+            externalId: person.Id,
+          }));
+          return;
+        }
+        default:
+          return;
+      }
+    },
+  );
+  return mapping;
+}
+
+function collectJellyfinItemIdentifiers(
+  item: ApiJellyfinItem,
+  serverId: string,
+): Identifier[] {
+  return [
+    {
+      type: 'jellyfin',
+      id: item.Id,
+      sourceId: serverId,
+    },
+    ...seq.collectMapValues(item.ProviderIds, (id, key) => {
+      if (!isNonEmptyString(id)) {
+        return;
+      }
+
+      const k = key?.toLowerCase();
+      switch (k) {
+        case 'imdb':
+        case 'tmdb':
+        case 'tvdb':
+          return {
+            id: id,
+            type: k,
+          } satisfies Identifier;
+        default:
+          return;
+      }
+    }),
+  ];
+}
+
+const seasonRe = /s(eason)?\s*(\d+).*/i;
+function getSeasonNumberFromPath(path: string): Nullable<number> {
+  let num: Nullable<number> = parseIntOrNull(path);
+  if (!isNull(num)) {
+    return num;
+  }
+
+  const match = path.match(seasonRe);
+  if (match && match.length > 1) {
+    num = parseInt(match[1]);
+    if (!isNull(num)) return num;
+  }
+
+  if (path.toLowerCase().includes('special')) {
+    return 0;
+  }
+
+  return null;
 }

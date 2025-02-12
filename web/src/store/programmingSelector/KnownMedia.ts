@@ -1,4 +1,6 @@
 import { seq } from '@tunarr/shared/util';
+import type { MediaSourceType } from '@tunarr/types';
+import type { Imported } from '../../types/MediaSource';
 import type { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 
 /**
@@ -23,24 +25,21 @@ export class KnownMedia {
     return this.getMediaForSourceId(sourceId)[itemId];
   }
 
-  getMediaOfType<
-    MediaItemType extends MediaItems['type'],
-    OutType = Extract<MediaItems, { type: MediaItemType }>['item'],
-  >(
+  getMediaOfType<MediaItemType extends MediaSourceType | Imported>(
     sourceId: string,
     itemId: string,
     type: MediaItemType,
-  ): OutType | undefined {
+  ): MediaItems | undefined {
     const media = this.getMedia(sourceId, itemId);
     if (!media) {
       return;
     }
 
-    if (media.type !== type) {
+    if (media.sourceType !== type) {
       return;
     }
 
-    return media.item as OutType;
+    return media;
   }
 
   getPlexMedia(sourceId: string, itemId: string) {

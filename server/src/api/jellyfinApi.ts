@@ -1,21 +1,21 @@
-import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { TruthyQueryParam } from '@/types/schemas.js';
-import { inConstArr, isDefined, nullToUndefined } from '@/util/index.js';
-import { JellyfinLoginRequest } from '@tunarr/types/api';
-import type { JellyfinCollectionType } from '@tunarr/types/jellyfin';
+import { mediaSourceParamsSchema, TruthyQueryParam } from '@/types/schemas.js';
+import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';
+import { tag, type Library } from '@tunarr/types';
+import { JellyfinLoginRequest, PagedResult } from '@tunarr/types/api';
 import {
   JellyfinItemFields,
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
-  TunarrAmendedJellyfinVirtualFolder,
 } from '@tunarr/types/jellyfin';
+import { ItemOrFolder, Library as LibrarySchema } from '@tunarr/types/schemas';
 import type { FastifyReply } from 'fastify/types/reply.js';
 import { isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
+import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import { ServerRequestContext } from '../ServerContext.ts';
 import type {
   RouterPluginCallback,
   ZodFastifyRequest,
@@ -24,19 +24,6 @@ import type {
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
 });
-
-const ValidJellyfinCollectionTypes = [
-  'movies',
-  'tvshows',
-  'music',
-  'trailers',
-  'musicvideos',
-  'homevideos',
-  'playlists',
-  'boxsets',
-  'folders',
-  'unknown',
-] satisfies JellyfinCollectionType[];
 
 function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
   return !isEmpty(f);
@@ -84,8 +71,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
       schema: {
         params: mediaSourceParams,
         response: {
-          // HACK
-          200: z.array(TunarrAmendedJellyfinVirtualFolder),
+          200: z.array(LibrarySchema),
         },
         operationId: 'getJellyfinLibraries',
       },
@@ -99,28 +85,34 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
         const response = await api.getUserViews();
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(
-          response.data
-            .filter((library) => {
-              // Mixed collections don't have this set
-              if (!library.CollectionType) {
-                return true;
-              }
+        // const amendedResponse = response
+        //   .get()
+        //   .filter((library) => {
+        //     // Mixed collections don't have this set
+        //     if (!library.CollectionType) {
+        //       return true;
+        //     }
 
-              return inConstArr(
-                ValidJellyfinCollectionTypes,
-                library.CollectionType ?? '',
-              );
-            })
-            .map((lib) => ({
-              ...lib,
-              jellyfinType: 'VirtualFolder',
-            })),
-        );
+        //     return inConstArr(
+        //       ValidJellyfinCollectionTypes,
+        //       library.CollectionType ?? '',
+        //     );
+        //   })
+        //   .map(
+        //     (lib) =>
+        //       ({
+        //         ...lib,
+        //         jellyfinType: 'VirtualFolder',
+        //       }) satisfies TunarrAmendedJellyfinVirtualFolder,
+        //   );
+
+        await addTunarrLibraryIdsToResponse(response.get(), mediaSource);
+
+        return res.send(response.get());
       }),
   );
 
@@ -128,7 +120,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
     {
       schema: {
-        params: mediaSourceParams.extend({
+        params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
         querystring: z.object({
@@ -152,11 +144,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           req.query.includeItemTypes,
         );
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 
@@ -164,7 +156,8 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     '/jellyfin/:mediaSourceId/libraries/:libraryId/items',
     {
       schema: {
-        params: mediaSourceParams.extend({
+        operationId: 'getJellyfinLibraryItems',
+        params: mediaSourceParamsSchema.extend({
           libraryId: z.string(),
         }),
         querystring: z.object({
@@ -201,9 +194,8 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           parentId: z.string().optional(),
         }),
         response: {
-          200: JellyfinLibraryItemsResponse,
+          200: PagedResult(ItemOrFolder.array()),
         },
-        operationId: 'getJellyfinLibraryItems',
       },
     },
     (req, res) =>
@@ -239,25 +231,25 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : ['SortName', 'ProductionYear'],
         );
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 
   async function withJellyfinMediaSource<
     Req extends ZodFastifyRequest<{
-      params: typeof mediaSourceParams;
+      params: typeof mediaSourceParamsSchema;
     }>,
   >(
     req: Req,
     res: FastifyReply,
-    cb: (m: MediaSource) => Promise<FastifyReply>,
+    cb: (m: MediaSourceWithLibraries) => Promise<FastifyReply>,
   ) {
     const mediaSource = await req.serverCtx.mediaSourceDB.getById(
-      req.params.mediaSourceId,
+      tag(req.params.mediaSourceId),
     );
 
     if (isNil(mediaSource)) {
@@ -279,3 +271,42 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
   done();
 };
+
+async function addTunarrLibraryIdsToResponse(
+  response: Library[],
+  mediaSource: MediaSourceWithLibraries,
+  attempts: number = 1,
+) {
+  if (attempts > 2) {
+    return;
+  }
+
+  const librariesByExternalId = groupByUniq(
+    mediaSource.libraries,
+    (lib) => lib.externalKey,
+  );
+  let needsRefresh = false;
+  for (const library of response) {
+    const tunarrLibrary = librariesByExternalId[library.externalId];
+    if (!tunarrLibrary) {
+      needsRefresh = true;
+      continue;
+    }
+
+    library.uuid = tunarrLibrary.uuid;
+  }
+
+  if (needsRefresh) {
+    const ctx = ServerRequestContext.currentServerContext()!;
+    await ctx.mediaSourceLibraryRefresher.refreshMediaSource(mediaSource);
+    // This definitely exists...
+    const newMediaSource = await ctx.mediaSourceDB.getById(mediaSource.uuid);
+    return addTunarrLibraryIdsToResponse(
+      response,
+      newMediaSource!,
+      attempts + 1,
+    );
+  }
+
+  return;
+}

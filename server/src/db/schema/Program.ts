@@ -1,4 +1,3 @@
-import { createExternalId } from '@tunarr/shared';
 import type { TupleToUnion } from '@tunarr/types';
 import { inArray } from 'drizzle-orm';
 import {
@@ -12,8 +11,14 @@ import {
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkNotNilable } from '../../types/util.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import { MediaSource, MediaSourceTypes } from './MediaSource.ts';
+import {
+  MediaSource,
+  MediaSourceLibrary,
+  MediaSourceTypes,
+} from './MediaSource.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
+import type { MediaSourceName } from './base.ts';
+import { type MediaSourceId } from './base.ts';
 
 export const ProgramTypes = [
   'movie',
@@ -41,14 +46,18 @@ export const Program = sqliteTable(
     albumUuid: text().references(() => ProgramGrouping.uuid),
     artistName: text(),
     artistUuid: text().references(() => ProgramGrouping.uuid),
+    canonicalId: text(),
     duration: integer().notNull(),
     episode: integer(),
     episodeIcon: text(),
     externalKey: text().notNull(),
-    externalSourceId: text().notNull(),
-    mediaSourceId: text().references(() => MediaSource.uuid, {
-      onDelete: 'cascade',
-    }),
+    externalSourceId: text().notNull().$type<MediaSourceName>(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, {
+        onDelete: 'cascade',
+      })
+      .$type<MediaSourceId>(),
+    libraryId: text().references(() => MediaSourceLibrary.uuid),
     filePath: text(),
     grandparentExternalKey: text(),
     icon: text(),
@@ -77,6 +86,11 @@ export const Program = sqliteTable(
     uniqueIndex(
       'program_source_type_external_source_id_external_key_unique',
     ).on(table.sourceType, table.externalSourceId, table.externalKey),
+    uniqueIndex('program_source_type_media_source_external_key_unique').on(
+      table.sourceType,
+      table.mediaSourceId,
+      table.externalKey,
+    ),
     check(
       'program_type_check',
       inArray(table.type, table.type.enumValues).inlineParams(),
@@ -85,17 +99,15 @@ export const Program = sqliteTable(
       'program_source_type_check',
       inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
     ),
+    index('program_canonical_id_index').on(table.canonicalId),
   ],
 );
 
 export type ProgramTable = KyselifyBetter<typeof Program>;
 export type ProgramDao = Selectable<ProgramTable>;
+// Make canonicalId required on insert.
 export type NewProgramDao = MarkNotNilable<
   Insertable<ProgramTable>,
-  'mediaSourceId'
+  'canonicalId' | 'mediaSourceId'
 >;
 export type ProgramDaoUpdate = Updateable<ProgramTable>;
-
-export function programExternalIdString(p: ProgramDao | NewProgramDao) {
-  return createExternalId(p.sourceType, p.externalSourceId, p.externalKey);
-}

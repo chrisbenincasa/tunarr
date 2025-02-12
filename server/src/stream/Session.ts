@@ -158,7 +158,7 @@ export abstract class Session<
       switch (this.state) {
         case 'starting':
         case 'started':
-          this.logger.debug('Stopping stream session', this.channel.uuid);
+          this.logger.debug('Stopping stream session: %s', this.channel.uuid);
           await this.stopInternal();
           return;
         case 'error':

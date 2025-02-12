@@ -16,7 +16,6 @@ import {
   lighten,
   useTheme,
 } from '@mui/material';
-import type { MediaSourceSettings } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
 import type { ForwardedRef, MouseEvent } from 'react';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
@@ -26,6 +25,7 @@ import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import type {
   EmbySelectedMedia,
+  ImportedLibrarySelectedMedia,
   JellyfinSelectedMedia,
   PlexSelectedMedia,
   SelectedMedia,
@@ -47,7 +47,8 @@ export type GridItemMetadata = {
 
 type Props<T> = {
   item: T;
-  itemSource: MediaSourceSettings['type'];
+  itemSource: SelectedMedia['type'];
+  // extractors: GridItemMetadataExtractors<T>;
   metadata: GridItemMetadata;
   style?: React.CSSProperties;
   index: number;
@@ -82,7 +83,7 @@ const MediaGridItemInner = <T,>(
       title,
       subtitle,
       childCount,
-      mayHaveChildren,
+      mayHaveChildren = false,
       isFolder = false,
     },
     style,
@@ -103,8 +104,11 @@ const MediaGridItemInner = <T,>(
         s.selectedMedia,
         (
           p,
-        ): p is PlexSelectedMedia | JellyfinSelectedMedia | EmbySelectedMedia =>
-          p.type !== 'custom-show',
+        ): p is
+          | PlexSelectedMedia
+          | JellyfinSelectedMedia
+          | EmbySelectedMedia
+          | ImportedLibrarySelectedMedia => p.type !== 'custom-show',
       ),
     ),
   );

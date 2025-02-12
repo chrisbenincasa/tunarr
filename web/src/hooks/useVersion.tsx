@@ -34,6 +34,9 @@ export const useVersion = (
           The loaded version of the Tunarr UI does not match the server. Reload
           the browser to get the latest. If this message persists, clear your
           browser cache and reload.
+          <br />
+          Web version = {__TUNARR_VERSION__}, Server version ={' '}
+          {query.data?.tunarr}
         </span>
       ),
       variant: 'warning',

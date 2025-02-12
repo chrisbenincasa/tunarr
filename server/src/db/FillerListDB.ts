@@ -1,7 +1,8 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
 import { KEYS } from '@/types/inject.js';
-import { isNonEmptyString } from '@/util/index.js';
+import { isNonEmptyString, programExternalIdString } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
 import { ContentProgram } from '@tunarr/types';
 import {
   CreateFillerListRequest,
@@ -44,7 +45,6 @@ import type {
   NewFillerShow,
   NewFillerShowContent,
 } from './schema/FillerShow.ts';
-import { programExternalIdString } from './schema/Program.ts';
 import { DB } from './schema/db.ts';
 import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
 
@@ -356,7 +356,7 @@ export class FillerDB implements IFillerListDB {
       )
       .executeTakeFirst();
 
-    return map(programs?.fillerContent, (program) =>
+    return seq.collect(programs?.fillerContent, (program) =>
       this.programConverter.programDaoToContentProgram(program, []),
     );
   }

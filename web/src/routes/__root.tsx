@@ -27,6 +27,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return (
       <Root>
         <ErrorPage error={error} resetRoute={reset} />
+        <TanStackRouterDevtools />
       </Root>
     );
   },

@@ -1,10 +1,8 @@
+import { SpecificMediaSourceType } from '@/db/schema/derivedTypes.js';
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
 import type { SpecificMinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
-import {
-  MediaSourceType,
-  SpecificMediaSourceType,
-} from '../db/schema/MediaSource.js';
+import { MediaSourceType } from '../db/schema/MediaSource.js';
 import { KEYS } from '../types/inject.ts';
 import type { Nullable } from '../types/util.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';

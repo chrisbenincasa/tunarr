@@ -25,7 +25,7 @@ export class SlotProgrammingMigration extends ChannelLineupMigration<3, 4> {
 
     const slots = lineup['schedule']['slots'] as Json;
     if (!isArray(slots)) {
-      this.logger.warn('Malformed slot schedule: %O', slots);
+      this.logger.warn('Malformed slot schedule: %s', JSON.stringify(slots));
       return Promise.resolve();
     }
 

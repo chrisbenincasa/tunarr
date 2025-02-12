@@ -3,13 +3,13 @@ import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.js';
 import { ProgramDao } from '@/db/schema/Program.js';
 import { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
+import { tag } from '@tunarr/types';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
@@ -26,6 +26,8 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import { withLibraries } from '../../db/mediaSourceQueryHelpers.ts';
+import { MediaSourceName } from '../../db/schema/base.ts';
 import { DB } from '../../db/schema/db.ts';
 import { Timer } from '../../util/Timer.ts';
 import {
@@ -113,7 +115,12 @@ export class BackfillProgramExternalIds extends Fixer {
       const serverSettings = await this.db
         .selectFrom('mediaSource')
         .selectAll()
-        .where('name', 'in', missingServers)
+        .select(withLibraries)
+        .where(
+          'name',
+          'in',
+          missingServers.map((name) => tag<MediaSourceName>(name)),
+        )
         .execute();
 
       for (const server of serverSettings) {
@@ -175,13 +182,14 @@ export class BackfillProgramExternalIds extends Fixer {
 
     const metadataResult = await plex.getItemMetadata(program.externalKey);
 
-    if (isQueryError(metadataResult)) {
+    if (metadataResult.isFailure()) {
       throw new Error(
         `Could not retrieve metadata for program ID ${program.uuid}, rating key = ${program.externalKey}`,
+        { cause: metadataResult.error },
       );
     }
 
-    const metadata = metadataResult.data as PlexTerminalMedia;
+    const metadata = metadataResult.get() as PlexTerminalMedia;
 
     // We're here, might as well use the real thing.
     const firstPart = first(first(metadata.Media)?.Part);

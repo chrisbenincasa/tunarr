@@ -1,19 +1,5 @@
 import { forPlexMedia } from '@tunarr/shared/util';
 import type { PlexMedia } from '@tunarr/types/plex';
-import { queryPlex } from '../generated/sdk.gen.ts';
-
-export const fetchPlexPath = <T>(serverId: string, path: string) => {
-  return async () => {
-    const r = await queryPlex({
-      query: {
-        id: serverId,
-        path,
-      },
-      throwOnError: true,
-    });
-    return r.data as T;
-  };
-};
 
 export const getPlexMediaChildType = forPlexMedia({
   season: 'episode',

@@ -28,11 +28,16 @@ import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
 import { App } from './App.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
+import { ExternalApiModule } from './external/ExternalApiModule.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
+import { EntityMutex } from './services/EntityMutex.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
+import { MediaSourceLibraryRefresher } from './services/MediaSourceLibraryRefresher.js';
+import { MeilisearchService } from './services/MeilisearchService.ts';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
+import { ServicesModule } from './services/ServicesModule.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
@@ -47,6 +52,7 @@ import { SeedFfmpegInfoCache } from './services/startup/SeedFfmpegInfoCache.ts';
 import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevicesStartupTask.ts';
 import { ChannelCache } from './stream/ChannelCache.ts';
 import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
+import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
 
@@ -93,6 +99,7 @@ const RootModule = new ContainerModule((bind) => {
   >(() => (timeout?: number) => new MutexMap(timeout));
 
   container.bind(MediaSourceApiFactory).toSelf().inSingletonScope();
+
   // If we need lazy init...
   // container
   //   .bind<MediaSourceApiFactory>(KEYS.MediaSourceApiFactory)
@@ -108,6 +115,12 @@ const RootModule = new ContainerModule((bind) => {
 
   bind(FixerRunner).toSelf().inSingletonScope();
   bind(StartupService).toSelf().inSingletonScope();
+  container
+    .bind<
+      interfaces.Factory<MediaSourceLibraryRefresher>
+    >(KEYS.MediaSourceLibraryRefresher)
+    .toAutoFactory(MediaSourceLibraryRefresher);
+
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();
   bind(HdhrService).toSelf().inSingletonScope();
@@ -139,6 +152,11 @@ const RootModule = new ContainerModule((bind) => {
   bind<interfaces.AutoFactory<IWorkerPool>>(
     KEYS.WorkerPoolFactory,
   ).toAutoFactory(KEYS.WorkerPool);
+  bind(EntityMutex).toSelf().inSingletonScope();
+  bind(MeilisearchService).toSelf().inSingletonScope();
+  bind(KEYS.SearchService).toService(MeilisearchService);
+
+  bind(ChildProcessHelper).toSelf().inSingletonScope();
 
   bind(App).toSelf().inSingletonScope();
 });
@@ -152,5 +170,7 @@ container.load(FixerModule);
 container.load(FFmpegModule);
 container.load(FfmpegPipelineBuilderModule);
 container.load(DynamicChannelsModule);
+container.load(ServicesModule);
+container.load(ExternalApiModule);
 
 export { container };

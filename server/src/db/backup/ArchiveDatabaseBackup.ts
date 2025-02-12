@@ -184,7 +184,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       )) {
         if (result.isFailure()) {
           this.logger.warn(
-            'Unable to delete old backup file: %s',
+            'Unable to delete old backup file: %O',
             result.error.input,
           );
         } else {

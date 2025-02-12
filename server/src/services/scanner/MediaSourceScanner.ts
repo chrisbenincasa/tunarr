@@ -1,0 +1,106 @@
+import dayjs from 'dayjs';
+import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import type {
+  MediaLibraryType,
+  MediaSource,
+  MediaSourceLibrary,
+  MediaSourceType,
+} from '../../db/schema/MediaSource.ts';
+import { devAssert } from '../../util/debug.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
+
+export type ScanRequest = {
+  library: MediaSourceLibrary;
+  force?: boolean;
+};
+
+export type ScanContext<ApiClientTypeT> = {
+  library: MediaSourceLibrary;
+  mediaSource: MediaSource;
+  apiClient: ApiClientTypeT;
+  force: boolean;
+};
+
+type RunState = 'unknown' | 'starting' | 'running' | 'canceled';
+
+export type GenericMediaSourceScanner = MediaSourceScanner<
+  MediaLibraryType,
+  MediaSourceType,
+  unknown
+>;
+
+export type GenericMediaSourceScannerFactory = (
+  sourceType: MediaSourceType,
+  libraryType: MediaLibraryType,
+) => GenericMediaSourceScanner;
+
+export abstract class MediaSourceScanner<
+  MediaLibraryTypeT extends MediaLibraryType,
+  MediaSourceTypeT extends MediaSourceType,
+  ApiClientTypeT,
+> {
+  #state: Map<string, RunState> = new Map();
+  abstract readonly type: MediaLibraryTypeT;
+  abstract readonly mediaSourceType: MediaSourceTypeT;
+
+  constructor(
+    protected logger: Logger,
+    protected mediaSourceDB: MediaSourceDB,
+  ) {}
+
+  async scan({ library, force }: ScanRequest) {
+    this.#state.set(library.uuid, 'starting');
+
+    this.#state.set(library.uuid, 'running');
+
+    try {
+      if (this.state(library.uuid) === 'canceled') {
+        return;
+      }
+
+      const mediaSource = await this.mediaSourceDB.getById(
+        library.mediaSourceId,
+      );
+
+      if (!mediaSource) {
+        throw new Error(`Media source ${library.mediaSourceId} not found.`);
+      }
+
+      devAssert(mediaSource.type === this.mediaSourceType);
+
+      await this.scanInternal({
+        library,
+        mediaSource,
+        force: force ?? false,
+        apiClient: await this.getApiClient(mediaSource),
+      });
+
+      await this.mediaSourceDB.setLibraryLastScannedTime(library.uuid, dayjs());
+    } finally {
+      this.#state.delete(library.uuid);
+    }
+  }
+
+  cancel(libraryId: string) {
+    this.logger.info('Request to cancel scan for library %s', libraryId);
+    this.#state.set(libraryId, 'canceled');
+  }
+
+  protected state(libraryId: string) {
+    return this.#state.get(libraryId) ?? 'unknown';
+  }
+
+  protected abstract scanInternal(
+    context: ScanContext<ApiClientTypeT>,
+  ): Promise<void>;
+
+  protected abstract getApiClient(
+    mediaSource: MediaSourceWithLibraries,
+  ): Promise<ApiClientTypeT>;
+
+  protected abstract getLibrarySize(
+    libraryKey: string,
+    context: ScanContext<ApiClientTypeT>,
+  ): Promise<number>;
+}

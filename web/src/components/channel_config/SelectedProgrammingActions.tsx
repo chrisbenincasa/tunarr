@@ -12,18 +12,19 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { nullToUndefined } from '@tunarr/shared/util';
+import { EmbyItemKind } from '@tunarr/types/emby';
+import { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
+import { match } from 'ts-pattern';
 import {
   getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems,
   getJellyfinLibraryItems,
 } from '../../generated/sdk.gen.ts';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { embyCollectionTypeToItemTypes } from '../../helpers/embyUtil.ts';
-import { jellyfinCollectionTypeToItemTypes } from '../../helpers/jellyfinUtil.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { enumerateSyncedItems } from '../../helpers/programUtil.ts';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -31,6 +32,7 @@ import {
   addJellyfinSelectedMedia,
   addKnownMediaForServer,
   addPlexSelectedMedia,
+  addSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
@@ -61,6 +63,7 @@ export default function SelectedProgrammingActions({
   const removeAllItems = useCallback(() => {
     clearSelectedMedia();
   }, []);
+  const currentSearchRequest = useStore((s) => s.currentSearchRequest);
 
   const directPlexSearchFn = useDirectPlexSearch(
     selectedServer,
@@ -71,74 +74,109 @@ export default function SelectedProgrammingActions({
     true,
   );
 
-  const selectAllItems = () => {
+  const selectAllItems = useCallback(() => {
     if (!isNil(selectedServer) && !isNil(selectedLibrary)) {
       removeAllItems();
       setSelectAllLoading(true);
       let prom: Promise<void>;
-      switch (selectedServer.type) {
-        case Plex:
-          prom = directPlexSearchFn().then((response) => {
-            addPlexSelectedMedia(selectedServer, response.Metadata);
-            addKnownMediaForServer(selectedServer.id, {
-              type: 'plex' as const,
-              items: response.Metadata ?? [],
-            });
-          });
-          break;
-        case Jellyfin: {
-          const library = selectedLibrary as JellyfinMediaSourceView;
 
-          prom = getJellyfinLibraryItems({
-            path: {
-              mediaSourceId: selectedServer.id,
-              libraryId: library.view.ItemId,
-            },
-            query: {
-              itemTypes: jellyfinCollectionTypeToItemTypes(
-                nullToUndefined(library.view.CollectionType),
-              ),
-              recursive: true,
-              genres: currentGenre,
-            },
-            throwOnError: true,
-          }).then(({ data: response }) => {
-            addJellyfinSelectedMedia(selectedServer, response.Items);
-            addKnownMediaForServer(selectedServer.id, {
-              type: Jellyfin,
-              items: response.Items,
+      if (selectedLibrary.type === Imported) {
+        prom = enumerateSyncedItems(
+          selectedLibrary.view.id,
+          currentSearchRequest,
+        ).then((res) => {
+          addSelectedMedia(
+            res.map((program) => ({
+              type: Imported,
+              id: program.uuid,
+              mediaSource: selectedServer,
+              libraryId: selectedLibrary!.view.id,
+            })),
+          );
+          addKnownMediaForServer(selectedServer.id, res);
+        });
+      } else {
+        switch (selectedServer.type) {
+          case Plex:
+            prom = directPlexSearchFn().then((response) => {
+              if (selectedLibrary.type !== 'plex') {
+                throw new Error('');
+              }
+              switch (selectedLibrary.view.type) {
+                case 'library':
+                  addPlexSelectedMedia(
+                    selectedServer,
+                    selectedLibrary.view.library.uuid,
+                    response.result,
+                  );
+                  addKnownMediaForServer(selectedServer.id, response.result);
+                  break;
+                case 'playlists':
+                  response.result.forEach((item) => {
+                    addPlexSelectedMedia(selectedServer, item.libraryId, [
+                      item,
+                    ]);
+                    addKnownMediaForServer(selectedServer.id, [item]);
+                  });
+              }
             });
-          });
-          break;
-        }
-        case Emby: {
-          const library = selectedLibrary as EmbyMediaSourceView;
+            break;
+          case Jellyfin: {
+            const library = selectedLibrary as JellyfinMediaSourceView;
 
-          prom = getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
-            path: {
-              mediaSourceId: selectedServer.id,
-              libraryId: library.view.Id,
-            },
-            query: {
-              itemTypes: embyCollectionTypeToItemTypes(
-                library.view.CollectionType,
-              ),
-            },
-            throwOnError: true,
-          }).then(({ data: response }) => {
-            addEmbySelectedMedia(selectedServer, response.Items);
-            addKnownMediaForServer(selectedServer.id, {
-              type: Emby,
-              items: response.Items,
+            prom = getJellyfinLibraryItems({
+              path: {
+                mediaSourceId: selectedServer.id,
+                libraryId: library.view.externalId,
+              },
+              query: {
+                itemTypes: match(library.view.childType)
+                  .returnType<JellyfinItemKind[]>()
+                  .with('movie', () => ['Movie'])
+                  .with('show', () => ['Series'])
+                  .with('artist', () => ['MusicArtist'])
+                  .with('music_video', () => ['MusicVideo'])
+                  .otherwise(() => []),
+                recursive: true,
+                genres: currentGenre,
+              },
+              throwOnError: true,
+            }).then(({ data: response }) => {
+              addJellyfinSelectedMedia(selectedServer, response.result);
+              addKnownMediaForServer(selectedServer.id, response.result);
             });
-          });
-          break;
+            break;
+          }
+          case Emby: {
+            const library = selectedLibrary as EmbyMediaSourceView;
+
+            prom = getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
+              path: {
+                mediaSourceId: selectedServer.id,
+                libraryId: library.view.externalId,
+              },
+              query: {
+                itemTypes: match(library.view.childType)
+                  .returnType<EmbyItemKind[]>()
+                  .with('movie', () => ['Movie'])
+                  .with('show', () => ['Series'])
+                  .with('artist', () => ['MusicArtist'])
+                  .with('music_video', () => ['MusicVideo'])
+                  .otherwise(() => []),
+              },
+              throwOnError: true,
+            }).then(({ data: response }) => {
+              addEmbySelectedMedia(selectedServer, response.result);
+              addKnownMediaForServer(selectedServer.id, response.result);
+            });
+            break;
+          }
         }
       }
 
       prom
         .catch((e) => {
-          console.error('Error while attempting to select all Plex items', e);
+          console.error('Error while attempting to select all items', e);
           snackbar.enqueueSnackbar(
             'Error querying Plex. Check console log and consider reporting a bug!',
             {
@@ -148,7 +186,7 @@ export default function SelectedProgrammingActions({
         })
         .finally(() => setSelectAllLoading(false));
     }
-  };
+  }, [selectedServer, selectedLibrary, currentSearchRequest]);
 
   const darkMode = useIsDarkMode();
 

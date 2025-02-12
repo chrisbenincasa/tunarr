@@ -1,9 +1,12 @@
+import type { Library, ProgramOrFolder, TerminalProgram } from '@tunarr/types';
 import { type EmbyItem, type EmbyItemKind } from '@tunarr/types/emby';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import { isTerminalItemType } from '../components/library/ProgramGridItem.tsx';
 import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../generated/sdk.gen.ts';
+import type { Nullable } from '../types/util.ts';
 import { JellyfinTerminalTypes } from './jellyfinUtil.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -88,70 +91,62 @@ export const childEmbyItemType = (item: EmbyItem): string | null => {
     .otherwise(() => null);
 };
 
-export const sortEmbyLibraries = (item: EmbyItem) => {
-  if (item.CollectionType) {
-    switch (item.CollectionType) {
-      case 'tvshows':
-        return 0;
-      case 'movies':
-      case 'music':
-        return 1;
-      case 'unknown':
-      case 'musicvideos':
-      case 'trailers':
-      case 'homevideos':
-      case 'boxsets':
-      case 'books':
-      case 'photos':
-      case 'livetv':
-      case 'playlists':
-      case 'folders':
-        return 2;
-    }
-  }
-
-  return Number.MAX_SAFE_INTEGER;
-};
-
 export type EnrichedEmbyItem = EmbyItem & {
   // The internal Tunarr ID of the media source
   serverId: string;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
+  libraryId: string;
   // If we found an existing reference to this item on the server, we add it here
   id?: string;
   showId?: string;
   seasonId?: string;
 };
 
-export const enumerateEmbyItem = (
+export const enumerateEmbyItem2 = (
   serverId: string,
-  serverName: string,
-  initialItem: EmbyItem,
-): (() => Promise<EnrichedEmbyItem[]>) => {
-  const seen = new Map<string, EmbyItem[]>();
+  initialItem: ProgramOrFolder | Library,
+): Promise<TerminalProgram[]> => {
+  const seen = new Map<string, (ProgramOrFolder | Library)[]>();
 
-  return async function () {
-    async function loopInner(item: EmbyItem): Promise<EnrichedEmbyItem[]> {
-      if (item.Type && EmbyTerminalTypes.has(item.Type)) {
+  return (async function () {
+    async function loopInner(
+      item: ProgramOrFolder | Library,
+      parent: Nullable<ProgramOrFolder | Library>,
+      acc: TerminalProgram[],
+    ): Promise<TerminalProgram[]> {
+      if (isTerminalItemType(item)) {
         // Only reliable way to filter out programs that were deleted
         // from disk but not updated in JF
-        if (item.RunTimeTicks && item.RunTimeTicks > 0) {
-          return [{ ...item, serverName, serverId }];
-        } else {
-          return [];
+        if (item.duration <= 0) {
+          return acc;
         }
+
+        if (parent?.type === 'season' && item.type === 'episode') {
+          item.season = parent;
+        } else if (parent?.type === 'album' && item.type === 'track') {
+          item.album = parent;
+        }
+
+        acc.push(item);
+        return acc;
       } else {
-        if (seen.has(item.Id)) {
-          return sequentialPromises(seen.get(item.Id) ?? [], loopInner).then(
-            flattenDeep,
-          );
+        if (seen.has(item.uuid)) {
+          return sequentialPromises(seen.get(item.uuid) ?? [], (next) =>
+            loopInner(next, item, acc),
+          ).then(flattenDeep);
+        }
+
+        if (parent?.type === 'show' && item.type === 'season') {
+          item.show = parent;
+        } else if (parent?.type === 'artist' && item.type === 'album') {
+          item.artist = parent;
         }
 
         return getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
           path: {
             mediaSourceId: serverId,
-            libraryId: item.Id,
+            libraryId: item.externalId,
           },
           query: {
             itemTypes: EmbyTerminalTypesArray,
@@ -159,13 +154,17 @@ export const enumerateEmbyItem = (
           },
           throwOnError: true,
         }) // TODO: Use p-queue here to parallelize a bit
-          .then((result) => sequentialPromises(result.data.Items, loopInner))
+          .then((result) =>
+            sequentialPromises(result.data.result, (program) =>
+              loopInner(program, item, acc),
+            ),
+          )
           .then(flattenDeep);
       }
     }
 
-    return await loopInner(initialItem);
-  };
+    return await loopInner(initialItem, null, []);
+  })();
 };
 
 export function embyCollectionTypeToItemTypes(

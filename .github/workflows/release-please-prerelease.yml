@@ -1,5 +1,10 @@
 on:
   workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Ref to build pre-release from"
+        required: true
+        default: 'dev'
   push:
     branches:
       - media-scanner

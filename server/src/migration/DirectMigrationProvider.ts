@@ -33,6 +33,8 @@ import Migration1746123876_ReworkSubtitleFilter from './db/Migration1746123876_R
 import Migration1746128022_FixSubtitlePriorityType from './db/Migration1746128022_FixSubtitlePriorityType.ts';
 import Migration1748345299_AddMoreProgramTypes from './db/Migration1748345299_AddMoreProgramTypes.ts';
 import Migration1756312561_InitialAdvancedTranscodeConfig from './db/Migration1756312561_InitialAdvancedTranscodeConfig.ts';
+import Migration1756381281_AddLibraries from './db/Migration1756381281_AddLibraries.ts';
+import Migration1757704591_AddProgramMediaSourceIndex from './db/Migration1757704591_AddProgramMediaSourceIndex.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -113,6 +115,8 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1748345299: Migration1748345299_AddMoreProgramTypes,
           migration1756312561:
             Migration1756312561_InitialAdvancedTranscodeConfig,
+          migration1756381281: Migration1756381281_AddLibraries,
+          migration1757704591: Migration1757704591_AddProgramMediaSourceIndex,
         },
         wrapWithTransaction,
       ),

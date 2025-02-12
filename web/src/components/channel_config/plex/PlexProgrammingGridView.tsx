@@ -1,35 +1,30 @@
 import { Box } from '@mui/material';
-import { seq } from '@tunarr/shared/util';
-import type { PlexFilter } from '@tunarr/types/api';
-import { type PlexMedia } from '@tunarr/types/plex';
+import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import { ProgramOrFolder } from '@tunarr/types';
+import type { PagedResult, PlexFilter } from '@tunarr/types/api';
 import { usePrevious } from '@uidotdev/usehooks';
-import { flatten, isNull, isUndefined, last, map, range } from 'lodash-es';
+import { isNull, last, map, range } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
-import {
-  estimateNumberOfColumns,
-  isNonEmptyString,
-} from '../../../helpers/util.ts';
+import { Plex } from '../../../helpers/constants.ts';
+import { estimateNumberOfColumns } from '../../../helpers/util.ts';
 import { usePlexCollectionsInfinite } from '../../../hooks/plex/usePlexCollections.ts';
 import { usePlexPlaylistsInfinite } from '../../../hooks/plex/usePlexPlaylists.ts';
 import { usePlexItemsInfinite } from '../../../hooks/plex/usePlexSearch.ts';
 import useStore from '../../../store/index.ts';
-import {
-  addKnownMediaForPlexServer,
-  setPlexFilter,
-} from '../../../store/programmingSelector/actions.ts';
+import { setPlexFilter } from '../../../store/programmingSelector/actions.ts';
 import {
   useCurrentMediaSource,
   useCurrentMediaSourceView,
 } from '../../../store/programmingSelector/selectors.ts';
 import type { Size } from '../../../types/util.ts';
+import { ProgramGridItem } from '../../library/ProgramGridItem.tsx';
 import type { NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid, type GridItemProps } from '../MediaItemGrid.tsx';
-import { PlexGridItem } from './PlexGridItem.tsx';
 
 type Props = {
-  parentContext: PlexMedia[];
+  parentContext: ProgramOrFolder[];
   depth?: number;
 };
 
@@ -39,8 +34,8 @@ export const PlexProgrammingGridView = ({
   parentContext,
   depth = 0,
 }: Props) => {
-  const selectedServer = useCurrentMediaSource('plex');
-  const selectedLibrary = useCurrentMediaSourceView('plex');
+  const selectedServer = useCurrentMediaSource(Plex);
+  const selectedLibrary = useCurrentMediaSourceView(Plex);
   const { urlFilter: searchKey } = useStore(({ plexSearch }) => plexSearch);
   const [columns, setColumns] = useState(8);
   const [bufferSize, setBufferSize] = useState(0);
@@ -72,10 +67,11 @@ export const PlexProgrammingGridView = ({
     columns * RowsToLoad + bufferSize * (depth === 0 ? 1 : 2),
     currentParentContext
       ? {
-          parentId: currentParentContext.ratingKey,
+          parentId: currentParentContext.externalId,
           type: currentParentContext.type,
         }
       : undefined,
+    !subview || !!currentParentContext,
   );
 
   const { data: searchData, isFetchingNextPage: isFetchingNextLibraryPage } =
@@ -85,57 +81,54 @@ export const PlexProgrammingGridView = ({
     selectedServer,
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     columns * RowsToLoad + bufferSize,
-    subview === 'collections',
+    subview === 'collections' && !currentParentContext,
   );
 
-  const {
-    data: collectionsData,
-    isFetchingNextPage: isFetchingNextCollectionPage,
-  } = plexCollectionsQuery;
+  const { isFetchingNextPage: isFetchingNextCollectionPage } =
+    plexCollectionsQuery;
 
   const plexPlaylistsQuery = usePlexPlaylistsInfinite(
     selectedServer,
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     columns * RowsToLoad + bufferSize,
-    // selectedLibrary?.view.type === 'library',
-    subview === 'playlists',
+    subview === 'playlists' && !currentParentContext,
   );
 
   const { isFetchingNextPage: isFetchingNextPlaylistPage } = plexPlaylistsQuery;
 
-  // Update store
-  useEffect(() => {
-    if (!isUndefined(searchData)) {
-      // We probably wouldn't have made it this far if we didnt have a server, but
-      // putting this here to prevent crashes
-      if (selectedServer) {
-        const allMedia = flatten(
-          seq.collect(searchData.pages, (page) => {
-            if (page.size === 0) {
-              return;
-            }
-            return page.Metadata;
-          }),
-        );
-        addKnownMediaForPlexServer(selectedServer.id, allMedia);
-      }
-    }
-  }, [selectedServer, searchData]);
+  // // Update store
+  // useEffect(() => {
+  //   if (!isUndefined(searchData)) {
+  //     // We probably wouldn't have made it this far if we didnt have a server, but
+  //     // putting this here to prevent crashes
+  //     if (selectedServer) {
+  //       const allMedia = flatten(
+  //         seq.collect(searchData.pages, (page) => {
+  //           if (page.result.length === 0) {
+  //             return;
+  //           }
+  //           return page.result;
+  //         }),
+  //       );
+  //       addKnownMediaForPlexServer(selectedServer.id, allMedia);
+  //     }
+  //   }
+  // }, [selectedServer, searchData]);
 
-  // Update store
-  useEffect(() => {
-    if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
-      const allCollections = flatten(
-        seq.collect(collectionsData.pages, (page) => {
-          if (page.size === 0) {
-            return;
-          }
-          return page.Metadata;
-        }),
-      );
-      addKnownMediaForPlexServer(selectedServer.id, allCollections);
-    }
-  }, [selectedServer?.id, collectionsData]);
+  // // Update store
+  // useEffect(() => {
+  //   if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
+  //     const allCollections = flatten(
+  //       seq.collect(collectionsData.pages, (page) => {
+  //         if (page.size === 0) {
+  //           return;
+  //         }
+  //         return page.result;
+  //       }),
+  //     );
+  //     addKnownMediaForPlexServer(selectedServer.id, allCollections);
+  //   }
+  // }, [selectedServer?.id, collectionsData]);
 
   const previousIsFetchingNextLibraryPage = usePrevious(
     isFetchingNextLibraryPage,
@@ -175,11 +168,11 @@ export const PlexProgrammingGridView = ({
     // We have to estimate the number of columns because the items aren't loaded yet to use their width to calculate it
     const numberOfColumns = estimateNumberOfColumns(containerWidth + padding);
     const prevNumberOfColumns =
-      searchData?.pages[searchData?.pages.length - 1].size;
+      searchData?.pages[searchData?.pages.length - 1].result.length;
 
     // Calculate total number of fetched items so far
     const currentTotalSize =
-      searchData?.pages.reduce((acc, page) => acc + page.size, 0) || 0;
+      searchData?.pages.reduce((acc, page) => acc + page.result.length, 0) || 0;
 
     // Calculate total items that don't fill an entire row
     const leftOvers = currentTotalSize % numberOfColumns;
@@ -203,7 +196,7 @@ export const PlexProgrammingGridView = ({
 
       const field =
         selectedLibrary?.view.type === 'library' &&
-        selectedLibrary.view.library.type === 'show'
+        selectedLibrary.view.library.childType === 'show'
           ? 'show.title'
           : 'title';
 
@@ -237,14 +230,17 @@ export const PlexProgrammingGridView = ({
     [selectedLibrary?.view],
   );
 
-  const getPlexItemKey = useCallback((item: PlexMedia) => item.guid, []);
+  const getPlexItemKey = useCallback((item: ProgramOrFolder) => item.uuid, []);
 
-  const renderGridItem2 = useCallback((props: GridItemProps<PlexMedia>) => {
-    return <PlexGridItem {...props} />;
-  }, []);
+  const renderGridItem = useCallback(
+    (props: GridItemProps<ProgramOrFolder>) => {
+      return <ProgramGridItem {...props} />;
+    },
+    [],
+  );
 
   const renderNestedGrid = useCallback(
-    ({ parent, depth }: NestedGridProps<PlexMedia>) => {
+    ({ parent, depth }: NestedGridProps<ProgramOrFolder>) => {
       return (
         <PlexProgrammingGridView
           parentContext={parent ? [parent] : []}
@@ -255,19 +251,14 @@ export const PlexProgrammingGridView = ({
     [],
   );
 
-  const getPageDataSize = useCallback(
-    (data: { totalSize?: number; size: number }) => {
-      return {
-        total: data.totalSize,
-        size: data.size,
-      };
-    },
-    [],
-  );
-
-  const query = currentParentContext
+  const query: UseInfiniteQueryResult<
+    InfiniteData<PagedResult<ProgramOrFolder[]>>
+  > = currentParentContext
     ? plexSearchQuery
     : match(subview)
+        .returnType<
+          UseInfiniteQueryResult<InfiniteData<PagedResult<ProgramOrFolder[]>>>
+        >()
         .with('collections', () => plexCollectionsQuery)
         .with('playlists', () => plexPlaylistsQuery)
         .with(P.nullish, () => plexSearchQuery)
@@ -276,10 +267,16 @@ export const PlexProgrammingGridView = ({
   return (
     <Box ref={itemContainer}>
       <MediaItemGrid
-        getPageDataSize={getPageDataSize}
-        extractItems={(page) => page.Metadata ?? []}
+        getPageDataSize={useCallback(
+          (res: PagedResult<ProgramOrFolder[]>) => ({
+            size: res.size,
+            total: res.total,
+          }),
+          [],
+        )}
+        extractItems={(page) => page.result}
         getItemKey={getPlexItemKey}
-        renderGridItem={renderGridItem2}
+        renderGridItem={renderGridItem}
         depth={depth}
         infiniteQuery={query}
         renderNestedGrid={renderNestedGrid}

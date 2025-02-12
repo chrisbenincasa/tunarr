@@ -1,7 +1,5 @@
 import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, Nullable } from '@/types/util.js';
@@ -29,6 +27,7 @@ import {
   trimStart,
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
+import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
 import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { EmbyT } from '../../types/internal.ts';
 import {
@@ -74,7 +73,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
   }
 
   private async getStreamInternal(
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceWithLibraries,
     item: SpecificMinimalContentStreamLineupItem<EmbyT>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
@@ -89,10 +88,14 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
 
     const itemMetadataResult = await this.emby.getItem(item.externalKey);
 
-    if (isQueryError(itemMetadataResult)) {
+    if (itemMetadataResult.isFailure()) {
       this.logger.error(itemMetadataResult, 'Error getting Emby stream');
       return null;
-    } else if (isUndefined(itemMetadataResult.data)) {
+    }
+
+    const itemMetadata = itemMetadataResult.get();
+
+    if (isUndefined(itemMetadata)) {
       this.logger.error(
         'Emby item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
         item.externalKey,
@@ -113,8 +116,6 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
 
       return null;
     }
-
-    const itemMetadata = itemMetadataResult.data;
 
     const details = await this.getItemStreamDetails(item, itemMetadata);
 

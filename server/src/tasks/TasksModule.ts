@@ -16,7 +16,7 @@ import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { type IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import type { MediaSource } from '../db/schema/MediaSource.js';
+import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import type { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
@@ -34,11 +34,14 @@ import type {
   UpdatePlexPlayStatusScheduleRequest,
 } from './plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
+import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.ts';
+import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import type {
   SubtitleExtractorTaskFactory,
   SubtitleExtractorTaskRequest,
 } from './SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+import type { Task } from './Task.ts';
 
 export type ReconcileProgramDurationsTaskFactory = (
   request?: ReconcileProgramDurationsTaskRequest,
@@ -64,6 +67,11 @@ const TasksModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<CleanupSessionsTask>>(
     CleanupSessionsTask.KEY,
   ).toAutoFactory(CleanupSessionsTask);
+
+  bind(ScanLibrariesTask).toSelf();
+  bind<interfaces.Factory<ScanLibrariesTask>>(
+    ScanLibrariesTask.KEY,
+  ).toAutoFactory(ScanLibrariesTask);
 
   bind<
     interfaces.Factory<
@@ -124,7 +132,7 @@ const TasksModule = new ContainerModule((bind) => {
     UpdatePlexPlayStatusScheduledTask.KEY,
     (ctx) =>
       (
-        plexServer: MediaSource,
+        plexServer: MediaSourceWithLibraries,
         request: UpdatePlexPlayStatusScheduleRequest,
         sessionId: string,
       ) =>
@@ -155,6 +163,10 @@ const TasksModule = new ContainerModule((bind) => {
         req,
       ),
   );
+
+  bind<RefreshMediaSourceLibraryTask>(RefreshMediaSourceLibraryTask).toSelf();
+
+  bind<Task>(KEYS.StartupTasks).toService(RefreshMediaSourceLibraryTask);
 });
 
 export { TasksModule };

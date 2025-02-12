@@ -3,8 +3,11 @@ import JellyfinLogo from '@/assets/jellyfin.svg';
 import PlexLogo from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
+import type {
+  EmbySelectedMedia,
+  ImportedLibrarySelectedMedia,
+} from '@/store/programmingSelector/store.ts';
 import {
-  type EmbySelectedMedia,
   type JellyfinSelectedMedia,
   type PlexSelectedMedia,
   type SelectedMedia,
@@ -24,16 +27,13 @@ import {
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
-import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
-import { isPlexDirectory } from '@tunarr/types/plex';
-import { first, groupBy, isNil, mapValues } from 'lodash-es';
+import { first, groupBy, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
-import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { pluralizeWithCount, unwrapNil } from '../../helpers/util.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { type KnownMedia } from '../../store/programmingSelector/KnownMedia.ts';
@@ -52,144 +52,75 @@ type SelectedProgramListItemProps<SelectedMediaType> = {
   mediaSourcesById: Record<string, MediaSourceSettings>;
 };
 
-const PlexSelectedProgramListItem = ({
+const ImportedProgramListItem = ({
   selected,
   knownMedia,
   listChildProps,
   mediaSourcesById,
-}: SelectedProgramListItemProps<PlexSelectedMedia>) => {
+}: SelectedProgramListItemProps<
+  | PlexSelectedMedia
+  | JellyfinSelectedMedia
+  | EmbySelectedMedia
+  | ImportedLibrarySelectedMedia
+>) => {
   const media = knownMedia.getMediaOfType(
-    selected.serverId,
+    selected.mediaSource.id,
     selected.id,
-    Plex,
-  )!;
-
-  const [title, secondary] = useMemo(() => {
-    let title: string = media.title;
-    let secondary: ReactNode = null;
-    match(media)
-      .with(
-        P.when(isPlexDirectory),
-        (dir) => (title = `Library - ${dir.title}`),
-      )
-      .with(
-        { type: 'show' },
-        (show) =>
-          (secondary = `${show.childCount} ${pluralize(
-            'season',
-            show.childCount,
-          )}, ${show.leafCount} total ${pluralize('episode', show.leafCount)}`),
-      )
-      .with(
-        { type: 'season' },
-        (season) =>
-          (secondary = `${season.parentTitle} - ${season.title} (${
-            season.leafCount
-          } ${pluralize('episode', season.leafCount)})`),
-      )
-      .with(
-        { type: 'collection' },
-        (coll) =>
-          (secondary = `${coll.title} (${coll.childCount} ${pluralize(
-            'item',
-            parseInt(coll.childCount),
-          )})`),
-      )
-      .with(
-        { type: 'movie' },
-        (movie) => (secondary = `Movie${movie.year ? ', ' + movie.year : ''}`),
-      )
-      .with(
-        { type: 'playlist', leafCount: P.nonNullable },
-        (playlist) =>
-          (secondary = `Playlist with ${playlist.leafCount} ${pluralize(
-            'tracks',
-            playlist.leafCount,
-          )}`),
-      )
-      .with(
-        { type: 'episode' },
-        (ep) => (secondary = `${ep.grandparentTitle}, ${ep.parentTitle}`),
-      )
-      .otherwise(() => {});
-
-    return [title, secondary];
-  }, [media]);
-
-  return (
-    <ListItem
-      style={listChildProps.style}
-      divider
-      sx={{ px: 1 }}
-      dense
-      key={selected.id}
-    >
-      <Tooltip
-        placement="left"
-        title={mediaSourcesById[selected.serverId]?.name ?? 'Plex Server'}
-      >
-        <Box component="img" src={PlexLogo} width={30} sx={{ pr: 1 }} />
-      </Tooltip>
-      <ListItemText primary={title} secondary={secondary} />
-      <ListItemIcon sx={{ minWidth: 40 }}>
-        <IconButton onClick={() => removeSelectedMedia([selected])}>
-          <RemoveIcon />
-        </IconButton>
-      </ListItemIcon>
-    </ListItem>
+    selected.type === 'imported' ? selected.mediaSource.type : selected.type,
   );
-};
 
-const JellyfinSelectedProgramListItem = ({
-  selected,
-  knownMedia,
-  listChildProps,
-  mediaSourcesById,
-}: SelectedProgramListItemProps<JellyfinSelectedMedia>) => {
-  const media = knownMedia.getMediaOfType(
-    selected.serverId,
-    selected.id,
-    Jellyfin,
-  )!;
+  if (!media) {
+    return;
+  }
 
-  const { title = media.Name ?? '', secondary = null } = match(media)
-    .returnType<{ title?: string; secondary?: ReactNode }>()
-    .with(P.when(isJellyfinVirtualFolder), (dir) => ({
-      title: `Library - ${dir.Name}`,
-    }))
-    .with(
-      { Type: P.union('CollectionFolder', 'AggregateFolder', 'Folder') },
-      (media) => ({
-        title: `Folder - ${media.Name}`,
-        secondary: `${pluralizeWithCount('item', media.ChildCount)}`,
-      }),
-    )
-    .with({ Type: 'Series' }, (media) => ({
-      secondary: `${pluralizeWithCount('season', media.ChildCount)}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+  let icon: string | undefined;
+  switch (mediaSourcesById[selected.mediaSource.id].type) {
+    case 'plex':
+      icon = PlexLogo;
+      break;
+    case 'jellyfin':
+      icon = JellyfinLogo;
+      break;
+    case 'emby':
+      icon = EmbyLogo;
+      break;
+  }
+
+  let secondary: ReactNode = null;
+  switch (media?.type) {
+    case 'show':
+      secondary = `${media.childCount ?? 0} ${pluralize(
+        'season',
+        media.childCount ?? 0,
+      )}, ${media.grandchildCount ?? 0} total ${pluralize(
         'episode',
-        media.RecursiveItemCount ?? 0,
-      )}`,
-    }))
-    .with({ Type: 'Season' }, (media) => ({
-      secondary: `${media.SeriesName} - ${media.Name} (${pluralizeWithCount('episode', media.ChildCount)})`,
-    }))
-    .with({ Type: 'Movie' }, (media) => ({
-      secondary: `Movie${
-        media.ProductionYear ? ', ' + media.ProductionYear : ''
-      }`,
-    }))
-    .with({ Type: 'Episode' }, (media) => {
-      const hasIndexes =
-        !isNil(media.IndexNumber) && !isNil(media.ParentIndexNumber);
-      const seasonEp = hasIndexes
-        ? `S${media.ParentIndexNumber?.toFixed().padStart(2, '0')}E${media.IndexNumber?.toFixed().padStart(2, '0')} - `
-        : '';
-      return {
-        title: `${seasonEp}${media.Name}`,
-        secondary: `${media.SeriesName}`,
-      };
-    })
-    .otherwise(() => ({}));
+        media.grandchildCount ?? 0,
+      )}`;
+      break;
+    case 'movie':
+      secondary = `Movie${media.year ? ', ' + media.year : ''}`;
+      break;
+  }
+  // if (media.Type === 'CollectionFolder') {
+  //   // TODO: Show the size
+  //   title = `Media - ${media.Name}`;
+  // } else if (media.Type === 'Series') {
+  //   secondary = `${media.ChildCount ?? 0} ${pluralize(
+  //     'season',
+  //     media.ChildCount ?? 0,
+  //   )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+  //     'episode',
+  //     media.RecursiveItemCount ?? 0,
+  //   )}`;
+  // } else if (media.Type === 'Season') {
+  //   secondary = `${media.SeriesName} - ${media.Name} (${
+  //     media.ChildCount ?? 0
+  //   } ${pluralize('episode', media.ChildCount ?? 0)})`;
+  // } else if (media.Type === 'Movie') {
+  //   secondary = `Movie${
+  //     media.ProductionYear ? ', ' + media.ProductionYear : ''
+  //   }`;
+  // }
 
   return (
     <ListItem
@@ -197,81 +128,15 @@ const JellyfinSelectedProgramListItem = ({
       divider
       sx={{ px: 1 }}
       dense
-      key={isJellyfinVirtualFolder(media) ? media.ItemId : media.Id}
+      key={selected.id}
     >
       <Tooltip
         placement="left"
-        title={mediaSourcesById[selected.serverId]?.name ?? 'Jellyfin Server'}
+        title={mediaSourcesById[selected.mediaSource.id]?.name ?? ''}
       >
-        <Box component="img" src={JellyfinLogo} width={30} sx={{ pr: 1 }} />
+        <Box component="img" src={icon} width={30} sx={{ pr: 1 }} />
       </Tooltip>
-      <ListItemText primary={title} secondary={secondary} />
-      <ListItemIcon sx={{ minWidth: 40 }}>
-        <IconButton onClick={() => removeSelectedMedia([selected])}>
-          <RemoveIcon />
-        </IconButton>
-      </ListItemIcon>
-    </ListItem>
-  );
-};
-
-const EmbySelectedProgramListItem = ({
-  selected,
-  knownMedia,
-  listChildProps,
-  mediaSourcesById,
-}: SelectedProgramListItemProps<EmbySelectedMedia>) => {
-  const media = knownMedia.getMediaOfType(
-    selected.serverId,
-    selected.id,
-    Emby,
-  )!;
-
-  const { title = media.Name ?? '', secondary = null } = match(media)
-    .returnType<{ title?: string; secondary?: ReactNode }>()
-    .with(
-      { Type: P.union('CollectionFolder', 'AggregateFolder', 'Folder') },
-      () => ({
-        title: `Folder - ${media.Name}`,
-        secondary: `${pluralizeWithCount('item', media.ChildCount)}`,
-      }),
-    )
-    .with({ Type: 'Series' }, () => ({
-      secondary: `${pluralizeWithCount('season', media.ChildCount)}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
-        'episode',
-        media.RecursiveItemCount ?? 0,
-      )}`,
-    }))
-    .with({ Type: 'Season' }, () => ({
-      secondary: `${media.SeriesName} - ${media.Name} (${pluralizeWithCount('episode', media.ChildCount)})`,
-    }))
-    .with({ Type: 'Movie' }, () => ({
-      secondary: `Movie${
-        media.ProductionYear ? ', ' + media.ProductionYear : ''
-      }`,
-    }))
-    .with({ Type: 'Episode' }, () => {
-      const hasIndexes =
-        !isNil(media.IndexNumber) && !isNil(media.ParentIndexNumber);
-      const seasonEp = hasIndexes
-        ? `S${media.ParentIndexNumber?.toFixed().padStart(2, '0')}E${media.IndexNumber?.toFixed().padStart(2, '0')} - `
-        : '';
-      return {
-        title: `${seasonEp}${media.Name}`,
-        secondary: `${media.SeriesName}`,
-      };
-    })
-    .otherwise(() => ({}));
-
-  return (
-    <ListItem {...listChildProps} divider sx={{ px: 1 }} dense key={media.Id}>
-      <Tooltip
-        placement="left"
-        title={mediaSourcesById[selected.serverId]?.name ?? 'Emby Server'}
-      >
-        <Box component="img" src={EmbyLogo} width={30} sx={{ pr: 1 }} />
-      </Tooltip>
-      <ListItemText primary={title} secondary={secondary} />
+      <ListItemText primary={media?.title ?? ''} secondary={secondary} />
       <ListItemIcon sx={{ minWidth: 40 }}>
         <IconButton onClick={() => removeSelectedMedia([selected])}>
           <RemoveIcon />
@@ -315,7 +180,8 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
-        return `${item.type}.${item.serverId}.${item.id}`;
+      case Imported:
+        return `${item.type}.${item.mediaSource.id}.${item.id}`;
       case 'custom-show':
         return `custom_${item.customShowId}_${index}`;
     }
@@ -325,26 +191,11 @@ export default function SelectedProgrammingList({
     const selected = selectedMedia[props.index];
     switch (selected.type) {
       case Plex:
-        return (
-          <PlexSelectedProgramListItem
-            knownMedia={knownMedia}
-            listChildProps={props}
-            selected={selected}
-            mediaSourcesById={mediaSourcesById}
-          />
-        );
       case Jellyfin:
-        return (
-          <JellyfinSelectedProgramListItem
-            knownMedia={knownMedia}
-            listChildProps={props}
-            selected={selected}
-            mediaSourcesById={mediaSourcesById}
-          />
-        );
       case Emby:
+      case Imported:
         return (
-          <EmbySelectedProgramListItem
+          <ImportedProgramListItem
             knownMedia={knownMedia}
             listChildProps={props}
             selected={selected}

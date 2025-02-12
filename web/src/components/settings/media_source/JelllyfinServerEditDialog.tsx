@@ -30,9 +30,9 @@ import {
 import { type JellyfinServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { type FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { type MarkOptional } from 'ts-essentials';
+import { StrictOmit, type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
 import {
   useCreateMediaSource,
@@ -46,7 +46,7 @@ type Props = {
 };
 
 export type JellyfinServerSettingsForm = MarkOptional<
-  JellyfinServerSettings,
+  StrictOmit<JellyfinServerSettings, 'libraries'>,
   'id'
 > & {
   password?: string;

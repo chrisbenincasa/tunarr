@@ -1,73 +1,47 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { NewSingleOrMultiProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
 import type { ContentProgram } from '@tunarr/types';
-import type { JellyfinItem } from '@tunarr/types/jellyfin';
-import type { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
+import {
+  isValidMultiExternalIdType,
+  isValidSingleExternalIdType,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
+import { injectable } from 'inversify';
 import { first } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import {
+  MediaSourceMusicAlbum,
+  MediaSourceMusicArtist,
+  MediaSourceSeason,
+  MediaSourceShow,
+} from '../../types/Media.ts';
 import type { Nullable } from '../../types/util.ts';
+import { MediaSourceId, MediaSourceName } from '../schema/base.ts';
+import {
+  NewMusicAlbum,
+  NewMusicArtist,
+  NewProgramGroupingWithExternalIds,
+  NewTvSeason,
+  NewTvShow,
+} from '../schema/derivedTypes.js';
+import { MediaSource, MediaSourceLibrary } from '../schema/MediaSource.ts';
 import {
   ProgramGroupingType,
   type NewProgramGrouping,
 } from '../schema/ProgramGrouping.ts';
 
+@injectable()
 export class ProgramGroupingMinter {
-  static mintParentProgramGroupingForPlex(
-    plexItem: PlexEpisode | PlexMusicTrack,
-  ): NewProgramGrouping {
-    const now = +dayjs();
-
-    return {
-      uuid: v4(),
-      type:
-        plexItem.type === 'episode'
-          ? ProgramGroupingType.Season
-          : ProgramGroupingType.Album,
-      createdAt: now,
-      updatedAt: now,
-      index: plexItem.parentIndex ?? null,
-      title: plexItem.parentTitle ?? '',
-      summary: null,
-      icon: null,
-      artistUuid: null,
-      showUuid: null,
-      year: null,
-    };
-  }
-
-  static mintParentProgramGroupingForJellyfin(jellyfinItem: JellyfinItem) {
-    if (jellyfinItem.Type !== 'Episode' && jellyfinItem.Type !== 'Audio') {
-      return null;
-    }
-
-    const now = +dayjs();
-
-    return {
-      uuid: v4(),
-      type:
-        jellyfinItem.Type === 'Episode'
-          ? ProgramGroupingType.Show
-          : ProgramGroupingType.Album,
-      createdAt: now,
-      updatedAt: now,
-      index: jellyfinItem.ParentIndexNumber ?? null,
-      title: jellyfinItem.SeasonName ?? jellyfinItem.Album ?? '',
-      summary: null,
-      icon: null,
-      artistUuid: null,
-      showUuid: null,
-      year: jellyfinItem.ProductionYear,
-    } satisfies NewProgramGrouping;
-  }
+  constructor() {}
 
   static mintGroupingExternalIds(
     program: ContentProgram,
     groupingId: string,
-    externalSourceId: string,
-    mediaSourceId: string,
+    externalSourceId: MediaSourceName,
+    mediaSourceId: MediaSourceId,
     relationType: 'parent' | 'grandparent',
   ): NewSingleOrMultiProgramGroupingExternalId[] {
     if (program.subtype === 'movie') {
@@ -124,6 +98,10 @@ export class ProgramGroupingMinter {
       return null;
     }
 
+    if (!item.canonicalId || !item.libraryId) {
+      return null;
+    }
+
     const now = +dayjs();
     return {
       uuid: v4(),
@@ -140,6 +118,8 @@ export class ProgramGroupingMinter {
       artistUuid: null,
       showUuid: null,
       year: item.grandparent.year,
+      canonicalId: item.canonicalId,
+      libraryId: item.libraryId,
     };
   }
 
@@ -147,6 +127,10 @@ export class ProgramGroupingMinter {
     item: MarkRequired<ContentProgram, 'parent'>,
   ): Nullable<NewProgramGrouping> {
     if (item.subtype === 'movie') {
+      return null;
+    }
+
+    if (!item.canonicalId || !item.libraryId) {
       return null;
     }
 
@@ -166,6 +150,210 @@ export class ProgramGroupingMinter {
       artistUuid: null,
       showUuid: null,
       year: item.parent.year,
+      canonicalId: item.canonicalId,
+      libraryId: item.libraryId,
     } satisfies NewProgramGrouping;
+  }
+
+  mintForMediaSourceShow(
+    mediaSource: MediaSource,
+    mediaSourceLibrary: MediaSourceLibrary,
+    show: MediaSourceShow,
+  ): NewTvShow {
+    const now = +dayjs();
+    const groupingId = v4();
+
+    const externalIds = seq.collect(show.identifiers, (id) => {
+      if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        return {
+          type: 'single',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      } else if (isValidMultiExternalIdType(id.type)) {
+        return {
+          type: 'multi',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          externalSourceId: mediaSource.name, // legacy
+          mediaSourceId: mediaSource.uuid, // new
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      }
+
+      return;
+    });
+
+    return {
+      uuid: groupingId,
+      type: ProgramGroupingType.Show,
+      createdAt: now,
+      updatedAt: now,
+      // index: show.index,
+      title: show.title,
+      summary: show.summary,
+      year: show.year,
+      libraryId: mediaSourceLibrary.uuid,
+      canonicalId: show.canonicalId,
+      externalIds,
+    } satisfies NewProgramGroupingWithExternalIds;
+  }
+
+  mintForMediaSourceArtist(
+    mediaSource: MediaSource,
+    mediaSourceLibrary: MediaSourceLibrary,
+    artist: MediaSourceMusicArtist,
+  ): NewMusicArtist {
+    const now = +dayjs();
+    const groupingId = v4();
+
+    const externalIds = seq.collect(artist.identifiers, (id) => {
+      if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        return {
+          type: 'single',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      } else if (isValidMultiExternalIdType(id.type)) {
+        return {
+          type: 'multi',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          externalSourceId: mediaSource.name, // legacy
+          mediaSourceId: mediaSource.uuid, // new
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      }
+
+      return;
+    });
+
+    return {
+      uuid: groupingId,
+      type: ProgramGroupingType.Artist,
+      createdAt: now,
+      updatedAt: now,
+      // index: show.index,
+      title: artist.title,
+      summary: artist.summary,
+      year: null,
+      libraryId: mediaSourceLibrary.uuid,
+      canonicalId: artist.canonicalId,
+      externalIds,
+    } satisfies NewMusicArtist;
+  }
+
+  mintSeason(
+    mediaSource: MediaSource,
+    mediaSourceLibrary: MediaSourceLibrary,
+    season: MediaSourceSeason,
+  ): NewTvSeason {
+    const now = +dayjs();
+    const groupingId = v4();
+
+    const externalIds = seq.collect(season.identifiers, (id) => {
+      if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        return {
+          type: 'single',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      } else if (isValidMultiExternalIdType(id.type)) {
+        return {
+          type: 'multi',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          externalSourceId: mediaSource.name, // legacy
+          mediaSourceId: mediaSource.uuid, // new
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      }
+
+      return;
+    });
+
+    return {
+      uuid: groupingId,
+      type: ProgramGroupingType.Season,
+      createdAt: now,
+      updatedAt: now,
+      index: season.index,
+      title: season.title,
+      summary: season.summary,
+      libraryId: mediaSourceLibrary.uuid,
+      canonicalId: season.canonicalId,
+      externalIds,
+    } satisfies NewProgramGroupingWithExternalIds;
+  }
+
+  mintMusicAlbum(
+    mediaSource: MediaSource,
+    mediaSourceLibrary: MediaSourceLibrary,
+    album: MediaSourceMusicAlbum,
+  ): NewMusicAlbum {
+    const now = +dayjs();
+    const groupingId = v4();
+
+    const externalIds = seq.collect(album.identifiers, (id) => {
+      if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        return {
+          type: 'single',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      } else if (isValidMultiExternalIdType(id.type)) {
+        return {
+          type: 'multi',
+          externalKey: id.id,
+          groupUuid: groupingId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          externalSourceId: mediaSource.name, // legacy
+          mediaSourceId: mediaSource.uuid, // new
+        } satisfies NewSingleOrMultiProgramGroupingExternalId;
+      }
+
+      return;
+    });
+
+    return {
+      uuid: groupingId,
+      type: ProgramGroupingType.Album,
+      createdAt: now,
+      updatedAt: now,
+      index: album.index,
+      title: album.title,
+      summary: album.summary,
+      libraryId: mediaSourceLibrary.uuid,
+      canonicalId: album.canonicalId,
+      externalIds,
+    } satisfies NewMusicAlbum;
   }
 }

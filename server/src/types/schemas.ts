@@ -29,3 +29,6 @@ export function isJsonObject(t: Json): t is JsonObject {
     isArray(t)
   );
 }
+export const mediaSourceParamsSchema = z.object({
+  mediaSourceId: z.string(),
+});

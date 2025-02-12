@@ -338,7 +338,7 @@ export class HlsSession extends BaseHlsSession {
             playlistLines,
           );
 
-        this.logger.trace('writing playlist\n%O', trimResult.playlist);
+        this.logger.trace('writing playlist\n%s', trimResult.playlist);
 
         await fs.writeFile(this._m3u8PlaylistPath, trimResult.playlist);
 

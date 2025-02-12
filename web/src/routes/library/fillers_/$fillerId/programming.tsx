@@ -2,6 +2,7 @@ import { preloadFillerAndProgramming } from '@/helpers/routeLoaders.ts';
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage.tsx';
 import { addMediaToCurrentFillerList } from '@/store/fillerListEditor/action.ts';
 import { createFileRoute } from '@tanstack/react-router';
+import { noop } from 'ts-essentials';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute('/library/fillers/$fillerId/programming')({
@@ -22,6 +23,9 @@ function FillerProgrammingSelectorPage() {
             params: { fillerId },
           }).catch(console.error);
         },
+        onMediaSourceChange: noop,
+        onLibraryChange: noop,
+        onSearchChange: noop,
         entityType: 'filler-list',
       }}
     >

@@ -17,14 +17,14 @@ import {
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { DatePicker } from '@mui/x-date-pickers';
-import {
-  type PlexFilter,
-  type PlexFilterOperatorNode,
-  type PlexFilterValueNode,
+import type {
+  PlexFilter,
+  PlexFilterOperatorNode,
+  PlexFilterValueNode,
 } from '@tunarr/types/api';
-import {
-  type PlexFilterResponseMeta,
-  type PlexFilterType,
+import type {
+  PlexFilterResponseMeta,
+  PlexFilterType,
 } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { find, first, isEmpty, isUndefined, map, size } from 'lodash-es';
@@ -36,13 +36,13 @@ import {
   useMemo,
   useState,
 } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
 import {
   Controller,
   FormProvider,
   useFieldArray,
   useForm,
   useFormContext,
-  type SubmitHandler,
 } from 'react-hook-form';
 import { useSelectedLibraryPlexFilters } from '../../../hooks/plex/usePlexFilters.ts';
 import { usePlexTags } from '../../../hooks/plex/usePlexTags.ts';
@@ -240,7 +240,7 @@ export function PlexValueNode({
 
   return (
     libraryFilterMetadata &&
-    libraryFilterMetadata.Field.length > 0 && (
+    (libraryFilterMetadata.Field?.length ?? 0) > 0 && (
       <Stack
         gap={1}
         sx={{ pl: 4 * depth, flexDirection: { xs: 'column', md: 'row' } }}
@@ -449,7 +449,7 @@ export function PlexFilterBuilder(
 
   const libraryFilterMetadata = find(
     plexFilterMetadata?.Type,
-    (t) => t.type === mediaSourceView?.library.type,
+    (t) => t.type === mediaSourceView?.library.childType,
   );
 
   const handleSearch: SubmitHandler<PlexFilter> = (data) => {
@@ -469,7 +469,9 @@ export function PlexFilterBuilder(
         type: 'value',
         op: '=',
         field:
-          mediaSourceView?.library.type === 'show' ? 'show.title' : 'title',
+          mediaSourceView?.library.childType === 'show'
+            ? 'show.title'
+            : 'title',
         value: '',
       });
     }

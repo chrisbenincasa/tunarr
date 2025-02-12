@@ -10,6 +10,7 @@ import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { enumValues } from '@/util/enumUtil.js';
 import { ifDefined } from '@/util/index.js';
+import { tag } from '@tunarr/types';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -342,7 +343,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const mediaSource = (await req.serverCtx.mediaSourceDB.getById(
-        req.query.id,
+        tag(req.query.id),
       ))!;
 
       const knownProgramIds = await req.serverCtx

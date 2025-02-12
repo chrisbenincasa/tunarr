@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 
-type Props = { isNew: boolean };
+type Props = { isNew?: boolean };
 
 export default function EditCustomShowPage({ isNew }: Props) {
   const { showId } = Route.useParams();

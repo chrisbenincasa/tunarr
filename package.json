@@ -30,7 +30,7 @@
     "eslint-import-resolver-typescript": "^3.7.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react": "^7.37.3",
-    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^15.0.0",
@@ -48,7 +48,6 @@
   "packageManager": "pnpm@9.12.3",
   "pnpm": {
     "patchedDependencies": {
-      "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch",
       "kysely": "patches/kysely.patch"
     },
     "overrides": {

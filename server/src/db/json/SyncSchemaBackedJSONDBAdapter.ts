@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import type { Nullable } from '@/types/util.js';
 import { isProduction } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -51,8 +50,8 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny>
 
       if (!parseResult.success) {
         this.logger.error(
-          `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
           parseResult.error,
+          `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
         );
         return null;
       }
@@ -64,8 +63,8 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny>
     const parseResult = this.schema.safeParse(data);
     if (!parseResult.success) {
       this.logger.warn(
-        'Could not verify schema before saving to DB - the given type does not match the expected schema.',
         parseResult.error,
+        'Could not verify schema before saving to DB - the given type does not match the expected schema.',
       );
       throw new Error(
         'Could not verify schema before saving to DB - the given type does not match the expected schema.',

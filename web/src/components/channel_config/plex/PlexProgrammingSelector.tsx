@@ -4,10 +4,10 @@ import {
 } from '@/store/programmingSelector/selectors.ts';
 import { PlexMediaSourceLibraryViewType } from '@/store/programmingSelector/store.ts';
 import { Box, Tab, Tabs, Tooltip } from '@mui/material';
+import { ProgramOrFolder } from '@tunarr/types';
 import { filter, isNil } from 'lodash-es';
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { P, match } from 'ts-pattern';
-import { extractPlexRatingKey } from '../../../helpers/plexUtil.ts';
 import { useProgramHierarchy } from '../../../hooks/channel_config/useProgramHierarchy.ts';
 import { usePlexLibraries } from '../../../hooks/plex/usePlex.ts';
 import { useMediaSources } from '../../../hooks/settingsHooks.ts';
@@ -57,7 +57,9 @@ export default function PlexProgrammingSelector({
     .with(P.nullish, () => TabValues.Library)
     .exhaustive();
 
-  const programHierarchyRet = useProgramHierarchy(extractPlexRatingKey);
+  const programHierarchyRet = useProgramHierarchy<ProgramOrFolder>(
+    useCallback((pof) => pof.uuid, []),
+  );
 
   const isListView = useStore(
     (s) => s.theme.programmingSelectorView === 'list',
@@ -88,7 +90,7 @@ export default function PlexProgrammingSelector({
   return (
     <>
       {!isNil(directoryChildren) &&
-        directoryChildren.size > 0 &&
+        directoryChildren.length > 0 &&
         selectedLibrary && (
           <>
             <PlexProgrammingFilterToolbar />

@@ -1,21 +1,21 @@
-import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { isQueryError } from '@/external/BaseApiClient.js';
 import { EmbyApiClient } from '@/external/emby/EmbyApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { isDefined, nullToUndefined } from '@/util/index.js';
-import { EmbyLoginRequest } from '@tunarr/types/api';
-import type { EmbyCollectionType } from '@tunarr/types/emby';
+import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';
+import type { Library } from '@tunarr/types';
+import { tag } from '@tunarr/types';
+import { EmbyLoginRequest, PagedResult } from '@tunarr/types/api';
 import {
   EmbyItemFields,
   EmbyItemKind,
   EmbyItemSortBy,
-  EmbyLibraryItemsResponse,
-  type EmbyLibraryItemsResponse as EmbyLibraryItemsResponseType,
 } from '@tunarr/types/emby';
+import { ItemOrFolder, Library as LibrarySchema } from '@tunarr/types/schemas';
 import type { FastifyReply } from 'fastify/types/reply.js';
-import { filter, isEmpty, isNil, isUndefined, uniq } from 'lodash-es';
+import { isEmpty, isNil, isUndefined, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
+import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import { ServerRequestContext } from '../ServerContext.ts';
 import type {
   RouterPluginCallback,
   ZodFastifyRequest,
@@ -24,19 +24,6 @@ import type {
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
 });
-
-const ValidEmbyCollectionTypes: EmbyCollectionType[] = [
-  'movies',
-  'tvshows',
-  'music',
-  'trailers',
-  'musicvideos',
-  'homevideos',
-  'playlists',
-  'boxsets',
-  'folders',
-  'unknown',
-];
 
 function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
   return !isEmpty(f);
@@ -83,7 +70,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
       schema: {
         params: mediaSourceParams,
         response: {
-          200: EmbyLibraryItemsResponse,
+          200: z.array(LibrarySchema),
         },
       },
     },
@@ -94,27 +81,34 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             mediaSource,
           );
 
-        const response = await api.getUserViews();
+        const response = await api.getUserLibraries();
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        const sanitizedResponse: EmbyLibraryItemsResponseType = {
-          ...response.data,
-          Items: filter(response.data.Items, (library) => {
-            // Mixed collections don't have this set
-            if (!library.CollectionType) {
-              return true;
-            }
+        // const sanitizedResponse: EmbyLibraryItemsResponseType = {
+        //   ...response.get(),
+        //   Items: filter(response.get().Items, (library) => {
+        //     // Mixed collections don't have this set
+        //     if (!library.CollectionType) {
+        //       return true;
+        //     }
 
-            return ValidEmbyCollectionTypes.includes(
-              library.CollectionType as EmbyCollectionType,
-            );
-          }),
-        };
+        //     return ValidEmbyCollectionTypes.includes(
+        //       library.CollectionType as EmbyCollectionType,
+        //     );
+        //   }),
+        // };
 
-        return res.send(sanitizedResponse);
+        // await addTunarrLibraryIdsToResponse(
+        //   sanitizedResponse.Items,
+        //   mediaSource,
+        // );
+
+        await addTunarrLibraryIdsToResponse(response.get(), mediaSource);
+
+        return res.send(response.get());
       }),
   );
 
@@ -164,7 +158,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .or(z.array(z.enum(['Artist', 'AlbumArtist'])).optional()),
         }),
         response: {
-          200: EmbyLibraryItemsResponse,
+          200: PagedResult(ItemOrFolder.array()),
         },
       },
     },
@@ -201,11 +195,11 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : ['SortName', 'ProductionYear'],
         );
 
-        if (isQueryError(response)) {
-          throw new Error(response.message);
+        if (response.isFailure()) {
+          throw response.error;
         }
 
-        return res.send(response.data);
+        return res.send(response.get());
       }),
   );
 
@@ -216,10 +210,10 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
   >(
     req: Req,
     res: FastifyReply,
-    cb: (m: MediaSource) => Promise<FastifyReply>,
+    cb: (m: MediaSourceWithLibraries) => Promise<FastifyReply>,
   ) {
     const mediaSource = await req.serverCtx.mediaSourceDB.getById(
-      req.params.mediaSourceId,
+      tag(req.params.mediaSourceId),
     );
 
     if (isNil(mediaSource)) {
@@ -241,3 +235,42 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
   done();
 };
+
+async function addTunarrLibraryIdsToResponse(
+  response: Library[],
+  mediaSource: MediaSourceWithLibraries,
+  attempts: number = 1,
+) {
+  if (attempts > 2) {
+    return;
+  }
+
+  const librariesByExternalId = groupByUniq(
+    mediaSource.libraries,
+    (lib) => lib.externalKey,
+  );
+  let needsRefresh = false;
+  for (const library of response) {
+    const tunarrLibrary = librariesByExternalId[library.externalId];
+    if (!tunarrLibrary) {
+      needsRefresh = true;
+      continue;
+    }
+
+    library.uuid = tunarrLibrary.uuid;
+  }
+
+  if (needsRefresh) {
+    const ctx = ServerRequestContext.currentServerContext()!;
+    await ctx.mediaSourceLibraryRefresher.refreshMediaSource(mediaSource);
+    // This definitely exists...
+    const newMediaSource = await ctx.mediaSourceDB.getById(mediaSource.uuid);
+    return addTunarrLibraryIdsToResponse(
+      response,
+      newMediaSource!,
+      attempts + 1,
+    );
+  }
+
+  return;
+}

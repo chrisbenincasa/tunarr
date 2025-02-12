@@ -2,6 +2,7 @@ import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { FfprobeStreamDetails } from '@/stream/FfprobeStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { z } from 'zod/v4';
 import { container } from '../../container.ts';
@@ -92,7 +93,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
           streamDuration: +dayjs.duration({ seconds: 30 }),
           externalKey: 'none',
           externalSource: 'emby',
-          externalSourceId: 'none',
+          externalSourceId: tag('none'),
           programBeginMs: 0,
           programId: '',
           programType: 'movie',
@@ -115,7 +116,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
           return res.status(500).send();
         }
 
-        const server = await req.serverCtx.mediaSourceDB.getByName(
+        const server = await req.serverCtx.mediaSourceDB.getById(
           item.externalSourceId,
         );
 

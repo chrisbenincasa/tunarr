@@ -323,7 +323,7 @@ export class SessionManager {
             this.logger.debug(
               this.getLoggerContext(session?.id),
               'Connection removed for session %s: %O',
-              session?.id,
+              session?.id ?? '',
               connection,
             );
             // Error handled below

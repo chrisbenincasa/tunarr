@@ -1,6 +1,6 @@
 import type { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import type { ProgramDao } from '@/db/schema/Program.js';
+import type { ProgramDao, ProgramType } from '@/db/schema/Program.js';
 import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
@@ -10,15 +10,19 @@ import type {
 import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
 import type {
   MusicAlbumWithExternalIds,
+  NewProgramGroupingWithExternalIds,
+  NewProgramWithExternalIds,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
   TvSeasonWithExternalIds,
 } from '@/db/schema/derivedTypes.js';
-import type { Maybe, PagedResult } from '@/types/util.js';
-import type { ChannelProgram, ContentProgram } from '@tunarr/types';
-import type { MarkOptional } from 'ts-essentials';
+import type { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
+import type { ChannelProgram } from '@tunarr/types';
+import type { Dictionary, MarkOptional } from 'ts-essentials';
+import type { MediaSourceType } from '../schema/MediaSource.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
+import type { MediaSourceId } from '../schema/base.ts';
 import type { PageParams } from './IChannelDB.ts';
 
 export interface IProgramDB {
@@ -35,11 +39,19 @@ export interface IProgramDB {
 
   getProgramsByIds(
     ids: string[],
-    batchSize: number,
+    batchSize?: number,
   ): Promise<ProgramWithRelations[]>;
 
   getProgramGrouping(
     id: string,
+  ): Promise<Maybe<ProgramGroupingWithExternalIds>>;
+
+  getProgramGroupings(
+    ids: string[],
+  ): Promise<Record<string, ProgramGroupingWithExternalIds>>;
+
+  getProgramGroupingByExternalId(
+    eid: ProgramGroupingExternalIdLookup,
   ): Promise<Maybe<ProgramGroupingWithExternalIds>>;
 
   getProgramParent(
@@ -73,11 +85,21 @@ export interface IProgramDB {
     sourceType: ProgramSourceType;
     externalSourceId: string;
     externalKey: string;
-  }): Promise<Maybe<ContentProgram>>;
+  }): Promise<Maybe<ProgramWithRelations>>;
 
   lookupByExternalIds(
-    ids: Set<[string, string, string]>,
-  ): Promise<Record<string, ContentProgram>>;
+    ids:
+      | Set<[string, MediaSourceId, string]>
+      | Set<readonly [string, MediaSourceId, string]>,
+    chunkSize?: number,
+  ): Promise<ProgramWithRelations[]>;
+
+  lookupByMediaSource(
+    sourceType: MediaSourceType,
+    sourceId: MediaSourceId,
+    mediaType?: ProgramType,
+    chunkSize?: number,
+  ): Promise<ProgramDao[]>;
 
   programIdsByExternalIds(
     ids: Set<[string, string, string]>,
@@ -107,7 +129,12 @@ export interface IProgramDB {
   upsertContentPrograms(
     programs: ChannelProgram[],
     programUpsertBatchSize?: number,
-  ): Promise<ProgramDao[]>;
+  ): Promise<MarkNonNullable<ProgramDao, 'mediaSourceId'>[]>;
+
+  upsertPrograms(
+    programs: NewProgramWithExternalIds[],
+    programUpsertBatchSize?: number,
+  ): Promise<ProgramWithExternalIds[]>;
 
   programIdsByExternalIds(
     ids: Set<[string, string, string]>,
@@ -117,9 +144,81 @@ export interface IProgramDB {
   upsertProgramExternalIds(
     externalIds: NewSingleOrMultiExternalId[],
     chunkSize?: number,
-  ): Promise<void>;
+  ): Promise<Dictionary<ProgramExternalId[]>>;
+
+  getProgramsForMediaSource(
+    mediaSourceId: string,
+    type?: ProgramType,
+  ): Promise<ProgramDao[]>;
+
+  getMediaSourceLibraryPrograms(
+    libraryId: string,
+  ): Promise<ProgramWithRelations[]>;
+
+  getProgramCanonicalIdsForMediaSource(
+    mediaSourceLibraryId: string,
+    type: ProgramType,
+  ): Promise<Dictionary<ProgramCanonicalIdLookupResult>>;
+
+  getProgramGroupingCanonicalIds(
+    mediaSourceLibraryId: string,
+    type: ProgramGroupingType,
+    sourceType: MediaSourceType,
+  ): Promise<Dictionary<ProgramGroupingCanonicalIdLookupResult>>;
+
+  getOrInsertProgramGrouping(
+    dao: NewProgramGroupingWithExternalIds,
+    externalId: ProgramGroupingExternalIdLookup,
+    forceUpdate?: boolean,
+  ): Promise<GetOrInsertResult<ProgramGroupingWithExternalIds>>;
+
+  getShowSeasons(showUuid: string): Promise<ProgramGroupingWithExternalIds[]>;
+
+  getArtistAlbums(
+    artistUuid: string,
+  ): Promise<ProgramGroupingWithExternalIds[]>;
+
+  getProgramGroupingChildCounts(
+    groupIds: string[],
+  ): Promise<Record<string, ProgramGroupingChildCounts>>;
+
+  getProgramGroupingDescendants(
+    groupId: string,
+    groupTypeHint?: ProgramGroupingType,
+  ): Promise<ProgramWithExternalIds[]>;
 }
 
 export type WithChannelIdFilter<T> = T & {
   channelId?: string;
+};
+
+export type ProgramCanonicalIdLookupResult = {
+  uuid: string;
+  canonicalId: string;
+  libraryId: string;
+  externalKey: string;
+};
+
+export type ProgramGroupingCanonicalIdLookupResult = {
+  uuid: string;
+  canonicalId: string;
+  libraryId: string;
+};
+
+export type ProgramGroupingExternalIdLookup = {
+  sourceType: ProgramExternalIdSourceType;
+  externalKey: string;
+  externalSourceId: MediaSourceId;
+};
+
+export type GetOrInsertResult<Entity> = {
+  wasInserted: boolean;
+  wasUpdated: boolean;
+  entity: Entity;
+};
+
+export type ProgramGroupingChildCounts = {
+  type: ProgramGroupingType;
+  childCount?: number;
+  grandchildCount?: number;
 };

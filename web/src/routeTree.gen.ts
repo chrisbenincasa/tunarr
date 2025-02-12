@@ -29,6 +29,7 @@ import { Route as SettingsGeneralImport } from './routes/settings/general';
 import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg';
 import { Route as LibraryFillersImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows';
+import { Route as LibraryLibraryIdImport } from './routes/library/$libraryId';
 import { Route as ChannelsTestImport } from './routes/channels/test';
 import { Route as ChannelsNewImport } from './routes/channels/new';
 import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId';
@@ -138,6 +139,11 @@ const LibraryFillersRoute = LibraryFillersImport.update({
 
 const LibraryCustomShowsRoute = LibraryCustomShowsImport.update({
   path: '/library/custom-shows',
+  getParentRoute: () => rootRoute,
+} as any);
+
+const LibraryLibraryIdRoute = LibraryLibraryIdImport.update({
+  path: '/library/$libraryId',
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -307,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/channels/test';
       fullPath: '/channels/test';
       preLoaderRoute: typeof ChannelsTestImport;
+      parentRoute: typeof rootRoute;
+    };
+    '/library/$libraryId': {
+      id: '/library/$libraryId';
+      path: '/library/$libraryId';
+      fullPath: '/library/$libraryId';
+      preLoaderRoute: typeof LibraryLibraryIdImport;
       parentRoute: typeof rootRoute;
     };
     '/library/custom-shows': {
@@ -539,6 +552,7 @@ export const routeTree = rootRoute.addChildren({
   ChannelsChannelIdRoute,
   ChannelsNewRoute,
   ChannelsTestRoute,
+  LibraryLibraryIdRoute,
   LibraryCustomShowsRoute,
   LibraryFillersRoute,
   ChannelsIndexRoute,
@@ -575,6 +589,7 @@ export const routeTree = rootRoute.addChildren({
         "/channels/$channelId",
         "/channels/new",
         "/channels/test",
+        "/library/$libraryId",
         "/library/custom-shows",
         "/library/fillers",
         "/channels/",
@@ -633,6 +648,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/channels/test": {
       "filePath": "channels/test.tsx"
+    },
+    "/library/$libraryId": {
+      "filePath": "library/$libraryId.tsx"
     },
     "/library/custom-shows": {
       "filePath": "library/custom-shows.tsx"

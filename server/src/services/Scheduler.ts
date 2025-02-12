@@ -82,7 +82,7 @@ class Scheduler {
     Scheduler.immediateExecuteQueue
       .add(() => task.run())
       .catch((e) => {
-        this.logger.error(e, 'Error running task', task);
+        this.logger.error(e, 'Error running task: %O', task);
       });
   }
 
@@ -103,7 +103,10 @@ class Scheduler {
     } else {
       const taskFactory = container.tryGet<interfaces.AutoFactory<TaskT>>(name);
       if (!taskFactory) {
-        this.logger.error('Unable to schedule unknown task: %s', name);
+        this.logger.error(
+          'Unable to schedule unknown task: %s',
+          name.toString(),
+        );
         return;
       }
 

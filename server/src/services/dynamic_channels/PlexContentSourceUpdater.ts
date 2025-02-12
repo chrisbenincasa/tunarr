@@ -1,19 +1,18 @@
 import type { PendingProgram } from '@/db/derived_types/Lineup.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import type { Channel } from '@/db/schema/Channel.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Timer } from '@/util/Timer.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ApiProgramMinter } from '@tunarr/shared';
-import { buildPlexFilterKey } from '@tunarr/shared/util';
-import type { ContentProgram } from '@tunarr/types';
+import { buildPlexFilterKey, seq } from '@tunarr/shared/util';
+import { tag, type ContentProgram } from '@tunarr/types';
 import type { DynamicContentConfigPlexSource } from '@tunarr/types/api';
-import type { PlexLibraryListing } from '@tunarr/types/plex';
 import { map } from 'lodash-es';
 import type { IChannelDB } from '../../db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.js';
+import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
 import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
@@ -23,7 +22,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   });
   #timer = new Timer(this.#logger);
   #plex: PlexApiClient;
-  #mediaSource: MediaSource;
+  #mediaSource: MediaSourceWithLibraries;
 
   constructor(
     private channelDB: IChannelDB,
@@ -38,7 +37,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   protected async prepare() {
     const server = await this.mediaSourceDB.findByType(
       'plex',
-      this.config.plexServerId,
+      tag(this.config.plexServerId),
     );
 
     if (!server) {
@@ -46,6 +45,15 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     }
 
     this.#mediaSource = server;
+
+    const library = this.#mediaSource.libraries.find(
+      (lib) => lib.externalKey === this.config.plexLibraryKey,
+    );
+    if (!library) {
+      throw new Error(
+        `Library with external key = ${this.config.plexLibraryKey} not found. Try syncing libraries.`,
+      );
+    }
   }
 
   protected async run() {
@@ -53,25 +61,29 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
 
     // TODO page through the results
     const plexResult = await this.#timer.timeAsync('plex search', () =>
-      this.#plex.doGetPath<PlexLibraryListing>(
-        `/library/sections/${this.config.plexLibraryKey}/all?${filter.join(
-          '&',
-        )}`,
+      this.#plex.search(
+        this.config.plexLibraryKey,
+        undefined,
+        filter.join('&'),
+        undefined,
       ),
     );
 
-    const enumerator = new PlexItemEnumerator(this.#plex, this.programDB);
+    const enumerator = new PlexItemEnumerator(this.#plex);
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
-      enumerator.enumerateItems(plexResult?.Metadata ?? []),
+      enumerator.enumerateItems(
+        this.#mediaSource,
+        plexResult.getOrThrow().result,
+      ),
     );
 
-    const channelPrograms: ContentProgram[] = map(enumeratedItems, (media) => {
-      return ApiProgramMinter.mintProgram(
-        { id: this.#mediaSource.uuid, name: this.#mediaSource.name },
-        { program: media, sourceType: 'plex' },
-      );
-    });
+    const channelPrograms: ContentProgram[] = seq.collect(
+      enumeratedItems,
+      (media) => {
+        return ApiProgramMinter.mintProgram2(media);
+      },
+    );
 
     const dbPrograms =
       await this.programDB.upsertContentPrograms(channelPrograms);

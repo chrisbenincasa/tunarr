@@ -1,14 +1,12 @@
-import { isNonEmptyString } from '@/helpers/util.ts';
-import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.ts';
+import { addKnownMediaForServer } from '@/store/programmingSelector/actions.ts';
 import type { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
 import type { Maybe, Nilable } from '@/types/util.ts';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
 import type { PlexServerSettings } from '@tunarr/types';
-import type { PlexPlaylists } from '@tunarr/types/plex';
 import { flatten, isNil, reject, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { fetchPlexPath } from '../../helpers/plexUtil.ts';
+import { getApiPlexByMediaSourceIdLibrariesByLibraryIdPlaylists } from '../../generated/sdk.gen.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
 
 /**
@@ -26,32 +24,31 @@ export const usePlexPlaylistsInfinite = (
       queryKey: [
         'plex',
         plexServer?.id,
-        currentLibrary?.library.key ?? 'all',
+        currentLibrary?.library.externalId ?? 'all',
         'playlists',
         'infinite',
       ],
-      queryFn: ({ pageParam }) => {
-        const plexQuery = new URLSearchParams({
-          type: '15',
+      queryFn: async ({ pageParam = 0 }) => {
+        const result =
+          await getApiPlexByMediaSourceIdLibrariesByLibraryIdPlaylists({
+            path: {
+              mediaSourceId: plexServer!.id,
+              libraryId: currentLibrary!.library.externalId,
+            },
+            query: {
+              offset: pageParam,
+              limit: pageSize,
+            },
+            throwOnError: true,
+          });
 
-          'X-Plex-Container-Start': pageParam.toString(),
-          'X-Plex-Container-Size': pageSize.toString(),
-        });
-
-        if (isNonEmptyString(currentLibrary?.library.key)) {
-          plexQuery.set('sectionID', currentLibrary.library.key);
-        }
-
-        return fetchPlexPath<PlexPlaylists>(
-          plexServer!.id,
-          `/playlists?${plexQuery.toString()}`,
-        )();
+        return result.data;
       },
       enabled: !isNil(plexServer) && enabled,
       initialPageParam: 0,
       getNextPageParam: (res, all, last) => {
         const total = sumBy(all, (page) => page.size);
-        if (total >= (res.totalSize ?? res.size)) {
+        if (total >= (res.total < 0 ? res.size : res.total)) {
           return null;
         }
 
@@ -59,7 +56,7 @@ export const usePlexPlaylistsInfinite = (
         return last + res.size;
       },
     });
-  }, [currentLibrary?.library.key, enabled, pageSize, plexServer]);
+  }, [currentLibrary, enabled, pageSize, plexServer]);
 
   const queryResult = useInfiniteQuery(queryOpts);
 
@@ -71,10 +68,10 @@ export const usePlexPlaylistsInfinite = (
           const playlists = flatten(
             seq.collect(
               reject(result.data.pages, (page) => page.size === 0),
-              (page) => page.Metadata,
+              (page) => page.result,
             ),
           );
-          addKnownMediaForPlexServer(plexServer!.id, playlists);
+          addKnownMediaForServer(plexServer!.id, playlists);
         }
       },
       [plexServer],

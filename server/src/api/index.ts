@@ -1,4 +1,3 @@
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
@@ -10,7 +9,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
-import { isEmpty, isNil } from 'lodash-es';
+import { isEmpty } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod/v4';
@@ -28,6 +27,7 @@ import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { jellyfinApiRouter } from './jellyfinApi.js';
 import { mediaSourceRouter } from './mediaSourceApi.js';
 import { metadataApiRouter } from './metadataApi.js';
+import { plexApiRouter } from './plexApi.ts';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
@@ -62,6 +62,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(hdhrSettingsRouter)
     .register(systemApiRouter)
     .register(guideRouter)
+    .register(plexApiRouter)
     .register(jellyfinApiRouter)
     .register(sessionApiRouter)
     .register(embyApiRouter);
@@ -142,6 +143,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
             name: z.string(),
             fileUrl: z.string(),
           }),
+          400: z.void(),
         },
       },
     },
@@ -225,7 +227,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
           .header('Content-Type', 'application/xml')
           .send(fileFinal);
       } catch (err) {
-        logger.error('%O', err);
+        logger.error(err);
         return res.status(500).send('error');
       }
     },
@@ -284,35 +286,6 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       await req.serverCtx.m3uService.regenerateCache();
       return res.status(204).send();
-    },
-  );
-
-  fastify.get(
-    '/plex',
-    {
-      schema: {
-        querystring: z.object({ id: z.string(), path: z.string() }),
-        operationId: 'queryPlex',
-      },
-    },
-    async (req, res) => {
-      req.logRequestAtLevel = 'trace';
-      const server = await req.serverCtx.mediaSourceDB.findByType(
-        MediaSourceType.Plex,
-        req.query.id,
-      );
-
-      if (isNil(server)) {
-        return res
-          .status(404)
-          .send({ error: 'No server found with id: ' + req.query.id });
-      }
-
-      const plex =
-        await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
-          server,
-        );
-      return res.send(await plex.doGetPath(req.query.path));
     },
   );
 };

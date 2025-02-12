@@ -8,7 +8,7 @@ import {
 } from '@tunarr/types';
 import { findIndex, forEach, inRange, merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import { type AddedMedia } from '../../types/index.ts';
 import useStore from '../index.ts';
@@ -17,29 +17,34 @@ export const addMediaToCurrentCustomShow = (programs: AddedMedia[]) =>
   useStore.setState(({ customShowEditor }) => {
     if (customShowEditor.currentEntity && programs.length > 0) {
       customShowEditor.dirty.programs = true;
-      const allNewPrograms = seq.collect(programs, (item) =>
-        match(item)
-          .with({ type: Plex, media: P.select() }, (plexItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: plexItem.serverId, name: plexItem.serverName },
-              { program: plexItem, sourceType: Plex },
-            ),
+      const allNewPrograms = seq.collect(programs, (item) => {
+        const result = match(item)
+          .returnType<ContentProgram | null>()
+          // There might be a way to consolidate these in a type-safe way, but I'm
+          // not sure right now.
+          .with(
+            { type: P.union(Plex, Jellyfin, Emby), media: P.select() },
+            (item) => ApiProgramMinter.mintProgram2(item),
           )
-          .with({ type: Jellyfin, media: P.select() }, (jfItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: jfItem.serverId, name: jfItem.serverName },
-              { program: jfItem, sourceType: Jellyfin },
-            ),
+          .with({ type: 'custom-show', program: P.select() }, () => null)
+          .with(
+            {
+              type: Imported,
+              media: P.select(),
+            },
+            (program) => program,
           )
-          .with({ type: Emby, media: P.select() }, (embyItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: embyItem.serverId, name: embyItem.serverName },
-              { program: embyItem, sourceType: Emby },
-            ),
-          )
-          .with({ type: 'custom-show' }, () => null)
-          .exhaustive(),
-      );
+          .exhaustive();
+
+        if (!result) {
+          console.warn(
+            'Could not successfully convert item to API representation. This implies data was missing and the item was omitted to protect invariants. Please report this!',
+            item,
+          );
+        }
+
+        return result;
+      });
 
       customShowEditor.programList = customShowEditor.programList.concat(
         zipWithIndex(allNewPrograms, customShowEditor.programList.length),

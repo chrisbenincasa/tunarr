@@ -1,20 +1,18 @@
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { typedProperty } from '@/types/path.js';
-import { asyncPool, unfurlPool } from '@/util/asyncPool.js';
-import { flatMapAsyncSeq, wait } from '@/util/index.js';
+import { flatMapAsyncSeq } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Timer } from '@/util/Timer.js';
-import { createExternalId } from '@tunarr/shared';
-import type {
-  PlexChildMediaViewType,
-  PlexLibrarySection,
-  PlexMedia,
-  PlexTerminalMedia,
-} from '@tunarr/types/plex';
-import { isPlexDirectory, isTerminalItem } from '@tunarr/types/plex';
-import { flatten, isNil, map, uniqBy } from 'lodash-es';
-import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import {
+  isTerminalItemType,
+  type Library,
+  type ProgramOrFolder,
+  type TerminalProgram,
+} from '@tunarr/types';
+import type { PlexTerminalMedia } from '@tunarr/types/plex';
+import { flatten, flattenDeep, map, uniqBy } from 'lodash-es';
+import { match, P } from 'ts-pattern';
+import type { MediaSource } from '../db/schema/MediaSource.ts';
+import { asyncPool, unfurlPool } from '../util/asyncPool.ts';
 
 export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
   id?: string;
@@ -22,91 +20,64 @@ export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
 
 export class PlexItemEnumerator {
   #logger: Logger = LoggerFactory.child({ className: PlexItemEnumerator.name });
-  #timer = new Timer(this.#logger);
-  #plex: PlexApiClient;
 
-  constructor(
-    plex: PlexApiClient,
-    private programDB: IProgramDB,
+  constructor(private plex: PlexApiClient) {}
+
+  async enumerateItems(
+    mediaSource: MediaSource,
+    initialItems: (ProgramOrFolder | Library)[],
   ) {
-    this.#plex = plex;
-  }
-
-  async enumerateItems(initialItems: (PlexMedia | PlexLibrarySection)[]) {
     this.#logger.debug(
       'enumerating items: %O',
-      map(initialItems, (item) => item.key),
+      map(initialItems, (item) => item.externalId),
     );
     const allItems = await flatMapAsyncSeq(initialItems, (item) =>
-      this.enumerateItem(item),
+      this.enumerateItem(mediaSource, item),
     );
-    return uniqBy(allItems, typedProperty('key'));
+    return uniqBy(allItems, (item) => item.externalId);
   }
 
   async enumerateItem(
-    initialItem: PlexMedia | PlexLibrarySection,
-  ): Promise<EnrichedPlexTerminalMedia[]> {
-    const loopInner = async (
-      item: PlexMedia | PlexLibrarySection,
-    ): Promise<PlexTerminalMedia[]> => {
-      await wait(50);
-      if (isTerminalItem(item)) {
-        return [item];
-      } else if (isPlexDirectory(item)) {
-        return [];
-      } else {
-        const plexResult = await this.#plex.doGetPath<PlexChildMediaViewType>(
-          item.key,
-        );
-
-        if (isNil(plexResult)) {
-          // TODO Log
-          return [];
-        }
-
-        // TODO: we could use a single pqueue here
-        return flatten(
-          await unfurlPool(
-            asyncPool<
-              PlexMedia | PlexLibrarySection,
-              EnrichedPlexTerminalMedia[]
-            >(plexResult.Metadata, (listing) => loopInner(listing), {
-              concurrency: 3,
-            }),
-          ),
-        );
+    mediaSource: MediaSource,
+    item: ProgramOrFolder | Library,
+    parent?: ProgramOrFolder | Library,
+    acc: TerminalProgram[] = [],
+  ): Promise<TerminalProgram[]> {
+    if (isTerminalItemType(item)) {
+      if ((item.duration ?? 0) <= 0) {
+        return acc;
       }
-    };
 
-    // q.add(async () => {
-    //   return await
-    // })
+      if (item.type === 'episode' && parent?.type === 'season') {
+        item.season = parent;
+      } else if (item.type === 'track' && parent?.type === 'album') {
+        item.album = parent;
+      }
 
-    const res = await this.#timer.timeAsync('loop ' + initialItem.key, () =>
-      loopInner(initialItem),
-    );
+      acc.push(item);
+      return acc;
+    } else {
+      if (item.type === 'season' && parent?.type === 'show') {
+        item.show = parent;
+      }
 
-    const externalIds: [string, string, string][] = res.map(
-      (m) => ['plex', this.#plex.serverName, m.key] as const,
-    );
-
-    // This is best effort - if the user saves these IDs later, the upsert
-    // logic should figure out what is new/existing
-    try {
-      const existingIdsByExternalId = await this.#timer.timeAsync(
-        'programIdsByExternalIds',
-        () => this.programDB.programIdsByExternalIds(new Set(externalIds)),
-      );
-      return map(res, (media) => ({
-        ...media,
-        id: existingIdsByExternalId[
-          createExternalId('plex', this.#plex.serverName, media.key)
-        ],
-      }));
-    } catch (e) {
-      console.error('Unable to retrieve IDs in batch', e);
+      const parentType = match(item.type)
+        .returnType<'item' | 'collection' | 'playlist'>()
+        .with('collection', () => 'collection')
+        .with('playlist', () => 'playlist')
+        .with(P._, () => 'item')
+        .exhaustive();
+      return this.plex
+        .getItemChildren(item.externalId, parentType)
+        .then(async (result) => {
+          const pool = asyncPool(
+            result.getOrThrow(),
+            (nextItem) => this.enumerateItem(mediaSource, nextItem, item, acc),
+            { concurrency: 3 },
+          );
+          return flatten(await unfurlPool(pool));
+        })
+        .then((allResults) => flattenDeep(allResults));
     }
-
-    return res;
   }
 }

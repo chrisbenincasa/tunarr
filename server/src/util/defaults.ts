@@ -5,10 +5,7 @@ import { isRunningInContainer } from './containerUtil.ts';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './env.ts';
 import { isNonEmptyString, isProduction } from './index.js';
 import type { LogLevels } from './logging/LoggerFactory.ts';
-import {
-  LogConfigEnvVars,
-  getEnvironmentLogLevel,
-} from './logging/LoggerFactory.ts';
+import { getEnvironmentLogLevel } from './logging/LoggerFactory.ts';
 
 function getRuntimeSpecificPrefix(): string {
   let prefix: string;
@@ -26,12 +23,7 @@ function getRuntimeSpecificPrefix(): string {
 }
 
 export function getDefaultLogDirectory(): string {
-  const env = process.env[LogConfigEnvVars.directory];
-  if (isNonEmptyString(env)) {
-    return env;
-  }
-
-  return path.join(getRuntimeSpecificPrefix() ?? '', 'tunarr', 'logs');
+  return path.join(getDefaultDatabaseDirectory(), 'logs');
 }
 
 export function getDefaultLogLevel(useEnvVar: boolean = true): LogLevels {

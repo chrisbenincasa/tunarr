@@ -1,6 +1,6 @@
 /// <reference types="vite-plugin-svgr/client" />
 
-import { type EnrichedJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
+import type { TerminalProgram } from '@tunarr/types';
 import {
   type ChannelProgram,
   type CondensedChannelProgram,
@@ -8,21 +8,10 @@ import {
   type ContentProgram,
   type CustomProgram,
   type FlexProgram,
-  type Program,
   type RedirectProgram,
 } from '@tunarr/types';
 import type { MarkRequired } from 'ts-essentials';
-import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';
-import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
-import type { Emby } from './MediaSource';
-
-// A program that may or may not exist in the DB yet
-export type EphemeralProgram = Omit<Program, 'id'>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PreloadedData<T extends (...args: any[]) => any> = Awaited<
-  ReturnType<ReturnType<T>>
->;
+import type { Emby, Imported, Jellyfin, Plex } from './MediaSource';
 
 export type UIIndex = { uiIndex: number; originalIndex: number };
 
@@ -109,18 +98,23 @@ export type AddedCustomShowProgram = {
 };
 
 export type AddedPlexMedia = {
-  type: 'plex';
-  media: EnrichedPlexMedia;
+  type: Plex;
+  media: TerminalProgram;
 };
 
 export type AddedJellyfinMedia = {
-  type: 'jellyfin';
-  media: EnrichedJellyfinItem;
+  type: Jellyfin;
+  media: TerminalProgram;
 };
 
 export type AddedEmbyMedia = {
   type: Emby;
-  media: EnrichedEmbyItem;
+  media: TerminalProgram;
+};
+
+export type AddedImportedMedia = {
+  type: Imported;
+  media: ContentProgram;
 };
 
 /**
@@ -130,7 +124,8 @@ export type AddedMedia =
   | AddedPlexMedia
   | AddedJellyfinMedia
   | AddedEmbyMedia
-  | AddedCustomShowProgram;
+  | AddedCustomShowProgram
+  | AddedImportedMedia;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type Prettify<Type> = Type extends Function

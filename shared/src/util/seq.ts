@@ -155,3 +155,16 @@ export function binarySearchRange(seq: readonly number[], target: number) {
 
   return low;
 }
+
+export function inTuple<Arr extends readonly string[], S extends string>(
+  arr: Arr,
+  typ: S,
+): boolean {
+  for (const value of arr) {
+    if (value === typ) {
+      return true;
+    }
+  }
+
+  return false;
+}

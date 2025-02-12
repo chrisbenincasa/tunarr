@@ -1,6 +1,6 @@
 import { isError, isString } from 'lodash-es';
 import { Result } from '../types/result.ts';
-import { wait } from './index.js';
+import { caughtErrorToError, wait } from './index.js';
 
 type AsyncPoolOpts = {
   concurrency: number;
@@ -11,6 +11,7 @@ type AsyncPoolOpts = {
 // Notable changes:
 // 1. Types
 
+import { WrappedError } from '../types/errors.ts';
 import { LoggerFactory } from './logging/LoggerFactory.js';
 
 // 2. Single failed promise doesn't abort the whole operation
@@ -105,16 +106,7 @@ export async function* asyncPoolGen<T, R>(
         }
         return [item, r] as const;
       } catch (e) {
-        let error: Error;
-        if (isError(e)) {
-          error = e;
-        } else if (isString(e)) {
-          error = new Error(e);
-        } else {
-          error = new Error(JSON.stringify(e));
-        }
-
-        throw new ErrorWithInput(error, item);
+        throw new ErrorWithInput(caughtErrorToError(e), item);
       }
     })().finally(() => executing.delete(promise));
 
@@ -146,16 +138,12 @@ export async function unfurlPool<T, R>(
   return results;
 }
 
-class ErrorWithInput<In> extends Error {
+class ErrorWithInput<In> extends WrappedError {
   constructor(
-    private root: Error,
+    root: Error,
     public input: In,
   ) {
-    super(root?.message);
-  }
-
-  get cause(): unknown {
-    return this.root;
+    super(root?.message, { cause: root.cause });
   }
 }
 

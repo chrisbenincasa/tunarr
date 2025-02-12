@@ -1,14 +1,6 @@
 import { floor, range } from 'lodash-es';
 import { estimateNumberOfColumns } from './util';
 
-// Magic Numbers
-// TODO: eventually grab this data via refs just in case it changes in the future
-const SeasonModalHeight = 204;
-const DefaultSingleRowModalHeight = 294;
-const inlineModalTopPadding = 16;
-const imageContainerXPadding = 8;
-const listItemBarContainerHeight = 54;
-
 export function getImagesPerRow(
   containerWidth: number,
   imageWidth: number,
@@ -21,35 +13,6 @@ export function getImagesPerRow(
 }
 
 // Estimate the modal height to prevent div collapse while new modal images load
-export function getEstimatedModalHeight(
-  itemsPerRow: number,
-  containerWidth: number,
-  imageContainerWidth: number,
-  listSize: number,
-  type: string, // temporary
-  // type: PlexMedia['type'] | 'all',
-): number {
-  // Episode modals have smaller height, short circuit for  now
-  if (type.toLowerCase() === 'season') {
-    return SeasonModalHeight;
-  }
-  // Exit with defaults if container & image width are not provided
-  if (containerWidth === 0 || imageContainerWidth === 0) {
-    return DefaultSingleRowModalHeight; //default modal height for 1 row
-  }
-
-  const imagewidth = imageContainerWidth - imageContainerXPadding * 2; // 16px padding on each item
-  const heightPerImage = (3 * imagewidth) / 2; // Movie Posters are 2:3
-  const heightPerItem =
-    heightPerImage + listItemBarContainerHeight + imageContainerXPadding; // 54px
-
-  const rows = listSize < itemsPerRow ? 1 : Math.ceil(listSize / itemsPerRow);
-  //This is min-height so we only need to adjust it for visible rows since we
-  //use interesectionObserver to load them in
-  const maxRows = rows >= 3 ? 3 : rows;
-
-  return Math.ceil(maxRows * heightPerItem + inlineModalTopPadding); // 16px padding added to top
-}
 
 export function isNewModalBelow(
   previousModalIndex: number,

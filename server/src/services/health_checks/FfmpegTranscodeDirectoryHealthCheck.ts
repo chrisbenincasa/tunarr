@@ -31,10 +31,8 @@ export class FfmpegTranscodeDirectoryHealthCheck implements HealthCheck {
         fs.stat(parentDir),
       );
       if (parentStatResult.isFailure()) {
-        if (
-          isNodeError(parentStatResult.error) &&
-          parentStatResult.error.code === 'ENOENT'
-        ) {
+        const err = parentStatResult.error;
+        if (isNodeError(err.cause) && err.cause.code === 'ENOENT') {
           return healthCheckResult({
             type: 'error',
             context: `Parent directory of configured transcode directory ${settings.transcodeDirectory} does not exist. Tunarr will not be able to create the transcode directory`,

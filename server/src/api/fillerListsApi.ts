@@ -116,6 +116,7 @@ export const fillerListsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: UpdateFillerListRequestSchema,
         response: {
           200: FillerListSchema,
+          404: z.void(),
         },
       },
     },

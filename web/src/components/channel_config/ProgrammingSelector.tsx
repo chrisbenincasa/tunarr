@@ -2,29 +2,37 @@ import {
   Alert,
   Box,
   FormControl,
+  FormControlLabel,
   InputLabel,
+  Link,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
-import { capitalize, find, isEmpty, isUndefined, map } from 'lodash-es';
+import { Link as RouterLink } from '@tanstack/react-router';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import { SearchRequest } from '@tunarr/types/api';
+import { capitalize, find, isEmpty, isUndefined, map, some } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useProgrammingSelectionContext } from '../../hooks/useProgrammingSelectionContext.ts';
-import { Route } from '../../routes/channels_/$channelId/programming/add.tsx';
 import useStore from '../../store/index.ts';
 import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
+import { LibraryProgramGrid } from '../library/LibraryProgramGrid.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
 import { EmbyProgrammingSelector } from './emby/EmbyProgrammingSelector.tsx';
+import { ImportedLibrarySelector } from './ImportedLibrarySeletor.tsx';
 import { JellyfinLibrarySelector } from './jellyfin/JellyfinLibrarySelector.tsx';
 import { JellyfinProgrammingSelector } from './jellyfin/JellyfinProgrammingSelector.tsx';
 import { PlexLibrarySelector } from './plex/PlexLibrarySelector.tsx';
@@ -33,6 +41,7 @@ import PlexProgrammingSelector from './plex/PlexProgrammingSelector.tsx';
 type Props = {
   initialMediaSourceId?: string;
   initialLibraryId?: string;
+  initialSearchRequest?: SearchRequest;
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
@@ -41,17 +50,21 @@ export const ProgrammingSelector = ({
   initialLibraryId,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) => {
-  const { entityType } = useProgrammingSelectionContext();
+  const { entityType, onMediaSourceChange } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
-  const navigate = Route.useNavigate();
+  const [useSyncedSources, setUseSyncedSources] = useState(true);
   const viewingCustomShows = mediaSource === 'custom-shows';
 
+  const { data: libraries, isLoading: librariesLoading } =
+    useMediaSourceLibraries(selectedServer?.id ?? '', {
+      enabled: isNonEmptyString(selectedServer?.id),
+    });
+
   useEffect(() => {
-    console.log('105');
     const server =
       !isUndefined(mediaSources) && !isEmpty(mediaSources)
         ? (find(mediaSources, ({ id }) => id === initialMediaSourceId) ??
@@ -66,7 +79,7 @@ export const ProgrammingSelector = ({
    */
   const { data: customShows } = useCustomShows();
 
-  const onMediaSourceChange = useCallback(
+  const handleMediaSourceChange = useCallback(
     (newMediaSourceId: string) => {
       if (newMediaSourceId === 'custom-shows') {
         // Not dealing with a server
@@ -81,19 +94,36 @@ export const ProgrammingSelector = ({
         if (server) {
           setProgrammingListingServer(server);
           setMediaSource(server.name);
-          navigate({
-            search: {
-              mediaSourceId: server.id,
-              libraryId: undefined,
-            },
-          }).catch(console.error);
+          onMediaSourceChange(server.id);
         }
       }
     },
-    [mediaSources, navigate],
+    [mediaSources, onMediaSourceChange],
   );
 
   const renderMediaSourcePrograms = () => {
+    const noSyncedLibraries =
+      useSyncedSources &&
+      !librariesLoading &&
+      !some(libraries, (lib) => lib.enabled && !!lib.lastScannedAt);
+
+    if (noSyncedLibraries) {
+      return (
+        <Alert severity="error">
+          This media source has no enabled or scanned libraries. Enable
+          libraries for this source on the{' '}
+          <Link component={RouterLink} href="/settings/sources">
+            Media Sources
+          </Link>{' '}
+          page or manually trigger scans on the{' '}
+          <Link component={RouterLink} href="/library">
+            Library
+          </Link>{' '}
+          page.
+        </Alert>
+      );
+    }
+
     if (selectedLibrary) {
       switch (selectedLibrary.type) {
         case Plex:
@@ -128,6 +158,21 @@ export const ProgrammingSelector = ({
               }
             />
           );
+        case Imported:
+          return (
+            <Box sx={{ mt: 2 }}>
+              <LibraryProgramGrid
+                library={{
+                  ...selectedLibrary.view,
+                  mediaSource: selectedServer!,
+                }}
+                disableProgramSelection={false}
+                toggleOrSetSelectedProgramsDrawer={
+                  toggleOrSetSelectedProgramsDrawer
+                }
+              />
+            </Box>
+          );
       }
     }
 
@@ -138,8 +183,8 @@ export const ProgrammingSelector = ({
             Connect Media Source
           </Typography>
           <Typography sx={{ mb: 3 }} align="left">
-            To use Tunarr, you need to first connect a Plex or Jellyfin library.
-            This will allow you to build custom channels with your content.
+            To use Tunarr, you need to first connect a media source. This will
+            allow you to build custom channels with your content.
           </Typography>
 
           <Alert
@@ -159,6 +204,10 @@ export const ProgrammingSelector = ({
   const renderLibraryChoices = () => {
     if (isUndefined(selectedServer)) {
       return;
+    }
+
+    if (useSyncedSources) {
+      return <ImportedLibrarySelector initialLibraryId={initialLibraryId} />;
     }
 
     switch (selectedServer.type) {
@@ -200,7 +249,7 @@ export const ProgrammingSelector = ({
                     ? 'custom-shows'
                     : (selectedServer?.id ?? '')
                 }
-                onChange={(e) => onMediaSourceChange(e.target.value)}
+                onChange={(e) => handleMediaSourceChange(e.target.value)}
               >
                 {map(mediaSources, (server) => (
                   <MenuItem key={server.id} value={server.id}>
@@ -215,6 +264,15 @@ export const ProgrammingSelector = ({
           )}
 
           {renderLibraryChoices()}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useSyncedSources}
+                onChange={(_, v) => setUseSyncedSources(v)}
+              />
+            }
+            label="Show only synced"
+          />
           <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
       </Box>

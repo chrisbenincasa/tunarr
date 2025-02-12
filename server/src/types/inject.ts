@@ -23,6 +23,8 @@ const KEYS = {
   TimeSlotSchedulerServiceFactory: Symbol.for(
     'TimeSlotSchedulerServiceFactory',
   ),
+  MediaSourceLibraryRefresher: Symbol.for('MediaSourceLibraryRefresher'),
+  ProgramDaoMinterFactory: Symbol.for('ProgramDaoMinterFactory'),
 
   // Streaming
   HlsSession: Symbol.for('HlsSession'),
@@ -47,11 +49,26 @@ const KEYS = {
   Fixer: Symbol.for('Fixer'),
   WorkerPool: Symbol.for('WorkerPool'),
   WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
-
+  PlexCanonicalizer: Symbol.for('PlexCanonicalizer'),
+  JellyfinCanonicalizer: Symbol.for('JellyfinCanonicalizer'),
+  EmbyCanonicalizer: Symbol.for('EmbyCanonicalizer'),
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 
   FillerPicker: Symbol.for('FillerPicker'),
   ChannelCache: Symbol.for('ChannelCache'),
+  SearchService: Symbol.for('SearchService'),
+  PlexApiClientFactory: Symbol.for('PlexApiClientFactory'),
+  JellyfinApiClientFactory: Symbol.for('JellyfinApiClientFactory'),
+  EmbyApiClientFactory: Symbol.for('EmbyApiClientFactory'),
+  MediaSourceMovieLibraryScanner: Symbol.for('MediaSourceMovieLibraryScanner'),
+  MediaSourceTvShowLibraryScanner: Symbol.for(
+    'MediaSourceTvShowLibraryScanner',
+  ),
+  MediaSourceMusicLibraryScanner: Symbol.for('MediaSourceMusicLibraryScanner'),
+  MediaSourceLibraryScanner: Symbol.for('MediaSourceLibraryScanner'),
+
+  // Tasks
+  StartupTasks: Symbol.for('StartupTasks'),
 };
 
 export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;

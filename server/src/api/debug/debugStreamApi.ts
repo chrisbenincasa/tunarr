@@ -325,5 +325,6 @@ function createStreamItemFromProgram(
     contentDuration: program.duration,
     streamDuration: program.duration,
     infiniteLoop: false,
+    externalSourceId: program.mediaSourceId!,
   };
 }

@@ -6,6 +6,7 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
+import { seq } from '@tunarr/shared/util';
 import type { ChannelSession, CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
@@ -66,7 +67,11 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.addHook('onError', (req, _, error, done) => {
-    logger.error(error, '%s %s', req.routeOptions.method, req.routeOptions.url);
+    logger.error({
+      error,
+      method: req.routeOptions.method,
+      url: req.routeOptions.url,
+    });
     done();
   });
 
@@ -247,6 +252,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: z.object({ id: z.string() }),
         response: {
           200: ChannelSchema,
+          404: z.void(),
+          500: z.void(),
         },
       },
     },
@@ -362,7 +369,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       return res.send(
-        programs.map((program) =>
+        seq.collect(programs, (program) =>
           req.serverCtx.programConverter.programDaoToContentProgram(
             program,
             program.externalIds ?? [],
@@ -395,6 +402,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         result: shows.map((show) =>
           req.serverCtx.programConverter.tvShowDaoToDto(show),
         ),
+        size: shows.length,
       });
     },
   );
@@ -422,6 +430,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         result: shows.map((show) =>
           req.serverCtx.programConverter.musicArtistDaoToDto(show),
         ),
+        size: shows.length,
       });
     },
   );
@@ -566,7 +575,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const fallbacks =
         await req.serverCtx.channelDB.getChannelFallbackPrograms(req.params.id);
-      const converted = map(fallbacks, (p) =>
+      const converted = seq.collect(fallbacks, (p) =>
         req.serverCtx.programConverter.programDaoToContentProgram(p, []),
       );
       return res.send(converted);

@@ -13,9 +13,9 @@ import {
 } from 'lodash-es';
 import path, { join } from 'node:path';
 import type { Bindings, MultiStreamRes, StreamEntry } from 'pino';
-import {
+import pino, {
   levels,
-  pino,
+  multistream,
   symbols,
   type LevelWithSilent,
   type Logger as PinoLogger,
@@ -158,7 +158,7 @@ class LoggerFactoryImpl {
 
   private createLogStreams(level?: LogLevels) {
     const { level: settingsLevel } = this.logLevel;
-    this.currentStreams = pino.multistream(
+    this.currentStreams = multistream(
       this.createStreams(level ?? settingsLevel),
     );
     return this.currentStreams;

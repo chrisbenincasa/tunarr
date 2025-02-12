@@ -14,7 +14,7 @@
     },
     "bundle": {
       "inputs": ["./scripts/bundle.ts", "./src/**"],
-      "dependsOn": ["^build", "^bundle"],
+      "dependsOn": ["^build", "^bundle", "@tunarr/web#bundle"],
       "outputs": ["dist/**"]
     },
     "build-dev": {

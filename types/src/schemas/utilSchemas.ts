@@ -57,6 +57,8 @@ export function isValidMultiExternalIdType(
   return inConstArr(MultiExternalIdType, s);
 }
 
+export const ExternalIdSourceType = z.enum(ExternalIdType);
+
 // Represents an external ID that has a single
 // source-of-truth (i.e. the 'id' field is global)
 // to the source, e.g. IMDB

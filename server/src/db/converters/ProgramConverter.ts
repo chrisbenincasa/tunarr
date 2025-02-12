@@ -26,6 +26,7 @@ import { Kysely } from 'kysely';
 import { find, isNil, omitBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
+import { MarkNonNullable, Nullable } from '../../types/util.ts';
 import {
   LineupItem,
   OfflineItem,
@@ -91,11 +92,12 @@ export class ProgramConverter {
       }
       return this.redirectLineupItemToProgram(item, redirectChannel);
     } else if (item.type === 'content') {
+      console.log(channel.programs);
       const program =
         preMaterializedProgram && preMaterializedProgram.uuid === item.id
           ? preMaterializedProgram
           : channel.programs.find((p) => p.uuid === item.id);
-      if (isNil(program)) {
+      if (isNil(program) || isNil(program.mediaSourceId)) {
         return null;
       }
 
@@ -108,10 +110,44 @@ export class ProgramConverter {
     return null;
   }
 
+  convertProgramWithExternalIds(
+    program: MarkNonNullable<
+      MarkRequired<ProgramWithRelations, 'externalIds'>,
+      'mediaSourceId'
+    >,
+  ): MarkRequired<ContentProgram, 'id'>;
+  convertProgramWithExternalIds(
+    program: MarkRequired<ProgramWithRelations, 'externalIds'>,
+  ): MarkRequired<ContentProgram, 'id'> | null;
+  convertProgramWithExternalIds(
+    program:
+      | MarkRequired<ProgramWithRelations, 'externalIds'>
+      | MarkRequired<
+          MarkNonNullable<ProgramWithRelations, 'mediaSourceId'>,
+          'externalIds'
+        >,
+  ): Nullable<MarkRequired<ContentProgram, 'id'>> {
+    return this.programDaoToContentProgram(program);
+  }
+
+  programDaoToContentProgram(
+    program: MarkNonNullable<ProgramWithRelations, 'mediaSourceId'>,
+    externalIds?: MinimalProgramExternalId[],
+  ): MarkRequired<ContentProgram, 'id'>;
   programDaoToContentProgram(
     program: ProgramWithRelations,
+    externalIds?: MinimalProgramExternalId[],
+  ): MarkRequired<ContentProgram, 'id'> | null;
+  programDaoToContentProgram(
+    program:
+      | ProgramWithRelations
+      | MarkNonNullable<ProgramWithRelations, 'mediaSourceId'>,
     externalIds: MinimalProgramExternalId[] = program.externalIds ?? [],
-  ): MarkRequired<ContentProgram, 'id'> {
+  ): MarkRequired<ContentProgram, 'id'> | null {
+    if (!program.mediaSourceId) {
+      return null;
+    }
+
     let extraFields: Partial<ContentProgram> = {};
     if (program.type === ProgramType.Episode) {
       extraFields = {
@@ -216,11 +252,14 @@ export class ProgramConverter {
       type: 'content',
       id: program.uuid,
       subtype: program.type,
-      externalIds: seq.collect(externalIds, (eid) => this.toExternalId(eid)),
+      externalIds: seq.collect(program.externalIds ?? externalIds, (eid) =>
+        this.toExternalId(eid),
+      ),
       externalKey: program.externalKey,
-      externalSourceId: program.externalSourceId,
+      externalSourceId: program.mediaSourceId,
       externalSourceName: program.externalSourceId,
       externalSourceType: program.sourceType,
+      canonicalId: nullToUndefined(program.canonicalId),
       ...omitBy(extraFields, isNil),
     };
   }

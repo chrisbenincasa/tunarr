@@ -1,9 +1,11 @@
 import type { TupleToUnion } from '@tunarr/types';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { Updateable } from 'kysely';
 import { type Insertable, type Selectable } from 'kysely';
-import type { StrictOmit } from 'ts-essentials';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
+import type { MediaSourceName } from './base.ts';
+import { type MediaSourceId } from './base.ts';
 
 export const MediaSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
 
@@ -22,13 +24,13 @@ export const MediaSourceType: MediaSourceMap = {
 export const MediaSource = sqliteTable(
   'media_source',
   {
-    uuid: text().primaryKey(),
+    uuid: text().primaryKey().$type<MediaSourceId>(),
     createdAt: integer(),
     updatedAt: integer(),
     accessToken: text().notNull(),
     clientIdentifier: text(),
     index: integer().notNull(),
-    name: text().notNull(),
+    name: text().notNull().$type<MediaSourceName>(),
     sendChannelUpdates: integer({ mode: 'boolean' }).default(false),
     sendGuideUpdates: integer({ mode: 'boolean' }).default(false),
     type: text({ enum: MediaSourceTypes }).notNull(),
@@ -63,20 +65,63 @@ export const MediaSourceFields: (keyof MediaSourceTable)[] = [
 export type MediaSourceTable = KyselifyBetter<typeof MediaSource>;
 export type MediaSource = Selectable<MediaSourceTable>;
 export type NewMediaSource = Insertable<MediaSourceTable>;
+export type MediaSourceUpdate = Updateable<MediaSourceTable>;
 
-export type SpecificMediaSourceType<Typ extends MediaSourceType> = StrictOmit<
-  MediaSource,
-  'type'
-> & {
-  type: Typ;
-};
+export const MediaLibraryTypes = [
+  'movies',
+  'shows',
+  'music_videos',
+  'other_videos',
+  'tracks',
+] as const;
 
-export type PlexMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Plex
->;
-export type JellyfinMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Jellyfin
->;
-export type EmbyMediaSource = SpecificMediaSourceType<
-  typeof MediaSourceType.Emby
->;
+export type MediaLibraryType = TupleToUnion<typeof MediaLibraryTypes>;
+
+export const MediaSourceLibrary = sqliteTable(
+  'media_source_library',
+  {
+    uuid: text().primaryKey().notNull(),
+    name: text().notNull(),
+    mediaType: text({ enum: MediaLibraryTypes }).notNull(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, { onDelete: 'cascade' })
+      .notNull()
+      .$type<MediaSourceId>(),
+    lastScannedAt: integer({ mode: 'timestamp_ms' }),
+    externalKey: text().notNull(),
+    enabled: integer({ mode: 'boolean' }).default(false).notNull(),
+  },
+  (table) => [
+    check(
+      'media_type_check',
+      inArray(table.mediaType, table.mediaType.enumValues).inlineParams(),
+    ),
+  ],
+);
+
+export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
+  'enabled',
+  'externalKey',
+  'lastScannedAt',
+  'mediaSourceId',
+  'mediaType',
+  'uuid',
+  'name',
+];
+
+export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;
+export type MediaSourceLibrary = Selectable<MediaSourceLibraryTable>;
+export type NewMediaSourceLibrary = Insertable<MediaSourceLibraryTable>;
+export type MediaSourceLibraryUpdate = Updateable<MediaSourceLibraryTable>;
+
+export const MediaSourceLibraryReplacePath = sqliteTable(
+  'media_source_library_replace_path',
+  {
+    uuid: text().primaryKey().notNull(),
+    serverPath: text().notNull(),
+    localPath: text().notNull(),
+    mediaSourceId: text()
+      .notNull()
+      .references(() => MediaSource.uuid, { onDelete: 'cascade' }),
+  },
+);

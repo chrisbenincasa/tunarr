@@ -30,14 +30,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type EmbyServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { type FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { type MarkOptional } from 'ts-essentials';
+import { StrictOmit, type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
 import {
   postApiMediaSources,
   putApiMediaSourcesById,
 } from '../../../generated/sdk.gen.ts';
+import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { embyLogin } from '../../../hooks/emby/useEmbyLogin.ts';
 
 type Props = {
@@ -46,7 +47,10 @@ type Props = {
   server?: EmbyServerSettings;
 };
 
-export type EmbyServerSettingsForm = MarkOptional<EmbyServerSettings, 'id'> & {
+export type EmbyServerSettingsForm = MarkOptional<
+  StrictOmit<EmbyServerSettings, 'libraries'>,
+  'id'
+> & {
   password?: string;
 };
 
@@ -116,7 +120,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
+        predicate: invalidateTaggedQueries('Media Source'),
       });
       handleClose();
     },

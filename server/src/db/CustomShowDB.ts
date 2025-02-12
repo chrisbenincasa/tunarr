@@ -1,5 +1,6 @@
 import { KEYS } from '@/types/inject.js';
-import { isNonEmptyString } from '@/util/index.js';
+import { isNonEmptyString, programExternalIdString } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
 import { CustomProgram } from '@tunarr/types';
 import {
   CreateCustomShowRequest,
@@ -21,7 +22,6 @@ import type {
   NewCustomShow,
   NewCustomShowContent,
 } from './schema/CustomShow.ts';
-import { programExternalIdString } from './schema/Program.ts';
 import { DB } from './schema/db.ts';
 
 @injectable()
@@ -53,15 +53,21 @@ export class CustomShowDB {
       .select((eb) => withCustomShowPrograms(eb, { joins: AllProgramJoins }))
       .executeTakeFirst();
 
-    return map(programs?.customShowContent, (csc) => ({
-      type: 'custom' as const,
-      persisted: true,
-      duration: csc.duration,
-      program: this.programConverter.programDaoToContentProgram(csc, []),
-      customShowId: id,
-      index: csc.index,
-      id: csc.uuid,
-    }));
+    return seq.collect(programs?.customShowContent, (csc) => {
+      const program = this.programConverter.programDaoToContentProgram(csc, []);
+      if (!program) {
+        return;
+      }
+      return {
+        type: 'custom' as const,
+        persisted: true,
+        duration: csc.duration,
+        program,
+        customShowId: id,
+        index: csc.index,
+        id: csc.uuid,
+      };
+    });
   }
 
   async saveShow(id: string, updateRequest: UpdateCustomShowRequest) {

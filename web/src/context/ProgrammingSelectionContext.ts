@@ -1,3 +1,4 @@
+import type { SearchRequest } from '@tunarr/types/api';
 import { createContext } from 'react';
 import { type AddedMedia } from '../types/index.ts';
 import { type Nullable } from '../types/util.ts';
@@ -10,6 +11,9 @@ export type ProgrammingSelectionContextType = {
   entityType: EntityType;
   initialMediaSourceId?: string;
   initialLibraryId?: string;
+  onMediaSourceChange: (mediaSourceId: string) => void;
+  onLibraryChange: (libraryId: string) => void;
+  onSearchChange: (searchRequest: SearchRequest) => void;
 };
 
 export const ProgrammingSelectionContext =

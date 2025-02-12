@@ -32,7 +32,7 @@ import { isUndefined } from 'lodash-es';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { MarkOptional } from 'ts-essentials';
+import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
 import { getApiMediaSourcesQueryKey } from '../../../generated/@tanstack/react-query.gen.ts';
 import {
@@ -47,7 +47,7 @@ type Props = {
 };
 
 type PlexServerSettingsForm = MarkOptional<
-  Omit<PlexServerSettings, 'clientIdentifier'>,
+  StrictOmit<PlexServerSettings, 'clientIdentifier' | 'libraries'>,
   'id'
 >;
 

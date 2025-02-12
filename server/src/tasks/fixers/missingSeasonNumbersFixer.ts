@@ -28,6 +28,7 @@ import {
   pickBy,
   reduce,
 } from 'lodash-es';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import {
   ProgramType,
   ProgramDao as RawProgram,
@@ -43,17 +44,15 @@ export class MissingSeasonNumbersFixer extends Fixer {
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {
     super();
   }
 
   async runInternal(): Promise<void> {
-    const allPlexServers = await this.db
-      .selectFrom('mediaSource')
-      .where('mediaSource.type', '=', MediaSourceType.Plex)
-      .groupBy('name')
-      .selectAll()
-      .execute();
+    const allPlexServers = await this.mediaSourceDB.findByType(
+      MediaSourceType.Plex,
+    );
 
     if (allPlexServers.length === 0) {
       return;
@@ -214,7 +213,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
       if (isNil(server)) {
         this.logger.warn(
           'Could not find server with name %s',
-          ref.externalSourceId,
+          ref.externalSourceId ?? 'null',
         );
         continue;
       }
@@ -229,7 +228,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         this.logger.warn(
           'Found no result for key %s in plex server %s',
           ref.externalKey,
-          ref.externalSourceId,
+          ref.externalSourceId ?? 'null',
         );
         continue;
       }
@@ -257,7 +256,12 @@ export class MissingSeasonNumbersFixer extends Fixer {
       );
       return episode?.parentIndex;
     } catch (e) {
-      this.logger.warn(e, 'Error grabbing episode %s from plex: %O', episodeId);
+      this.logger.warn(
+        e,
+        'Error grabbing episode %s from plex: %s',
+        episodeId,
+        plex.serverId ?? 'unknown server',
+      );
       return;
     }
   }

@@ -232,7 +232,6 @@ export class Server {
       const roundedTime = round(rep.elapsedTime, 4);
 
       this.logger[req.routeOptions.config.logAtLevel ?? 'http'](
-        `${req.method} ${req.url} ${rep.statusCode} -${lengthStr}${roundedTime}ms`,
         {
           req: {
             method: req.method,
@@ -241,6 +240,7 @@ export class Server {
             elapsedTime: roundedTime,
           },
         },
+        `${req.method} ${req.url} ${rep.statusCode} -${lengthStr}${roundedTime}ms`,
       );
       done();
     });
@@ -462,6 +462,8 @@ export class Server {
     } catch (e) {
       this.logger.debug(e, 'Error sending shutdown signal to frontend');
     }
+
+    this.serverContext.searchService.stop();
 
     try {
       this.logger.debug('Pausing all on-demand channels');
