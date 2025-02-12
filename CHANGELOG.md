@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.9](https://github.com/chrisbenincasa/tunarr/compare/v0.18.8...v0.18.9) (2025-02-12)
+
+
+### Bug Fixes
+
+* fix release builds for docker and simplify ([41f0cee](https://github.com/chrisbenincasa/tunarr/commit/41f0cee40c60aedfc79914db566f7589162bb051))
+
 ## [0.18.8](https://github.com/chrisbenincasa/tunarr/compare/v0.18.7...v0.18.8) (2025-02-07)
 
 
