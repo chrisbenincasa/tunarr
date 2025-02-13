@@ -1,5 +1,5 @@
 import z from 'zod';
-import { Tag, TupleToUnion } from '../util.js';
+import { type Tag, type TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
@@ -145,7 +145,7 @@ export const FfmpegSettingsSchema = z.object({
   disableChannelPrelude: z.boolean().default(false),
   vaapiDevice: z.string().optional(),
   vaapiDriver: z.string().optional(),
-  useNewFfmpegPipeline: z.boolean().default(false),
+  useNewFfmpegPipeline: z.boolean().default(true),
   hlsDirectOutputFormat: z.enum(['mkv', 'mpegts', 'mp4']).default('mpegts'),
 });
 
