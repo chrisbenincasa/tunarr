@@ -111,6 +111,7 @@ export const ManualProgramLineupSchema = z.object({
   type: z.literal('manual'),
   programs: z.array(ChannelProgramSchema),
   lineup: z.array(UpdateLineupItemSchema), // Array of indexes into the programming array
+  append: z.boolean().default(false),
 });
 
 export const TimeBasedProgramLineupSchema = z.object({

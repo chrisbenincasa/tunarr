@@ -114,6 +114,7 @@ export type UpdateChannelLineupRequest = MarkOptional<
   >,
   'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets'
 >;
+
 export type PageParams = {
   offset: number;
   limit: number;

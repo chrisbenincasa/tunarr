@@ -720,9 +720,18 @@ export class ChannelDB implements IChannelDB {
         }),
       );
 
-      const newLineupItems = await this.timer.timeAsync('createNewLineup', () =>
-        createNewLineup(programs, lineupItems),
-      );
+      const newLineupItems = await run(async () => {
+        const newItems = await this.timer.timeAsync('createNewLineup', () =>
+          createNewLineup(programs, lineupItems),
+        );
+        if (req.append) {
+          const existingLineup = await this.loadLineup(channel.uuid);
+          return [...existingLineup.items, ...newItems];
+        } else {
+          return newItems;
+        }
+      });
+
       const updatedChannel = await this.timer.timeAsync('updateChannel', () =>
         updateChannel(newLineupItems),
       );

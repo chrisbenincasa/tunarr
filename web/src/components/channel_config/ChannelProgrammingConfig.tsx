@@ -132,7 +132,12 @@ export function ChannelProgrammingConfig() {
 
     updateLineupMutation.mutate({
       channelId: channel!.id,
-      lineupRequest: { type: 'manual', lineup, programs: uniquePrograms },
+      lineupRequest: {
+        type: 'manual',
+        lineup,
+        programs: uniquePrograms,
+        append: false,
+      },
     });
   };
 
