@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.10](https://github.com/chrisbenincasa/tunarr/compare/v0.18.9...v0.18.10) (2025-02-12)
+
+
+### Features
+
+* add support for older CPUs (pre-2013) on bun builds ([066a538](https://github.com/chrisbenincasa/tunarr/commit/066a538a5c20f7627ac0c27105a41e5bfea6214f))
+
+
+### Bug Fixes
+
+* fix docker build args for new baseline builds ([deacd3d](https://github.com/chrisbenincasa/tunarr/commit/deacd3dd11144b760e47c4a991a10f3a962692d5))
+
 ## [0.18.9](https://github.com/chrisbenincasa/tunarr/compare/v0.18.8...v0.18.9) (2025-02-12)
 
 
