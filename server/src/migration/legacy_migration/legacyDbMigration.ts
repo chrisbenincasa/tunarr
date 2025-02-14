@@ -275,13 +275,8 @@ export class LegacyDbMigrator {
           await getDatabase()
             .insertInto('mediaSource')
             .values(entities)
-            .onConflict((oc) => oc.columns(['name', 'uri']).doNothing())
+            .onConflict((oc) => oc.columns(['type', 'name', 'uri']).doNothing())
             .execute();
-          // await em.upsertMany(PlexServerSettingsEntity, entities, {
-          //   onConflictFields: ['name', 'uri'],
-          //   onConflictAction: 'ignore',
-          // });
-          // await em.persistAndFlush(entities);
         }
       } catch (e) {
         this.logger.error(e, 'Unable to migrate Plex server settings');
