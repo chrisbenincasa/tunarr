@@ -515,11 +515,13 @@ export class LegacyChannelMigrator {
         } satisfies NewChannelFillerShow;
       });
 
-      await getDatabase()
-        .insertInto('channelFillerShow')
-        .values(relations)
-        .onConflict((oc) => oc.doNothing())
-        .execute();
+      if (relations.length > 0) {
+        await getDatabase()
+          .insertInto('channelFillerShow')
+          .values(relations)
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+      }
     });
 
     return migratedChannels;
