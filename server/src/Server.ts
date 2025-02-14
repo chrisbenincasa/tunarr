@@ -46,6 +46,7 @@ import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
+import { TUNARR_ENV_VARS } from './util/env.ts';
 import { fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { type Logger, RootLogger } from './util/logging/LoggerFactory.js';
@@ -524,7 +525,7 @@ export class Server {
     const start = performance.now();
     await this.init();
 
-    const host = process.env['TUNARR_BIND_ADDR'] ?? '0.0.0.0';
+    const host = process.env[TUNARR_ENV_VARS.BIND_ADDR_ENV_VAR] ?? '0.0.0.0';
 
     await this.app.listen({
       host,

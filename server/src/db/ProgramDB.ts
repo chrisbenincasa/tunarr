@@ -19,7 +19,7 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { CaseWhenBuilder } from 'kysely';
+import { CaseWhenBuilder, UpdateResult } from 'kysely';
 import {
   chunk,
   concat,
@@ -46,12 +46,14 @@ import {
 } from 'lodash-es';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import {
   flatMapAsyncSeq,
   groupByUniq,
   groupByUniqProp,
   isNonEmptyString,
   mapToObj,
+  run,
 } from '../util/index.ts';
 import { getDatabase } from './DBAccess.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
@@ -77,9 +79,9 @@ import {
 } from './programQueryHelpers.ts';
 import {
   NewProgramDao as NewRawProgram,
+  programExternalIdString,
   ProgramType,
   ProgramDao as RawProgram,
-  programExternalIdString,
 } from './schema/Program.ts';
 import {
   MinimalProgramExternalId,
@@ -123,6 +125,9 @@ type ProgramRelationCaseBuilder = CaseWhenBuilder<
   unknown,
   string | null
 >;
+
+// Keep this low to make bun sqlite happy.
+const DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE = 100;
 
 @injectable()
 export class ProgramDB implements IProgramDB {
@@ -992,25 +997,40 @@ export class ProgramDB implements IProgramDB {
               ...updatesByType[ProgramGroupingType.Show],
             ];
 
+            const chunkSize = run(() => {
+              const envVal = getNumericEnvVar(
+                TUNARR_ENV_VARS.DEBUG__PROGRAM_GROUPING_UPDATE_CHUNK_SIZE,
+              );
+
+              if (isNonEmptyString(envVal) && !isNaN(parseInt(envVal))) {
+                return Math.min(10_000, parseInt(envVal));
+              }
+              return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
+            });
+
+            const updates: Promise<UpdateResult[]>[] = [];
+
             if (!isEmpty(tvShowIdUpdates)) {
               // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(tvShowIdUpdates, 10_000)) {
-                await tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    tvShowUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].tvShowUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.tvShowUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute();
+              for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
+                updates.push(
+                  tx
+                    .updateTable('program')
+                    .set((eb) => ({
+                      tvShowUuid: reduce(
+                        idChunk,
+                        (acc, curr) =>
+                          acc
+                            .when('program.uuid', '=', curr)
+                            .then(upsertedProgramById[curr].tvShowUuid),
+                        eb.case() as unknown as ProgramRelationCaseBuilder,
+                      )
+                        .else(eb.ref('program.tvShowUuid'))
+                        .end(),
+                    }))
+                    .where('program.uuid', 'in', idChunk)
+                    .execute(),
+                );
               }
             }
 
@@ -1020,23 +1040,25 @@ export class ProgramDB implements IProgramDB {
 
             if (!isEmpty(seasonIdUpdates)) {
               // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(seasonIdUpdates, 10_000)) {
-                await tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    seasonUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].seasonUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.seasonUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute();
+              for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
+                updates.push(
+                  tx
+                    .updateTable('program')
+                    .set((eb) => ({
+                      seasonUuid: reduce(
+                        idChunk,
+                        (acc, curr) =>
+                          acc
+                            .when('program.uuid', '=', curr)
+                            .then(upsertedProgramById[curr].seasonUuid),
+                        eb.case() as unknown as ProgramRelationCaseBuilder,
+                      )
+                        .else(eb.ref('program.seasonUuid'))
+                        .end(),
+                    }))
+                    .where('program.uuid', 'in', idChunk)
+                    .execute(),
+                );
               }
             }
 
@@ -1046,23 +1068,25 @@ export class ProgramDB implements IProgramDB {
 
             if (!isEmpty(musicArtistUpdates)) {
               // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(musicArtistUpdates, 10_000)) {
-                await tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    artistUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].artistUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.artistUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute();
+              for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
+                updates.push(
+                  tx
+                    .updateTable('program')
+                    .set((eb) => ({
+                      artistUuid: reduce(
+                        idChunk,
+                        (acc, curr) =>
+                          acc
+                            .when('program.uuid', '=', curr)
+                            .then(upsertedProgramById[curr].artistUuid),
+                        eb.case() as unknown as ProgramRelationCaseBuilder,
+                      )
+                        .else(eb.ref('program.artistUuid'))
+                        .end(),
+                    }))
+                    .where('program.uuid', 'in', idChunk)
+                    .execute(),
+                );
               }
             }
 
@@ -1072,25 +1096,29 @@ export class ProgramDB implements IProgramDB {
 
             if (!isEmpty(musicAlbumUpdates)) {
               // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(musicAlbumUpdates, 10_000)) {
-                await tx
-                  .updateTable('program')
-                  .set((eb) => ({
-                    albumUuid: reduce(
-                      idChunk,
-                      (acc, curr) =>
-                        acc
-                          .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].albumUuid),
-                      eb.case() as unknown as ProgramRelationCaseBuilder,
-                    )
-                      .else(eb.ref('program.albumUuid'))
-                      .end(),
-                  }))
-                  .where('program.uuid', 'in', idChunk)
-                  .execute();
+              for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
+                updates.push(
+                  tx
+                    .updateTable('program')
+                    .set((eb) => ({
+                      albumUuid: reduce(
+                        idChunk,
+                        (acc, curr) =>
+                          acc
+                            .when('program.uuid', '=', curr)
+                            .then(upsertedProgramById[curr].albumUuid),
+                        eb.case() as unknown as ProgramRelationCaseBuilder,
+                      )
+                        .else(eb.ref('program.albumUuid'))
+                        .end(),
+                    }))
+                    .where('program.uuid', 'in', idChunk)
+                    .execute(),
+                );
               }
             }
+
+            await Promise.all(updates);
           }),
       );
     }

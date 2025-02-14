@@ -1,11 +1,11 @@
 import { container } from '@/container.js';
-import { TruthyQueryParam } from '@/types/schemas.js';
 import { getDefaultServerPort } from '@/util/defaults.js';
-import { isNonEmptyString, isProduction } from '@/util/index.js';
+import { isProduction } from '@/util/index.js';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import { setServerOptions } from '../globals.ts';
 import { Server } from '../Server.ts';
 import { StartupService } from '../services/StartupService.ts';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import type { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {
@@ -27,20 +27,12 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
     printRoutes: {
       type: 'boolean',
       default: () =>
-        TruthyQueryParam.catch(false).parse(
-          process.env['TUNARR_SERVER_PRINT_ROUTES'],
-        ),
+        getBooleanEnvVar(TUNARR_ENV_VARS.PRINT_ROUTES_ENV_VAR, false),
     },
     admin: {
       type: 'boolean',
-      default: () => {
-        if (isNonEmptyString(process.env['TUNARR_SERVER_ADMIN_MODE'])) {
-          return TruthyQueryParam.catch(false).parse(
-            process.env['TUNARR_SERVER_ADMIN_MODE'],
-          );
-        }
-        return !isProduction;
-      },
+      default: () =>
+        getBooleanEnvVar(TUNARR_ENV_VARS.ADMIN_MODE_ENV_VAR, !isProduction),
     },
   },
   handler: async (opts: ArgumentsCamelCase<ServerArgsType>) => {

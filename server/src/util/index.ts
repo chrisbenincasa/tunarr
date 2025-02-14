@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
 import type { DeepReadonly, DeepWritable } from 'ts-essentials';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from './env.ts';
 
 dayjs.extend(duration);
 
@@ -429,8 +430,10 @@ export const currentEnv = once(() => {
 export const isProduction = currentEnv() === 'production';
 export const isDev = currentEnv() === 'development';
 export const isTest = currentEnv() === 'test';
-export const isEdgeBuild = process.env['TUNARR_EDGE_BUILD'] === 'true';
-export const tunarrBuild = process.env['TUNARR_BUILD'];
+export const isEdgeBuild = getBooleanEnvVar(
+  TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,
+);
+export const tunarrBuild = process.env[TUNARR_ENV_VARS.BUILD_ENV_VAR];
 
 export const zipWithIndex = <T>(
   seq: readonly T[],

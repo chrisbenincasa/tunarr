@@ -1,14 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ArgumentsCamelCase, CommandModule } from 'yargs';
+import { type ArgumentsCamelCase, type CommandModule } from 'yargs';
 import { container } from '../container.ts';
 import { setServerOptions } from '../globals.ts';
 import { Server } from '../Server.ts';
-import { TruthyQueryParam } from '../types/schemas.ts';
-import { isNonEmptyString, isProduction } from '../util/index.ts';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
+import { isProduction } from '../util/index.ts';
 import { getTunarrVersion } from '../util/version.ts';
-import { ServerArgsType } from './RunServerCommand.ts';
-import { GlobalArgsType } from './types.ts';
+import { type ServerArgsType } from './RunServerCommand.ts';
+import { type GlobalArgsType } from './types.ts';
 
 type GenerateOpenApiCommandArgs = ServerArgsType & {
   apiVersion: string;
@@ -30,19 +30,15 @@ export const GenerateOpenApiCommand: CommandModule<
     printRoutes: {
       type: 'boolean',
       default: () =>
-        TruthyQueryParam.catch(false).parse(
-          process.env['TUNARR_SERVER_PRINT_ROUTES'],
-        ),
+        getBooleanEnvVar(TUNARR_ENV_VARS.PRINT_ROUTES_ENV_VAR, false),
     },
     admin: {
       type: 'boolean',
       default: () => {
-        if (isNonEmptyString(process.env['TUNARR_SERVER_ADMIN_MODE'])) {
-          return TruthyQueryParam.catch(false).parse(
-            process.env['TUNARR_SERVER_ADMIN_MODE'],
-          );
-        }
-        return !isProduction;
+        return getBooleanEnvVar(
+          TUNARR_ENV_VARS.ADMIN_MODE_ENV_VAR,
+          !isProduction,
+        );
       },
     },
     apiVersion: {
