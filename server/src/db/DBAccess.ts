@@ -1,19 +1,19 @@
 import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { Database } from 'bun:sqlite';
+import Sqlite from 'better-sqlite3';
 import dayjs from 'dayjs';
 import {
   CamelCasePlugin,
   Kysely,
   Migrator,
   ParseJSONResultsPlugin,
+  SqliteDialect,
 } from 'kysely';
 import { findIndex, isError, last, map, once, slice } from 'lodash-es';
 import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
-import { BunSqliteDialect } from './dialect/BunSqliteDialect.ts';
 import type { DB } from './schema/db.ts';
 
 const MigrationTableName = 'migrations';
@@ -25,9 +25,9 @@ const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
 export const initDatabaseAccess = once((dbName: string) => {
   _directDbAccess = new Kysely<DB>({
-    dialect: new BunSqliteDialect({
-      database: new Database(dbName, {
-        strict: true,
+    dialect: new SqliteDialect({
+      database: new Sqlite(dbName, {
+        timeout: 5000,
       }),
     }),
     log: (event) => {

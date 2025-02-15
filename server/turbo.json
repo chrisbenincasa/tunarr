@@ -13,29 +13,24 @@
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "inputs": ["./scripts/bundle.ts"],
-      "dependsOn": ["^build", "^bundle", "make-web-vfs"],
-      "outputs": ["dist/bin/**"]
+      "inputs": ["./scripts/bundle-old.ts"],
+      "dependsOn": ["^build", "^bundle"],
+      "outputs": ["dist/**"]
     },
     "build-dev": {
       "dependsOn": ["^build"]
     },
-    "make-exec": {
-      "dependsOn": ["^bundle", "@tunarr/web#bundle", "make-web-vfs"],
-      "outputs": ["dist/**"]
+    "make-bin": {
+      "dependsOn": ["bundle"],
+      "outputs": ["dist/bin/**"]
     },
     "lint-staged": {},
     "lint": {
       "dependsOn": ["lint-staged"]
     },
-    "make-web-vfs": {
-      "dependsOn": ["@tunarr/web#bundle"],
-      "outputs": ["src/generated/web-imports.ts"]
-    },
     "dev": {
       "persistent": true,
-      "cache": false,
-      "dependsOn": ["make-web-vfs"]
+      "cache": false
     }
   }
 }
