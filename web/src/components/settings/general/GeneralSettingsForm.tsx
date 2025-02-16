@@ -1,13 +1,11 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import { NumericFormControllerText } from '@/components/util/TypedController.tsx';
 import { isValidUrl } from '@/helpers/util.ts';
-import { useUpdateSystemSettings } from '@/hooks/useSystemSettings.ts';
-import { useVersion } from '@/hooks/useVersion.ts';
 import {
-  GeneralSetingsFormProps,
-  GeneralSettingsFormData,
-  LogLevelChoices,
-} from '@/pages/settings/GeneralSettingsPage';
+  useSystemState,
+  useUpdateSystemSettings,
+} from '@/hooks/useSystemSettings.ts';
+import { useVersion } from '@/hooks/useVersion.ts';
 import { setBackendUri } from '@/store/settings/actions.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';
@@ -21,25 +19,42 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   TextField,
   Tooltip,
   Typography,
   useTheme,
+  type SelectChangeEvent,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid2';
 import Stack from '@mui/material/Stack';
 import { TimePicker } from '@mui/x-date-pickers';
-import { SystemSettings } from '@tunarr/types';
-import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
-import { EverySchedule } from '@tunarr/types/schemas';
+import {
+  LogLevels,
+  type CacheSettings,
+  type LogLevel,
+  type ServerSettings,
+  type SystemSettings,
+} from '@tunarr/types';
+import { type UpdateSystemSettingsRequest } from '@tunarr/types/api';
+import { type BackupSettings, type EverySchedule } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { first, isNull, map, trim, trimEnd } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
+
+const LogLevelChoices = [
+  {
+    description: 'Use environment settings',
+    value: 'env',
+  },
+  ...map(LogLevels, (level) => ({
+    description: level,
+    value: level,
+  })),
+];
 
 export function GeneralSettingsForm({
   systemSettings,
@@ -50,6 +65,7 @@ export function GeneralSettingsForm({
     retry: 0,
   });
   const theme = useTheme();
+  const systemState = useSystemState();
 
   const { isLoading, isError } = versionInfo;
 
@@ -66,6 +82,7 @@ export function GeneralSettingsForm({
     cache: systemSettings.cache ?? {
       enablePlexRequestCache: false,
     },
+    server: systemSettings.server,
   });
 
   const {
@@ -103,6 +120,7 @@ export function GeneralSettingsForm({
       },
       backup: data.backup,
       cache: data.cache,
+      server: data.server,
     };
     updateSystemSettings.mutate(updateReq, {
       onSuccess(data) {
@@ -295,6 +313,20 @@ export function GeneralSettingsForm({
         <Typography variant="h5" sx={{ mb: 1 }}>
           Server Settings
         </Typography>
+        {!systemState.data.isDocker && (
+          <NumericFormControllerText
+            control={control}
+            name="server.port"
+            TextFieldProps={{
+              label: 'Server Listen Port',
+              sx: {
+                width: ['100%', '50%'],
+              },
+              helperText:
+                'Select the port the Tunarr server will listen on. This requires a server restart to take effect.',
+            }}
+          />
+        )}
         <Box>
           <Controller
             control={control}
@@ -426,3 +458,13 @@ export function GeneralSettingsForm({
     </Box>
   );
 }
+export type GeneralSettingsFormData = {
+  backendUri: string;
+  logLevel: LogLevel | 'env';
+  backup: BackupSettings;
+  cache: CacheSettings;
+  server: ServerSettings;
+};
+export type GeneralSetingsFormProps = {
+  systemSettings: SystemSettings;
+};

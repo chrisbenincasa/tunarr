@@ -22,6 +22,7 @@ import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaH
 import { SystemDevicesService } from '../services/SystemDevicesService.ts';
 import { Result } from '../types/result.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
+import { isDocker } from '../util/isDocker.ts';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -58,6 +59,25 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
 
   fastify.get(
     '/system/state',
+    {
+      schema: {
+        tags: ['System'],
+        response: {
+          200: z.object({
+            isDocker: z.boolean(),
+          }),
+        },
+      },
+    },
+    async (_, res) => {
+      return res.send({
+        isDocker: isDocker(),
+      });
+    },
+  );
+
+  fastify.get(
+    '/system/migration-state',
     {
       schema: {
         tags: ['System'],
@@ -129,6 +149,10 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
 
         ifDefined(req.body.cache, (cache) => {
           system.cache = cache;
+        });
+
+        ifDefined(req.body.server, (server) => {
+          system.server = server;
         });
 
         return file;

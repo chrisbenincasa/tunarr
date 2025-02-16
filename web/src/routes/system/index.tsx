@@ -12,9 +12,9 @@ export const Route = createFileRoute('/system/')({
 
     await context.queryClient.ensureQueryData({
       queryFn() {
-        return context.tunarrApiClientProvider().getSystemState();
+        return context.tunarrApiClientProvider().getSystemMigrationState();
       },
-      queryKey: ['system', 'state'],
+      queryKey: ['system', 'migration-state'],
     });
 
     // setShowWelcome(systemState.isFreshSettings);

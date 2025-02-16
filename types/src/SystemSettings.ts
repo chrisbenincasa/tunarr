@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { TupleToUnion } from './util.js';
 import { BackupSettingsSchema } from './schemas/settingsSchemas.js';
+import { type TupleToUnion } from './util.js';
 
 export const LogLevelsSchema = z.union([
   z.literal('silent'),
@@ -41,10 +41,21 @@ export const CacheSettingsSchema = z.object({
 
 export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
 
+export const ServerSettingsSchema = z.object({
+  port: z.number().min(1).max(65535).optional().default(8000),
+});
+
+export type ServerSettings = z.infer<typeof ServerSettingsSchema>;
+
+export const DefaultServerSettings = {
+  port: 8000,
+} satisfies ServerSettings;
+
 export const SystemSettingsSchema = z.object({
   backup: BackupSettingsSchema,
   logging: LoggingSettingsSchema,
   cache: CacheSettingsSchema.optional(),
+  server: ServerSettingsSchema.default(DefaultServerSettings),
 });
 
 export type SystemSettings = z.infer<typeof SystemSettingsSchema>;
