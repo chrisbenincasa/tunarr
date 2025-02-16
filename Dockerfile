@@ -10,16 +10,12 @@ EXPOSE 8000
 # Expose SSDP default port
 EXPOSE 1900/udp 
 
-# Update deps, Install Bun
+# Update deps
 # Install musl for native node bindings (sqlite)
 RUN <<EOF
 apt-get update --fix-missing && apt-get install -y ca-certificates curl gnupg unzip wget musl-dev
 EOF
 RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
-RUN <<EOF
-curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.0"
-EOF
-RUN ln -s ~/.bun/bin/bun /usr/bin/bun
 
 # Install node - we still need this for some dev tools (for now)
 RUN <<EOF 
@@ -84,7 +80,7 @@ cat server/.env
 EOF
 # Build and bundle
 RUN echo "Building target: ${exec_target}"
-RUN pnpm turbo --filter=@tunarr/server make-exec -- --target ${exec_target} --no-include-version
+RUN pnpm turbo --filter=@tunarr/server make-bin -- --target ${exec_target} --no-include-version
 ### End server build ###
 
 ### Begin server web ###
@@ -101,34 +97,12 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Bundle web in a separate task
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
 RUN echo "Building target: ${exec_target}"
-RUN pnpm turbo --filter=@tunarr/server make-exec -- --target ${exec_target} --no-include-version --strip-baseline-name
-
-### Begin server run ###
-FROM ffmpeg-base AS server
-COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
-COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
-COPY --from=build-server /tunarr/types /tunarr/types
-COPY --from=build-server /tunarr/shared /tunarr/shared
-COPY --from=build-server /tunarr/server/package.json /tunarr/server/package.json
-COPY --from=build-server /tunarr/server/dist /tunarr/server/dist
-# Create a symlink to the executable in /tunarr. This simplifies things for the
-# user, such as volume mapping their legacy DBs, while not interrupting the
-# other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/dist/bin/tunarr-linux-x64 /tunarr/tunarr-linux-x64
-### Begin server run
+RUN pnpm turbo --filter=@tunarr/server make-bin -- --target ${exec_target} --no-include-version
 
 ### Full stack ###
 FROM ffmpeg-base AS full-stack
-# Duplicate the COPY statements from server build to ensure we don't bundle
-# twice, needlessly
-COPY --from=prod-deps /tunarr/node_modules /tunarr/node_modules
-COPY --from=prod-deps /tunarr/server/node_modules /tunarr/server/node_modules
-COPY --from=build-full-stack /tunarr/types /tunarr/types
-COPY --from=build-full-stack /tunarr/shared /tunarr/shared
-COPY --from=build-full-stack /tunarr/server/package.json /tunarr/server/package.json
-COPY --from=build-full-stack /tunarr/server/dist /tunarr/server/dist
-COPY --from=build-full-stack /tunarr/web/dist /tunarr/server/dist/web
+COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/dist/bin/tunarr-linux-x64 /tunarr/tunarr-linux-x64
+RUN ln -s /tunarr/server/bin/tunarr-linux-x64 /tunarr/tunarr-linux-x64

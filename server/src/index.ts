@@ -47,7 +47,7 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
   );
 }
 
-await yargs(hideBin(process.argv))
+yargs(hideBin(process.argv))
   .scriptName('tunarr')
   .option('log_level', {
     type: 'string',
@@ -67,8 +67,7 @@ await yargs(hideBin(process.argv))
     desc: 'Path to the database directory',
     default: getDefaultDatabaseDirectory(),
     normalize: true,
-    coerce: (db: string) =>
-      fileURLToPath(new URL(`file://${db}`, import.meta.url)),
+    coerce: (db: string) => fileURLToPath(new URL(`file://${db}`)),
   })
   .option('force_migration', {
     type: 'boolean',
@@ -83,4 +82,4 @@ await yargs(hideBin(process.argv))
   .version(getTunarrVersion())
   .command(commands)
   .help()
-  .parseAsync();
+  .parse();

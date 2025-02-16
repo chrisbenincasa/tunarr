@@ -1,5 +1,4 @@
 import { container } from '@/container.js';
-import webImports from '@/generated/web-imports.js';
 import { KEYS } from '@/types/inject.js';
 import type { ServerType } from '@/types/serverType.js';
 import { getTunarrVersion } from '@/util/version.js';
@@ -17,7 +16,6 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
-import type { FastifyReply } from 'fastify/types/reply.js';
 import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
@@ -398,52 +396,31 @@ export class Server {
       .register(streamApi)
       // Serve the webapp
       .register(
-        (f, _, done) => {
-          function sendIndex(res: FastifyReply) {
-            return res
-              .header('content-type', webImports['index.html'].type)
-              .header('content-length', webImports['index.html'].size)
-              .send(webImports['index.html'].stream());
-          }
-
-          f.route({
-            method: ['HEAD', 'GET'],
-            schema: {
-              hide: true,
-            },
-            config: {
-              disableRequestLogging: true,
-            },
-            url: '/*',
-            handler: async (req, res) => {
-              const rawPath = req.url.replace('/web/', '');
-              if (rawPath in webImports) {
-                const file = webImports[rawPath];
-                if (file) {
-                  return res
-                    .header('content-type', file.type)
-                    .header('content-length', file.size)
-                    .send(file.stream());
-                } else {
-                  return sendIndex(res);
-                }
-              }
-            },
+        async (f) => {
+          // For assets that exist...
+          await f.register(fpStatic, {
+            root: path.join(currentDirectory, 'web'),
+            schemaHide: true,
           });
-
           // Make it work with just '/web' and not '/web/;
           f.get(
             '/',
             { schema: { hide: true }, config: { disableRequestLogging: true } },
-            async (_, res) => sendIndex(res),
+            async (_, res) => {
+              return res.sendFile(
+                'index.html',
+                path.join(currentDirectory, 'web'),
+              );
+            },
           );
           // client side routing 'hack'. This makes navigating to other client-side
           // routes work as expected.
           f.setNotFoundHandler(async (_, res) => {
-            return sendIndex(res);
+            return res.sendFile(
+              'index.html',
+              path.join(currentDirectory, 'web'),
+            );
           });
-
-          done();
         },
         { prefix: '/web' },
       )
