@@ -3,6 +3,7 @@ import {
   CacheSettingsSchema,
   LogLevelsSchema,
   LoggingSettingsSchema,
+  ServerSettingsSchema,
   SystemSettingsSchema,
 } from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
@@ -225,6 +226,7 @@ export const UpdateSystemSettingsRequestSchema = z.object({
     .optional(),
   backup: BackupSettingsSchema.optional(),
   cache: CacheSettingsSchema.optional(),
+  server: ServerSettingsSchema.optional(),
 });
 
 export type UpdateSystemSettingsRequest = z.infer<

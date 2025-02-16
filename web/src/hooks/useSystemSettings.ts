@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { UpdateSystemSettingsRequest } from '@tunarr/types/api';
+import { type UpdateSystemSettingsRequest } from '@tunarr/types/api';
 import { useApiQuery, useApiSuspenseQuery } from './useApiQuery.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 
@@ -30,3 +30,11 @@ export const useUpdateSystemSettings = () => {
       queryClient.setQueryData(['system', 'settings'], response),
   });
 };
+
+export const useSystemState = () =>
+  useApiSuspenseQuery({
+    queryFn(apiClient) {
+      return apiClient.getSystemState();
+    },
+    queryKey: ['system', 'state'],
+  });

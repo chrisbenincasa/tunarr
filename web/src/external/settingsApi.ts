@@ -171,10 +171,19 @@ const runSystemFixer = makeEndpoint({
   response: z.any(),
 });
 
-const systemMigrationState = makeEndpoint({
+const systemState = makeEndpoint({
   method: 'get',
   path: '/api/system/state',
   alias: 'getSystemState',
+  response: z.object({
+    isDocker: z.boolean(),
+  }),
+});
+
+const systemMigrationState = makeEndpoint({
+  method: 'get',
+  path: '/api/system/migration-state',
+  alias: 'getSystemMigrationState',
   response: z.object({
     isFreshSettings: z.boolean().optional().default(true),
   }),
@@ -271,6 +280,7 @@ export const endpoints = [
   updatePlexStreamSettings,
   getSystemSettings,
   updateSystemSettings,
+  systemState,
   jellyfinLogin,
   systemHealthChecks,
   runSystemFixer,

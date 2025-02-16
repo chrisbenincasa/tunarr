@@ -6,6 +6,7 @@ import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { isProduction } from '@/util/index.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
+  DefaultServerSettings,
   FfmpegSettings,
   HdhrSettings,
   LoggingSettingsSchema,
@@ -107,6 +108,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     cache: {
       enablePlexRequestCache: false,
     },
+    server: DefaultServerSettings,
   },
 });
 

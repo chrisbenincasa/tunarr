@@ -82,4 +82,5 @@ yargs(hideBin(process.argv))
   .version(getTunarrVersion())
   .command(commands)
   .help()
-  .parse();
+  .parseAsync()
+  .catch(console.error);
