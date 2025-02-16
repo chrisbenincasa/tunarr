@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.18.11](https://github.com/chrisbenincasa/tunarr/compare/v0.18.10...v0.18.11) (2025-02-16)
+
+
+### Features
+
+* ability to set the server port in the UI ([#1096](https://github.com/chrisbenincasa/tunarr/issues/1096)) ([3b65ccd](https://github.com/chrisbenincasa/tunarr/commit/3b65ccdff3fb79bf65c03b51b3c52fe2ee1b20b3))
+* **backend:** support "append" parameter for programming lineup update requests ([be55db2](https://github.com/chrisbenincasa/tunarr/commit/be55db276247d436e29d9a2189c333e70b042761))
+
+
+### Bug Fixes
+
+* fix legacy channel migrator to only insert channel filler shows if they exist ([e184540](https://github.com/chrisbenincasa/tunarr/commit/e1845405768653ab7881ad948a2e3d5cf85b6f75))
+* fix media_source insert query in legacy migrator to use correct index ([aa069d3](https://github.com/chrisbenincasa/tunarr/commit/aa069d3429debcab0a67d57ebdff54b41345660c))
+* remove Bun and rollback to Node 22.13.1 ([#1095](https://github.com/chrisbenincasa/tunarr/issues/1095)) ([e803946](https://github.com/chrisbenincasa/tunarr/commit/e803946d6fc4296fe5685f27cd542c1e6cce8ef7))
+
+
+### Performance Improvements
+
+* fix channel lineup update performance regression from bun conversion ([2aecc71](https://github.com/chrisbenincasa/tunarr/commit/2aecc71da914e30b454e0927fee899adbefaff61)), closes [#1093](https://github.com/chrisbenincasa/tunarr/issues/1093)
+
+
+### UI Changes
+
+* add data directory location to system status page ([99c69b3](https://github.com/chrisbenincasa/tunarr/commit/99c69b3ff7a575fd338c6d0debc1062c32584ffa))
+
 ## [0.18.10](https://github.com/chrisbenincasa/tunarr/compare/v0.18.9...v0.18.10) (2025-02-12)
 
 
