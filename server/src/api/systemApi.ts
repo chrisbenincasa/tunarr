@@ -240,6 +240,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     const envLogLevel = getEnvironmentLogLevel();
     return {
       ...(settings as Writable<SystemSettings>),
+      dataDirectory: serverOptions().databaseDirectory,
       logging: {
         ...(settings.logging as Writable<LoggingSettings>),
         environmentLogLevel: envLogLevel,

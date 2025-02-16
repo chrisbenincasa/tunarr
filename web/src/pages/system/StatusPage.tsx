@@ -269,6 +269,21 @@ export const StatusPage = () => {
                 <TableRow hover>
                   <TableCell>
                     <Typography>
+                      <strong>Data Directory:</strong>
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ display: 'flex', alignItems: 'center' }}>
+                      <span>{systemSettings.data.dataDirectory}</span>
+                      <CopyToClipboardButton
+                        content={systemSettings.data.dataDirectory}
+                      />
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+                <TableRow hover>
+                  <TableCell>
+                    <Typography>
                       <strong>Logs Directory:</strong>
                     </Typography>
                   </TableCell>

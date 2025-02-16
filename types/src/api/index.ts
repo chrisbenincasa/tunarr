@@ -209,6 +209,7 @@ export const FfmpegInfoResponse = z.object({
 });
 
 export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
+  dataDirectory: z.string(),
   logging: LoggingSettingsSchema.extend({
     environmentLogLevel: LogLevelsSchema.optional(),
   }),
