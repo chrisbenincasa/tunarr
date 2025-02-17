@@ -30,7 +30,7 @@
     "build": "tsup --dts",
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./build/",
-    "dev": "tsup --watch --dts",
+    "dev": "tsc --watch --declaration",
     "test": "vitest"
   },
   "dependencies": {
