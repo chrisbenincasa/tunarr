@@ -83,19 +83,27 @@ export async function pendingDatabaseMigrations(
   db: Kysely<DB> = getDatabase(),
 ) {
   return lock.runExclusive(async () => {
+    const tables = await db.introspection.getTables({
+      withInternalKyselyTables: true,
+    });
+    if (!tables.some((table) => table.name === MigrationTableName)) {
+      return getMigrator(db).getMigrations();
+    }
+
     const executedMigrations =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (
-        await (db as Kysely<any>)
-          .selectFrom(MigrationTableName)
-          .select('name')
-          .orderBy(['timestamp', 'name'])
-          .execute()
-      ).map((migration) => migration.name as string);
+      await (db as Kysely<any>)
+        .selectFrom(MigrationTableName)
+        .select('name')
+        .orderBy(['timestamp', 'name'])
+        .execute();
+    const executedMigrationNames = executedMigrations.map(
+      (migration) => migration.name as string,
+    );
     const migrator = getMigrator(db);
     const knownMigrations = await migrator.getMigrations();
     return knownMigrations.filter(
-      (migration) => !executedMigrations.includes(migration.name),
+      (migration) => !executedMigrationNames.includes(migration.name),
     );
   });
 }

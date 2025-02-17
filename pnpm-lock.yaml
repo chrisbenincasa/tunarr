@@ -110,6 +110,9 @@ importers:
       '@tunarr/types':
         specifier: workspace:*
         version: link:../types
+      '@types/better-sqlite3':
+        specifier: ^7.6.12
+        version: 7.6.12
       archiver:
         specifier: ^7.0.1
         version: 7.0.1
@@ -2455,6 +2458,9 @@ packages:
 
   '@types/babel__traverse@7.20.6':
     resolution: {integrity: sha512-r1bzfrm0tomOI8g1SzvCaQHo6Lcv6zu0EA+W2kHrt8dyrHQxGzBBL4kdkzIS+jBMV+EYcMAEAqXqYaLJq5rOZg==}
+
+  '@types/better-sqlite3@7.6.12':
+    resolution: {integrity: sha512-fnQmj8lELIj7BSrZQAdBMHEHX8OZLYIHXqAKT1O7tDfLxaINzf00PMjw22r3N/xXh0w/sGHlO6SVaCQ2mj78lg==}
 
   '@types/bun@1.2.0':
     resolution: {integrity: sha512-5N1JqdahfpBlAv4wy6svEYcd/YfO2GNrbL95JOmFx8nkE6dbK4R0oSE5SpBA4vBRqgrOUAXF8Dpiz+gi7r80SA==}
@@ -9231,6 +9237,10 @@ snapshots:
   '@types/babel__traverse@7.20.6':
     dependencies:
       '@babel/types': 7.26.7
+
+  '@types/better-sqlite3@7.6.12':
+    dependencies:
+      '@types/node': 22.10.7
 
   '@types/bun@1.2.0':
     dependencies:
