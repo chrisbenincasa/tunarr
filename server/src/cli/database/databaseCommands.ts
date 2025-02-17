@@ -1,6 +1,7 @@
 import type { CommandModule } from 'yargs';
 import { DatabaseListMigrationsCommand } from './DatabaseListMigrationsCommand.ts';
 import { DatabaseMigrateDownCommand } from './DatabaseMigrateDownCommand.ts';
+import { DatabaseMigrateToLatestCommand } from './DatabaseMigrateToLatestCommand.ts';
 import { DatabaseMigrateUpCommand } from './DatabaseMigrateUpCommand .ts';
 
 export const databaseCommands: CommandModule = {
@@ -18,6 +19,7 @@ const databaseMigrationCommands: CommandModule = {
       DatabaseListMigrationsCommand,
       DatabaseMigrateDownCommand,
       DatabaseMigrateUpCommand,
+      DatabaseMigrateToLatestCommand,
     ]),
   handler: () => {},
 };
