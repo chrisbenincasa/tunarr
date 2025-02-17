@@ -8,8 +8,7 @@
     "build": "tsc --declaration ",
     "clean": "rimraf ./build/",
     "dev": "tsc --declaration --watch",
-    "build-dev": "tsc --declaration --watch",
-    "gen-emby": "typed-openapi https://swagger.emby.media/openapi.json -r zod -o ./build/emby-generated.ts"
+    "build-dev": "tsc --declaration --watch"
   },
   "main": "./build/src/index.js",
   "module": "./build/src/index.js",
@@ -25,7 +24,6 @@
     "eslint": "9.17.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
-    "typed-openapi": "^0.10.1",
     "typescript": "5.4.3"
   },
   "dependencies": {
@@ -48,10 +46,6 @@
     "./jellyfin": {
       "types": "./build/src/jellyfin/index.d.ts",
       "default": "./build/src/jellyfin/index.js"
-    },
-    "./emby": {
-      "types": "./build/src/emby/index.d.ts",
-      "default": "./build/src/emby/index.js"
     },
     "./api": {
       "types": "./build/src/api/index.d.ts",

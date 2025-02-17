@@ -25,8 +25,6 @@
     "@typescript-eslint/parser": "^8.21.0",
     "esbuild": "^0.21.5",
     "eslint": "9.17.0",
-    "eslint-import-resolver-typescript": "^3.7.0",
-    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",

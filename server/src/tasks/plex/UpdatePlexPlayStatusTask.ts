@@ -1,4 +1,5 @@
 import type { MediaSource } from '@/db/schema/MediaSource.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task } from '@/tasks/Task.js';
@@ -9,7 +10,6 @@ import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
-import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 
 type UpdatePlexPlayStatusScheduleRequest = {
   ratingKey: string;
@@ -37,7 +37,6 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
   private playState: PlayState = 'playing';
 
   constructor(
-    private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusScheduleRequest,
     public sessionId: string = v4(),
@@ -76,15 +75,11 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
   }
 
   private getNextTask(): UpdatePlexPlayStatusTask {
-    const task = new UpdatePlexPlayStatusTask(
-      this.mediaSourceApiFactory,
-      this.plexServer,
-      {
-        ...this.request,
-        playState: this.playState,
-        sessionId: this.sessionId,
-      },
-    );
+    const task = new UpdatePlexPlayStatusTask(this.plexServer, {
+      ...this.request,
+      playState: this.playState,
+      sessionId: this.sessionId,
+    });
 
     this.request = {
       ...this.request,
@@ -107,7 +102,6 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   constructor(
-    private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusInvocation,
   ) {
@@ -119,9 +113,7 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   protected async runInternal(): Promise<boolean> {
-    const plex = await this.mediaSourceApiFactory.getPlexApiClient(
-      this.plexServer,
-    );
+    const plex = MediaSourceApiFactory().get(this.plexServer);
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     const params = {

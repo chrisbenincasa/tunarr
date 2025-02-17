@@ -16,7 +16,6 @@ import {
   ContentProgramSchema,
   CustomProgramSchema,
   CustomShowSchema,
-  ExternalSourceTypeSchema,
   FillerListProgrammingSchema,
   FillerListSchema,
   SaveChannelRequestSchema,
@@ -33,7 +32,6 @@ import {
 import { isEmpty } from 'lodash-es';
 import querystring from 'query-string';
 import { z } from 'zod';
-import { embyEndpoints } from './embyApi.ts';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import { jellyfinEndpoints } from './jellyfinApi.ts';
 import { endpoints as settingsEndpoints } from './settingsApi.ts';
@@ -107,7 +105,6 @@ export const api = makeApi([
     method: 'post',
     path: '/api/channels/:id/programming',
     requestFormat: 'json',
-    alias: 'updateChannelProgramming',
     parameters: parametersBuilder()
       .addPath('id', z.string())
       .addBody(UpdateChannelProgrammingRequestSchema)
@@ -287,7 +284,7 @@ export const api = makeApi([
           accessToken: z.string(),
           uri: z.string(),
           username: z.string().optional(),
-          type: ExternalSourceTypeSchema,
+          type: z.union([z.literal('plex'), z.literal('jellyfin')]),
         }),
       )
       .build(),
@@ -426,7 +423,6 @@ export const api = makeApi([
   },
   ...settingsEndpoints,
   ...jellyfinEndpoints,
-  ...embyEndpoints,
 ]);
 
 export type ApiClient = ZodiosInstance<typeof api>;

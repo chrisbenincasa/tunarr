@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type TupleToUnion } from '../util.js';
+import { TupleToUnion } from '../util.js';
 import { constructZodLiteralUnionType } from './util.js';
 
 // Should match the DB schema...
@@ -10,7 +10,6 @@ export const ExternalIdType = [
   'tmdb',
   'tvdb',
   'jellyfin',
-  'emby',
 ] as const;
 
 export type ExternalIdType = TupleToUnion<typeof ExternalIdType>;
@@ -28,9 +27,8 @@ export const SingleExternalIdSourceSchema = constructZodLiteralUnionType(
   SingleExternalIdType.map((typ) => z.literal(typ)),
 );
 
-export const MultiExternalIdType = ['plex', 'jellyfin', 'emby'] as const;
-export const MultiExternalSourceSchema = z.enum(MultiExternalIdType);
-export type MultiExternalIdType = z.infer<typeof MultiExternalSourceSchema>;
+export const MultiExternalIdType = ['plex', 'jellyfin'] as const;
+export type MultiExternalIdType = TupleToUnion<typeof MultiExternalIdType>;
 
 function inConstArr<Arr extends readonly string[], S extends string>(
   arr: Arr,
@@ -65,6 +63,12 @@ export const SingleExternalIdSchema = z.object({
   source: SingleExternalIdSourceSchema,
   id: z.string(),
 });
+
+// When we have more sources, this will be a union
+export const MultiExternalSourceSchema = z.union([
+  z.literal('plex'),
+  z.literal('jellyfin'),
+]);
 
 // Represents components of an ID that can be
 // used to address an object (program or grouping) in

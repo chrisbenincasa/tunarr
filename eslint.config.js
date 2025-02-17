@@ -23,13 +23,27 @@ export default tseslint.config(
     plugins: {
       'unused-imports': noUnusedImports,
     },
+    rules: {
+      'unused-imports/no-unused-imports': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          fixStyle: 'inline-type-imports',
+        },
+      ],
+    },
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: [
+          './server/tsconfig.json',
+          './shared/tsconfig.json',
+          './types/tsconfig.json',
+          './web/tsconfig.build.json',
+        ],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -43,8 +57,6 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      'unused-imports/no-unused-imports': 'error',
-      '@typescript-eslint/consistent-type-imports': ['error'],
     },
   },
   {

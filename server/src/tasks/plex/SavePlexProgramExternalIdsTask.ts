@@ -2,7 +2,7 @@ import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.j
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
-import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Task } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
@@ -12,18 +12,12 @@ import type { PlexTerminalMedia } from '@tunarr/types/plex';
 import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 
-export type SavePlexProgramExternalIdsTaskFactory = (
-  programId: string,
-) => SavePlexProgramExternalIdsTask;
-
 export class SavePlexProgramExternalIdsTask extends Task {
-  static KEY = Symbol.for(SavePlexProgramExternalIdsTask.name);
   ID = SavePlexProgramExternalIdsTask.name;
 
   constructor(
     private programId: string,
     private programDB: IProgramDB,
-    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
@@ -52,9 +46,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
         continue;
       }
 
-      api = await this.mediaSourceApiFactory.getPlexApiClientByName(
-        id.externalSourceId,
-      );
+      api = await MediaSourceApiFactory().getOrSet(id.externalSourceId);
 
       if (isDefined(api)) {
         chosenId = id;

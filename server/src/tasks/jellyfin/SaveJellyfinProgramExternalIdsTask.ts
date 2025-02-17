@@ -1,7 +1,7 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
-import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { Task } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
@@ -18,18 +18,12 @@ import type {
   NewProgramExternalId,
 } from '../../db/schema/ProgramExternalId.ts';
 
-export type SaveJellyfinProgramExternalIdsTaskFactory = (
-  programId: string,
-) => SaveJellyfinProgramExternalIdsTask;
-
 export class SaveJellyfinProgramExternalIdsTask extends Task {
-  static KEY = Symbol.for(SaveJellyfinProgramExternalIdsTask.name);
   ID = SaveJellyfinProgramExternalIdsTask.name;
 
   constructor(
     private programId: string,
     private programDB: IProgramDB,
-    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
@@ -58,7 +52,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
         continue;
       }
 
-      api = await this.mediaSourceApiFactory.getJellyfinApiClientByName(
+      api = await MediaSourceApiFactory().getJellyfinByName(
         id.externalSourceId,
       );
 

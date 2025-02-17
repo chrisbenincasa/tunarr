@@ -1,7 +1,4 @@
-import {
-  type JellyfinItem,
-  type JellyfinItemKind,
-} from '@tunarr/types/jellyfin';
+import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 
 export function jellyfinChildType(
   item: JellyfinItem,
@@ -37,27 +34,3 @@ export const JellyfinTerminalTypes = new Set<JellyfinItemKind>([
   'Video',
   'Trailer',
 ]);
-export const sortJellyfinLibraries = (item: JellyfinItem) => {
-  if (item.CollectionType) {
-    switch (item.CollectionType) {
-      case 'tvshows':
-        return 0;
-      case 'movies':
-      case 'music':
-        return 1;
-      case 'unknown':
-      case 'musicvideos':
-      case 'trailers':
-      case 'homevideos':
-      case 'boxsets':
-      case 'books':
-      case 'photos':
-      case 'livetv':
-      case 'playlists':
-      case 'folders':
-        return 2;
-    }
-  }
-
-  return Number.MAX_SAFE_INTEGER;
-};

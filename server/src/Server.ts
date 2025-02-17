@@ -20,7 +20,6 @@ import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
-  isEmpty,
   isNumber,
   isString,
   isUndefined,
@@ -100,18 +99,10 @@ export class Server {
         .catch((e) => {
           this.logger.error('Failed to migrate from legacy DB: %O', e);
         });
-    } else if (
-      !this.serverContext.settings.migrationState.isFreshSettings &&
-      isNonEmptyString(legacyDbPath)
-    ) {
+    } else {
       this.logger.info(
         'Found legacy dizquetv database folder at %s, but not migrating because an existing Tunarr database was also found',
         legacyDbPath,
-      );
-    } else if (isEmpty(legacyDbPath)) {
-      this.logger.info(
-        'No legacy dizquetv database folder found when searching at: %s',
-        path.join(process.cwd(), '.dizquetv'),
       );
     }
 

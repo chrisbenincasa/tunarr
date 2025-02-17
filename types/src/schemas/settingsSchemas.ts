@@ -175,14 +175,9 @@ export const JellyfinServerSettingsSchema =
     type: z.literal('jellyfin'),
   });
 
-export const EmbyServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
-  type: z.literal('emby'),
-});
-
 export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema,
   JellyfinServerSettingsSchema,
-  EmbyServerSettingsSchema,
 ]);
 
 export const PlexStreamSettingsSchema = z.object({

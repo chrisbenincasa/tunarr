@@ -9,11 +9,7 @@ import Fixer from './fixer.js';
 
 @injectable()
 export class AddPlexServerIdsFixer extends Fixer {
-  constructor(
-    @inject(KEYS.Logger) protected logger: Logger,
-    @inject(MediaSourceApiFactory)
-    private mediaSourceApiFactory: MediaSourceApiFactory,
-  ) {
+  constructor(@inject(KEYS.Logger) protected logger: Logger) {
     super();
   }
 
@@ -25,7 +21,7 @@ export class AddPlexServerIdsFixer extends Fixer {
       .where('type', '=', MediaSourceType.Plex)
       .execute();
     for (const server of plexServers) {
-      const api = await this.mediaSourceApiFactory.getPlexApiClient(server);
+      const api = MediaSourceApiFactory().get(server);
       const devices = await api.getDevices();
       if (!isNil(devices) && devices.MediaContainer.Device) {
         const matchingServer = find(

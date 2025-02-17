@@ -1,24 +1,19 @@
-import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
-import { type PlexSearch } from '@tunarr/types/api';
-import { type EmbyItem } from '@tunarr/types/emby';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { CustomProgram, MediaSourceSettings } from '@tunarr/types';
+import { PlexSearch } from '@tunarr/types/api';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
-  type PlexLibrarySection,
-  type PlexMedia,
-  type PlexPlaylists,
+  PlexLibrarySection,
+  PlexMedia,
+  PlexPlaylists,
 } from '@tunarr/types/plex';
-import { type MediaSourceId } from '@tunarr/types/schemas';
-import { type StateCreator } from 'zustand';
-import {
-  type Emby,
-  type ItemUuid,
-  type Jellyfin,
-  type Plex,
-  type Typed,
-  type TypedKey,
-} from '../../types/MediaSource';
+import { MediaSourceId } from '@tunarr/types/schemas';
+import { StateCreator } from 'zustand';
 
-export type PlexSelectedMedia = Typed<ExternalSourceSelectedMedia, Plex>;
+type ItemUuid = string;
+
+export type PlexSelectedMedia = {
+  type: 'plex';
+} & ExternalSourceSelectedMedia;
 
 export type CustomShowSelectedMedia = {
   type: 'custom-show';
@@ -28,12 +23,9 @@ export type CustomShowSelectedMedia = {
   programs: CustomProgram[];
 };
 
-export type JellyfinSelectedMedia = Typed<
-  ExternalSourceSelectedMedia,
-  Jellyfin
->;
-
-export type EmbySelectedMedia = Typed<ExternalSourceSelectedMedia, Emby>;
+export type JellyfinSelectedMedia = {
+  type: 'jellyfin';
+} & ExternalSourceSelectedMedia;
 
 export type ExternalSourceSelectedMedia = {
   serverId: MediaSourceId;
@@ -46,7 +38,6 @@ export type ExternalSourceSelectedMedia = {
 export type SelectedMedia =
   | PlexSelectedMedia
   | JellyfinSelectedMedia
-  | EmbySelectedMedia
   | CustomShowSelectedMedia;
 
 export const PlexMediaSourceLibraryViewType = {
@@ -64,16 +55,15 @@ export type PlexMediaSourcePlaylistsView = {
   playlists: PlexPlaylists;
 };
 
-type TypedView<T, Type> = TypedKey<T, Type, 'view'>;
+export type PlexMediaSourceView = {
+  type: 'plex';
+  view: PlexMediaSourceLibraryView | PlexMediaSourcePlaylistsView;
+};
 
-export type PlexMediaSourceView = TypedView<
-  PlexMediaSourceLibraryView | PlexMediaSourcePlaylistsView,
-  Plex
->;
-
-export type JellyfinMediaSourceView = TypedView<JellyfinItem, Jellyfin>;
-
-export type EmbyMediaSourceView = TypedView<EmbyItem, Emby>;
+export type JellyfinMediaSourceView = {
+  type: 'jellyfin';
+  library: JellyfinItem;
+};
 
 export type CustomShowView = {
   type: 'custom-show';
@@ -82,15 +72,19 @@ export type CustomShowView = {
 export type MediaSourceView =
   | PlexMediaSourceView
   | JellyfinMediaSourceView
-  | EmbyMediaSourceView
   | CustomShowView;
 
-type TypedItem<T, Type> = TypedKey<T, Type, 'item'>;
+export type PlexMediaItems = {
+  type: 'plex';
+  item: PlexLibrarySection | PlexMedia;
+};
 
-export type MediaItems =
-  | TypedItem<PlexLibrarySection | PlexMedia, Plex>
-  | TypedItem<JellyfinItem, Jellyfin>
-  | TypedItem<EmbyItem, Emby>;
+export type JellyfinItems = {
+  type: 'jellyfin';
+  item: JellyfinItem;
+};
+
+export type MediaItems = PlexMediaItems | JellyfinItems;
 
 export type KnownMediaMap = Record<MediaSourceId, Record<ItemUuid, MediaItems>>;
 

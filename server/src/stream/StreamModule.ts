@@ -27,8 +27,6 @@ import { ContainerModule } from 'inversify';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
-import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
-import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
 
 export type ProgramStreamFactoryType = (
   playerContext: PlayerContext,
@@ -83,26 +81,6 @@ const StreamModule = new ContainerModule((bind) => {
       };
     },
   ).whenTargetNamed('jellyfin');
-
-  bindFactoryFunc<ProgramStreamFactoryType>(
-    bind,
-    KEYS.ProgramStreamFactory,
-    (ctx) => {
-      return (playerContext: PlayerContext, outputFormat: OutputFormat) => {
-        return new EmbyProgramStream(
-          ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
-          ctx.container.get(MediaSourceDB),
-          ctx.container.get<interfaces.AutoFactory<EmbyStreamDetails>>(
-            KEYS.EmbyStreamDetailsFactory,
-          ),
-          ctx.container.get(CacheImageService),
-          ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
-          playerContext,
-          outputFormat,
-        );
-      };
-    },
-  ).whenTargetNamed('emby');
 
   bind<OfflineStreamFactoryType>(KEYS.ProgramStreamFactory)
     .toFactory<ProgramStream, [boolean], [PlayerContext, OutputFormat]>(
@@ -203,11 +181,6 @@ const StreamModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<PlexStreamDetails>>(
     KEYS.PlexStreamDetailsFactory,
   ).toAutoFactory(PlexStreamDetails);
-
-  bind(EmbyStreamDetails).toSelf();
-  bind<interfaces.Factory<EmbyStreamDetails>>(
-    KEYS.EmbyStreamDetailsFactory,
-  ).toAutoFactory(EmbyStreamDetails);
 
   bind<interfaces.Factory<ConcatStream>>(KEYS.ConcatStreamFactory).toFactory<
     ConcatStream,

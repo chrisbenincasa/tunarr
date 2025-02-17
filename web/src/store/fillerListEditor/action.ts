@@ -1,9 +1,9 @@
 import { zipWithIndex } from '@/helpers/util.ts';
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import useStore from '@/store/index.ts';
-import type { AddedMedia } from '@/types/index.ts';
+import { AddedMedia } from '@/types/index.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
-import type { FillerList, FillerListProgramming } from '@tunarr/types';
+import { FillerList, FillerListProgramming } from '@tunarr/types';
 import { map, merge } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 
@@ -23,12 +23,6 @@ export const addMediaToCurrentFillerList = (programs: AddedMedia[]) =>
             ApiProgramMinter.mintProgram(
               { id: jfItem.serverId, name: jfItem.serverName },
               { program: jfItem, sourceType: 'jellyfin' },
-            ),
-          )
-          .with({ type: 'emby', media: P.select() }, (embyItem) =>
-            ApiProgramMinter.mintProgram(
-              { id: embyItem.serverId, name: embyItem.serverName },
-              { program: embyItem, sourceType: 'emby' },
             ),
           )
           .with(

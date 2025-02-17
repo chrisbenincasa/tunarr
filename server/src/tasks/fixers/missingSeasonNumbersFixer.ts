@@ -39,11 +39,7 @@ import Fixer from './fixer.js';
 export class MissingSeasonNumbersFixer extends Fixer {
   canRunInBackground: boolean = true;
 
-  constructor(
-    @inject(KEYS.Logger) protected logger: Logger,
-    @inject(MediaSourceApiFactory)
-    private mediaSourceApiFactory: MediaSourceApiFactory,
-  ) {
+  constructor(@inject(KEYS.Logger) protected logger: Logger) {
     super();
   }
 
@@ -51,7 +47,6 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const allPlexServers = await getDatabase()
       .selectFrom('mediaSource')
       .where('mediaSource.type', '=', MediaSourceType.Plex)
-      .groupBy('name')
       .selectAll()
       .execute();
 
@@ -59,11 +54,9 @@ export class MissingSeasonNumbersFixer extends Fixer {
       return;
     }
 
-    const plexByName: Record<string, PlexApiClient> = {};
-    for (const server of allPlexServers) {
-      plexByName[server.name] =
-        await this.mediaSourceApiFactory.getPlexApiClient(server);
-    }
+    const plexByName = groupByUniqPropAndMap(allPlexServers, 'name', (server) =>
+      MediaSourceApiFactory().get(server),
+    );
 
     const updatedPrograms: RawProgram[] = [];
     let lastId: Maybe<string> = undefined;
@@ -219,7 +212,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         continue;
       }
 
-      const plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
+      const plex = MediaSourceApiFactory().get(server);
       const plexResult = await plex.doGetPath<PlexSeasonView>(
         '/library/metadata/' + ref.externalKey,
       );

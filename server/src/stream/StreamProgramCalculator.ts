@@ -16,7 +16,6 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
 import { StrictExclude } from 'ts-essentials';
-import { match } from 'ts-pattern';
 import {
   Lineup,
   isContentItem,
@@ -393,25 +392,16 @@ export class StreamProgramCalculator {
         const externalInfo = backingItem.externalIds.find(
           (eid) =>
             eid.sourceType === ProgramExternalIdType.PLEX ||
-            eid.sourceType === ProgramExternalIdType.JELLYFIN ||
-            eid.sourceType === ProgramExternalIdType.EMBY,
+            eid.sourceType === ProgramExternalIdType.JELLYFIN,
         );
 
         if (externalInfo && isNonEmptyString(externalInfo.externalSourceId)) {
-          const mediaSourceType = match(externalInfo.sourceType)
-            .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
-            .with(
-              ProgramExternalIdType.JELLYFIN,
-              () => MediaSourceType.Jellyfin,
-            )
-            .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
-            .otherwise(() => null);
-          if (!mediaSourceType) {
-            throw new Error('Impossible');
-          }
           program = {
             type: 'program',
-            externalSource: mediaSourceType,
+            externalSource:
+              externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
+                ? MediaSourceType.Jellyfin
+                : MediaSourceType.Plex,
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             externalKey: externalInfo.externalKey,
             filePath: nullToUndefined(externalInfo.directFilePath),
@@ -423,11 +413,6 @@ export class StreamProgramCalculator {
             programType: backingItem.type,
             programBeginMs: timestamp - timeElapsed,
           };
-        } else {
-          this.logger.warn(
-            'Found a backing item, but could not find external ID info!! %O',
-            backingItem,
-          );
         }
       }
     } else if (isOfflineItem(lineupItem)) {

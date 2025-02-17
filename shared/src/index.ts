@@ -1,12 +1,8 @@
+import { ExternalId, MultiExternalId, SingleExternalId } from '@tunarr/types';
+import { PlexMedia } from '@tunarr/types/plex';
 import {
-  type ExternalId,
-  type MultiExternalId,
-  type SingleExternalId,
-} from '@tunarr/types';
-import { type PlexMedia } from '@tunarr/types/plex';
-import {
+  SingleExternalIdType,
   type ExternalIdType,
-  type SingleExternalIdType,
 } from '@tunarr/types/schemas';
 export { ApiProgramMinter } from './services/ApiProgramMinter.js';
 export { RandomSlotScheduler } from './services/RandomSlotsService.js';

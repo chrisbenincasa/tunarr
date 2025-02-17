@@ -1,5 +1,7 @@
+import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { enumKeys } from '@/util/enumUtil.js';
 import type { ExternalIdType } from '@tunarr/types/schemas';
+import { ProgramSourceType } from './ProgramSourceType.ts';
 
 export enum ProgramExternalIdType {
   PLEX = 'plex',
@@ -8,13 +10,36 @@ export enum ProgramExternalIdType {
   IMDB = 'imdb',
   TVDB = 'tvdb',
   JELLYFIN = 'jellyfin',
-  EMBY = 'emby',
 }
 
 export function programExternalIdTypeFromExternalIdType(
   str: ExternalIdType,
 ): ProgramExternalIdType {
   return programExternalIdTypeFromString(str)!;
+}
+
+export function programExternalIdTypeFromSourceType(
+  src: ProgramSourceType,
+): ProgramExternalIdType {
+  switch (src) {
+    case ProgramSourceType.PLEX:
+      return ProgramExternalIdType.PLEX;
+    case ProgramSourceType.JELLYFIN:
+      return ProgramExternalIdType.JELLYFIN;
+  }
+}
+
+export function programExternalIdTypeToMediaSourceType(
+  src: ProgramExternalIdType,
+) {
+  switch (src) {
+    case ProgramExternalIdType.PLEX:
+      return MediaSourceType.Plex;
+    case ProgramExternalIdType.JELLYFIN:
+      return MediaSourceType.Jellyfin;
+    default:
+      return;
+  }
 }
 
 export function programExternalIdTypeFromString(
