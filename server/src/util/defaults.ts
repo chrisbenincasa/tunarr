@@ -2,6 +2,7 @@ import type { Nullable } from '@/types/util.js';
 import constants from '@tunarr/shared/constants';
 import { isNull, isUndefined } from 'lodash-es';
 import path from 'node:path';
+import { globalOptions } from '../globals.ts';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './env.ts';
 import { isNonEmptyString, isProduction } from './index.js';
 import { isDocker } from './isDocker.js';
@@ -59,6 +60,13 @@ export function getDefaultDatabaseDirectory(): string {
   }
 
   return path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
+}
+
+export function getDefaultDatabaseName() {
+  return path.join(
+    globalOptions().databaseDirectory,
+    process.env['TUNARR_DATABASE_NAME'] ?? 'db.db',
+  );
 }
 
 export function getDefaultServerPort() {

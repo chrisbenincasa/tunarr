@@ -3,12 +3,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
 import {
-  initDatabaseAccess,
+  databaseNeedsMigration,
+  getDatabase,
+  runPendingMigrations,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { type GlobalOptions, globalOptions } from './globals.js';
+import { DatabaseCopyMigrator } from './migration/db/DatabaseCopyMigrator.ts';
+import { getDefaultDatabaseName } from './util/defaults.ts';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 
@@ -70,7 +74,19 @@ export async function bootstrapTunarr(
   }
 
   await initDbDirectories(opts);
-  initDatabaseAccess(path.join(opts.databaseDirectory, 'db.db'));
-  await syncMigrationTablesIfNecessary();
+  const db = getDatabase(); // Initialize the DB
+
+  // not the first run, use the copy migrator
+  if (hasTunarrDb) {
+    const migrationNecessary = await databaseNeedsMigration(db);
+    if (migrationNecessary) {
+      RootLogger.debug('Running copy DB migrator');
+      await new DatabaseCopyMigrator().migrate(getDefaultDatabaseName());
+    }
+  } else {
+    await syncMigrationTablesIfNecessary(db);
+    await runPendingMigrations(db);
+  }
+
   LoggerFactory.initialize(settingsDb);
 }

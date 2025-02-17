@@ -1,5 +1,6 @@
 import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Mutex } from 'async-mutex';
 import Sqlite from 'better-sqlite3';
 import dayjs from 'dayjs';
 import {
@@ -14,63 +15,99 @@ import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
+import { getDefaultDatabaseName } from '../util/defaults.ts';
 import type { DB } from './schema/db.ts';
 
-const MigrationTableName = 'migrations';
-const MigrationLockTableName = 'migration_lock';
+const lock = new Mutex();
 
-let _directDbAccess: Kysely<DB>;
+export const MigrationTableName = 'migrations';
+export const MigrationLockTableName = 'migration_lock';
+
+const dbConnections: Map<string, Kysely<DB>> = new Map();
 
 const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
-export const initDatabaseAccess = once((dbName: string) => {
-  _directDbAccess = new Kysely<DB>({
-    dialect: new SqliteDialect({
-      database: new Sqlite(dbName, {
-        timeout: 5000,
+export const getDatabase = (
+  dbName: string = getDefaultDatabaseName(),
+  forceInit: boolean = false,
+) => {
+  let conn = dbConnections.get(dbName);
+  if (!conn || forceInit) {
+    conn = new Kysely<DB>({
+      dialect: new SqliteDialect({
+        database: new Sqlite(dbName, {
+          timeout: 5000,
+        }),
       }),
-    }),
-    log: (event) => {
-      switch (event.level) {
-        case 'query':
-          if (
-            process.env['DATABASE_DEBUG_LOGGING'] ||
-            process.env['DIRECT_DATABASE_DEBUG_LOGGING']
-          ) {
-            logger().debug(
-              'Query: %O (%d ms)',
+      log: (event) => {
+        switch (event.level) {
+          case 'query':
+            if (
+              process.env['DATABASE_DEBUG_LOGGING'] ||
+              process.env['DIRECT_DATABASE_DEBUG_LOGGING']
+            ) {
+              logger().debug(
+                'Query: %O (%d ms)',
+                event.query.sql,
+                event.queryDurationMillis,
+              );
+            }
+            return;
+          case 'error':
+            logger().error(
+              event.error,
+              'Query error: %O\n%O',
               event.query.sql,
-              event.queryDurationMillis,
+              event.query.parameters,
             );
-          }
-          return;
-        case 'error':
-          logger().error(
-            event.error,
-            'Query error: %O\n%O',
-            event.query.sql,
-            event.query.parameters,
-          );
-          return;
-      }
-    },
-    plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
-  });
-});
+            return;
+        }
+      },
+      plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
+    });
+  }
+  dbConnections.set(dbName, conn);
+  return conn;
+};
 
-export const getDatabase = () => _directDbAccess;
-
-export function getMigrator() {
+export function getMigrator(db: Kysely<DB> = getDatabase()) {
   return new Migrator({
-    db: getDatabase(),
+    db,
     provider: new DirectMigrationProvider(),
     migrationTableName: MigrationTableName,
     migrationLockTableName: MigrationLockTableName,
   });
 }
 
-export async function syncMigrationTablesIfNecessary() {
-  const tables = await getDatabase().introspection.getTables({
+export async function pendingDatabaseMigrations(
+  db: Kysely<DB> = getDatabase(),
+) {
+  return lock.runExclusive(async () => {
+    const executedMigrations =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (
+        await (db as Kysely<any>)
+          .selectFrom(MigrationTableName)
+          .select('name')
+          .orderBy(['timestamp', 'name'])
+          .execute()
+      ).map((migration) => migration.name as string);
+    const migrator = getMigrator(db);
+    const knownMigrations = await migrator.getMigrations();
+    return knownMigrations.filter(
+      (migration) => !executedMigrations.includes(migration.name),
+    );
+  });
+}
+
+export async function databaseNeedsMigration(db: Kysely<DB> = getDatabase()) {
+  return (await pendingDatabaseMigrations(db)).length > 0;
+}
+
+export async function syncMigrationTablesIfNecessary(
+  db: Kysely<DB> = getDatabase(),
+) {
+  const tables = await db.introspection.getTables({
     withInternalKyselyTables: true,
   });
 
@@ -93,7 +130,7 @@ export async function syncMigrationTablesIfNecessary() {
     await migrator.migrateUp();
 
     const result = await attempt(async () => {
-      const previouslyRunLegacyMigrations = await getDatabase()
+      const previouslyRunLegacyMigrations = await db
         .selectFrom('mikroOrmMigrations')
         .selectAll()
         .orderBy('id asc')
@@ -139,7 +176,7 @@ export async function syncMigrationTablesIfNecessary() {
         logger().debug('Fast-forwarding migrations: %O', newMigrationRows);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (getDatabase() as Kysely<any>)
+        await (db as Kysely<any>)
           .insertInto(MigrationTableName)
           .values(newMigrationRows)
           .execute();
@@ -149,21 +186,17 @@ export async function syncMigrationTablesIfNecessary() {
     // Try to reset state so we can try again on the next run
     if (isError(result)) {
       await migrator.migrateDown();
-      await getDatabase()
-        .schema.dropTable(MigrationTableName)
-        .ifExists()
-        .execute();
-      await getDatabase()
-        .schema.dropTable(MigrationLockTableName)
-        .ifExists()
-        .execute();
+      await db.schema.dropTable(MigrationTableName).ifExists().execute();
+      await db.schema.dropTable(MigrationLockTableName).ifExists().execute();
     }
   } else {
     logger().debug('New migration table already exists');
   }
+}
 
+export async function runPendingMigrations(db: Kysely<DB> = getDatabase()) {
   const _logger = logger();
-  const { error, results } = await migrator.migrateToLatest();
+  const { error, results } = await getMigrator(db).migrateToLatest();
 
   results?.forEach((it) => {
     if (it.status === 'Success') {
@@ -176,8 +209,4 @@ export async function syncMigrationTablesIfNecessary() {
   if (error) {
     _logger.error(error, 'failed to run `migrateToLatest`');
   }
-}
-
-export async function runPendingMigrations() {
-  return await getMigrator().migrateToLatest();
 }
