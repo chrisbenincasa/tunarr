@@ -26,6 +26,7 @@ import type { interfaces } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
 import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
+import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
@@ -71,6 +72,20 @@ const RootModule = new ContainerModule((bind) => {
     MutexMap,
     [Maybe<number>]
   >(() => (timeout?: number) => new MutexMap(timeout));
+
+  container.bind(MediaSourceApiFactory).toSelf().inSingletonScope();
+  // If we need lazy init...
+  // container
+  //   .bind<MediaSourceApiFactory>(KEYS.MediaSourceApiFactory)
+  //   .to(MediaSourceApiFactory)
+  //   .inSingletonScope();
+
+  container
+    .bind<interfaces.Factory<MediaSourceApiFactory>>(KEYS.MediaSourceApiFactory)
+    .toFactory(
+      (ctx) => () =>
+        ctx.container.get<MediaSourceApiFactory>(MediaSourceApiFactory),
+    );
 
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();

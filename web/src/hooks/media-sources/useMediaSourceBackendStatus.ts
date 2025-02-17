@@ -1,6 +1,6 @@
 import { isNonEmptyString, isValidUrl } from '@/helpers/util';
-import { MediaSourceSettings } from '@tunarr/types';
-import { MarkOptional } from 'ts-essentials';
+import type { MediaSourceSettings } from '@tunarr/types';
+import type { MarkOptional } from 'ts-essentials';
 import { useApiQuery } from '../useApiQuery';
 
 export const useMediaSourceBackendStatus = (

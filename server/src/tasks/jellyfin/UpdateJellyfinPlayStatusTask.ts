@@ -1,5 +1,5 @@
 import type { MediaSource } from '@/db/schema/MediaSource.js';
-import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import type { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task } from '@/tasks/Task.js';
@@ -33,6 +33,7 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
   constructor(
     private jellyfinServer: MediaSource,
     private request: UpdateJellyfinPlayStatusScheduleRequest,
+    private mediaSourceApiFactory: MediaSourceApiFactory,
     public sessionId: string = v4(),
   ) {
     super(
@@ -69,12 +70,16 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
   }
 
   private getNextTask(): UpdateJellyfinPlayStatusTask {
-    const task = new UpdateJellyfinPlayStatusTask(this.jellyfinServer, {
-      ...this.request,
-      playState: this.playState,
-      sessionId: this.sessionId,
-      elapsedMs: dayjs.duration(dayjs().diff(this.start)).asMilliseconds(),
-    });
+    const task = new UpdateJellyfinPlayStatusTask(
+      this.jellyfinServer,
+      {
+        ...this.request,
+        playState: this.playState,
+        sessionId: this.sessionId,
+        elapsedMs: dayjs.duration(dayjs().diff(this.start)).asMilliseconds(),
+      },
+      this.mediaSourceApiFactory,
+    );
 
     this.request = {
       ...this.request,
@@ -103,16 +108,15 @@ class UpdateJellyfinPlayStatusTask extends Task {
   constructor(
     private jellyfinServer: MediaSource,
     private request: UpdateJellyfinPlayStatusInvocation,
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
 
   protected async runInternal(): Promise<boolean> {
-    const jellyfin = await MediaSourceApiFactory().getJellyfinClient({
-      apiKey: this.jellyfinServer.accessToken,
-      url: this.jellyfinServer.uri,
-      name: this.jellyfinServer.name,
-    });
+    const jellyfin = await this.mediaSourceApiFactory.getJellyfinApiClient(
+      this.jellyfinServer,
+    );
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     try {

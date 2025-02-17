@@ -34,6 +34,8 @@ export class UpdateXmlTvTask extends Task<void> {
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
+    @inject(MediaSourceApiFactory)
+    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
@@ -80,7 +82,8 @@ export class UpdateXmlTvTask extends Task<void> {
     const allMediaSources = await this.mediaSourceDB.findByType('plex');
 
     await mapAsyncSeq(allMediaSources, async (plexServer) => {
-      const plex = MediaSourceApiFactory().get(plexServer);
+      const plex =
+        await this.mediaSourceApiFactory.getPlexApiClient(plexServer);
       let dvrs: PlexDvr[] = [];
 
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {

@@ -5,11 +5,10 @@ import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
-import { GlobalScheduler } from '@/services/Scheduler.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
-import { UpdatePlexPlayStatusScheduledTask } from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
+import type { UpdatePlexPlayStatusScheduledTask } from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
@@ -128,20 +127,19 @@ export class PlexProgramStream extends ProgramStream {
     }
 
     if (plexSettings.updatePlayStatus) {
-      this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
-        server,
-        {
-          channelNumber: this.context.sourceChannel.number,
-          duration: lineupItem.duration,
-          ratingKey: lineupItem.externalKey,
-          startTime: lineupItem.startOffset ?? 0,
-        },
-      );
-
-      GlobalScheduler.scheduleTask(
-        this.updatePlexStatusTask.id,
-        this.updatePlexStatusTask,
-      );
+      // this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
+      //   server,
+      //   {
+      //     channelNumber: this.context.sourceChannel.number,
+      //     duration: lineupItem.duration,
+      //     ratingKey: lineupItem.externalKey,
+      //     startTime: lineupItem.startOffset ?? 0,
+      //   },
+      // );
+      // GlobalScheduler.scheduleTask(
+      //   this.updatePlexStatusTask.id,
+      //   this.updatePlexStatusTask,
+      // );
     }
 
     return Result.success(transcodeSession);

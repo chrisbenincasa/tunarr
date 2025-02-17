@@ -23,7 +23,8 @@ export type ProgramExternalIdSourceType =
   | 'tmdb'
   | 'imdb'
   | 'tvdb'
-  | 'jellyfin';
+  | 'jellyfin'
+  | 'emby';
 
 export type ChannelStreamMode = 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct';
 
@@ -54,7 +55,7 @@ export const DefaultChannelIcon = ChannelIconSchema.parse({});
 
 export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 
-const ChannelTranscodingSettingsSchema = z.object({
+export const ChannelTranscodingSettingsSchema = z.object({
   targetResolution: ResolutionSchema.optional().catch(undefined),
   videoBitrate: z.number().nonnegative().optional().catch(undefined),
   videoBufferSize: z.number().nonnegative().optional().catch(undefined),
@@ -64,7 +65,7 @@ export type ChannelTranscodingSettings = z.infer<
   typeof ChannelTranscodingSettingsSchema
 >;
 
-const ChannelWatermarkSchema = z.object({
+export const ChannelWatermarkSchema = z.object({
   url: z.string().optional().catch(undefined),
   enabled: z.boolean().catch(false),
   position: z
@@ -98,7 +99,7 @@ const ChannelWatermarkSchema = z.object({
 
 export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
 
-const ChannelOfflineSettingsSchema = z.object({
+export const ChannelOfflineSettingsSchema = z.object({
   picture: z.string().optional(),
   soundtrack: z.string().optional(),
   mode: z.union([z.literal('pic'), z.literal('clip')]).catch('clip'),

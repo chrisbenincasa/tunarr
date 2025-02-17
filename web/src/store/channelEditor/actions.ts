@@ -23,6 +23,7 @@ import {
   tail,
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
+import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import {
   type AddedMedia,
   type UIChannelProgram,
@@ -267,6 +268,7 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
         forAddedMediaType({
           plex: ({ media }) => media.duration ?? 0,
           jellyfin: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
+          emby: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
           'custom-show': ({ program }) => program.duration ?? 0,
         }),
       );
@@ -274,16 +276,24 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       // Convert any external program types to our internal representation
       const allNewPrograms = map(programs, (item) =>
         match(item)
-          .with({ type: 'plex', media: P.select() }, (plexItem) =>
+          // There might be a way to consolidate these in a type-safe way, but I'm
+          // not sure right now.
+          .with({ type: Plex, media: P.select() }, (plexItem) =>
             ApiProgramMinter.mintProgram(
               { id: plexItem.serverId, name: plexItem.serverName },
-              { program: plexItem, sourceType: 'plex' },
+              { program: plexItem, sourceType: Plex },
             ),
           )
-          .with({ type: 'jellyfin', media: P.select() }, (jfItem) =>
+          .with({ type: Jellyfin, media: P.select() }, (jfItem) =>
             ApiProgramMinter.mintProgram(
               { id: jfItem.serverId, name: jfItem.serverName },
-              { program: jfItem, sourceType: 'jellyfin' },
+              { program: jfItem, sourceType: Jellyfin },
+            ),
+          )
+          .with({ type: Emby, media: P.select() }, (embyItem) =>
+            ApiProgramMinter.mintProgram(
+              { id: embyItem.serverId, name: embyItem.serverName },
+              { program: embyItem, sourceType: Emby },
             ),
           )
           .with(
