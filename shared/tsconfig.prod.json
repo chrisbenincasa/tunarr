@@ -4,6 +4,7 @@
         "./src/**/*.ts"
     ],
     "exclude": [
+        "vitest.config.ts",
         "./build/**/*",
         "./**/*.test.ts",
         "./**/*.ignore.ts"

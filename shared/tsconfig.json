@@ -3,7 +3,8 @@
         "target": "es2022",
         "module": "NodeNext",
         "lib": [
-            "ES2022"
+            "ES2022",
+            "DOM" // We have to declare this so vitest doesn't explode
         ],
         "moduleResolution": "nodenext",
         "rootDir": ".",

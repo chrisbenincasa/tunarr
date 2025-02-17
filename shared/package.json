@@ -7,6 +7,14 @@
   "license": "Zlib",
   "author": "chrisbenincasa",
   "type": "module",
+  "scripts": {
+    "bundle": "tsup",
+    "build": "tsc -p tsconfig.prod.json",
+    "build-dev": "tsup --dts --watch",
+    "clean": "rimraf ./build/",
+    "dev": "tsc --watch --declaration",
+    "test": "vitest"
+  },
   "exports": {
     ".": {
       "types": "./build/index.d.ts",
@@ -25,14 +33,6 @@
     }
   },
   "main": "index.ts",
-  "scripts": {
-    "bundle": "tsup",
-    "build": "tsup --dts",
-    "build-dev": "tsup --dts --watch",
-    "clean": "rimraf ./build/",
-    "dev": "tsc --watch --declaration",
-    "test": "vitest"
-  },
   "dependencies": {
     "@tunarr/types": "workspace:*",
     "dayjs": "^1.11.10",
