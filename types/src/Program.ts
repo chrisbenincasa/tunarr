@@ -1,20 +1,20 @@
-import type z from 'zod';
+import z from 'zod';
 import {
-  type BaseProgramSchema,
-  type ChannelProgramSchema,
-  type ChannelProgrammingSchema,
-  type CondensedChannelProgramSchema,
-  type CondensedChannelProgrammingSchema,
-  type CondensedContentProgramSchema,
-  type ContentProgramParentSchema,
-  type ContentProgramSchema,
-  type CustomProgramSchema,
-  type FlexProgramSchema,
-  type ProgramSchema,
-  type ProgramTypeSchema,
-  type RedirectProgramSchema,
+  BaseProgramSchema,
+  ChannelProgramSchema,
+  ChannelProgrammingSchema,
+  CondensedChannelProgramSchema,
+  CondensedChannelProgrammingSchema,
+  CondensedContentProgramSchema,
+  ContentProgramParentSchema,
+  ContentProgramSchema,
+  CustomProgramSchema,
+  FlexProgramSchema,
+  ProgramSchema,
+  ProgramTypeSchema,
+  RedirectProgramSchema,
 } from './schemas/programmingSchema.js';
-import { type ExternalIdSchema } from './schemas/utilSchemas.js';
+import { ExternalIdSchema } from './schemas/utilSchemas.js';
 
 // This helps with VS Code type preview
 export type ProgramType = z.infer<typeof ProgramTypeSchema>;

@@ -14,11 +14,11 @@ import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import { Box, Breadcrumbs, Link, Stack, Tab, Tabs } from '@mui/material';
 import { tag } from '@tunarr/types';
 import {
-  type JellyfinItem,
-  type JellyfinItemKind,
-  type JellyfinItemSortBy,
+  JellyfinItem,
+  JellyfinItemKind,
+  JellyfinItemSortBy,
 } from '@tunarr/types/jellyfin';
-import { type MediaSourceId } from '@tunarr/types/schemas';
+import { MediaSourceId } from '@tunarr/types/schemas';
 import { usePrevious } from '@uidotdev/usehooks';
 import { first, isEmpty, last, map, slice } from 'lodash-es';
 import React, {
@@ -28,17 +28,15 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { type NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
-import { Jellyfin } from '../../helpers/constants.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
 import { JellyfinListItem } from './JellyfinListItem.tsx';
 import {
-  type GridInlineModalProps,
-  type GridItemProps,
+  GridInlineModalProps,
+  GridItemProps,
   MediaItemGrid,
 } from './MediaItemGrid.tsx';
 
@@ -78,9 +76,9 @@ type Size = {
 };
 
 export function JellyfinProgrammingSelector() {
-  const selectedServer = useCurrentMediaSource(Jellyfin);
-  const selectedLibrary = useCurrentMediaSourceView(Jellyfin);
-  const prevSelectedLibrary = usePrevious(selectedLibrary?.view?.Id);
+  const selectedServer = useCurrentMediaSource('jellyfin');
+  const selectedLibrary = useCurrentMediaSourceView('jellyfin');
+  const prevSelectedLibrary = usePrevious(selectedLibrary?.library?.Id);
   const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
     null,
   );
@@ -93,8 +91,8 @@ export function JellyfinProgrammingSelector() {
   const itemTypes: JellyfinItemKind[] = useMemo(() => {
     if (!isEmpty(parentContext)) {
       return jellyfinChildType(last(parentContext)!) ?? [];
-    } else if (selectedLibrary?.view.CollectionType) {
-      switch (selectedLibrary.view.CollectionType) {
+    } else if (selectedLibrary?.library.CollectionType) {
+      switch (selectedLibrary.library.CollectionType) {
         case 'movies':
           return ['Movie'];
         case 'tvshows':
@@ -107,14 +105,15 @@ export function JellyfinProgrammingSelector() {
     }
 
     return [];
-  }, [parentContext, selectedLibrary?.view.CollectionType]);
+  }, [parentContext, selectedLibrary?.library.CollectionType]);
 
-  const sortBy: NonEmptyArray<JellyfinItemSortBy> | null = useMemo(() => {
-    return match(selectedLibrary?.view.CollectionType)
-      .returnType<[JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null>()
-      .with('homevideos', () => ['IsFolder', 'SortName'])
-      .otherwise(() => null);
-  }, [selectedLibrary?.view.CollectionType]);
+  const sortBy: [JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null =
+    useMemo(() => {
+      return match(selectedLibrary?.library.CollectionType)
+        .returnType<[JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null>()
+        .with('homevideos', () => ['IsFolder', 'SortName'])
+        .otherwise(() => null);
+    }, [selectedLibrary?.library.CollectionType]);
 
   const itemContainer = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(8);
@@ -135,7 +134,7 @@ export function JellyfinProgrammingSelector() {
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     isEmpty(parentContext)
-      ? selectedLibrary?.view.Id ?? ''
+      ? selectedLibrary?.library.Id ?? ''
       : last(parentContext)!.Id,
     itemTypes,
     true,
@@ -198,7 +197,7 @@ export function JellyfinProgrammingSelector() {
   }, [previousIsFetchingNextLibraryPage, isFetchingNextLibraryPage]);
 
   useEffect(() => {
-    if (selectedLibrary?.view.Id !== prevSelectedLibrary) {
+    if (selectedLibrary?.library.Id !== prevSelectedLibrary) {
       clearParentContext();
     }
   }, [prevSelectedLibrary, selectedLibrary]);
@@ -224,7 +223,7 @@ export function JellyfinProgrammingSelector() {
           <InlineModal
             {...modalProps}
             extractItemId={typedProperty('Id')}
-            sourceType={Jellyfin}
+            sourceType="jellyfin"
             getItemType={typedProperty('Type')}
             getChildItemType={childJellyfinType}
           />

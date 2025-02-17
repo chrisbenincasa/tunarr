@@ -1,13 +1,13 @@
-import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
+import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { MediaSource } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import { KEYS } from '@/types/inject.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -29,7 +29,7 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
-import { type NonEmptyArray } from 'ts-essentials';
+import { NonEmptyArray } from 'ts-essentials';
 import {
   ifDefined,
   isDefined,
@@ -37,12 +37,12 @@ import {
   nullToUndefined,
 } from '../../util/index.js';
 import {
-  type AudioStreamDetails,
+  AudioStreamDetails,
   HttpStreamSource,
-  type ProgramStreamResult,
-  type StreamDetails,
-  type StreamSource,
-  type VideoStreamDetails,
+  ProgramStreamResult,
+  StreamDetails,
+  StreamSource,
+  VideoStreamDetails,
 } from '../types.js';
 
 // The minimum fields we need to get stream details about an item
@@ -60,8 +60,6 @@ export class JellyfinStreamDetails {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(JellyfinItemFinder) private jellyfinItemFinder: JellyfinItemFinder,
-    @inject(MediaSourceApiFactory)
-    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   async getStream(server: MediaSource, item: JellyfinItemStreamDetailsQuery) {
@@ -69,7 +67,7 @@ export class JellyfinStreamDetails {
   }
 
   private async getStreamInternal(
-    mediaSource: MediaSource,
+    server: MediaSource,
     item: JellyfinItemStreamDetailsQuery,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
@@ -77,8 +75,11 @@ export class JellyfinStreamDetails {
       return null;
     }
 
-    this.jellyfin =
-      await this.mediaSourceApiFactory.getJellyfinApiClient(mediaSource);
+    this.jellyfin = await MediaSourceApiFactory().getJellyfinClient({
+      apiKey: server.accessToken,
+      url: server.uri,
+      name: server.name,
+    });
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);
@@ -96,7 +97,7 @@ export class JellyfinStreamDetails {
 
       if (newExternalId) {
         return this.getStreamInternal(
-          mediaSource,
+          server,
           {
             ...item,
             ...newExternalId,
@@ -126,6 +127,25 @@ export class JellyfinStreamDetails {
       return null;
     }
 
+    // if (
+    //   isNonEmptyString(details.serverPath) &&
+    //   details.serverPath !== item.plexFilePath
+    // ) {
+    //   this.programDB
+    //     .updateProgramPlexRatingKey(item.programId, this.server.name, {
+    //       externalKey: item.externalKey,
+    //       externalFilePath: details.serverPath,
+    //       directFilePath: details.directFilePath,
+    //     })
+    //     .catch((err) => {
+    //       this.logger.error(
+    //         err,
+    //         'Error while updating Jellyfin file path for program %s',
+    //         item.programId,
+    //       );
+    //     });
+    // }
+
     const streamSettings = this.settings.plexSettings();
 
     let streamSource: StreamSource;
@@ -149,13 +169,13 @@ export class JellyfinStreamDetails {
       const path = details.serverPath ?? item.plexFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
-          `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
+          `${trimEnd(server.uri, '/')}/Videos/${trimStart(
             path,
             '/',
           )}/stream?static=true`,
           {
             // TODO: Use the real authorization string
-            'X-Emby-Token': mediaSource.accessToken,
+            'X-Emby-Token': server.accessToken,
           },
         );
       } else {

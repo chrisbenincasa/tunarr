@@ -1,9 +1,8 @@
-import type z from 'zod';
+import z from 'zod';
 import {
-  type EmbyServerSettingsSchema,
-  type JellyfinServerSettingsSchema,
-  type MediaSourceSettingsSchema,
-  type PlexServerSettingsSchema,
+  JellyfinServerSettingsSchema,
+  MediaSourceSettingsSchema,
+  PlexServerSettingsSchema,
   PlexStreamSettingsSchema,
 } from './schemas/settingsSchemas.js';
 
@@ -13,11 +12,7 @@ export type JellyfinServerSettings = z.infer<
   typeof JellyfinServerSettingsSchema
 >;
 
-export type EmbyServerSettings = z.infer<typeof EmbyServerSettingsSchema>;
-
 export type MediaSourceSettings = z.infer<typeof MediaSourceSettingsSchema>;
-
-export type MediaSourceType = MediaSourceSettings['type'];
 
 export type PlexStreamSettings = z.infer<typeof PlexStreamSettingsSchema>;
 

@@ -1,7 +1,6 @@
 import {
   ISettingsDB,
   ReadableFfmpegSettings,
-  SettingsChangeEvents,
 } from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { isProduction } from '@/util/index.js';
@@ -112,6 +111,10 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     server: DefaultServerSettings,
   },
 });
+
+type SettingsChangeEvents = {
+  change(): void;
+};
 
 abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
 

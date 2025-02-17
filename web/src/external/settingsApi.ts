@@ -1,6 +1,5 @@
 import { SystemSettingsSchema } from '@tunarr/types';
 import {
-  EmbyLoginRequest,
   InsertMediaSourceRequestSchema,
   JellyfinLoginRequest,
   SystemSettingsResponseSchema,
@@ -140,14 +139,6 @@ const jellyfinLogin = makeEndpoint({
   path: '/api/jellyfin/login',
   parameters: parametersBuilder().addBody(JellyfinLoginRequest).build(),
   alias: 'jellyfinUserLogin',
-  response: z.object({ accessToken: z.string().optional() }),
-});
-
-const embyLogin = makeEndpoint({
-  method: 'post',
-  path: '/api/emby/login',
-  parameters: parametersBuilder().addBody(EmbyLoginRequest).build(),
-  alias: 'embyUserLogin',
   response: z.object({ accessToken: z.string().optional() }),
 });
 
@@ -299,7 +290,6 @@ export const endpoints = [
   createTranscodeConfig,
   updateTranscodeConfig,
   deleteTranscodeConfig,
-  embyLogin,
   duplicateTranscodeConfig,
   vainfoDebugEndpoint,
   nvidiaDebugEndpoint,

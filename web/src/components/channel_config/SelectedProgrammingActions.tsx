@@ -2,7 +2,6 @@ import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
-import type { EmbyMediaSourceView } from '@/store/programmingSelector/store.ts';
 import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
 import {
   AddCircle,
@@ -20,7 +19,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { nullToUndefined } from '@tunarr/shared/util';
-import type { EmbyItemKind } from '@tunarr/types/emby';
 import {
   type JellyfinCollectionType,
   type JellyfinItemKind,
@@ -28,10 +26,8 @@ import {
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
-import { Emby, Jellyfin } from '../../helpers/constants.ts';
 import useStore from '../../store/index.ts';
 import {
-  addEmbySelectedMedia,
   addJellyfinSelectedMedia,
   addKnownMediaForServer,
   addPlexSelectedMedia,
@@ -45,28 +41,9 @@ type Props = {
   selectAllEnabled?: boolean;
 };
 
-function jellyfinCollectionTypeToItemTypes(
+function collectionTypeToItemTypes(
   collectionType?: JellyfinCollectionType,
 ): JellyfinItemKind[] {
-  if (!collectionType) {
-    return ['Movie', 'Series', 'MusicArtist'];
-  }
-
-  switch (collectionType) {
-    case 'movies':
-      return ['Movie'];
-    case 'tvshows':
-      return ['Series'];
-    case 'music':
-      return ['MusicArtist'];
-    default:
-      return ['Movie', 'Series', 'MusicArtist'];
-  }
-}
-
-function embyCollectionTypeToItemTypes(
-  collectionType?: string,
-): EmbyItemKind[] {
   if (!collectionType) {
     return ['Movie', 'Series', 'MusicArtist'];
   }
@@ -137,46 +114,20 @@ export default function SelectedProgrammingActions({
             .getJellyfinItems({
               params: {
                 mediaSourceId: selectedServer.id,
-                libraryId: library.view.Id,
+                libraryId: library.library.Id,
               },
               queries: {
                 // offset: pageParams?.offset,
                 // limit: pageParams?.limit,
-                itemTypes: jellyfinCollectionTypeToItemTypes(
-                  nullToUndefined(library.view.CollectionType),
+                itemTypes: collectionTypeToItemTypes(
+                  nullToUndefined(library.library.CollectionType),
                 ),
               },
             })
             .then((response) => {
               addJellyfinSelectedMedia(selectedServer, response.Items);
               addKnownMediaForServer(selectedServer.id, {
-                type: Jellyfin,
-                items: response.Items,
-              });
-            });
-          break;
-        }
-        case 'emby': {
-          const library = selectedLibrary as EmbyMediaSourceView;
-
-          prom = apiClient
-            .getEmbyItems({
-              params: {
-                mediaSourceId: selectedServer.id,
-                libraryId: library.view.Id,
-              },
-              queries: {
-                // offset: pageParams?.offset,
-                // limit: pageParams?.limit,
-                itemTypes: embyCollectionTypeToItemTypes(
-                  library.view.CollectionType,
-                ),
-              },
-            })
-            .then((response) => {
-              addEmbySelectedMedia(selectedServer, response.Items);
-              addKnownMediaForServer(selectedServer.id, {
-                type: Emby,
+                type: 'jellyfin' as const,
                 items: response.Items,
               });
             });

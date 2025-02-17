@@ -29,7 +29,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type JellyfinServerSettings } from '@tunarr/types';
+import {
+  type JellyfinServerSettings,
+  type PlexServerSettings,
+} from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -43,12 +46,22 @@ type Props = {
   server?: JellyfinServerSettings;
 };
 
+type PlexServerSettingsForm = MarkOptional<
+  Omit<PlexServerSettings, 'clientIdentifier'>,
+  'id'
+>;
+
 export type JellyfinServerSettingsForm = MarkOptional<
   JellyfinServerSettings,
   'id'
 > & {
   username?: string;
   password?: string;
+};
+
+export type FormType = {
+  plex?: PlexServerSettingsForm;
+  jellyfin?: JellyfinServerSettingsForm;
 };
 
 const emptyDefaults: JellyfinServerSettingsForm = {

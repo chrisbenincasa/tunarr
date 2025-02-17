@@ -26,8 +26,6 @@ export class JellyfinItemFinder {
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(MediaSourceApiFactory)
-    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   async findForProgramAndUpdate(programId: string) {
@@ -99,10 +97,9 @@ export class JellyfinItemFinder {
       return;
     }
 
-    const jfClient =
-      await this.mediaSourceApiFactory.getJellyfinApiClientByName(
-        program.externalSourceId,
-      );
+    const jfClient = await MediaSourceApiFactory().getJellyfinByName(
+      program.externalSourceId,
+    );
 
     if (!jfClient) {
       this.logger.error(

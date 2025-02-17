@@ -11,23 +11,18 @@ import type {
 } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import { isError, isString } from 'lodash-es';
-import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import type { z } from 'zod';
-import type { MediaSource } from '../db/schema/MediaSource.ts';
 
-export type ApiClientOptions = StrictOmit<
-  MarkOptional<MediaSource, 'uuid'>,
-  | 'index'
-  | 'updatedAt'
-  | 'createdAt'
-  | 'type'
-  | 'sendChannelUpdates'
-  | 'sendGuideUpdates'
-> & {
+export type ApiClientOptions = {
+  name?: string;
+  url: string;
   extraHeaders?: {
     [key: string]: AxiosHeaderValue;
   };
-  enableRequestCache?: boolean;
+};
+
+export type RemoteMediaSourceOptions = ApiClientOptions & {
+  apiKey: string;
 };
 
 export type QuerySuccessResult<T> = {
@@ -72,9 +67,9 @@ export abstract class BaseApiClient<
       serverName: options.name,
     });
 
-    const url = options.uri.endsWith('/')
-      ? options.uri.slice(0, options.uri.length - 1)
-      : options.uri;
+    const url = options.url.endsWith('/')
+      ? options.url.slice(0, options.url.length - 1)
+      : options.url;
 
     this.axiosInstance = axios.create({
       baseURL: url,
@@ -164,7 +159,7 @@ export abstract class BaseApiClient<
 
   getFullUrl(path: string): string {
     const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${this.options.uri}${sanitizedPath}`);
+    const url = new URL(`${this.options.url}${sanitizedPath}`);
     return url.toString();
   }
 

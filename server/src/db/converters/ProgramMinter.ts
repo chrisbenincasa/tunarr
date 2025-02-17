@@ -227,9 +227,6 @@ class ProgramDaoMinter {
       .with({ externalSourceType: 'jellyfin' }, () =>
         this.mintJellyfinExternalIds(serverName, programId, program),
       )
-      .with({ externalSourceType: 'emby' }, () =>
-        this.mintEmbyExternalIds(serverName, programId, program),
-      )
       .exhaustive();
   }
 
@@ -240,6 +237,7 @@ class ProgramDaoMinter {
   ): NewProgramExternalId[] {
     const now = +dayjs();
 
+    // const file = first(first(program.Media)?.Part ?? []);
     const ids: NewProgramExternalId[] = [
       {
         uuid: v4(),
@@ -318,49 +316,6 @@ class ProgramDaoMinter {
         updatedAt: now,
         externalKey: program.externalKey,
         sourceType: ProgramExternalIdType.JELLYFIN,
-        programUuid: programId,
-        externalSourceId: serverName,
-        externalFilePath: program.serverFileKey,
-        directFilePath: program.serverFilePath,
-      },
-    ];
-
-    ids.push(
-      ...seq.collect(program.externalIds, (eid) => {
-        switch (eid.source) {
-          case 'tmdb':
-          case 'imdb':
-          case 'tvdb':
-            return {
-              uuid: v4(),
-              createdAt: now,
-              updatedAt: now,
-              externalKey: eid.id,
-              sourceType: eid.source,
-              programUuid: programId,
-            } satisfies NewProgramExternalId;
-          default:
-            return null;
-        }
-      }),
-    );
-
-    return ids;
-  }
-
-  mintEmbyExternalIds(
-    serverName: string,
-    programId: string,
-    program: ContentProgram,
-  ) {
-    const now = +dayjs();
-    const ids: NewProgramExternalId[] = [
-      {
-        uuid: v4(),
-        createdAt: now,
-        updatedAt: now,
-        externalKey: program.externalKey,
-        sourceType: ProgramExternalIdType.EMBY,
         programUuid: programId,
         externalSourceId: serverName,
         externalFilePath: program.serverFileKey,

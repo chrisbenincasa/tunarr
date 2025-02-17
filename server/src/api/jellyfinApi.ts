@@ -1,6 +1,7 @@
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { isDefined, nullToUndefined } from '@/util/index.js';
@@ -60,7 +61,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     async (req, res) => {
       const response = await JellyfinApiClient.login(
-        req.body.url,
+        { url: req.body.url, name: 'Unknown' },
         req.body.username,
         req.body.password,
         req.serverCtx.settings.clientId(),
@@ -79,10 +80,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        const api =
-          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
-            mediaSource,
-          );
+        const api = await MediaSourceApiFactory().getJellyfinClient({
+          ...mediaSource,
+          url: mediaSource.uri,
+          apiKey: mediaSource.accessToken,
+        });
 
         const response = await api.getUserViews();
 
@@ -153,10 +155,11 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
-        const api =
-          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
-            mediaSource,
-          );
+        const api = await MediaSourceApiFactory().getJellyfinClient({
+          ...mediaSource,
+          url: mediaSource.uri,
+          apiKey: mediaSource.accessToken,
+        });
 
         const pageParams =
           isDefined(req.query.offset) && isDefined(req.query.limit)

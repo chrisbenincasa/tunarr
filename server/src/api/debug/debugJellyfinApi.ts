@@ -24,11 +24,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const client = new JellyfinApiClient({
-        uri: req.query.uri,
-        accessToken: req.query.apiKey,
-        userId: req.query.userId,
-        name: 'debug',
-        clientIdentifier: null,
+        url: req.query.uri,
+        apiKey: req.query.apiKey,
       });
 
       await res.send(await client.getUserLibraries(req.query.userId));
@@ -55,10 +52,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const client = new JellyfinApiClient({
-        uri: req.query.uri,
-        accessToken: req.query.apiKey,
-        name: 'debug',
-        clientIdentifier: null,
+        url: req.query.uri,
+        apiKey: req.query.apiKey,
       });
 
       let pageParams: Nilable<{ offset: number; limit: number }> = null;

@@ -1,24 +1,21 @@
-import EmbyIcon from '@/assets/emby.svg?react';
-import JellyfinIcon from '@/assets/jellyfin.svg?react';
-import PlexIcon from '@/assets/plex.svg?react';
-import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
 import { Add } from '@mui/icons-material';
 import {
   Box,
   Button,
-  type ButtonProps,
-  ListItemIcon,
-  ListItemText,
   Menu,
   MenuItem,
+  ListItemIcon,
   SvgIcon,
+  ListItemText,
+  ButtonProps,
 } from '@mui/material';
-import type { MediaSourceType } from '@tunarr/types';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
-import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
+import PlexIcon from '@/assets/plex.svg?react';
+import JellyfinIcon from '@/assets/jellyfin.svg?react';
+import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
 
 type Props = {
   ButtonProps?: ButtonProps;
@@ -30,7 +27,6 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
 
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
   const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
-  const [embyEditDialogOpen, setEmbyEditDialogOpen] = useState(false);
   const discoverPlexServers = usePlexLogin();
 
   const open = !isNull(manualAddPopoverRef);
@@ -45,16 +41,13 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
     setManualAddPopoverRef(null);
   };
 
-  const handleOpenMediaSourceDialog = (source: MediaSourceType) => {
+  const handleOpenMediaSourceDialog = (source: 'plex' | 'jellyfin') => {
     switch (source) {
       case 'plex':
         setPlexEditDialogOpen(true);
         break;
       case 'jellyfin':
         setJellyfinEditDialogOpen(true);
-        break;
-      case 'emby':
-        setEmbyEditDialogOpen(true);
         break;
     }
     closeManualAddButtonMenu();
@@ -109,14 +102,6 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
           </ListItemIcon>
           <ListItemText>Jellyfin</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleOpenMediaSourceDialog('emby')}>
-          <ListItemIcon>
-            <SvgIcon>
-              <EmbyIcon />
-            </SvgIcon>
-          </ListItemIcon>
-          <ListItemText>Emby</ListItemText>
-        </MenuItem>
       </Menu>
       <PlexServerEditDialog
         open={plexEditDialogOpen}
@@ -125,10 +110,6 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
       <JellyfinServerEditDialog
         open={jellyfinEditDialogOpen}
         onClose={() => setJellyfinEditDialogOpen(false)}
-      />
-      <EmbyServerEditDialog
-        open={embyEditDialogOpen}
-        onClose={() => setEmbyEditDialogOpen(false)}
       />
     </Box>
   );

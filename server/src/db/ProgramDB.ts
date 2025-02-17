@@ -3,14 +3,8 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
-import {
-  SaveJellyfinProgramExternalIdsTask,
-  type SaveJellyfinProgramExternalIdsTaskFactory,
-} from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
-import {
-  SavePlexProgramExternalIdsTask,
-  type SavePlexProgramExternalIdsTaskFactory,
-} from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
+import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
@@ -142,10 +136,6 @@ export class ProgramDB implements IProgramDB {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
-    @inject(SavePlexProgramExternalIdsTask.KEY)
-    private savePlexProgramExternalIdsTaskFactory: SavePlexProgramExternalIdsTaskFactory,
-    @inject(SaveJellyfinProgramExternalIdsTask.KEY)
-    private saveJellyfinProgramExternalIdsTask: SaveJellyfinProgramExternalIdsTaskFactory,
   ) {
     this.timer = new Timer(this.logger);
   }
@@ -1141,9 +1131,7 @@ export class ProgramDB implements IProgramDB {
         filter(upsertedPrograms, { sourceType: ProgramSourceType.PLEX }),
         (program) => {
           try {
-            const task = this.savePlexProgramExternalIdsTaskFactory(
-              program.uuid,
-            );
+            const task = new SavePlexProgramExternalIdsTask(program.uuid, this);
             task.logLevel = 'trace';
             PlexTaskQueue.add(task).catch((e) => {
               this.logger.error(
@@ -1174,7 +1162,10 @@ export class ProgramDB implements IProgramDB {
         ),
         (program) => {
           try {
-            const task = this.saveJellyfinProgramExternalIdsTask(program.uuid);
+            const task = new SaveJellyfinProgramExternalIdsTask(
+              program.uuid,
+              this,
+            );
             JellyfinTaskQueue.add(task).catch((e) => {
               this.logger.error(
                 e,

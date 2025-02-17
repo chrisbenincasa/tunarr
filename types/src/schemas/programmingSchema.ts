@@ -3,7 +3,6 @@ import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
 } from '../api/Scheduling.js';
-import { EmbyItemSchema } from '../emby/index.js';
 import { JellyfinItem } from '../jellyfin/index.js';
 import {
   PlexEpisodeSchema,
@@ -21,7 +20,7 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const ExternalSourceTypeSchema = z.enum(['plex', 'jellyfin', 'emby']);
+export const ExternalSourceTypeSchema = z.enum(['plex', 'jellyfin']);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),
@@ -94,10 +93,6 @@ export const OriginalProgramSchema = z.discriminatedUnion('sourceType', [
   z.object({
     sourceType: z.literal('jellyfin'),
     program: JellyfinItem,
-  }),
-  z.object({
-    sourceType: z.literal('emby'),
-    program: EmbyItemSchema,
   }),
 ]);
 

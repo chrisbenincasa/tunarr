@@ -1,6 +1,6 @@
-import { type ApiClient } from '@/external/api.ts';
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
+import { ApiClient } from '@/external/api.ts';
 
 type Opts = {
   uri: string;

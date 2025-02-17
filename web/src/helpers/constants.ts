@@ -1,5 +1,5 @@
-import { type Channel } from '@tunarr/types';
-import { type MarkOptional } from 'ts-essentials';
+import { Channel } from '@tunarr/types';
+import { MarkOptional } from 'ts-essentials';
 
 export const OneDayMillis = 1000 * 60 * 60 * 24;
 export const OneWeekMillis = OneDayMillis * 7;
@@ -54,7 +54,3 @@ export const TranscodeResolutionOptions = [
 ] as const;
 
 export const Plex = 'plex';
-export const Jellyfin = 'jellyfin';
-export const Emby = 'emby';
-export const Playlists = 'playlists';
-export const Library = 'library';

@@ -1,22 +1,21 @@
 import {
-  type ContentProgram,
-  type ExternalId,
-  type MultiExternalId,
-  type SingleExternalId,
+  ContentProgram,
+  ExternalId,
+  MultiExternalId,
+  SingleExternalId,
 } from '@tunarr/types';
-import { type EmbyItem } from '@tunarr/types/emby';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { JellyfinItem } from '@tunarr/types/jellyfin';
 import {
-  type PlexEpisode,
-  type PlexMovie,
-  type PlexMusicTrack,
-  type PlexTerminalMedia,
+  PlexEpisode,
+  PlexMovie,
+  PlexMusicTrack,
+  PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import {
-  type ContentProgramOriginalProgram,
+  ContentProgramOriginalProgram,
   ContentProgramTypeSchema,
   ExternalSourceTypeSchema,
-  type SingleExternalIdType,
+  SingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { compact, find, first, isError, isNil } from 'lodash-es';
 import { P, match } from 'ts-pattern';
@@ -59,13 +58,6 @@ export class ApiProgramMinter {
           program: { Type: P.union('Movie', 'Audio', 'Episode') },
         },
         ({ program }) => this.mintProgramForJellyfinItem(mediaSource, program),
-      )
-      .with(
-        {
-          sourceType: 'emby',
-          program: { Type: P.union('Movie', 'Audio', 'Episode') },
-        },
-        ({ program }) => this.mintProgramForEmbyItem(mediaSource, program),
       )
       .otherwise(() => new Error('Unexpected program type'));
     if (isError(ret)) {
@@ -278,7 +270,7 @@ export class ApiProgramMinter {
             ? ({
                 type: 'multi',
                 id: parentIdentifier,
-                source: 'jellyfin',
+                source: 'plex',
                 sourceId: server.name,
               } satisfies MultiExternalId)
             : null,
@@ -294,7 +286,7 @@ export class ApiProgramMinter {
             ? ({
                 type: 'multi',
                 id: grandparentIdentifier,
-                source: 'jellyfin',
+                source: 'plex',
                 sourceId: server.name,
               } satisfies MultiExternalId)
             : null,
@@ -311,84 +303,16 @@ export class ApiProgramMinter {
     };
   }
 
-  private static mintProgramForEmbyItem(
-    server: MediaSourceDetails,
-    item: Omit<EmbyItem, 'Type'> & { Type: 'Movie' | 'Episode' | 'Audio' },
-  ): ContentProgram {
-    const id = createExternalId('emby', server.name, item.Id);
-    const parentIdentifier = item.ParentId ?? item.SeasonId ?? item.AlbumId;
-    const grandparentIdentifier = item.SeriesId ?? item.AlbumArtist;
-    return {
-      externalSourceType: ExternalSourceTypeSchema.enum.emby,
-      date: nullToUndefined(item.PremiereDate),
-      duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: server.name,
-      externalKey: item.Id,
-      rating: nullToUndefined(item.OfficialRating),
-      summary: nullToUndefined(item.Overview),
-      title: item.Name ?? '',
-      type: 'content',
-      subtype: match(item.Type)
-        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
-        .with('Episode', () => ContentProgramTypeSchema.enum.episode)
-        .with('Audio', () => ContentProgramTypeSchema.Enum.track)
-        .exhaustive(),
-      year: nullToUndefined(item.ProductionYear),
-      parent: {
-        title: nullToUndefined(item.SeasonName ?? item.Album),
-        index: nullToUndefined(item.ParentIndexNumber),
-        externalKey: nullToUndefined(parentIdentifier),
-        externalIds: compact([
-          parentIdentifier
-            ? ({
-                type: 'multi',
-                id: parentIdentifier,
-                source: 'emby',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-        ]),
-      },
-      grandparent: {
-        title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
-        externalKey:
-          item.SeriesId ??
-          find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id?.toString(),
-        externalIds: compact([
-          grandparentIdentifier
-            ? ({
-                type: 'multi',
-                id: grandparentIdentifier,
-                source: 'plex',
-                sourceId: server.name,
-              } satisfies MultiExternalId)
-            : null,
-        ]),
-      },
-      seasonNumber: nullToUndefined(item.ParentIndexNumber),
-      episodeNumber: nullToUndefined(item.IndexNumber),
-      index: nullToUndefined(item.IndexNumber),
-      externalIds: this.mintExternalIdsForEmby(server.name, item),
-      uniqueId: id,
-      id,
-      externalSourceName: server.name,
-      persisted: false,
-    };
-  }
-
   static mintExternalIds(
     serverName: string,
     originalProgram: ContentProgramOriginalProgram,
-  ): ExternalId[] {
+  ) {
     return match(originalProgram)
       .with({ sourceType: 'plex' }, ({ program: originalProgram }) =>
         this.mintExternalIdsForPlex(serverName, originalProgram),
       )
       .with({ sourceType: 'jellyfin' }, ({ program: originalProgram }) =>
         this.mintExternalIdsForJellyfin(serverName, originalProgram),
-      )
-      .with({ sourceType: 'emby' }, ({ program: originalProgram }) =>
-        this.mintExternalIdsForEmby(serverName, originalProgram),
       )
       .exhaustive();
   }
@@ -429,60 +353,8 @@ export class ApiProgramMinter {
     } satisfies ExternalId;
   }
 
-  static mintEmbyExternalId(serverName: string, media: EmbyItem) {
-    return {
-      type: 'multi',
-      id: media.Id,
-      source: 'emby',
-      sourceId: serverName,
-    } satisfies ExternalId;
-  }
-
-  static mintExternalIdsForJellyfin(
-    serverName: string,
-    media: JellyfinItem,
-  ): ExternalId[] {
+  static mintExternalIdsForJellyfin(serverName: string, media: JellyfinItem) {
     const ratingId = this.mintJellyfinExternalId(serverName, media);
-
-    const externalGuids = seq.collectMapValues(
-      media.ProviderIds,
-      (externalGuid, guidType) => {
-        if (isNil(externalGuid)) {
-          return;
-        }
-
-        let source: SingleExternalIdType | null = null;
-        const normalizedType = guidType.toLowerCase();
-        switch (normalizedType) {
-          case 'tmdb':
-          case 'imdb':
-          case 'tvdb':
-            source = normalizedType as SingleExternalIdType;
-            break;
-          default:
-            return null;
-        }
-
-        if (source) {
-          return {
-            id: externalGuid,
-            source,
-            type: 'single',
-          } satisfies ExternalId;
-        }
-
-        return;
-      },
-    );
-
-    return [ratingId, ...externalGuids];
-  }
-
-  static mintExternalIdsForEmby(
-    serverName: string,
-    media: EmbyItem,
-  ): ExternalId[] {
-    const ratingId = this.mintEmbyExternalId(serverName, media);
 
     const externalGuids = seq.collectMapValues(
       media.ProviderIds,

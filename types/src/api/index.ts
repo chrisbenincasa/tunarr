@@ -23,7 +23,6 @@ import {
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
-  EmbyServerSettingsSchema,
   JellyfinServerSettingsSchema,
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
@@ -156,7 +155,6 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
     clientIdentifier: true,
   }),
   JellyfinServerSettingsSchema,
-  EmbyServerSettingsSchema,
 ]);
 
 export type UpdateMediaSourceRequest = z.infer<
@@ -182,7 +180,6 @@ export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
     clientIdentifier: true,
   }).omit({ id: true }),
   JellyfinServerSettingsSchema.omit({ id: true }),
-  EmbyServerSettingsSchema.omit({ id: true }),
 ]);
 
 export type InsertMediaSourceRequest = z.infer<
@@ -240,12 +237,6 @@ export type UpdateSystemSettingsRequest = z.infer<
 export const UpdateBackupSettingsRequestSchema = BackupSettingsSchema;
 
 export const JellyfinLoginRequest = z.object({
-  url: z.string().url(),
-  username: z.string().min(1),
-  password: z.string().min(1),
-});
-
-export const EmbyLoginRequest = z.object({
   url: z.string().url(),
   username: z.string().min(1),
   password: z.string().min(1),

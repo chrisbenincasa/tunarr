@@ -90,8 +90,6 @@ export class LegacyDbMigrator {
     private legacyChannelMigrator: LegacyChannelMigrator,
     @inject(LegacyMetadataBackfiller)
     private legacyMetadataBackiller: LegacyMetadataBackfiller,
-    @inject(MediaSourceApiFactory)
-    private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
   async migrateFromLegacyDb(legacyDbPath: string, entities?: string[]) {
@@ -252,9 +250,9 @@ export class LegacyDbMigrator {
           // will take care of that -- we may want to do it here if we want
           // to remove the fixer eventually, though.
           for (const entity of entities) {
-            const plexApi = await this.mediaSourceApiFactory.getPlexApiClient({
+            const plexApi = MediaSourceApiFactory().get({
               accessToken: entity.accessToken,
-              clientIdentifier: entity.clientIdentifier ?? null,
+              clientIdentifier: entity.clientIdentifier,
               name: entity.name,
               uri: entity.uri,
             });
