@@ -45,7 +45,7 @@ export class DatabaseCopyMigrator {
     for (const table of oldTables) {
       const columns = orderBy(table.columns, (col) => col.name);
       const colNames = columns.map((col) => col.name);
-      await sql`INSERT INTO ${sql.table(table.name)} (${sql.join(colNames.map((n) => sql.ref(n)))}) SELECT ${sql.join(colNames.map((n) => sql.ref(n)))} FROM ${sql.ref('old')}.${sql.table(table.name)};`.execute(
+      await sql`INSERT INTO ${sql.table(table.name)} (${sql.join(colNames.map((n) => sql.ref(n)))}) SELECT ${sql.join(colNames.map((n) => sql.ref(n)))} FROM ${sql.ref('old')}.${sql.table(table.name)} WHERE true ON CONFLICT DO NOTHING;`.execute(
         tempDB,
       );
     }
