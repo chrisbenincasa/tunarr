@@ -1,5 +1,4 @@
-import { sql } from 'kysely';
-import { orderBy } from 'lodash-es';
+import { type Kysely, sql } from 'kysely';
 import fs from 'node:fs/promises';
 import tmp from 'tmp-promise';
 import {
@@ -26,15 +25,8 @@ export class DatabaseCopyMigrator {
     await runDBMigrations(tempDB, migrateTo);
 
     const oldDB = getDatabase(currentDbPath);
-    const oldTables = (
-      await oldDB.introspection.getTables({
-        withInternalKyselyTables: false,
-      })
-    ).filter(
-      (table) =>
-        table.name !== MigrationTableName &&
-        table.name !== MigrationLockTableName,
-    );
+    const oldTables = await this.getTables(oldDB);
+    const newTables = await this.getTables(tempDB);
     // Prepare for copy.
     await sql`PRAGMA foreign_keys = OFF;`.execute(tempDB);
     await sql`PRAGMA defer_foreign_keys = ON;`.execute(tempDB);
@@ -43,8 +35,22 @@ export class DatabaseCopyMigrator {
     );
     await sql`BEGIN TRANSACTION;`.execute(tempDB);
     for (const table of oldTables) {
-      const columns = orderBy(table.columns, (col) => col.name);
-      const colNames = columns.map((col) => col.name);
+      const newTable = newTables.find(
+        (newTable) => newTable.name === table.name,
+      );
+      if (!newTable) {
+        this.logger.debug(
+          'Skipping table %s because it does not exist in target',
+          table.name,
+        );
+        continue;
+      }
+
+      const columnUnion = new Set(table.columns.map((col) => col.name)).union(
+        new Set(newTable.columns.map((col) => col.name)),
+      );
+
+      const colNames = [...columnUnion].sort();
       await sql`INSERT INTO ${sql.table(table.name)} (${sql.join(colNames.map((n) => sql.ref(n)))}) SELECT ${sql.join(colNames.map((n) => sql.ref(n)))} FROM ${sql.ref('old')}.${sql.table(table.name)} WHERE true ON CONFLICT DO NOTHING;`.execute(
         tempDB,
       );
@@ -57,5 +63,17 @@ export class DatabaseCopyMigrator {
     await fs.rename(tmpPath, currentDbPath);
     // Force reinit at the new path
     getDatabase(currentDbPath, true);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async getTables(db: Kysely<any>) {
+    const tables = await db.introspection.getTables({
+      withInternalKyselyTables: false,
+    });
+    return tables.filter(
+      (table) =>
+        table.name !== MigrationTableName &&
+        table.name !== MigrationLockTableName,
+    );
   }
 }
