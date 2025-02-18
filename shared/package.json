@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "bundle": "tsup",
-    "build": "tsc -p tsconfig.prod.json",
+    "build": "tsup --dts",
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./build/",
     "dev": "tsc --watch --declaration",
