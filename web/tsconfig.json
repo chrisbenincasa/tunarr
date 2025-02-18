@@ -32,7 +32,6 @@
   "files": [
     "vite.config.ts",
     "vitest.config.ts",
-    "./src/pages/settings/GeneralSetingsFormProps.tsx",
   ],
   "include": [
     "./src/**/*.ts",

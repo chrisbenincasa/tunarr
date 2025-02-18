@@ -11,19 +11,23 @@ import {
   Typography,
 } from '@mui/material';
 import { tag } from '@tunarr/types';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
-import { type PlexMedia, isPlexDirectory } from '@tunarr/types/plex';
+import { isPlexDirectory } from '@tunarr/types/plex';
 import {
   capitalize,
   chain,
   find,
+  first,
   isEmpty,
   isNil,
   isUndefined,
   map,
   sortBy,
 } from 'lodash-es';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { sortEmbyLibraries } from '../../helpers/embyUtil.ts';
+import { sortJellyfinLibraries } from '../../helpers/jellyfinUtil.ts';
+import { useEmbyUserLibraries } from '../../hooks/emby/useEmbyApi.ts';
 import {
   usePlexLibraries,
   usePlexPlaylists,
@@ -31,8 +35,10 @@ import {
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useProgrammingSelectionContext } from '../../hooks/useProgrammingSelectionContext.ts';
+import { Route } from '../../routes/channels_/$channelId/programming/add.tsx';
 import useStore from '../../store/index.ts';
 import {
+  addKnownMediaForEmbyServer,
   addKnownMediaForJellyfinServer,
   addKnownMediaForPlexServer,
   setProgrammingListLibrary,
@@ -40,48 +46,16 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
+import { EmbyProgrammingSelector } from './EmbyProgrammingSelector.tsx';
 import { JellyfinProgrammingSelector } from './JellyfinProgrammingSelector.tsx';
 import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
-
-const sortJellyfinLibraries = (item: JellyfinItem) => {
-  if (item.CollectionType) {
-    switch (item.CollectionType) {
-      case 'tvshows':
-        return 0;
-      case 'movies':
-      case 'music':
-        return 1;
-      case 'unknown':
-      case 'musicvideos':
-      case 'trailers':
-      case 'homevideos':
-      case 'boxsets':
-      case 'books':
-      case 'photos':
-      case 'livetv':
-      case 'playlists':
-      case 'folders':
-        return 2;
-    }
-  }
-
-  return Number.MAX_SAFE_INTEGER;
-};
-
-export interface PlexListItemProps<T extends PlexMedia> {
-  item: T;
-  style?: React.CSSProperties;
-  index?: number;
-  length: number;
-  parent?: string;
-}
 
 type Props = {
   initialMediaSourceId?: string;
   initialLibraryId?: string;
 };
 
-export default function ProgrammingSelector(_: Props) {
+export default function ProgrammingSelector({ initialMediaSourceId }: Props) {
   const { entityType } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
@@ -89,29 +63,37 @@ export default function ProgrammingSelector(_: Props) {
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
+  const navigate = Route.useNavigate();
 
   // Convenience sub-selectors for specific library types
   const selectedPlexLibrary =
-    selectedLibrary?.type === 'plex' ? selectedLibrary.view : undefined;
+    selectedLibrary?.type === Plex ? selectedLibrary.view : undefined;
   const selectedJellyfinLibrary =
-    selectedLibrary?.type === 'jellyfin' ? selectedLibrary.library : undefined;
+    selectedLibrary?.type === Jellyfin ? selectedLibrary.view : undefined;
+  const selectedEmbyLibrary =
+    selectedLibrary?.type === Emby ? selectedLibrary.view : undefined;
 
   const viewingCustomShows = mediaSource === 'custom-shows';
 
   const { data: plexLibraryChildren } = usePlexLibraries(
     selectedServer?.id ?? tag(''),
-    selectedServer?.type === 'plex',
+    selectedServer?.type === Plex,
   );
 
   const { data: plexPlaylists, isLoading: plexPlaylistsLoading } =
     usePlexPlaylists(
       selectedServer?.id ?? tag(''),
-      selectedServer?.type === 'plex',
+      selectedServer?.type === Plex,
     );
 
   const { data: jellyfinLibraries } = useJellyfinUserLibraries(
     selectedServer?.id ?? '',
-    selectedServer?.type === 'jellyfin',
+    selectedServer?.type === Jellyfin,
+  );
+
+  const { data: embyLibraries } = useEmbyUserLibraries(
+    selectedServer?.id ?? '',
+    selectedServer?.type === Emby,
   );
 
   useEffect(() => {
@@ -124,37 +106,68 @@ export default function ProgrammingSelector(_: Props) {
   }, [mediaSources]);
 
   useEffect(() => {
-    if (selectedServer?.type === 'plex' && plexLibraryChildren) {
+    if (selectedServer?.type === Plex && plexLibraryChildren) {
       if (
         plexLibraryChildren.size > 0 &&
-        (!selectedLibrary || selectedLibrary.type !== 'plex')
+        (!selectedLibrary || selectedLibrary.type !== Plex)
       ) {
         setProgrammingListLibrary({
-          type: 'plex',
+          type: Plex,
           view: {
             type: 'library',
             library: plexLibraryChildren.Directory[0],
           },
         });
+        navigate({
+          search: {
+            libraryId: plexLibraryChildren.Directory[0].uuid,
+            mediaSourceId: selectedServer.id,
+          },
+        }).catch(console.error);
       }
       addKnownMediaForPlexServer(selectedServer.id, [
         ...plexLibraryChildren.Directory,
       ]);
-    } else if (selectedServer?.type === 'jellyfin' && jellyfinLibraries) {
+    } else if (selectedServer?.type === Jellyfin && jellyfinLibraries) {
       if (
         jellyfinLibraries.Items.length > 0 &&
-        (!selectedLibrary || selectedLibrary.type !== 'jellyfin')
+        (!selectedLibrary || selectedLibrary.type !== Jellyfin)
       ) {
+        const view = sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0];
         setProgrammingListLibrary({
-          type: 'jellyfin',
-          library: sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0],
+          type: Jellyfin,
+          view,
         });
+        navigate({
+          search: {
+            libraryId: view.Id,
+            mediaSourceId: selectedServer.id,
+          },
+        }).catch(console.error);
       }
       addKnownMediaForJellyfinServer(selectedServer.id, [
         ...jellyfinLibraries.Items,
       ]);
+    } else if (selectedServer?.type === Emby && embyLibraries) {
+      if (
+        embyLibraries.Items.length > 0 &&
+        (!selectedLibrary || selectedLibrary.type !== Emby)
+      ) {
+        setProgrammingListLibrary({
+          type: Emby,
+          view: first(sortBy(embyLibraries.Items, sortEmbyLibraries))!,
+        });
+      }
+      addKnownMediaForEmbyServer(selectedServer.id, embyLibraries.Items);
     }
-  }, [selectedServer, plexLibraryChildren, jellyfinLibraries, selectedLibrary]);
+  }, [
+    selectedServer,
+    plexLibraryChildren,
+    jellyfinLibraries,
+    selectedLibrary,
+    embyLibraries,
+    navigate,
+  ]);
 
   /**
    * Load custom shows
@@ -184,10 +197,10 @@ export default function ProgrammingSelector(_: Props) {
 
   const onLibraryChange = useCallback(
     (libraryUuid: string) => {
-      if (selectedServer?.type === 'plex') {
+      if (selectedServer?.type === Plex) {
         if (libraryUuid === 'playlists' && plexPlaylists) {
           setProgrammingListLibrary({
-            type: 'plex',
+            type: Plex,
             view: { type: 'playlists', playlists: plexPlaylists },
           });
           return;
@@ -197,18 +210,27 @@ export default function ProgrammingSelector(_: Props) {
 
         if (library && isPlexDirectory(library)) {
           setProgrammingListLibrary({
-            type: 'plex',
+            type: Plex,
             view: { type: 'library', library },
           });
         }
-      } else if (selectedServer?.type === 'jellyfin') {
-        const library = knownMedia.getMediaOfType(
+      } else if (selectedServer?.type === Jellyfin) {
+        const view = knownMedia.getMediaOfType(
           selectedServer.id,
           libraryUuid,
-          'jellyfin',
+          Jellyfin,
         );
-        if (library) {
-          setProgrammingListLibrary({ type: 'jellyfin', library });
+        if (view) {
+          setProgrammingListLibrary({ type: Jellyfin, view });
+        }
+      } else if (selectedServer?.type === Emby) {
+        const view = knownMedia.getMediaOfType(
+          selectedServer.id,
+          libraryUuid,
+          Emby,
+        );
+        if (view) {
+          setProgrammingListLibrary({ type: Emby, view });
         }
       }
     },
@@ -218,10 +240,12 @@ export default function ProgrammingSelector(_: Props) {
   const renderMediaSourcePrograms = () => {
     if (selectedLibrary) {
       switch (selectedLibrary.type) {
-        case 'plex':
+        case Plex:
           return <PlexProgrammingSelector />;
-        case 'jellyfin':
+        case Jellyfin:
           return <JellyfinProgrammingSelector />;
+        case Emby:
+          return <EmbyProgrammingSelector />;
         case 'custom-show':
           return <CustomShowProgrammingSelector />;
       }
@@ -258,7 +282,7 @@ export default function ProgrammingSelector(_: Props) {
     }
 
     switch (selectedServer.type) {
-      case 'plex': {
+      case Plex: {
         const hasLibraries =
           !isNil(plexLibraryChildren) &&
           plexLibraryChildren.size > 0 &&
@@ -300,7 +324,7 @@ export default function ProgrammingSelector(_: Props) {
           )
         );
       }
-      case 'jellyfin': {
+      case Jellyfin: {
         return (
           !isNil(jellyfinLibraries) &&
           jellyfinLibraries.Items.length > 0 &&
@@ -314,6 +338,31 @@ export default function ProgrammingSelector(_: Props) {
               >
                 {chain(jellyfinLibraries.Items)
                   .sortBy(sortJellyfinLibraries)
+                  .map((lib) => (
+                    <MenuItem key={lib.Id} value={lib.Id}>
+                      {lib.Name}
+                    </MenuItem>
+                  ))
+                  .value()}
+              </Select>
+            </FormControl>
+          )
+        );
+      }
+      case Emby: {
+        return (
+          !isNil(embyLibraries) &&
+          embyLibraries.Items.length > 0 &&
+          selectedEmbyLibrary && (
+            <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+              <InputLabel>Library</InputLabel>
+              <Select
+                label="Library"
+                value={selectedEmbyLibrary.Id}
+                onChange={(e) => onLibraryChange(e.target.value)}
+              >
+                {chain(embyLibraries.Items)
+                  .sortBy(sortEmbyLibraries)
                   .map((lib) => (
                     <MenuItem key={lib.Id} value={lib.Id}>
                       {lib.Name}
@@ -349,7 +398,9 @@ export default function ProgrammingSelector(_: Props) {
               <Select
                 label="Media Source"
                 value={
-                  viewingCustomShows ? 'custom-shows' : selectedServer?.id ?? ''
+                  viewingCustomShows
+                    ? 'custom-shows'
+                    : initialMediaSourceId ?? selectedServer?.id ?? ''
                 }
                 onChange={(e) => onMediaSourceChange(e.target.value)}
               >

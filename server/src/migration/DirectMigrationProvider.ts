@@ -22,6 +22,7 @@ import LegacyMigration9 from './db/LegacyMigration9.ts';
 import Migration1730806741 from './db/Migration1730806741.ts';
 import Migration1731982492 from './db/Migration1731982492.ts';
 import Migration1732969335_AddTranscodeConfig from './db/Migration1732969335_AddTranscodeConfig.ts';
+import Migration1738604866_AddEmby from './db/Migration1738604866_AddEmby.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -88,6 +89,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1731982492: Migration1731982492,
           migration1732969335: Migration1732969335_AddTranscodeConfig,
           migration1735044379: Migration1735044379_AddHlsDirect,
+          migration1738604866: Migration1738604866_AddEmby,
         },
         wrapWithTransaction,
       ),
@@ -97,6 +99,7 @@ export class DirectMigrationProvider implements MigrationProvider {
 
 function wrapWithTransaction(m: Migration): Migration {
   return {
+    ...m,
     up(db) {
       return db.transaction().execute((tx) => {
         return m.up(tx);

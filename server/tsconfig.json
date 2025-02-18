@@ -34,13 +34,14 @@
         "emitDecoratorMetadata": true,
         "esModuleInterop": true,
         "noErrorTruncation": true,
+        "baseUrl": ".",
         "paths": {
             "@/*": [
                 "./src/*"
             ]
         },
         "rewriteRelativeImportExtensions": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
     },
     "include": [
         "./src/**/*.ts",
@@ -49,12 +50,7 @@
         "./src/generated/web-imports.js"
     ],
     "exclude": [
-        "./build/**/*",
-        "../types/build/**/*",
-        "./**/*.ignore.ts",
+        "./src/**/*.ignore.ts",
         "./streams/**/*.ts"
-    ],
-    "ts-node": {
-        "esm": true
-    }
+    ]
 }

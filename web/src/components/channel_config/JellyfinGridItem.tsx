@@ -1,7 +1,7 @@
 import { isEqual, isNil } from 'lodash-es';
 import pluralize from 'pluralize';
 import {
-  ForwardedRef,
+  type ForwardedRef,
   forwardRef,
   memo,
   useCallback,
@@ -18,10 +18,13 @@ import {
 import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import { SelectedMedia } from '@/store/programmingSelector/store.ts';
-import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
-import { GridItemProps } from './MediaItemGrid.tsx';
+import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
+import {
+  type JellyfinItem,
+  type JellyfinItemKind,
+} from '@tunarr/types/jellyfin';
+import { type GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
+import { type GridItemProps } from './MediaItemGrid.tsx';
 
 export interface JellyfinGridItemProps extends GridItemProps<JellyfinItem> {}
 
@@ -139,8 +142,8 @@ export const JellyfinGridItem = memo(
             aspectRatio: isMusicItem(item)
               ? 'square'
               : isEpisode(item)
-              ? 'landscape'
-              : 'portrait',
+                ? 'landscape'
+                : 'portrait',
             subtitle: subtitle(item),
             thumbnailUrl: thumbnailUrlFunc(item),
             selectedMedia: selectedMediaFunc(item),

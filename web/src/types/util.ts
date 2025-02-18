@@ -5,9 +5,9 @@ export type ExtractTypeKeys<
 > = Arr extends []
   ? Acc
   : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Arr extends [[infer Head, any], ...infer Tail]
-  ? Head | ExtractTypeKeys<Tail>
-  : never;
+    Arr extends [[infer Head, any], ...infer Tail]
+    ? Head | ExtractTypeKeys<Tail>
+    : never;
 
 export type FindChild<Target, Arr extends unknown[] = []> = Arr extends [
   [infer Head, infer Child],
@@ -22,3 +22,7 @@ export type FindChild<Target, Arr extends unknown[] = []> = Arr extends [
 export type Maybe<T> = T | undefined;
 export type Nullable<T> = T | null;
 export type Nilable<T> = T | undefined | null;
+export type Size = {
+  width?: number;
+  height?: number;
+};

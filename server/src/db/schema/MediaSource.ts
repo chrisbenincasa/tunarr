@@ -4,7 +4,7 @@ import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { type Insertable, type Selectable } from 'kysely';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
-export const MediaSourceTypes = ['plex', 'jellyfin'] as const;
+export const MediaSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
 
 export type MediaSourceType = TupleToUnion<typeof MediaSourceTypes>;
 
@@ -15,6 +15,7 @@ type MediaSourceMap = {
 export const MediaSourceType: MediaSourceMap = {
   Plex: 'plex',
   Jellyfin: 'jellyfin',
+  Emby: 'emby',
 } as const;
 
 export const MediaSource = sqliteTable(
@@ -39,6 +40,20 @@ export const MediaSource = sqliteTable(
     ),
   ],
 );
+
+export const MediaSourceFields: (keyof MediaSourceTable)[] = [
+  'accessToken',
+  'clientIdentifier',
+  'createdAt',
+  'index',
+  'name',
+  'sendChannelUpdates',
+  'sendGuideUpdates',
+  'type',
+  'updatedAt',
+  'uri',
+  'uuid',
+] as const;
 
 export type MediaSourceTable = KyselifyBetter<typeof MediaSource>;
 export type MediaSource = Selectable<MediaSourceTable>;
