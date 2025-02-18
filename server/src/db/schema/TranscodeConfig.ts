@@ -1,16 +1,12 @@
-import { booleanToNumber } from '@/util/sqliteUtil.js';
 import type { Resolution, TupleToUnion } from '@tunarr/types';
 import { defaultFfmpegSettings } from '@tunarr/types';
-import type {
-  Generated,
-  Insertable,
-  JSONColumnType,
-  Selectable,
-  Updateable,
-} from 'kysely';
+import { inArray } from 'drizzle-orm';
+import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { Insertable, Selectable, Updateable } from 'kysely';
 import { v4 } from 'uuid';
+import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import type { ReadableFfmpegSettings } from '../interfaces/ISettingsDB.ts';
-import type { WithUuid } from './base.ts';
+import { type KyselifyBetter } from './KyselifyBetter.ts';
 
 export const HardwareAccelerationModes = [
   'none',
@@ -125,38 +121,78 @@ type TranscodeConfigFields<Alias extends string = 'transcodeConfig'> =
 export const AllTranscodeConfigColumns: TranscodeConfigFields =
   TranscodeConfigColumns.map((key) => `transcodeConfig.${key}` as const);
 
-export interface TrannscodeConfigTable extends WithUuid {
-  name: string;
-  threadCount: number;
-  hardwareAccelerationMode: HardwareAccelerationMode;
-  vaapiDriver: Generated<VaapiDriver>;
-  vaapiDevice: string | null;
-  resolution: JSONColumnType<Resolution>;
-  videoFormat: TranscodeVideoOutputFormat;
-  videoProfile: string | null;
-  videoPreset: string | null;
-  // default 8
-  videoBitDepth: 8 | 10 | null; // TODO: See if we want to represent this differently
-  videoBitRate: number;
-  videoBufferSize: number;
+export const TranscodeConfig = sqliteTable(
+  'transcode_config',
+  {
+    uuid: text().primaryKey(),
+    name: text().notNull(),
+    threadCount: integer().notNull(),
+    hardwareAccelerationMode: text({
+      enum: HardwareAccelerationModes,
+    }).notNull(),
+    vaapiDriver: text({ enum: VaapiDrivers }).notNull().default('system'),
+    vaapiDevice: text(),
+    resolution: text({ mode: 'json' }).$type<Resolution>().notNull(),
+    videoFormat: text({ enum: TranscodeVideoOutputFormats }).notNull(),
+    videoProfile: text(),
+    videoPreset: text(),
+    videoBitDepth: integer().$type<8 | 10>().default(8), // TODO: See if we want to represent this differently
+    videoBitRate: integer().notNull(),
+    videoBufferSize: integer().notNull(),
 
-  audioChannels: number;
-  audioFormat: TranscodeAudioOutputFormat;
-  audioBitRate: number;
-  audioBufferSize: number;
-  audioSampleRate: number;
-  audioVolumePercent: Generated<number>; // Default 100
+    audioChannels: integer().notNull(),
+    audioFormat: text({ enum: TranscodeAudioOutputFormats }).notNull(),
+    audioBitRate: integer().notNull(),
+    audioBufferSize: integer().notNull(),
+    audioSampleRate: integer().notNull(),
+    audioVolumePercent: integer().notNull().default(100), // Default 100
 
-  normalizeFrameRate: Generated<number>; // Boolean
-  deinterlaceVideo: Generated<number>; // Boolean
-  disableChannelOverlay: Generated<number>; // Boolean
+    normalizeFrameRate: integer({ mode: 'boolean' }).default(false),
+    deinterlaceVideo: integer({ mode: 'boolean' }).default(true),
+    disableChannelOverlay: integer({ mode: 'boolean' }).default(false),
 
-  errorScreen: Generated<ErrorScreenType>;
-  errorScreenAudio: Generated<ErrorScreenAudioType>;
+    errorScreen: text({ enum: ErrorScreenTypes }).default('pic').notNull(),
+    errorScreenAudio: text({ enum: ErrorScreenAudioTypes })
+      .default('silent')
+      .notNull(),
 
-  isDefault: Generated<number>; // boolean,
-}
+    isDefault: integer({ mode: 'boolean' }).default(false).notNull(),
+  },
+  (table) => [
+    check(
+      'transcode_config_hardware_accel_check',
+      inArray(
+        table.hardwareAccelerationMode,
+        table.hardwareAccelerationMode.enumValues,
+      ).inlineParams(),
+    ),
+    check(
+      'transcode_config_vaapi_driver_check',
+      inArray(table.vaapiDriver, table.vaapiDriver.enumValues).inlineParams(),
+    ),
+    check(
+      'transcode_config_video_format_check',
+      inArray(table.videoFormat, table.videoFormat.enumValues).inlineParams(),
+    ),
+    check(
+      'transcode_config_audio_format_check',
+      inArray(table.audioFormat, table.audioFormat.enumValues).inlineParams(),
+    ),
+    check(
+      'transcode_config_error_screen_check',
+      inArray(table.errorScreen, table.errorScreen.enumValues).inlineParams(),
+    ),
+    check(
+      'transcode_config_error_screen_audio_check',
+      inArray(
+        table.errorScreenAudio,
+        table.errorScreenAudio.enumValues,
+      ).inlineParams(),
+    ),
+  ],
+);
 
+export type TrannscodeConfigTable = KyselifyBetter<typeof TranscodeConfig>;
 export type TranscodeConfig = Selectable<TrannscodeConfigTable>;
 export type NewTranscodeConfig = Insertable<TrannscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TrannscodeConfigTable>;

@@ -1,24 +1,49 @@
+import { inArray, sql } from 'drizzle-orm';
+import {
+  check,
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
 import type { MarkRequired } from 'ts-essentials';
-import type {
-  ProgramExternalIdSourceType,
-  WithCreatedAt,
-  WithUpdatedAt,
-  WithUuid,
-} from './base.ts';
+import { ProgramExternalIdSourceTypes } from './base.ts';
+import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { Program } from './Program.ts';
 
-export interface ProgramExternalIdTable
-  extends WithUuid,
-    WithCreatedAt,
-    WithUpdatedAt {
-  directFilePath: string | null;
-  externalFilePath: string | null;
-  externalKey: string;
-  externalSourceId: string | null;
-  programUuid: string;
-  sourceType: ProgramExternalIdSourceType;
-}
+export const ProgramExternalId = sqliteTable(
+  'program_external_id',
+  {
+    uuid: text().primaryKey(),
+    createdAt: integer(),
+    updatedAt: integer(),
+    directFilePath: text(),
+    externalFilePath: text(),
+    externalKey: text().notNull(),
+    externalSourceId: text(),
+    programUuid: text()
+      .notNull()
+      .references(() => Program.uuid),
+    sourceType: text({ enum: ProgramExternalIdSourceTypes }).notNull(),
+  },
+  (table) => [
+    index('program_external_id_program_uuid_index').on(table.programUuid),
+    uniqueIndex('unique_program_multiple_external_id')
+      .on(table.programUuid, table.sourceType, table.externalSourceId)
+      .where(sql`\`external_source_id\` is not null`),
+    uniqueIndex('unique_program_single_external_id')
+      .on(table.programUuid, table.sourceType, table.externalSourceId)
+      .where(sql`\`external_source_id\` is null`),
+    check(
+      'source_type',
+      inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
+    ),
+  ],
+);
 
+export type ProgramExternalIdTable = KyselifyBetter<typeof ProgramExternalId>;
 export type ProgramExternalId = Selectable<ProgramExternalIdTable>;
 export type NewProgramExternalId = Insertable<ProgramExternalIdTable>;
 
@@ -32,14 +57,14 @@ export type ProgramExternalIdFields<
 > = readonly `${Alias}.${keyof ProgramExternalId}`[];
 
 export const ProgramExternalIdKeys: (keyof ProgramExternalId)[] = [
-  'createdAt',
+  // 'createdAt',
   'directFilePath',
   'externalFilePath',
   'externalKey',
   'externalSourceId',
   'programUuid',
   'sourceType',
-  'updatedAt',
+  // 'updatedAt',
   'uuid',
 ];
 

@@ -5,13 +5,13 @@ import type { DeepPartial } from 'ts-essentials';
 import {
   databaseNeedsMigration,
   getDatabase,
-  runPendingMigrations,
+  migrateExistingDatabase,
+  runDBMigrations,
   syncMigrationTablesIfNecessary,
 } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { type GlobalOptions, globalOptions } from './globals.js';
-import { DatabaseCopyMigrator } from './migration/db/DatabaseCopyMigrator.ts';
 import { getDefaultDatabaseName } from './util/defaults.ts';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
@@ -80,12 +80,11 @@ export async function bootstrapTunarr(
   if (hasTunarrDb) {
     const migrationNecessary = await databaseNeedsMigration(db);
     if (migrationNecessary) {
-      RootLogger.debug('Running copy DB migrator');
-      await new DatabaseCopyMigrator().migrate(getDefaultDatabaseName());
+      await migrateExistingDatabase(getDefaultDatabaseName());
     }
   } else {
     await syncMigrationTablesIfNecessary(db);
-    await runPendingMigrations(db);
+    await runDBMigrations(db);
   }
 
   LoggerFactory.initialize(settingsDb);
