@@ -94,14 +94,6 @@ console.log(`Going to build archs: ${args.target.join(' ')}`);
 for (const arch of args.target) {
   await tmp.withDir(
     async (dir) => {
-      const isArm = arch.includes('arm');
-      if (isArm && process.arch !== 'arm64') {
-        console.error(
-          `Cannot build target ${arch} on processor ${process.arch}`,
-        );
-        return;
-      }
-
       const [osString, archString] = arch.split('-', 2);
       const betterSqliteDlStream = await retry(() => {
         const url = getBetterSqlite3DownloadUrl(
