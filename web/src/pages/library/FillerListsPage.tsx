@@ -127,7 +127,13 @@ export default function FillerListsPage() {
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete" placement="top">
-            <IconButton onClick={() => setDeleteConfirmationId(filler.id)}>
+            <IconButton
+              onClick={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                setDeleteConfirmationId(filler.id);
+              }}
+            >
               <Delete />
             </IconButton>
           </Tooltip>
