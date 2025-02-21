@@ -456,6 +456,10 @@ export class ProgramDB implements IProgramDB {
     programs: ChannelProgram[],
     programUpsertBatchSize: number = 100,
   ) {
+    if (isEmpty(programs)) {
+      return [];
+    }
+
     const start = performance.now();
     // TODO: Wrap all of this stuff in a class and use its own logger
     const [, nonPersisted] = partition(programs, (p) => p.persisted);

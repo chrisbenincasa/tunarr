@@ -31,14 +31,14 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import type { MediaSourceId } from '@tunarr/types/schemas';
-import { find, first, groupBy, mapValues } from 'lodash-es';
+import { first, groupBy, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
 import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { forSelectedMediaType, unwrapNil } from '../../helpers/util.ts';
+import { unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
@@ -280,171 +280,6 @@ export default function SelectedProgrammingList({
     return mediaSourcesById;
   }, [mediaSources]);
 
-  const renderSelectedMediaType = forSelectedMediaType<
-    JSX.Element,
-    [ListChildComponentProps]
-  >({
-    plex: (selected, { style }) => {
-      const media = knownMedia.getMediaOfType(
-        selected.serverId,
-        selected.id,
-        'plex',
-      )!;
-
-      let title: string = media.title;
-      let secondary: ReactNode = null;
-      match(media)
-        .with(
-          P.when(isPlexDirectory),
-          (dir) => (title = `Library - ${dir.title}`),
-        )
-        .with(
-          { type: 'show' },
-          (show) =>
-            (secondary = `${show.childCount} ${pluralize(
-              'season',
-              show.childCount,
-            )}, ${show.leafCount} total ${pluralize(
-              'episode',
-              show.leafCount,
-            )}`),
-        )
-        .with(
-          { type: 'season' },
-          (season) =>
-            (secondary = `${season.parentTitle} - ${season.title} (${
-              season.leafCount
-            } ${pluralize('episode', season.leafCount)})`),
-        )
-        .with(
-          { type: 'collection' },
-          (coll) =>
-            (secondary = `${coll.title} (${coll.childCount} ${pluralize(
-              'item',
-              parseInt(coll.childCount),
-            )})`),
-        )
-        .with(
-          { type: 'movie' },
-          (movie) =>
-            (secondary = `Movie${movie.year ? ', ' + movie.year : ''}`),
-        )
-        .with(
-          { type: 'playlist', leafCount: P.nonNullable },
-          (playlist) =>
-            (secondary = `Playlist with ${playlist.leafCount} ${pluralize(
-              'tracks',
-              playlist.leafCount,
-            )}`),
-        )
-        .with(
-          { type: 'episode' },
-          (ep) => (secondary = `${ep.grandparentTitle}, ${ep.parentTitle}`),
-        )
-        .otherwise(() => {});
-
-      return (
-        <ListItem divider sx={{ px: 1 }} dense key={selected.id} style={style}>
-          <ListItemText primary={title} secondary={secondary} />
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <IconButton onClick={() => removeSelectedMedia([selected])}>
-              <RemoveIcon />
-            </IconButton>
-          </ListItemIcon>
-        </ListItem>
-      );
-    },
-    jellyfin: (selected, { style }) => {
-      const media = knownMedia.getMediaOfType(
-        selected.serverId,
-        selected.id,
-        'jellyfin',
-      )!;
-
-      let title: string = media.Name ?? '';
-      let secondary: ReactNode = null;
-      if (media.Type === 'CollectionFolder') {
-        // TODO: Show the size
-        title = `Media - ${media.Name}`;
-      } else if (media.Type === 'Series') {
-        secondary = `${media.ChildCount ?? 0} ${pluralize(
-          'season',
-          media.ChildCount ?? 0,
-        )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
-          'episode',
-          media.RecursiveItemCount ?? 0,
-        )}`;
-      } else if (media.Type === 'Season') {
-        secondary = `${media.SeriesName} - ${media.Name} (${
-          media.ChildCount ?? 0
-        } ${pluralize('episode', media.ChildCount ?? 0)})`;
-        // } else if (media.Type === '') {
-        //   secondary = `${media.title} (${media.childCount} ${pluralize(
-        //     'item',
-        //     parseInt(media.childCount),
-        //   )})`;
-        // }
-      } else if (media.Type === 'Movie') {
-        secondary = `Movie${
-          media.ProductionYear ? ', ' + media.ProductionYear : ''
-        }`;
-      }
-      // else if (isPlexPlaylist(media) && !isUndefined(media.leafCount)) {
-      //   secondary = `Playlist with ${media.leafCount} ${pluralize(
-      //     'tracks',
-      //     media.leafCount,
-      //   )}`;
-      // }
-
-      return (
-        <ListItem divider sx={{ px: 1 }} dense key={media.Id} style={style}>
-          <Tooltip
-            placement="left"
-            title={
-              find(mediaSources, { id: selected.serverId })?.name ??
-              'Jellyfin Server'
-            }
-          >
-            <Box component="img" src={JellyfinLogo} width={30} sx={{ pr: 1 }} />
-          </Tooltip>
-          <ListItemText primary={title} secondary={secondary} />
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <IconButton onClick={() => removeSelectedMedia([selected])}>
-              <RemoveIcon />
-            </IconButton>
-          </ListItemIcon>
-        </ListItem>
-      );
-    },
-    'custom-show': (selected, { index, style }) => {
-      const customShow = customShowById[selected.customShowId];
-      return (
-        customShow && (
-          <ListItem
-            divider={index !== 0}
-            sx={{ px: 1 }}
-            dense
-            key={`custom_${selected.customShowId}_${index}`}
-            style={style}
-          >
-            <ListItemText
-              primary={`${customShow.name}`}
-              secondary={`${customShow.contentCount} ${pluralize(
-                'item',
-                customShow.contentCount,
-              )}`}
-            />
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <IconButton onClick={() => removeSelectedMedia([selected])}>
-                <RemoveIcon />
-              </IconButton>
-            </ListItemIcon>
-          </ListItem>
-        )
-      );
-    },
-  });
-
   const getItemKey = (index: number, data: SelectedMedia[]) => {
     const item = data[index];
     switch (item.type) {
@@ -487,8 +322,33 @@ export default function SelectedProgrammingList({
             mediaSourcesById={mediaSourcesById}
           />
         );
-      default:
-        return renderSelectedMediaType(selectedMedia[props.index], props);
+      case 'custom-show': {
+        const customShow = customShowById[selected.customShowId];
+        return (
+          customShow && (
+            <ListItem
+              divider={props.index !== 0}
+              sx={{ px: 1 }}
+              dense
+              key={`custom_${selected.customShowId}_${props.index}`}
+              style={props.style}
+            >
+              <ListItemText
+                primary={`${customShow.name}`}
+                secondary={`${customShow.contentCount} ${pluralize(
+                  'item',
+                  customShow.contentCount,
+                )}`}
+              />
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <IconButton onClick={() => removeSelectedMedia([selected])}>
+                  <RemoveIcon />
+                </IconButton>
+              </ListItemIcon>
+            </ListItem>
+          )
+        );
+      }
     }
   };
 

@@ -119,10 +119,10 @@ export const hasOnlyDigits = (value: string) => {
   return /^-?\d+$/g.test(value);
 };
 
-export const channelProgramUniqueId = (program: ChannelProgram): string => {
+export function channelProgramUniqueId(program: ChannelProgram): string {
   switch (program.type) {
     case 'custom':
-      return `custom.${program.id}`;
+      return `custom.${program.customShowId}.${program.id}`;
     case 'content':
       return `content.${program.uniqueId}`;
     case 'redirect':
@@ -130,7 +130,7 @@ export const channelProgramUniqueId = (program: ChannelProgram): string => {
     case 'flex':
       return 'flex';
   }
-};
+}
 
 export const zipWithIndex = <T extends object>(
   seq: readonly T[],

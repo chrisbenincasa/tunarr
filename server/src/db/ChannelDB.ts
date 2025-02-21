@@ -31,7 +31,6 @@ import { inject, injectable } from 'inversify';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
-  compact,
   drop,
   entries,
   filter,
@@ -618,12 +617,11 @@ export class ChannelDB implements IChannelDB {
           await tx
             .updateTable('channel')
             .where('channel.uuid', '=', id)
-            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-            // .limit(1)
             .set({
               startTime,
               duration: sumBy(lineup, typedProperty('durationMs')),
             })
+            .limit(1)
             .executeTakeFirstOrThrow();
 
           const allNewIds = new Set([
@@ -705,24 +703,48 @@ export class ChannelDB implements IChannelDB {
       return map(lineup, channelProgramToLineupItemFunc(dbIdByUniqueId));
     };
 
-    if (req.type === 'manual') {
-      const programs = req.programs;
-      const lineupItems = compact(
-        map(req.lineup, ({ index, duration }) => {
-          const program = nth(programs, index);
-          if (program) {
-            return {
-              ...program,
-              duration: duration ?? program.duration,
-            };
-          }
-          return;
-        }),
+    const upsertPrograms = async (programs: ChannelProgram[]) => {
+      const upsertedPrograms =
+        await this.programDB.upsertContentPrograms(programs);
+      return groupByFunc(
+        upsertedPrograms,
+        programExternalIdString,
+        (p) => p.uuid,
       );
+    };
 
+    if (req.type === 'manual') {
       const newLineupItems = await run(async () => {
-        const newItems = await this.timer.timeAsync('createNewLineup', () =>
-          createNewLineup(programs, lineupItems),
+        const newItems = await this.timer.timeAsync(
+          'createNewLineup',
+          async () => {
+            const programs = req.programs;
+            const dbIdByUniqueId = await upsertPrograms(programs);
+            const convertFunc = channelProgramToLineupItemFunc(dbIdByUniqueId);
+            return seq.collect(req.lineup, (lineupItem) => {
+              switch (lineupItem.type) {
+                // Lookup the item in the program lookup list
+                case 'index': {
+                  const program = nth(programs, lineupItem.index);
+                  if (program) {
+                    return convertFunc({
+                      ...program,
+                      duration: lineupItem.duration ?? program.duration,
+                    });
+                  }
+                  return null;
+                }
+                case 'persisted': {
+                  return {
+                    type: 'content',
+                    id: lineupItem.programId,
+                    customShowId: lineupItem.customShowId,
+                    durationMs: lineupItem.duration,
+                  } satisfies ContentItem;
+                }
+              }
+            });
+          },
         );
         if (req.append) {
           const existingLineup = await this.loadLineup(channel.uuid);
