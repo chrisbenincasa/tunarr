@@ -21,7 +21,7 @@ export class DatabaseCopyMigrator {
   });
 
   async migrate(currentDbPath: string, migrateTo?: string) {
-    const { path: tmpPath } = await tmp.file({ keep: true });
+    const { path: tmpPath } = await tmp.file({ keep: false });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
     const tempDB = getDatabase(tmpPath);
     await runDBMigrations(tempDB, migrateTo);
@@ -65,7 +65,7 @@ export class DatabaseCopyMigrator {
       currentDbPath,
       `${trimEnd(currentDbPath, '.db')}-${+dayjs()}.bak`,
     );
-    await fs.rename(tmpPath, currentDbPath);
+    await fs.cp(tmpPath, currentDbPath);
     // Force reinit at the new path
     getDatabase(currentDbPath, true);
   }
