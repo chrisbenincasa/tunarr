@@ -15,15 +15,18 @@ import {
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
+import { TimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
-import {
+import type {
   ChannelStreamMode,
   SaveChannelRequest,
   Watermark,
 } from '@tunarr/types';
-import { map, range, round } from 'lodash-es';
+import dayjs from 'dayjs';
+import { isNil, map, range, round } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { OneDayMillis } from '../../helpers/constants.ts';
 import { typedProperty } from '../../helpers/util.ts';
 import {
   useFfmpegSettings,
@@ -68,6 +71,8 @@ const ChannelStreamModeOptions: {
   },
 ] as const;
 
+type DisplayStyle = 'static' | 'temporary' | 'intermittent';
+
 export default function ChannelTranscodingConfig() {
   const { backendUri } = useSettings();
   const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
@@ -83,7 +88,19 @@ export default function ChannelTranscodingConfig() {
     'watermark',
   ]);
 
+  const [watermarkDisplayStyle, setWatermarkDisplayStyle] =
+    useState<DisplayStyle>(
+      watermark
+        ? watermark.duration > 0
+          ? 'temporary'
+          : watermark.fadeConfig?.length
+            ? 'intermittent'
+            : 'static'
+        : 'static',
+    );
+
   const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
+  console.log(watermark);
 
   if (ffmpegSettingsLoading) {
     return <CircularProgress />;
@@ -221,12 +238,12 @@ export default function ChannelTranscodingConfig() {
               </Box>
               <Grid
                 container
-                rowSpacing={1}
+                rowSpacing={2}
                 columnSpacing={2}
-                rowGap={1}
+                rowGap={2}
                 sx={{ flexGrow: 1, height: 'fit-content' }}
               >
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller
                     name="watermark.url"
                     control={control}
@@ -247,7 +264,7 @@ export default function ChannelTranscodingConfig() {
                     )}
                   />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>Position</InputLabel>
                     <Controller
@@ -364,51 +381,139 @@ export default function ChannelTranscodingConfig() {
                     </FormHelperText>
                   </FormControl>
                 </Grid>
-
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.fadeConfig.0.periodMins"
-                    rules={{ min: 0 }}
-                    TextFieldProps={{
-                      label: 'Watermark Period (mins)',
-                      fullWidth: true,
-                      helperText:
-                        'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
+                <Grid size={{ xs: 12 }}>
                   <FormControl fullWidth>
-                    <FormControlLabel
-                      control={
-                        <CheckboxFormController
-                          control={control}
-                          name="watermark.fadeConfig.0.leadingEdge"
-                        />
+                    <InputLabel>Display Duration</InputLabel>
+                    <Select
+                      label="Display Durations"
+                      value={watermarkDisplayStyle}
+                      onChange={(ev) =>
+                        setWatermarkDisplayStyle(
+                          ev.target.value as DisplayStyle,
+                        )
                       }
-                      label="Display Watermark on Leading Edge"
-                    />
+                    >
+                      <MenuItem value="static">Static</MenuItem>
+                      <MenuItem value="temporary">Temporary</MenuItem>
+                      <MenuItem value="intermittent">Intermittent</MenuItem>
+                    </Select>
                     <FormHelperText>
-                      When enabled, intermittent watermarks fade in immediately
-                      when a stream is initialized. When disabled, the first
-                      watermark fade-in occurs after a full period.
+                      <span>
+                        This field configures how long the watermark will be
+                        displayed
+                        <br />
+                        <ul>
+                          <li>
+                            <strong>Static:</strong> The watermark is displayed
+                            for the entire duration of each program
+                          </li>
+                          <li>
+                            <strong>Temporary:</strong> The watermark is
+                            displayed for the first N seconds of each program
+                          </li>
+                          <li>
+                            <strong>Intermittent:</strong> The watermark fades
+                            in and out over the specified period, remaining
+                            visible for the specified duration
+                          </li>
+                        </ul>
+                      </span>
                     </FormHelperText>
                   </FormControl>
                 </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <NumericFormControllerText
-                    control={control}
-                    name="watermark.duration"
-                    rules={{ min: 0 }}
-                    TextFieldProps={{
-                      label: 'Total Watermark Duration (seconds)',
-                      fullWidth: true,
-                      helperText:
-                        "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
-                    }}
-                  />
-                </Grid>
+                {watermarkDisplayStyle === 'intermittent' && (
+                  <>
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <Controller
+                        control={control}
+                        name={`watermark.fadeConfig.0.durationSeconds`}
+                        render={({ field, fieldState: { error } }) => {
+                          return (
+                            <TimePicker
+                              disabled
+                              reduceAnimations
+                              label="Duration"
+                              format="m[m] s[s]"
+                              views={['minutes', 'seconds']}
+                              closeOnSelect={false}
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  error: !isNil(error),
+                                  helperText:
+                                    'How long to display the watermark',
+                                },
+                              }}
+                              {...field}
+                              value={dayjs()
+                                .startOf('day')
+                                .add(field.value * 1_000)}
+                              onChange={(value) => {
+                                console.log(
+                                  value,
+                                  value?.mod(OneDayMillis).asSeconds(),
+                                  60 * (value?.minute() ?? 0) +
+                                    (value?.second() ?? 0),
+                                );
+                                field.onChange(
+                                  60 * (value?.minute() ?? 0) +
+                                    (value?.second() ?? 0),
+                                );
+                              }}
+                            />
+                          );
+                        }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <NumericFormControllerText
+                        control={control}
+                        name="watermark.fadeConfig.0.periodMins"
+                        rules={{ min: 0 }}
+                        TextFieldProps={{
+                          label: 'Watermark Period (mins)',
+                          fullWidth: true,
+                          helperText:
+                            'Display the watermark via a fade animation every N minutes. Set to 0 to disable.',
+                        }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                      <FormControl fullWidth>
+                        <FormControlLabel
+                          control={
+                            <CheckboxFormController
+                              control={control}
+                              name="watermark.fadeConfig.0.leadingEdge"
+                            />
+                          }
+                          label="Display Watermark on Leading Edge"
+                        />
+                        <FormHelperText>
+                          When enabled, intermittent watermarks fade in
+                          immediately when a stream is initialized. When
+                          disabled, the first watermark fade-in occurs after a
+                          full period.
+                        </FormHelperText>
+                      </FormControl>
+                    </Grid>
+                  </>
+                )}
+                {watermarkDisplayStyle === 'temporary' && (
+                  <Grid size={{ xs: 12, lg: 6 }}>
+                    <NumericFormControllerText
+                      control={control}
+                      name="watermark.duration"
+                      rules={{ min: 0 }}
+                      TextFieldProps={{
+                        label: 'Total Watermark Duration (seconds)',
+                        fullWidth: true,
+                        helperText:
+                          "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
+                      }}
+                    />
+                  </Grid>
+                )}
               </Grid>
             </Stack>
           )}

@@ -6,15 +6,11 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useNavigate } from '@tanstack/react-router';
-import { Channel, SaveChannelRequest } from '@tunarr/types';
+import type { Channel, SaveChannelRequest } from '@tunarr/types';
 import { isEmpty, keys, reject, some } from 'lodash-es';
 import { useState } from 'react';
-import {
-  FormProvider,
-  SubmitErrorHandler,
-  SubmitHandler,
-  useForm,
-} from 'react-hook-form';
+import type { SubmitErrorHandler, SubmitHandler } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
@@ -22,10 +18,12 @@ import ChannelEpgConfig from './ChannelEpgConfig.tsx';
 import { ChannelFlexConfig } from './ChannelFlexConfig.tsx';
 import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from './ChannelTranscodingConfig.tsx';
-import {
-  EditChannelTabPanel,
+import type {
   EditChannelTabProps,
   EditChannelTabs,
+} from './EditChannelTabPanel.tsx';
+import {
+  EditChannelTabPanel,
   EditChannelTabsProps,
 } from './EditChannelTabPanel.tsx';
 
@@ -68,6 +66,7 @@ function getDefaultFormValues(channel: Channel): SaveChannelRequest {
         {
           periodMins: 0,
           leadingEdge: true,
+          durationSeconds: 0,
         },
       ],
     },

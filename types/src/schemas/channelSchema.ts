@@ -1,5 +1,6 @@
-import z, { ZodTypeAny } from 'zod';
-import { TupleToUnion } from '../util.js';
+import type { ZodTypeAny } from 'zod';
+import z from 'zod';
+import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {
   ContentProgramTypeSchema,
@@ -36,6 +37,7 @@ export const WatermarkSchema = z.object({
         // If true, the watermark will fade in immediately on channel stream start.
         // If false, the watermark will start not visible and fade in after periodMins.
         leadingEdge: z.boolean().optional().catch(true),
+        durationSeconds: z.number().positive().min(1).default(10).catch(10),
       }),
     )
     .optional(),

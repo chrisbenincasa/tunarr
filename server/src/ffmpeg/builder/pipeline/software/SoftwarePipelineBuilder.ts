@@ -138,9 +138,18 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       );
     }
 
-    watermarkInputSource.filterSteps.push(
-      ...this.getWatermarkFadeFilters(watermark),
-    );
+    if (watermarkInputSource.watermark.duration > 0) {
+      watermarkInputSource.filterSteps.push(
+        WatermarkFadeFilter.fadeOut(watermarkInputSource.watermark.duration, {
+          start: 0,
+          end: watermarkInputSource.watermark.duration,
+        }),
+      );
+    } else {
+      watermarkInputSource.filterSteps.push(
+        ...this.getWatermarkFadeFilters(watermark),
+      );
+    }
 
     // pixel format
     const desiredPixelState = this.desiredState.pixelFormat?.unwrap();
@@ -185,6 +194,16 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   }
 
   protected getWatermarkFadeFilters(watermark: Watermark) {
+    // Absolute duration takes precedence over intermittent
+    if (watermark.duration > 0) {
+      return [
+        WatermarkFadeFilter.fadeOut(watermark.duration, {
+          start: 0,
+          end: watermark.duration,
+        }),
+      ];
+    }
+
     if (isEmpty(watermark?.fadeConfig)) {
       return [];
     }
@@ -205,6 +224,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
           : this.ffmpegState.duration;
 
       const periodSeconds = periodMins * 60;
+      const durationSeconds = fadeConfig.durationSeconds;
       const cycles = streamDur.asMilliseconds() / (periodSeconds * 1000);
 
       // If leading edge, fade in the watermark after the first second of programming
@@ -220,13 +240,14 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
 
       for (let cycle = 0, t = fadeStartTime; cycle < cycles; cycle++) {
         filters.push(
-          new WatermarkFadeFilter(true, t, t, t + (periodSeconds - 1)),
-          new WatermarkFadeFilter(
-            false,
-            t + periodSeconds,
-            t + periodSeconds,
-            t + periodSeconds * 2,
-          ),
+          WatermarkFadeFilter.fadeIn(t, {
+            start: t,
+            end: t + (durationSeconds - 1),
+          }),
+          WatermarkFadeFilter.fadeOut(t + periodSeconds, {
+            start: t + periodSeconds,
+            end: t + periodSeconds + durationSeconds,
+          }),
         );
         t += periodSeconds * 2;
       }
