@@ -57,6 +57,6 @@ export class OverlayWatermarkFilter extends FilterOption {
         ? `:enable='between(t,0,${this.watermark.duration})'`
         : '';
     const format = this.outputPixelFormat.bitDepth === 10 ? 1 : 0;
-    return `overlay=${this.getPosition()}:format=${format}${enablePart}`;
+    return `overlay=${this.getPosition()}:format=${format}:shortest=1${enablePart}`;
   }
 }

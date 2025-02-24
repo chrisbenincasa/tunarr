@@ -8,9 +8,10 @@ import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/Overla
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import dayjs from '@/util/dayjs.js';
 import type { Watermark } from '@tunarr/types';
-import { filter, first, isEmpty, isNull, some } from 'lodash-es';
+import { filter, first, head, isEmpty, isNull, some } from 'lodash-es';
+import { LoopFilter } from '../../filter/LoopFilter.ts';
+import { TrimFilter } from '../../filter/TrimFilter.ts';
 import { WatermarkFadeFilter } from '../../filter/watermark/WatermarkFadeFilter.ts';
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
@@ -215,42 +216,58 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     const filters: HasFilterOption[] = [];
     // Pick the first for now
     const fadeConfig = first(watermark.fadeConfig)!;
-    const periodMins = fadeConfig.periodMins;
-    if (periodMins > 0) {
-      const start = this.ffmpegState.start ?? dayjs.duration(0);
-      const streamDur =
-        +this.ffmpegState.duration > +start
-          ? this.ffmpegState.duration.subtract(start)
-          : this.ffmpegState.duration;
-
-      const periodSeconds = periodMins * 60;
+    const periodSeconds = fadeConfig.periodMins * 60;
+    if (
+      fadeConfig.periodMins > 0 &&
+      periodSeconds > fadeConfig.durationSeconds
+    ) {
       const durationSeconds = fadeConfig.durationSeconds;
-      const cycles = streamDur.asMilliseconds() / (periodSeconds * 1000);
 
       // If leading edge, fade in the watermark after the first second of programming
       // otherwise, wait a full period
-      const fadeStartTime = fadeConfig.leadingEdge ? 1 : periodSeconds;
-      // Make the watermark transparent before the first fade in
-      filters.push(
-        new WatermarkOpacityFilter(0, {
-          startSeconds: 0,
-          endSeconds: fadeStartTime,
-        }),
-      );
+      // const fadeStartTime = fadeConfig.leadingEdge ? 1 : periodSeconds;
 
-      for (let cycle = 0, t = fadeStartTime; cycle < cycles; cycle++) {
-        filters.push(
-          WatermarkFadeFilter.fadeIn(t, {
-            start: t,
-            end: t + (durationSeconds - 1),
-          }),
-          WatermarkFadeFilter.fadeOut(t + periodSeconds, {
-            start: t + periodSeconds,
-            end: t + periodSeconds + durationSeconds,
-          }),
-        );
-        t += periodSeconds * 2;
+      // Trim the watermark input to one period in seconds
+      // We add 2 for the 1-second fade in and 1-second fade out
+      let totalLoopDurationSeconds: number = periodSeconds + 2;
+      // (fadeConfig.leadingEdge
+      //   ? periodSeconds
+      //   : periodSeconds + durationSeconds) + 2;
+      // if (!fadeConfig.leadingEdge) {
+      //   this.watermarkInputSource?.addOption(
+      //     new InputOffsetOption(periodSeconds),
+      //   );
+      // }
+
+      // Configure the single fade in and out within the period
+      if (fadeConfig.leadingEdge) {
+        totalLoopDurationSeconds = periodSeconds + 2;
+        filters.push(new TrimFilter(0, totalLoopDurationSeconds));
+        filters.push(WatermarkFadeFilter.fadeIn(1));
+        filters.push(WatermarkFadeFilter.fadeOut(durationSeconds + 1));
+      } else {
+        totalLoopDurationSeconds = periodSeconds + durationSeconds + 2;
+        filters.push(new TrimFilter(0, totalLoopDurationSeconds));
+        filters.push(WatermarkFadeFilter.fadeOut(0));
+        filters.push(WatermarkFadeFilter.fadeIn(periodSeconds));
       }
+
+      const frameRate =
+        this.desiredState.frameRate ??
+        head(this.videoInputSource.streams)?.getFrameRateFromMedia() ??
+        25;
+
+      // Loop the now trimmed watermark to the length of the whole video
+      filters.push(
+        new LoopFilter(
+          // Math.ceil(
+          // this.ffmpegState.duration.asSeconds() / totalLoopDurationSeconds,
+          // ) + 1,
+          // 999,
+          -1,
+          Math.ceil(frameRate * totalLoopDurationSeconds),
+        ),
+      );
     }
 
     return filters;

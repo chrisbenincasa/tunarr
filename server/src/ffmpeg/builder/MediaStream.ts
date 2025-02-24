@@ -1,6 +1,7 @@
 import type { ExcludeByValueType, Nullable } from '@/types/util.js';
-import { isEmpty, isNull, merge } from 'lodash-es';
+import { isEmpty, isNull, merge, nth } from 'lodash-es';
 import type { AnyFunction, MarkOptional } from 'ts-essentials';
+import { isNonEmptyString } from '../../util/index.ts';
 import type { PixelFormat } from './format/PixelFormat.ts';
 import type { DataProps, StreamKind } from './types.ts';
 import { FrameSize } from './types.ts';
@@ -105,6 +106,29 @@ export class VideoStream implements MediaStream {
       width: Math.floor(width * minPercent),
       height: Math.floor(height * minPercent),
     });
+  }
+
+  getFrameRateFromMedia(fallbackRate: number = 24) {
+    let frameRate = fallbackRate;
+    if (isNonEmptyString(this.frameRate)) {
+      const numericFrameRate = Math.round(parseFloat(this.frameRate));
+      if (isNaN(numericFrameRate)) {
+        const parts = this.frameRate.split('/');
+        const numerator = nth(parts, 0);
+        const denominator = nth(parts, 1);
+        let rate = 24;
+        if (isNonEmptyString(numerator) && isNonEmptyString(denominator)) {
+          const numeratorInt = parseInt(numerator);
+          const denominatorInt = parseInt(denominator);
+          if (!isNaN(numeratorInt) && !isNaN(denominatorInt)) {
+            rate = Math.round(numeratorInt / denominatorInt);
+          }
+        }
+        frameRate = rate;
+      }
+    }
+
+    return frameRate;
   }
 
   private getSampleAspectRatio() {

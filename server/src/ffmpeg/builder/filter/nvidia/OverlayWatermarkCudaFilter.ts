@@ -10,7 +10,7 @@ export class OverlayWatermarkCudaFilter extends OverlayWatermarkFilter {
 
   constructor(watermark: Watermark, resolution: FrameSize) {
     super(watermark, resolution, resolution, PixelFormatUnknown());
-    this.filter = `overlay_cuda=${this.getPosition()}`;
+    this.filter = `overlay_cuda=${this.getPosition()}:shortest=1`;
   }
 
   nextState(currentState: FrameState): FrameState {
