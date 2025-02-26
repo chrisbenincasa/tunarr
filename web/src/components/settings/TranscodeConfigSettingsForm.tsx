@@ -4,7 +4,7 @@ import {
   TypedController,
 } from '@/components/util/TypedController';
 import { TranscodeResolutionOptions } from '@/helpers/constants';
-import { DropdownOption } from '@/helpers/DropdownOption';
+import type { DropdownOption } from '@/helpers/DropdownOption';
 import {
   isNonEmptyString,
   resolutionFromAnyString,
@@ -12,6 +12,7 @@ import {
 } from '@/helpers/util';
 import { useFfmpegSettings } from '@/hooks/settingsHooks';
 import { useApiSuspenseQuery } from '@/hooks/useApiQuery';
+import type { SelectChangeEvent } from '@mui/material';
 import {
   Box,
   Button,
@@ -25,22 +26,23 @@ import {
   MenuItem,
   Link as MuiLink,
   Select,
-  SelectChangeEvent,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import {
+import type {
   SupportedTranscodeVideoOutputFormat,
   TranscodeConfig,
 } from '@tunarr/types';
-import {
+import type {
   SupportedHardwareAccels,
   SupportedTranscodeAudioOutputFormats,
 } from '@tunarr/types/schemas';
 import { chain } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { Controller, FieldErrors, useForm } from 'react-hook-form';
+import type { FieldErrors } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import Breadcrumbs from '../Breadcrumbs.tsx';
 
 const VideoFormats: DropdownOption<SupportedTranscodeVideoOutputFormat>[] = [
   {
@@ -469,6 +471,7 @@ export const TranscodeConfigSettingsForm = ({
 
   return (
     <Box component="form" onSubmit={handleSubmit(saveForm, handleSubmitError)}>
+      <Breadcrumbs />
       <Stack spacing={2}>
         <Typography variant="h5">
           Edit Config: "{initialConfig.name}"

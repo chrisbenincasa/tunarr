@@ -21,7 +21,7 @@ export default function SettingsLayout() {
 
   return (
     <Box>
-      <Typography variant="h4" mb={2}>
+      <Typography variant="h3" mb={2}>
         Settings
       </Typography>
       <Paper sx={{ p: 2 }}>

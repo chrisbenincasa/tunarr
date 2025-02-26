@@ -1,10 +1,12 @@
 import { find, memoize } from 'lodash-es';
-import { uuidRegexPattern } from '../helpers/util';
+import { isNonEmptyString, uuidRegexPattern } from '../helpers/util';
 
 type Route = { matcher: RegExp; name: string };
 
-const entityPageMatcher = (entity: string, path: string) =>
-  new RegExp(`^/${entity}/${uuidRegexPattern}/${path}/?$`);
+const entityPageMatcher = (entity: string, path: string) => {
+  const pathPart = isNonEmptyString(path) ? `/${path}` : '';
+  return new RegExp(`^/${entity}/${uuidRegexPattern}${pathPart}/?$`);
+};
 
 const channelsPageMatcher = (path: string) =>
   entityPageMatcher('channels', path);
@@ -96,6 +98,14 @@ const namedRoutes: Route[] = [
       `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
     ),
     name: 'Add Programming',
+  },
+  {
+    matcher: /^\/settings\/ffmpeg$/g,
+    name: 'FFmpeg Settings',
+  },
+  {
+    matcher: entityPageMatcher('settings/ffmpeg', ''),
+    name: 'Edit Transcode Config',
   },
 ];
 
