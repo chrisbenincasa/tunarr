@@ -200,7 +200,6 @@ export const PlexGridItem = memo(
           }) satisfies GridItemMetadata,
         [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
       );
-      console.log(item);
 
       return (
         currentServer && (
