@@ -1,19 +1,19 @@
 import {
-  PlexChildListing,
-  PlexMedia,
   isPlexPlaylist,
   isTerminalItem,
+  type PlexChildListing,
+  type PlexMedia,
 } from '@tunarr/types/plex';
 import { isEmpty, isEqual, isNil, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
 import {
-  ForwardedRef,
   forwardRef,
   memo,
   useCallback,
   useEffect,
   useMemo,
   useState,
+  type ForwardedRef,
 } from 'react';
 import {
   forPlexMedia,
@@ -29,14 +29,11 @@ import {
   addPlexSelectedMedia,
 } from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
-import { SelectedMedia } from '@/store/programmingSelector/store.ts';
+import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
-import { GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
-import { GridItemProps } from './MediaItemGrid.tsx';
-
-export interface PlexGridItemProps<T extends PlexMedia>
-  extends GridItemProps<T> {}
+import { MediaGridItem, type GridItemMetadata } from './MediaGridItem.tsx';
+import type { GridItemProps } from './MediaItemGrid.tsx';
 
 const genPlexChildPath = forPlexMedia({
   collection: (collection) =>
@@ -73,7 +70,7 @@ const subtitle = forPlexMedia({
 export const PlexGridItem = memo(
   forwardRef(
     <T extends PlexMedia>(
-      props: PlexGridItemProps<T>,
+      props: GridItemProps<T>,
       ref: ForwardedRef<HTMLDivElement>,
     ) => {
       const { item, index, moveModal } = props;
@@ -128,6 +125,20 @@ export const PlexGridItem = memo(
         moveModalToItem();
       }, [moveModalToItem]);
 
+      const getRatingKey = (item: PlexMedia) => {
+        if (item.type === 'track') {
+          return (
+            item.parentRatingKey ?? item.grandparentRatingKey ?? item.ratingKey
+          );
+        } else if (item.type === 'season') {
+          return item.thumb === item.parentThumb && item.parentRatingKey
+            ? item.parentRatingKey
+            : item.ratingKey;
+        } else {
+          return item.ratingKey;
+        }
+      };
+
       const thumbnailUrlFunc = useCallback(
         (item: PlexMedia) => {
           if (isPlexPlaylist(item)) {
@@ -136,15 +147,7 @@ export const PlexGridItem = memo(
             const query = new URLSearchParams({
               mode: 'proxy',
               asset: 'thumb',
-              id: createExternalId(
-                'plex',
-                server.name,
-                item.type === 'track'
-                  ? item.parentRatingKey ??
-                      item.grandparentRatingKey ??
-                      item.ratingKey
-                  : item.ratingKey,
-              ),
+              id: createExternalId('plex', server.name, getRatingKey(item)),
               // Commenting this out for now as temporary solution for image loading issue
               // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
               cache: import.meta.env.PROD ? 'true' : 'false',
@@ -179,8 +182,8 @@ export const PlexGridItem = memo(
               isPlexPlaylist(item)
                 ? item.composite
                 : item.type === 'track'
-                ? item.parentThumb ?? item.grandparentThumb ?? item.thumb
-                : item.thumb,
+                  ? (item.parentThumb ?? item.grandparentThumb ?? item.thumb)
+                  : item.thumb,
             ),
             childCount: extractChildCount(item),
             title: item.title,
@@ -191,8 +194,8 @@ export const PlexGridItem = memo(
               isMusicItem(item) || isPlexPlaylist(item)
                 ? 'square'
                 : isEpisode(item)
-                ? 'landscape'
-                : 'portrait',
+                  ? 'landscape'
+                  : 'portrait',
             isPlaylist: isPlexPlaylist(item),
           }) satisfies GridItemMetadata,
         [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
