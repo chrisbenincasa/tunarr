@@ -234,9 +234,6 @@ importers:
       '@types/async-retry':
         specifier: ^1.4.8
         version: 1.4.8
-      '@types/bun':
-        specifier: ^1.2.0
-        version: 1.2.0
       '@types/lodash-es':
         specifier: 4.17.9
         version: 4.17.9
@@ -267,12 +264,6 @@ importers:
       '@yao-pkg/pkg':
         specifier: ^6.3.0
         version: 6.3.0
-      bun-plugin-pino:
-        specifier: ^1.2.0
-        version: 1.2.0(typescript@5.7.3)
-      bun-types:
-        specifier: ^1.2.1
-        version: 1.2.1
       copyfiles:
         specifier: ^2.2.0
         version: 2.2.0
@@ -2587,9 +2578,6 @@ packages:
   '@types/better-sqlite3@7.6.12':
     resolution: {integrity: sha512-fnQmj8lELIj7BSrZQAdBMHEHX8OZLYIHXqAKT1O7tDfLxaINzf00PMjw22r3N/xXh0w/sGHlO6SVaCQ2mj78lg==}
 
-  '@types/bun@1.2.0':
-    resolution: {integrity: sha512-5N1JqdahfpBlAv4wy6svEYcd/YfO2GNrbL95JOmFx8nkE6dbK4R0oSE5SpBA4vBRqgrOUAXF8Dpiz+gi7r80SA==}
-
   '@types/conventional-commits-parser@5.0.0':
     resolution: {integrity: sha512-loB369iXNmAZglwWATL+WRe+CRMmmBPtpolYzIebFaX4YA3x+BEfLqhUAV9WanycKI3TG1IMr5bMJDajDKLlUQ==}
 
@@ -3314,14 +3302,6 @@ packages:
   buffers@0.1.1:
     resolution: {integrity: sha512-9q/rDEGSb/Qsvv2qvzIzdluL5k7AaJOTrw23z9reQthrbF7is4CtlT0DXyO1oei2DCp4uojjzQ7igaSHp1kAEQ==}
     engines: {node: '>=0.2.0'}
-
-  bun-plugin-pino@1.2.0:
-    resolution: {integrity: sha512-f0X+1jyrI6LgEObYZhtXocHm7+c5NJC4Mf6VhW9zIPE5gcy2TxqpUWOGOdrnN7Boacn65dXno02jo0kwmClqdw==}
-    peerDependencies:
-      typescript: ^5.0.0
-
-  bun-types@1.2.0:
-    resolution: {integrity: sha512-KEaJxyZfbV/c4eyG0vyehDpYmBGreNiQbZIqvVHJwZ4BmeuWlNZ7EAzMN2Zcd7ailmS/tGVW0BgYbGf+lGEpWw==}
 
   bun-types@1.2.1:
     resolution: {integrity: sha512-p7bmXUWmrPWxhcbFVk7oUXM5jAGt94URaoa3qf4mz43MEhNAo/ot1urzBqctgvuq7y9YxkuN51u+/qm4BiIsHw==}
@@ -9560,10 +9540,6 @@ snapshots:
     dependencies:
       '@types/node': 22.10.7
 
-  '@types/bun@1.2.0':
-    dependencies:
-      bun-types: 1.2.0
-
   '@types/conventional-commits-parser@5.0.0':
     dependencies:
       '@types/node': 22.10.7
@@ -9676,6 +9652,7 @@ snapshots:
   '@types/ws@8.5.13':
     dependencies:
       '@types/node': 22.10.7
+    optional: true
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -10552,19 +10529,11 @@ snapshots:
 
   buffers@0.1.1: {}
 
-  bun-plugin-pino@1.2.0(typescript@5.7.3):
-    dependencies:
-      typescript: 5.7.3
-
-  bun-types@1.2.0:
-    dependencies:
-      '@types/node': 22.10.7
-      '@types/ws': 8.5.13
-
   bun-types@1.2.1:
     dependencies:
       '@types/node': 22.10.7
       '@types/ws': 8.5.13
+    optional: true
 
   bundle-require@4.0.2(esbuild@0.19.12):
     dependencies:

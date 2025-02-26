@@ -14,7 +14,7 @@ export class ConnectionTracker<
   ConnectionDetails extends StreamConnectionDetails,
 > extends (events.EventEmitter as new () => TypedEventEmitter<ConnectionTrackerEvents>) {
   #logger: Logger = LoggerFactory.child({ className: ConnectionTracker.name });
-  #cleanupFunc: Timer | null = null;
+  #cleanupFunc: NodeJS.Timeout | null = null;
   #connections: Record<string, ConnectionDetails> = {};
   #heartbeats: Record<string, number> = {};
 

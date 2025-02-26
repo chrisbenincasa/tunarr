@@ -109,7 +109,7 @@ export function ChannelProgrammingConfig() {
     // Group programs by their unique ID. This will disregard their durations,
     // but we will keep the durations when creating the minimal lineup below
     const uniquePrograms = chain(newLineup)
-      .groupBy((lineupItem) => channelProgramUniqueId(lineupItem))
+      .groupBy(channelProgramUniqueId)
       .values()
       .map((l) => head(l))
       .compact()
@@ -121,12 +121,28 @@ export function ChannelProgrammingConfig() {
     const lineup = map(
       reject(newLineup, (lineupItem) => lineupItem.duration <= 0),
       (lineupItem) => {
-        const index = findIndex(
-          uniquePrograms,
-          (uniq) =>
-            channelProgramUniqueId(lineupItem) === channelProgramUniqueId(uniq),
-        );
-        return { duration: lineupItem.duration, index };
+        switch (lineupItem.type) {
+          case 'custom':
+            return {
+              type: 'persisted' as const,
+              programId: lineupItem.id,
+              customShowId: lineupItem.customShowId,
+              duration: lineupItem.duration,
+            };
+          default: {
+            const index = findIndex(
+              uniquePrograms,
+              (uniq) =>
+                channelProgramUniqueId(lineupItem) ===
+                channelProgramUniqueId(uniq),
+            );
+            return {
+              duration: lineupItem.duration,
+              index,
+              type: 'index' as const,
+            };
+          }
+        }
       },
     );
 

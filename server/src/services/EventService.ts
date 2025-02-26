@@ -26,7 +26,7 @@ export class EventService {
     caller: import.meta,
     className: this.constructor.name,
   });
-  private _heartbeat: Timer;
+  private _heartbeat: NodeJS.Timeout;
 
   constructor() {
     this._heartbeat = setInterval(() => {
