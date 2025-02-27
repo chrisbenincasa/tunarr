@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.18.12](https://github.com/chrisbenincasa/tunarr/compare/v0.18.11...v0.18.12) (2025-02-27)
+
+
+### Features
+
+* support Emby as a media source ([#1085](https://github.com/chrisbenincasa/tunarr/issues/1085)) ([a918176](https://github.com/chrisbenincasa/tunarr/commit/a918176a3bdf5751f4240e15548d8dafc3bb760e))
+* support Emby as a media source ([#1101](https://github.com/chrisbenincasa/tunarr/issues/1101)) ([846ed27](https://github.com/chrisbenincasa/tunarr/commit/846ed27498485f1f13c5f3d293ed337b1b67a693))
+
+
+### Bug Fixes
+
+* allow scheduling custom shows that contain the same programs ([#1102](https://github.com/chrisbenincasa/tunarr/issues/1102)) ([ea78d1c](https://github.com/chrisbenincasa/tunarr/commit/ea78d1c1ddc6cfe8d42ec513870bf2ec87481f8d))
+* copy temp db file instead of renaming to avoid cross-link errors ([c7a90f1](https://github.com/chrisbenincasa/tunarr/commit/c7a90f1b28782f271760f461f9b4e8c14078add5))
+* do not sort programs when block shuffling in random mode ([e072e54](https://github.com/chrisbenincasa/tunarr/commit/e072e54eb502b7a4f3a483945ed7d705d6ebb0df))
+* fix filler list delete confirmation dialog nav ([651d236](https://github.com/chrisbenincasa/tunarr/commit/651d236763b651f4676afbe4be0e06e1c1ec8926))
+* handle case where initial DB migration was not run yet ([70789ef](https://github.com/chrisbenincasa/tunarr/commit/70789efddbded37484de4c9293161e6ae78e7fec))
+
+
+### UI Changes
+
+* add breadcrumbs to transcode config page ([95f4456](https://github.com/chrisbenincasa/tunarr/commit/95f4456a5cafa24919a6df5811e4d1eed7d3e74d))
+
 ## [0.18.11](https://github.com/chrisbenincasa/tunarr/compare/v0.18.10...v0.18.11) (2025-02-16)
 
 
