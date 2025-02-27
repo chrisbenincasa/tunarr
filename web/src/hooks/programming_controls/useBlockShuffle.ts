@@ -33,6 +33,7 @@ import { removeDuplicatePrograms } from './useRemoveDuplicates.ts';
 export type BlockShuffleProgramCount = number;
 
 export type BlockShuffleType = 'Fixed' | 'Random';
+
 export interface BlockShuffleConfig {
   shuffleType: BlockShuffleType;
   blockSize: number;
@@ -150,6 +151,10 @@ function blockShuffle(
     })
     .groupBy(groupProgram)
     .thru((groups) => {
+      if (options?.shuffleType === 'Random') {
+        return groups;
+      }
+
       forEach(groups, (programs, key) => {
         if (key.startsWith('custom_')) {
           groups[key] = orderBy(programs as UICustomProgram[], (p) => p.index, [
