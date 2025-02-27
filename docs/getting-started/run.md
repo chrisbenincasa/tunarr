@@ -141,6 +141,67 @@ services:
       - /path/to/tunarr/data:/config/tunarr
 ```
 
-## Standalone
+## Standalone binaries
 
-If using the standalone Tunarr scripts, you must simply extract the archive and run the packaged script file. On Unix, this is `tunarr.sh` and on Windows this is `tunarr.bat`.
+It's recommended to run Tunarr as a service / background task. Below are examples depending on your host OS.
+
+### systemd (Linux)
+
+```systemd
+[Unit]
+Description=Tunarr
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/tunarr
+ExecStart=bash /opt/tunarr/tunarr-linux-x64
+ExecReload=pkill tunarr-linux-x64
+ExecStop=pkill tunarr-linux-x64
+KillMode=process
+Restart=always
+RestartSec=15
+
+User=YOUR_USER
+Group=YOUR_GROUP
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### launchd (macOS)
+
+```xml
+<?xml version=“1.0” encoding=“UTF-8”?>
+<!DOCTYPE plist PUBLIC “-//Apple//DTD PLIST 1.0//EN” “http://www.apple.com/DTDs/PropertyList-1.0.dtd”>
+<plist version=“1.0”>
+<dict>
+    <key>Label</key>
+    <string>com.tunarr.server.app</string>
+    <key>Program</key>
+    <string>/Path/to/tunarr/tunarr</string>
+    <key>WorkingDirectory</key>
+    <string>/Path/to/tunarr</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardErrorPath</key>
+    <string>/Path/to/tunarr/error.log</string>
+    <key>StandardOutPath</key>
+    <string>/Path/to/tunarr/output.log</string>
+    <key>UserName</key>
+    <string>useraccountyouruntunarrunder</string>
+    <key>HOME</key>
+    <string>/Path/to/home</string>
+</dict>
+</plist>
+```
+
+### NSSM (Windows)
+
+[NSSM](https://nssm.cc/) is the recommended way to run Tunarr as a background task in Windows. It is recommended to configure NSSM to run Tunarr as the currently logged in user.

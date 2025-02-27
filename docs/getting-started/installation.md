@@ -40,12 +40,8 @@ Follow the on-screen instructions to set up the container, including mapping the
 
 ## Binaries
 
-Tunarr is released in pre-built "binaries" for Windows (x64), macOS (x64), and Linux (x64). These are binaries in name only; due to many difficulties (as of 2024/11/05) with packaging Node.js as single executable applications, Tunarr is distributed as a standalone script file with a bundled version of Node.js for compatibility. On Unix-like systems, this takes the form of a shell script, `tunarr.sh`. On Windows, this a batch file, `tunarr.bat`.
+Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM).
 
 Like Docker images, binaries are released with versions as well as a singular 'edge' build which is released bihourly.
 
 Prebuilt edge binaries can be found at [https://github.com/chrisbenincasa/tunarr/releases/tag/edge](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
-
-!!! info
-
-    Pre-built ARM binaries are tracked at [chrisbenincasa/tunarr#363](https://github.com/chrisbenincasa/tunarr/issues/363)
