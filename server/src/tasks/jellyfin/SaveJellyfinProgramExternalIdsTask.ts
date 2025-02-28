@@ -1,5 +1,5 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
+import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
@@ -15,7 +15,7 @@ import {
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import type {
   MinimalProgramExternalId,
-  NewProgramExternalId,
+  NewSingleOrMultiExternalId,
 } from '../../db/schema/ProgramExternalId.ts';
 
 export type SaveJellyfinProgramExternalIdsTaskFactory = (
@@ -96,17 +96,18 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
         }
 
         return {
+          type: 'single',
           uuid: v4(),
           createdAt: +dayjs(),
           updatedAt: +dayjs(),
           externalKey: id,
           sourceType: type,
           programUuid: program.uuid,
-        } satisfies NewProgramExternalId;
+        } satisfies NewSingleOrMultiExternalId;
       }),
     );
 
-    return await upsertRawProgramExternalIds(eids);
+    return await upsertProgramExternalIds(eids);
   }
 
   get taskName() {

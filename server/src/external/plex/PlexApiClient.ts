@@ -69,6 +69,10 @@ export class PlexApiClient extends BaseApiClient {
     return this.opts.name;
   }
 
+  get serverId() {
+    return this.opts.uuid;
+  }
+
   getFullUrl(path: string): string {
     const url = super.getFullUrl(path);
     const parsed = new URL(url);

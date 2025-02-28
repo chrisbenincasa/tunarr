@@ -12,7 +12,7 @@ import {
   type SavePlexProgramExternalIdsTaskFactory,
 } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
+import { MarkNonNullable, Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -25,7 +25,7 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { CaseWhenBuilder, UpdateResult } from 'kysely';
+import { CaseWhenBuilder, NotNull, UpdateResult } from 'kysely';
 import {
   chunk,
   concat,
@@ -35,6 +35,7 @@ import {
   flatMap,
   forEach,
   groupBy,
+  head,
   isEmpty,
   isNil,
   isNull,
@@ -52,6 +53,7 @@ import {
 } from 'lodash-es';
 import { MarkOptional, MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { typedProperty } from '../types/path.ts';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import {
   flatMapAsyncSeq,
@@ -70,7 +72,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.ts';
-import { upsertRawProgramExternalIds } from './programExternalIdHelpers.ts';
+import { upsertProgramExternalIds } from './programExternalIdHelpers.ts';
 import {
   AllProgramJoins,
   ProgramUpsertFields,
@@ -84,7 +86,8 @@ import {
   withTvShow,
 } from './programQueryHelpers.ts';
 import {
-  NewProgramDao as NewRawProgram,
+  NewProgramDao,
+  ProgramDao,
   programExternalIdString,
   ProgramType,
   ProgramDao as RawProgram,
@@ -92,7 +95,7 @@ import {
 import {
   MinimalProgramExternalId,
   NewProgramExternalId,
-  NewProgramExternalId as NewRawProgramExternalId,
+  NewSingleOrMultiExternalId,
   ProgramExternalId,
   ProgramExternalIdKeys,
 } from './schema/ProgramExternalId.ts';
@@ -100,7 +103,10 @@ import {
   NewProgramGrouping,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
-import { NewProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
+import {
+  NewProgramGroupingExternalId,
+  toInsertableProgramGroupingExternalId,
+} from './schema/ProgramGroupingExternalId.ts';
 import { DB } from './schema/db.ts';
 import type {
   ProgramGroupingWithExternalIds,
@@ -112,9 +118,9 @@ type ValidatedContentProgram = MarkRequired<
   'externalSourceName' | 'externalSourceType'
 >;
 
-type MintedRawProgramInfo = {
-  program: NewRawProgram;
-  externalIds: NewRawProgramExternalId[];
+type MintedNewProgramInfo = {
+  program: NewProgramDao;
+  externalIds: NewSingleOrMultiExternalId[];
   apiProgram: ValidatedContentProgram;
 };
 
@@ -549,12 +555,13 @@ export class ProgramDB implements IProgramDB {
     // );
 
     // TODO: handle custom shows
-    const programsToPersist: MintedRawProgramInfo[] = map(
+    const programsToPersist: MintedNewProgramInfo[] = map(
       contentPrograms,
       (p) => {
         const program = minter.contentProgramDtoToDao(p);
         const externalIds = minter.mintExternalIds(
           p.externalSourceName,
+          p.externalSourceId,
           program.uuid,
           p,
         );
@@ -572,7 +579,7 @@ export class ProgramDB implements IProgramDB {
     // TODO: The way we deal with uniqueness right now makes a Program entity
     // exist 1:1 with its "external" entity, i.e. the same logical movie will
     // have duplicate entries in the DB across different servers and sources.
-    const upsertedPrograms: RawProgram[] = [];
+    const upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[] = [];
     await this.timer.timeAsync('programUpsert', async () => {
       for (const c of chunk(programsToPersist, programUpsertBatchSize)) {
         upsertedPrograms.push(
@@ -591,7 +598,17 @@ export class ProgramDB implements IProgramDB {
                       })),
                     ),
                 )
+                .onConflict((oc) =>
+                  oc
+                    .columns(['sourceType', 'mediaSourceId', 'externalKey'])
+                    .doUpdateSet((eb) =>
+                      mapToObj(ProgramUpsertFields, (f) => ({
+                        [f.replace('excluded.', '')]: eb.ref(f),
+                      })),
+                    ),
+                )
                 .returningAll()
+                .$narrowType<{ mediaSourceId: NotNull }>()
                 .execute(),
             )),
         );
@@ -624,7 +641,7 @@ export class ProgramDB implements IProgramDB {
     // TODO: We could optimize further here by only saving IDs necessary for streaming
     await this.timer.timeAsync(
       `upsert ${requiredExternalIds.length} external ids`,
-      () => upsertRawProgramExternalIds(requiredExternalIds, 200),
+      () => upsertProgramExternalIds(requiredExternalIds, 200),
       // upsertProgramExternalIds_deprecated(requiredExternalIds),
     );
 
@@ -650,7 +667,7 @@ export class ProgramDB implements IProgramDB {
         AnonymousTask('UpsertExternalIds', () =>
           this.timer.timeAsync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,
-            () => upsertRawProgramExternalIds(backgroundExternalIds),
+            () => upsertProgramExternalIds(backgroundExternalIds),
           ),
         ),
       );
@@ -667,18 +684,21 @@ export class ProgramDB implements IProgramDB {
   }
 
   private async handleProgramGroupings(
-    upsertedPrograms: RawProgram[],
-    programInfos: Record<string, MintedRawProgramInfo>,
+    upsertedPrograms: MarkNonNullable<ProgramDao, 'mediaSourceId'>[],
+    programInfos: Record<string, MintedNewProgramInfo>,
   ) {
     const programsBySourceAndServer = mapValues(
       groupBy(upsertedPrograms, 'sourceType'),
-      (ps) => groupBy(ps, 'externalSourceId'),
+      (ps) => groupBy(ps, typedProperty('mediaSourceId')),
     );
 
-    for (const [sourceType, byServerName] of Object.entries(
+    for (const [sourceType, byServerId] of Object.entries(
       programsBySourceAndServer,
     )) {
-      for (const [serverName, programs] of Object.entries(byServerName)) {
+      for (const [serverId, programs] of Object.entries(byServerId)) {
+        // Making an assumption that these are all the same... this field will
+        // go away soon anyway
+        const serverName = head(programs)!.externalSourceId;
         // This is just extra safety because lodash erases the type in groupBy
         const typ = programSourceTypeFromString(sourceType);
         if (!typ) {
@@ -690,6 +710,7 @@ export class ProgramDB implements IProgramDB {
           programInfos,
           typ,
           serverName,
+          serverId,
         );
       }
     }
@@ -697,8 +718,9 @@ export class ProgramDB implements IProgramDB {
 
   private async handleSingleSourceProgramGroupings(
     upsertedPrograms: RawProgram[],
-    programInfos: Record<string, MintedRawProgramInfo>,
+    programInfos: Record<string, MintedNewProgramInfo>,
     mediaSourceType: ProgramSourceType,
+    mediaSourceName: string,
     mediaSourceId: string,
   ) {
     const grandparentRatingKeyToParentRatingKey: Record<
@@ -790,7 +812,7 @@ export class ProgramDB implements IProgramDB {
               eb(
                 'programGroupingExternalId.externalSourceId',
                 '=',
-                mediaSourceId,
+                mediaSourceName,
               ),
               eb(
                 'programGroupingExternalId.externalKey',
@@ -954,6 +976,7 @@ export class ProgramDB implements IProgramDB {
           ...ProgramGroupingMinter.mintGroupingExternalIds(
             programs[0][1],
             parentGrouping.uuid,
+            mediaSourceName,
             mediaSourceId,
             'parent',
           ),
@@ -965,6 +988,7 @@ export class ProgramDB implements IProgramDB {
         ...ProgramGroupingMinter.mintGroupingExternalIds(
           matchingPrograms[0][1],
           grandparentGrouping.uuid,
+          mediaSourceName,
           mediaSourceId,
           'grandparent',
         ),
@@ -986,14 +1010,41 @@ export class ProgramDB implements IProgramDB {
 
     if (!isEmpty(externalIds)) {
       await this.timer.timeAsync('upsert program_grouping external ids', () =>
-        getDatabase()
-          .transaction()
-          .execute((tx) =>
-            tx
-              .insertInto('programGroupingExternalId')
-              .values(externalIds)
-              .executeTakeFirstOrThrow(),
+        Promise.all(
+          chunk(
+            externalIds.map(toInsertableProgramGroupingExternalId),
+            100,
+          ).map((externalIds) =>
+            getDatabase()
+              .transaction()
+              .execute((tx) =>
+                tx
+                  .insertInto('programGroupingExternalId')
+                  .values(externalIds)
+                  .onConflict((oc) =>
+                    oc
+                      .columns(['groupUuid', 'sourceType'])
+                      .where('mediaSourceId', 'is', null)
+                      .doUpdateSet((eb) => ({
+                        updatedAt: eb.ref('excluded.updatedAt'),
+                        externalFilePath: eb.ref('excluded.externalFilePath'),
+                        groupUuid: eb.ref('excluded.groupUuid'),
+                      })),
+                  )
+                  .onConflict((oc) =>
+                    oc
+                      .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
+                      .where('mediaSourceId', 'is not', null)
+                      .doUpdateSet((eb) => ({
+                        updatedAt: eb.ref('excluded.updatedAt'),
+                        externalFilePath: eb.ref('excluded.externalFilePath'),
+                        groupUuid: eb.ref('excluded.groupUuid'),
+                      })),
+                  )
+                  .executeTakeFirstOrThrow(),
+              ),
           ),
+        ),
       );
     }
 
@@ -1138,7 +1189,7 @@ export class ProgramDB implements IProgramDB {
     }
   }
 
-  private schedulePlexExternalIdsTask(upsertedPrograms: NewRawProgram[]) {
+  private schedulePlexExternalIdsTask(upsertedPrograms: ProgramDao[]) {
     PlexTaskQueue.pause();
     this.timer.timeSync('schedule Plex external IDs tasks', () => {
       forEach(
@@ -1168,7 +1219,7 @@ export class ProgramDB implements IProgramDB {
     });
   }
 
-  private scheduleJellyfinExternalIdsTask(upsertedPrograms: NewRawProgram[]) {
+  private scheduleJellyfinExternalIdsTask(upsertedPrograms: ProgramDao[]) {
     JellyfinTaskQueue.pause();
     this.timer.timeSync('Schedule Jellyfin external IDs tasks', () => {
       forEach(

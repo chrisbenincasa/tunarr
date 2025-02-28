@@ -6,6 +6,7 @@ import type Fixer from '@/tasks/fixers/fixer.js';
 import { MissingSeasonNumbersFixer } from '@/tasks/fixers/missingSeasonNumbersFixer.js';
 import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
+import { BackfillMediaSourceIdFixer } from './BackfillMediaSourceIdFixer.ts';
 
 const FixerModule = new ContainerModule((bind) => {
   bind<Fixer>(KEYS.Fixer).to(BackfillProgramExternalIds);
@@ -13,6 +14,7 @@ const FixerModule = new ContainerModule((bind) => {
   bind<Fixer>(KEYS.Fixer).to(AddPlexServerIdsFixer);
   bind<Fixer>(KEYS.Fixer).to(BackfillProgramGroupings);
   bind<Fixer>(KEYS.Fixer).to(MissingSeasonNumbersFixer);
+  bind<Fixer>(KEYS.Fixer).to(BackfillMediaSourceIdFixer);
 });
 
 export { FixerModule };

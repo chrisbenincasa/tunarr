@@ -1,13 +1,12 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type { NewProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
+import type { NewSingleOrMultiProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
 import { isNonEmptyString } from '@/util/index.js';
 import type { ContentProgram } from '@tunarr/types';
 import type { JellyfinItem } from '@tunarr/types/jellyfin';
 import type { PlexEpisode, PlexMusicTrack } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { find, first } from 'lodash-es';
+import { first } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
-import { P, match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import type { Nullable } from '../../types/util.ts';
 import {
@@ -68,14 +67,15 @@ export class ProgramGroupingMinter {
     program: ContentProgram,
     groupingId: string,
     externalSourceId: string,
+    mediaSourceId: string,
     relationType: 'parent' | 'grandparent',
-  ): NewProgramGroupingExternalId[] {
+  ): NewSingleOrMultiProgramGroupingExternalId[] {
     if (program.subtype === 'movie') {
       return [];
     }
 
     const now = +dayjs();
-    const parentExternalIds: NewProgramGroupingExternalId[] = [];
+    const parentExternalIds: NewSingleOrMultiProgramGroupingExternalId[] = [];
 
     const ratingKey =
       relationType === 'grandparent'
@@ -83,6 +83,7 @@ export class ProgramGroupingMinter {
         : program.parent?.externalKey;
     if (isNonEmptyString(ratingKey)) {
       parentExternalIds.push({
+        type: 'multi',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
@@ -90,6 +91,7 @@ export class ProgramGroupingMinter {
         externalKey: ratingKey,
         sourceType: ProgramExternalIdType.PLEX,
         externalSourceId,
+        mediaSourceId,
         groupUuid: groupingId,
       });
     }
@@ -101,89 +103,13 @@ export class ProgramGroupingMinter {
     );
     if (isNonEmptyString(guid)) {
       parentExternalIds.push({
+        type: 'single',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
         externalFilePath: null,
         externalKey: guid,
         sourceType: ProgramExternalIdType.PLEX_GUID,
-        externalSourceId: null,
-        groupUuid: groupingId,
-      });
-    }
-
-    return parentExternalIds;
-  }
-
-  static mintGroupingExternalIdsForPlex(
-    plexItem: PlexEpisode | PlexMusicTrack,
-    groupingId: string,
-    externalSourceId: string,
-    relationType: 'parent' | 'grandparent',
-  ): NewProgramGroupingExternalId[] {
-    const now = +dayjs();
-    const parentExternalIds: NewProgramGroupingExternalId[] = [];
-
-    const ratingKey = plexItem[`${relationType}RatingKey`];
-    if (isNonEmptyString(ratingKey)) {
-      parentExternalIds.push({
-        uuid: v4(),
-        createdAt: now,
-        updatedAt: now,
-        externalFilePath: null,
-        externalKey: ratingKey,
-        sourceType: ProgramExternalIdType.PLEX,
-        externalSourceId,
-        groupUuid: groupingId,
-      });
-    }
-
-    const guid = plexItem[`${relationType}Guid`];
-    if (isNonEmptyString(guid)) {
-      parentExternalIds.push({
-        uuid: v4(),
-        createdAt: now,
-        updatedAt: now,
-        externalFilePath: null,
-        externalKey: guid,
-        sourceType: ProgramExternalIdType.PLEX_GUID,
-        externalSourceId: null,
-        groupUuid: groupingId,
-      });
-    }
-
-    return parentExternalIds;
-  }
-
-  static mintGroupingExternalIdsForJellyfin(
-    jellyfinItem: JellyfinItem,
-    groupingId: string,
-    externalSourceId: string,
-    relationType: 'parent' | 'grandparent',
-  ): NewProgramGroupingExternalId[] {
-    const now = +dayjs();
-    const parentExternalIds: NewProgramGroupingExternalId[] = [];
-
-    const jellyfinId = match([jellyfinItem, relationType] as const)
-      .with([{ Type: 'Episode' }, 'grandparent'], () => jellyfinItem.SeriesId)
-      .with(
-        [{ Type: 'Audio' }, 'parent'],
-        () =>
-          find(jellyfinItem.AlbumArtists, { Name: jellyfinItem.AlbumArtist })
-            ?.Id,
-      )
-      .with([P._, 'parent'], () => jellyfinItem.ParentId)
-      .otherwise(() => null);
-
-    if (isNonEmptyString(jellyfinId)) {
-      parentExternalIds.push({
-        uuid: v4(),
-        createdAt: now,
-        updatedAt: now,
-        externalFilePath: null,
-        externalKey: jellyfinId,
-        sourceType: ProgramExternalIdType.JELLYFIN,
-        externalSourceId,
         groupUuid: groupingId,
       });
     }

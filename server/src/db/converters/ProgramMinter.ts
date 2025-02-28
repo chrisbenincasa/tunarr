@@ -1,6 +1,9 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import type { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type {
+  NewProgramExternalId,
+  NewSingleOrMultiExternalId,
+} from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
 import type { ContentProgram } from '@tunarr/types';
 import type { JellyfinItem } from '@tunarr/types/jellyfin';
@@ -26,7 +29,9 @@ class ProgramDaoMinter {
     return {
       uuid: v4(),
       sourceType: program.externalSourceType,
-      externalSourceId: program.externalSourceId ?? program.externalSourceName,
+      // Deprecated
+      externalSourceId: program.externalSourceName,
+      mediaSourceId: program.externalSourceId,
       externalKey: program.externalKey,
       originalAirDate: program.date ?? null,
       duration: program.duration,
@@ -50,21 +55,24 @@ class ProgramDaoMinter {
 
   mint(
     serverName: string,
+    serverId: string,
     program: ContentProgramOriginalProgram,
   ): NewRawProgram {
     const ret = match(program)
       .with(
         { sourceType: 'plex', program: { type: 'movie' } },
-        ({ program: movie }) => this.mintProgramForPlexMovie(serverName, movie),
+        ({ program: movie }) =>
+          this.mintProgramForPlexMovie(serverName, serverId, movie),
       )
       .with(
         { sourceType: 'plex', program: { type: 'episode' } },
         ({ program: episode }) =>
-          this.mintProgramForPlexEpisode(serverName, episode),
+          this.mintProgramForPlexEpisode(serverName, serverId, episode),
       )
       .with(
         { sourceType: 'plex', program: { type: 'track' } },
-        ({ program: track }) => this.mintProgramForPlexTrack(serverName, track),
+        ({ program: track }) =>
+          this.mintProgramForPlexTrack(serverName, serverId, track),
       )
       .with(
         {
@@ -80,7 +88,8 @@ class ProgramDaoMinter {
             ),
           },
         },
-        ({ program }) => this.mintProgramForJellyfinItem(serverName, program),
+        ({ program }) =>
+          this.mintProgramForJellyfinItem(serverName, serverId, program),
       )
       .otherwise(() => new Error('Unexpected program type'));
     if (isError(ret)) {
@@ -91,6 +100,7 @@ class ProgramDaoMinter {
 
   private mintProgramForPlexMovie(
     serverName: string,
+    serverId: string,
     plexMovie: PlexMovie,
   ): NewRawProgram {
     const file = first(first(plexMovie.Media)?.Part ?? []);
@@ -101,6 +111,7 @@ class ProgramDaoMinter {
       duration: plexMovie.duration ?? 0,
       filePath: file?.file ?? null,
       externalSourceId: serverName,
+      mediaSourceId: serverId,
       externalKey: plexMovie.ratingKey,
       plexRatingKey: plexMovie.ratingKey,
       plexFilePath: file?.key ?? null,
@@ -116,6 +127,7 @@ class ProgramDaoMinter {
 
   private mintProgramForJellyfinItem(
     serverName: string,
+    serverId: string,
     item: Omit<JellyfinItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
     },
@@ -128,6 +140,7 @@ class ProgramDaoMinter {
       originalAirDate: item.PremiereDate,
       duration: (item.RunTimeTicks ?? 0) / 10_000,
       externalSourceId: serverName,
+      mediaSourceId: serverId,
       externalKey: item.Id,
       rating: item.OfficialRating,
       summary: item.Overview,
@@ -154,6 +167,7 @@ class ProgramDaoMinter {
 
   private mintProgramForPlexEpisode(
     serverName: string,
+    serverId: string,
     plexEpisode: PlexEpisode,
   ): NewRawProgram {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
@@ -166,6 +180,7 @@ class ProgramDaoMinter {
       duration: plexEpisode.duration ?? 0,
       filePath: file?.file,
       externalSourceId: serverName,
+      mediaSourceId: serverId,
       externalKey: plexEpisode.ratingKey,
       plexRatingKey: plexEpisode.ratingKey,
       plexFilePath: file?.key,
@@ -185,6 +200,7 @@ class ProgramDaoMinter {
 
   private mintProgramForPlexTrack(
     serverName: string,
+    serverId: string,
     plexTrack: PlexMusicTrack,
   ): NewRawProgram {
     const file = first(first(plexTrack.Media)?.Part ?? []);
@@ -196,6 +212,7 @@ class ProgramDaoMinter {
       duration: plexTrack.duration ?? 0,
       filePath: file?.file,
       externalSourceId: serverName,
+      mediaSourceId: serverId,
       externalKey: plexTrack.ratingKey,
       plexRatingKey: plexTrack.ratingKey,
       plexFilePath: file?.key,
@@ -216,32 +233,34 @@ class ProgramDaoMinter {
 
   mintExternalIds(
     serverName: string,
+    serverId: string,
     programId: string,
     program: ContentProgram,
-    // originalProgram: ContentProgramOriginalProgram,
-  ) {
+  ): NewSingleOrMultiExternalId[] {
     return match(program)
       .with({ externalSourceType: 'plex' }, () =>
-        this.mintPlexExternalIds(serverName, programId, program),
+        this.mintPlexExternalIds(serverName, serverId, programId, program),
       )
       .with({ externalSourceType: 'jellyfin' }, () =>
-        this.mintJellyfinExternalIds(serverName, programId, program),
+        this.mintJellyfinExternalIds(serverName, serverId, programId, program),
       )
       .with({ externalSourceType: 'emby' }, () =>
-        this.mintEmbyExternalIds(serverName, programId, program),
+        this.mintEmbyExternalIds(serverName, serverId, programId, program),
       )
       .exhaustive();
   }
 
   mintPlexExternalIds(
     serverName: string,
+    serverId: string,
     programId: string,
     program: ContentProgram,
-  ): NewProgramExternalId[] {
+  ): NewSingleOrMultiExternalId[] {
     const now = +dayjs();
 
-    const ids: NewProgramExternalId[] = [
+    const ids: NewSingleOrMultiExternalId[] = [
       {
+        type: 'multi',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
@@ -249,6 +268,7 @@ class ProgramDaoMinter {
         sourceType: ProgramExternalIdType.PLEX,
         programUuid: programId,
         externalSourceId: serverName,
+        mediaSourceId: serverId,
         externalFilePath: program.serverFileKey,
         directFilePath: program.serverFilePath,
       },
@@ -257,6 +277,7 @@ class ProgramDaoMinter {
     const plexGuid = find(program.externalIds, { source: 'plex-guid' });
     if (plexGuid) {
       ids.push({
+        type: 'single',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
@@ -273,13 +294,14 @@ class ProgramDaoMinter {
           case 'imdb':
           case 'tvdb':
             return {
+              type: 'single',
               uuid: v4(),
               createdAt: now,
               updatedAt: now,
               externalKey: eid.id,
               sourceType: eid.source,
               programUuid: programId,
-            } satisfies NewProgramExternalId;
+            } satisfies NewSingleOrMultiExternalId;
           default:
             return null;
         }
@@ -307,12 +329,14 @@ class ProgramDaoMinter {
 
   mintJellyfinExternalIds(
     serverName: string,
+    serverId: string,
     programId: string,
     program: ContentProgram,
   ) {
     const now = +dayjs();
-    const ids: NewProgramExternalId[] = [
+    const ids: NewSingleOrMultiExternalId[] = [
       {
+        type: 'multi',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
@@ -320,6 +344,7 @@ class ProgramDaoMinter {
         sourceType: ProgramExternalIdType.JELLYFIN,
         programUuid: programId,
         externalSourceId: serverName,
+        mediaSourceId: serverId,
         externalFilePath: program.serverFileKey,
         directFilePath: program.serverFilePath,
       },
@@ -332,13 +357,14 @@ class ProgramDaoMinter {
           case 'imdb':
           case 'tvdb':
             return {
+              type: 'single',
               uuid: v4(),
               createdAt: now,
               updatedAt: now,
               externalKey: eid.id,
               sourceType: eid.source,
               programUuid: programId,
-            } satisfies NewProgramExternalId;
+            } satisfies NewSingleOrMultiExternalId;
           default:
             return null;
         }
@@ -350,12 +376,14 @@ class ProgramDaoMinter {
 
   mintEmbyExternalIds(
     serverName: string,
+    serverId: string,
     programId: string,
     program: ContentProgram,
   ) {
     const now = +dayjs();
-    const ids: NewProgramExternalId[] = [
+    const ids: NewSingleOrMultiExternalId[] = [
       {
+        type: 'multi',
         uuid: v4(),
         createdAt: now,
         updatedAt: now,
@@ -363,6 +391,7 @@ class ProgramDaoMinter {
         sourceType: ProgramExternalIdType.EMBY,
         programUuid: programId,
         externalSourceId: serverName,
+        mediaSourceId: serverId,
         externalFilePath: program.serverFileKey,
         directFilePath: program.serverFilePath,
       },
@@ -375,13 +404,14 @@ class ProgramDaoMinter {
           case 'imdb':
           case 'tvdb':
             return {
+              type: 'single',
               uuid: v4(),
               createdAt: now,
               updatedAt: now,
               externalKey: eid.id,
               sourceType: eid.source,
               programUuid: programId,
-            } satisfies NewProgramExternalId;
+            } satisfies NewSingleOrMultiExternalId;
           default:
             return null;
         }

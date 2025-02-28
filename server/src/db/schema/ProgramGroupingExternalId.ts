@@ -7,8 +7,12 @@ import {
   text,
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
+import { omit } from 'lodash-es';
+import type { StrictOmit } from 'ts-essentials';
+import type { MarkNotNilable } from '../../types/util.ts';
 import { ProgramExternalIdSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { MediaSource } from './MediaSource.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
 export const ProgramGroupingExternalId = sqliteTable(
@@ -20,6 +24,9 @@ export const ProgramGroupingExternalId = sqliteTable(
     externalFilePath: text(),
     externalKey: text().notNull(),
     externalSourceId: text(),
+    mediaSourceId: text().references(() => MediaSource.uuid, {
+      onDelete: 'cascade',
+    }),
     groupUuid: text()
       .notNull()
       .references(() => ProgramGrouping.uuid, {
@@ -45,6 +52,21 @@ export type ProgramGroupingExternalId =
   Selectable<ProgramGroupingExternalIdTable>;
 export type NewProgramGroupingExternalId =
   Insertable<ProgramGroupingExternalIdTable>;
+export type NewSingleOrMultiProgramGroupingExternalId =
+  | (StrictOmit<
+      Insertable<ProgramGroupingExternalIdTable>,
+      'externalSourceId' | 'mediaSourceId'
+    > & { type: 'single' })
+  | (MarkNotNilable<
+      Insertable<ProgramGroupingExternalIdTable>,
+      'externalSourceId' | 'mediaSourceId'
+    > & { type: 'multi' });
+
+export function toInsertableProgramGroupingExternalId(
+  eid: NewSingleOrMultiProgramGroupingExternalId,
+): NewProgramGroupingExternalId {
+  return omit(eid, 'type') satisfies NewProgramGroupingExternalId;
+}
 
 export type ProgramGroupingExternalIdFields<
   Alias extends string = 'ProgramGroupingExternalId',

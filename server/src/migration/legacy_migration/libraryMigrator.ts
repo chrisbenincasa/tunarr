@@ -27,10 +27,12 @@ import {
 import {
   groupByUniq,
   groupByUniqProp,
+  groupByUniqPropAndMap,
   isNonEmptyString,
   mapAsyncSeq,
   mapToObj,
 } from '../../util/index.ts';
+import type { LegacyProgram } from './LegacyChannelMigrator.ts';
 import type { CustomShow } from './legacyDbMigration.ts';
 import type { JSONArray, JSONObject } from './migrationUtil.ts';
 import {
@@ -88,7 +90,7 @@ export class LegacyLibraryMigrator {
       Promise.resolve([] as CustomShow[]),
     );
 
-    const uniquePrograms = uniqBy(
+    const uniquePrograms = uniqBy<LegacyProgram>(
       filter(
         flatMap(newCustomShows, (cs) => cs.content),
         (p) =>
@@ -99,7 +101,15 @@ export class LegacyLibraryMigrator {
       uniqueProgramId,
     );
 
-    const programEntities = seq.collect(uniquePrograms, createProgramEntity);
+    const mediaSourcesByName = await getDatabase()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .execute()
+      .then((_) => groupByUniqPropAndMap(_, 'name', (ms) => ms.uuid));
+
+    const programEntities = seq.collect(uniquePrograms, (program) =>
+      createProgramEntity(program, mediaSourcesByName),
+    );
 
     this.logger.debug(
       'Upserting %d programs from legacy DB',

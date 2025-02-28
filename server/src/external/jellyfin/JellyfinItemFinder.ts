@@ -8,7 +8,7 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { groupByUniq, isDefined } from '@/util/index.js';
+import { groupByUniq, isDefined, run } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
 import dayjs from 'dayjs';
@@ -19,6 +19,8 @@ import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
@@ -28,6 +30,7 @@ export class JellyfinItemFinder {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 
   async findForProgramAndUpdate(programId: string) {
@@ -65,10 +68,24 @@ export class JellyfinItemFinder {
     // Right now just check if the durations are different.
     // otherwise we might blow away details we already have, since
     // Jellyfin collects metadata asynchronously (sometimes)
-    const updatedProgram = minter.mint(program.externalSourceId, {
-      sourceType: 'jellyfin',
-      program: potentialApiMatch,
-    });
+    const mediaSourceId =
+      program.mediaSourceId ??
+      (await run(async () => {
+        const ms = await this.findMediaSource(program.externalSourceId);
+        if (!ms)
+          throw new Error(
+            `Could not find media source by name: ${program.externalSourceId}`,
+          );
+        return ms.uuid;
+      }));
+    const updatedProgram = minter.mint(
+      program.externalSourceId,
+      mediaSourceId,
+      {
+        sourceType: 'jellyfin',
+        program: potentialApiMatch,
+      },
+    );
 
     if (updatedProgram.duration !== program.duration) {
       await this.programDB.updateProgramDuration(
@@ -206,5 +223,12 @@ export class JellyfinItemFinder {
     }
 
     return possibleMatch;
+  }
+
+  private findMediaSource(mediaSourceName: string) {
+    return this.mediaSourceDB.findByType(
+      MediaSourceType.Jellyfin,
+      mediaSourceName,
+    );
   }
 }

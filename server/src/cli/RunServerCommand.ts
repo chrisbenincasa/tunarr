@@ -2,11 +2,13 @@ import { container } from '@/container.js';
 import { isProduction } from '@/util/index.js';
 import { type MarkOptional } from 'ts-essentials';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
+import { DBContext } from '../db/DBAccess.ts';
 import { type ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { setServerOptions } from '../globals.ts';
 import { Server } from '../Server.ts';
 import { StartupService } from '../services/StartupService.ts';
 import { KEYS } from '../types/inject.ts';
+import { getDefaultDatabaseName } from '../util/defaults.ts';
 import {
   getBooleanEnvVar,
   getNumericEnvVar,
@@ -52,7 +54,10 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
       portSetting;
     // port precedence - env var -> argument -> settings
     setServerOptions({ ...opts, port: portToUse });
-    await container.get(StartupService).runStartupServices();
-    await container.get(Server).initAndRun();
+
+    await DBContext.createForName(getDefaultDatabaseName(), async () => {
+      await container.get(StartupService).runStartupServices();
+      await container.get(Server).initAndRun();
+    });
   },
 };

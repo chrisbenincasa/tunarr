@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { type Kysely, sql } from 'kysely';
-import { trimEnd } from 'lodash-es';
+import { replace } from 'lodash-es';
 import fs from 'node:fs/promises';
 import tmp from 'tmp-promise';
 import {
-  getDatabase,
+  getDatabaseContext,
   MigrationLockTableName,
   MigrationTableName,
   runDBMigrations,
@@ -23,10 +23,11 @@ export class DatabaseCopyMigrator {
   async migrate(currentDbPath: string, migrateTo?: string) {
     const { path: tmpPath } = await tmp.file({ keep: false });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
-    const tempDB = getDatabase(tmpPath);
+    const tempDB = getDatabaseContext()!.getOrCreateKyselyDatabase(tmpPath);
     await runDBMigrations(tempDB, migrateTo);
 
-    const oldDB = getDatabase(currentDbPath);
+    const oldDB =
+      getDatabaseContext()!.getOrCreateKyselyDatabase(currentDbPath);
     const oldTables = await this.getTables(oldDB);
     const newTables = await this.getTables(tempDB);
     // Prepare for copy.
@@ -48,11 +49,11 @@ export class DatabaseCopyMigrator {
         continue;
       }
 
-      const columnUnion = new Set(table.columns.map((col) => col.name)).union(
-        new Set(newTable.columns.map((col) => col.name)),
-      );
+      const columnIntersection = new Set(
+        table.columns.map((col) => col.name),
+      ).intersection(new Set(newTable.columns.map((col) => col.name)));
 
-      const colNames = [...columnUnion].sort();
+      const colNames = [...columnIntersection].sort();
       await sql`INSERT INTO ${sql.table(table.name)} (${sql.join(colNames.map((n) => sql.ref(n)))}) SELECT ${sql.join(colNames.map((n) => sql.ref(n)))} FROM ${sql.ref('old')}.${sql.table(table.name)} WHERE true ON CONFLICT DO NOTHING;`.execute(
         tempDB,
       );
@@ -63,11 +64,11 @@ export class DatabaseCopyMigrator {
 
     await fs.copyFile(
       currentDbPath,
-      `${trimEnd(currentDbPath, '.db')}-${+dayjs()}.bak`,
+      `${replace(currentDbPath, '.db', '')}-${+dayjs()}.bak`,
     );
     await fs.cp(tmpPath, currentDbPath);
     // Force reinit at the new path
-    getDatabase(currentDbPath, true);
+    getDatabaseContext()!.setConnection(currentDbPath);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

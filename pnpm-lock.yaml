@@ -9,6 +9,9 @@ overrides:
   '@types/node': 22.10.7
 
 patchedDependencies:
+  kysely:
+    hash: 5ewjqngd4oyjgaqa3fcufrviwq
+    path: patches/kysely.patch
   ts-essentials@9.4.1:
     hash: 254pvnpgpcwoswa4ncfq4tq6su
     path: patches/ts-essentials@9.4.1.patch
@@ -145,7 +148,7 @@ importers:
         version: 1.11.10
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.12)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.4)
+        version: 0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.12)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))
       fast-xml-parser:
         specifier: ^4.3.5
         version: 4.3.5
@@ -172,7 +175,7 @@ importers:
         version: 6.2.1(reflect-metadata@0.2.2)
       kysely:
         specifier: ^0.27.4
-        version: 0.27.4
+        version: 0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -293,7 +296,7 @@ importers:
         version: 15.0.0
       kysely-ctl:
         specifier: ^0.9.0
-        version: 0.9.0(kysely@0.27.4)(magicast@0.3.5)
+        version: 0.9.0(kysely@0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))(magicast@0.3.5)
       make-vfs:
         specifier: ^1.0.15
         version: 1.0.15
@@ -11087,13 +11090,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.12)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.4):
+  drizzle-orm@0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.12)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)):
     optionalDependencies:
       '@opentelemetry/api': 1.4.1
       '@types/better-sqlite3': 7.6.12
       better-sqlite3: 11.8.1
       bun-types: 1.2.1
-      kysely: 0.27.4
+      kysely: 0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
 
   dunder-proto@1.0.1:
     dependencies:
@@ -12565,12 +12568,12 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kysely-ctl@0.9.0(kysely@0.27.4)(magicast@0.3.5):
+  kysely-ctl@0.9.0(kysely@0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))(magicast@0.3.5):
     dependencies:
       c12: 1.11.2(magicast@0.3.5)
       citty: 0.1.6
       consola: 3.2.3
-      kysely: 0.27.4
+      kysely: 0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
       nypm: 0.3.12
       ofetch: 1.4.1
       pathe: 1.1.2
@@ -12580,7 +12583,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  kysely@0.27.4: {}
+  kysely@0.27.4(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq): {}
 
   lazystream@1.0.1:
     dependencies:

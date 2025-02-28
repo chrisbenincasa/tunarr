@@ -1,12 +1,14 @@
 import { mapAsyncSeq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
-import { chunk, flatten, isEmpty, isUndefined, partition } from 'lodash-es';
+import { chunk, flatten, isEmpty, partition } from 'lodash-es';
 import { getDatabase } from './DBAccess.ts';
-import type { NewProgramExternalId as NewRawProgramExternalId } from './schema/ProgramExternalId.ts';
+import {
+  toInsertableProgramExternalId,
+  type NewSingleOrMultiExternalId,
+} from './schema/ProgramExternalId.ts';
 
-export const upsertRawProgramExternalIds = async (
-  externalIds: NewRawProgramExternalId[],
+export const upsertProgramExternalIds = async (
+  externalIds: NewSingleOrMultiExternalId[],
   chunkSize: number = 100,
 ) => {
   if (isEmpty(externalIds)) {
@@ -17,9 +19,7 @@ export const upsertRawProgramExternalIds = async (
 
   const [singles, multiples] = partition(
     externalIds,
-    (id) =>
-      isValidSingleExternalIdType(id.sourceType) &&
-      isUndefined(id.externalSourceId),
+    (id) => id.type === 'single',
   );
 
   let singleIdPromise: Promise<{ uuid: string }[]>;
@@ -30,11 +30,22 @@ export const upsertRawProgramExternalIds = async (
         .execute((tx) =>
           tx
             .insertInto('programExternalId')
-            .values(singleChunk)
+            .values(singleChunk.map(toInsertableProgramExternalId))
             .onConflict((oc) =>
               oc
                 .columns(['programUuid', 'sourceType'])
                 .where('externalSourceId', 'is', null)
+                .doUpdateSet((eb) => ({
+                  updatedAt: eb.ref('excluded.updatedAt'),
+                  externalFilePath: eb.ref('excluded.externalFilePath'),
+                  directFilePath: eb.ref('excluded.directFilePath'),
+                  programUuid: eb.ref('excluded.programUuid'),
+                })),
+            )
+            .onConflict((oc) =>
+              oc
+                .columns(['programUuid', 'sourceType'])
+                .where('mediaSourceId', 'is', null)
                 .doUpdateSet((eb) => ({
                   updatedAt: eb.ref('excluded.updatedAt'),
                   externalFilePath: eb.ref('excluded.externalFilePath'),
@@ -58,11 +69,22 @@ export const upsertRawProgramExternalIds = async (
         .execute((tx) =>
           tx
             .insertInto('programExternalId')
-            .values(multiChunk)
+            .values(multiChunk.map(toInsertableProgramExternalId))
             .onConflict((oc) =>
               oc
                 .columns(['programUuid', 'sourceType', 'externalSourceId'])
                 .where('externalSourceId', 'is not', null)
+                .doUpdateSet((eb) => ({
+                  updatedAt: eb.ref('excluded.updatedAt'),
+                  externalFilePath: eb.ref('excluded.externalFilePath'),
+                  directFilePath: eb.ref('excluded.directFilePath'),
+                  programUuid: eb.ref('excluded.programUuid'),
+                })),
+            )
+            .onConflict((oc) =>
+              oc
+                .columns(['programUuid', 'sourceType', 'mediaSourceId'])
+                .where('mediaSourceId', 'is not', null)
                 .doUpdateSet((eb) => ({
                   updatedAt: eb.ref('excluded.updatedAt'),
                   externalFilePath: eb.ref('excluded.externalFilePath'),
