@@ -18,6 +18,7 @@ export class BackfillProgramGroupings extends Fixer {
     // This clears out mismatches that might have happened on bugged earlier versions
     // There was a bug where we were setting the season ID to the show ID.
     // This should only affect seasons since the music album stuff had the fix
+    console.log('backfill', getDatabase().transaction());
     const clearedSeasons = await getDatabase()
       .transaction()
       .execute((tx) =>

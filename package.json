@@ -45,7 +45,8 @@
   "packageManager": "pnpm@9.12.3",
   "pnpm": {
     "patchedDependencies": {
-      "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch"
+      "ts-essentials@9.4.1": "patches/ts-essentials@9.4.1.patch",
+      "kysely": "patches/kysely.patch"
     },
     "overrides": {
       "eslint": "9.17.0",

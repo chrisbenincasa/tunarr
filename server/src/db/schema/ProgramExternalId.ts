@@ -8,9 +8,12 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
-import type { MarkRequired } from 'ts-essentials';
+import { omit } from 'lodash-es';
+import type { MarkRequired, StrictOmit } from 'ts-essentials';
+import type { MarkNotNilable } from '../../types/util.ts';
 import { ProgramExternalIdSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { MediaSource } from './MediaSource.ts';
 import { Program } from './Program.ts';
 
 export const ProgramExternalId = sqliteTable(
@@ -23,9 +26,12 @@ export const ProgramExternalId = sqliteTable(
     externalFilePath: text(),
     externalKey: text().notNull(),
     externalSourceId: text(),
+    mediaSourceId: text().references(() => MediaSource.uuid, {
+      onDelete: 'cascade',
+    }),
     programUuid: text()
       .notNull()
-      .references(() => Program.uuid),
+      .references(() => Program.uuid, { onDelete: 'cascade' }),
     sourceType: text({ enum: ProgramExternalIdSourceTypes }).notNull(),
   },
   (table) => [
@@ -46,6 +52,24 @@ export const ProgramExternalId = sqliteTable(
 export type ProgramExternalIdTable = KyselifyBetter<typeof ProgramExternalId>;
 export type ProgramExternalId = Selectable<ProgramExternalIdTable>;
 export type NewProgramExternalId = Insertable<ProgramExternalIdTable>;
+export type NewSingleOrMultiExternalId =
+  | (StrictOmit<
+      Insertable<ProgramExternalIdTable>,
+      'mediaSourceId' | 'externalSourceId'
+    > & { type: 'single' })
+  | (MarkNotNilable<
+      Insertable<ProgramExternalIdTable>,
+      'mediaSourceId' | 'externalSourceId'
+    > & { type: 'multi' });
+
+export function toInsertableProgramExternalId(
+  extraInfo: NewSingleOrMultiExternalId,
+): NewProgramExternalId {
+  return omit(extraInfo, 'type') satisfies Omit<
+    NewSingleOrMultiExternalId,
+    'type'
+  >;
+}
 
 export type MinimalProgramExternalId = MarkRequired<
   Partial<ProgramExternalId>,

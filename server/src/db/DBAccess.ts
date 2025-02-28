@@ -7,19 +7,32 @@ import {
   drizzle,
   type BetterSQLite3Database,
 } from 'drizzle-orm/better-sqlite3';
+import type {
+  IsolationLevel,
+  KyselyConfig,
+  KyselyProps,
+  Transaction,
+} from 'kysely';
 import {
   CamelCasePlugin,
+  DefaultConnectionProvider,
+  DefaultQueryExecutor,
   Kysely,
+  Log,
   Migrator,
   ParseJSONResultsPlugin,
+  RuntimeDriver,
   SqliteDialect,
+  TransactionBuilder,
 } from 'kysely';
 import { findIndex, has, isError, last, map, once, slice } from 'lodash-es';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { DatabaseCopyMigrator } from '../migration/db/DatabaseCopyMigrator.ts';
 import {
   DirectMigrationProvider,
   LegacyMigrationNameToNewMigrationName,
 } from '../migration/DirectMigrationProvider.ts';
+import type { Maybe } from '../types/util.ts';
 import { getDefaultDatabaseName } from '../util/defaults.ts';
 import type { DB } from './schema/db.ts';
 
@@ -30,6 +43,7 @@ export const MigrationLockTableName = 'migration_lock';
 
 // let _directDbAccess: Kysely<DB>;
 type Conn = {
+  name: string;
   kysely: Kysely<DB>;
   drizzle: BetterSQLite3Database;
 };
@@ -38,55 +52,176 @@ const connections = new Map<string, Conn>();
 
 const logger = once(() => LoggerFactory.child({ className: 'DirectDBAccess' }));
 
+export class DBContext {
+  private static storage = new AsyncLocalStorage<DBContext>();
+
+  constructor(private connections: Map<string, Conn> = new Map()) {}
+
+  get db(): Maybe<Kysely<DB>> {
+    return this.getKyselyDatabase();
+  }
+
+  getConnection(name: string = getDefaultDatabaseName()): Maybe<Conn> {
+    return this.connections.get(name);
+  }
+
+  getKyselyDatabase(
+    name: string = getDefaultDatabaseName(),
+  ): Maybe<Kysely<DB>> {
+    return this.getConnection(name)?.kysely;
+  }
+
+  getOrCreateKyselyDatabase(name: string): Kysely<DB> {
+    return this.getOrCreateConnection(name)?.kysely;
+  }
+
+  getOrCreateConnection(name: string): Conn {
+    const existing = this.connections.get(name);
+    if (existing) {
+      return existing;
+    }
+    const conn = makeDatabaseConnection(name);
+    this.connections.set(name, conn);
+    return conn;
+  }
+
+  setConnection(name: string) {
+    this.connections.set(name, makeDatabaseConnection(name));
+  }
+
+  static create<T>(context: Conn, next: (...args: unknown[]) => T) {
+    const m = new Map<string, Conn>([[context.name, context]]);
+    return this.storage.run(new DBContext(m), next);
+  }
+
+  static createForName<T>(name: string, next: (...args: unknown[]) => T) {
+    if (connections.has(name)) {
+      return this.create(connections.get(name)!, next);
+    }
+    return this.create(makeDatabaseConnection(name), next);
+  }
+
+  static enter(context: Conn) {
+    const m = new Map<string, Conn>([[context.name, context]]);
+    this.storage.enterWith(new DBContext(m));
+  }
+
+  static currentDBContext(): Maybe<DBContext> {
+    return this.storage.getStore();
+  }
+}
+
+class TransactionBuilderWrapper extends TransactionBuilder<DB> {
+  constructor(
+    private dbName: string,
+    props: KyselyProps & { isolationLevel?: IsolationLevel },
+  ) {
+    super(props);
+  }
+
+  execute<T>(callback: (trx: Transaction<DB>) => Promise<T>): Promise<T> {
+    return super.execute((tx) => {
+      const curr = DBContext.currentDBContext()?.getConnection(this.dbName);
+      if (!curr) {
+        throw new Error('no DB context');
+      }
+
+      return DBContext.create({ ...curr, kysely: tx }, () => callback(tx));
+    });
+  }
+}
+
+class KyselyWrapper extends Kysely<DB> {
+  constructor(
+    private dbName: string,
+    private config: KyselyConfig,
+  ) {
+    super(config);
+  }
+
+  transaction(): TransactionBuilder<DB> {
+    const driver = new RuntimeDriver(
+      this.config.dialect.createDriver(),
+      new Log(this.config.log ?? []),
+    );
+    return new TransactionBuilderWrapper(this.dbName, {
+      config: this.config,
+      dialect: this.config.dialect,
+      driver,
+      executor: new DefaultQueryExecutor(
+        this.config.dialect.createQueryCompiler(),
+        this.config.dialect.createAdapter(),
+        new DefaultConnectionProvider(driver),
+        this.config.plugins ?? [],
+      ),
+    });
+  }
+}
+
+export function makeDatabaseConnection(
+  dbName: string = getDefaultDatabaseName(),
+): Conn {
+  const dbConn = new Sqlite(dbName, {
+    timeout: 5000,
+  });
+
+  const kysely = new KyselyWrapper(dbName, {
+    dialect: new SqliteDialect({
+      database: dbConn,
+    }),
+    log: (event) => {
+      switch (event.level) {
+        case 'query':
+          if (
+            process.env['DATABASE_DEBUG_LOGGING'] ||
+            process.env['DIRECT_DATABASE_DEBUG_LOGGING']
+          ) {
+            logger().setBindings({ db: dbName });
+            logger().debug(
+              'Query: %O (%d ms)',
+              event.query.sql,
+              event.queryDurationMillis,
+            );
+          }
+          return;
+        case 'error':
+          logger().setBindings({ db: dbName });
+          logger().error(
+            event.error,
+            'Query error: %O\n%O',
+            event.query.sql,
+            event.query.parameters,
+          );
+          return;
+      }
+    },
+    plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
+  });
+
+  const drizzleConn = drizzle({
+    client: dbConn,
+    casing: 'snake_case',
+  });
+
+  const connection = { name: dbName, kysely, drizzle: drizzleConn };
+
+  connections.set(dbName, connection);
+
+  return connection;
+}
+
+export function getDatabaseContext() {
+  return DBContext.currentDBContext();
+}
+
 export const getDatabase = (
   dbName: string = getDefaultDatabaseName(),
   forceInit: boolean = false,
 ) => {
-  let conn = connections.get(dbName);
-  if (!conn || forceInit) {
-    const dbConn = new Sqlite(dbName, {
-      timeout: 5000,
-    });
-    const kysely = new Kysely<DB>({
-      dialect: new SqliteDialect({
-        database: dbConn,
-      }),
-      log: (event) => {
-        switch (event.level) {
-          case 'query':
-            if (
-              process.env['DATABASE_DEBUG_LOGGING'] ||
-              process.env['DIRECT_DATABASE_DEBUG_LOGGING']
-            ) {
-              logger().debug(
-                'Query: %O (%d ms)',
-                event.query.sql,
-                event.queryDurationMillis,
-              );
-            }
-            return;
-          case 'error':
-            logger().error(
-              event.error,
-              'Query error: %O\n%O',
-              event.query.sql,
-              event.query.parameters,
-            );
-            return;
-        }
-      },
-      plugins: [new ParseJSONResultsPlugin(), new CamelCasePlugin()],
-    });
-
-    const drizzleConn = drizzle({
-      client: dbConn,
-      casing: 'snake_case',
-    });
-
-    conn = { kysely, drizzle: drizzleConn };
+  if (forceInit) {
+    DBContext.enter(makeDatabaseConnection(dbName));
   }
-  connections.set(dbName, conn);
-  return conn.kysely;
+  return DBContext.currentDBContext()!.getKyselyDatabase(dbName)!;
 };
 
 export function getMigrator(db: Kysely<DB> = getDatabase()) {
@@ -98,9 +233,7 @@ export function getMigrator(db: Kysely<DB> = getDatabase()) {
   });
 }
 
-export async function pendingDatabaseMigrations(
-  db: Kysely<DB> = getDatabase(),
-) {
+export async function pendingDatabaseMigrations(db: Kysely<DB>) {
   return lock.runExclusive(async () => {
     const tables = await db.introspection.getTables({
       withInternalKyselyTables: true,
@@ -127,7 +260,7 @@ export async function pendingDatabaseMigrations(
   });
 }
 
-export async function databaseNeedsMigration(db: Kysely<DB> = getDatabase()) {
+export async function databaseNeedsMigration(db: Kysely<DB>) {
   return (await pendingDatabaseMigrations(db)).length > 0;
 }
 
@@ -221,10 +354,7 @@ export async function syncMigrationTablesIfNecessary(
   }
 }
 
-export async function runDBMigrations(
-  db: Kysely<DB> = getDatabase(),
-  migrateTo?: string,
-) {
+export async function runDBMigrations(db: Kysely<DB>, migrateTo?: string) {
   const _logger = logger();
   const migrator = getMigrator(db);
   const { error, results } = await (isNonEmptyString(migrateTo)
@@ -245,9 +375,7 @@ export async function runDBMigrations(
 }
 
 // Runs through pending migrations, using the DB copier if necessary
-export async function migrateExistingDatabase(
-  dbPath: string = getDefaultDatabaseName(),
-) {
+export async function migrateExistingDatabase(dbPath: string) {
   const db = getDatabase(dbPath);
   const pendingMigrations = await pendingDatabaseMigrations(db);
 

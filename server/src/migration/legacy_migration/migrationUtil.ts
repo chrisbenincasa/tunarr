@@ -12,8 +12,11 @@ import type {
 import type { LegacyProgram } from './LegacyChannelMigrator.ts';
 
 // JSON representation for easier parsing of legacy db files
-export interface JSONArray extends Array<JSONValue> {}
-export interface JSONObject extends Record<string, JSONValue> {}
+export type JSONArray = Array<JSONValue>;
+export interface JSONObject {
+  [x: string]: JSONValue;
+}
+
 export type JSONValue =
   | string
   | number
@@ -68,7 +71,7 @@ export function convertRawProgram(program: JSONObject): LegacyProgram {
   const programType = program['type'] as string | undefined;
   const isMovie = programType === 'movie';
   const id = v4();
-  const outProgram: LegacyProgram = {
+  return {
     id,
     duration: program['duration'] as number,
     episodeIcon: program['episodeIcon'] as Maybe<string>,
@@ -96,15 +99,18 @@ export function convertRawProgram(program: JSONObject): LegacyProgram {
     customShowId: program['customShowId'] as Maybe<string>,
     customShowName: program['customShowName'] as Maybe<string>,
     sourceType: 'plex',
-  };
-
-  return outProgram;
+  } satisfies LegacyProgram;
 }
 
 export function createProgramEntity(
   program: LegacyProgram,
+  mediaSourceIdByName: Record<string, string>,
 ): NewProgramDao | undefined {
   const now = +dayjs();
+  if (!mediaSourceIdByName[program.serverKey ?? '']) {
+    return;
+  }
+
   if (
     ['movie', 'episode', 'track'].includes(program.type ?? '') &&
     every([program.ratingKey, program.serverKey, program.key], isNonEmptyString)
@@ -122,6 +128,7 @@ export function createProgramEntity(
       plexRatingKey: program.key!,
       plexFilePath: program.plexFile,
       externalSourceId: program.serverKey!,
+      mediaSourceId: mediaSourceIdByName[program.serverKey ?? ''],
       showTitle: program.showTitle,
       summary: program.summary,
       title: program.title!,

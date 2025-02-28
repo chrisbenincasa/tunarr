@@ -1,10 +1,10 @@
 import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
+import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.js';
 import { ProgramDao } from '@/db/schema/Program.js';
-import { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
@@ -118,7 +118,7 @@ export class BackfillProgramExternalIds extends Fixer {
           );
         } else {
           const upsertResult = await attempt(() =>
-            upsertRawProgramExternalIds(result.result),
+            upsertProgramExternalIds(result.result),
           );
           if (isError(upsertResult)) {
             this.logger.warn(
@@ -147,6 +147,10 @@ export class BackfillProgramExternalIds extends Fixer {
       );
     }
 
+    if (isUndefined(plex.serverId)) {
+      throw new Error('Plex server is not a saved media source');
+    }
+
     const metadataResult = await plex.getItemMetadata(program.externalKey);
 
     if (isQueryError(metadataResult)) {
@@ -160,12 +164,14 @@ export class BackfillProgramExternalIds extends Fixer {
     // We're here, might as well use the real thing.
     const firstPart = first(first(metadata.Media)?.Part);
 
-    const entities: NewProgramExternalId[] = [
+    const entities: NewSingleOrMultiExternalId[] = [
       {
+        type: 'multi',
         externalFilePath: firstPart?.key ?? program.plexFilePath,
         directFilePath: firstPart?.file ?? program.filePath,
         externalKey: metadata.ratingKey,
         externalSourceId: plex.serverName,
+        mediaSourceId: plex.serverId,
         programUuid: program.uuid,
         sourceType: ProgramExternalIdType.PLEX,
         uuid: v4(),
@@ -183,6 +189,7 @@ export class BackfillProgramExternalIds extends Fixer {
       }
 
       entities.push({
+        type: 'single',
         uuid: v4(),
         createdAt: +dayjs(),
         updatedAt: +dayjs(),

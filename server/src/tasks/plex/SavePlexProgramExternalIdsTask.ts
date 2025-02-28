@@ -1,5 +1,5 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { upsertRawProgramExternalIds } from '@/db/programExternalIdHelpers.js';
+import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -8,8 +8,9 @@ import { Task } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
 import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
 import type { PlexTerminalMedia } from '@tunarr/types/plex';
-import { compact, isEmpty, isNil, isUndefined, map } from 'lodash-es';
+import { isEmpty, isNil, isUndefined } from 'lodash-es';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 
 export type SavePlexProgramExternalIdsTaskFactory = (
@@ -78,19 +79,11 @@ export class SavePlexProgramExternalIdsTask extends Task {
 
     const metadata = metadataResult.data as PlexTerminalMedia;
 
-    const eids = compact(
-      map(metadata.Guid, (guid) => {
-        const parsed = mintExternalIdForPlexGuid(guid.id, program.uuid);
-        if (parsed) {
-          parsed.externalSourceId = undefined;
-          return parsed;
-        }
-
-        return;
-      }),
+    const eids = seq.collect(metadata.Guid, (guid) =>
+      mintExternalIdForPlexGuid(guid.id, program.uuid),
     );
 
-    return await upsertRawProgramExternalIds(eids);
+    return await upsertProgramExternalIds(eids);
   }
 
   get taskName() {

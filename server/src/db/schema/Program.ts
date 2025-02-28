@@ -10,8 +10,9 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
+import type { MarkNotNilable } from '../../types/util.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import { MediaSourceTypes } from './MediaSource.ts';
+import { MediaSource, MediaSourceTypes } from './MediaSource.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
 export const ProgramTypes = ['movie', 'episode', 'track'] as const;
@@ -37,6 +38,9 @@ export const Program = sqliteTable(
     episodeIcon: text(),
     externalKey: text().notNull(),
     externalSourceId: text().notNull(),
+    mediaSourceId: text().references(() => MediaSource.uuid, {
+      onDelete: 'cascade',
+    }),
     filePath: text(),
     grandparentExternalKey: text(),
     icon: text(),
@@ -78,7 +82,10 @@ export const Program = sqliteTable(
 
 export type ProgramTable = KyselifyBetter<typeof Program>;
 export type ProgramDao = Selectable<ProgramTable>;
-export type NewProgramDao = Insertable<ProgramTable>;
+export type NewProgramDao = MarkNotNilable<
+  Insertable<ProgramTable>,
+  'mediaSourceId'
+>;
 export type ProgramDaoUpdate = Updateable<ProgramTable>;
 
 export function programExternalIdString(p: ProgramDao | NewProgramDao) {

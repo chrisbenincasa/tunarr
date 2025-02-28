@@ -1,4 +1,8 @@
-import type { DeepNonNullable, StrictExclude } from 'ts-essentials';
+import type {
+  DeepNonNullable,
+  MarkRequired,
+  StrictExclude,
+} from 'ts-essentials';
 
 export type Maybe<T> = T | undefined;
 
@@ -31,3 +35,8 @@ export type MarkNullable<Type, Keys extends keyof Type = keyof Type> = {
 };
 
 export type NonEmptyArray<T> = [T, ...T[]];
+
+export type MarkNotNilable<Type, Keys extends keyof Type> = MarkNonNullable<
+  MarkRequired<Type, Keys>,
+  Keys
+>;

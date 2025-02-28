@@ -176,9 +176,19 @@ export class LegacyChannelMigrator {
         isNonEmptyString(p.key),
     );
 
+    const mediaSources = await getDatabase()
+      .selectFrom('mediaSource')
+      .selectAll()
+      .execute();
+    const mediaSourcesByName = groupByUniqPropAndMap(
+      mediaSources,
+      'name',
+      (ms) => ms.uuid,
+    );
+
     const programEntities = seq.collect(
-      uniqBy(programs, uniqueProgramId),
-      createProgramEntity,
+      uniqBy<LegacyProgram>(programs, uniqueProgramId),
+      (program) => createProgramEntity(program, mediaSourcesByName),
     );
 
     this.logger.debug(

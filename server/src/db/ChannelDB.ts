@@ -1172,6 +1172,39 @@ export class ChannelDB implements IChannelDB {
     await this.saveLineup(channelId, lineup);
   }
 
+  async removeProgramsFromAllLineups(programIds: string[]): Promise<void> {
+    if (isEmpty(programIds)) {
+      return;
+    }
+
+    const lineups = await this.loadAllLineups();
+
+    const programsToRemove = new Set(programIds);
+    for (const [channelId, { lineup }] of Object.entries(lineups)) {
+      const newLineupItems: LineupItem[] = lineup.items.map((item) => {
+        switch (item.type) {
+          case 'content': {
+            if (programsToRemove.has(item.id)) {
+              return {
+                type: 'offline',
+                durationMs: item.durationMs,
+              };
+            }
+            return item;
+          }
+          case 'offline':
+          case 'redirect':
+            return item;
+        }
+      });
+
+      await this.saveLineup(channelId, {
+        ...lineup,
+        items: newLineupItems,
+      });
+    }
+  }
+
   private async createLineup(channelId: string) {
     const db = await this.getFileDb(channelId);
     await db.write();

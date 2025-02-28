@@ -117,32 +117,36 @@ export class MediaSourceDB {
       .executeTakeFirst();
   }
 
-  async deleteMediaSource(id: string, removePrograms: boolean = true) {
+  async deleteMediaSource(id: string) {
     const deletedServer = await this.getById(id);
     if (isNil(deletedServer)) {
       throw new Error(`MediaSource not found: ${id}`);
     }
 
+    // This should cascade all relevant deletes across the DB
     await getDatabase()
-      .deleteFrom('mediaSource')
-      .where('uuid', '=', id)
-      // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-      // .limit(1)
-      .execute();
+      .transaction()
+      .execute(async (tx) => {
+        const relatedProgramIds = await tx
+          .selectFrom('program')
+          .where('program.mediaSourceId', '=', id)
+          .select('uuid')
+          .execute()
+          .then((_) => _.map(({ uuid }) => uuid));
 
-    let reports: Report[];
-    if (!removePrograms) {
-      reports = [];
-    } else {
-      reports = await this.fixupProgramReferences(
-        deletedServer.name,
-        deletedServer.type,
-      );
-    }
+        await tx
+          .deleteFrom('mediaSource')
+          .where('uuid', '=', id)
+          .limit(1)
+          .execute();
+        // TODO: Update lineups
+
+        await this.channelDb.removeProgramsFromAllLineups(relatedProgramIds);
+      });
 
     this.mediaSourceApiFactory().deleteCachedClient(deletedServer);
 
-    return { deletedServer, reports };
+    return { deletedServer };
   }
 
   async updateMediaSource(server: UpdateMediaSourceRequest) {
@@ -155,9 +159,9 @@ export class MediaSourceDB {
     }
 
     const sendGuideUpdates =
-      server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
+      server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
     const sendChannelUpdates =
-      server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
+      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
 
     await getDatabase()
       .updateTable('mediaSource')
@@ -188,9 +192,9 @@ export class MediaSourceDB {
   async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
     const name = isUndefined(server.name) ? 'plex' : server.name;
     const sendGuideUpdates =
-      server.type === 'plex' ? server.sendGuideUpdates ?? false : false;
+      server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
     const sendChannelUpdates =
-      server.type === 'plex' ? server.sendChannelUpdates ?? false : false;
+      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
     const index = await getDatabase()
       .selectFrom('mediaSource')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
@@ -217,38 +221,6 @@ export class MediaSourceDB {
 
     return newServer?.uuid;
   }
-
-  // private async removeDanglingPrograms(mediaSource: MediaSource) {
-  //   const knownProgramIds = await directDbAccess()
-  //     .selectFrom('programExternalId as p1')
-  //     .where(({ eb, and }) =>
-  //       and([
-  //         eb('p1.externalSourceId', '=', mediaSource.name),
-  //         eb('p1.sourceType', '=', mediaSource.type),
-  //       ]),
-  //     )
-  //     .selectAll('p1')
-  //     .select((eb) =>
-  //       jsonArrayFrom(
-  //         eb
-  //           .selectFrom('programExternalId as p2')
-  //           .whereRef('p2.programUuid', '=', 'p1.programUuid')
-  //           .whereRef('p2.uuid', '!=', 'p1.uuid')
-  //           .select(['p2.sourceType', 'p2.externalSourceId', 'p2.externalKey']),
-  //       ).as('otherExternalIds'),
-  //     )
-  //     .groupBy('p1.uuid')
-  //     .execute();
-
-  //   const mediaSourceTypes = map(enumValues(MediaSourceType), (typ) =>
-  //     typ.toString(),
-  //   );
-  //   const danglingPrograms = reject(knownProgramIds, (program) => {
-  //     some(program.otherExternalIds, (eid) =>
-  //       mediaSourceTypes.includes(eid.sourceType),
-  //     );
-  //   });
-  // }
 
   private async fixupProgramReferences(
     serverName: string,
@@ -350,8 +322,8 @@ export class MediaSourceDB {
           id,
           channelNumber: number,
           channelName: name,
-          destroyedPrograms: isUpdate ? 0 : channelToProgramCount[id] ?? 0,
-          modifiedPrograms: isUpdate ? channelToProgramCount[id] ?? 0 : 0,
+          destroyedPrograms: isUpdate ? 0 : (channelToProgramCount[id] ?? 0),
+          modifiedPrograms: isUpdate ? (channelToProgramCount[id] ?? 0) : 0,
         } as Report;
       },
     );
@@ -359,15 +331,15 @@ export class MediaSourceDB {
     const fillerReports: Report[] = map(fillersById, ({ uuid }) => ({
       type: 'filler',
       id: uuid,
-      destroyedPrograms: isUpdate ? 0 : fillerToProgramCount[uuid] ?? 0,
-      modifiedPrograms: isUpdate ? fillerToProgramCount[uuid] ?? 0 : 0,
+      destroyedPrograms: isUpdate ? 0 : (fillerToProgramCount[uuid] ?? 0),
+      modifiedPrograms: isUpdate ? (fillerToProgramCount[uuid] ?? 0) : 0,
     }));
 
     const customShowReports: Report[] = map(customShowById, ({ uuid }) => ({
       type: 'custom-show',
       id: uuid,
-      destroyedPrograms: isUpdate ? 0 : customShowToProgramCount[uuid] ?? 0,
-      modifiedPrograms: isUpdate ? customShowToProgramCount[uuid] ?? 0 : 0,
+      destroyedPrograms: isUpdate ? 0 : (customShowToProgramCount[uuid] ?? 0),
+      modifiedPrograms: isUpdate ? (customShowToProgramCount[uuid] ?? 0) : 0,
     }));
 
     return [...channelReports, ...fillerReports, ...customShowReports];

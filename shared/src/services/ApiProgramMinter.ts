@@ -83,6 +83,7 @@ export class ApiProgramMinter {
     return {
       type: 'content',
       externalSourceType: 'plex',
+      externalSourceId: server.id,
       externalSourceName: server.name,
       date: plexMovie.originallyAvailableAt,
       duration: plexMovie.duration ?? 0,
@@ -95,7 +96,6 @@ export class ApiProgramMinter {
       subtype: 'movie',
       persisted: false,
       externalIds: this.mintExternalIdsForPlex(server.name, plexMovie),
-      externalSourceId: server.name,
       uniqueId: id,
       id,
     };
@@ -113,7 +113,7 @@ export class ApiProgramMinter {
       index: plexEpisode.index,
       externalKey: plexEpisode.ratingKey,
       externalSourceName: server.name,
-      externalSourceId: server.name,
+      externalSourceId: server.id,
       externalSourceType: ExternalSourceTypeSchema.enum.plex,
       parent: {
         title: plexEpisode.parentTitle,
@@ -242,7 +242,7 @@ export class ApiProgramMinter {
       persisted: false,
       uniqueId: id,
       id,
-      externalSourceId: server.name,
+      externalSourceId: server.id,
     };
   }
 
@@ -257,7 +257,7 @@ export class ApiProgramMinter {
       externalSourceType: ExternalSourceTypeSchema.enum.jellyfin,
       date: nullToUndefined(item.PremiereDate),
       duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: server.name,
+      externalSourceId: server.id,
       externalKey: item.Id,
       rating: nullToUndefined(item.OfficialRating),
       summary: nullToUndefined(item.Overview),
@@ -322,7 +322,7 @@ export class ApiProgramMinter {
       externalSourceType: ExternalSourceTypeSchema.enum.emby,
       date: nullToUndefined(item.PremiereDate),
       duration: (item.RunTimeTicks ?? 0) / 10_000,
-      externalSourceId: server.name,
+      externalSourceId: server.id,
       externalKey: item.Id,
       rating: nullToUndefined(item.OfficialRating),
       summary: nullToUndefined(item.Overview),

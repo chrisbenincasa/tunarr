@@ -1,5 +1,5 @@
 import { programExternalIdTypeFromExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type { NewProgramExternalId } from '@/db/schema/ProgramExternalId.js';
+import type { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
 import type { Nullable } from '@/types/util.js';
 import type { MultiExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
@@ -29,10 +29,11 @@ export const createPlexExternalId = (
 export const mintExternalIdForPlexGuid = (
   guid: string,
   programId: string,
-): Nullable<NewProgramExternalId> => {
+): Nullable<NewSingleOrMultiExternalId> => {
   const parsed = parsePlexGuid(guid);
   if (parsed) {
     return {
+      type: 'single',
       uuid: v4(),
       createdAt: +dayjs(),
       updatedAt: +dayjs(),

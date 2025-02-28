@@ -4,7 +4,9 @@ import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
 import {
   databaseNeedsMigration,
+  DBContext,
   getDatabase,
+  makeDatabaseConnection,
   migrateExistingDatabase,
   runDBMigrations,
   syncMigrationTablesIfNecessary,
@@ -74,18 +76,20 @@ export async function bootstrapTunarr(
   }
 
   await initDbDirectories(opts);
-  const db = getDatabase(); // Initialize the DB
+  await DBContext.create(makeDatabaseConnection(), async () => {
+    const db = getDatabase(); // Initialize the DB
 
-  // not the first run, use the copy migrator
-  if (hasTunarrDb) {
-    const migrationNecessary = await databaseNeedsMigration(db);
-    if (migrationNecessary) {
-      await migrateExistingDatabase(getDefaultDatabaseName());
+    // not the first run, use the copy migrator
+    if (hasTunarrDb) {
+      const migrationNecessary = await databaseNeedsMigration(db);
+      if (migrationNecessary) {
+        await migrateExistingDatabase(getDefaultDatabaseName());
+      }
+    } else {
+      await syncMigrationTablesIfNecessary(db);
+      await runDBMigrations(db);
     }
-  } else {
-    await syncMigrationTablesIfNecessary(db);
-    await runDBMigrations(db);
-  }
+  });
 
   LoggerFactory.initialize(settingsDb);
 }
