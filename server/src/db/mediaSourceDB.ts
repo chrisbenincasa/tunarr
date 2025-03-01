@@ -124,7 +124,7 @@ export class MediaSourceDB {
     }
 
     // This should cascade all relevant deletes across the DB
-    await getDatabase()
+    const relatedProgramIds = await getDatabase()
       .transaction()
       .execute(async (tx) => {
         const relatedProgramIds = await tx
@@ -139,10 +139,10 @@ export class MediaSourceDB {
           .where('uuid', '=', id)
           .limit(1)
           .execute();
-        // TODO: Update lineups
-
-        await this.channelDb.removeProgramsFromAllLineups(relatedProgramIds);
+        return relatedProgramIds;
       });
+
+    await this.channelDb.removeProgramsFromAllLineups(relatedProgramIds);
 
     this.mediaSourceApiFactory().deleteCachedClient(deletedServer);
 

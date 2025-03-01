@@ -1,5 +1,5 @@
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
-import { expect } from 'bun:test';
+import { expect } from 'vitest';
 
 expect.extend({
   toMatchPixelFormat(received: PixelFormat, expected: PixelFormat) {

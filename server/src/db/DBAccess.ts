@@ -7,23 +7,12 @@ import {
   drizzle,
   type BetterSQLite3Database,
 } from 'drizzle-orm/better-sqlite3';
-import type {
-  IsolationLevel,
-  KyselyConfig,
-  KyselyProps,
-  Transaction,
-} from 'kysely';
 import {
   CamelCasePlugin,
-  DefaultConnectionProvider,
-  DefaultQueryExecutor,
   Kysely,
-  Log,
   Migrator,
   ParseJSONResultsPlugin,
-  RuntimeDriver,
   SqliteDialect,
-  TransactionBuilder,
 } from 'kysely';
 import { findIndex, has, isError, last, map, once, slice } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -111,53 +100,6 @@ export class DBContext {
   }
 }
 
-class TransactionBuilderWrapper extends TransactionBuilder<DB> {
-  constructor(
-    private dbName: string,
-    props: KyselyProps & { isolationLevel?: IsolationLevel },
-  ) {
-    super(props);
-  }
-
-  execute<T>(callback: (trx: Transaction<DB>) => Promise<T>): Promise<T> {
-    return super.execute((tx) => {
-      const curr = DBContext.currentDBContext()?.getConnection(this.dbName);
-      if (!curr) {
-        throw new Error('no DB context');
-      }
-
-      return DBContext.create({ ...curr, kysely: tx }, () => callback(tx));
-    });
-  }
-}
-
-class KyselyWrapper extends Kysely<DB> {
-  constructor(
-    private dbName: string,
-    private config: KyselyConfig,
-  ) {
-    super(config);
-  }
-
-  transaction(): TransactionBuilder<DB> {
-    const driver = new RuntimeDriver(
-      this.config.dialect.createDriver(),
-      new Log(this.config.log ?? []),
-    );
-    return new TransactionBuilderWrapper(this.dbName, {
-      config: this.config,
-      dialect: this.config.dialect,
-      driver,
-      executor: new DefaultQueryExecutor(
-        this.config.dialect.createQueryCompiler(),
-        this.config.dialect.createAdapter(),
-        new DefaultConnectionProvider(driver),
-        this.config.plugins ?? [],
-      ),
-    });
-  }
-}
-
 export function makeDatabaseConnection(
   dbName: string = getDefaultDatabaseName(),
 ): Conn {
@@ -165,7 +107,7 @@ export function makeDatabaseConnection(
     timeout: 5000,
   });
 
-  const kysely = new KyselyWrapper(dbName, {
+  const kysely = new Kysely<DB>({
     dialect: new SqliteDialect({
       database: dbConn,
     }),
