@@ -37,7 +37,7 @@ jobs:
 
   build_and_push:
     needs: typecheck
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.builds.os }}
     continue-on-error: true
     strategy:
       max-parallel: 2
@@ -47,40 +47,25 @@ jobs:
             platform: linux/amd64
             suffix:
             target: linux-x64
-
-          - base_tag: '7.0'
-            platform: linux/amd64
-            suffix: -baseline
-            target: linux-x64-baseline
+            os: ubuntu-latest
 
           - base_tag: 7.0-nvidia
             platform: linux/amd64
             suffix: -nvidia
             target: linux-x64
-
-          - base_tag: 7.0-nvidia
-            platform: linux/amd64
-            suffix: -baseline-nvidia
-            target: linux-x64-baseline
+            os: ubuntu-latest
 
           - base_tag: 7.0-vaapi
             platform: linux/amd64
             suffix: -vaapi
             target: linux-x64
-
-          - base_tag: 7.0-vaapi
-            platform: linux/amd64
-            suffix: -baseline-vaapi
-            target: linux-x64-baseline
+            os: ubuntu-latest
 
           - base_tag: 7.0-arm64
             platform: linux/arm64
             suffix: -arm64
             target: linux-arm64
-
-          # - base_tag: 7.0-arm
-          #   platform: linux/arm/v7
-          #   suffix: -arm
+            os: ubuntu-24.04-arm
 
     steps:
       - uses: actions/checkout@v4

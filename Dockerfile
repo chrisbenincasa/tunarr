@@ -13,9 +13,13 @@ EXPOSE 1900/udp
 # Update deps
 # Install musl for native node bindings (sqlite)
 RUN <<EOF
-apt-get update --fix-missing && apt-get install -y ca-certificates curl gnupg unzip wget musl-dev
+rm /var/lib/dpkg/info/libc-bin.*
+apt-get clean
+apt-get update --fix-missing
+apt-get install libc-bin
+apt-get install -y ca-certificates curl gnupg unzip wget musl-dev
+ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 EOF
-RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 
 # Install node - we still need this for some dev tools (for now)
 RUN <<EOF 
