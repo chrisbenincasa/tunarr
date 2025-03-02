@@ -3,6 +3,7 @@ import { type Kysely, sql } from 'kysely';
 import { replace } from 'lodash-es';
 import fs from 'node:fs/promises';
 import tmp from 'tmp-promise';
+import { SqliteDatabaseBackup } from '../../db/backup/SqliteDatabaseBackup.ts';
 import {
   getDatabaseContext,
   MigrationLockTableName,
@@ -23,11 +24,11 @@ export class DatabaseCopyMigrator {
   async migrate(currentDbPath: string, migrateTo?: string) {
     const { path: tmpPath } = await tmp.file({ keep: false });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
-    const tempDB = getDatabaseContext()!.getOrCreateKyselyDatabase(tmpPath);
+    const dbContext = getDatabaseContext()!;
+    const tempDB = dbContext.getOrCreateKyselyDatabase(tmpPath);
     await runDBMigrations(tempDB, migrateTo);
 
-    const oldDB =
-      getDatabaseContext()!.getOrCreateKyselyDatabase(currentDbPath);
+    const oldDB = dbContext.getOrCreateKyselyDatabase(currentDbPath);
     const oldTables = await this.getTables(oldDB);
     const newTables = await this.getTables(tempDB);
     // Prepare for copy.
@@ -62,13 +63,18 @@ export class DatabaseCopyMigrator {
     await sql`PRAGMA foreign_keys = ON;`.execute(tempDB);
     await sql`PRAGMA defer_foreign_keys = OFF;`.execute(tempDB);
 
-    await fs.copyFile(
+    await new SqliteDatabaseBackup().backup(
       currentDbPath,
       `${replace(currentDbPath, '.db', '')}-${+dayjs()}.bak`,
     );
+
+    // Explicitly close both connections to close underlying files
+    // Required to do before the copy of the tmp DB, in Windows
+    await dbContext.closeConnection(tmpPath);
+    await dbContext.closeConnection(currentDbPath);
     await fs.cp(tmpPath, currentDbPath);
     // Force reinit at the new path
-    getDatabaseContext()!.setConnection(currentDbPath);
+    dbContext.setConnection(currentDbPath);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

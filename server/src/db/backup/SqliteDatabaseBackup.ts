@@ -6,22 +6,9 @@ export class SqliteDatabaseBackup {
   #logger = LoggerFactory.child({ className: SqliteDatabaseBackup.name });
 
   async backup(dbName: string, outFile: string) {
-    // const conn = new Database(dbName, { readonly: true, create: false });
     const conn = BetterSqlite3(dbName, {
       fileMustExist: true,
     });
-
-    // await wait();
-
-    // try {
-    //   conn.exec(`VACUUM INTO '${outFile}'`);
-    // } catch (e) {
-    //   this.#logger.error(e, 'Error while backing up database!');
-    // } finally {
-    //   conn.close();
-    // }
-
-    // return outFile;
     try {
       await conn.backup(outFile, {
         progress: (info) => {
