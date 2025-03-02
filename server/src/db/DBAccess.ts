@@ -35,6 +35,7 @@ type Conn = {
   name: string;
   kysely: Kysely<DB>;
   drizzle: BetterSQLite3Database;
+  sqlite: Sqlite.Database;
 };
 
 const connections = new Map<string, Conn>();
@@ -76,6 +77,13 @@ export class DBContext {
 
   setConnection(name: string) {
     this.connections.set(name, makeDatabaseConnection(name));
+  }
+
+  async closeConnection(name: string) {
+    const conn = this.connections.get(name);
+    conn?.sqlite.close();
+    await conn?.kysely.destroy();
+    this.connections.delete(name);
   }
 
   static create<T>(context: Conn, next: (...args: unknown[]) => T) {
@@ -145,7 +153,12 @@ export function makeDatabaseConnection(
     casing: 'snake_case',
   });
 
-  const connection = { name: dbName, kysely, drizzle: drizzleConn };
+  const connection = {
+    name: dbName,
+    kysely,
+    drizzle: drizzleConn,
+    sqlite: dbConn,
+  };
 
   connections.set(dbName, connection);
 
