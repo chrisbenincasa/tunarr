@@ -8,7 +8,7 @@ import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
-import { groupByUniqPropAndMap, isDefined, wait } from '@/util/index.js';
+import { groupByUniqAndMap, isDefined, wait } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
@@ -165,7 +165,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
     for (const updateChunk of chunk(updatedPrograms, 50)) {
       const seasonNumberById: Record<string, number> = omitBy(
-        groupByUniqPropAndMap(updateChunk, 'uuid', (p) => p.seasonNumber),
+        groupByUniqAndMap(updateChunk, 'uuid', (p) => p.seasonNumber),
         isNull,
       );
       await getDatabase()

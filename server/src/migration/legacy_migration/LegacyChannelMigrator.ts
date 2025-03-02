@@ -49,7 +49,7 @@ import { KEYS } from '../../types/inject.ts';
 import {
   emptyStringToUndefined,
   groupByUniq,
-  groupByUniqPropAndMap,
+  groupByUniqAndMap,
   isNonEmptyString,
   mapAsyncSeq,
   mapToObj,
@@ -100,7 +100,7 @@ export class LegacyChannelMigrator {
     dbProgramById: Record<string, ProgramDao>,
   ): Promise<Lineup> {
     const channels = await this.channelDB.getAllChannels();
-    const channelIdsByNumber = groupByUniqPropAndMap(
+    const channelIdsByNumber = groupByUniqAndMap(
       channels,
       'number',
       (c) => c.uuid,
@@ -180,7 +180,7 @@ export class LegacyChannelMigrator {
       .selectFrom('mediaSource')
       .selectAll()
       .execute();
-    const mediaSourcesByName = groupByUniqPropAndMap(
+    const mediaSourcesByName = groupByUniqAndMap(
       mediaSources,
       'name',
       (ms) => ms.uuid,

@@ -63,22 +63,23 @@ export function groupByUniqProp<
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
 >(data: T[], member: K): Record<Key, T> {
-  return groupByUniqPropAndMap(data, member);
+  return groupByUniqAndMap(data, member);
 }
 
-export function groupByUniqPropAndMap<
+export function groupByUniqAndMap<
   T,
   K extends KeysOfType<T>,
   Key extends IsStringOrNumberValue<T, K>,
   Value,
 >(
   data: T[],
-  member: K | ((item: T) => K),
+  member: K | ((item: T) => Key),
   mapper: (val: T) => Value = identity,
 ): Record<Key, Value> {
   const out: Record<Key, Value> = {} as Record<Key, Value>;
   for (const t of data) {
-    out[t[isFunction(member) ? member(t) : member] as Key] = mapper(t);
+    const key = isFunction(member) ? member(t) : t[member];
+    out[key] = mapper(t);
   }
   return out;
 }

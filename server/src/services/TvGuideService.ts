@@ -48,10 +48,10 @@ import {
 import * as syncRetry from 'retry';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { Channel } from '../db/schema/Channel.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
-  ChannelWithPrograms as RawChannel,
 } from '../db/schema/derivedTypes.ts';
 import {
   deepCopy,
@@ -85,12 +85,12 @@ export type TvGuideChannel = {
 };
 
 export type ChannelPrograms = {
-  channel: RawChannel;
+  channel: ChannelWithPrograms;
   programs: GuideItem[];
 };
 
 type ChannelWithLineup = {
-  channel: RawChannel;
+  channel: ChannelWithPrograms;
   lineup: Lineup;
 };
 
@@ -837,7 +837,15 @@ export class TVGuideService {
 
   private async writeXmlTv() {
     // Materialize the guide to write out the XML.
-    const allChannels = map(values(this.channelsById), 'channel');
+    const allChannels: Channel[] = await run(() => {
+      // In the case of updating a channel we have initialize
+      // this list
+      if (!isEmpty(this.channelsById)) {
+        return map(values(this.channelsById), 'channel');
+      }
+      return this.channelDB.getAllChannels();
+    });
+    // const allChannels = map(values(this.channelsById), 'channel');
     await this.xmltv.write(
       map(values(this.cachedGuide), ({ channel, programs }) => {
         return {
@@ -958,8 +966,8 @@ export class TVGuideService {
     const icon = isNonEmptyString(materializedItem.icon)
       ? materializedItem.icon
       : isNonEmptyString(channel.icon?.path)
-      ? channel.icon.path
-      : makeLocalUrl('/images/tunarr.png');
+        ? channel.icon.path
+        : makeLocalUrl('/images/tunarr.png');
 
     return match(materializedItem)
       .returnType<TvGuideProgram>()
@@ -993,9 +1001,9 @@ export class TVGuideService {
   }
 
   private materializeGuideItem(
-    channel: RawChannel,
+    channel: ChannelWithPrograms,
     currentProgram: GuideItem,
-    allChannels: RawChannel[],
+    allChannels: Channel[],
   ): TvGuideProgram {
     return this.guideItemToProgram(
       channel,
@@ -1079,7 +1087,7 @@ export class TVGuideService {
 
 function isProgramOffline(
   program: Maybe<LineupItem>,
-  channel: RawChannel,
+  channel: ChannelWithPrograms,
 ): boolean {
   return (
     !isUndefined(program) &&

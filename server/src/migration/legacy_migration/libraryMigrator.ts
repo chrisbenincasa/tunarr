@@ -26,8 +26,8 @@ import {
 } from '../../db/programQueryHelpers.ts';
 import {
   groupByUniq,
+  groupByUniqAndMap,
   groupByUniqProp,
-  groupByUniqPropAndMap,
   isNonEmptyString,
   mapAsyncSeq,
   mapToObj,
@@ -105,7 +105,7 @@ export class LegacyLibraryMigrator {
       .selectFrom('mediaSource')
       .selectAll()
       .execute()
-      .then((_) => groupByUniqPropAndMap(_, 'name', (ms) => ms.uuid));
+      .then((_) => groupByUniqAndMap(_, 'name', (ms) => ms.uuid));
 
     const programEntities = seq.collect(uniquePrograms, (program) =>
       createProgramEntity(program, mediaSourcesByName),

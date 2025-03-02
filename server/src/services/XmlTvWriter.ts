@@ -2,7 +2,7 @@ import { SettingsDB } from '@/db/SettingsDB.js';
 import { Channel } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
-import { isNonEmptyString } from '@/util/index.js';
+import { groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   writeXmltv,
@@ -18,8 +18,6 @@ import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 
 const lock = new Mutex();
-
-const channelIdCache: Record<string, string> = {};
 
 type MaterializedChannelPrograms = {
   channel: Channel;
@@ -48,21 +46,33 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
+    const xmlChannelIdById = groupByFunc(
+      channels,
+      ({ channel }) => channel.uuid,
+      ({ channel }) => getChannelId(channel.number),
+    );
     const content = writeXmltv({
       generatorInfoName: 'tunarr',
       date: new Date(),
-      channels: map(channels, ({ channel }) => this.makeXmlTvChannel(channel)),
+      channels: map(channels, ({ channel }) =>
+        this.makeXmlTvChannel(channel, xmlChannelIdById[channel.uuid]),
+      ),
       programmes: flatMap(channels, ({ channel, programs }) =>
-        map(programs, (p) => this.makeXmlTvProgram(p, channel)),
+        map(programs, (p) =>
+          this.makeXmlTvProgram(p, xmlChannelIdById[channel.uuid]),
+        ),
       ),
     });
 
     return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
   }
 
-  private makeXmlTvChannel(channel: Channel): XmltvChannel {
+  private makeXmlTvChannel(
+    channel: Channel,
+    xmlChannelId: string,
+  ): XmltvChannel {
     const partial: XmltvChannel = {
-      id: this.getChannelId(channel),
+      id: xmlChannelId,
       displayName: [
         {
           _value: `${channel.number} ${escape(channel.name)}`,
@@ -92,7 +102,7 @@ export class XmlTvWriter {
 
   private makeXmlTvProgram(
     program: TvGuideProgram,
-    channel: Channel,
+    xmlChannelId: string,
   ): XmltvProgramme {
     const title = match(program)
       .with({ type: 'content' }, (c) => {
@@ -114,7 +124,7 @@ export class XmlTvWriter {
       stop: new Date(program.stop),
       title: [{ _value: escape(title) }],
       previouslyShown: {},
-      channel: this.getChannelId(channel),
+      channel: xmlChannelId,
     };
 
     if (isContentProgram(program)) {
@@ -206,15 +216,6 @@ export class XmlTvWriter {
     }
 
     return partial;
-  }
-
-  private getChannelId(channel: Channel): string {
-    const existing = channelIdCache[channel.uuid];
-    if (existing) {
-      return existing;
-    }
-
-    return (channelIdCache[channel.uuid] = getChannelId(channel.number));
   }
 
   isWriting() {

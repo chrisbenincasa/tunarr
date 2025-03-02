@@ -27,6 +27,7 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from '../derived_types/Lineup.js';
+import { Channel } from '../schema/Channel.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
@@ -44,7 +45,7 @@ export class ProgramConverter {
     channel: ChannelWithRelations,
     item: LineupItem,
     channelReferences: MarkRequired<
-      DeepPartial<ChannelWithRelations>,
+      DeepPartial<Channel>,
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
     preMaterializedProgram?: ProgramWithRelations,
@@ -53,7 +54,7 @@ export class ProgramConverter {
     channel: ChannelWithPrograms,
     item: LineupItem,
     channelReferences: MarkRequired<
-      DeepPartial<ChannelWithRelations>,
+      DeepPartial<Channel>,
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
     preMaterializedProgram?: ProgramWithRelations,
@@ -218,14 +219,11 @@ export class ProgramConverter {
 
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel: MarkRequired<DeepPartial<ChannelWithRelations>, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
   ): RedirectProgram;
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel?: MarkRequired<
-      DeepPartial<ChannelWithRelations>,
-      'name' | 'number'
-    >,
+    channel?: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
       ? getDatabase()
@@ -243,7 +241,7 @@ export class ProgramConverter {
 
   private toRedirectChannelInternal(
     item: RedirectItem,
-    channel: MarkRequired<DeepPartial<ChannelWithRelations>, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
   ): RedirectProgram {
     return {
       persisted: true,
