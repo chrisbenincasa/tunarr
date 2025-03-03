@@ -26,7 +26,12 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
-import { alternateColors, forTvGuideProgram } from '../../helpers/util';
+import {
+  alternateColors,
+  forTvGuideProgram,
+  isNonEmptyString,
+} from '../../helpers/util';
+import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
@@ -222,6 +227,8 @@ export function TvGuide({ channelId, start, end }: Props) {
     { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
   );
 
+  const { data: channelsInfo } = useChannelsSuspense();
+
   useEffect(() => {
     if (ref.current) {
       setMinHeight(ref.current.offsetHeight);
@@ -250,7 +257,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         <MenuItem
           disableRipple
           onClick={() => {
-            copyToClipboard(channelMenu.id!).catch(console.error);
+            copyToClipboard(channelMenu.id).catch(console.error);
             setAnchorEl(null);
           }}
         >
@@ -286,127 +293,134 @@ export function TvGuide({ channelId, start, end }: Props) {
     ) : null;
   };
 
-  const renderProgram = (
-    program: TvGuideProgram,
-    index: number,
-    lineup: TvGuideProgram[],
-  ) => {
-    const title = forTvGuideProgram({
-      content: (p) => p.grandparent?.title ?? p.title,
-      custom: (p) => p.program?.title ?? 'Custom Program',
-      redirect: (p) => `Redirect to Channel ${p.channel}`,
-      flex: 'Flex',
-    })(program);
+  const renderProgram = ({
+    id: channelId,
+    name: channelName,
+  }: ChannelLineup) => {
+    const configuredFuideFlexTitle = channelsInfo.find(
+      (c) => c.id === channelId,
+    )?.guideFlexTitle;
+    const flexTitle = isNonEmptyString(configuredFuideFlexTitle)
+      ? configuredFuideFlexTitle
+      : channelName;
+    return (
+      program: TvGuideProgram,
+      index: number,
+      lineup: TvGuideProgram[],
+    ) => {
+      const title = forTvGuideProgram({
+        content: (p) => p.grandparent?.title ?? p.title,
+        custom: (p) => p.program?.title ?? 'Custom Program',
+        redirect: (p) => `Redirect to Channel ${p.channel}`,
+        flex: flexTitle,
+      })(program);
 
-    // Clean this up...
-    const episodeTitle = forTvGuideProgram({
-      custom: (p) =>
-        p.program?.subtype === 'movie'
-          ? compact([
-              p.program.date ? dayjs(p.program.date).year() : null,
-            ]).join(',')
-          : p.program?.title ?? '',
-      content: (p) =>
-        p.subtype === 'movie'
-          ? compact([p.date ? dayjs(p.date).year() : null]).join(',')
-          : p.title,
-      default: '',
-    })(program);
+      // Clean this up...
+      const episodeTitle = forTvGuideProgram({
+        custom: (p) =>
+          p.program?.subtype === 'movie'
+            ? compact([
+                p.program.date ? dayjs(p.program.date).year() : null,
+              ]).join(',')
+            : (p.program?.title ?? ''),
+        content: (p) =>
+          p.subtype === 'movie'
+            ? compact([p.date ? dayjs(p.date).year() : null]).join(',')
+            : p.title,
+        default: '',
+      })(program);
 
-    const key = `${title}_${program.start}_${program.stop}`;
-    const programStart = dayjs(program.start);
-    const programEnd = dayjs(program.stop);
-    let duration = dayjs.duration(programEnd.diff(programStart));
-    let endOfAvailableProgramming = false;
+      const key = `${title}_${program.start}_${program.stop}`;
+      const programStart = dayjs(program.start);
+      const programEnd = dayjs(program.stop);
+      let duration = dayjs.duration(programEnd.diff(programStart));
+      let endOfAvailableProgramming = false;
 
-    // Trim any time that has already played from the currently playing program
-    if (index === 0) {
-      const trimStart = start.diff(programStart);
-      duration = duration.subtract(trimStart, 'ms');
-    }
-
-    // Calc for final program in lineup
-    if (index === lineup.length - 1) {
-      // If program goes beyond current guide duration, trim it so we get accurate program durations
-      if (programEnd.isAfter(end)) {
-        const trimEnd = programEnd.diff(end);
-        duration = duration.subtract(trimEnd, 'ms');
+      // Trim any time that has already played from the currently playing program
+      if (index === 0) {
+        const trimStart = start.diff(programStart);
+        duration = duration.subtract(trimStart, 'ms');
       }
 
-      if (programEnd.isBefore(end)) {
-        endOfAvailableProgramming = true;
-      }
-    }
-
-    // Calculate the total duration of programming in the lineup
-    // This allows us to properly calculate the width of injected 'no programming available' blocks
-    const totalProgramDuration = lineup.reduce(
-      (totalDuration, currentProgram, index) => {
-        const programStart = dayjs(currentProgram.start);
-        const programEnd = dayjs(currentProgram.stop);
-        let duration = dayjs.duration(programEnd.diff(programStart));
-
-        if (index === 0 && programStart.isBefore(start)) {
-          const trimStart = start.diff(programStart);
-          duration = duration.subtract(trimStart, 'ms');
-        }
-
-        if (index === lineup.length - 1 && programEnd.isAfter(end)) {
+      // Calc for final program in lineup
+      if (index === lineup.length - 1) {
+        // If program goes beyond current guide duration, trim it so we get accurate program durations
+        if (programEnd.isAfter(end)) {
           const trimEnd = programEnd.diff(end);
           duration = duration.subtract(trimEnd, 'ms');
         }
 
-        return totalDuration + duration.asMilliseconds();
-      },
-      0,
-    );
+        if (programEnd.isBefore(end)) {
+          endOfAvailableProgramming = true;
+        }
+      }
 
-    const finalBlockWidth = round(
-      ((timelineDuration.asMilliseconds() - totalProgramDuration) /
-        timelineDuration.asMilliseconds()) *
-        100.0,
-      2,
-    );
+      // Calculate the total duration of programming in the lineup
+      // This allows us to properly calculate the width of injected 'no programming available' blocks
+      const totalProgramDuration = lineup.reduce(
+        (totalDuration, currentProgram, index) => {
+          const programStart = dayjs(currentProgram.start);
+          const programEnd = dayjs(currentProgram.stop);
+          let duration = dayjs.duration(programEnd.diff(programStart));
 
-    const pct = round(
-      (duration.asMilliseconds() / timelineDuration.asMilliseconds()) * 100.0,
-      2,
-    );
+          if (index === 0 && programStart.isBefore(start)) {
+            const trimStart = start.diff(programStart);
+            duration = duration.subtract(trimStart, 'ms');
+          }
 
-    const isPlaying = dayjs().isBetween(programStart, programEnd);
-    let remainingTime;
+          if (index === lineup.length - 1 && programEnd.isAfter(end)) {
+            const trimEnd = programEnd.diff(end);
+            duration = duration.subtract(trimEnd, 'ms');
+          }
 
-    if (isPlaying) {
-      remainingTime = programEnd.diff(dayjs(), 'm');
-    }
+          return totalDuration + duration.asMilliseconds();
+        },
+        0,
+      );
 
-    return (
-      <Fragment key={key}>
-        <GuideItem
-          width={pct}
-          index={index}
-          onClick={() => handleModalOpen(program)}
-        >
-          <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
-          <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
-            {episodeTitle}
-          </Box>
-          {((smallViewport && pct > 20) || (!smallViewport && pct > 8)) && (
-            <>
-              <Box sx={{ fontSize: '12px' }}>
-                {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
-              </Box>
-              <Box sx={{ fontSize: '12px' }}>
-                {isPlaying ? ` (${remainingTime}m left)` : null}
-              </Box>
-            </>
-          )}
-        </GuideItem>
-        {endOfAvailableProgramming
-          ? renderUnavailableProgramming(finalBlockWidth, index)
-          : null}
-      </Fragment>
-    );
+      const finalBlockWidth = round(
+        ((+timelineDuration - totalProgramDuration) / +timelineDuration) *
+          100.0,
+        2,
+      );
+
+      const pct = round((+duration / +timelineDuration) * 100.0, 2);
+
+      const isPlaying = dayjs().isBetween(programStart, programEnd);
+      let remainingTime;
+
+      if (isPlaying) {
+        remainingTime = programEnd.diff(dayjs(), 'm');
+      }
+
+      return (
+        <Fragment key={key}>
+          <GuideItem
+            width={pct}
+            index={index}
+            onClick={() => handleModalOpen(program)}
+          >
+            <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
+            <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
+              {episodeTitle}
+            </Box>
+            {((smallViewport && pct > 20) || (!smallViewport && pct > 8)) && (
+              <>
+                <Box sx={{ fontSize: '12px' }}>
+                  {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
+                </Box>
+                <Box sx={{ fontSize: '12px' }}>
+                  {isPlaying ? ` (${remainingTime}m left)` : null}
+                </Box>
+              </>
+            )}
+          </GuideItem>
+          {endOfAvailableProgramming
+            ? renderUnavailableProgramming(finalBlockWidth, index)
+            : null}
+        </Fragment>
+      );
+    };
   };
 
   const renderUnavailableProgramming = (width: number, index: number) => {
@@ -444,6 +458,9 @@ export function TvGuide({ channelId, start, end }: Props) {
 
   const channels = map(channelLineup, (lineup, index) => {
     const alignedLineup = lineup.programs;
+    const flexPlaceholderTitle =
+      channelsInfo.find((c) => c.id === lineup.id)?.guideFlexTitle ??
+      lineup.name;
     if (
       lineup.programs.length > 0 &&
       start.isBefore(lineup.programs[0].start)
@@ -462,9 +479,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         duration: fillerLength,
         start: startUnix,
         stop: lineup.programs[0].start,
-        // TODO: We should use the configured guideFlexPlaceholder title
-        // here if it is configured for this channel
-        title: 'Flex',
+        title: flexPlaceholderTitle,
       });
     }
     return (
@@ -479,7 +494,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         }}
       >
         {alignedLineup.length > 0
-          ? alignedLineup.map(renderProgram)
+          ? alignedLineup.map(renderProgram(lineup))
           : renderUnavailableProgramming(100, index)}
       </Box>
     );

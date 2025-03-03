@@ -42,8 +42,8 @@ export const TvGuideProgramSchema = z.discriminatedUnion('type', [
 
 export const ChannelLineupSchema = z.object({
   icon: ChannelIconSchema.optional(),
-  name: z.string().optional(),
-  number: z.number().optional(),
-  id: z.string().optional(),
+  name: z.string(),
+  number: z.number(),
+  id: z.string(),
   programs: z.array(TvGuideProgramSchema),
 });

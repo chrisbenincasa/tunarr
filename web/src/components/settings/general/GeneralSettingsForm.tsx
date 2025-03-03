@@ -5,7 +5,7 @@ import {
   useSystemState,
   useUpdateSystemSettings,
 } from '@/hooks/useSystemSettings.ts';
-import { useVersion } from '@/hooks/useVersion.ts';
+import { useVersion } from '@/hooks/useVersion.tsx';
 import { setBackendUri } from '@/store/settings/actions.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { CloudDoneOutlined, CloudOff } from '@mui/icons-material';

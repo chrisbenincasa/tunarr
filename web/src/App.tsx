@@ -33,7 +33,7 @@ import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { type NavItem } from './hooks/useNavItems.ts';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useTunarrTheme } from './hooks/useTunarrTheme.ts';
-import { useVersion } from './hooks/useVersion.ts';
+import { useVersion } from './hooks/useVersion.tsx';
 import { useSettings } from './store/settings/selectors.ts';
 import { strings } from './strings.ts';
 
@@ -80,14 +80,14 @@ export function Root({ children }: { children?: React.ReactNode }) {
     () => [
       {
         name: 'XMLTV',
-        path: '/api/xmltv.xml',
+        path: `${actualBackendUri}/api/xmltv.xml`,
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
       },
       {
         name: 'M3U',
-        path: '/api/channels.m3u',
+        path: `${actualBackendUri}/api/channels.m3u`,
         visible: true,
         icon: <LinkIcon />,
         copyToClipboard: true,
@@ -115,13 +115,14 @@ export function Root({ children }: { children?: React.ReactNode }) {
         icon: <TextSnippetIcon />,
       },
     ],
-    [],
+    [actualBackendUri],
   );
 
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
+
         <AppBar
           position="fixed"
           sx={{

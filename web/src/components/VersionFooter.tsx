@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
-import { useVersion } from '../hooks/useVersion.ts';
-import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
+import Typography from '@mui/material/Typography';
+import { useVersion } from '../hooks/useVersion.tsx';
 
 export default function VersionFooter() {
   const {

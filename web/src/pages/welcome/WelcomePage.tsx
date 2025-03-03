@@ -17,7 +17,7 @@ import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
-import { useVersion } from '../../hooks/useVersion.ts';
+import { useVersion } from '../../hooks/useVersion.tsx';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
 
 const steps = ['Connect Sources', 'Install FFMPEG', 'All Set!'];

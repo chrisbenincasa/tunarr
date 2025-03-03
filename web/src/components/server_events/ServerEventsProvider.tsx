@@ -1,14 +1,16 @@
+import { useSettings } from '@/store/settings/selectors';
+import { tag } from '@tunarr/types';
 import { TunarrEventSchema } from '@tunarr/types/schemas';
-import { ReactNode, useCallback, useEffect, useRef } from 'react';
-import {
+import { isEqual, omit, some, values } from 'lodash-es';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { v4 } from 'uuid';
+import { queryClient } from '../../queryClient.ts';
+import type {
   ServerEventListener,
   ServerEventListenerKey,
-  ServerEventsContext,
 } from './ServerEventsContext';
-import { useSettings } from '@/store/settings/selectors';
-import { v4 } from 'uuid';
-import { tag } from '@tunarr/types';
-import { isEqual, omit, some, values } from 'lodash-es';
+import { ServerEventsContext } from './ServerEventsContext';
 
 type Props = {
   children: ReactNode;
@@ -37,7 +39,6 @@ export function ServerEventsProvider({ children }: Props) {
 
   const removeListener = useCallback(
     (key: ServerEventListenerKey) => {
-      console.log('removing listener key ', key);
       listeners.current = omit(listeners.current, key);
     },
     [listeners],
@@ -52,6 +53,14 @@ export function ServerEventsProvider({ children }: Props) {
       es.addEventListener('message', (event: MessageEvent<string>) => {
         const parsed = TunarrEventSchema.safeParse(JSON.parse(event.data));
         if (parsed.success) {
+          if (parsed.data.type === 'lifecycle') {
+            queryClient
+              .invalidateQueries({
+                queryKey: ['version'],
+              })
+              .catch(console.error);
+          }
+
           if (parsed.data.type !== 'heartbeat') {
             for (const listener of values(listeners.current)) {
               listener(parsed.data);
