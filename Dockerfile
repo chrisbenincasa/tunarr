@@ -38,8 +38,7 @@ RUN corepack enable && corepack enable pnpm
 RUN pnpm --version
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
-ARG exec_target=linux-x64
-ENTRYPOINT [ "/tunarr/tunarr-${exec_target}" ]
+ENTRYPOINT [ "/tunarr/tunarr" ]
 CMD [ "server" ]
 
 # Add Tunarr sources
@@ -111,4 +110,4 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr-${exec_target}
+RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr
