@@ -105,8 +105,9 @@ RUN pnpm turbo --filter=@tunarr/server make-bin -- --target ${exec_target} --no-
 
 ### Full stack ###
 FROM ffmpeg-base AS full-stack
+ARG exec_target=linux-x64
 COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
-RUN ln -s /tunarr/server/bin/tunarr-linux-x64 /tunarr/tunarr-linux-x64
+RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr-${exec_target}
