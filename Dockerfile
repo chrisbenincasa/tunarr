@@ -38,7 +38,8 @@ RUN corepack enable && corepack enable pnpm
 RUN pnpm --version
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
-ENTRYPOINT [ "/tunarr/tunarr-linux-x64" ]
+ARG exec_target=linux-x64
+ENTRYPOINT [ "/tunarr/tunarr-${exec_target}" ]
 CMD [ "server" ]
 
 # Add Tunarr sources
