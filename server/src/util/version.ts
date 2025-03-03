@@ -1,5 +1,10 @@
 import tunarrPackage from '../../package.json' with { type: 'json' };
-import { isEdgeBuild, isNonEmptyString, tunarrBuild } from './index.js';
+import {
+  isEdgeBuild,
+  isNonEmptyString,
+  isProduction,
+  tunarrBuild,
+} from './index.js';
 
 let tunarrVersion: string;
 export const getTunarrVersion = () => {
@@ -9,6 +14,10 @@ export const getTunarrVersion = () => {
 
     if (isNonEmptyString(tunarrBuild) && isEdgeBuild) {
       tunarrVersion += `-${tunarrBuild}`;
+    }
+
+    if (!isProduction) {
+      tunarrVersion += '-dev';
     }
 
     if (tunarrVersion === '') {

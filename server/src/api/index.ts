@@ -13,13 +13,7 @@ import { isEmpty, isError, isNil } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import {
-  isEdgeBuild,
-  isNonEmptyString,
-  isProduction,
-  run,
-  tunarrBuild,
-} from '../util/index.js';
+import { run } from '../util/index.js';
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -83,14 +77,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       try {
         const v = await new FfmpegInfo(req.serverCtx.settings).getVersion();
-        let tunarrVersion: string = getTunarrVersion();
-        if (!isProduction) {
-          tunarrVersion += `-dev`;
-        } else if (isEdgeBuild && isNonEmptyString(tunarrBuild)) {
-          tunarrVersion += `-${tunarrBuild}`;
-        }
         return res.send({
-          tunarr: tunarrVersion,
+          tunarr: getTunarrVersion(),
           ffmpeg: v.versionString,
           nodejs: process.version.replace('v', ''),
         });

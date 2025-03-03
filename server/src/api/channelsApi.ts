@@ -185,12 +185,20 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const channelUpdate = {
             ...req.body,
           };
+
           const updatedChannel = await req.serverCtx.channelDB.updateChannel(
             channel.uuid,
             channelUpdate,
           );
 
-          await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
+          const needsGuideRegen =
+            channel.guideMinimumDuration !==
+            updatedChannel.channel.guideMinimumDuration;
+
+          await req.serverCtx.guideService.updateCachedChannel(
+            channel.uuid,
+            needsGuideRegen,
+          );
           await req.serverCtx.m3uService.regenerateCache();
 
           const apiChannel = omit(

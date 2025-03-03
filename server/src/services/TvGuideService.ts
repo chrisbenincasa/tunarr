@@ -48,6 +48,7 @@ import {
 import * as syncRetry from 'retry';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { Channel } from '../db/schema/Channel.ts';
 import type {
   ChannelWithPrograms,
@@ -96,6 +97,8 @@ type ChannelWithLineup = {
 
 type ChannelId = string;
 
+const PlaceholderChannelId = v4();
+
 @injectable()
 export class TVGuideService {
   private timer: Timer;
@@ -124,6 +127,7 @@ export class TVGuideService {
     @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
     @inject(ProgramConverter) programConverter: ProgramConverter,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
   ) {
     this.timer = new Timer(this.logger);
     this.cachedGuide = {};
@@ -166,6 +170,7 @@ export class TVGuideService {
         const placeholderChannel = await this.makePlaceholderChannel();
         this.cachedGuide[placeholderChannel.channel.uuid] = placeholderChannel;
       } else {
+        delete this.cachedGuide[PlaceholderChannelId];
         await Promise.all(
           keys(this.channelsById).map((channelId) =>
             this.buildChannelGuide(guideDuration, channelId, false, force),
@@ -182,6 +187,7 @@ export class TVGuideService {
     channelId: string,
     writeXmlTv: boolean = true,
     force: boolean = false,
+    startTime: number = +dayjs(),
   ) {
     return this.withGuideContext(async () => {
       return this.buildChannelGuide(
@@ -189,6 +195,7 @@ export class TVGuideService {
         channelId,
         writeXmlTv,
         force,
+        startTime,
       );
     });
   }
@@ -259,7 +266,10 @@ export class TVGuideService {
   // If we updated channel metadata, we should push it to this cache
   // and rewrite xmltv. This should be very fast since we're not altering
   // programming details or the schedule
-  async updateCachedChannel(updatedChannelId: string) {
+  async updateCachedChannel(
+    updatedChannelId: string,
+    recalculateGuide: boolean = false,
+  ) {
     const channel = await this.channelDB.getChannel(updatedChannelId);
     if (isNil(channel)) {
       this.logger.warn(
@@ -281,6 +291,25 @@ export class TVGuideService {
       ...channel,
       programs: existingChannel.programs,
     };
+
+    // Some setting changed that means we should recalculate the guide
+    // i.e. a channel setting and not the lineup or associated programming
+    if (recalculateGuide) {
+      const now = dayjs();
+      const end = this.lastEndTime[channel.uuid];
+      const duration = end
+        ? dayjs.duration(dayjs(end).diff(now))
+        : dayjs.duration({
+            hours: this.settingsDB.xmlTvSettings().programmingHours,
+          });
+      await this.refreshGuide(
+        duration,
+        channel.uuid,
+        false,
+        true,
+        this.lastUpdateTime[channel.uuid] ?? now,
+      );
+    }
 
     return await this.writeXmlTv();
   }
@@ -340,11 +369,12 @@ export class TVGuideService {
     channelId: string,
     writeXmlTv: boolean = true,
     force: boolean = false,
+    startTime: number = +dayjs(),
   ) {
     return this.locks.getOrCreateLock(channelId).then((lock) =>
       lock.runExclusive(async () => {
         devAssert(!isEmpty(this.channelsById));
-        const now = +dayjs();
+        const now = startTime;
         const lastUpdateTime = this.lastUpdateTime[channelId] ?? 0;
         const currentUpdateTime = this.currentUpdateTime[channelId] ?? -1;
 
@@ -845,7 +875,6 @@ export class TVGuideService {
       }
       return this.channelDB.getAllChannels();
     });
-    // const allChannels = map(values(this.channelsById), 'channel');
     await this.xmltv.write(
       map(values(this.cachedGuide), ({ channel, programs }) => {
         return {
@@ -1030,9 +1059,8 @@ export class TVGuideService {
 
   private async makePlaceholderChannel(): Promise<ChannelPrograms> {
     const currentUpdateTimeMs = +dayjs();
-    const fakeChannelId = v4();
     const channel: ChannelWithPrograms = {
-      uuid: fakeChannelId,
+      uuid: PlaceholderChannelId,
       name: 'Tunarr',
       icon: {
         path: makeLocalUrl('/images/tunarr.png'),
