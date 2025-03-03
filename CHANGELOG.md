@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.13](https://github.com/chrisbenincasa/tunarr/compare/v0.18.12...v0.18.13) (2025-03-03)
+
+
+### Features
+
+* show version mismatch warning on frontend ([4c534ce](https://github.com/chrisbenincasa/tunarr/commit/4c534ce922a713e8423c6e851a474034180613df))
+
+
+### Bug Fixes
+
+* fix ARM Docker builds; use the ARM executable artifact name ([7d246f4](https://github.com/chrisbenincasa/tunarr/commit/7d246f4bd50ffb2fe410874f8765597fcf8cd863))
+* fix DB copy migrator on Windows ([#1111](https://github.com/chrisbenincasa/tunarr/issues/1111)) ([e440380](https://github.com/chrisbenincasa/tunarr/commit/e4403802f978fa531b918b313266669e436743d3))
+* properly regenerate relevant XMLTV bits when channel configs change ([6ee1b1c](https://github.com/chrisbenincasa/tunarr/commit/6ee1b1cb5a5eb477956b8ebe582f089b52639cc6))
+* run Docker ARM builds on an ARM machine ([#1107](https://github.com/chrisbenincasa/tunarr/issues/1107)) ([5086ae3](https://github.com/chrisbenincasa/tunarr/commit/5086ae3ce0e501924d2a08eae4f8e75540e58c0b))
+* updating channel number properly refreshes XMLTV ([4c40190](https://github.com/chrisbenincasa/tunarr/commit/4c401905e46136371925d7cf0a75e13426c46032))
+
 ## [0.18.12](https://github.com/chrisbenincasa/tunarr/compare/v0.18.11...v0.18.12) (2025-02-27)
 
 
