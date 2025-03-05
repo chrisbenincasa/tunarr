@@ -163,6 +163,7 @@ for (const arch of args.target) {
         `${dir.path}/dist/bundle.cjs`,
         // Look into whether we want this sometimes...
         '--no-bytecode',
+        '--signature', // for macos arm64
         '-o',
         `dist/bin/${execName}`,
       ];
