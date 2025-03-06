@@ -93,9 +93,6 @@ jobs:
       - name: Bundle web
         run: pnpm turbo bundle --filter=@tunarr/web
 
-      - name: Build Executable
-        run: pnpm turbo make-bin -- --target ${{matrix.os.target}}
-
       # Install ldid for adhoc signing of macos ARM binaries. PKG should take
       # care of this.
       - name: Install ldid
@@ -103,6 +100,9 @@ jobs:
         with:
           tag: v2.1.5-procursus2
         if: matrix.os.target == 'macos-arm64'
+
+      - name: Build Executable
+        run: pnpm turbo make-bin -- --target ${{matrix.os.target}}
 
       - name: Upload Edge Binary
         uses: softprops/action-gh-release@v2
