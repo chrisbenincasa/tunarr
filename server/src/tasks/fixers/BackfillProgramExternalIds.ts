@@ -26,64 +26,81 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
+import { Timer } from '../../util/Timer.ts';
 import {
   attempt,
   attemptSync,
   groupByUniqProp,
-  isNonEmptyString,
   wait,
 } from '../../util/index.js';
 import Fixer from './fixer.ts';
 
 @injectable()
 export class BackfillProgramExternalIds extends Fixer {
+  private timer: Timer;
   constructor(
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
+    this.timer = new Timer(this.logger);
   }
 
   canRunInBackground: boolean = true;
 
   async runInternal(): Promise<void> {
-    const getNextPage = (offset?: string) => {
-      return getDatabase()
-        .selectFrom('program')
-        .selectAll()
-        .select(withProgramExternalIds)
-        .where('sourceType', '=', ProgramSourceType.PLEX)
-        .$if(isNonEmptyString(offset), (eb) =>
-          eb.where('program.uuid', '>', offset!),
-        )
-        .where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom('programExternalId')
-                .select('programExternalId.uuid')
-                .whereRef('programExternalId.programUuid', '=', 'program.uuid')
-                .where(
-                  'programExternalId.sourceType',
-                  '=',
-                  ProgramExternalIdType.PLEX_GUID,
-                ),
-            ),
-          ),
-        )
-        .limit(100)
-        .orderBy('program.uuid asc')
-        .execute();
+    // This makes the paging much faster...
+    const firstId = await getDatabase()
+      .selectFrom('program')
+      .where('sourceType', '=', ProgramSourceType.PLEX)
+      .select('uuid')
+      .groupBy('program.uuid')
+      .orderBy('program.uuid asc')
+      .limit(1)
+      .executeTakeFirst();
+
+    // No programs.
+    if (!firstId) {
+      return;
+    }
+
+    const getNextPage = (offset: string, first: boolean) => {
+      return this.timer.timeAsync(
+        'BackfillProgramExternalIds#getPrograms',
+        () =>
+          getDatabase()
+            .selectFrom('program')
+            .selectAll()
+            .select(withProgramExternalIds)
+            .where('sourceType', '=', ProgramSourceType.PLEX)
+            .$if(first, (eb) => eb.where('program.uuid', '>=', offset))
+            .$if(!first, (eb) => eb.where('program.uuid', '>', offset))
+            .limit(1000)
+            .groupBy('program.uuid')
+            .orderBy('program.uuid asc')
+            .execute(),
+      );
     };
 
-    let programs = await getNextPage();
+    let programsPage = await getNextPage(firstId.uuid, true);
 
     const plexConnections: Record<string, PlexApiClient> = {};
-    while (programs.length > 0) {
+    while (programsPage.length > 0) {
       await wait(50);
+      const relevantPrograms = programsPage.filter(
+        (program) =>
+          !program.externalIds.some((eid) => eid.sourceType === 'plex-guid'),
+      );
+      if (relevantPrograms.length === 0) {
+        continue;
+      }
+
       // process
-      const programsByPlexId = groupByUniqProp(programs, 'externalSourceId');
+      const programsByPlexId = groupByUniqProp(
+        relevantPrograms,
+        'externalSourceId',
+      );
 
       const missingServers = difference(
         keys(programsByPlexId),
@@ -102,13 +119,13 @@ export class BackfillProgramExternalIds extends Fixer {
       }
 
       for await (const result of asyncPool(
-        programs,
+        relevantPrograms,
         (program) =>
           this.handleProgram(
             program,
             plexConnections[program.externalSourceId],
           ),
-        { concurrency: 1, waitAfterEachMs: 50 },
+        { concurrency: 3, waitAfterEachMs: 50 },
       )) {
         if (result.type === 'error') {
           this.logger.error(
@@ -130,12 +147,12 @@ export class BackfillProgramExternalIds extends Fixer {
         }
       }
 
-      if (isEmpty(programs)) {
+      if (isEmpty(programsPage)) {
         // We should've done this already but let's just be safe.
         break;
       }
 
-      programs = await getNextPage(last(programs)?.uuid);
+      programsPage = await getNextPage(last(programsPage)!.uuid, false);
     }
   }
 

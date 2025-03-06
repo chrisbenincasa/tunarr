@@ -24,6 +24,7 @@ import Migration1731982492 from './db/Migration1731982492.ts';
 import Migration1732969335_AddTranscodeConfig from './db/Migration1732969335_AddTranscodeConfig.ts';
 import Migration1738604866_AddEmby from './db/Migration1738604866_AddEmby.ts';
 import Migration1740691984_ProgramMediaSourceId from './db/Migration1740691984_ProgramMediaSourceId.ts';
+import Migration1741297998_AddProgramIndexes from './db/Migration1741297998_AddProgramIndexes.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -92,6 +93,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1735044379: Migration1735044379_AddHlsDirect,
           migration1738604866: Migration1738604866_AddEmby,
           migration1740691984: Migration1740691984_ProgramMediaSourceId,
+          migration1741297998: Migration1741297998_AddProgramIndexes,
         },
         wrapWithTransaction,
       ),

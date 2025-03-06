@@ -75,7 +75,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         .where('seasonNumber', 'is', null)
         .where('type', '=', ProgramType.Episode)
         .orderBy('uuid asc')
-        .limit(100)
+        .limit(1000)
         .execute();
 
       lastId = last(items)?.uuid;
