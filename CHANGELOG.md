@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.14](https://github.com/chrisbenincasa/tunarr/compare/v0.18.13...v0.18.14) (2025-03-06)
+
+
+### Bug Fixes
+
+* add indexes for external ids to improve various queries ([91d654d](https://github.com/chrisbenincasa/tunarr/commit/91d654d4f9b8f48a6e83789fa12c86ac78f89d3b))
+* install ldid on binary build github action to properly codesign macos-arm binaries ([e442e70](https://github.com/chrisbenincasa/tunarr/commit/e442e70737d71aa1b47eca90f450ef1dd4d3531f))
+
 ## [0.18.13](https://github.com/chrisbenincasa/tunarr/compare/v0.18.12...v0.18.13) (2025-03-03)
 
 
