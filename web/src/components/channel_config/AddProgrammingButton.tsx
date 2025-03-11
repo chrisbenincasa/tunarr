@@ -1,3 +1,4 @@
+import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
 import {
   AddToQueue,
   FreeBreakfast as BreaksIcon,
@@ -7,15 +8,8 @@ import {
   Directions as RedirectIcon,
   Nightlight as RestrictHoursIcon,
 } from '@mui/icons-material';
-import {
-  Button,
-  ButtonGroup,
-  MenuItem,
-  Tooltip,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import { Link } from '@tanstack/react-router';
+import { Button, ButtonGroup, MenuItem, Tooltip } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
 import { StyledMenu } from '../base/StyledMenu';
@@ -33,8 +27,9 @@ export default function AddProgrammingButton() {
     useState(false);
   const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const theme = useTheme();
-  const mediumViewport = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const [lastSelection, setLastSelection] = useState<number>(0);
+  const navigate = useNavigate();
+  const { channelId } = Route.useParams();
 
   const open = !isNull(anchorEl);
 
@@ -45,6 +40,67 @@ export default function AddProgrammingButton() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const addProgrammingOptions = [
+    {
+      icon: <AddToQueue />,
+      name: 'Add Media',
+      callback: () =>
+        navigate({
+          to: '/channels/$channelId/programming/add',
+          params: { channelId },
+        }),
+      description: 'Add TV Shows or Movies to programming list.',
+      divider: false,
+    },
+    {
+      icon: <RedirectIcon />,
+      name: 'Add Redirect',
+      callback: () => setAddRedirectModalOpen(true),
+      description:
+        'Adds a channel redirect. During this period of time, the channel will redirect to another channel.',
+      divider: false,
+    },
+    {
+      icon: null,
+      name: 'Flex',
+      callback: () => null,
+      description: '',
+      divider: true,
+    },
+    {
+      icon: <FlexIcon />,
+      name: 'Add Flex',
+      callback: () => setAddFlexModalOpen(true),
+      description:
+        "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases.",
+      divider: false,
+    },
+    {
+      icon: <BreaksIcon />,
+      name: 'Add Breaks',
+      callback: () => setAddBreaksModalOpen(true),
+      description:
+        'Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.',
+      divider: false,
+    },
+    {
+      icon: <PaddingIcon />,
+      name: 'Add Padding',
+      callback: () => setAddPaddingModalOpen(true),
+      description:
+        'Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.',
+      divider: false,
+    },
+    {
+      icon: <RestrictHoursIcon />,
+      name: 'Restrict Hours',
+      callback: () => setAddRestrictHoursModalOpen(true),
+      description:
+        "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.",
+      divider: false,
+    },
+  ];
 
   return (
     <>
@@ -69,111 +125,42 @@ export default function AddProgrammingButton() {
         onClose={() => setAddBreaksModalOpen(false)}
       />
 
-      <ButtonGroup variant="contained" aria-label="Basic button group">
+      <ButtonGroup
+        variant="contained"
+        aria-label="Add Programming Button Group"
+      >
         <Button
           variant="contained"
-          component={Link}
-          to="add"
-          startIcon={<AddToQueue />}
+          onClick={addProgrammingOptions[lastSelection].callback}
+          startIcon={addProgrammingOptions[lastSelection].icon}
         >
-          {mediumViewport ? 'Add' : 'Add Media'}
+          {addProgrammingOptions[lastSelection].name}
         </Button>
         <Button onClick={handleClick}>
           <KeyboardArrowDownIcon />
         </Button>
       </ButtonGroup>
-      <StyledMenu
-        MenuListProps={{
-          'aria-labelledby': 'demo-customized-button',
-        }}
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-      >
-        {/* <MenuItem disableRipple>
-          <Bolt /> Make Dynamic
-        </MenuItem> */}
-        <Tooltip
-          title="Add TV Shows or Movies to programming list."
-          placement="right"
-        >
-          <MenuItem disableRipple component={Link} to="add">
-            <AddToQueue /> Add Media
-          </MenuItem>
-        </Tooltip>
-        <Tooltip
-          title="Adds a channel redirect. During this period of time, the channel will redirect to another channel."
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddRedirectModalOpen(true);
-              handleClose();
-            }}
-          >
-            <RedirectIcon /> Add Redirect
-          </MenuItem>
-        </Tooltip>
-        <MenuItem divider disabled>
-          Flex
-        </MenuItem>
-        <Tooltip
-          title="Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddFlexModalOpen(true);
-              handleClose();
-            }}
-          >
-            <FlexIcon /> Add Flex
-          </MenuItem>
-        </Tooltip>
-        <Tooltip
-          title="Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes. This button might be disabled if the channel is already too large."
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddBreaksModalOpen(true);
-              handleClose();
-            }}
-          >
-            <BreaksIcon /> Add Breaks
-          </MenuItem>
-        </Tooltip>
-        <Tooltip
-          title="Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddPaddingModalOpen(true);
-              handleClose();
-            }}
-          >
-            <PaddingIcon /> Add Padding
-          </MenuItem>
-        </Tooltip>
-        <Tooltip
-          title="The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddRestrictHoursModalOpen(true);
-              handleClose();
-            }}
-          >
-            <RestrictHoursIcon /> Restrict Hours
-          </MenuItem>
-        </Tooltip>
+      <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
+        {addProgrammingOptions.map((item, index) =>
+          item.divider ? (
+            <MenuItem divider disabled>
+              {item.name}
+            </MenuItem>
+          ) : (
+            <Tooltip key={item.name} title={item.description} placement="right">
+              <MenuItem
+                disableRipple
+                onClick={() => {
+                  item.callback();
+                  setLastSelection(index);
+                  handleClose();
+                }}
+              >
+                {item.icon} {item.name}
+              </MenuItem>
+            </Tooltip>
+          ),
+        )}
       </StyledMenu>
     </>
   );
