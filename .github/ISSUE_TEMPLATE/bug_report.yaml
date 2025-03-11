@@ -34,7 +34,7 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: version
+    id: encoder
     attributes:
       label: FFMPEG encoder type
       description: If this issue is related to streaming, please provide which type of encoder family you are using
