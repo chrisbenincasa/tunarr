@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.15](https://github.com/chrisbenincasa/tunarr/compare/v0.18.14...v0.18.15) (2025-03-11)
+
+
+### Features
+
+* update primary button in add media button group after selection ([#1114](https://github.com/chrisbenincasa/tunarr/issues/1114)) ([45e1fc5](https://github.com/chrisbenincasa/tunarr/commit/45e1fc5a2d55113fec3b550f883fa428ce93fee7))
+
+
+### Bug Fixes
+
+* re-add media_source unique index ([d874b9b](https://github.com/chrisbenincasa/tunarr/commit/d874b9b2f51267fd381e88b87868f505b229a777))
+
 ## [0.18.14](https://github.com/chrisbenincasa/tunarr/compare/v0.18.13...v0.18.14) (2025-03-06)
 
 
