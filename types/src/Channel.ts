@@ -1,15 +1,18 @@
-import z from 'zod';
-import {
+import type z from 'zod';
+import type {
   ChannelOfflineSchema,
   ChannelSchema,
-  ChannelStreamMode as ChannelStreamModesArr,
+  ChannelSessionSchema,
   ChannelTranscodingOptionsSchema,
   FillerCollectionSchema,
   SaveChannelRequestSchema,
   WatermarkSchema,
+} from './schemas/channelSchema.js';
+import {
+  ChannelStreamMode as ChannelStreamModesArr,
   type ChannelStreamMode as ChannelStreamModeType,
 } from './schemas/channelSchema.js';
-import { ChannelIconSchema } from './schemas/index.js';
+import type { ChannelIconSchema } from './schemas/index.js';
 
 export type Watermark = z.infer<typeof WatermarkSchema>;
 
@@ -22,6 +25,8 @@ export type ChannelIcon = z.infer<typeof ChannelIconSchema>;
 export type ChannelTranscodingOptions = z.infer<
   typeof ChannelTranscodingOptionsSchema
 >;
+
+export type ChannelSession = z.infer<typeof ChannelSessionSchema>;
 
 export type Channel = z.infer<typeof ChannelSchema>;
 

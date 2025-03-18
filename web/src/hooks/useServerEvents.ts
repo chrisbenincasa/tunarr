@@ -12,9 +12,11 @@ export function useServerEventsSnackbar() {
 
   useEffect(() => {
     const key = addListener((ev) => {
-      snackbar.enqueueSnackbar(ev.message, {
-        variant: ev.level,
-      });
+      if (ev.message) {
+        snackbar.enqueueSnackbar(ev.message, {
+          variant: ev.level,
+        });
+      }
     });
 
     return () => removeListener(key);

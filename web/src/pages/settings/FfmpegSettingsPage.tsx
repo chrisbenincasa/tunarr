@@ -1,5 +1,5 @@
 import { useSystemSettingsSuspense } from '@/hooks/useSystemSettings.ts';
-import { ContentCopy, Delete, Edit } from '@mui/icons-material';
+import type { SelectChangeEvent } from '@mui/material';
 import {
   Alert,
   Box,
@@ -8,72 +8,39 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  IconButton,
   InputLabel,
   MenuItem,
   Link as MuiLink,
   Select,
-  SelectChangeEvent,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import {
+import type {
   FfmpegSettings,
   TranscodeConfig,
   TupleToUnion,
-  defaultFfmpegSettings,
 } from '@tunarr/types';
+import { defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegLogLevels } from '@tunarr/types/schemas';
 import { capitalize, isEmpty, isEqual, isNull, map, some } from 'lodash-es';
-import {
-  MRT_ColumnDef,
-  MRT_Row,
-  MaterialReactTable,
-  useMaterialReactTable,
-} from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { CheckboxFormController } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
 import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
-import AddCircle from '@mui/icons-material/AddCircle';
-import {
-  useFfmpegSettings,
-  useTranscodeConfigs,
-} from '../../hooks/settingsHooks.ts';
+import { TranscodeConfigsTable } from '../../components/settings/ffmpeg/TranscodeConfigsTable.tsx';
+import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const FfmpegLogOptions = ['disable', 'console', 'file'] as const;
 type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
-
-// const supportedDeinterlaceFilters: {
-//   value: DeinterlaceFilterValue;
-//   string: string;
-// }[] = [
-//   { value: 'none', string: 'Disabled' },
-//   { value: 'bwdif=0', string: 'bwdif send frame' },
-//   { value: 'bwdif=1', string: 'bwdif send field' },
-//   { value: 'w3fdif', string: 'w3fdif' },
-//   { value: 'yadif=0', string: 'yadif send frame' },
-//   { value: 'yadif=1', string: 'yadif send field' },
-// ];
-
-// type ScalingAlgorithmValue = 'bicubic' | 'fast_bilinear' | 'lanczos' | 'spline';
-
-// const supportedScalingAlgorithm: ScalingAlgorithmValue[] = [
-//   'bicubic',
-//   'fast_bilinear',
-//   'lanczos',
-//   'spline',
-// ];
 
 export default function FfmpegSettingsPage() {
   const apiClient = useTunarrApi();
@@ -83,30 +50,10 @@ export default function FfmpegSettingsPage() {
     queryFn: (apiClient) => apiClient.getFfmpegInfo(),
   });
   const queryClient = useQueryClient();
-
   const systemSettings = useSystemSettingsSuspense();
-  const transcodeConfigs = useTranscodeConfigs();
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
-
-  const duplicateConfigMutation = useMutation({
-    mutationFn: (baseId: string) => {
-      return apiClient.duplicateTranscodeConfig(undefined, {
-        params: { id: baseId },
-      });
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        exact: false,
-        queryKey: ['settings', 'transcode_configs'],
-      });
-    },
-  });
-
-  const handleDuplicateConfig = (id: string) => {
-    duplicateConfigMutation.mutate(id);
-  };
 
   const {
     reset,
@@ -205,88 +152,6 @@ export default function FfmpegSettingsPage() {
       ...data,
     });
   };
-
-  const rows = useMemo(() => {
-    return transcodeConfigs.data;
-  }, [transcodeConfigs.data]);
-
-  const columns = useMemo<MRT_ColumnDef<TranscodeConfig>[]>(() => {
-    return [
-      {
-        header: 'Name',
-        accessorKey: 'name',
-      },
-      {
-        header: 'Resolution',
-        accessorFn(originalRow) {
-          return `${originalRow.resolution.widthPx}x${originalRow.resolution.heightPx}`;
-        },
-      },
-      {
-        header: 'Video Format',
-        accessorKey: 'videoFormat',
-      },
-      {
-        header: 'Audio Format',
-        accessorKey: 'audioFormat',
-      },
-    ];
-  }, []);
-
-  const renderRowActions = useCallback(
-    ({ row: { original: config } }: { row: MRT_Row<TranscodeConfig> }) => {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title="Edit" placement="top">
-            <IconButton to={`/settings/ffmpeg/${config.id}`} component={Link}>
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Duplicate" placement="top">
-            <IconButton onClick={() => handleDuplicateConfig(config.id)}>
-              <ContentCopy />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete" placement="top">
-            <IconButton onClick={() => setConfirmDeleteTranscodeConfig(config)}>
-              <Delete />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      );
-    },
-    [],
-  );
-
-  const table = useMaterialReactTable({
-    data: rows,
-    columns,
-    renderRowActions,
-    enableRowActions: true,
-    displayColumnDefOptions: {
-      'mrt-row-actions': {
-        size: 100,
-        grow: false,
-        Header: '',
-        visibleInShowHideMenu: false,
-      },
-    },
-    positionActionsColumn: 'last',
-    renderTopToolbarCustomActions() {
-      return (
-        <Stack direction="row" alignItems="center" gap={2} useFlexGap>
-          <Button
-            variant="contained"
-            startIcon={<AddCircle />}
-            component={Link}
-            to="/settings/ffmpeg/new"
-          >
-            New
-          </Button>
-        </Stack>
-      );
-    },
-  });
 
   if (isPending || error || ffmpegInfo.isPending || ffmpegInfo.isError) {
     return <div></div>;
@@ -517,7 +382,7 @@ export default function FfmpegSettingsPage() {
         Configure transcoding settings for Tunarr's streams. Each channel is
         assigned one transcode configuration.
       </Typography>
-      <MaterialReactTable table={table} />
+      <TranscodeConfigsTable />
       <UnsavedNavigationAlert isDirty={isDirty} />
       <DeleteConfirmationDialog
         open={!isNull(confirmDeleteTranscodeConfig)}

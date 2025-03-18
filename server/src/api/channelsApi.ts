@@ -7,6 +7,7 @@ import { attempt } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
 import { scheduleTimeSlots } from '@tunarr/shared';
+import type { ChannelSession } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
@@ -32,9 +33,11 @@ import {
   isUndefined,
   map,
   omit,
-  sortBy,
+  orderBy,
+  reduce,
 } from 'lodash-es';
 import z from 'zod';
+import type { SessionType } from '../stream/Session.ts';
 
 dayjs.extend(duration);
 
@@ -69,21 +72,47 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      try {
-        const channelsAndLineups =
-          await req.serverCtx.channelDB.loadAllLineupConfigs();
+      const channelsAndLineups =
+        await req.serverCtx.channelDB.loadAllLineupConfigs();
 
-        const result = sortBy(
-          map(channelsAndLineups, (channelAndLineup) => {
-            return dbChannelToApiChannel(channelAndLineup);
-          }),
-          'number',
-        );
+      const sessionsByChannel =
+        req.serverCtx.sessionManager.allSessionsByChannel();
 
-        return res.send(result);
-      } catch (err) {
-        return res.status(500).send('error');
-      }
+      const result = orderBy(
+        map(channelsAndLineups, (channelAndLineup) => {
+          const sessions = sessionsByChannel[channelAndLineup.channel.uuid];
+          const apiSessions = reduce(
+            sessions,
+            (prev, session, sessionType) => {
+              if (!session) {
+                return prev;
+              }
+              prev.push({
+                connections: map(
+                  session.connections(),
+                  (connection, token) => ({
+                    ...connection,
+                    lastHeartbeat: session?.lastHeartbeat(token),
+                  }),
+                ),
+                type: sessionType as SessionType,
+                state: session.state,
+                numConnections: session.numConnections(),
+              } satisfies ChannelSession);
+
+              return prev;
+            },
+            [] as ChannelSession[],
+          );
+          return {
+            ...dbChannelToApiChannel(channelAndLineup),
+            sessions: apiSessions,
+          };
+        }),
+        'number',
+      );
+
+      return res.send(result);
     },
   );
 

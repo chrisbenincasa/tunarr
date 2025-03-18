@@ -1,11 +1,11 @@
+import type { DataTag } from '@tanstack/react-query';
 import {
-  DataTag,
   queryOptions,
   useQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { Channel } from '@tunarr/types';
-import { ApiClient } from '../external/api';
+import type { Channel } from '@tunarr/types';
+import type { ApiClient } from '../external/api';
 import { useTunarrApi } from './useTunarrApi';
 
 export const channelsQuery = (

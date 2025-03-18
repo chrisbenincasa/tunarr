@@ -42,7 +42,7 @@ import { chain } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import type { FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import Breadcrumbs from '../Breadcrumbs.tsx';
+import Breadcrumbs from '../../Breadcrumbs.tsx';
 
 const VideoFormats: DropdownOption<SupportedTranscodeVideoOutputFormat>[] = [
   {

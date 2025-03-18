@@ -4,7 +4,7 @@ import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { map } from 'lodash-es';
+import { head, isEmpty, map, reject } from 'lodash-es';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { DB } from '../../db/schema/db.ts';
 
@@ -19,6 +19,37 @@ export class EnsureTranscodeConfigIds extends Fixer {
   }
 
   protected async runInternal(): Promise<void> {
+    const defaultConfigs = await this.db
+      .selectFrom('transcodeConfig')
+      .select('uuid')
+      .where('isDefault', '=', 1)
+      .execute();
+    let defaultConfig = head(defaultConfigs);
+
+    if (isEmpty(defaultConfigs)) {
+      this.logger.warn('No default transcode config found! Creating one.');
+
+      defaultConfig = { uuid: await this.createDefaultTranscodeConfig() };
+    } else if (defaultConfigs.length > 1) {
+      this.logger.debug(
+        'Found multiple default transcode configs. Marking one as the default',
+      );
+      const toMarkNonDefault = reject(defaultConfigs, {
+        uuid: defaultConfig!.uuid,
+      });
+      await this.db
+        .updateTable('transcodeConfig')
+        .set({
+          isDefault: 0,
+        })
+        .where(
+          'uuid',
+          'in',
+          toMarkNonDefault.map(({ uuid }) => uuid),
+        )
+        .execute();
+    }
+
     const channelsMissingTranscodeId = await this.db
       .selectFrom('channel')
       .where('channel.transcodeConfigId', 'is', null)
@@ -29,23 +60,10 @@ export class EnsureTranscodeConfigIds extends Fixer {
       return;
     }
 
-    let defaultConfig = await this.db
-      .selectFrom('transcodeConfig')
-      .select('uuid')
-      .where('isDefault', '=', 1)
-      .limit(1)
-      .executeTakeFirst();
-
-    if (!defaultConfig) {
-      this.logger.warn('No default transcode config found! Creating one.');
-
-      defaultConfig = { uuid: await this.createDefaultTranscodeConfig() };
-    }
-
     await this.db
       .updateTable('channel')
       .set({
-        transcodeConfigId: defaultConfig.uuid,
+        transcodeConfigId: defaultConfig!.uuid,
       })
       .where('channel.uuid', 'in', map(channelsMissingTranscodeId, 'uuid'))
       .execute();

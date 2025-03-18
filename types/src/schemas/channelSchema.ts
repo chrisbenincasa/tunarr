@@ -1,5 +1,6 @@
-import z, { ZodTypeAny } from 'zod';
-import { TupleToUnion } from '../util.js';
+import type { ZodTypeAny } from 'zod';
+import z from 'zod';
+import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {
   ContentProgramTypeSchema,
@@ -104,6 +105,19 @@ export type ChannelConcatStreamMode = TupleToUnion<
 >;
 export const ChannelConcatStreamModeSchema = z.enum(ChannelConcatStreamModes);
 
+export const StreamConnectionDetailsSchema = z.object({
+  ip: z.string().ip(),
+  userAgent: z.string().optional(),
+  lastHeartbeat: z.number().nonnegative().optional(),
+});
+
+export const ChannelSessionSchema = z.object({
+  type: z.enum([...ChannelStreamModes, ...ChannelConcatStreamModes]),
+  state: z.string(),
+  numConnections: z.number().nonnegative(),
+  connections: z.array(StreamConnectionDetailsSchema),
+});
+
 export const ChannelSchema = z.object({
   disableFillerOverlay: z.boolean(),
   duration: z.number(),
@@ -128,6 +142,7 @@ export const ChannelSchema = z.object({
   programCount: z.number(),
   streamMode: ChannelStreamModeSchema,
   transcodeConfigId: z.string(),
+  sessions: z.array(ChannelSessionSchema).optional(),
 });
 
 function addOrTransform<T extends ZodTypeAny>(x: T) {

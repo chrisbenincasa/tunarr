@@ -1,12 +1,11 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
-import { useApiQuery } from '@/hooks/useApiQuery.ts';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import {
   setChannelPaginationState,
   setChannelTableColumnModel,
 } from '@/store/settings/actions.ts';
-import { Maybe } from '@/types/util.ts';
+import type { Maybe } from '@/types/util.ts';
 import {
   Check,
   Close,
@@ -19,6 +18,7 @@ import {
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import type { BoxProps } from '@mui/material';
 import {
   Box,
   Button,
@@ -39,43 +39,68 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { green, red, yellow } from '@mui/material/colors';
+import { styled, useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
-import { PaginationState, VisibilityState } from '@tanstack/react-table';
-import { Channel, ChannelIcon, TranscodeConfig } from '@tunarr/types';
-import { ChannelSessionsResponse } from '@tunarr/types/api';
-import dayjs from 'dayjs';
-import { find, isEmpty, map, trimEnd } from 'lodash-es';
+import type { PaginationState, VisibilityState } from '@tanstack/react-table';
+import type { ChannelSession } from '@tunarr/types';
 import {
-  MRT_Row,
+  type Channel,
+  type ChannelIcon,
+  type TranscodeConfig,
+} from '@tunarr/types';
+import dayjs from 'dayjs';
+import { find, isEmpty, map, sum, trimEnd } from 'lodash-es';
+import type { MRT_Row } from 'material-react-table';
+import {
   MaterialReactTable,
   useMaterialReactTable,
   type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
 } from 'material-react-table';
+import pluralize from 'pluralize';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
+import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
-type ChannelRow = Channel & {
-  sessions: ChannelSessionsResponse[] | undefined;
-};
+type ChannelRow = Channel;
+
+interface GlowingCircleProps extends BoxProps {
+  color?: string;
+  glowColor?: string;
+}
+
+const GlowingCircle = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'color' && prop !== 'glowColor',
+})<GlowingCircleProps>(({ color = '#87CEEB', glowColor = '#ADD8E6' }) => ({
+  width: '50px',
+  height: '50px',
+  borderRadius: '50%',
+  backgroundColor: color,
+  boxShadow: `0 0 10px ${color}`,
+  animation: 'glow 2s infinite alternate',
+  '@keyframes glow': {
+    '0%': {
+      boxShadow: `0 0 10px ${color}` /* Start with a moderate glow */,
+      backgroundColor: color,
+    },
+    '100%': {
+      boxShadow: `0 0 20px ${glowColor}, 0 0 30px ${glowColor}` /* Increase glow and intensity, lighter blue */,
+      backgroundColor: glowColor,
+    },
+  },
+}));
 
 export default function ChannelsPage() {
   const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useChannelsSuspense();
-  const { data: channelSessions } = useApiQuery({
-    queryKey: ['channels', 'sessions'],
-    queryFn(apiClient) {
-      return apiClient.getAllChannelSessions();
-    },
-    staleTime: 10_000,
-  });
   const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
@@ -84,6 +109,8 @@ export default function ChannelsPage() {
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
     Channel | undefined
   >(undefined);
+  const [sessionDetailDialog, setSessionDetailDialog] =
+    useState<Channel | null>(null);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [channelMenuOpen, setChannelMenuOpen] = React.useState<string | null>(
     null,
@@ -96,10 +123,26 @@ export default function ChannelsPage() {
   const [paginationState, setPaginationState] = useState<PaginationState>(
     settings.ui.channelTablePagination,
   );
+  const { addListener, removeListener } = useServerEvents();
 
   useEffect(() => {
     setChannelTableColumnModel(columnVisibility);
   }, [columnVisibility]);
+
+  useEffect(() => {
+    const key = addListener((ev) => {
+      if (ev.type === 'stream') {
+        queryClient
+          .invalidateQueries({
+            queryKey: ['channels'],
+          })
+          .catch(console.error);
+      }
+    });
+    return () => {
+      removeListener(key);
+    };
+  }, [addListener, queryClient, removeListener]);
 
   useEffect(() => {
     setChannelPaginationState(paginationState);
@@ -338,7 +381,7 @@ export default function ChannelsPage() {
     row: MRT_Row<ChannelRow>;
   }) => {
     return (
-      <>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {renderChannelMenu(channel)}
         {!mediumViewport && (
           <Tooltip title="Edit Channel Settings" placement="top">
@@ -360,12 +403,64 @@ export default function ChannelsPage() {
         >
           <MoreVert />
         </IconButton>
-      </>
+      </Box>
     );
   };
 
   const columnsNew = useMemo<MRT_ColumnDef<ChannelRow>[]>(
     () => [
+      {
+        header: '',
+        accessorKey: 'sessions',
+        enableSorting: false,
+        enableColumnActions: false,
+        size: 50,
+        Header: () => null,
+        Cell: ({ cell, row: { original: channel } }) => {
+          const sessions = cell.getValue<ChannelSession[] | undefined>();
+          if (!sessions || isEmpty(sessions)) {
+            return (
+              <Tooltip placement="top" title="No active sessions">
+                <Box
+                  sx={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: red[200],
+                  }}
+                />
+              </Tooltip>
+            );
+          }
+
+          const totalConnections = sum(map(sessions, (s) => s.numConnections));
+          const lameDuck = totalConnections === 0 && sessions.length > 0;
+
+          return (
+            <Tooltip
+              placement="top"
+              title={
+                <Box component="span" sx={{ textAlign: 'center' }}>
+                  {sessions.length} {pluralize('session', sessions.length)}
+                  <br />
+                  {totalConnections} {totalConnections > 1 ? 'total' : ''}
+                  {pluralize('connection', totalConnections)}
+                </Box>
+              }
+            >
+              <GlowingCircle
+                sx={{ width: '10px', height: '10px' }}
+                color={lameDuck ? yellow[400] : green[400]}
+                glowColor={lameDuck ? yellow[200] : green[200]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSessionDetailDialog(channel);
+                }}
+              />
+            </Tooltip>
+          );
+        },
+      },
       {
         header: 'Icon',
         accessorKey: 'icon',
@@ -450,18 +545,18 @@ export default function ChannelsPage() {
     [transcodeConfigs],
   );
 
-  const channelTableData = useMemo(() => {
-    return map(channels, (channel) => {
-      return {
-        ...channel,
-        sessions: channelSessions ? channelSessions[channel.id] : undefined,
-      };
-    });
-  }, [channels, channelSessions]);
+  // const channelTableData = useMemo(() => {
+  //   return map(channels, (channel) => {
+  //     return {
+  //       ...channel,
+  //       sessions: channelSessions ? channelSessions[channel.id] : undefined,
+  //     };
+  //   });
+  // }, [channels, channelSessions]);
 
   const table = useMaterialReactTable({
     columns: columnsNew,
-    data: channelTableData,
+    data: channels,
     enableRowActions: true,
     layoutMode: 'grid',
     state: {
@@ -516,6 +611,11 @@ export default function ChannelsPage() {
       </TableContainer>
 
       <NoChannelsCreated />
+      <ChannelSessionsDialog
+        open={!!sessionDetailDialog}
+        onClose={() => setSessionDetailDialog(null)}
+        channel={sessionDetailDialog}
+      />
     </div>
   );
 }
