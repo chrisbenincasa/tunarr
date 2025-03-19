@@ -10,7 +10,7 @@ import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { mapAsyncSeq } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import type { Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
@@ -20,24 +20,20 @@ import { Task } from './Task.js';
 @injectable()
 export class UpdateXmlTvTask extends Task<void> {
   public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
-
-  protected logger = LoggerFactory.child({
-    caller: import.meta,
-    task: UpdateXmlTvTask.ID as string,
-    className: this.constructor.name,
-  });
-
   public ID = UpdateXmlTvTask.ID;
 
   constructor(
+    @inject(KEYS.Logger) protected logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(LineupCreator) private lineupCreator: LineupCreator,
   ) {
     super();
+    this.logger.setBindings({ task: UpdateXmlTvTask.ID });
   }
 
   get taskName() {
@@ -65,7 +61,7 @@ export class UpdateXmlTvTask extends Task<void> {
         xmltvSettings = this.settingsDB.xmlTvSettings();
       }
 
-      await new LineupCreator().promoteAllPendingLineups();
+      await this.lineupCreator.promoteAllPendingLineups();
 
       await this.guideService.buildAllChannels(
         dayjs.duration({ hours: xmltvSettings.programmingHours }),

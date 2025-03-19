@@ -1,4 +1,3 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { ProgramGroupingExternalId } from '@/db/schema/ProgramGroupingExternalId.js';
@@ -17,6 +16,7 @@ import {
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { find, isNil, omitBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
@@ -28,6 +28,7 @@ import {
   isRedirectItem,
 } from '../derived_types/Lineup.js';
 import { Channel } from '../schema/Channel.ts';
+import { DB } from '../schema/db.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
@@ -39,7 +40,10 @@ import type {
  */
 @injectable()
 export class ProgramConverter {
-  constructor(@inject(KEYS.Logger) private logger: Logger) {}
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {}
 
   lineupItemToChannelProgram(
     channel: ChannelWithRelations,
@@ -226,7 +230,7 @@ export class ProgramConverter {
     channel?: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
-      ? getDatabase()
+      ? this.db
           .selectFrom('channel')
           .select(['uuid', 'number', 'name'])
           .where('uuid', '=', item.channel)

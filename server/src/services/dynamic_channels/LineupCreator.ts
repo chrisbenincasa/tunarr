@@ -1,12 +1,12 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
-import { getDatabase } from '@/db/DBAccess.js';
 import type { Lineup } from '@/db/derived_types/Lineup.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
 import type { Func } from '@/types/func.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
 import { asyncPool } from '@/util/asyncPool.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import type { SchedulingOperation } from '@tunarr/types/api';
+import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   compact,
   filter,
@@ -16,6 +16,9 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
+import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { DB } from '../../db/schema/db.ts';
+import { KEYS } from '../../types/inject.ts';
 import {
   asyncFlow,
   groupByUniqProp,
@@ -33,9 +36,13 @@ const OperatorToWeight: Record<SchedulingOperation['type'], number> = {
   modifier: 10,
 } as const;
 
+@injectable()
 export class LineupCreator {
-  #logger = LoggerFactory.child({ className: LineupCreator.name });
-  private channelDB = new ChannelDB();
+  constructor(
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {}
 
   // Right now this is very basic -- we just set the pending items
   // to be he lineup items. Eventually, this will apply lineup
@@ -87,7 +94,7 @@ export class LineupCreator {
 
     for await (const result of pool) {
       if (result.type === 'error') {
-        this.#logger.error(
+        this.logger.error(
           result.error,
           'Error while promoting lineup for channel: %s',
           result.input,
@@ -104,7 +111,7 @@ export class LineupCreator {
       const channelAndLineup =
         await this.channelDB.loadChannelAndLineup(channelId);
       if (isNull(channelAndLineup)) {
-        this.#logger.warn(
+        this.logger.warn(
           'Could not load channel and lineup ID = %s',
           channelId,
         );
@@ -161,8 +168,7 @@ export class LineupCreator {
     );
 
     return async ({ channel, lineup }) => {
-      const db = getDatabase();
-      const programs = await db
+      const programs = await this.db
         .selectFrom('program')
         .where(
           'uuid',

@@ -35,7 +35,6 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
-import { DBContext, makeDatabaseConnection } from './db/DBAccess.ts';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
 import {
   type ServerOptions,
@@ -440,7 +439,6 @@ export class Server {
 
     this.app.after(() => {
       this.app.gracefulShutdown(async (signal) => {
-        DBContext.enter(makeDatabaseConnection());
         this.logger.info(
           'Received exit signal %s, attempting graceful shutdown',
           signal,

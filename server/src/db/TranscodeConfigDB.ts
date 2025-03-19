@@ -1,12 +1,12 @@
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TranscodeConfig } from '@tunarr/types';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { omit } from 'lodash-es';
 import { v4 } from 'uuid';
 import { TranscodeConfigNotFoundError } from '../types/errors.ts';
+import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
-import { getDatabase } from './DBAccess.ts';
 import {
   NewTranscodeConfig,
   TranscodeConfig as TranscodeConfigDAO,
@@ -16,12 +16,14 @@ import { DB } from './schema/db.ts';
 
 @injectable()
 export class TranscodeConfigDB {
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {}
+
   getAll() {
-    return getDatabase().selectFrom('transcodeConfig').selectAll().execute();
+    return this.db.selectFrom('transcodeConfig').selectAll().execute();
   }
 
   getById(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('transcodeConfig')
       .where('uuid', '=', id)
       .selectAll()
@@ -29,7 +31,7 @@ export class TranscodeConfigDB {
   }
 
   getDefaultConfig() {
-    return getDatabase()
+    return this.db
       .selectFrom('transcodeConfig')
       .where('isDefault', '=', 1)
       .limit(1)
@@ -38,7 +40,7 @@ export class TranscodeConfigDB {
   }
 
   async getChannelConfig(channelId: string) {
-    const channelConfig = await getDatabase()
+    const channelConfig = await this.db
       .selectFrom('channel')
       .where('channel.uuid', '=', channelId)
       .innerJoin(
@@ -54,7 +56,7 @@ export class TranscodeConfigDB {
       return channelConfig;
     }
 
-    return getDatabase()
+    return this.db
       .selectFrom('transcodeConfig')
       .where('isDefault', '=', 1)
       .selectAll()
@@ -74,7 +76,7 @@ export class TranscodeConfigDB {
       isDefault: booleanToNumber(config.disableChannelOverlay),
     };
 
-    return getDatabase()
+    return this.db
       .insertInto('transcodeConfig')
       .values(newConfig)
       .returningAll()
@@ -95,7 +97,7 @@ export class TranscodeConfigDB {
     baseConfig.name = `${baseConfig.name} (copy)`;
 
     return Result.attemptAsync(() => {
-      return getDatabase()
+      return this.db
         .insertInto('transcodeConfig')
         .values({
           ...baseConfig,
@@ -118,7 +120,7 @@ export class TranscodeConfigDB {
       isDefault: booleanToNumber(updatedConfig.disableChannelOverlay),
     };
 
-    return getDatabase()
+    return this.db
       .updateTable('transcodeConfig')
       .where('uuid', '=', id)
       .set(update)
@@ -130,87 +132,85 @@ export class TranscodeConfigDB {
     // 1. if we are deleting the default configuration, we have to pick a new one.
     // 2. If we are deleting the last configuration, we have to create a default configuration
     // 3. We have to update all related channels.
-    return getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        const numConfigs = await tx
-          .selectFrom('transcodeConfig')
-          .select((eb) => eb.fn.count<number>('uuid').as('count'))
-          .executeTakeFirst()
-          .then((res) => res?.count ?? 0);
+    return this.db.transaction().execute(async (tx) => {
+      const numConfigs = await tx
+        .selectFrom('transcodeConfig')
+        .select((eb) => eb.fn.count<number>('uuid').as('count'))
+        .executeTakeFirst()
+        .then((res) => res?.count ?? 0);
 
-        // If there are no configs (should be impossible) create a default, assign it to all channels
-        // and move on.
-        if (numConfigs === 0) {
-          const { uuid: newDefaultConfigId } =
-            await this.insertDefaultConfiguration(tx);
-          await tx
-            .updateTable('channel')
-            .set('transcodeConfigId', newDefaultConfigId)
-            .execute();
-          return;
-        }
+      // If there are no configs (should be impossible) create a default, assign it to all channels
+      // and move on.
+      if (numConfigs === 0) {
+        const { uuid: newDefaultConfigId } =
+          await this.insertDefaultConfiguration(tx);
+        await tx
+          .updateTable('channel')
+          .set('transcodeConfigId', newDefaultConfigId)
+          .execute();
+        return;
+      }
 
-        const configToDelete = await tx
-          .selectFrom('transcodeConfig')
-          .where('uuid', '=', id)
-          .selectAll()
-          .limit(1)
-          .executeTakeFirst();
+      const configToDelete = await tx
+        .selectFrom('transcodeConfig')
+        .where('uuid', '=', id)
+        .selectAll()
+        .limit(1)
+        .executeTakeFirst();
 
-        if (!configToDelete) {
-          return;
-        }
+      if (!configToDelete) {
+        return;
+      }
 
-        // If this is the last config, we'll need a new one and will have to assign it
-        if (numConfigs === 1) {
-          const { uuid: newDefaultConfigId } =
-            await this.insertDefaultConfiguration(tx);
-          await tx
-            .updateTable('channel')
-            .set('transcodeConfigId', newDefaultConfigId)
-            .execute();
-          await tx
-            .deleteFrom('transcodeConfig')
-            .where('uuid', '=', id)
-            // TODO: Blocked in https://github.com/oven-sh/bun/issues/16909
-            // .limit(1)
-            .execute();
-          return;
-        }
-
-        // We're deleting the default config. Pick a random one to make the new default. Not great!
-        if (configToDelete.isDefault) {
-          const newDefaultConfig = await tx
-            .selectFrom('transcodeConfig')
-            .where('uuid', '!=', id)
-            .where('isDefault', '=', 0)
-            .select('uuid')
-            .limit(1)
-            .executeTakeFirstOrThrow();
-          await tx
-            .updateTable('transcodeConfig')
-            .set('isDefault', 1)
-            .where('uuid', '=', newDefaultConfig.uuid)
-            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-            // .limit(1)
-            .execute();
-          await tx
-            .updateTable('channel')
-            .set('transcodeConfigId', newDefaultConfig.uuid)
-            .execute();
-        }
-
+      // If this is the last config, we'll need a new one and will have to assign it
+      if (numConfigs === 1) {
+        const { uuid: newDefaultConfigId } =
+          await this.insertDefaultConfiguration(tx);
+        await tx
+          .updateTable('channel')
+          .set('transcodeConfigId', newDefaultConfigId)
+          .execute();
         await tx
           .deleteFrom('transcodeConfig')
           .where('uuid', '=', id)
+          // TODO: Blocked in https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
+          .execute();
+        return;
+      }
+
+      // We're deleting the default config. Pick a random one to make the new default. Not great!
+      if (configToDelete.isDefault) {
+        const newDefaultConfig = await tx
+          .selectFrom('transcodeConfig')
+          .where('uuid', '!=', id)
+          .where('isDefault', '=', 0)
+          .select('uuid')
+          .limit(1)
+          .executeTakeFirstOrThrow();
+        await tx
+          .updateTable('transcodeConfig')
+          .set('isDefault', 1)
+          .where('uuid', '=', newDefaultConfig.uuid)
           // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
           // .limit(1)
           .execute();
-      });
+        await tx
+          .updateTable('channel')
+          .set('transcodeConfigId', newDefaultConfig.uuid)
+          .execute();
+      }
+
+      await tx
+        .deleteFrom('transcodeConfig')
+        .where('uuid', '=', id)
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
+        .execute();
+    });
   }
 
-  private async insertDefaultConfiguration(db: Kysely<DB> = getDatabase()) {
+  private async insertDefaultConfiguration(db: Kysely<DB> = this.db) {
     return db
       .insertInto('transcodeConfig')
       .values(TranscodeConfigDB.createDefaultConfiguration())

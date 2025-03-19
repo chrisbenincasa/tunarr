@@ -105,6 +105,18 @@ export interface IChannelDB {
     channelId: string,
     pendingPrograms: PendingProgram[],
   ): Promise<void>;
+
+  setChannelPrograms(
+    channel: Channel,
+    lineup: readonly LineupItem[],
+  ): Promise<Channel | null>;
+  setChannelPrograms(
+    channel: string | Channel,
+    lineup: readonly LineupItem[],
+    startTime?: number,
+  ): Promise<Channel | null>;
+
+  updateChannelStartTime(id: string, newTime: number): Promise<void>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
   MarkNullable<

@@ -48,6 +48,7 @@ const TasksModule = new ContainerModule((bind) => {
       new ReconcileProgramDurationsTask(
         ctx.container.get(KEYS.ChannelDB),
         ctx.container.get(KEYS.Logger),
+        ctx.container.get(KEYS.Database),
         channelId,
       ),
   );

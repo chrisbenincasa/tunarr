@@ -4,11 +4,10 @@ import { replace } from 'lodash-es';
 import fs from 'node:fs/promises';
 import tmp from 'tmp-promise';
 import { SqliteDatabaseBackup } from '../../db/backup/SqliteDatabaseBackup.ts';
+import type { DBAccess } from '../../db/DBAccess.ts';
 import {
-  getDatabaseContext,
   MigrationLockTableName,
   MigrationTableName,
-  runDBMigrations,
 } from '../../db/DBAccess.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
@@ -21,14 +20,16 @@ export class DatabaseCopyMigrator {
     className: DatabaseCopyMigrator.name,
   });
 
+  constructor(private dbAccess: DBAccess) {}
+
   async migrate(currentDbPath: string, migrateTo?: string) {
     const { path: tmpPath } = await tmp.file({ keep: false });
     this.logger.debug('Migrating to temp DB %s', tmpPath);
-    const dbContext = getDatabaseContext()!;
-    const tempDB = dbContext.getOrCreateKyselyDatabase(tmpPath);
-    await runDBMigrations(tempDB, migrateTo);
+    const tempDBConn = this.dbAccess.getOrCreateConnection(tmpPath);
+    const tempDB = tempDBConn.kysely;
+    await tempDBConn.runDBMigrations(migrateTo);
 
-    const oldDB = dbContext.getOrCreateKyselyDatabase(currentDbPath);
+    const oldDB = this.dbAccess.getOrCreateKyselyDatabase(currentDbPath);
     const oldTables = await this.getTables(oldDB);
     const newTables = await this.getTables(tempDB);
     // Prepare for copy.
@@ -70,11 +71,11 @@ export class DatabaseCopyMigrator {
 
     // Explicitly close both connections to close underlying files
     // Required to do before the copy of the tmp DB, in Windows
-    await dbContext.closeConnection(tmpPath);
-    await dbContext.closeConnection(currentDbPath);
+    await this.dbAccess.closeConnection(tmpPath);
+    await this.dbAccess.closeConnection(currentDbPath);
     await fs.cp(tmpPath, currentDbPath);
     // Force reinit at the new path
-    dbContext.setConnection(currentDbPath);
+    this.dbAccess.setConnection(currentDbPath);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

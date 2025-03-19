@@ -1,9 +1,10 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import type { NewCustomShowContent } from '@/db/schema/CustomShow.js';
 import type { NewFillerShowContent } from '@/db/schema/FillerShow.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   chunk,
   compact,
@@ -24,6 +25,8 @@ import {
   withCustomShowPrograms,
   withFillerPrograms,
 } from '../../db/programQueryHelpers.ts';
+import { DB } from '../../db/schema/db.ts';
+import { KEYS } from '../../types/inject.ts';
 import {
   groupByUniq,
   groupByUniqAndMap,
@@ -42,11 +45,12 @@ import {
 } from './migrationUtil.ts';
 
 // Migrates flex and custom shows
+@injectable()
 export class LegacyLibraryMigrator {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {}
 
   async convertCustomShow(
     id: string,
@@ -101,7 +105,7 @@ export class LegacyLibraryMigrator {
       uniqueProgramId,
     );
 
-    const mediaSourcesByName = await getDatabase()
+    const mediaSourcesByName = await this.db
       .selectFrom('mediaSource')
       .selectAll()
       .execute()
@@ -123,28 +127,26 @@ export class LegacyLibraryMigrator {
     }[] = [];
     for (const c of chunk(programEntities, 100)) {
       upsertedPrograms.push(
-        ...(await getDatabase()
-          .transaction()
-          .execute((tx) =>
-            tx
-              .insertInto('program')
-              .values(map(c, 'program'))
-              .onConflict((oc) =>
-                oc
-                  .columns(['sourceType', 'externalSourceId', 'externalKey'])
-                  .doUpdateSet((eb) =>
-                    mapToObj(ProgramUpsertFields, (f) => ({
-                      [f.replace('excluded.', '')]: eb.ref(f),
-                    })),
-                  ),
-              )
-              .returning([
-                'uuid as uuid',
-                'externalSourceId as externalSourceId',
-                'externalKey as externalKey',
-              ])
-              .execute(),
-          )),
+        ...(await this.db.transaction().execute((tx) =>
+          tx
+            .insertInto('program')
+            .values(map(c, 'program'))
+            .onConflict((oc) =>
+              oc
+                .columns(['sourceType', 'externalSourceId', 'externalKey'])
+                .doUpdateSet((eb) =>
+                  mapToObj(ProgramUpsertFields, (f) => ({
+                    [f.replace('excluded.', '')]: eb.ref(f),
+                  })),
+                ),
+            )
+            .returning([
+              'uuid as uuid',
+              'externalSourceId as externalSourceId',
+              'externalKey as externalKey',
+            ])
+            .execute(),
+        )),
       );
     }
 
@@ -164,7 +166,7 @@ export class LegacyLibraryMigrator {
 
     await mapAsyncSeq(newCustomShows, async (customShow) => {
       if (type === 'custom-shows') {
-        const existing = await getDatabase()
+        const existing = await this.db
           .selectFrom('customShow')
           .selectAll()
           .where('customShow.uuid', '=', customShow.id)
@@ -173,7 +175,7 @@ export class LegacyLibraryMigrator {
 
         const entity =
           existing ??
-          (await getDatabase()
+          (await this.db
             .insertInto('customShow')
             .values({
               uuid: customShow.id,
@@ -184,7 +186,7 @@ export class LegacyLibraryMigrator {
             .returningAll()
             .executeTakeFirstOrThrow());
 
-        await getDatabase()
+        await this.db
           .deleteFrom('customShowContent')
           .where('customShowContent.customShowUuid', '=', entity.uuid)
           .execute();
@@ -216,25 +218,23 @@ export class LegacyLibraryMigrator {
             }) satisfies NewCustomShowContent,
         );
 
-        await getDatabase()
-          .transaction()
-          .execute(async (tx) => {
-            for (const contentChunk of chunk(csContent, 50)) {
-              await tx
-                .insertInto('customShowContent')
-                .values(contentChunk)
-                .onConflict((oc) =>
-                  oc.doUpdateSet((eb) => {
-                    return {
-                      index: eb.ref('excluded.index'),
-                    };
-                  }),
-                )
-                .execute();
-            }
-          });
+        await this.db.transaction().execute(async (tx) => {
+          for (const contentChunk of chunk(csContent, 50)) {
+            await tx
+              .insertInto('customShowContent')
+              .values(contentChunk)
+              .onConflict((oc) =>
+                oc.doUpdateSet((eb) => {
+                  return {
+                    index: eb.ref('excluded.index'),
+                  };
+                }),
+              )
+              .execute();
+          }
+        });
       } else {
-        const existing = await getDatabase()
+        const existing = await this.db
           .selectFrom('fillerShow')
           .selectAll()
           .where('fillerShow.uuid', '=', customShow.id)
@@ -243,7 +243,7 @@ export class LegacyLibraryMigrator {
 
         const entity =
           existing ??
-          (await getDatabase()
+          (await this.db
             .insertInto('fillerShow')
             .values({
               uuid: customShow.id,
@@ -254,7 +254,7 @@ export class LegacyLibraryMigrator {
             .returningAll()
             .executeTakeFirstOrThrow());
 
-        await getDatabase()
+        await this.db
           .deleteFrom('customShowContent')
           .where('customShowContent.customShowUuid', '=', entity.uuid)
           .execute();
@@ -276,21 +276,19 @@ export class LegacyLibraryMigrator {
             }) satisfies NewFillerShowContent,
         );
 
-        await getDatabase()
-          .transaction()
-          .execute(async (tx) => {
-            for (const contentChunk of chunk(entities, 50)) {
-              await tx
-                .insertInto('fillerShowContent')
-                .values(contentChunk)
-                .onConflict((oc) =>
-                  oc.doUpdateSet((eb) => ({
-                    index: eb.ref('excluded.index'),
-                  })),
-                )
-                .execute();
-            }
-          });
+        await this.db.transaction().execute(async (tx) => {
+          for (const contentChunk of chunk(entities, 50)) {
+            await tx
+              .insertInto('fillerShowContent')
+              .values(contentChunk)
+              .onConflict((oc) =>
+                oc.doUpdateSet((eb) => ({
+                  index: eb.ref('excluded.index'),
+                })),
+              )
+              .execute();
+          }
+        });
       }
     });
   }

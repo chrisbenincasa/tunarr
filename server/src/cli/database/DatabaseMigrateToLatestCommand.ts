@@ -1,5 +1,6 @@
 import type { CommandModule } from 'yargs';
-import { DatabaseCopyMigrator } from '../../migration/db/DatabaseCopyMigrator.ts';
+import { container } from '../../container.ts';
+import { DBAccess } from '../../db/DBAccess.ts';
 import { getDefaultDatabaseName } from '../../util/defaults.ts';
 
 interface DatabaseMigrateUpCommandArgs {
@@ -15,6 +16,8 @@ export const DatabaseMigrateToLatestCommand: CommandModule<
   builder: (yargs) =>
     yargs.positional('migrationName', { demandOption: false, type: 'string' }),
   handler: async () => {
-    await new DatabaseCopyMigrator().migrate(getDefaultDatabaseName());
+    await container
+      .get(DBAccess)
+      .migrateExistingDatabase(getDefaultDatabaseName());
   },
 };

@@ -1,10 +1,10 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
@@ -15,6 +15,7 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
+import { DB } from '../db/schema/db.ts';
 import { Task } from './Task.ts';
 
 // This task is fired off whenever programs are updated. It goes through
@@ -35,6 +36,7 @@ export class ReconcileProgramDurationsTask extends Task {
   constructor(
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.Logger) logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
     private channelId?: string,
   ) {
     super(logger);
@@ -65,7 +67,7 @@ export class ReconcileProgramDurationsTask extends Task {
       const missingPrograms = await flatMapAsyncSeq(
         chunk(missingKeys, 200),
         (items) =>
-          getDatabase()
+          this.db
             .selectFrom('program')
             .select(['uuid', 'duration'])
             .where('uuid', 'in', map(items, 'id'))

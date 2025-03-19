@@ -28,6 +28,7 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -68,7 +69,6 @@ import {
   mapReduceAsyncSeq,
   run,
 } from '../util/index.ts';
-import { getDatabase } from './DBAccess.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import {
   ContentItem,
@@ -105,6 +105,7 @@ import {
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
+import { DB } from './schema/db.ts';
 import type {
   ChannelWithRelations,
   ChannelWithPrograms as RawChannelWithPrograms,
@@ -222,14 +223,15 @@ export class ChannelDB implements IChannelDB {
 
   private timer = new Timer(this.logger, 'trace');
 
-  @inject(ProgramConverter) private programConverter: ProgramConverter;
-  @inject(KEYS.ProgramDB) private programDB: IProgramDB;
-  @inject(CacheImageService) private cacheImageService: CacheImageService;
-
-  // constructor(private programDB: ProgramDB = new ProgramDB()) {}
+  constructor(
+    @inject(ProgramConverter) private programConverter: ProgramConverter,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(CacheImageService) private cacheImageService: CacheImageService,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {}
 
   async channelExists(channelId: string) {
-    const channel = await getDatabase()
+    const channel = await this.db
       .selectFrom('channel')
       .where('channel.uuid', '=', channelId)
       .select('uuid')
@@ -246,7 +248,7 @@ export class ChannelDB implements IChannelDB {
     id: string | number,
     includeFiller: boolean = false,
   ): Promise<Maybe<ChannelWithRelations>> {
-    return getDatabase()
+    return this.db
       .selectFrom('channel')
       .$if(isString(id), (eb) => eb.where('channel.uuid', '=', id as string))
       .$if(isNumber(id), (eb) => eb.where('channel.number', '=', id as number))
@@ -270,13 +272,13 @@ export class ChannelDB implements IChannelDB {
   }
 
   getChannelBuilder(id: string | number) {
-    return ChannelQueryBuilder.createForIdOrNumber(getDatabase(), id);
+    return ChannelQueryBuilder.createForIdOrNumber(this.db, id);
   }
 
   getChannelAndPrograms(
     uuid: string,
   ): Promise<RawChannelWithPrograms | undefined> {
-    return getDatabase()
+    return this.db
       .selectFrom('channel')
       .selectAll(['channel'])
       .where('channel.uuid', '=', uuid)
@@ -322,7 +324,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   getChannelProgramExternalIds(uuid: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('channelPrograms')
       .where('channelUuid', '=', uuid)
       .innerJoin(
@@ -335,7 +337,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   async getChannelFallbackPrograms(uuid: string) {
-    const result = await getDatabase()
+    const result = await this.db
       .selectFrom('channelFallback')
       .where('channelFallback.channelUuid', '=', uuid)
       .select(withFallbackPrograms)
@@ -352,39 +354,37 @@ export class ChannelDB implements IChannelDB {
       );
     }
 
-    const channel = await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        const channel = await tx
-          .insertInto('channel')
-          .values(createRequestToChannel(createReq))
-          .returningAll()
-          .executeTakeFirst();
+    const channel = await this.db.transaction().execute(async (tx) => {
+      const channel = await tx
+        .insertInto('channel')
+        .values(createRequestToChannel(createReq))
+        .returningAll()
+        .executeTakeFirst();
 
-        if (!channel) {
-          throw new Error('Error while saving new channel.');
-        }
+      if (!channel) {
+        throw new Error('Error while saving new channel.');
+      }
 
-        if (!isEmpty(createReq.fillerCollections)) {
-          await tx
-            .insertInto('channelFillerShow')
-            .values(
-              map(
-                createReq.fillerCollections,
-                (fc) =>
-                  ({
-                    channelUuid: channel.uuid,
-                    cooldown: fc.cooldownSeconds,
-                    fillerShowUuid: fc.id,
-                    weight: fc.weight,
-                  }) satisfies NewChannelFillerShow,
-              ),
-            )
-            .execute();
-        }
+      if (!isEmpty(createReq.fillerCollections)) {
+        await tx
+          .insertInto('channelFillerShow')
+          .values(
+            map(
+              createReq.fillerCollections,
+              (fc) =>
+                ({
+                  channelUuid: channel.uuid,
+                  cooldown: fc.cooldownSeconds,
+                  fillerShowUuid: fc.id,
+                  weight: fc.weight,
+                }) satisfies NewChannelFillerShow,
+            ),
+          )
+          .execute();
+      }
 
-        return channel;
-      });
+      return channel;
+    });
 
     await this.createLineup(channel.uuid);
 
@@ -435,39 +435,37 @@ export class ChannelDB implements IChannelDB {
       }
     }
 
-    await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
+    await this.db.transaction().execute(async (tx) => {
+      await tx
+        .updateTable('channel')
+        .where('channel.uuid', '=', id)
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
+        .set(update)
+        .executeTakeFirstOrThrow();
+
+      if (!isEmpty(updateReq.fillerCollections)) {
+        const channelFillerShows = map(
+          updateReq.fillerCollections,
+          (filler) =>
+            ({
+              cooldown: filler.cooldownSeconds,
+              channelUuid: channel.uuid,
+              fillerShowUuid: filler.id,
+              weight: filler.weight,
+            }) satisfies NewChannelFillerShow,
+        );
+
         await tx
-          .updateTable('channel')
-          .where('channel.uuid', '=', id)
-          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-          // .limit(1)
-          .set(update)
+          .deleteFrom('channelFillerShow')
+          .where('channelFillerShow.channelUuid', '=', channel.uuid)
           .executeTakeFirstOrThrow();
-
-        if (!isEmpty(updateReq.fillerCollections)) {
-          const channelFillerShows = map(
-            updateReq.fillerCollections,
-            (filler) =>
-              ({
-                cooldown: filler.cooldownSeconds,
-                channelUuid: channel.uuid,
-                fillerShowUuid: filler.id,
-                weight: filler.weight,
-              }) satisfies NewChannelFillerShow,
-          );
-
-          await tx
-            .deleteFrom('channelFillerShow')
-            .where('channelFillerShow.channelUuid', '=', channel.uuid)
-            .executeTakeFirstOrThrow();
-          await tx
-            .insertInto('channelFillerShow')
-            .values(channelFillerShows)
-            .executeTakeFirstOrThrow();
-        }
-      });
+        await tx
+          .insertInto('channelFillerShow')
+          .values(channelFillerShows)
+          .executeTakeFirstOrThrow();
+      }
+    });
 
     if (isDefined(updateReq.onDemand)) {
       const db = await this.getFileDb(id);
@@ -489,12 +487,13 @@ export class ChannelDB implements IChannelDB {
     };
   }
 
-  async updateChannelStartTime(id: string, newTime: number) {
-    return getDatabase()
+  async updateChannelStartTime(id: string, newTime: number): Promise<void> {
+    return this.db
       .updateTable('channel')
       .where('channel.uuid', '=', id)
       .set('startTime', newTime)
-      .executeTakeFirst();
+      .executeTakeFirst()
+      .then(() => {});
   }
 
   async deleteChannel(
@@ -506,7 +505,7 @@ export class ChannelDB implements IChannelDB {
       await this.markLineupFileForDeletion(channelId);
       marked = true;
 
-      await getDatabase()
+      await this.db
         .deleteFrom('channel')
         .where('uuid', '=', channelId)
         // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
@@ -549,7 +548,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   getAllChannels(pageParams?: PageParams) {
-    return getDatabase()
+    return this.db
       .selectFrom('channel')
       .selectAll()
       .orderBy('channel.number asc')
@@ -562,7 +561,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
-    return await getDatabase()
+    return await this.db
       .selectFrom('channel')
       .selectAll(['channel'])
       .leftJoin(
@@ -586,7 +585,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
-    const channel = await getDatabase()
+    const channel = await this.db
       .selectFrom('channel')
       .selectAll()
       .where('channel.uuid', '=', id)
@@ -611,82 +610,80 @@ export class ChannelDB implements IChannelDB {
       lineup: readonly LineupItem[],
       startTime?: number,
     ) => {
-      return await getDatabase()
-        .transaction()
-        .execute(async (tx) => {
-          await tx
-            .updateTable('channel')
-            .where('channel.uuid', '=', id)
-            .set({
-              startTime,
-              duration: sumBy(lineup, typedProperty('durationMs')),
-            })
-            .limit(1)
-            .executeTakeFirstOrThrow();
+      return await this.db.transaction().execute(async (tx) => {
+        await tx
+          .updateTable('channel')
+          .where('channel.uuid', '=', id)
+          .set({
+            startTime,
+            duration: sumBy(lineup, typedProperty('durationMs')),
+          })
+          .limit(1)
+          .executeTakeFirstOrThrow();
 
-          const allNewIds = new Set([
-            ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
-          ]);
+        const allNewIds = new Set([
+          ...uniq(map(filter(lineup, isContentItem), (p) => p.id)),
+        ]);
 
-          const existingIds = new Set([
-            ...channel.programs.map((program) => program.uuid),
-          ]);
+        const existingIds = new Set([
+          ...channel.programs.map((program) => program.uuid),
+        ]);
 
-          // Create our remove operations
-          const removeOperations: ProgramRelationOperation[] = map(
-            reject([...existingIds], (existingId) => allNewIds.has(existingId)),
-            (removalId) => ({
-              operation: 'remove' as const,
-              id: removalId,
-            }),
+        // Create our remove operations
+        const removeOperations: ProgramRelationOperation[] = map(
+          reject([...existingIds], (existingId) => allNewIds.has(existingId)),
+          (removalId) => ({
+            operation: 'remove' as const,
+            id: removalId,
+          }),
+        );
+
+        // Create addition operations
+        const addOperations: ProgramRelationOperation[] = map(
+          reject([...allNewIds], (newId) => existingIds.has(newId)),
+          (addId) => ({
+            operation: 'add' as const,
+            id: addId,
+          }),
+        );
+
+        // TODO: See if this is still necessary w/ kysely building
+        // This is busted....wtf
+        for (const ops of chunk(
+          [...addOperations, ...removeOperations],
+          SqliteMaxDepthLimit / 2,
+        )) {
+          const [adds, removes] = partition(
+            ops,
+            ({ operation }) => operation === 'add',
           );
 
-          // Create addition operations
-          const addOperations: ProgramRelationOperation[] = map(
-            reject([...allNewIds], (newId) => existingIds.has(newId)),
-            (addId) => ({
-              operation: 'add' as const,
-              id: addId,
-            }),
-          );
-
-          // TODO: See if this is still necessary w/ kysely building
-          // This is busted....wtf
-          for (const ops of chunk(
-            [...addOperations, ...removeOperations],
-            SqliteMaxDepthLimit / 2,
-          )) {
-            const [adds, removes] = partition(
-              ops,
-              ({ operation }) => operation === 'add',
-            );
-
-            if (!isEmpty(removes)) {
-              await tx
-                .deleteFrom('channelPrograms')
-                .where('channelPrograms.programUuid', 'in', map(removes, 'id'))
-                .where('channelPrograms.channelUuid', '=', id)
-                .execute();
-            }
-
-            if (!isEmpty(adds)) {
-              await tx
-                .insertInto('channelPrograms')
-                .values(
-                  map(
-                    adds,
-                    ({ id }) =>
-                      ({
-                        channelUuid: channel.uuid,
-                        programUuid: id,
-                      }) satisfies NewChannelProgram,
-                  ),
-                )
-                .execute();
-            }
+          if (!isEmpty(removes)) {
+            await tx
+              .deleteFrom('channelPrograms')
+              .where('channelPrograms.programUuid', 'in', map(removes, 'id'))
+              .where('channelPrograms.channelUuid', '=', id)
+              .execute();
           }
-          return channel;
-        });
+
+          if (!isEmpty(adds)) {
+            await tx
+              .insertInto('channelPrograms')
+              .values(
+                map(
+                  adds,
+                  ({ id }) =>
+                    ({
+                      channelUuid: channel.uuid,
+                      programUuid: id,
+                    }) satisfies NewChannelProgram,
+                ),
+              )
+              .execute();
+          }
+        }
+        return channel;
+      });
     };
 
     const createNewLineup = async (
@@ -857,45 +854,43 @@ export class ChannelDB implements IChannelDB {
 
     const allIds = uniq(map(filter(lineup, isContentItem), 'id'));
 
-    return await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        // await tx
-        if (!isUndefined(startTime)) {
-          loadedChannel.startTime = startTime;
-        }
-        loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
-        const updatedChannel = await tx
-          .updateTable('channel')
-          .where('channel.uuid', '=', loadedChannel.uuid)
-          .set('duration', sumBy(lineup, typedProperty('durationMs')))
-          .$if(isDefined(startTime), (_) => _.set('startTime', startTime!))
-          .returningAll()
+    return await this.db.transaction().execute(async (tx) => {
+      // await tx
+      if (!isUndefined(startTime)) {
+        loadedChannel.startTime = startTime;
+      }
+      loadedChannel.duration = sumBy(lineup, typedProperty('durationMs'));
+      const updatedChannel = await tx
+        .updateTable('channel')
+        .where('channel.uuid', '=', loadedChannel.uuid)
+        .set('duration', sumBy(lineup, typedProperty('durationMs')))
+        .$if(isDefined(startTime), (_) => _.set('startTime', startTime!))
+        .returningAll()
+        .executeTakeFirst();
+
+      for (const idChunk of chunk(allIds, 500)) {
+        await tx
+          .deleteFrom('channelPrograms')
+          .where('channelUuid', '=', loadedChannel.uuid)
+          .where('programUuid', 'not in', idChunk)
+          .execute();
+      }
+
+      for (const idChunk of chunk(allIds, 500)) {
+        await tx
+          .insertInto('channelPrograms')
+          .values(
+            map(idChunk, (id) => ({
+              programUuid: id,
+              channelUuid: loadedChannel.uuid,
+            })),
+          )
+          .onConflict((oc) => oc.doNothing())
           .executeTakeFirst();
+      }
 
-        for (const idChunk of chunk(allIds, 500)) {
-          await tx
-            .deleteFrom('channelPrograms')
-            .where('channelUuid', '=', loadedChannel.uuid)
-            .where('programUuid', 'not in', idChunk)
-            .execute();
-        }
-
-        for (const idChunk of chunk(allIds, 500)) {
-          await tx
-            .insertInto('channelPrograms')
-            .values(
-              map(idChunk, (id) => ({
-                programUuid: id,
-                channelUuid: loadedChannel.uuid,
-              })),
-            )
-            .onConflict((oc) => oc.doNothing())
-            .executeTakeFirst();
-        }
-
-        return updatedChannel ?? null;
-      });
+      return updatedChannel ?? null;
+    });
   }
 
   async addPendingPrograms(
@@ -1024,7 +1019,7 @@ export class ChannelDB implements IChannelDB {
     const contentItems = filter(pagedLineup, isContentItem);
 
     const directPrograms = await this.timer.timeAsync('direct', () =>
-      getDatabase()
+      this.db
         .selectFrom('channelPrograms')
         .where('channelUuid', '=', channelId)
         .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
@@ -1283,7 +1278,7 @@ export class ChannelDB implements IChannelDB {
     channel: RawChannelWithPrograms,
     lineup: LineupItem[],
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
-    const allChannels = await getDatabase()
+    const allChannels = await this.db
       .selectFrom('channel')
       .select(['channel.uuid', 'channel.number', 'channel.name'])
       .execute();
@@ -1350,7 +1345,7 @@ export class ChannelDB implements IChannelDB {
     )) {
       customShowIndexes[customShowId] = {};
 
-      const results = await getDatabase()
+      const results = await this.db
         .selectFrom('customShowContent')
         .select(['customShowContent.contentUuid', 'customShowContent.index'])
         .where('customShowContent.contentUuid', 'in', map(items, 'id'))
@@ -1366,7 +1361,7 @@ export class ChannelDB implements IChannelDB {
       customShowIndexes[customShowId] = byItemId;
     }
 
-    const allChannels = await getDatabase()
+    const allChannels = await this.db
       .selectFrom('channel')
       .select(['uuid', 'name', 'number'])
       .execute();

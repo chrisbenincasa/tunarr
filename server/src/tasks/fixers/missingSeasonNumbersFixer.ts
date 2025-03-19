@@ -1,4 +1,3 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
@@ -12,7 +11,7 @@ import { groupByUniqAndMap, isDefined, wait } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexEpisodeView, PlexSeasonView } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
-import { CaseWhenBuilder } from 'kysely';
+import { CaseWhenBuilder, Kysely } from 'kysely';
 import {
   chunk,
   find,
@@ -43,12 +42,13 @@ export class MissingSeasonNumbersFixer extends Fixer {
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     super();
   }
 
   async runInternal(): Promise<void> {
-    const allPlexServers = await getDatabase()
+    const allPlexServers = await this.db
       .selectFrom('mediaSource')
       .where('mediaSource.type', '=', MediaSourceType.Plex)
       .groupBy('name')
@@ -68,7 +68,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const updatedPrograms: RawProgram[] = [];
     let lastId: Maybe<string> = undefined;
     do {
-      const items: RawProgram[] = await getDatabase()
+      const items: RawProgram[] = await this.db
         .selectFrom('program')
         .selectAll()
         .$if(!isNull(lastId), (eb) => eb.where('uuid', '>', lastId!))
@@ -168,7 +168,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         groupByUniqAndMap(updateChunk, 'uuid', (p) => p.seasonNumber),
         isNull,
       );
-      await getDatabase()
+      await this.db
         .updateTable('program')
         .set((eb) => ({
           seasonNumber: reduce(
@@ -190,7 +190,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
         .executeTakeFirst();
     }
 
-    const seasonsMissingIndexes = await getDatabase()
+    const seasonsMissingIndexes = await this.db
       .selectFrom('programGrouping')
       .select('programGrouping.uuid')
       .where('programGrouping.type', '=', ProgramGroupingType.Show)
@@ -235,7 +235,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
 
       const plexSeason = first(plexResult.Metadata)!;
       if (isDefined(plexSeason.index)) {
-        await getDatabase()
+        await this.db
           .updateTable('programGrouping')
           .set({ index: plexSeason.index })
           .where('uuid', '=', season.uuid)

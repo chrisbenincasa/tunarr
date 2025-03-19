@@ -1,10 +1,11 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { find, isNil } from 'lodash-es';
+import { DB } from '../../db/schema/db.ts';
 import Fixer from './fixer.js';
 
 @injectable()
@@ -13,12 +14,13 @@ export class AddPlexServerIdsFixer extends Fixer {
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     super();
   }
 
   async runInternal(): Promise<void> {
-    const plexServers = await getDatabase()
+    const plexServers = await this.db
       .selectFrom('mediaSource')
       .selectAll()
       .where('clientIdentifier', 'is', null)
@@ -33,7 +35,7 @@ export class AddPlexServerIdsFixer extends Fixer {
           (d) => d.provides.includes('server') && d.name === server.name,
         );
         if (matchingServer) {
-          await getDatabase()
+          await this.db
             .updateTable('mediaSource')
             .set({
               clientIdentifier: matchingServer.clientIdentifier,

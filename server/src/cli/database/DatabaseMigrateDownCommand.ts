@@ -1,4 +1,4 @@
-import { getMigrator } from '@/db/DBAccess.js';
+import { DBAccess } from '@/db/DBAccess.js';
 import { isNonEmptyString } from '@/util/index.js';
 import type { CommandModule } from 'yargs';
 import { isWrongMigrationDirection } from './databaseCommandUtil.ts';
@@ -17,7 +17,7 @@ export const DatabaseMigrateDownCommand: CommandModule<
     yargs.positional('migrationName', { demandOption: false, type: 'string' }),
 
   handler: async (args) => {
-    const migrator = getMigrator();
+    const migrator = new DBAccess().getOrCreateConnection().getMigrator();
     if (await isWrongMigrationDirection(args.migrationName, 'down', migrator)) {
       console.info('No migrations found!');
       return;

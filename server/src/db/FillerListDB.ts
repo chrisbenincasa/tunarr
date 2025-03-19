@@ -8,7 +8,7 @@ import {
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { CaseWhenBuilder } from 'kysely';
+import { CaseWhenBuilder, Kysely } from 'kysely';
 import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
 import {
   filter,
@@ -28,7 +28,6 @@ import {
   values,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { getDatabase } from './DBAccess.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
@@ -47,10 +46,11 @@ export class FillerDB {
     @inject(ChannelCache) private channelCache: ChannelCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {}
 
   getFiller(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('fillerShow')
       .where('uuid', '=', id)
       .selectAll()
@@ -98,22 +98,20 @@ export class FillerDB {
           }) satisfies NewFillerShowContent,
       );
 
-      await getDatabase()
-        .transaction()
-        .execute(async (tx) => {
-          await tx
-            .deleteFrom('fillerShowContent')
-            .where('fillerShowContent.fillerShowUuid', '=', filler.uuid)
-            .execute();
-          await tx
-            .insertInto('fillerShowContent')
-            .values([...persistedFillerShowContent, ...newFillerShowContent])
-            .execute();
-        });
+      await this.db.transaction().execute(async (tx) => {
+        await tx
+          .deleteFrom('fillerShowContent')
+          .where('fillerShowContent.fillerShowUuid', '=', filler.uuid)
+          .execute();
+        await tx
+          .insertInto('fillerShowContent')
+          .values([...persistedFillerShowContent, ...newFillerShowContent])
+          .execute();
+      });
     }
 
     if (updateRequest.name) {
-      await getDatabase()
+      await this.db
         .updateTable('fillerShow')
         .where('uuid', '=', filler.uuid)
         .set({ name: updateRequest.name })
@@ -142,7 +140,7 @@ export class FillerDB {
       createRequest.programs,
     );
 
-    await getDatabase().insertInto('fillerShow').values(filler).execute();
+    await this.db.insertInto('fillerShow').values(filler).execute();
 
     const persistedFillerShowContent = map(
       persisted,
@@ -163,7 +161,7 @@ export class FillerDB {
         }) satisfies NewFillerShowContent,
     );
 
-    await getDatabase()
+    await this.db
       .insertInto('fillerShowContent')
       .values([...persistedFillerShowContent, ...newFillerShowContent])
       .execute();
@@ -173,7 +171,7 @@ export class FillerDB {
 
   // Returns all channels a given filler list is a part of
   async getFillerChannels(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('channelFillerShow')
       .where('channelFillerShow.fillerShowUuid', '=', id)
       .innerJoin('channel', 'channel.uuid', 'channelFillerShow.channelUuid')
@@ -182,113 +180,108 @@ export class FillerDB {
   }
 
   async deleteFiller(id: string): Promise<void> {
-    await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        const relevantChannelFillers = await tx
-          .selectFrom('channelFillerShow')
-          .selectAll()
-          .where('fillerShowUuid', '=', id)
-          .execute();
+    await this.db.transaction().execute(async (tx) => {
+      const relevantChannelFillers = await tx
+        .selectFrom('channelFillerShow')
+        .selectAll()
+        .where('fillerShowUuid', '=', id)
+        .execute();
 
-        const allRelevantChannelFillers = await tx
-          .selectFrom('channelFillerShow')
-          .selectAll()
-          .where(
-            'channelFillerShow.channelUuid',
-            'in',
-            uniq(map(relevantChannelFillers, (cf) => cf.channelUuid)),
-          )
-          .execute();
+      const allRelevantChannelFillers = await tx
+        .selectFrom('channelFillerShow')
+        .selectAll()
+        .where(
+          'channelFillerShow.channelUuid',
+          'in',
+          uniq(map(relevantChannelFillers, (cf) => cf.channelUuid)),
+        )
+        .execute();
 
-        const fillersByChannel = groupBy(
-          allRelevantChannelFillers,
-          (cf) => cf.channelUuid,
-        );
+      const fillersByChannel = groupBy(
+        allRelevantChannelFillers,
+        (cf) => cf.channelUuid,
+      );
 
-        forEach(values(fillersByChannel), (cfs) => {
-          const removedWeight = find(
-            cfs,
-            (cf) => cf.fillerShowUuid === id,
-          )?.weight;
-          if (isUndefined(removedWeight)) {
-            return;
-          }
-          const remainingFillers = reject(
-            cfs,
-            (cf) => cf.fillerShowUuid === id,
-          );
-          const distributeWeight =
-            remainingFillers.length > 0
-              ? round(removedWeight / remainingFillers.length, 2)
-              : 0;
-          forEach(remainingFillers, (filler) => {
-            filler.weight += distributeWeight;
-          });
-        });
-
-        await tx
-          .deleteFrom('channelFillerShow')
-          .where('channelFillerShow.fillerShowUuid', '=', id)
-          .execute();
-
-        const reminaingChannelFillers = omitBy<ChannelFillerShow[]>(
-          mapValues(fillersByChannel, (cfs) =>
-            reject(cfs, (cf) => cf.fillerShowUuid === id),
-          ),
-          isEmpty,
-        );
-
-        if (!isEmpty(fillersByChannel) && !isEmpty(reminaingChannelFillers)) {
-          await tx
-            .updateTable('channelFillerShow')
-            .set(({ eb }) => {
-              const weight = reduce(
-                reminaingChannelFillers,
-                (builder, channelFillers) => {
-                  return reduce(
-                    channelFillers,
-                    (caseBuilder, channelFiller) =>
-                      caseBuilder
-                        .when(
-                          eb.and([
-                            eb(
-                              'channelFillerShow.fillerShowUuid',
-                              '=',
-                              channelFiller.fillerShowUuid,
-                            ),
-                            eb(
-                              'channelFillerShow.channelUuid',
-                              '=',
-                              channelFiller.channelUuid,
-                            ),
-                          ]),
-                        )
-                        .then(channelFiller.weight),
-                    builder,
-                  );
-                },
-                eb.case() as unknown as CaseWhenBuilder<
-                  DB,
-                  'channelFillerShow',
-                  unknown,
-                  number
-                >,
-              )
-                .else(eb.ref('channelFillerShow.weight'))
-                .end();
-              return { weight };
-            })
-            .execute();
+      forEach(values(fillersByChannel), (cfs) => {
+        const removedWeight = find(
+          cfs,
+          (cf) => cf.fillerShowUuid === id,
+        )?.weight;
+        if (isUndefined(removedWeight)) {
+          return;
         }
-
-        await tx
-          .deleteFrom('fillerShow')
-          .where('uuid', '=', id)
-          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-          // .limit(1)
-          .execute();
+        const remainingFillers = reject(cfs, (cf) => cf.fillerShowUuid === id);
+        const distributeWeight =
+          remainingFillers.length > 0
+            ? round(removedWeight / remainingFillers.length, 2)
+            : 0;
+        forEach(remainingFillers, (filler) => {
+          filler.weight += distributeWeight;
+        });
       });
+
+      await tx
+        .deleteFrom('channelFillerShow')
+        .where('channelFillerShow.fillerShowUuid', '=', id)
+        .execute();
+
+      const reminaingChannelFillers = omitBy<ChannelFillerShow[]>(
+        mapValues(fillersByChannel, (cfs) =>
+          reject(cfs, (cf) => cf.fillerShowUuid === id),
+        ),
+        isEmpty,
+      );
+
+      if (!isEmpty(fillersByChannel) && !isEmpty(reminaingChannelFillers)) {
+        await tx
+          .updateTable('channelFillerShow')
+          .set(({ eb }) => {
+            const weight = reduce(
+              reminaingChannelFillers,
+              (builder, channelFillers) => {
+                return reduce(
+                  channelFillers,
+                  (caseBuilder, channelFiller) =>
+                    caseBuilder
+                      .when(
+                        eb.and([
+                          eb(
+                            'channelFillerShow.fillerShowUuid',
+                            '=',
+                            channelFiller.fillerShowUuid,
+                          ),
+                          eb(
+                            'channelFillerShow.channelUuid',
+                            '=',
+                            channelFiller.channelUuid,
+                          ),
+                        ]),
+                      )
+                      .then(channelFiller.weight),
+                  builder,
+                );
+              },
+              eb.case() as unknown as CaseWhenBuilder<
+                DB,
+                'channelFillerShow',
+                unknown,
+                number
+              >,
+            )
+              .else(eb.ref('channelFillerShow.weight'))
+              .end();
+            return { weight };
+          })
+          .execute();
+      }
+
+      await tx
+        .deleteFrom('fillerShow')
+        .where('uuid', '=', id)
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
+        .execute();
+    });
 
     this.channelCache.clear();
     return;
@@ -296,7 +289,7 @@ export class FillerDB {
 
   // Specifically cast these down for now because our TaggedType type is not portable
   async getAllFillerIds(): Promise<string[]> {
-    const ids = await getDatabase()
+    const ids = await this.db
       .selectFrom('fillerShow')
       .select(['uuid'])
       .execute();
@@ -304,7 +297,7 @@ export class FillerDB {
   }
 
   async getAllFillers() {
-    return await getDatabase()
+    return await this.db
       .selectFrom('fillerShow')
       .selectAll()
       .select((eb) =>
@@ -325,7 +318,7 @@ export class FillerDB {
   }
 
   async getFillerPrograms(id: string) {
-    const programs = await getDatabase()
+    const programs = await this.db
       .selectFrom('fillerShow')
       .where('fillerShow.uuid', '=', id)
       .select((eb) =>
@@ -348,7 +341,7 @@ export class FillerDB {
   async getFillersFromChannel(
     channelId: string,
   ): Promise<ChannelFillerShowWithContent[]> {
-    return getDatabase()
+    return this.db
       .selectFrom('channelFillerShow')
       .where('channelFillerShow.channelUuid', '=', channelId)
       .innerJoin(

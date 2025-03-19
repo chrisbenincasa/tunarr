@@ -2,13 +2,13 @@ import { type TupleToUnion } from '@tunarr/types';
 import type {
   CaseWhenBuilder,
   ExpressionBuilder,
+  Kysely,
   UpdateQueryBuilder,
   UpdateResult,
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
-import { getDatabase } from './DBAccess.ts';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
 import type { ProgramTable as RawProgram } from './schema/Program.ts';
 import { ProgramType } from './schema/Program.ts';
@@ -342,6 +342,7 @@ function baseWithProgramsExpressionBuilder(
 
 // TODO: See if there is a way to share the impls here and above
 export function selectProgramsBuilder(
+  db: Kysely<DB>,
   optOverides: DeepPartial<WithProgramsOptions> = defaultWithProgramOptions,
 ) {
   const opts: DeepRequired<WithProgramsOptions> = merge(
@@ -349,7 +350,7 @@ export function selectProgramsBuilder(
     defaultWithProgramOptions,
     optOverides,
   );
-  return getDatabase()
+  return db
     .selectFrom('program')
     .select(opts.fields)
     .$if(!!opts.joins.trackAlbum, (qb) =>

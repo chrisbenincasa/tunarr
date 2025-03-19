@@ -1,4 +1,3 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
@@ -34,6 +33,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   isArray,
   isEmpty,
@@ -54,6 +54,7 @@ import {
   MediaSourceType,
   NewMediaSource,
 } from '../../db/schema/MediaSource.ts';
+import { DB } from '../../db/schema/db.ts';
 import {
   LegacyChannelMigrator,
   LegacyProgram,
@@ -92,6 +93,9 @@ export class LegacyDbMigrator {
     private legacyMetadataBackiller: LegacyMetadataBackfiller,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(LegacyLibraryMigrator)
+    private legacyLibraryMigrator: LegacyLibraryMigrator,
   ) {}
 
   async migrateFromLegacyDb(legacyDbPath: string, entities?: string[]) {
@@ -274,7 +278,7 @@ export class LegacyDbMigrator {
             }
           }
 
-          await getDatabase()
+          await this.db
             .insertInto('mediaSource')
             .values(entities)
             .onConflict((oc) => oc.columns(['type', 'name', 'uri']).doNothing())
@@ -435,7 +439,7 @@ export class LegacyDbMigrator {
             isDefault: booleanToNumber(true),
           };
 
-          await getDatabase()
+          await this.db
             .insertInto('transcodeConfig')
             .values(defaultTranscodeConfig)
             .execute();
@@ -456,12 +460,13 @@ export class LegacyDbMigrator {
       this.logger.error(e, 'Unable to migrate client ID');
     }
 
-    const libraryMigrator = new LegacyLibraryMigrator();
-
     if (entitiesToMigrate.includes('custom-shows')) {
       try {
         this.logger.debug('Migrating custom shows');
-        await libraryMigrator.migrateCustomShows(legacyDbPath, 'custom-shows');
+        await this.legacyLibraryMigrator.migrateCustomShows(
+          legacyDbPath,
+          'custom-shows',
+        );
       } catch (e) {
         this.logger.error(e, 'Unable to migrate all custom shows');
       }
@@ -470,7 +475,10 @@ export class LegacyDbMigrator {
     if (entitiesToMigrate.includes('filler-shows')) {
       try {
         this.logger.debug('Migrating filler shows');
-        await libraryMigrator.migrateCustomShows(legacyDbPath, 'filler');
+        await this.legacyLibraryMigrator.migrateCustomShows(
+          legacyDbPath,
+          'filler',
+        );
       } catch (e) {
         this.logger.error(e, 'Unable to migrate all filler shows');
       }
@@ -574,7 +582,7 @@ export class LegacyDbMigrator {
       newCacheImages.push({ url, hash, mimeType });
     }
 
-    return getDatabase()
+    return this.db
       .insertInto('cachedImage')
       .values(newCacheImages)
       .onConflict((oc) =>

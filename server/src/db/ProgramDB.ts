@@ -15,7 +15,7 @@ import { KEYS } from '@/types/inject.js';
 import { MarkNonNullable, Maybe } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
-import { type Logger } from '@/util/logging/LoggerFactory.js';
+import { LoggerFactory, type Logger } from '@/util/logging/LoggerFactory.js';
 import { createExternalId } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {
@@ -25,7 +25,7 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { CaseWhenBuilder, NotNull, UpdateResult } from 'kysely';
+import { CaseWhenBuilder, Kysely, NotNull, UpdateResult } from 'kysely';
 import {
   chunk,
   concat,
@@ -33,6 +33,7 @@ import {
   filter,
   first,
   flatMap,
+  flatten,
   forEach,
   groupBy,
   head,
@@ -60,10 +61,10 @@ import {
   groupByUniq,
   groupByUniqProp,
   isNonEmptyString,
+  mapAsyncSeq,
   mapToObj,
   run,
 } from '../util/index.ts';
-import { getDatabase } from './DBAccess.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramMinterFactory } from './converters/ProgramMinter.ts';
@@ -72,7 +73,6 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.ts';
-import { upsertProgramExternalIds } from './programExternalIdHelpers.ts';
 import {
   AllProgramJoins,
   ProgramUpsertFields,
@@ -98,6 +98,7 @@ import {
   NewSingleOrMultiExternalId,
   ProgramExternalId,
   ProgramExternalIdKeys,
+  toInsertableProgramExternalId,
 } from './schema/ProgramExternalId.ts';
 import {
   NewProgramGrouping,
@@ -152,12 +153,13 @@ export class ProgramDB implements IProgramDB {
     private savePlexProgramExternalIdsTaskFactory: SavePlexProgramExternalIdsTaskFactory,
     @inject(SaveJellyfinProgramExternalIdsTask.KEY)
     private saveJellyfinProgramExternalIdsTask: SaveJellyfinProgramExternalIdsTaskFactory,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     this.timer = new Timer(this.logger);
   }
 
   async getProgramById(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('program')
       .selectAll()
       .select((eb) => withProgramExternalIds(eb, ProgramExternalIdKeys))
@@ -169,7 +171,7 @@ export class ProgramDB implements IProgramDB {
     id: string,
     externalIdTypes?: ProgramExternalIdType[],
   ) {
-    return await getDatabase()
+    return await this.db
       .selectFrom('programExternalId')
       .selectAll()
       .where('programExternalId.programUuid', '=', id)
@@ -180,7 +182,7 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getShowIdFromTitle(title: string) {
-    const matchedGrouping = await getDatabase()
+    const matchedGrouping = await this.db
       .selectFrom('programGrouping')
       .select('uuid')
       .where('title', '=', title)
@@ -191,7 +193,7 @@ export class ProgramDB implements IProgramDB {
   }
 
   async updateProgramDuration(programId: string, duration: number) {
-    await getDatabase()
+    await this.db
       .updateTable('program')
       .where('uuid', '=', programId)
       .set({
@@ -206,7 +208,7 @@ export class ProgramDB implements IProgramDB {
   ): Promise<ProgramWithRelations[]> {
     const results: ProgramWithRelations[] = [];
     for (const idChunk of chunk(ids, batchSize)) {
-      const res = await getDatabase()
+      const res = await this.db
         .selectFrom('program')
         .selectAll()
         .select(withTrackAlbum)
@@ -222,7 +224,7 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getProgramGrouping(id: string) {
-    return getDatabase()
+    return this.db
       .selectFrom('programGrouping')
       .selectAll()
       .select(withProgramGroupingExternalIds)
@@ -233,7 +235,7 @@ export class ProgramDB implements IProgramDB {
   async getProgramParent(
     programId: string,
   ): Promise<Maybe<ProgramGroupingWithExternalIds>> {
-    const p = await selectProgramsBuilder({
+    const p = await selectProgramsBuilder(this.db, {
       joins: { tvSeason: true, trackAlbum: true },
     })
       .where('program.uuid', '=', programId)
@@ -242,7 +244,7 @@ export class ProgramDB implements IProgramDB {
 
     // It would be better if we didn'thave to do this in two queries...
     if (p) {
-      const eids = await getDatabase()
+      const eids = await this.db
         .selectFrom('programGroupingExternalId')
         .where('groupUuid', '=', p.uuid)
         .selectAll()
@@ -275,7 +277,7 @@ export class ProgramDB implements IProgramDB {
     const programsByExternalIds: ProgramWithRelations[] = [];
     for (const idChunk of chunk(allIds, 200)) {
       programsByExternalIds.push(
-        ...(await getDatabase()
+        ...(await this.db
           .selectFrom('programExternalId')
           .select((eb) =>
             withProgramByExternalId(eb, { joins: AllProgramJoins }),
@@ -322,7 +324,7 @@ export class ProgramDB implements IProgramDB {
     const externalIds = await flatMapAsyncSeq(
       chunk([...ids], chunkSize),
       (idChunk) => {
-        return getDatabase()
+        return this.db
           .selectFrom('programExternalId')
           .selectAll()
           .where((eb) =>
@@ -367,7 +369,7 @@ export class ProgramDB implements IProgramDB {
       'directFilePath' | 'externalFilePath'
     >,
   ) {
-    const existingRatingKey = await getDatabase()
+    const existingRatingKey = await this.db
       .selectFrom('programExternalId')
       .selectAll()
       .where((eb) =>
@@ -381,7 +383,7 @@ export class ProgramDB implements IProgramDB {
 
     if (isNil(existingRatingKey)) {
       const now = +dayjs();
-      return await getDatabase()
+      return await this.db
         .insertInto('programExternalId')
         .values({
           uuid: v4(),
@@ -395,7 +397,7 @@ export class ProgramDB implements IProgramDB {
         .returningAll()
         .executeTakeFirstOrThrow();
     } else {
-      await getDatabase()
+      await this.db
         .updateTable('programExternalId')
         .set({
           externalKey: details.externalKey,
@@ -412,7 +414,7 @@ export class ProgramDB implements IProgramDB {
         )
         .where('uuid', '=', existingRatingKey.uuid)
         .executeTakeFirst();
-      return await getDatabase()
+      return await this.db
         .selectFrom('programExternalId')
         .selectAll()
         .where('uuid', '=', existingRatingKey.uuid)
@@ -425,37 +427,28 @@ export class ProgramDB implements IProgramDB {
     newExternalId: NewProgramExternalId,
     oldExternalId?: MinimalProgramExternalId,
   ) {
-    await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
-        if (oldExternalId) {
-          await tx
-            .deleteFrom('programExternalId')
-            .where('programExternalId.programUuid', '=', programId)
-            .where(
-              'programExternalId.externalKey',
-              '=',
-              oldExternalId.externalKey,
-            )
-            .where(
-              'programExternalId.externalSourceId',
-              '=',
-              oldExternalId.externalSourceId,
-            )
-            .where(
-              'programExternalId.sourceType',
-              '=',
-              oldExternalId.sourceType,
-            )
-            // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-            // .limit(1)
-            .execute();
-        }
+    await this.db.transaction().execute(async (tx) => {
+      if (oldExternalId) {
         await tx
-          .insertInto('programExternalId')
-          .values(newExternalId)
+          .deleteFrom('programExternalId')
+          .where('programExternalId.programUuid', '=', programId)
+          .where(
+            'programExternalId.externalKey',
+            '=',
+            oldExternalId.externalKey,
+          )
+          .where(
+            'programExternalId.externalSourceId',
+            '=',
+            oldExternalId.externalSourceId,
+          )
+          .where('programExternalId.sourceType', '=', oldExternalId.sourceType)
+          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+          // .limit(1)
           .execute();
-      });
+      }
+      await tx.insertInto('programExternalId').values(newExternalId).execute();
+    });
   }
 
   async upsertContentPrograms(
@@ -583,34 +576,32 @@ export class ProgramDB implements IProgramDB {
     await this.timer.timeAsync('programUpsert', async () => {
       for (const c of chunk(programsToPersist, programUpsertBatchSize)) {
         upsertedPrograms.push(
-          ...(await getDatabase()
-            .transaction()
-            .execute((tx) =>
-              tx
-                .insertInto('program')
-                .values(map(c, 'program'))
-                .onConflict((oc) =>
-                  oc
-                    .columns(['sourceType', 'externalSourceId', 'externalKey'])
-                    .doUpdateSet((eb) =>
-                      mapToObj(ProgramUpsertFields, (f) => ({
-                        [f.replace('excluded.', '')]: eb.ref(f),
-                      })),
-                    ),
-                )
-                .onConflict((oc) =>
-                  oc
-                    .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                    .doUpdateSet((eb) =>
-                      mapToObj(ProgramUpsertFields, (f) => ({
-                        [f.replace('excluded.', '')]: eb.ref(f),
-                      })),
-                    ),
-                )
-                .returningAll()
-                .$narrowType<{ mediaSourceId: NotNull }>()
-                .execute(),
-            )),
+          ...(await this.db.transaction().execute((tx) =>
+            tx
+              .insertInto('program')
+              .values(map(c, 'program'))
+              .onConflict((oc) =>
+                oc
+                  .columns(['sourceType', 'externalSourceId', 'externalKey'])
+                  .doUpdateSet((eb) =>
+                    mapToObj(ProgramUpsertFields, (f) => ({
+                      [f.replace('excluded.', '')]: eb.ref(f),
+                    })),
+                  ),
+              )
+              .onConflict((oc) =>
+                oc
+                  .columns(['sourceType', 'mediaSourceId', 'externalKey'])
+                  .doUpdateSet((eb) =>
+                    mapToObj(ProgramUpsertFields, (f) => ({
+                      [f.replace('excluded.', '')]: eb.ref(f),
+                    })),
+                  ),
+              )
+              .returningAll()
+              .$narrowType<{ mediaSourceId: NotNull }>()
+              .execute(),
+          )),
         );
       }
     });
@@ -641,8 +632,7 @@ export class ProgramDB implements IProgramDB {
     // TODO: We could optimize further here by only saving IDs necessary for streaming
     await this.timer.timeAsync(
       `upsert ${requiredExternalIds.length} external ids`,
-      () => upsertProgramExternalIds(requiredExternalIds, 200),
-      // upsertProgramExternalIds_deprecated(requiredExternalIds),
+      () => this.upsertProgramExternalIds(requiredExternalIds, 200),
     );
 
     this.schedulePlexExternalIdsTask(upsertedPrograms);
@@ -667,7 +657,7 @@ export class ProgramDB implements IProgramDB {
         AnonymousTask('UpsertExternalIds', () =>
           this.timer.timeAsync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,
-            () => upsertProgramExternalIds(backgroundExternalIds),
+            () => this.upsertProgramExternalIds(backgroundExternalIds),
           ),
         ),
       );
@@ -804,7 +794,7 @@ export class ProgramDB implements IProgramDB {
     const existingGroupings = await this.timer.timeAsync(
       `selecting grouping external ids (${allGroupingKeys.length})`,
       () =>
-        getDatabase()
+        this.db
           .selectFrom('programGroupingExternalId')
           .where((eb) => {
             return eb.and([
@@ -997,7 +987,7 @@ export class ProgramDB implements IProgramDB {
 
     if (!isEmpty(groupings)) {
       await this.timer.timeAsync('upsert program_groupings', () =>
-        getDatabase()
+        this.db
           .transaction()
           .execute((tx) =>
             tx
@@ -1015,34 +1005,32 @@ export class ProgramDB implements IProgramDB {
             externalIds.map(toInsertableProgramGroupingExternalId),
             100,
           ).map((externalIds) =>
-            getDatabase()
-              .transaction()
-              .execute((tx) =>
-                tx
-                  .insertInto('programGroupingExternalId')
-                  .values(externalIds)
-                  .onConflict((oc) =>
-                    oc
-                      .columns(['groupUuid', 'sourceType'])
-                      .where('mediaSourceId', 'is', null)
-                      .doUpdateSet((eb) => ({
-                        updatedAt: eb.ref('excluded.updatedAt'),
-                        externalFilePath: eb.ref('excluded.externalFilePath'),
-                        groupUuid: eb.ref('excluded.groupUuid'),
-                      })),
-                  )
-                  .onConflict((oc) =>
-                    oc
-                      .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
-                      .where('mediaSourceId', 'is not', null)
-                      .doUpdateSet((eb) => ({
-                        updatedAt: eb.ref('excluded.updatedAt'),
-                        externalFilePath: eb.ref('excluded.externalFilePath'),
-                        groupUuid: eb.ref('excluded.groupUuid'),
-                      })),
-                  )
-                  .executeTakeFirstOrThrow(),
-              ),
+            this.db.transaction().execute((tx) =>
+              tx
+                .insertInto('programGroupingExternalId')
+                .values(externalIds)
+                .onConflict((oc) =>
+                  oc
+                    .columns(['groupUuid', 'sourceType'])
+                    .where('mediaSourceId', 'is', null)
+                    .doUpdateSet((eb) => ({
+                      updatedAt: eb.ref('excluded.updatedAt'),
+                      externalFilePath: eb.ref('excluded.externalFilePath'),
+                      groupUuid: eb.ref('excluded.groupUuid'),
+                    })),
+                )
+                .onConflict((oc) =>
+                  oc
+                    .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
+                    .where('mediaSourceId', 'is not', null)
+                    .doUpdateSet((eb) => ({
+                      updatedAt: eb.ref('excluded.updatedAt'),
+                      externalFilePath: eb.ref('excluded.externalFilePath'),
+                      groupUuid: eb.ref('excluded.groupUuid'),
+                    })),
+                )
+                .executeTakeFirstOrThrow(),
+            ),
           ),
         ),
       );
@@ -1053,138 +1041,134 @@ export class ProgramDB implements IProgramDB {
     if (hasUpdates) {
       // Surprisingly it's faster to do these all at once...
       await this.timer.timeAsync('update program relations', () =>
-        getDatabase()
-          .transaction()
-          .execute(async (tx) => {
-            // For each program, we produce 3 SQL variables: when = ?, then = ?, and uuid in [?].
-            // We have to chunk by type in order to ensure we don't go over the variable limit
-            const tvShowIdUpdates = [
-              ...updatesByType[ProgramGroupingType.Show],
-            ];
+        this.db.transaction().execute(async (tx) => {
+          // For each program, we produce 3 SQL variables: when = ?, then = ?, and uuid in [?].
+          // We have to chunk by type in order to ensure we don't go over the variable limit
+          const tvShowIdUpdates = [...updatesByType[ProgramGroupingType.Show]];
 
-            const chunkSize = run(() => {
-              const envVal = getNumericEnvVar(
-                TUNARR_ENV_VARS.DEBUG__PROGRAM_GROUPING_UPDATE_CHUNK_SIZE,
+          const chunkSize = run(() => {
+            const envVal = getNumericEnvVar(
+              TUNARR_ENV_VARS.DEBUG__PROGRAM_GROUPING_UPDATE_CHUNK_SIZE,
+            );
+
+            if (isNonEmptyString(envVal) && !isNaN(parseInt(envVal))) {
+              return Math.min(10_000, parseInt(envVal));
+            }
+            return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
+          });
+
+          const updates: Promise<UpdateResult[]>[] = [];
+
+          if (!isEmpty(tvShowIdUpdates)) {
+            // Should produce up to 30_000 variables each iteration...
+            for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
+              updates.push(
+                tx
+                  .updateTable('program')
+                  .set((eb) => ({
+                    tvShowUuid: reduce(
+                      idChunk,
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].tvShowUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.tvShowUuid'))
+                      .end(),
+                  }))
+                  .where('program.uuid', 'in', idChunk)
+                  .execute(),
               );
-
-              if (isNonEmptyString(envVal) && !isNaN(parseInt(envVal))) {
-                return Math.min(10_000, parseInt(envVal));
-              }
-              return DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE;
-            });
-
-            const updates: Promise<UpdateResult[]>[] = [];
-
-            if (!isEmpty(tvShowIdUpdates)) {
-              // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(tvShowIdUpdates, chunkSize)) {
-                updates.push(
-                  tx
-                    .updateTable('program')
-                    .set((eb) => ({
-                      tvShowUuid: reduce(
-                        idChunk,
-                        (acc, curr) =>
-                          acc
-                            .when('program.uuid', '=', curr)
-                            .then(upsertedProgramById[curr].tvShowUuid),
-                        eb.case() as unknown as ProgramRelationCaseBuilder,
-                      )
-                        .else(eb.ref('program.tvShowUuid'))
-                        .end(),
-                    }))
-                    .where('program.uuid', 'in', idChunk)
-                    .execute(),
-                );
-              }
             }
+          }
 
-            const seasonIdUpdates = [
-              ...updatesByType[ProgramGroupingType.Season],
-            ];
+          const seasonIdUpdates = [
+            ...updatesByType[ProgramGroupingType.Season],
+          ];
 
-            if (!isEmpty(seasonIdUpdates)) {
-              // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
-                updates.push(
-                  tx
-                    .updateTable('program')
-                    .set((eb) => ({
-                      seasonUuid: reduce(
-                        idChunk,
-                        (acc, curr) =>
-                          acc
-                            .when('program.uuid', '=', curr)
-                            .then(upsertedProgramById[curr].seasonUuid),
-                        eb.case() as unknown as ProgramRelationCaseBuilder,
-                      )
-                        .else(eb.ref('program.seasonUuid'))
-                        .end(),
-                    }))
-                    .where('program.uuid', 'in', idChunk)
-                    .execute(),
-                );
-              }
+          if (!isEmpty(seasonIdUpdates)) {
+            // Should produce up to 30_000 variables each iteration...
+            for (const idChunk of chunk(seasonIdUpdates, chunkSize)) {
+              updates.push(
+                tx
+                  .updateTable('program')
+                  .set((eb) => ({
+                    seasonUuid: reduce(
+                      idChunk,
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].seasonUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.seasonUuid'))
+                      .end(),
+                  }))
+                  .where('program.uuid', 'in', idChunk)
+                  .execute(),
+              );
             }
+          }
 
-            const musicArtistUpdates = [
-              ...updatesByType[ProgramGroupingType.Artist],
-            ];
+          const musicArtistUpdates = [
+            ...updatesByType[ProgramGroupingType.Artist],
+          ];
 
-            if (!isEmpty(musicArtistUpdates)) {
-              // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
-                updates.push(
-                  tx
-                    .updateTable('program')
-                    .set((eb) => ({
-                      artistUuid: reduce(
-                        idChunk,
-                        (acc, curr) =>
-                          acc
-                            .when('program.uuid', '=', curr)
-                            .then(upsertedProgramById[curr].artistUuid),
-                        eb.case() as unknown as ProgramRelationCaseBuilder,
-                      )
-                        .else(eb.ref('program.artistUuid'))
-                        .end(),
-                    }))
-                    .where('program.uuid', 'in', idChunk)
-                    .execute(),
-                );
-              }
+          if (!isEmpty(musicArtistUpdates)) {
+            // Should produce up to 30_000 variables each iteration...
+            for (const idChunk of chunk(musicArtistUpdates, chunkSize)) {
+              updates.push(
+                tx
+                  .updateTable('program')
+                  .set((eb) => ({
+                    artistUuid: reduce(
+                      idChunk,
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].artistUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.artistUuid'))
+                      .end(),
+                  }))
+                  .where('program.uuid', 'in', idChunk)
+                  .execute(),
+              );
             }
+          }
 
-            const musicAlbumUpdates = [
-              ...updatesByType[ProgramGroupingType.Album],
-            ];
+          const musicAlbumUpdates = [
+            ...updatesByType[ProgramGroupingType.Album],
+          ];
 
-            if (!isEmpty(musicAlbumUpdates)) {
-              // Should produce up to 30_000 variables each iteration...
-              for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
-                updates.push(
-                  tx
-                    .updateTable('program')
-                    .set((eb) => ({
-                      albumUuid: reduce(
-                        idChunk,
-                        (acc, curr) =>
-                          acc
-                            .when('program.uuid', '=', curr)
-                            .then(upsertedProgramById[curr].albumUuid),
-                        eb.case() as unknown as ProgramRelationCaseBuilder,
-                      )
-                        .else(eb.ref('program.albumUuid'))
-                        .end(),
-                    }))
-                    .where('program.uuid', 'in', idChunk)
-                    .execute(),
-                );
-              }
+          if (!isEmpty(musicAlbumUpdates)) {
+            // Should produce up to 30_000 variables each iteration...
+            for (const idChunk of chunk(musicAlbumUpdates, chunkSize)) {
+              updates.push(
+                tx
+                  .updateTable('program')
+                  .set((eb) => ({
+                    albumUuid: reduce(
+                      idChunk,
+                      (acc, curr) =>
+                        acc
+                          .when('program.uuid', '=', curr)
+                          .then(upsertedProgramById[curr].albumUuid),
+                      eb.case() as unknown as ProgramRelationCaseBuilder,
+                    )
+                      .else(eb.ref('program.albumUuid'))
+                      .end(),
+                  }))
+                  .where('program.uuid', 'in', idChunk)
+                  .execute(),
+              );
             }
+          }
 
-            await Promise.all(updates);
-          }),
+          await Promise.all(updates);
+        }),
       );
     }
   }
@@ -1247,5 +1231,118 @@ export class ProgramDB implements IProgramDB {
         },
       );
     });
+  }
+
+  async upsertProgramExternalIds(
+    externalIds: NewSingleOrMultiExternalId[],
+    chunkSize: number = 100,
+  ) {
+    if (isEmpty(externalIds)) {
+      return;
+    }
+
+    const logger = LoggerFactory.root;
+
+    const [singles, multiples] = partition(
+      externalIds,
+      (id) => id.type === 'single',
+    );
+
+    let singleIdPromise: Promise<{ uuid: string }[]>;
+    if (!isEmpty(singles)) {
+      singleIdPromise = mapAsyncSeq(
+        chunk(singles, chunkSize),
+        (singleChunk) => {
+          return this.db.transaction().execute((tx) =>
+            tx
+              .insertInto('programExternalId')
+              .values(singleChunk.map(toInsertableProgramExternalId))
+              .onConflict((oc) =>
+                oc
+                  .columns(['programUuid', 'sourceType'])
+                  .where('externalSourceId', 'is', null)
+                  .doUpdateSet((eb) => ({
+                    updatedAt: eb.ref('excluded.updatedAt'),
+                    externalFilePath: eb.ref('excluded.externalFilePath'),
+                    directFilePath: eb.ref('excluded.directFilePath'),
+                    programUuid: eb.ref('excluded.programUuid'),
+                  })),
+              )
+              .onConflict((oc) =>
+                oc
+                  .columns(['programUuid', 'sourceType'])
+                  .where('mediaSourceId', 'is', null)
+                  .doUpdateSet((eb) => ({
+                    updatedAt: eb.ref('excluded.updatedAt'),
+                    externalFilePath: eb.ref('excluded.externalFilePath'),
+                    directFilePath: eb.ref('excluded.directFilePath'),
+                    programUuid: eb.ref('excluded.programUuid'),
+                  })),
+              )
+              .returning('uuid as uuid')
+              .execute(),
+          );
+        },
+      ).then(flatten);
+    } else {
+      singleIdPromise = Promise.resolve([]);
+    }
+
+    let multiIdPromise: Promise<{ uuid: string }[]>;
+    if (!isEmpty(multiples)) {
+      multiIdPromise = mapAsyncSeq(
+        chunk(multiples, chunkSize),
+        (multiChunk) => {
+          return this.db.transaction().execute((tx) =>
+            tx
+              .insertInto('programExternalId')
+              .values(multiChunk.map(toInsertableProgramExternalId))
+              .onConflict((oc) =>
+                oc
+                  .columns(['programUuid', 'sourceType', 'externalSourceId'])
+                  .where('externalSourceId', 'is not', null)
+                  .doUpdateSet((eb) => ({
+                    updatedAt: eb.ref('excluded.updatedAt'),
+                    externalFilePath: eb.ref('excluded.externalFilePath'),
+                    directFilePath: eb.ref('excluded.directFilePath'),
+                    programUuid: eb.ref('excluded.programUuid'),
+                  })),
+              )
+              .onConflict((oc) =>
+                oc
+                  .columns(['programUuid', 'sourceType', 'mediaSourceId'])
+                  .where('mediaSourceId', 'is not', null)
+                  .doUpdateSet((eb) => ({
+                    updatedAt: eb.ref('excluded.updatedAt'),
+                    externalFilePath: eb.ref('excluded.externalFilePath'),
+                    directFilePath: eb.ref('excluded.directFilePath'),
+                    programUuid: eb.ref('excluded.programUuid'),
+                  })),
+              )
+              .returning('uuid as uuid')
+              .execute(),
+          );
+        },
+      ).then(flatten);
+    } else {
+      multiIdPromise = Promise.resolve([]);
+    }
+
+    const [singleResult, multiResult] = await Promise.allSettled([
+      singleIdPromise,
+      multiIdPromise,
+    ]);
+
+    if (singleResult.status === 'rejected') {
+      logger.error(singleResult.reason, 'Error saving external IDs');
+    } else {
+      logger.trace('Upserted %d external IDs', singleResult.value.length);
+    }
+
+    if (multiResult.status === 'rejected') {
+      logger.error(multiResult.reason, 'Error saving external IDs');
+    } else {
+      logger.trace('Upserted %d external IDs', multiResult.value.length);
+    }
   }
 }

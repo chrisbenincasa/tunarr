@@ -5,7 +5,8 @@ import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration
 import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
 import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';
 import { KEYS } from '@/types/inject.js';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
+import { Kysely } from 'kysely';
 import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
@@ -13,6 +14,7 @@ import { FillerDB } from './db/FillerListDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
+import { DB } from './db/schema/db.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { EventService } from './services/EventService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
@@ -64,6 +66,9 @@ export class ServerContext {
 
   @inject(MediaSourceApiFactory)
   public readonly mediaSourceApiFactory!: MediaSourceApiFactory;
+
+  @inject(KEYS.DatabaseFactory)
+  public readonly databaseFactory!: interfaces.AutoFactory<Kysely<DB>>;
 }
 
 export class ServerRequestContext {

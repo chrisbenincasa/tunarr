@@ -1,13 +1,15 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import type { CachedImage } from '@/db/schema/CachedImage.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import axios, { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import { FastifyReply } from 'fastify';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { isString, isUndefined } from 'lodash-es';
 import crypto from 'node:crypto';
 import { createWriteStream, promises as fs } from 'node:fs';
 import stream from 'node:stream';
+import { DB } from '../db/schema/db.ts';
+import { KEYS } from '../types/inject.ts';
 import { FileCacheService } from './FileCacheService.ts';
 
 /**
@@ -17,15 +19,13 @@ import { FileCacheService } from './FileCacheService.ts';
  */
 @injectable()
 export class CacheImageService {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   private cacheService!: FileCacheService;
   private imageCacheFolder: string;
 
-  constructor() {
+  constructor(
+    @inject(KEYS.Logger) private logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {
     this.cacheService = new FileCacheService();
     this.imageCacheFolder = 'images';
   }
@@ -41,7 +41,7 @@ export class CacheImageService {
    */
   async routerInterceptor(hash: string, res: FastifyReply) {
     try {
-      const imgItem = await getDatabase()
+      const imgItem = await this.db
         .selectFrom('cachedImage')
         .where('hash', '=', hash)
         .selectAll()
@@ -67,7 +67,7 @@ export class CacheImageService {
   }
 
   async getOrDownloadImage(hash: string) {
-    const imgItem = await getDatabase()
+    const imgItem = await this.db
       .selectFrom('cachedImage')
       .where('hash', '=', hash)
       .selectAll()
@@ -107,7 +107,7 @@ export class CacheImageService {
     const mimeType = (response.headers as AxiosHeaders).get('content-type');
     if (!isUndefined(mimeType) && isString(mimeType)) {
       this.logger.debug('Got image file with mimeType %s', mimeType);
-      await getDatabase()
+      await this.db
         .insertInto('cachedImage')
         .values({
           ...cachedImage,
@@ -159,7 +159,7 @@ export class CacheImageService {
       .update(imageUrl)
       .digest('base64url');
 
-    await getDatabase()
+    await this.db
       .insertInto('cachedImage')
       .values({
         hash: encodedUrl,
