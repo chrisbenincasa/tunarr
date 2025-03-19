@@ -1,4 +1,5 @@
 import { type Channel } from '@tunarr/types';
+import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { type MarkOptional } from 'ts-essentials';
 
 export const OneDayMillis = 1000 * 60 * 60 * 24;
@@ -58,3 +59,15 @@ export const Jellyfin = 'jellyfin';
 export const Emby = 'emby';
 export const Playlists = 'playlists';
 export const Library = 'library';
+export const defaultRandomSlotSchedule: RandomSlotSchedule = {
+  type: 'random',
+  padStyle: 'slot',
+  randomDistribution: 'uniform',
+  flexPreference: 'distribute',
+  maxDays: 365,
+  padMs: 1,
+  slots: [],
+  timeZoneOffset: new Date().getTimezoneOffset(),
+  // UI mechanism
+  lockWeights: false,
+};

@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
-import { RandomSlotSchedule } from '@tunarr/types/api';
+import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -33,33 +33,22 @@ import {
 } from 'lodash-es';
 import React, { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import type { StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
+import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
 
 dayjs.extend(duration);
 
-export type RandomSlotForm = Omit<
+export type RandomSlotForm = StrictOmit<
   RandomSlotSchedule,
   'timeZoneOffset' | 'type'
 >;
-
-const defaultRandomSlotSchedule: RandomSlotSchedule = {
-  type: 'random',
-  padStyle: 'slot',
-  randomDistribution: 'uniform',
-  flexPreference: 'distribute',
-  maxDays: 365,
-  padMs: 1,
-  slots: [],
-  timeZoneOffset: new Date().getTimezoneOffset(),
-  // UI mechanism
-  lockWeights: false,
-};
 
 export default function RandomSlotEditorPage() {
   const {

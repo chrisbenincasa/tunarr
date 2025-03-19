@@ -4,13 +4,19 @@ import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useCalculateProgramFrequency } from '@/hooks/slot_scheduler/useCalculatorProgramFrequency.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
-import { Shuffle, SvgIconComponent } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import { Shuffle } from '@mui/icons-material';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { Button, ListItemIcon, MenuItem } from '@mui/material';
-import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import type {
+  RandomSlot,
+  RandomSlotProgramming,
+  RandomSlotSchedule,
+} from '@tunarr/types/api';
 import { forEach, maxBy } from 'lodash-es';
 import React from 'react';
 import { match } from 'ts-pattern';
+import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
 
 type Preset = {
   key: 'cyclie_shuffle';
@@ -87,11 +93,12 @@ export const RandomSlotPresetButton = () => {
         });
 
         reset({
+          ...defaultRandomSlotSchedule,
           randomDistribution: 'weighted',
           padMs: 1,
           slots,
           lockWeights: false,
-        });
+        } satisfies RandomSlotSchedule);
       }
     }
     handleClose();

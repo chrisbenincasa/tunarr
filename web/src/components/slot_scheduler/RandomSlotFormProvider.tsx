@@ -1,6 +1,6 @@
-import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
+import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
 import React from 'react';
-import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
+import type { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
 
 export type RandomSlotFormContextType = UseFormReturn<RandomSlotForm> & {
   slotArray: UseFieldArrayReturn<RandomSlotForm, 'slots'>;
