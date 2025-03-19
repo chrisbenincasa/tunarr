@@ -1,19 +1,21 @@
 import { inject, injectable } from 'inversify';
-import { getDatabase } from '../../db/DBAccess.ts';
+import { Kysely } from 'kysely';
+import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 
 @injectable()
 export class BackfillMediaSourceIdFixer extends Fixer {
-  constructor(@inject(KEYS.Logger) protected logger: Logger) {
+  constructor(
+    @inject(KEYS.Logger) protected logger: Logger,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+  ) {
     super();
   }
 
   protected async runInternal(): Promise<void> {
-    const db = getDatabase();
-
-    await db
+    await this.db
       .updateTable('program')
       .set({
         mediaSourceId: (eb) =>
@@ -27,7 +29,7 @@ export class BackfillMediaSourceIdFixer extends Fixer {
       .where('program.mediaSourceId', 'is', null)
       .execute();
 
-    await db
+    await this.db
       .updateTable('programExternalId')
       .set({
         mediaSourceId: (eb) =>
@@ -46,7 +48,7 @@ export class BackfillMediaSourceIdFixer extends Fixer {
       .where('programExternalId.sourceType', 'in', ['plex', 'emby', 'jellyfin'])
       .execute();
 
-    await db
+    await this.db
       .updateTable('programGroupingExternalId')
       .set({
         mediaSourceId: (eb) =>

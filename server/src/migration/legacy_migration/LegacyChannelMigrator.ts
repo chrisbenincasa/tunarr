@@ -1,6 +1,4 @@
-import { ChannelDB } from '@/db/ChannelDB.js';
 import { CustomShowDB } from '@/db/CustomShowDB.js';
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramUpsertFields } from '@/db/programQueryHelpers.js';
 import { Channel, NewChannelFillerShow } from '@/db/schema/Channel.js';
 import { ProgramDao } from '@/db/schema/Program.js';
@@ -44,7 +42,9 @@ import {
 
 import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { type IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   emptyStringToUndefined,
@@ -93,6 +93,7 @@ export class LegacyChannelMigrator {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {}
 
   async createLineup(
@@ -176,7 +177,7 @@ export class LegacyChannelMigrator {
         isNonEmptyString(p.key),
     );
 
-    const mediaSources = await getDatabase()
+    const mediaSources = await this.db
       .selectFrom('mediaSource')
       .selectAll()
       .execute();
@@ -199,24 +200,22 @@ export class LegacyChannelMigrator {
     const upsertedPrograms: ProgramDao[] = [];
     for (const c of chunk(programEntities, 100)) {
       upsertedPrograms.push(
-        ...(await getDatabase()
-          .transaction()
-          .execute((tx) =>
-            tx
-              .insertInto('program')
-              .values(c)
-              .onConflict((oc) =>
-                oc
-                  .columns(['sourceType', 'externalSourceId', 'externalKey'])
-                  .doUpdateSet((eb) =>
-                    mapToObj(ProgramUpsertFields, (f) => ({
-                      [f.replace('excluded.', '')]: eb.ref(f),
-                    })),
-                  ),
-              )
-              .returningAll()
-              .execute(),
-          )),
+        ...(await this.db.transaction().execute((tx) =>
+          tx
+            .insertInto('program')
+            .values(c)
+            .onConflict((oc) =>
+              oc
+                .columns(['sourceType', 'externalSourceId', 'externalKey'])
+                .doUpdateSet((eb) =>
+                  mapToObj(ProgramUpsertFields, (f) => ({
+                    [f.replace('excluded.', '')]: eb.ref(f),
+                  })),
+                ),
+            )
+            .returningAll()
+            .execute(),
+        )),
       );
     }
 
@@ -244,46 +243,43 @@ export class LegacyChannelMigrator {
     }
 
     this.logger.debug('Saving channel %s', channelEntity.uuid);
-    await getDatabase()
-      .transaction()
-      .execute(async (tx) => {
+    await this.db.transaction().execute(async (tx) => {
+      await tx
+        .deleteFrom('channelPrograms')
+        .where('channelPrograms.channelUuid', '=', channelEntity.uuid)
+        .execute();
+      await tx
+        .deleteFrom('channelCustomShows')
+        .where('channelCustomShows.channelUuid', '=', channelEntity.uuid)
+        .execute();
+      // Update associations from custom show <-> channel
+      if (customShowRefs.length > 0) {
         await tx
-          .deleteFrom('channelPrograms')
-          .where('channelPrograms.channelUuid', '=', channelEntity.uuid)
+          .insertInto('channelCustomShows')
+          .values(
+            map(customShowRefs, (cs) => ({
+              customShowUuid: cs,
+              channelUuid: channelEntity.uuid,
+            })),
+          )
           .execute();
+      }
+      // Associate the programs with the channel
+      if (!isEmpty(dbProgramById)) {
         await tx
-          .deleteFrom('channelCustomShows')
-          .where('channelCustomShows.channelUuid', '=', channelEntity.uuid)
+          .insertInto('channelPrograms')
+          .values(
+            map(values(dbProgramById), (id) => ({
+              programUuid: id.uuid,
+              channelUuid: channelEntity.uuid,
+            })),
+          )
           .execute();
-        // Update associations from custom show <-> channel
-        if (customShowRefs.length > 0) {
-          await tx
-            .insertInto('channelCustomShows')
-            .values(
-              map(customShowRefs, (cs) => ({
-                customShowUuid: cs,
-                channelUuid: channelEntity.uuid,
-              })),
-            )
-            .execute();
-        }
-        // Associate the programs with the channel
-        if (!isEmpty(dbProgramById)) {
-          await tx
-            .insertInto('channelPrograms')
-            .values(
-              map(values(dbProgramById), (id) => ({
-                programUuid: id.uuid,
-                channelUuid: channelEntity.uuid,
-              })),
-            )
-            .execute();
-        }
-      });
+      }
+    });
 
     this.logger.debug('Saving channel lineup %s', channelEntity.uuid);
-    const channelDB = new ChannelDB();
-    await channelDB.saveLineup(channelEntity.uuid, {
+    await this.channelDB.saveLineup(channelEntity.uuid, {
       ...(await this.createLineup(programs, dbProgramById)),
       onDemandConfig: isOnDemand
         ? {
@@ -478,11 +474,11 @@ export class LegacyChannelMigrator {
     }
 
     // Init programs, we may have already inserted some
-    await getDatabase()
+    await this.db
       .deleteFrom('channelPrograms')
       .where('channelUuid', '=', channelEntity.uuid)
       .execute();
-    await getDatabase()
+    await this.db
       .deleteFrom('channelCustomShows')
       .where('channelUuid', '=', channelEntity.uuid)
       .execute();
@@ -526,7 +522,7 @@ export class LegacyChannelMigrator {
       });
 
       if (relations.length > 0) {
-        await getDatabase()
+        await this.db
           .insertInto('channelFillerShow')
           .values(relations)
           .onConflict((oc) => oc.doNothing())

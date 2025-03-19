@@ -13,6 +13,8 @@ const KEYS = {
   Timer: Symbol.for('Timer'),
   MutexMap: Symbol.for('MutexMap'),
 
+  Database: Symbol.for('Database'),
+  DatabaseFactory: Symbol.for('DatabaseFactory'),
   ChannelDB: Symbol.for('ChannelDB'),
   ProgramDB: Symbol.for('ProgramDB'),
   SettingsDB: Symbol.for('SettingsDB'),

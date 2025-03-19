@@ -1,5 +1,4 @@
 import { container } from '@/container.js';
-import { getDatabase } from '@/db/DBAccess.js';
 import type { ProgramStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { Channel } from '@/db/schema/Channel.js';
@@ -40,7 +39,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await getDatabase()
+      const channel = await req.serverCtx
+        .databaseFactory()
         .selectFrom('channel')
         .selectAll()
         .select((eb) =>
@@ -97,7 +97,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const channel = await getDatabase()
+      const channel = await req.serverCtx
+        .databaseFactory()
         .selectFrom('channel')
         .selectAll()
         .select((eb) =>
@@ -139,8 +140,9 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
   );
 
-  fastify.get('/streams/random', async (_, res) => {
-    const program = await getDatabase()
+  fastify.get('/streams/random', async (req, res) => {
+    const program = await req.serverCtx
+      .databaseFactory()
       .selectFrom('program')
       .orderBy((ob) => ob.fn('random'))
       .where('type', '=', ProgramType.Episode)
@@ -148,7 +150,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       .selectAll()
       .executeTakeFirstOrThrow();
 
-    const channels = await getDatabase()
+    const channels = await req.serverCtx
+      .databaseFactory()
       .selectFrom('channelPrograms')
       .where('programUuid', '=', program.uuid)
       .select((eb) =>
@@ -214,10 +217,11 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         (isNumber(req.query.start) && req.query.start <= 0)
           ? 0
           : req.query.start === 'random'
-          ? random(program.duration / 1000, true)
-          : req.query.start;
+            ? random(program.duration / 1000, true)
+            : req.query.start;
 
-      const channels = await getDatabase()
+      const channels = await req.serverCtx
+        .databaseFactory()
         .selectFrom('channelPrograms')
         .where('programUuid', '=', program.uuid)
         .select((eb) =>
@@ -245,7 +249,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       let firstChannel = nth(channels, 0)?.channel;
 
       if (!firstChannel) {
-        firstChannel = await getDatabase()
+        firstChannel = await req.serverCtx
+          .databaseFactory()
           .selectFrom('channel')
           .selectAll()
           .select((eb) =>

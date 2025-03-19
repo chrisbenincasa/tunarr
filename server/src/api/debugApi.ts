@@ -1,5 +1,4 @@
 import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
-import { getDatabase } from '@/db/DBAccess.js';
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
@@ -286,9 +285,9 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await new LineupCreator().resolveLineup(
-        req.query.channelId,
-      );
+      const result = await container
+        .get(LineupCreator)
+        .resolveLineup(req.query.channelId);
       ifDefined(result, (r) => {
         console.log(r.lineup.items.length);
       });
@@ -319,12 +318,13 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
       },
     },
-    async (_req, res) => {
-      const mediaSource = (await _req.serverCtx.mediaSourceDB.getById(
-        _req.query.id,
+    async (req, res) => {
+      const mediaSource = (await req.serverCtx.mediaSourceDB.getById(
+        req.query.id,
       ))!;
 
-      const knownProgramIds = await getDatabase()
+      const knownProgramIds = await req.serverCtx
+        .databaseFactory()
         .selectFrom('programExternalId as p1')
         .where(({ eb }) =>
           eb.and([

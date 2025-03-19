@@ -1,5 +1,4 @@
 import { ChannelDB } from '@/db/ChannelDB.js';
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
@@ -25,6 +24,7 @@ import retry from 'async-retry';
 import dayjs from 'dayjs';
 import duration, { Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   compact,
   filter,
@@ -50,6 +50,7 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { Channel } from '../db/schema/Channel.ts';
+import { DB } from '../db/schema/db.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
@@ -128,6 +129,7 @@ export class TVGuideService {
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
     @inject(ProgramConverter) programConverter: ProgramConverter,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     this.timer = new Timer(this.logger);
     this.cachedGuide = {};
@@ -1089,9 +1091,10 @@ export class TVGuideService {
       programs: [],
       streamMode: 'hls',
       transcodeConfigId: (
-        await getDatabase()
+        await this.db
           .selectFrom('transcodeConfig')
           .select('uuid')
+          .orderBy('isDefault desc')
           .executeTakeFirstOrThrow()
       ).uuid,
     };

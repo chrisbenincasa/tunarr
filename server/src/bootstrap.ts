@@ -2,19 +2,10 @@ import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
-import {
-  databaseNeedsMigration,
-  DBContext,
-  getDatabase,
-  makeDatabaseConnection,
-  migrateExistingDatabase,
-  runDBMigrations,
-  syncMigrationTablesIfNecessary,
-} from './db/DBAccess.ts';
+import { DBAccess } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { type GlobalOptions, globalOptions } from './globals.js';
-import { getDefaultDatabaseName } from './util/defaults.ts';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 
@@ -76,20 +67,15 @@ export async function bootstrapTunarr(
   }
 
   await initDbDirectories(opts);
-  await DBContext.create(makeDatabaseConnection(), async () => {
-    const db = getDatabase(); // Initialize the DB
+  const conn = DBAccess.init();
 
-    // not the first run, use the copy migrator
-    if (hasTunarrDb) {
-      const migrationNecessary = await databaseNeedsMigration(db);
-      if (migrationNecessary) {
-        await migrateExistingDatabase(getDefaultDatabaseName());
-      }
-    } else {
-      await syncMigrationTablesIfNecessary(db);
-      await runDBMigrations(db);
-    }
-  });
+  // not the first run, use the copy migrator
+  if (hasTunarrDb) {
+    await DBAccess.instance.migrateExistingDatabase(conn.name);
+  } else {
+    await conn.syncMigrationTablesIfNecessary();
+    await conn.runDBMigrations();
+  }
 
   LoggerFactory.initialize(settingsDb);
 }

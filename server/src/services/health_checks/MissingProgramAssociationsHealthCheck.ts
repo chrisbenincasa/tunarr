@@ -1,7 +1,9 @@
-import { getDatabase } from '@/db/DBAccess.js';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import { find } from 'lodash-es';
 import { P, match } from 'ts-pattern';
+import { DB } from '../../db/schema/db.ts';
+import { KEYS } from '../../types/inject.ts';
 import {
   type HealthCheck,
   type HealthCheckResult,
@@ -13,8 +15,10 @@ import {
 export class MissingProgramAssociationsHealthCheck implements HealthCheck {
   readonly id: string = this.constructor.name;
 
+  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {}
+
   async getStatus(): Promise<HealthCheckResult> {
-    const missingParents = await getDatabase()
+    const missingParents = await this.db
       .selectFrom('program')
       .select((eb) => ['type', eb.fn.count<number>('uuid').as('count')])
       .where((eb) =>

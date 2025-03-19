@@ -1,4 +1,3 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
@@ -78,7 +77,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       return res.send(
         req.serverCtx.programConverter.programDaoToContentProgram(
-          await selectProgramsBuilder({
+          await selectProgramsBuilder(req.serverCtx.databaseFactory(), {
             joins: {
               tvSeason: true,
               tvShow: true,
@@ -451,7 +450,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await getDatabase()
+      const result = await req.serverCtx
+        .databaseFactory()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
@@ -508,7 +508,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await getDatabase()
+      const result = await req.serverCtx
+        .databaseFactory()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.uuid', '=', req.params.id)
@@ -541,7 +542,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await getDatabase()
+      const result = await req.serverCtx
+        .databaseFactory()
         .selectFrom('programGrouping')
         .selectAll()
         .where('programGrouping.showUuid', '=', req.params.id)

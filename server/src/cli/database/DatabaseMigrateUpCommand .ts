@@ -1,4 +1,4 @@
-import { getMigrator } from '@/db/DBAccess.js';
+import { DBAccess } from '@/db/DBAccess.js';
 import { isNonEmptyString } from '@/util/index.js';
 import type { CommandModule } from 'yargs';
 import { isWrongMigrationDirection } from './databaseCommandUtil.ts';
@@ -16,7 +16,7 @@ export const DatabaseMigrateUpCommand: CommandModule<
   builder: (yargs) =>
     yargs.positional('migrationName', { demandOption: false, type: 'string' }),
   handler: async (args) => {
-    const migrator = getMigrator();
+    const migrator = new DBAccess().getOrCreateConnection().getMigrator();
     if (await isWrongMigrationDirection(args.migrationName, 'up', migrator)) {
       console.warn(
         `Migration skipped: "${args.migrationName}" has already been run`,

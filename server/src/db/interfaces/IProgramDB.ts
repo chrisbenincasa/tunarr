@@ -4,6 +4,7 @@ import type { ProgramDao } from '@/db/schema/Program.js';
 import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
+  NewSingleOrMultiExternalId,
   ProgramExternalId,
 } from '@/db/schema/ProgramExternalId.js';
 import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
@@ -85,4 +86,9 @@ export interface IProgramDB {
     ids: Set<[string, string, string]>,
     chunkSize?: number,
   ): Promise<Record<`${string}|${string}|${string}`, string>>;
+
+  upsertProgramExternalIds(
+    externalIds: NewSingleOrMultiExternalId[],
+    chunkSize?: number,
+  ): Promise<void>;
 }

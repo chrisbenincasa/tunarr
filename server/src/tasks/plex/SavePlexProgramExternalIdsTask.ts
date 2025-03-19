@@ -1,5 +1,4 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -83,7 +82,7 @@ export class SavePlexProgramExternalIdsTask extends Task {
       mintExternalIdForPlexGuid(guid.id, program.uuid),
     );
 
-    return await upsertProgramExternalIds(eids);
+    return await this.programDB.upsertProgramExternalIds(eids);
   }
 
   get taskName() {

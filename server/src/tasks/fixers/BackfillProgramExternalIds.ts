@@ -1,7 +1,5 @@
-import { getDatabase } from '@/db/DBAccess.js';
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { withProgramExternalIds } from '@/db/programQueryHelpers.js';
 import { ProgramDao } from '@/db/schema/Program.js';
 import { NewSingleOrMultiExternalId } from '@/db/schema/ProgramExternalId.js';
@@ -15,6 +13,7 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { PlexTerminalMedia } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   difference,
   first,
@@ -26,6 +25,8 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { v4 } from 'uuid';
+import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import { DB } from '../../db/schema/db.ts';
 import { Timer } from '../../util/Timer.ts';
 import {
   attempt,
@@ -42,6 +43,8 @@ export class BackfillProgramExternalIds extends Fixer {
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
   ) {
     super();
     this.timer = new Timer(this.logger);
@@ -51,7 +54,7 @@ export class BackfillProgramExternalIds extends Fixer {
 
   async runInternal(): Promise<void> {
     // This makes the paging much faster...
-    const firstId = await getDatabase()
+    const firstId = await this.db
       .selectFrom('program')
       .where('sourceType', '=', ProgramSourceType.PLEX)
       .select('uuid')
@@ -69,7 +72,7 @@ export class BackfillProgramExternalIds extends Fixer {
       return this.timer.timeAsync(
         'BackfillProgramExternalIds#getPrograms',
         () =>
-          getDatabase()
+          this.db
             .selectFrom('program')
             .selectAll()
             .select(withProgramExternalIds)
@@ -107,7 +110,7 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await getDatabase()
+      const serverSettings = await this.db
         .selectFrom('mediaSource')
         .selectAll()
         .where('name', 'in', missingServers)
@@ -135,7 +138,7 @@ export class BackfillProgramExternalIds extends Fixer {
           );
         } else {
           const upsertResult = await attempt(() =>
-            upsertProgramExternalIds(result.result),
+            this.programDB.upsertProgramExternalIds(result.result),
           );
           if (isError(upsertResult)) {
             this.logger.warn(

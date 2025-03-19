@@ -1,5 +1,4 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { upsertProgramExternalIds } from '@/db/programExternalIdHelpers.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
@@ -107,7 +106,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
       }),
     );
 
-    return await upsertProgramExternalIds(eids);
+    return await this.programDB.upsertProgramExternalIds(eids);
   }
 
   get taskName() {
