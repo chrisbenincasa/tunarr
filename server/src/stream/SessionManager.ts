@@ -6,9 +6,11 @@ import {
   compact,
   filter,
   initial,
+  isEmpty,
   isNil,
   isUndefined,
   maxBy,
+  omitBy,
   values,
 } from 'lodash-es';
 import {
@@ -43,6 +45,8 @@ import { StreamConnectionDetails } from '@tunarr/types/api';
 import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
+import { Dictionary } from 'ts-essentials';
+import { EventService } from '../services/EventService.ts';
 import { SessionType } from './Session.js';
 
 export type SessionKey = `${string}_${SessionType}`;
@@ -62,10 +66,26 @@ export class SessionManager {
     private hlsSlowerSessionFactory: HlsSlowerSessionProvider,
     @inject(KEYS.ConcatSession)
     private concatSessionFactory: ConcatSessionFactory,
+    @inject(EventService) private eventService: EventService,
   ) {}
 
   allSessions(): Record<SessionKey, Session> {
     return this.#sessions;
+  }
+
+  allSessionsByChannel(): Record<
+    string,
+    Partial<Record<SessionType, Session>>
+  > {
+    const ret: Dictionary<Partial<Dictionary<Session, SessionType>>> = {};
+    for (const [key, session] of Object.entries(this.#sessions)) {
+      const [channelId, sessionType] = key.split('_', 2);
+      if (!ret[channelId]) {
+        ret[channelId] = {};
+      }
+      ret[channelId][sessionType] = session;
+    }
+    return omitBy(ret, isEmpty);
   }
 
   getHlsSlowerSession(id: string): Maybe<HlsSlowerSession> {
@@ -265,11 +285,29 @@ export class SessionManager {
               );
             });
             this.shutdownChildSessions(channelId, sessionType);
+            this.eventService.push({
+              type: 'stream',
+              action: 'error',
+              level: 'error',
+              details: {
+                channelId,
+                sessionType,
+              },
+            });
           });
 
           session.on('stop', () => {
             this.deleteSession(channelId, sessionType);
             this.shutdownChildSessions(channelId, sessionType);
+            this.eventService.push({
+              type: 'stream',
+              action: 'end',
+              level: 'info',
+              details: {
+                channelId,
+                sessionType,
+              },
+            });
           });
 
           session.on('cleanup', () => {
@@ -282,6 +320,15 @@ export class SessionManager {
             if (session) {
               this.pauseChannelIfNecessary(session, connection).catch(() => {});
             }
+            this.eventService.push({
+              type: 'stream',
+              action: 'connection_remove',
+              level: 'info',
+              details: {
+                channelId,
+                sessionType,
+              },
+            });
           });
 
           if (this.getAllSessionsForChannel(channelId).length === 0) {
@@ -291,6 +338,15 @@ export class SessionManager {
 
         if (!session.started || session.hasError) {
           await session.start();
+          this.eventService.push({
+            type: 'stream',
+            action: 'start',
+            level: 'info',
+            details: {
+              channelId,
+              sessionType,
+            },
+          });
         }
 
         return session;
@@ -304,6 +360,15 @@ export class SessionManager {
       }
 
       session.addConnection(token, connection);
+      this.eventService.push({
+        type: 'stream',
+        action: 'connection_add',
+        level: 'info',
+        details: {
+          channelId,
+          sessionType,
+        },
+      });
 
       return Result.success(session);
     } catch (e) {

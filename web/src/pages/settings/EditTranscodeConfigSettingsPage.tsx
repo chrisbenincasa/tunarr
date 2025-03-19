@@ -1,4 +1,4 @@
-import { TranscodeConfigSettingsForm } from '@/components/settings/TranscodeConfigSettingsForm';
+import { TranscodeConfigSettingsForm } from '@/components/settings/ffmpeg/TranscodeConfigSettingsForm';
 
 import { useTranscodeConfig } from '@/hooks/settingsHooks';
 import { useTunarrApi } from '@/hooks/useTunarrApi';
