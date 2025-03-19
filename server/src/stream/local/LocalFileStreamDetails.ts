@@ -52,8 +52,8 @@ export class LocalFileStreamDetails {
           videoStream.field_order === 'interlaced'
             ? 'interlaced'
             : videoStream.field_order === 'progressive'
-            ? 'progressive'
-            : 'unknown',
+              ? 'progressive'
+              : 'unknown',
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.r_frame_rate ?? undefined,
@@ -64,6 +64,7 @@ export class LocalFileStreamDetails {
           videoStream.height,
           videoStream.display_aspect_ratio,
         ),
+        pixelFormat: videoStream.pix_fmt,
         bitDepth: videoStream.bits_per_raw_sample,
         bitrate: videoStream.bit_rate,
         codec: videoStream.codec_name,

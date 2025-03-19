@@ -3,7 +3,10 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { isEmpty } from 'lodash-es';
-import type { ValidPixelFormatName } from '../../format/PixelFormat.ts';
+import type {
+  PixelFormat,
+  ValidPixelFormatName,
+} from '../../format/PixelFormat.ts';
 import { PixelFormats } from '../../format/PixelFormat.ts';
 
 export class ScaleCudaFilter extends FilterOption {
@@ -25,6 +28,14 @@ export class ScaleCudaFilter extends FilterOption {
   ) {
     super();
     this.filter = this.generateFilter();
+  }
+
+  static formatOnly(currentState: FrameState, targetPixelFormat: PixelFormat) {
+    return new ScaleCudaFilter(
+      currentState.update({ pixelFormat: targetPixelFormat }),
+      currentState.scaledSize,
+      currentState.paddedSize,
+    );
   }
 
   nextState(currentState: FrameState): FrameState {
