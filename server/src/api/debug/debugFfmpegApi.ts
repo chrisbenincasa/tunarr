@@ -1,5 +1,5 @@
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
-import { NutOutputFormat } from '@/ffmpeg/builder/constants.js';
+import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
@@ -72,7 +72,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       const session = await ffmpeg.createStreamSession({
         ...streamDetails,
         duration: dayjs.duration({ seconds: 30 }),
-        outputFormat: NutOutputFormat,
+        outputFormat: MpegTsOutputFormat,
         realtime: false,
         startTime: dayjs.duration(0),
         watermark: channel.watermark ?? undefined,

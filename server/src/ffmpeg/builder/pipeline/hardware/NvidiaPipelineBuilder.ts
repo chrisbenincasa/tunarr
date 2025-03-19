@@ -145,7 +145,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           ? videoStream.pixelFormat
             ? new PixelFormatNv12(videoStream.pixelFormat)
             : null
-          : desiredState.pixelFormat,
+          : videoStream.pixelFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
@@ -156,12 +156,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     this.setStillImageLoop();
 
     if (currentState.bitDepth === 8 && this.watermarkInputSource) {
-      this.logger.debug('adding pixel filter format for watermark!!!');
       const desiredPixelFormat = new PixelFormatYuv420P();
       if (
         !isNil(currentState.pixelFormat) &&
         !desiredPixelFormat.equals(currentState.pixelFormat)
       ) {
+        this.logger.debug('adding pixel filter format for watermark!!!');
         if (currentState.frameDataLocation === FrameDataLocation.Software) {
           const pixelFormatFilter = new PixelFormatFilter(desiredPixelFormat);
           currentState = pixelFormatFilter.nextState(currentState);
@@ -504,6 +504,19 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           currentState.updateFrameLocation(FrameDataLocation.Software),
         ),
       );
+
+      if (currentState.pixelFormat?.bitDepth === 10) {
+        // We're about to use overlay_cuda but we still have a 10-bit input, which
+        // overlay_cuda does not support. We need to convert the input down to 8-bit
+        // to perform the overlay (alternatively, we could've just forced software
+        // overlay...and we still might, in a future version)
+        const hwPixelFormatChange = ScaleCudaFilter.formatOnly(
+          currentState,
+          new PixelFormatYuv420P(),
+        );
+        currentState = hwPixelFormatChange.nextState(currentState);
+        this.videoInputSource.filterSteps.push(hwPixelFormatChange);
+      }
 
       const overlayFilter = new OverlayWatermarkCudaFilter(
         this.watermarkInputSource.watermark,
