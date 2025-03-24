@@ -49,6 +49,7 @@ export type HlsOptions = {
   hlsTime: number; // Duration of each clip in seconds,
   hlsListSize: number; // Number of clips to have in the list
   hlsDeleteThreshold: number;
+  segmentBaseDirectory: string;
   streamBasePath: string;
   streamBaseUrl: string;
   segmentNameFormat: string;
@@ -78,6 +79,7 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   hlsTime: 2,
   hlsListSize: 3,
   hlsDeleteThreshold: 3,
+  segmentBaseDirectory: 'streams', // Relative to cwd
   streamBasePath: 'stream_%v',
   segmentNameFormat: 'data%05d.ts',
   streamNameFormat: 'stream.m3u8',
@@ -460,8 +462,8 @@ export class FFMPEG implements IFFMPEG {
       const vaapiDevice = isNonEmptyString(this.transcodeConfig.vaapiDevice)
         ? this.transcodeConfig.vaapiDevice
         : isLinux()
-        ? '/dev/dri/renderD128'
-        : undefined;
+          ? '/dev/dri/renderD128'
+          : undefined;
       ffmpegArgs.push(
         // Crude workaround for no av1 decoding support
         ...(videoStream?.codec === 'av1' ? [] : ['-hwaccel', 'vaapi']),

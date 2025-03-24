@@ -1,7 +1,10 @@
-import z from 'zod';
-import { ExternalId } from './Program.js';
-import { ResolutionSchema } from './schemas/miscSchemas.js';
-import {
+import type z from 'zod';
+import type { ExternalId } from './Program.js';
+import type {
+  HealthCheckSchema,
+  ResolutionSchema,
+} from './schemas/miscSchemas.js';
+import type {
   MultiExternalIdSchema,
   SingleExternalIdSchema,
 } from './schemas/utilSchemas.js';
@@ -23,3 +26,5 @@ export function externalIdEquals(a: ExternalId, b: ExternalId): boolean {
 export type SingleExternalId = z.infer<typeof SingleExternalIdSchema>;
 
 export type MultiExternalId = z.infer<typeof MultiExternalIdSchema>;
+
+export type HealthCheck = z.infer<typeof HealthCheckSchema>;

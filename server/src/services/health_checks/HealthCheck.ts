@@ -1,5 +1,6 @@
 export type HealthyCheckResult = {
   type: 'healthy';
+  context?: string;
 };
 
 export const HealthyHealthCheckResult: HealthyCheckResult = { type: 'healthy' };

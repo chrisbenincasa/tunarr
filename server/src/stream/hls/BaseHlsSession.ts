@@ -2,13 +2,15 @@ import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { SessionOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
-import { isNodeError } from '@/util/index.js';
+import { isNodeError, isNonEmptyString } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { filter, isError, isString, map, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
+import { defaultHlsOptions } from '../../ffmpeg/ffmpeg.ts';
+import { fileExists } from '../../util/fsUtil.ts';
 
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,
@@ -25,14 +27,19 @@ export abstract class BaseHlsSession<
   constructor(channel: ChannelWithTranscodeConfig, options: HlsSessionOptsT) {
     super(channel, options);
 
-    this._workingDirectory = path.resolve(
-      process.cwd(),
-      'streams',
+    this._workingDirectory = path.join(
+      this.baseDirectory,
       `stream_${this.channel.uuid}`,
     );
     this._m3u8PlaylistPath = path.join(this._workingDirectory, 'stream.m3u8');
     // Direct players back to the /hls URL which will return the playlist
     this._serverPath = `/stream/channels/${this.channel.uuid}.m3u8`;
+  }
+
+  get baseDirectory() {
+    return isNonEmptyString(this.sessionOptions.transcodeDirectory)
+      ? this.sessionOptions.transcodeDirectory
+      : path.resolve(process.cwd(), defaultHlsOptions.segmentBaseDirectory);
   }
 
   get workingDirectory() {
@@ -48,19 +55,18 @@ export abstract class BaseHlsSession<
   }
 
   protected async initDirectories() {
-    this.logger.debug(`Creating stream directory: ${this._workingDirectory}`);
+    if (!(await fileExists(this.baseDirectory))) {
+      this.logger.debug(
+        `Creating stream base directory: ${this.baseDirectory}`,
+      );
+      await fs.mkdir(this.baseDirectory);
+    }
 
-    try {
-      await fs.stat(this._workingDirectory);
+    if (!(await fileExists(this.workingDirectory))) {
+      this.logger.debug(`Creating stream directory: ${this.workingDirectory}`);
+      await fs.mkdir(this.workingDirectory);
+    } else {
       await this.cleanupDirectory();
-    } catch (e) {
-      if (isNodeError(e) && e.code === 'ENOENT') {
-        this.logger.debug(
-          "[Session %s]: Stream directory doesn't exist.",
-          this.channel.uuid,
-        );
-        await fs.mkdir(this._workingDirectory);
-      }
     }
 
     this.transcodedUntil = dayjs();
@@ -115,8 +121,7 @@ export abstract class BaseHlsSession<
             if (isNodeError(e) && e.code === 'ENOENT') {
               this.logger.debug("Session working directory doesn't exist yet!");
               throw e; // Retry
-            } else {
-              this.state === 'error';
+            } else if (this.state === 'error') {
               bail(e);
             }
           }
@@ -164,8 +169,9 @@ export abstract class BaseHlsSession<
 }
 
 export type BaseHlsSessionOptions = SessionOptions & {
-  sessionType: 'hls' | 'hls_slower';
   // The number of segments to wait for before returning
   // the stream to the consumer.
   initialSegmentCount: number;
+  // The directory to write segments to
+  transcodeDirectory?: string;
 };

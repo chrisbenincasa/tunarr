@@ -321,6 +321,34 @@ export default function FfmpegSettingsPage() {
             the selected container format.
           </FormHelperText>
         </FormControl>
+        <FormControl fullWidth>
+          <Controller
+            control={control}
+            name="transcodeDirectory"
+            render={({ field }) => (
+              <TextField
+                id="ffmpeg-transcode-path"
+                label="FFmpeg Transcode Path"
+                helperText={
+                  <span>
+                    Configure the directory where Tunarr writes HLS segment
+                    files when transcoding. Tunarr will create the target
+                    directory (but not intermediate directories) if it doesn't
+                    exist.
+                    <br />
+                    Changing this field will only affect new sessions. Existing
+                    sessions will continue writing to the previous setting, but
+                    will clean out segments when the segment ends.
+                    <br />
+                    When unset, Tunarr will write segments to its current
+                    working directory.
+                  </span>
+                }
+                {...field}
+              />
+            )}
+          />
+        </FormControl>
       </Stack>
       <Divider sx={{ my: 1 }} />
       <Typography variant="h5" sx={{ mb: 2 }}>

@@ -13,7 +13,7 @@ import {
   UpdateSystemSettingsRequestSchema,
 } from '@tunarr/types/api';
 import type { BackupSettings } from '@tunarr/types/schemas';
-import { BackupSettingsSchema } from '@tunarr/types/schemas';
+import { BackupSettingsSchema, HealthCheckSchema } from '@tunarr/types/schemas';
 import { identity, isError, isUndefined, map } from 'lodash-es';
 import type { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
@@ -33,6 +33,9 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     {
       schema: {
         tags: ['System'],
+        response: {
+          200: z.record(HealthCheckSchema),
+        },
       },
     },
     async (req, res) => {

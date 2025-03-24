@@ -301,7 +301,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new NoStdInOption(),
       new HideBannerOption(),
       new NoStatsOption(),
-      new LogLevelOption(),
+      new LogLevelOption(ffmpegState.logLevel),
       new StandardFormatFlags(),
 
       NoDemuxDecodeDelayOutputOption(),

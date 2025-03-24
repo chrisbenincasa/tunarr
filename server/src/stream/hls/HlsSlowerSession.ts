@@ -7,6 +7,7 @@ import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.j
 import type { Result } from '@/types/result.js';
 import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
+import { basename } from 'node:path';
 import type { StrictOmit } from 'ts-essentials';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import {
@@ -19,15 +20,11 @@ import type { ProgramStreamFactoryType } from '../StreamModule.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
 import { BaseHlsSession } from './BaseHlsSession.ts';
 
-export type HlsSlowerSessionOptions = BaseHlsSessionOptions & {
-  sessionType: 'hls_slower';
-};
-
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
  * endpoint and outputs an HLS format + segments
  */
-export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
+export class HlsSlowerSession extends BaseHlsSession {
   public readonly sessionType = 'hls_slower' as const;
 
   // Start in lookahead mode
@@ -37,7 +34,7 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
 
   constructor(
     channel: ChannelWithTranscodeConfig,
-    options: HlsSlowerSessionOptions,
+    options: BaseHlsSessionOptions,
     programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
     private programStreamFactory: ProgramStreamFactoryType,
@@ -162,7 +159,8 @@ export class HlsSlowerSession extends BaseHlsSession<HlsSlowerSessionOptions> {
       mode: 'hls_slower_concat',
       outputFormat: HlsOutputFormat({
         ...defaultHlsOptions,
-        streamBasePath: `stream_${this.channel.uuid}`,
+        segmentBaseDirectory: this.baseDirectory,
+        streamBasePath: basename(this.workingDirectory),
         streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
         hlsTime: 4,
         hlsListSize: 25,

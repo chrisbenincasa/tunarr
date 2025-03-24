@@ -3,16 +3,17 @@ import { isError, isString } from 'lodash-es';
 export abstract class TypedError extends Error {
   readonly type: KnownErrorTypes;
 
-  constructor(public message: string) {
-    super(message);
-  }
-
   static fromError(e: Error): TypedError {
     if (e instanceof TypedError) {
       return e;
     }
 
-    return new GenericError(e.message);
+    console.log(e);
+    const err = new GenericError(e.message, { cause: e.cause });
+    if (e.stack) {
+      err.stack = e.stack;
+    }
+    return err;
   }
 
   static fromAny(e: unknown): TypedError {
