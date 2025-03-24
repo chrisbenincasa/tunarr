@@ -25,6 +25,7 @@ import { MutexMap } from '@/util/mutexMap.js';
 import type { interfaces } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
 import type { DeepPartial } from 'ts-essentials';
+import { ApiModule } from './api/ApiModule.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
@@ -102,5 +103,6 @@ container.load(FixerModule);
 container.load(FFmpegModule);
 container.load(FfmpegPipelineBuilderModule);
 container.load(DynamicChannelsModule);
+container.load(ApiModule);
 
 export { container };

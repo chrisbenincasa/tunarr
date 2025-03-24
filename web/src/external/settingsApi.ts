@@ -60,14 +60,14 @@ const deleteMediaSourceEndpoint = makeEndpoint({
 
 const getXmlTvSettings = makeEndpoint({
   method: 'get',
-  path: '/api/xmltv-settings',
+  path: '/api/settings/xmltv',
   response: XmlTvSettingsSchema,
   alias: 'getXmlTvSettings',
 });
 
 const updateXmlTvSettings = makeEndpoint({
   method: 'put',
-  path: '/api/xmltv-settings',
+  path: '/api/settings/xmltv',
   response: XmlTvSettingsSchema,
   parameters: parametersBuilder().addBody(XmlTvSettingsSchema).build(),
   alias: 'updateXmlTvSettings',
@@ -75,14 +75,14 @@ const updateXmlTvSettings = makeEndpoint({
 
 const getFffmpegSettings = makeEndpoint({
   method: 'get',
-  path: '/api/ffmpeg-settings',
+  path: '/api/settings/ffmpeg',
   response: FfmpegSettingsSchema,
   alias: 'getFfmpegSettings',
 });
 
 const updateFfmpegSettings = makeEndpoint({
   method: 'put',
-  path: '/api/ffmpeg-settings',
+  path: '/api/settings/ffmpeg',
   response: FfmpegSettingsSchema,
   parameters: parametersBuilder().addBody(FfmpegSettingsSchema).build(),
   alias: 'updateFfmpegSettings',
@@ -90,14 +90,14 @@ const updateFfmpegSettings = makeEndpoint({
 
 const getHdhrSettings = makeEndpoint({
   method: 'get',
-  path: '/api/hdhr-settings',
+  path: '/api/settings/hdhr',
   response: HdhrSettingsSchema,
   alias: 'getHdhrSettings',
 });
 
 const updateHdhrSettings = makeEndpoint({
   method: 'put',
-  path: '/api/hdhr-settings',
+  path: '/api/settings/hdhr',
   response: HdhrSettingsSchema,
   parameters: parametersBuilder().addBody(HdhrSettingsSchema).build(),
   alias: 'updateHdhrSettings',
@@ -201,14 +201,14 @@ const systemMigrationState = makeEndpoint({
 const transcodeConfigs = makeEndpoint({
   method: 'get',
   alias: 'getTranscodeConfigs',
-  path: '/api/transcode_configs',
+  path: '/api/settings/transcode_configs',
   response: z.array(TranscodeConfigSchema),
 });
 
 const getTranscodeConfig = makeEndpoint({
   method: 'get',
   alias: 'getTranscodeConfig',
-  path: '/api/transcode_configs/:id',
+  path: '/api/settings/transcode_configs/:id',
   parameters: parametersBuilder()
     .addParameter('id', 'Path', z.string().uuid())
     .build(),
@@ -218,7 +218,7 @@ const getTranscodeConfig = makeEndpoint({
 const createTranscodeConfig = makeEndpoint({
   method: 'post',
   alias: 'createTranscodeConfig',
-  path: '/api/transcode_configs',
+  path: '/api/settings/transcode_configs',
   parameters: parametersBuilder().addBody(TranscodeConfigSchema).build(),
   response: TranscodeConfigSchema,
 });
@@ -226,7 +226,7 @@ const createTranscodeConfig = makeEndpoint({
 const updateTranscodeConfig = makeEndpoint({
   method: 'put',
   alias: 'updateTranscodeConfig',
-  path: '/api/transcode_configs/:id',
+  path: '/api/settings/transcode_configs/:id',
   parameters: parametersBuilder()
     .addPath('id', z.string().uuid())
     .addBody(TranscodeConfigSchema)
@@ -237,7 +237,7 @@ const updateTranscodeConfig = makeEndpoint({
 const deleteTranscodeConfig = makeEndpoint({
   method: 'delete',
   alias: 'deleteTranscodeConfig',
-  path: '/api/transcode_configs/:id',
+  path: '/api/settings/transcode_configs/:id',
   parameters: parametersBuilder().addPath('id', z.string().uuid()).build(),
   response: z.void(),
 });
@@ -245,7 +245,7 @@ const deleteTranscodeConfig = makeEndpoint({
 const duplicateTranscodeConfig = makeEndpoint({
   method: 'post',
   alias: 'duplicateTranscodeConfig',
-  path: '/api/transcode_configs/:id/copy',
+  path: '/api/settings/transcode_configs/:id/copy',
   parameters: parametersBuilder().addPath('id', z.string().uuid()).build(),
   response: TranscodeConfigSchema,
   errors: [

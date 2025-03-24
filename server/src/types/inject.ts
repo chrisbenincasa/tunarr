@@ -43,6 +43,9 @@ const KEYS = {
   Fixer: Symbol.for('Fixer'),
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
+
+  // API
+  ApiController: Symbol.for('ApiController'),
 };
 
 export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;

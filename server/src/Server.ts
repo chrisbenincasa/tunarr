@@ -32,7 +32,7 @@ import path, { dirname } from 'node:path';
 import 'reflect-metadata';
 import { z } from 'zod';
 import { HdhrApiRouter } from './api/hdhrApi.js';
-import { apiRouter } from './api/index.js';
+import { ApiController, apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
@@ -394,6 +394,7 @@ export class Server {
           this.logger.error(error, req.routeOptions.config.url);
           done();
         });
+        await container.get(ApiController).attach(f);
         await f
           .get('/', { schema: { hide: true } }, async (_, res) =>
             res.redirect('/web', 302),
