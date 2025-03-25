@@ -21,8 +21,7 @@ import {
   TvGuideProgram,
 } from '@tunarr/types';
 import retry from 'async-retry';
-import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import { Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import {
@@ -46,6 +45,7 @@ import {
   values,
 } from 'lodash-es';
 import * as syncRetry from 'retry';
+import { DeepReadonly } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -55,6 +55,7 @@ import type {
   ChannelWithPrograms,
   ChannelWithRelations,
 } from '../db/schema/derivedTypes.ts';
+import dayjs from '../util/dayjs.ts';
 import {
   deepCopy,
   groupByUniqProp,
@@ -64,18 +65,24 @@ import {
   wait,
 } from '../util/index.ts';
 import { EventService } from './EventService.ts';
+import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
-
-dayjs.extend(duration);
 
 // LineupItem + optional index + startTime
 type GuideItem = {
   // The underlying lineup item
-  lineupItem: LineupItem;
+  lineupItem: DeepReadonly<LineupItem>;
   // Index in the channel lineup sequence
   index?: number;
   // Start time of the program in this guide generation
   startTimeMs: number;
+  // true if when the guide was generated, the item was
+  // paused
+  isPaused?: boolean;
+  // For paused shows, this represents how much time is remaining
+  // in the program. We lose this information because for paused
+  // guide states we extend the guide time arbitrarily
+  timeRemaining?: number;
   redirectChannelId?: string;
 };
 
@@ -130,6 +137,8 @@ export class TVGuideService {
     @inject(ProgramConverter) programConverter: ProgramConverter,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(OnDemandChannelService)
+    private onDemandChannelService: OnDemandChannelService,
   ) {
     this.timer = new Timer(this.logger);
     this.cachedGuide = {};
@@ -399,10 +408,10 @@ export class TVGuideService {
     );
   }
 
-  private getCurrentPlayingIndex(
+  private async getCurrentPlayingIndex(
     { channel, lineup }: ChannelWithLineup,
     currentUpdateTimeMs: number,
-  ): GuideItem {
+  ): Promise<GuideItem> {
     const channelStartTime = new Date(channel.startTime).getTime();
     if (currentUpdateTimeMs < channelStartTime) {
       //it's flex time
@@ -432,17 +441,37 @@ export class TVGuideService {
       }
 
       // How many ms we are "into" the current channel cycle
-      const channelProgress =
+      let channelProgress =
         (currentUpdateTimeMs - channelStartTime) % channel.duration;
 
       // The timestamp of the start of this cycle
       const startOfCycle = currentUpdateTimeMs - channelProgress;
 
       // Binary search for the currently playing program
-      const targetIndex =
+      let targetIndex =
         accumulate.length === 1
           ? 0
           : binarySearchRange(accumulate, channelProgress);
+
+      if (
+        isNull(targetIndex) &&
+        (await this.channelDB.syncChannelDuration(channel.uuid))
+      ) {
+        const updatedChannel = await this.channelDB
+          .loadChannelWithProgamsAndLineup(channel.uuid)
+          .then((v) => v!);
+        this.logger.warn(
+          'Actual channel duration (%d) is not equal to stored duration (%d)',
+          updatedChannel.channel.duration,
+          channel.duration,
+        );
+        this.channelsById[channel.uuid] = updatedChannel;
+        channel = updatedChannel.channel;
+        lineup = updatedChannel.lineup;
+        channelProgress =
+          (currentUpdateTimeMs - channelStartTime) % channel.duration;
+        targetIndex = binarySearchRange(accumulate, channelProgress);
+      }
 
       if (
         isNull(targetIndex) ||
@@ -518,7 +547,7 @@ export class TVGuideService {
         startTimeMs: currentUpdateTimeMs,
       };
     } else {
-      playing = this.getCurrentPlayingIndex(
+      playing = await this.getCurrentPlayingIndex(
         channelWithLineup,
         currentUpdateTimeMs,
       );
@@ -573,18 +602,21 @@ export class TVGuideService {
             targetChannelProgram.startTimeMs,
           );
 
-          const program2 = deepCopy(targetChannelProgram.lineupItem);
           // Cap the program at the lowest duration
           // Either the redirect slot will cut off before the program is
           // finished, or the program itself will end.
           // Rounding is not a perfect solution here, we should normalize
           // fractional durations in channels
-          program2.durationMs = Math.round(
-            Math.min(
-              playing.lineupItem.durationMs,
-              targetChannelProgram.lineupItem.durationMs,
+          const program2 = {
+            ...deepCopy(targetChannelProgram.lineupItem),
+            durationMs: Math.round(
+              Math.min(
+                playing.lineupItem.durationMs,
+                targetChannelProgram.lineupItem.durationMs,
+              ),
             ),
-          );
+          };
+
           playing = {
             index: playing.index,
             startTimeMs: start,
@@ -594,6 +626,21 @@ export class TVGuideService {
         }
       }
     }
+
+    if (channelWithLineup.lineup?.onDemandConfig?.state === 'paused') {
+      playing.isPaused = true;
+      const itemEndsAt = playing.startTimeMs + playing.lineupItem.durationMs;
+      const remaining = itemEndsAt - currentUpdateTimeMs;
+
+      playing.timeRemaining = remaining;
+      playing.lineupItem = {
+        ...playing.lineupItem,
+        durationMs:
+          this.currentEndTime[channelWithLineup.channel.uuid] -
+          currentUpdateTimeMs,
+      };
+    }
+
     return playing;
   }
 
@@ -635,7 +682,12 @@ export class TVGuideService {
       ) {
         // meld with previous
         const meldedProgram = deepCopy(previousProgram);
-        meldedProgram.lineupItem.durationMs += currentProgram.durationMs;
+        meldedProgram.lineupItem = {
+          ...meldedProgram.lineupItem,
+          durationMs:
+            meldedProgram.lineupItem.durationMs + currentProgram.durationMs,
+        };
+
         melded += currentProgram.durationMs;
 
         // If we've exceeded the amount of time we're willing to 'prettify'
@@ -649,7 +701,10 @@ export class TVGuideService {
             channelWithLineup.channel,
           )
         ) {
-          meldedProgram.lineupItem.durationMs -= melded;
+          meldedProgram.lineupItem = {
+            ...meldedProgram.lineupItem,
+            durationMs: meldedProgram.lineupItem.durationMs - melded,
+          };
 
           programs[previousProgramIndex] = meldedProgram;
           if (
@@ -684,10 +739,28 @@ export class TVGuideService {
       }
     };
 
+    const timestamp = run(() => {
+      const { startTime } = channelWithLineup.channel;
+      if (channelWithLineup.lineup.onDemandConfig) {
+        const { state, cursor } = channelWithLineup.lineup.onDemandConfig;
+        if (state === 'paused') {
+          return startTime + cursor;
+        } else {
+          return this.onDemandChannelService.getLiveTimestampForConfig(
+            channelWithLineup.lineup.onDemandConfig,
+            startTime,
+            currentUpdateTimeMs,
+          );
+        }
+      } else {
+        return currentUpdateTimeMs;
+      }
+    });
+
     let currentProgram = await this.getChannelPlaying(
       channelWithLineup,
       undefined,
-      currentUpdateTimeMs,
+      timestamp,
       redirectStack,
     );
 
@@ -704,6 +777,11 @@ export class TVGuideService {
     let nextOffsetTime =
       currentProgram.startTimeMs + currentProgram.lineupItem.durationMs;
     while (currentProgram.startTimeMs < currentEndTimeMs) {
+      if (currentProgram.isPaused) {
+        push(currentProgram);
+        break;
+      }
+
       if (currentProgram.lineupItem.durationMs > 0) {
         push(currentProgram);
         await throttle();
@@ -754,8 +832,10 @@ export class TVGuideService {
         } else {
           const d = nextOffsetTime - currentProgram.startTimeMs;
           currentProgram.startTimeMs = nextOffsetTime;
-          currentProgram.lineupItem = deepCopy(currentProgram.lineupItem);
-          currentProgram.lineupItem.durationMs -= d;
+          currentProgram.lineupItem = {
+            ...deepCopy(currentProgram.lineupItem),
+            durationMs: currentProgram.lineupItem.durationMs - d,
+          };
         }
       } else if (currentProgram.startTimeMs > nextOffsetTime) {
         console.error('does this hit?');
@@ -979,12 +1059,15 @@ export class TVGuideService {
     channel: ChannelWithRelations,
     guideItem: GuideItem,
     materializedItem: ChannelProgram | null,
-  ) {
+  ): TvGuideProgram {
     const baseItem = {
       start: guideItem.startTimeMs,
       stop: guideItem.startTimeMs + guideItem.lineupItem.durationMs,
       persisted: true,
       duration: guideItem.lineupItem.durationMs,
+      isPaused: guideItem.isPaused ?? false,
+      // For paused items specifically
+      timeRemaining: guideItem.timeRemaining,
     } as const;
 
     if (isNull(materializedItem)) {
@@ -1000,7 +1083,7 @@ export class TVGuideService {
         ? channel.icon.path
         : makeLocalUrl('/images/tunarr.png');
 
-    return match(materializedItem)
+    const program = match(materializedItem)
       .returnType<TvGuideProgram>()
       .with({ type: 'flex' }, (flex) => ({
         ...baseItem,
@@ -1029,6 +1112,13 @@ export class TVGuideService {
           ? channel.guideFlexTitle
           : channel.name,
       }));
+
+    if (guideItem.isPaused && program.type === 'content') {
+      program.title += ' (paused)';
+      program.isPaused = true;
+    }
+
+    return program;
   }
 
   private materializeGuideItem(

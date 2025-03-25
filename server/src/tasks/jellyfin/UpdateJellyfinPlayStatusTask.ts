@@ -44,6 +44,7 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
         return rule;
       }),
       () => this.getNextTask(),
+      [],
       { visible: false },
     );
 
@@ -51,6 +52,7 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdateJellyfinPlayStatusTask.name,
       dayjs().add(1, 'second'),
+      [],
       this.getNextTask(),
     );
   }
@@ -65,6 +67,7 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdateJellyfinPlayStatusTask.name,
       dayjs().add(30, 'seconds').toDate(),
+      [],
       this.getNextTask(),
     );
   }

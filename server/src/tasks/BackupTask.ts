@@ -3,7 +3,7 @@ import type { Tag } from '@tunarr/types';
 import type { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
-import type { TaskId } from './Task.ts';
+import type { TaskMetadata } from './Task.ts';
 import { Task } from './Task.ts';
 
 export type BackupTaskFactory = (
@@ -12,7 +12,8 @@ export type BackupTaskFactory = (
 
 export class BackupTask extends Task {
   static KEY = Symbol.for(BackupTask.name);
-  public ID: string | Tag<TaskId, unknown> = BackupTask.name;
+  public ID: string | Tag<typeof BackupTask.name, TaskMetadata> =
+    BackupTask.name;
 
   constructor(
     private config: DeepReadonly<BackupConfiguration>,

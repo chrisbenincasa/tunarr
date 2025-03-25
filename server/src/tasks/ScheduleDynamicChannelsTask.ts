@@ -10,7 +10,7 @@ import { ScheduledTask } from './ScheduledTask.ts';
 import { Task, TaskId } from './Task.ts';
 
 @injectable()
-export class ScheduleDynamicChannelsTask extends Task<void> {
+export class ScheduleDynamicChannelsTask extends Task {
   public static KEY = Symbol.for(ScheduleDynamicChannelsTask.name);
   public static ID: TaskId = 'schedule-dynamic-channels';
 
@@ -43,6 +43,7 @@ export class ScheduleDynamicChannelsTask extends Task<void> {
             'UpdateDynamicChannel',
             source.updater.schedule,
             () => this.taskFactory.getTask(channel, source),
+            [],
           ),
         );
         console.log('scheduling task = ' + scheduled);

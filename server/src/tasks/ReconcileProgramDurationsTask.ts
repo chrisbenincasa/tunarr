@@ -3,6 +3,7 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
+import { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import {
@@ -16,7 +17,7 @@ import {
   uniqBy,
 } from 'lodash-es';
 import { DB } from '../db/schema/db.ts';
-import { Task } from './Task.ts';
+import { Task, TaskMetadata } from './Task.ts';
 
 // This task is fired off whenever programs are updated. It goes through
 // all channel lineups that contain the program and ensure that their
@@ -29,7 +30,10 @@ export class ReconcileProgramDurationsTask extends Task {
   static KEY = Symbol.for(ReconcileProgramDurationsTask.name);
   static ID = ReconcileProgramDurationsTask.name;
 
-  ID = ReconcileProgramDurationsTask.ID;
+  public ID = ReconcileProgramDurationsTask.ID as Tag<
+    typeof ReconcileProgramDurationsTask.name,
+    TaskMetadata
+  >;
 
   // Optionally provide the channel ID that was updated on the triggering
   // operation, since theoretically we don't have to check it.

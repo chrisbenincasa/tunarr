@@ -103,7 +103,7 @@ export const LineupSchema = z.object({
   lastUpdated: z.number().catch(() => new Date().getTime()),
 
   // The current lineup of a single cycle of this channel
-  items: LineupItemSchema.array(),
+  items: LineupItemSchema.readonly().array().readonly(),
 
   // Defines rules for how to schedule content in the channel
   // Currently time-based and random-slot-based rulesets are

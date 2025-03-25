@@ -9,17 +9,20 @@ import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { mapAsyncSeq } from '@/util/index.js';
+import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
-import type { Tag } from '@tunarr/types';
+import { type Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { Task } from './Task.js';
+import { Task, TaskMetadata } from './Task.js';
 
 @injectable()
-export class UpdateXmlTvTask extends Task<void> {
-  public static ID = 'update-xmltv' as Tag<'update-xmltv', void>;
+export class UpdateXmlTvTask extends Task<[string | undefined]> {
+  public static ID = UpdateXmlTvTask.name as Tag<
+    typeof UpdateXmlTvTask.name,
+    TaskMetadata<[string | undefined], void>
+  >;
   public ID = UpdateXmlTvTask.ID;
 
   constructor(
@@ -40,11 +43,11 @@ export class UpdateXmlTvTask extends Task<void> {
     return UpdateXmlTvTask.name;
   }
 
-  protected runInternal(): Promise<Maybe<void>> {
-    return this.updateXmlTv();
+  protected runInternal(channelId?: string): Promise<Maybe<void>> {
+    return this.updateXmlTv(channelId);
   }
 
-  private async updateXmlTv() {
+  private async updateXmlTv(channelId?: string) {
     try {
       let xmltvSettings = this.settingsDB.xmlTvSettings();
       if (!(await fileExists(xmltvSettings.outputPath))) {
@@ -63,13 +66,22 @@ export class UpdateXmlTvTask extends Task<void> {
 
       await this.lineupCreator.promoteAllPendingLineups();
 
-      await this.guideService.buildAllChannels(
-        dayjs.duration({ hours: xmltvSettings.programmingHours }),
-      );
+      if (isNonEmptyString(channelId)) {
+        await this.guideService.refreshGuide(
+          dayjs.duration({ hours: xmltvSettings.programmingHours }),
+          channelId,
+          true,
+        );
+      } else {
+        await this.guideService.buildAllChannels(
+          dayjs.duration({ hours: xmltvSettings.programmingHours }),
+          false,
+        );
+      }
 
-      this.logger.info('XMLTV Updated at ' + new Date().toLocaleString());
+      this.logger.info('XMLTV Updated at %s', dayjs().format());
     } catch (err) {
-      this.logger.error('Unable to update TV guide', err);
+      this.logger.error(err, 'Unable to update TV guide');
       return;
     }
 

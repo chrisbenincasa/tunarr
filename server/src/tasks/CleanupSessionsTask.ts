@@ -6,7 +6,7 @@ import { inject, injectable } from 'inversify';
 import { Task, TaskId } from './Task.js';
 
 @injectable()
-export class CleanupSessionsTask extends Task<void> {
+export class CleanupSessionsTask extends Task {
   static KEY = Symbol.for(CleanupSessionsTask.name);
   public static ID: TaskId = 'cleanup-sessions';
   public ID = CleanupSessionsTask.ID;

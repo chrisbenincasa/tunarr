@@ -20,6 +20,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -32,6 +33,7 @@ import {
   isNonEmptyString,
 } from '../../helpers/util';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
+import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
@@ -159,6 +161,9 @@ export function TvGuide({ channelId, start, end }: Props) {
     TvGuideProgram | undefined
   >();
 
+  const queryClient = useQueryClient();
+  const { addListener, removeListener } = useServerEvents();
+
   const copyToClipboard = useCopyToClipboard();
 
   const handleModalOpen = useCallback((program: TvGuideProgram | undefined) => {
@@ -172,6 +177,22 @@ export function TvGuide({ channelId, start, end }: Props) {
   const handleModalClose = useCallback(() => {
     setModalProgram(undefined);
   }, []);
+
+  useEffect(() => {
+    const key = addListener((ev) => {
+      if (ev.type === 'xmltv') {
+        queryClient
+          .invalidateQueries({
+            // Gnarly
+            predicate: (query) =>
+              query.queryKey?.[0] === 'channels' &&
+              query.queryKey?.[2] === 'guide',
+          })
+          .catch(console.error);
+      }
+    });
+    return () => removeListener(key);
+  }, [addListener, queryClient, removeListener]);
 
   const timelineDuration = dayjs.duration(end.diff(start));
   const increments =
@@ -387,10 +408,14 @@ export function TvGuide({ channelId, start, end }: Props) {
       const pct = round((+duration / +timelineDuration) * 100.0, 2);
 
       const isPlaying = dayjs().isBetween(programStart, programEnd);
-      let remainingTime;
+      let remainingTime: number = 0;
 
-      if (isPlaying) {
+      if (isPlaying && !program.isPaused) {
         remainingTime = programEnd.diff(dayjs(), 'm');
+      } else if (program.isPaused && !isUndefined(program.timeRemaining)) {
+        remainingTime = round(
+          dayjs.duration(program.timeRemaining).asMinutes(),
+        );
       }
 
       return (
@@ -404,16 +429,19 @@ export function TvGuide({ channelId, start, end }: Props) {
             <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
               {episodeTitle}
             </Box>
-            {((smallViewport && pct > 20) || (!smallViewport && pct > 8)) && (
-              <>
-                <Box sx={{ fontSize: '12px' }}>
-                  {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
-                </Box>
-                <Box sx={{ fontSize: '12px' }}>
-                  {isPlaying ? ` (${remainingTime}m left)` : null}
-                </Box>
-              </>
-            )}
+            {(smallViewport && pct > 20) ||
+              (!smallViewport && pct > 8 && (
+                <>
+                  {!program.isPaused && (
+                    <Box sx={{ fontSize: '12px' }}>
+                      {`${programStart.format('LT')} - ${programEnd.format('LT')}`}
+                    </Box>
+                  )}
+                  <Box sx={{ fontSize: '12px' }}>
+                    {remainingTime ? ` (${remainingTime}m left)` : null}
+                  </Box>
+                </>
+              ))}
           </GuideItem>
           {endOfAvailableProgramming
             ? renderUnavailableProgramming(finalBlockWidth, index)
@@ -480,6 +508,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         start: startUnix,
         stop: lineup.programs[0].start,
         title: flexPlaceholderTitle,
+        isPaused: false,
       });
     }
     return (

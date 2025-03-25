@@ -13,11 +13,11 @@ export class DynamicChannelUpdaterFactory {
   getTask(
     channel: Channel,
     contentSourceDef: DynamicContentConfigSource,
-  ): Task<unknown> {
+  ): Task {
     // Have to capture 'this' before returning the anonymous class.
     const factory = this.contentSourceUpdaterFactory;
     // This won't always be anonymous
-    return new (class extends Task<unknown> {
+    return new (class extends Task {
       public ID = contentSourceDef.updater._id;
 
       protected async runInternal() {

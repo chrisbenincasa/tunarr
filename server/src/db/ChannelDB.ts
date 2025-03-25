@@ -50,6 +50,7 @@ import {
   partition,
   reduce,
   reject,
+  sum,
   sumBy,
   take,
   uniq,
@@ -106,10 +107,10 @@ import {
 import { programExternalIdString } from './schema/Program.ts';
 import { ChannelTranscodingSettings } from './schema/base.ts';
 import { DB } from './schema/db.ts';
-import type {
+import {
+  ChannelWithPrograms,
   ChannelWithRelations,
-  ChannelWithPrograms as RawChannelWithPrograms,
-} from './schema/derivedTypes.ts';
+} from './schema/derivedTypes.js';
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
@@ -277,7 +278,7 @@ export class ChannelDB implements IChannelDB {
 
   getChannelAndPrograms(
     uuid: string,
-  ): Promise<RawChannelWithPrograms | undefined> {
+  ): Promise<ChannelWithPrograms | undefined> {
     return this.db
       .selectFrom('channel')
       .selectAll(['channel'])
@@ -496,6 +497,24 @@ export class ChannelDB implements IChannelDB {
       .then(() => {});
   }
 
+  async syncChannelDuration(id: string) {
+    const channelAndLineup = await this.loadChannelAndLineup(id);
+    if (!channelAndLineup) {
+      return false;
+    }
+    const { channel, lineup } = channelAndLineup;
+    const lineupDuration = sum(map(lineup.items, (item) => item.durationMs));
+    if (lineupDuration !== channel.duration) {
+      await this.db
+        .updateTable('channel')
+        .where('channel.uuid', '=', id)
+        .set('duration', lineupDuration)
+        .executeTakeFirst();
+      return true;
+    }
+    return false;
+  }
+
   async deleteChannel(
     channelId: string,
     blockOnLineupUpdates: boolean = false,
@@ -560,7 +579,7 @@ export class ChannelDB implements IChannelDB {
       .execute();
   }
 
-  async getAllChannelsAndPrograms(): Promise<RawChannelWithPrograms[]> {
+  async getAllChannelsAndPrograms(): Promise<ChannelWithPrograms[]> {
     return await this.db
       .selectFrom('channel')
       .selectAll(['channel'])
@@ -924,7 +943,7 @@ export class ChannelDB implements IChannelDB {
         ...prev,
         [channel.uuid]: { channel, lineup },
       }),
-      {} as Record<string, { channel: RawChannelWithPrograms; lineup: Lineup }>,
+      {} as Record<string, { channel: ChannelWithPrograms; lineup: Lineup }>,
     );
   }
 
@@ -949,6 +968,20 @@ export class ChannelDB implements IChannelDB {
     channelId: string,
   ): Promise<{ channel: RawChannel; lineup: Lineup } | null> {
     const channel = await this.getChannel(channelId);
+    if (isNil(channel)) {
+      return null;
+    }
+
+    return {
+      channel,
+      lineup: await this.loadLineup(channelId),
+    };
+  }
+
+  async loadChannelWithProgamsAndLineup(
+    channelId: string,
+  ): Promise<{ channel: ChannelWithPrograms; lineup: Lineup } | null> {
+    const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
       return null;
     }
@@ -1275,7 +1308,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   private async buildApiLineup(
-    channel: RawChannelWithPrograms,
+    channel: ChannelWithPrograms,
     lineup: LineupItem[],
   ): Promise<{ lineup: ChannelProgram[]; offsets: number[] }> {
     const allChannels = await this.db

@@ -28,12 +28,15 @@ export class TaskQueue {
     this.#queue = new PQueue({ ...opts });
   }
 
-  async add<Out = unknown>(task: Task<Out>): Promise<Maybe<Out>> {
+  async add<Args extends unknown[] = unknown[], Out = unknown>(
+    task: Task<Args, Out>,
+    ...args: Args
+  ): Promise<Maybe<Out>> {
     try {
       this.#logger.trace('Adding task %s to queue', task.taskName);
       return await this.#queue.add(
         () => {
-          return task.run();
+          return task.run(...args);
         },
         { throwOnTimeout: true },
       );

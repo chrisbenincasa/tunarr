@@ -95,6 +95,7 @@ export class JellyfinItemFinder {
       GlobalScheduler.scheduleOneOffTask(
         ReconcileProgramDurationsTask.KEY,
         dayjs().add(500, 'ms'),
+        [],
       );
     }
 

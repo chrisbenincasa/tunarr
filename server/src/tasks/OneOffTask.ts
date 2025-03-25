@@ -1,12 +1,16 @@
 import type { TaskFactoryFn } from './ScheduledTask.ts';
 import { ScheduledTask } from './ScheduledTask.ts';
 
-export class OneOffTask<OutType = unknown> extends ScheduledTask<OutType> {
+export class OneOffTask<
+  Args extends unknown[] = unknown[],
+  OutType = unknown,
+> extends ScheduledTask<Args, OutType> {
   constructor(
     jobName: string,
     when: Date | number,
-    taskFactory: TaskFactoryFn<OutType>,
+    taskFactory: TaskFactoryFn<OutType, Args>,
+    presetArgs: Args,
   ) {
-    super(jobName, when, taskFactory, { visible: false });
+    super(jobName, when, taskFactory, presetArgs, { visible: false });
   }
 }
