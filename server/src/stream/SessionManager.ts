@@ -26,14 +26,10 @@ import {
 import { HlsConcatSessionType, Session } from './Session.js';
 import {
   HlsSession,
-  type HlsSessionOptions,
   type HlsSessionProvider,
   type HlsSlowerSessionProvider,
 } from './hls/HlsSession.js';
-import {
-  HlsSlowerSession,
-  HlsSlowerSessionOptions,
-} from './hls/HlsSlowerSession.js';
+import { HlsSlowerSession } from './hls/HlsSlowerSession.js';
 
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
@@ -46,8 +42,10 @@ import { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Dictionary } from 'ts-essentials';
+import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { EventService } from '../services/EventService.ts';
 import { SessionType } from './Session.js';
+import { BaseHlsSessionOptions } from './hls/BaseHlsSession.ts';
 
 export type SessionKey = `${string}_${SessionType}`;
 
@@ -67,6 +65,7 @@ export class SessionManager {
     @inject(KEYS.ConcatSession)
     private concatSessionFactory: ConcatSessionFactory,
     @inject(EventService) private eventService: EventService,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
   ) {}
 
   allSessions(): Record<SessionKey, Session> {
@@ -208,10 +207,7 @@ export class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options: Omit<
-      HlsSlowerSessionOptions,
-      'sessionType' | 'initialSegmentCount'
-    >,
+    options?: Partial<BaseHlsSessionOptions>,
   ) {
     return this.getOrCreateSession(
       channelId,
@@ -220,9 +216,10 @@ export class SessionManager {
       'hls_slower',
       (channel) =>
         this.hlsSlowerSessionFactory(channel, {
-          ...options,
           initialSegmentCount: 2, // 8 seconds of content
-          sessionType: 'hls_slower',
+          transcodeDirectory:
+            this.settingsDB.ffmpegSettings().transcodeDirectory,
+          ...options,
         }),
     );
   }
@@ -231,7 +228,7 @@ export class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options: Omit<HlsSessionOptions, 'sessionType' | 'initialSegmentCount'>,
+    options?: Partial<BaseHlsSessionOptions>,
   ) {
     return this.getOrCreateSession(
       channelId,
@@ -240,9 +237,10 @@ export class SessionManager {
       'hls',
       (channel) =>
         this.hlsSessionFactory(channel, {
-          ...options,
           initialSegmentCount: 2, // 8 seconds of content
-          sessionType: 'hls',
+          transcodeDirectory:
+            this.settingsDB.ffmpegSettings().transcodeDirectory,
+          ...options,
         }),
     );
   }

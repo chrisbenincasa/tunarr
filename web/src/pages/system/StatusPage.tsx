@@ -38,16 +38,19 @@ import { useState, useTransition } from 'react';
 import Markdown from 'react-markdown';
 import { match } from 'ts-pattern';
 
+// TODO: Get these from server.
 const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
 const FfmpegVersionCheck = 'FfmpegVersion';
 const HardwareAccelerationCheck = 'HardwareAcceleration';
 const FfmpegDebugLoggingCheck = 'FfmpegDebugLogging';
 const MissingProgramAssociationsHealthCheck =
   'MissingProgramAssociationsHealthCheck';
+const FfmpegTranscodeDirectory = 'FfmpegTranscodeDirectory';
 
 const AllKnownChecks = [
   FfmpegVersionCheck,
   HardwareAccelerationCheck,
+  FfmpegTranscodeDirectory,
   FfmpegDebugLoggingCheck,
   MissingSeasonNumbersCheck,
   MissingProgramAssociationsHealthCheck,
@@ -131,6 +134,7 @@ export const StatusPage = () => {
             MissingProgramAssociationsHealthCheck,
             () => 'Missing Program Associations',
           )
+          .with(FfmpegTranscodeDirectory, () => 'FFmpeg Transcode Directory')
           .exhaustive();
 
         const fixer = match(check)

@@ -4,13 +4,16 @@ import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { isNull, isUndefined } from 'lodash-es';
 import type { ChildProcessByStdio } from 'node:child_process';
 import { exec, spawn } from 'node:child_process';
 import events from 'node:events';
+import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type stream from 'node:stream';
+import type { WritableOptions } from 'node:stream';
+import stream from 'node:stream';
 
 export type FfmpegEvents = {
   // Emitted when the process ended with a code === 0, i.e. it exited
@@ -107,6 +110,9 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.#processHandle.stderr.pipe(process.stderr);
     }
 
+    const bufferedOut = new LastNBytesStream({ bufSizeBytes: 10 * 1024 });
+    this.#processHandle.stderr.pipe(bufferedOut);
+
     if (this.#processKilled) {
       this.#logger.trace('Sending SIGKILL to ffmpeg');
       this.#processHandle.kill('SIGKILL');
@@ -142,22 +148,50 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
       if (expected) {
         this.emit('end');
-      } else if (code === 255) {
-        if (this.#processHandle) {
-          return;
-        }
+      } else {
+        const normalizedName = this.ffmpegName
+          .toLowerCase()
+          .replaceAll(' ', '-');
+        const outPath = path.join(
+          this.logDirectory,
+          `ffmpeg-error-log-${normalizedName}-${dayjs().format()}.log`,
+        );
 
-        if (!this.#sentData) {
+        this.#logger.info(
+          'Dumping last %n bytes from ffmpeg logging to console and file: %s. Please report this bug with the contents of this file attached!',
+          bufferedOut.bufSizeBytes,
+          outPath,
+        );
+
+        const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
+        console.log(bufferedBytes);
+        fs.writeFile(outPath, bufferedOut.getLastN()).catch((e) => {
+          this.#logger.error(
+            e,
+            'Failed to write last %n bytes to out path: %s',
+            bufferedOut.bufSizeBytes,
+            outPath,
+          );
+        });
+
+        if (code === 255) {
+          if (this.#processHandle) {
+            return;
+          }
+
+          if (!this.#sentData) {
+            this.emit('error', {
+              code: code,
+              cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
+            });
+          }
+        } else {
+          process.stderr.write(bufferedOut.getLastN());
           this.emit('error', {
             code: code,
             cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
           });
         }
-      } else {
-        this.emit('error', {
-          code: code,
-          cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
-        });
       }
     });
 
@@ -217,5 +251,54 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
   get args() {
     return this.ffmpegArgs;
+  }
+}
+
+type LastNBytesStreamOpts = WritableOptions & {
+  bufSizeBytes?: number;
+};
+
+class LastNBytesStream extends stream.Writable {
+  public bufSizeBytes!: number;
+  #bytesWritten = 0;
+  #buf: Buffer;
+
+  constructor(options?: LastNBytesStreamOpts) {
+    super(options);
+    this.bufSizeBytes = options?.bufSizeBytes ?? 1024;
+    this.#buf = Buffer.alloc(this.bufSizeBytes);
+  }
+
+  _write(
+    chunk: Buffer,
+    _encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    const chunkLength = chunk.length;
+    if (chunkLength >= this.bufSizeBytes) {
+      // If the chunk is larger than or equal to the buffer, just take the last 1KB
+      chunk.copy(this.#buf, 0, chunkLength - this.bufSizeBytes, chunkLength);
+      this.#bytesWritten = this.bufSizeBytes;
+    } else {
+      // If the chunk is smaller, shift existing buffer content and append
+      const remainingSpace = this.bufSizeBytes - this.#bytesWritten;
+
+      if (chunkLength <= remainingSpace) {
+        // Chunk fits in the remaining space
+        chunk.copy(this.#buf, this.#bytesWritten);
+        this.#bytesWritten += chunkLength;
+      } else {
+        // Chunk doesn't fit completely, overwrite from the beginning
+        chunk.copy(this.#buf, this.#bytesWritten, 0, remainingSpace);
+        chunk.copy(this.#buf, 0, remainingSpace, chunkLength);
+        this.#bytesWritten = this.bufSizeBytes;
+      }
+    }
+
+    callback();
+  }
+
+  getLastN() {
+    return this.#buf.slice(0, this.#bytesWritten);
   }
 }

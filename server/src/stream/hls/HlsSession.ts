@@ -8,10 +8,7 @@ import type { OnDemandChannelService } from '@/services/OnDemandChannelService.j
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
-import type {
-  HlsSlowerSession,
-  HlsSlowerSessionOptions,
-} from '@/stream/hls/HlsSlowerSession.js';
+import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
@@ -22,26 +19,26 @@ import dayjs from 'dayjs';
 import type { interfaces } from 'inversify';
 import { filter, isEmpty, last, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
-import path, { extname } from 'node:path';
+import path, { basename, dirname, extname } from 'node:path';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
 import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
 
 export type HlsSessionProvider = (
   channel: ChannelWithTranscodeConfig,
-  options: HlsSessionOptions,
+  options: BaseHlsSessionOptions,
 ) => HlsSession;
 
 export type HlsSlowerSessionProvider = (
   channel: ChannelWithTranscodeConfig,
-  options: HlsSlowerSessionOptions,
+  options: BaseHlsSessionOptions,
 ) => HlsSlowerSession;
 
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
  * endpoint and outputs an HLS format + segments
  */
-export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
+export class HlsSession extends BaseHlsSession {
   public readonly sessionType = 'hls' as const;
   #playlistStart: Dayjs;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
@@ -51,7 +48,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
   constructor(
     channel: ChannelWithTranscodeConfig,
-    options: HlsSessionOptions,
+    options: BaseHlsSessionOptions,
     private programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
     private onDemandService: OnDemandChannelService,
@@ -247,7 +244,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         hlsDeleteThreshold: 3,
         streamNameFormat: 'stream.m3u8',
         segmentNameFormat: 'data%06d.ts',
-        streamBasePath: `stream_${this.channel.uuid}`,
+        segmentBaseDirectory: dirname(this.workingDirectory),
+        streamBasePath: basename(this.workingDirectory),
         streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
         hlsTime: 4,
         hlsListSize: 0,
@@ -408,6 +406,3 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     return await this.cleanupDirectory();
   }
 }
-export type HlsSessionOptions = BaseHlsSessionOptions & {
-  sessionType: 'hls';
-};

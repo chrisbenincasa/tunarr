@@ -56,9 +56,8 @@ export class FfmpegState {
   // HLS
   get hlsPlaylistPath(): Maybe<string> {
     if (this.outputFormat.type === OutputFormatTypes.Hls) {
-      // TODO: do not hardcode this here.
       return path.join(
-        'streams',
+        this.outputFormat.hlsOptions.segmentBaseDirectory,
         this.outputFormat.hlsOptions.streamBasePath,
         this.outputFormat.hlsOptions.streamNameFormat,
       );
@@ -69,7 +68,7 @@ export class FfmpegState {
   get hlsSegmentTemplate(): Maybe<string> {
     if (this.outputFormat.type === OutputFormatTypes.Hls) {
       return path.join(
-        'streams',
+        this.outputFormat.hlsOptions.segmentBaseDirectory,
         this.outputFormat.hlsOptions.streamBasePath,
         this.outputFormat.hlsOptions.segmentNameFormat,
       );

@@ -10,6 +10,7 @@ import {
 import {
   FfmpegSettingsSchema,
   HdhrSettingsSchema,
+  HealthCheckSchema,
   MediaSourceSettingsSchema,
   PlexStreamSettingsSchema,
   TranscodeConfigSchema,
@@ -155,19 +156,7 @@ const systemHealthChecks = makeEndpoint({
   method: 'get',
   path: '/api/system/health',
   alias: 'getSystemHealth',
-  response: z.record(
-    z.union([
-      z.object({ type: z.literal('healthy') }),
-      z.object({
-        type: z.union([
-          z.literal('info'),
-          z.literal('warning'),
-          z.literal('error'),
-        ]),
-        context: z.string(),
-      }),
-    ]),
-  ),
+  response: z.record(HealthCheckSchema),
 });
 
 const runSystemFixer = makeEndpoint({

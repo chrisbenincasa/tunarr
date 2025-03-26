@@ -438,6 +438,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
+        logLevel: this.ffmpegSettings.logLevel,
       }),
       new FrameState({
         isAnamorphic: false,
@@ -569,6 +570,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
+        logLevel: this.ffmpegSettings.logLevel,
       }),
       new FrameState({
         isAnamorphic: false,
@@ -674,6 +676,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         // softwareScalingAlgorithm: this.transcodeConfig.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
+        logLevel: this.ffmpegSettings.logLevel,
       }),
       new FrameState({
         isAnamorphic: false,
@@ -708,8 +711,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
     return isNonEmptyString(this.transcodeConfig.vaapiDevice)
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
-      ? '/dev/dri/renderD128'
-      : undefined;
+        ? '/dev/dri/renderD128'
+        : undefined;
   }
 
   private getVaapiDriver() {

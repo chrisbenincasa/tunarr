@@ -364,6 +364,10 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(400).send();
       }
 
+      if (sessionResult.isFailure()) {
+        logger.error(sessionResult.error);
+      }
+
       return sessionResult.getOrElse(() => {
         return res.status(500).send('Error starting or retrieving session');
       });
