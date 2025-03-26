@@ -6,19 +6,14 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
-import { Link, Outlet, useMatches } from '@tanstack/react-router';
-import { last } from 'lodash-es';
+import { Link, Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
 
-export default function SettingsLayout() {
-  const match = useMatches();
-  const currentRoute = last(match)?.routeId;
-  let currentTab = '/settings/general';
+type Props = {
+  currentTab?: string;
+};
 
-  if (currentRoute) {
-    currentTab = currentRoute.split('/', 3).join('/');
-  }
-
+export function SettingsLayout({ currentTab = '/general' }: Props) {
   return (
     <Box>
       <Typography variant="h3" mb={2}>
@@ -33,37 +28,37 @@ export default function SettingsLayout() {
           >
             <Tab
               label="General"
-              value="/settings/general"
+              value="/general"
               to="/settings/general"
               component={Link}
             />
             <Tab
               label="XMLTV"
-              value="/settings/xmltv"
+              value="/xmltv"
               to="/settings/xmltv"
               component={Link}
             />
             <Tab
               label="FFMPEG"
-              value="/settings/ffmpeg"
+              value="/ffmpeg"
               to="/settings/ffmpeg"
               component={Link}
             />
             <Tab
               label="Sources"
-              value="/settings/sources"
+              value="/sources"
               to="/settings/sources"
               component={Link}
             />
             <Tab
               label="HDHR"
-              value="/settings/hdhr"
+              value="/hdhr"
               to="/settings/hdhr"
               component={Link}
             />
             <Tab
               label="Tasks"
-              value="/settings/tasks"
+              value="/tasks"
               to="/settings/tasks"
               component={Link}
             />
