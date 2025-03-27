@@ -1,6 +1,6 @@
-import { StatusPage } from '@/pages/system/StatusPage';
 import { setShowWelcome } from '@/store/themeEditor/actions';
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import GuidePage from '../pages/guide/GuidePage.tsx';
 
 export const Route = createFileRoute('/')({
   loader: async ({ context }) => {
@@ -25,5 +25,5 @@ export const Route = createFileRoute('/')({
       });
     }
   },
-  component: StatusPage,
+  component: () => <GuidePage channelId="all" />,
 });

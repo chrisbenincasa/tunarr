@@ -10,7 +10,7 @@ export const BottomNavBar = () => {
     <AppBar position="fixed" sx={{ top: 'auto', bottom: 0 }}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
         {navItems
-          .filter((item) => item.visible)
+          .filter((item) => !item.hidden)
           .map((item) => (
             <React.Fragment key={item.name}>
               <IconButton

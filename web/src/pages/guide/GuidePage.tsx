@@ -14,7 +14,8 @@ import {
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import dayjs, { Dayjs, duration } from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import dayjs, { duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useCallback, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
@@ -105,8 +106,8 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
 
   return (
     <>
-      <Typography variant="h4" mb={2}>
-        TV Guide
+      <Typography variant="h3" mb={2}>
+        Guide
       </Typography>
       <Box display={'flex'}>
         <Stack

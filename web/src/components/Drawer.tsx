@@ -29,7 +29,6 @@ type Props = {
 
 export const Drawer = ({ onOpen, onClose }: Props) => {
   const [drawerOpen, toggleDrawerOpen] = useToggle(false);
-  // const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerState, setDrawerState] =
     useState<DrawerTransitionState>('closed');
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
@@ -42,6 +41,7 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
   const handleOpenClick = useCallback(
     (ev: React.MouseEvent, itemName: string) => {
       ev.preventDefault();
+      ev.stopPropagation();
       setSublistStates((prev) => ({
         ...prev,
         [itemName]: prev[itemName] ? !prev[itemName] : true,
@@ -107,8 +107,8 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
           }}
           variant="permanent"
           anchor="left"
-          onMouseEnter={() => toggleDrawerOpen()}
-          onMouseLeave={() => toggleDrawerOpen()}
+          onMouseEnter={() => toggleDrawerOpen(true)}
+          onMouseLeave={() => toggleDrawerOpen(false)}
         >
           <>
             <Toolbar
@@ -122,7 +122,7 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
             <Divider />
             <List component="nav" sx={{ flex: '1 1 0%', overflowX: 'hidden' }}>
               {navItems
-                .filter((item) => item.visible)
+                .filter((item) => !item.hidden)
                 .map((item) => (
                   <React.Fragment key={item.name}>
                     <ListItemButton
@@ -161,7 +161,7 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
                       >
                         <List component="div" disablePadding>
                           {item.children
-                            .filter((item) => item.visible)
+                            .filter((item) => item.hidden)
                             .map((child) => (
                               <ListItemButton
                                 key={child.name}

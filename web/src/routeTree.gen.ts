@@ -12,12 +12,14 @@
 
 import { Route as rootRoute } from './routes/__root';
 import { Route as WelcomeImport } from './routes/welcome';
+import { Route as SystemImport } from './routes/system';
 import { Route as SettingsImport } from './routes/settings';
 import { Route as GuideImport } from './routes/guide';
 import { Route as IndexImport } from './routes/index';
 import { Route as SystemIndexImport } from './routes/system/index';
 import { Route as LibraryIndexImport } from './routes/library/index';
 import { Route as ChannelsIndexImport } from './routes/channels/index';
+import { Route as SystemLogsImport } from './routes/system/logs';
 import { Route as SystemDebugImport } from './routes/system/debug';
 import { Route as SettingsXmltvImport } from './routes/settings/xmltv';
 import { Route as SettingsTasksImport } from './routes/settings/tasks';
@@ -54,6 +56,11 @@ const WelcomeRoute = WelcomeImport.update({
   getParentRoute: () => rootRoute,
 } as any);
 
+const SystemRoute = SystemImport.update({
+  path: '/system',
+  getParentRoute: () => rootRoute,
+} as any);
+
 const SettingsRoute = SettingsImport.update({
   path: '/settings',
   getParentRoute: () => rootRoute,
@@ -70,8 +77,8 @@ const IndexRoute = IndexImport.update({
 } as any);
 
 const SystemIndexRoute = SystemIndexImport.update({
-  path: '/system/',
-  getParentRoute: () => rootRoute,
+  path: '/',
+  getParentRoute: () => SystemRoute,
 } as any);
 
 const LibraryIndexRoute = LibraryIndexImport.update({
@@ -84,9 +91,14 @@ const ChannelsIndexRoute = ChannelsIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any);
 
+const SystemLogsRoute = SystemLogsImport.update({
+  path: '/logs',
+  getParentRoute: () => SystemRoute,
+} as any);
+
 const SystemDebugRoute = SystemDebugImport.update({
-  path: '/system/debug',
-  getParentRoute: () => rootRoute,
+  path: '/debug',
+  getParentRoute: () => SystemRoute,
 } as any);
 
 const SettingsXmltvRoute = SettingsXmltvImport.update({
@@ -262,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsImport;
       parentRoute: typeof rootRoute;
     };
+    '/system': {
+      id: '/system';
+      path: '/system';
+      fullPath: '/system';
+      preLoaderRoute: typeof SystemImport;
+      parentRoute: typeof rootRoute;
+    };
     '/welcome': {
       id: '/welcome';
       path: '/welcome';
@@ -348,10 +367,17 @@ declare module '@tanstack/react-router' {
     };
     '/system/debug': {
       id: '/system/debug';
-      path: '/system/debug';
+      path: '/debug';
       fullPath: '/system/debug';
       preLoaderRoute: typeof SystemDebugImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof SystemImport;
+    };
+    '/system/logs': {
+      id: '/system/logs';
+      path: '/logs';
+      fullPath: '/system/logs';
+      preLoaderRoute: typeof SystemLogsImport;
+      parentRoute: typeof SystemImport;
     };
     '/channels/': {
       id: '/channels/';
@@ -369,10 +395,10 @@ declare module '@tanstack/react-router' {
     };
     '/system/': {
       id: '/system/';
-      path: '/system';
-      fullPath: '/system';
+      path: '/';
+      fullPath: '/system/';
       preLoaderRoute: typeof SystemIndexImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof SystemImport;
     };
     '/channels/$channelId/watch': {
       id: '/channels/$channelId/watch';
@@ -504,16 +530,19 @@ export const routeTree = rootRoute.addChildren({
     SettingsFfmpegConfigIdRoute,
     SettingsFfmpegNewRoute,
   }),
+  SystemRoute: SystemRoute.addChildren({
+    SystemDebugRoute,
+    SystemLogsRoute,
+    SystemIndexRoute,
+  }),
   WelcomeRoute,
   ChannelsChannelIdRoute,
   ChannelsNewRoute,
   ChannelsTestRoute,
   LibraryCustomShowsRoute,
   LibraryFillersRoute,
-  SystemDebugRoute,
   ChannelsIndexRoute,
   LibraryIndexRoute,
-  SystemIndexRoute,
   ChannelsChannelIdWatchRoute,
   LibraryCustomShowsNewRoute,
   LibraryFillersNewRoute,
@@ -541,16 +570,15 @@ export const routeTree = rootRoute.addChildren({
         "/",
         "/guide",
         "/settings",
+        "/system",
         "/welcome",
         "/channels/$channelId",
         "/channels/new",
         "/channels/test",
         "/library/custom-shows",
         "/library/fillers",
-        "/system/debug",
         "/channels/",
         "/library/",
-        "/system/",
         "/channels/$channelId/watch",
         "/library/custom-shows/new",
         "/library/fillers/new",
@@ -584,6 +612,14 @@ export const routeTree = rootRoute.addChildren({
         "/settings/xmltv",
         "/settings/ffmpeg/$configId",
         "/settings/ffmpeg/new"
+      ]
+    },
+    "/system": {
+      "filePath": "system.tsx",
+      "children": [
+        "/system/debug",
+        "/system/logs",
+        "/system/"
       ]
     },
     "/welcome": {
@@ -629,7 +665,12 @@ export const routeTree = rootRoute.addChildren({
       "parent": "/settings"
     },
     "/system/debug": {
-      "filePath": "system/debug.tsx"
+      "filePath": "system/debug.tsx",
+      "parent": "/system"
+    },
+    "/system/logs": {
+      "filePath": "system/logs.tsx",
+      "parent": "/system"
     },
     "/channels/": {
       "filePath": "channels/index.tsx"
@@ -638,7 +679,8 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "library/index.tsx"
     },
     "/system/": {
-      "filePath": "system/index.tsx"
+      "filePath": "system/index.tsx",
+      "parent": "/system"
     },
     "/channels/$channelId/watch": {
       "filePath": "channels_/$channelId/watch.tsx"

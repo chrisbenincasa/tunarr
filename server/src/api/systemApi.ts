@@ -4,7 +4,11 @@ import { scheduleBackupJobs } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
 import { ifDefined } from '@/util/index.js';
-import { getEnvironmentLogLevel } from '@/util/logging/LoggerFactory.js';
+import {
+  getEnvironmentLogLevel,
+  LoggerFactory,
+} from '@/util/logging/LoggerFactory.js';
+import TailFile from '@logdna/tail-file';
 import type { LoggingSettings, SystemSettings } from '@tunarr/types';
 import type { SystemSettingsResponse } from '@tunarr/types/api';
 import {
@@ -15,12 +19,18 @@ import {
 import type { BackupSettings } from '@tunarr/types/schemas';
 import { BackupSettingsSchema, HealthCheckSchema } from '@tunarr/types/schemas';
 import { identity, isError, isUndefined, map } from 'lodash-es';
+import { createReadStream } from 'node:fs';
+import fs from 'node:fs/promises';
+import { join } from 'path/posix';
+import split2 from 'split2';
+import { PassThrough } from 'stream';
 import type { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod';
 import { container } from '../container.ts';
 import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import { SystemDevicesService } from '../services/SystemDevicesService.ts';
 import { Result } from '../types/result.ts';
+import { TruthyQueryParam } from '../types/schemas.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import { isDocker } from '../util/isDocker.ts';
 
@@ -28,6 +38,8 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
   // eslint-disable-next-line @typescript-eslint/require-await
 ) => {
+  const logger = LoggerFactory.child({ className: 'SystemApiRouter' });
+
   fastify.get(
     '/system/health',
     {
@@ -258,6 +270,69 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       );
 
       return res.type('text').send(results.join('\n'));
+    },
+  );
+
+  fastify.get(
+    '/system/debug/logs',
+    {
+      schema: {
+        hide: true,
+        querystring: z.object({
+          download: TruthyQueryParam.optional(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const logFilePath = join(
+        req.serverCtx.settings.systemSettings().logging.logsDirectory,
+        'tunarr.log',
+      );
+
+      if (req.query.download) {
+        return res
+          .header('content-type', 'text/plain')
+          .header('content-disposition', 'attachment; filename="tunarr.log"')
+          .send(createReadStream(logFilePath));
+      }
+
+      const stat = await fs.stat(logFilePath);
+
+      const out = new PassThrough({
+        transform(chunk: Buffer, _, callback) {
+          const str = chunk.toString('utf-8');
+          this.push(
+            [`event: message`, `data: ${str}`, 'retry: 5000\n\n'].join('\n'),
+          );
+          callback();
+        },
+      });
+
+      const onemb = 1024 * 1024;
+      const tail = new TailFile(logFilePath, {
+        startPos: stat.size > onemb ? stat.size - onemb : 0,
+      });
+
+      await tail
+        .on('tail_error', (err) => {
+          out.end();
+          logger.error(err);
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw err;
+        })
+        .start();
+
+      out.on('close', () => {
+        tail.quit().catch(console.error);
+      });
+
+      return res
+        .headers({
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        })
+        .send(tail.pipe(split2()).pipe(out));
     },
   );
 

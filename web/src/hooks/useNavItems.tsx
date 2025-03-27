@@ -2,7 +2,9 @@ import {
   BugReport,
   Computer,
   Home,
+  InfoOutlined,
   LiveTv,
+  Notes,
   Preview,
   Settings,
   SettingsRemote,
@@ -38,33 +40,29 @@ export const useNavItems = () => {
       {
         name: 'Welcome',
         path: '/welcome',
-        visible: showWelcome,
+        hidden: !showWelcome,
         icon: <Home />,
       },
-      { name: 'Guide', path: '/guide', visible: true, icon: <Tv /> },
+      { name: 'Guide', path: '/guide', icon: <Tv /> },
       {
         name: 'Channels',
         path: '/channels',
-        visible: true,
         icon: <SettingsRemote />,
       },
-      { name: 'Watch', path: '/watch', visible: false, icon: <LiveTv /> },
+      { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
       {
         name: 'Library',
         path: '/library',
-        visible: true,
         icon: <VideoLibrary />,
         children: [
           {
             name: 'Filler',
             path: '/library/fillers',
-            visible: true,
             icon: <Preview />,
           },
           {
             name: 'Custom Shows',
             path: '/library/custom-shows',
-            visible: true,
             icon: <Theaters />,
           },
         ],
@@ -72,20 +70,27 @@ export const useNavItems = () => {
       {
         name: 'Settings',
         path: '/settings/general',
-        visible: true,
         icon: <Settings />,
       },
       {
         name: 'System',
         path: '/system',
-        visible: true,
         icon: <Computer />,
         children: [
           {
+            name: 'Status',
+            path: '/system/status',
+            icon: <InfoOutlined />,
+          },
+          {
             name: 'Debug',
             path: '/system/debug',
-            visible: true,
             icon: <BugReport />,
+          },
+          {
+            name: 'Logs',
+            path: '/system/logs',
+            icon: <Notes />,
           },
         ],
       },
@@ -100,7 +105,7 @@ export const useNavItems = () => {
 export interface NavItem {
   name: string;
   path: string;
-  visible: boolean;
+  hidden?: boolean;
   children?: NavItem[];
   icon?: ReactNode;
   copyToClipboard?: boolean;

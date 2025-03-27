@@ -593,7 +593,7 @@ export default function ChannelsPage() {
     <div>
       <Box display="flex" mb={2}>
         {renderConfirmationDialog()}
-        <Typography flexGrow={1} variant="h4">
+        <Typography flexGrow={1} variant="h3">
           Channels
         </Typography>
         <Button
