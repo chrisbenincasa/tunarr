@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.16](https://github.com/chrisbenincasa/tunarr/compare/v0.18.15...v0.18.16) (2025-03-27)
+
+
+### Features
+
+* ability to set the transcode output path ([#1129](https://github.com/chrisbenincasa/tunarr/issues/1129)) ([539df9f](https://github.com/chrisbenincasa/tunarr/commit/539df9f8038931d41add673ae435f12cdb02851f))
+* add system logs page ([#1130](https://github.com/chrisbenincasa/tunarr/issues/1130)) ([c166acb](https://github.com/chrisbenincasa/tunarr/commit/c166acb83a564d45b378a24436dd34b24f1093c9))
+* show channel active session indicator ([#1123](https://github.com/chrisbenincasa/tunarr/issues/1123)) ([a60d200](https://github.com/chrisbenincasa/tunarr/commit/a60d2008094eecf289af1596d9e4c1b45c37a515))
+
+
+### Bug Fixes
+
+* convert 10-bit inputs to 8-bit before using overlay_cuda filter ([#1125](https://github.com/chrisbenincasa/tunarr/issues/1125)) ([98d2070](https://github.com/chrisbenincasa/tunarr/commit/98d2070624728255de6531b1cc313e476fc9f266))
+* guide/epg now accurately reflects state of on-demand channels ([#978](https://github.com/chrisbenincasa/tunarr/issues/978)) ([79c6a69](https://github.com/chrisbenincasa/tunarr/commit/79c6a69e8d0ade55ddc8b878cdf3f17e6a2d91d4))
+* random slot schedule preset should set all relevant fields in form ([9a4d67f](https://github.com/chrisbenincasa/tunarr/commit/9a4d67f4dfd7650c82fdcd4cdb0ec679e4fc424c)), closes [#1122](https://github.com/chrisbenincasa/tunarr/issues/1122)
+
 ## [0.18.15](https://github.com/chrisbenincasa/tunarr/compare/v0.18.14...v0.18.15) (2025-03-11)
 
 
