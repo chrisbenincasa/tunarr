@@ -1,6 +1,8 @@
-import useStore, { State } from '@/store';
-import { Nilable } from '@/types/util';
-import { QueryKey, QueryOptions, useQueryClient } from '@tanstack/react-query';
+import type { State } from '@/store';
+import useStore from '@/store';
+import type { Nilable } from '@/types/util';
+import type { QueryKey, QueryOptions } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { isEmpty, isNil } from 'lodash-es';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { type MarkRequired } from 'ts-essentials';
@@ -40,6 +42,7 @@ export function useSuspendedStore<T>(
   const v = f(useSyncExternalStore(useStore.subscribe, useStore.getState));
 
   if (!condition(v)) {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw promise;
   } else {
     resolve(true);

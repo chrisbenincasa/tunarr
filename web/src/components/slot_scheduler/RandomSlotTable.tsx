@@ -7,7 +7,7 @@ import {
   RandomSlotsWeightAdjustDialog,
   UnlockedWeightScale,
 } from '@/components/slot_scheduler/RandomSlotsWeightAdjustDialog';
-import {
+import type {
   RandomSlotTableRowType,
   SlotWarning,
 } from '@/components/slot_scheduler/SlotTypes.ts';
@@ -20,6 +20,7 @@ import { Balance, Warning } from '@mui/icons-material';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';
 import {
+  Box,
   Button,
   Dialog,
   DialogTitle,
@@ -27,9 +28,9 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import { VisibilityState } from '@tanstack/react-table';
+import type { VisibilityState } from '@tanstack/react-table';
 import { seq } from '@tunarr/shared/util';
-import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import type { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
 import { usePrevious, useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import {
@@ -45,15 +46,17 @@ import {
   sum,
   uniq,
 } from 'lodash-es';
-import {
+import type {
   MRT_ColumnDef,
   MRT_Row,
   MRT_TableInstance,
+} from 'material-react-table';
+import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
 import pluralize from 'pluralize';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
 
 export const RandomSlotTable = () => {
@@ -84,8 +87,10 @@ export const RandomSlotTable = () => {
     number | null
   >(null);
 
+  const slotDistribution = getValues('randomDistribution');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    weight: getValues('randomDistribution') === 'weighted',
+    weight: slotDistribution === 'weighted',
+    cooldownMs: slotDistribution !== 'none',
   });
 
   const [currentSlots, distributionType] = watch([
@@ -126,6 +131,7 @@ export const RandomSlotTable = () => {
       setColumnVisibility((prev) => ({
         ...prev,
         weight: value.randomDistribution === 'weighted',
+        cooldownMs: value.randomDistribution !== 'none',
       }));
     });
     return () => sub.unsubscribe();
@@ -225,16 +231,20 @@ export const RandomSlotTable = () => {
             case 'movie':
             case 'show':
             case 'custom-show':
-              switch (originalRow.order) {
-                case 'next':
-                case 'shuffle':
-                  return capitalize(originalRow.order);
-                case 'ordered_shuffle':
-                  return 'Ordered Shuffle';
-              }
+              return originalRow.order.split('_').map(capitalize).join(' ');
           }
         },
         id: 'programOrder',
+        Header() {
+          return (
+            <Tooltip
+              placement="top"
+              title="Order of programming within the slot"
+            >
+              <span>Order</span>
+            </Tooltip>
+          );
+        },
         Cell({ cell }) {
           const value = cell.getValue<RandomSlot['order'] | null>();
           if (!value) {
@@ -409,11 +419,33 @@ export const RandomSlotTable = () => {
       pagination,
       columnVisibility,
     },
+    enableSorting: distributionType !== 'none',
+    enableRowOrdering: distributionType === 'none',
+    muiRowDragHandleProps: ({ table }) => ({
+      onDragEnd: () => {
+        const { draggingRow, hoveredRow } = table.getState();
+        if (hoveredRow && draggingRow) {
+          slotArray.swap(hoveredRow.index!, draggingRow.index);
+        }
+      },
+    }),
   });
+
+  const stopBubble: React.DragEventHandler = useCallback((e) => {
+    e.stopPropagation();
+  }, []);
 
   return (
     <>
-      <MaterialReactTable table={table} />
+      {/* This is necessary to ensure that the any react-dnd driven stuff still works, since they listen to events on the top-level window */}
+      <Box
+        onDragStart={stopBubble}
+        onDragEnter={stopBubble}
+        onDragOver={stopBubble}
+        onDrop={stopBubble}
+      >
+        <MaterialReactTable table={table} />
+      </Box>
       <Dialog
         maxWidth="sm"
         open={!!currentEditingSlot}

@@ -45,16 +45,16 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block. Once a channel has been configured with random slots, the reload button can re-evaluate them again, with the saved settings."
+        title="Schedule programming using slots assigned a start time and duration."
         placement="right"
         elevation={10}
       >
-        <MenuItem component={Link} to="random-slot-editor">
-          <ShuffleIcon /> Random Slots...
+        <MenuItem component={Link} to="slot-editor">
+          <ShuffleIcon /> Slots Editor...
         </MenuItem>
       </ElevatedTooltip>
       <ElevatedTooltip
-        title="This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
+        title="Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
         placement="right"
         elevation={10}
       >

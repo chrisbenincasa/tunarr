@@ -102,11 +102,11 @@ export type TimeSlot = z.infer<typeof TimeSlotSchema>;
 
 export const TimeSlotScheduleSchema = z.object({
   type: z.literal('time'),
-  flexPreference: z.union([z.literal('distribute'), z.literal('end')]),
+  flexPreference: z.enum(['distribute', 'end']),
   latenessMs: z.number(), // max lateness in millis
   maxDays: z.number(), // days to pregenerate schedule for
   padMs: z.number(), // Pad time in millis
-  period: z.union([z.literal('day'), z.literal('week'), z.literal('month')]),
+  period: z.enum(['day', 'week', 'month']),
   slots: z.array(TimeSlotSchema),
   timeZoneOffset: z.number(), // tz offset in...minutes, i think?
   startTomorrow: z.boolean().optional(),
@@ -185,9 +185,20 @@ export const RandomSlotSchema = z.object({
   }),
   weight: z.number(),
   programming: RandomSlotProgrammingSchema,
+  index: z.number().optional(),
 });
 
 export type RandomSlot = z.infer<typeof RandomSlotSchema>;
+
+export const RandomSlotDistributionTypeSchema = z.enum([
+  'uniform',
+  'weighted',
+  'none',
+]);
+
+export type RandomSlotDistributionType = z.infer<
+  typeof RandomSlotDistributionTypeSchema
+>;
 
 export const RandomSlotScheduleSchema = z.object({
   type: z.literal('random'),
@@ -197,7 +208,7 @@ export const RandomSlotScheduleSchema = z.object({
   padStyle: z.enum(['slot', 'episode']),
   slots: z.array(RandomSlotSchema),
   timeZoneOffset: z.number().optional(), // Timezone offset in minutes
-  randomDistribution: z.enum(['uniform', 'weighted']),
+  randomDistribution: RandomSlotDistributionTypeSchema,
   periodMs: z.number().optional(),
   // Purely for UI purposes. Adjusting weight of one program affects the
   // weights of all others if lock weights === true.

@@ -17,6 +17,7 @@ import {
   type ZodiosQueryParamsByAlias,
   type ZodiosResponseByAlias,
 } from '@zodios/core/lib/zodios.types';
+import type { MarkRequired } from 'ts-essentials';
 import { type ApiClient } from '../external/api.ts';
 import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';
 import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
@@ -89,9 +90,12 @@ export const isUICondensedContentBackedProgram = (
 // The default type is any ChannelProgram (e.g. content, flex, etc) with the
 // fields. We generalize here so we can effectively downcast UIChannelProgram
 // to more specific program types when doing list operations.
-export type UIChannelProgram<T extends ChannelProgram = ChannelProgram> = T &
-  UIIndex &
-  MaybeHasStartTimeOffset;
+export type UIChannelProgram<T extends ChannelProgram = ChannelProgram> =
+  Prettify<T & UIIndex & MaybeHasStartTimeOffset>;
+
+export type UIChannelProgramWithOffset<
+  T extends ChannelProgram = ChannelProgram,
+> = MarkRequired<UIChannelProgram<T>, 'startTimeOffset'>;
 
 export type UIContentProgram = UIChannelProgram<ContentProgram>;
 export type UIFlexProgram = UIChannelProgram<FlexProgram>;
@@ -151,3 +155,13 @@ export type AddedMedia =
   | AddedJellyfinMedia
   | AddedEmbyMedia
   | AddedCustomShowProgram;
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export type Prettify<Type> = Type extends Function
+  ? Type
+  : Extract<
+      {
+        [Key in keyof Type]: Type[Key];
+      },
+      Type
+    >;

@@ -11,7 +11,6 @@ import TvIcon from '@mui/icons-material/Tv';
 import {
   ListItemIcon,
   Typography,
-  lighten,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -21,6 +20,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { type Channel, type ChannelProgram } from '@tunarr/types';
+import color from 'color';
 import dayjs, { type Dayjs } from 'dayjs';
 import { findIndex, isString, isUndefined, map, sumBy } from 'lodash-es';
 import React, { type CSSProperties, useCallback, useState } from 'react';
@@ -44,7 +44,7 @@ import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 
-type CommonProps = {
+export type CommonProps = {
   moveProgram?: (originalIndex: number, toIndex: number) => void;
   deleteProgram?: (index: number) => void;
   // If given, the list will be rendered using react-window
@@ -53,6 +53,7 @@ type CommonProps = {
   enableRowEdit?: boolean;
   enableRowDelete?: boolean;
   showProgramCount?: boolean;
+  showProgramStartTime?: boolean;
   listEmptyMessage?: React.ReactNode;
 };
 
@@ -101,6 +102,7 @@ type ListItemProps = {
   ) => void;
   titleFormatter: (program: ChannelProgram) => string;
   channel: Channel;
+  showProgramStartTime?: boolean;
 };
 
 type ListDragItem = {
@@ -123,6 +125,7 @@ const ProgramListItem = ({
   enableDelete,
   titleFormatter,
   channel,
+  showProgramStartTime,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -155,20 +158,21 @@ const ProgramListItem = ({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const startTimeDate = !isUndefined(program.startTimeOffset)
-    ? dayjs(channel.startTime + program.startTimeOffset)
-    : undefined;
-
-  const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
-
   const handleInfoButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onInfoClicked(program);
   };
 
   let title = `${titleFormatter(program)}`;
-  if (!smallViewport && startTime) {
-    title += ` - ${startTime}`;
+  const startTimeDate = !isUndefined(program.startTimeOffset)
+    ? dayjs(channel.startTime + program.startTimeOffset)
+    : undefined;
+
+  const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
+  if (!smallViewport && showProgramStartTime && startTime) {
+    if (startTime) {
+      title += ` - ${startTime}`;
+    }
   }
 
   let icon: React.ReactElement | null = null;
@@ -197,6 +201,12 @@ const ProgramListItem = ({
     icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
   }
 
+  const backgroundColor = color(
+    alternateColors(index, theme.palette.mode, theme),
+  );
+  // const key = getProgramGroupingKey(program);
+  // const backgroundColor = color(pickRandomColor(key, randomColorSet1));
+
   return (
     <ListItem
       style={{
@@ -209,19 +219,15 @@ const ProgramListItem = ({
         cursor: enableDrag ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
       sx={{
-        backgroundColor: (theme) =>
-          isDragging
-            ? 'transparent'
-            : alternateColors(index, theme.palette.mode, theme),
+        color: (theme) => theme.palette.getContrastText(backgroundColor.hex()),
+        backgroundColor: isDragging ? 'transparent' : backgroundColor.hex(),
         '&:hover': {
-          backgroundColor: (theme) =>
-            isDragging
-              ? 'transparent'
-              : lighten(
-                  alternateColors(index, theme.palette.mode, theme),
-                  0.05,
-                ),
+          backgroundColor: isDragging
+            ? 'transparent'
+            : backgroundColor.lighten(0.05).hex(),
         },
+        borderBottom: 'thin solid',
+        borderBottomColor: backgroundColor.darken(0.1).hex(),
       }}
       key={startTime}
       secondaryAction={
@@ -293,7 +299,7 @@ const ProgramListItem = ({
           ) : null} */}
 
           {!smallViewport
-            ? icon ?? <Box sx={{ mr: 1, width: 24, height: '100%' }} />
+            ? (icon ?? <Box sx={{ mr: 1, width: 24, height: '100%' }} />)
             : null}
 
           <ListItemText
@@ -322,12 +328,13 @@ export default function ChannelProgrammingList(props: Props) {
     virtualListProps,
     showProgramCount = defaultProps.showProgramCount,
     enableDnd = defaultProps.enableDnd,
+    showProgramStartTime = true,
   } = props;
   const channel = useStore((s) => s.channelEditor.currentEntity);
   // We have to use props.type here to get proper type narrowing
   const selector =
     props.type === 'selector'
-      ? props.programListSelector ?? defaultProps.programListSelector
+      ? (props.programListSelector ?? defaultProps.programListSelector)
       : () => [];
   const storeProgramList = useSuspendedStore(selector);
   const programList =
@@ -388,6 +395,7 @@ export default function ChannelProgrammingList(props: Props) {
         onInfoClicked={() => openDetailsDialog(program)}
         onEditClicked={openEditDialog}
         titleFormatter={titleFormatter}
+        showProgramStartTime={showProgramStartTime}
       />
     );
   };

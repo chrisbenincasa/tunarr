@@ -1,11 +1,25 @@
-import { find, memoize } from 'lodash-es';
+import { isString } from 'lodash-es';
+import { useCallback } from 'react';
 import { isNonEmptyString, uuidRegexPattern } from '../helpers/util';
+import type { State } from '../store/index.ts';
+import useStore from '../store/index.ts';
+import type { Maybe } from '../types/util.ts';
 
-type Route = { matcher: RegExp; name: string };
+type RouteCallback = (s: State, maybeEntityId?: string) => string | undefined;
+
+type Route = {
+  matcher: RegExp;
+  name: string | RouteCallback;
+  isLink?: boolean;
+};
+
+type RouteDetails = { name: Maybe<string>; isLink: boolean };
 
 const entityPageMatcher = (entity: string, path: string) => {
   const pathPart = isNonEmptyString(path) ? `/${path}` : '';
-  return new RegExp(`^/${entity}/${uuidRegexPattern}${pathPart}/?$`);
+  return new RegExp(
+    `^/${entity}/(?<entityId>${uuidRegexPattern})${pathPart}/?$`,
+  );
 };
 
 const channelsPageMatcher = (path: string) =>
@@ -18,6 +32,16 @@ const namedRoutes: Route[] = [
   {
     matcher: /^\/channels$/g,
     name: 'Channels',
+  },
+  {
+    matcher: channelsPageMatcher(''),
+    name: (store, maybeId) =>
+      isNonEmptyString(maybeId) &&
+      store.channelEditor.currentEntity?.id === maybeId
+        ? store.channelEditor.currentEntity.name
+        : undefined,
+    isLink: false,
+    // name: (store) => store.channelEditor.,
   },
   {
     matcher: /^\/channels\/new$/g,
@@ -60,8 +84,8 @@ const namedRoutes: Route[] = [
     name: 'Time Slot Editor',
   },
   {
-    matcher: channelsPageMatcher('programming/random-slot-editor'),
-    name: 'Random Slot Editor',
+    matcher: channelsPageMatcher('programming/slot-editor'),
+    name: 'Slot Editor',
   },
   {
     matcher: /^\/library$/g,
@@ -109,12 +133,37 @@ const namedRoutes: Route[] = [
   },
 ];
 
-const getRouteName = memoize((path: string) => {
-  return find(namedRoutes, ({ matcher }) => {
-    return matcher.test(path);
-  })?.name;
-});
+export const useGetRouteDetails = () => {
+  const store = useStore();
 
-export const useGetRouteName = () => {
-  return (path: string) => getRouteName(path);
+  const getRoute = useCallback(
+    (path: string) => {
+      let route: Maybe<Route>;
+      let maybeId: Maybe<string>;
+      for (const namedRoute of namedRoutes) {
+        const matches = path.match(namedRoute.matcher);
+        if (matches) {
+          route = namedRoute;
+          maybeId = matches.groups?.['entityId'];
+          break;
+        }
+      }
+
+      if (!route) {
+        return;
+      }
+
+      const name = isString(route.name)
+        ? route.name
+        : route.name(store, maybeId);
+
+      return {
+        name,
+        isLink: route.isLink ?? true,
+      } satisfies RouteDetails;
+    },
+    [store],
+  );
+
+  return getRoute;
 };

@@ -1,12 +1,9 @@
-import {
-  ChannelProgram,
-  FlexProgram,
-  isFlexProgram,
-  isRedirectProgram,
-} from '@tunarr/types';
-import { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
+import type { ChannelProgram, FlexProgram } from '@tunarr/types';
+import { isFlexProgram, isRedirectProgram } from '@tunarr/types';
+import type { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc from 'dayjs/plugin/utc.js';
 import {
@@ -18,14 +15,15 @@ import {
   isUndefined,
   last,
   map,
+  orderBy,
   reject,
   sortBy,
   sum,
 } from 'lodash-es';
 import { MersenneTwister19937, Random } from 'random-js';
-import { NonEmptyArray } from 'ts-essentials';
+import type { NonEmptyArray } from 'ts-essentials';
+import type { ProgramIterator } from '../util/ProgramIterator.js';
 import {
-  ProgramIterator,
   advanceIterator,
   getNextProgramForSlot,
 } from '../util/ProgramIterator.js';
@@ -132,6 +130,9 @@ class ScheduleContext {
   #timeCursor: dayjs.Dayjs;
   #programmingIteratorsById: Record<string, ProgramIterator>;
   #workingLineup: ChannelProgram[] = [];
+  #sortedSlots: RandomSlot[];
+  #slotLastPlayed: Map<number, number> = new Map<number, number>();
+  #currentSlotIndex = 0;
 
   constructor(
     schedule: RandomSlotSchedule,
@@ -143,6 +144,15 @@ class ScheduleContext {
       createProgramMap(reject(programming, (p) => isFlexProgram(p))),
     );
     this.#timeCursor = startTime;
+    this.#sortedSlots = orderBy(
+      schedule.slots,
+      (slot, idx) => slot.index ?? idx,
+      'asc',
+    );
+  }
+
+  get sortedSlots() {
+    return this.#sortedSlots;
   }
 
   advanceTime(by: number | Duration) {
@@ -186,6 +196,18 @@ class ScheduleContext {
   get lineup(): ChannelProgram[] {
     return this.#workingLineup;
   }
+
+  // Indexed into the sorted slots array
+  getSlotLastPlayedTime(slotIndex: number) {
+    return this.#slotLastPlayed.get(slotIndex);
+  }
+
+  getNextSequentialSlot() {
+    const slot = this.#sortedSlots[this.#currentSlotIndex];
+    this.#currentSlotIndex =
+      (this.#currentSlotIndex + 1) % this.#sortedSlots.length;
+    return slot;
+  }
 }
 
 export class RandomSlotScheduler {
@@ -199,18 +221,16 @@ export class RandomSlotScheduler {
 
     const context = new ScheduleContext(this.schedule, programming, startTime);
 
-    const { slots, maxDays, padMs, padStyle, flexPreference } = this.schedule;
+    const { maxDays, padMs, padStyle, flexPreference, randomDistribution } =
+      this.schedule;
 
     const t0 = startTime;
     const upperLimit = t0.add(maxDays + 1, 'day');
 
-    const slotsLastPlayedMap: Record<number, number> = {};
-
-    // const lineup: ChannelProgram[] = [];
-
     while (context.timeCursor.isBefore(upperLimit)) {
       let currSlot: RandomSlot | null = null;
 
+      let minNextTime = context.timeCursor.add(24, 'days');
       // Pad time
       const m = +context.timeCursor.mod(padMs);
       if (m > constants.SLACK && padMs - m > constants.SLACK) {
@@ -218,28 +238,47 @@ export class RandomSlotScheduler {
         continue;
       }
 
-      let n = 0;
-      let minNextTime = context.timeCursor.add(24, 'days');
-      for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i];
-        const slotLastPlayed = slotsLastPlayedMap[i];
-        if (!isNil(slotLastPlayed)) {
-          const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
-          minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
-          if (
-            +dayjs.duration(context.timeCursor.diff(slotLastPlayed)) <
-            slot.cooldownMs - constants.SLACK
-          ) {
-            continue;
-          }
+      switch (randomDistribution) {
+        case 'uniform':
+        case 'weighted': {
+          const result = this.getRandomSlot(context);
+          currSlot = result.currSlot;
+          minNextTime = result.minNextTime;
+          break;
         }
-
-        n += slot.weight;
-
-        if (random.bool(slot.weight, n)) {
-          currSlot = slot;
-        }
+        case 'none':
+          currSlot = context.getNextSequentialSlot();
+          break;
       }
+
+      // let n = 0;
+      // for (let i = 0; i < sortedSlots.length; i++) {
+      //   const slot = sortedSlots[i];
+      //   // No cooldowns or random picking if we don't want a random
+      //   // distribution
+      //   if (randomDistribution === 'none') {
+      //     currSlot = slot;
+      //     break;
+      //   }
+
+      //   const slotLastPlayed = slotsLastPlayedMap[i];
+      //   if (!isNil(slotLastPlayed)) {
+      //     const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
+      //     minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
+      //     if (
+      //       +dayjs.duration(context.timeCursor.diff(slotLastPlayed)) <
+      //       slot.cooldownMs - constants.SLACK
+      //     ) {
+      //       continue;
+      //     }
+      //   }
+
+      //   n += slot.weight;
+
+      //   if (random.bool(slot.weight, n)) {
+      //     currSlot = slot;
+      //   }
+      // }
 
       if (isNull(currSlot)) {
         const duration = dayjs.duration(
@@ -420,9 +459,9 @@ export class RandomSlotScheduler {
     context: ScheduleContext,
   ): NonEmptyArray<PaddedProgram> | undefined {
     if (currSlot.durationSpec.type !== 'dynamic') {
-      throw new Error('');
+      throw new Error('Illegal state');
     } else if (currSlot.durationSpec.programCount <= 0) {
-      throw new Error('');
+      throw new Error('Cannot schedule a non-position program count');
     }
 
     const initialProgram = context.getNextProgramForSlot(currSlot);
@@ -453,5 +492,44 @@ export class RandomSlotScheduler {
       program,
       this.schedule.padStyle === 'slot' ? 1 : this.schedule.padMs,
     );
+  }
+
+  private getRandomSlot(context: ScheduleContext) {
+    let n = 0;
+    let currSlot: RandomSlot | null = null;
+    let minNextTime = context.timeCursor.add(24, 'days');
+    for (let i = 0; i < context.sortedSlots.length; i++) {
+      const slot = context.sortedSlots[i];
+      // No cooldowns or random picking if we don't want a random
+      // distribution
+      // if (randomDistribution === 'none') {
+      //   currSlot = slot;
+      //   break;
+      // }
+
+      const slotLastPlayed = context.getSlotLastPlayedTime(i);
+      // Default next time to play a program
+      if (!isNil(slotLastPlayed)) {
+        const nextPlay = dayjs.tz(slotLastPlayed + slot.cooldownMs);
+        minNextTime = minNextTime.isBefore(nextPlay) ? minNextTime : nextPlay;
+        if (
+          +dayjs.duration(context.timeCursor.diff(slotLastPlayed)) <
+          slot.cooldownMs - constants.SLACK
+        ) {
+          continue;
+        }
+      }
+
+      n += slot.weight;
+
+      if (random.bool(slot.weight, n)) {
+        currSlot = slot;
+      }
+    }
+
+    return {
+      currSlot,
+      minNextTime,
+    };
   }
 }

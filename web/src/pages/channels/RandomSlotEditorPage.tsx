@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
-import type { RandomSlotSchedule } from '@tunarr/types/api';
+import type { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -29,11 +29,12 @@ import {
   isUndefined,
   keys,
   mapValues,
+  orderBy,
   round,
 } from 'lodash-es';
 import React, { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
-import type { StrictOmit } from 'ts-essentials';
+import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
@@ -42,8 +43,15 @@ import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
+import type { Prettify } from '../../types/index.ts';
 
 dayjs.extend(duration);
+
+export type RandomSlotForm2 = Prettify<
+  StrictOmit<RandomSlotSchedule, 'timeZoneOffset' | 'type' | 'slots'> & {
+    slots: MarkRequired<RandomSlot, 'index'>[];
+  }
+>;
 
 export type RandomSlotForm = StrictOmit<
   RandomSlotSchedule,
@@ -78,7 +86,14 @@ export default function RandomSlotEditorPage() {
   const randomSlotForm = useForm<RandomSlotForm>({
     defaultValues:
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'random'
-        ? loadedSchedule
+        ? {
+            ...loadedSchedule,
+            slots: orderBy(
+              loadedSchedule.slots,
+              (slot, idx) => slot.index ?? idx,
+              'asc',
+            ),
+          }
         : defaultRandomSlotSchedule,
   });
 
@@ -103,8 +118,11 @@ export default function RandomSlotEditorPage() {
   }, [reset]);
 
   const onSave = () => {
+    const value = getValues();
     const schedule: RandomSlotSchedule = {
-      ...getValues(),
+      ...value,
+      // Index is controlled by the field array functions
+      slots: value.slots.map((slot, idx) => ({ ...slot, index: idx })),
       timeZoneOffset: new Date().getTimezoneOffset(),
       type: 'random',
     };
@@ -181,9 +199,7 @@ export default function RandomSlotEditorPage() {
     <>
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
-        <Typography variant="h4">
-          Edit Random Slots (Channel {channel?.number})
-        </Typography>
+        <Typography variant="h4">Slot Scheduler</Typography>
         <MissingProgramsAlert
           slots={slotArray.fields}
           programOptions={programOptions}
@@ -196,15 +212,7 @@ export default function RandomSlotEditorPage() {
           </Alert>
         )}
         <PaddedPaper>
-          <Stack
-            direction="row"
-            gap={1}
-            sx={{ display: 'flex', alignContent: 'center' }}
-          >
-            <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
-              Random Slots
-            </Typography>
-          </Stack>
+          <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>Slots</Typography>
           <Divider sx={{ my: 2 }} />
           <RandomSlotFormProvider {...randomSlotForm} slotArray={slotArray}>
             <RandomSlotTable />

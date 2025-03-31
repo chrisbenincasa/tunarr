@@ -4,18 +4,19 @@ import {
 } from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
-import { type UIChannelProgram, type UIIndex } from '../types/index.ts';
+import type { UIChannelProgramWithOffset } from '../types/index.ts';
+import { type UIIndex } from '../types/index.ts';
 import useStore, { type State } from './index.ts';
 
 const materializeProgramList = (
   lineup: (CondensedChannelProgram & UIIndex)[],
   programLookup: Record<string, ContentProgram>,
-): UIChannelProgram[] => {
+): UIChannelProgramWithOffset[] => {
   // TODO: Use the offsets from the network call
   let offset = 0;
   return chain(lineup)
     .map((p) => {
-      let content: UIChannelProgram | null = null;
+      let content: UIChannelProgramWithOffset | null = null;
       if (p.type === 'content') {
         if (!isUndefined(p.id) && !isNil(programLookup[p.id])) {
           content = {
@@ -53,7 +54,7 @@ const materializeProgramList = (
 
 export const materializedProgramListSelector = ({
   channelEditor: { programList, programLookup },
-}: State): UIChannelProgram[] => {
+}: State): UIChannelProgramWithOffset[] => {
   return materializeProgramList(programList, programLookup);
 };
 

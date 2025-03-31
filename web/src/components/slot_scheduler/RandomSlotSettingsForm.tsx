@@ -1,6 +1,6 @@
-import { DropdownOption } from '@/helpers/DropdownOption.js';
+import type { DropdownOption } from '@/helpers/DropdownOption.js';
 import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
-import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
+import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
 import {
   setChannelStartTime,
   setCurrentLineup,
@@ -22,7 +22,10 @@ import {
   Typography,
 } from '@mui/material';
 import { RandomSlotScheduler } from '@tunarr/shared';
-import { RandomSlotSchedule } from '@tunarr/types/api';
+import type {
+  RandomSlotDistributionType,
+  RandomSlotSchedule,
+} from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
@@ -34,9 +37,10 @@ import {
   NumericFormControllerText,
 } from '../util/TypedController';
 
-const distributionOptions: DropdownOption<string>[] = [
+const distributionOptions: DropdownOption<RandomSlotDistributionType>[] = [
   { value: 'uniform', description: 'Uniform' },
   { value: 'weighted', description: 'Weighted' },
+  { value: 'none', description: 'None' },
 ];
 
 const padStyleOptions: DropdownOption<RandomSlotSchedule['padStyle']>[] = [
@@ -83,8 +87,10 @@ export const RandomSlotSettingsForm = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
+      const values = getValues();
       const previewPrograms = new RandomSlotScheduler({
-        ...getValues(),
+        ...values,
+        slots: values.slots.map((slot, idx) => ({ ...slot, index: idx })),
         timeZoneOffset: new Date().getTimezoneOffset(),
         type: 'random',
       }).generateSchedule(materializeOriginalProgramList(), now);
@@ -126,8 +132,9 @@ export const RandomSlotSettingsForm = ({
             />
 
             <FormHelperText>
-              Ensures programs have a nice-looking start time, it will add Flex
-              time to fill the gaps.
+              Ensures programs start only at a particular interval within the
+              hour. This makes for nice looking schedules. Flex time is
+              scheduled to facilitate.
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -179,10 +186,14 @@ export const RandomSlotSettingsForm = ({
               )}
             />
             <FormHelperText>
-              Usually slots need to add flex time to ensure that the next slot
-              starts at the correct time. When there are multiple videos in the
-              slot, you might prefer to distribute the flex time between the
-              videos or to place most of the flex time at the end of the slot.
+              If no more programs can fit into a duration-based slot, flex time
+              is added to fill the gap. This setting determines how flex is
+              added <i>within</i> the slot to ensure all time is filled.
+              <br />
+              <strong>Between:</strong> Flex time is added between videos within
+              a slot, if there are multiple
+              <br />
+              <strong>End:</strong> Flex time is added at the end of the slot
             </FormHelperText>
           </FormControl>
         </Grid>
@@ -203,10 +214,14 @@ export const RandomSlotSettingsForm = ({
               )}
             />
             <FormHelperText>
-              Uniform means that all slots have an equal chancel to be picked.
-              Weighted makes the configuration of the slots more complicated but
-              allows to tweak the weight for each slot so you can make some
-              slots more likely to be picked than others.
+              <strong>None:</strong> slots are picked in the order they are
+              specified in the table (i.e. not randomly)
+              <br />
+              <strong>Uniform:</strong> all slots have an equal chancel to be
+              picked.
+              <br />
+              <strong>Weighted:</strong> each slot is picked with a specified
+              probability
             </FormHelperText>
           </FormControl>
         </Grid>

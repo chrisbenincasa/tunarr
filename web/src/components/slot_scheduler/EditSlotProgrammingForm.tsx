@@ -1,10 +1,10 @@
-import {
+import type {
   CustomShowProgramOption,
   ProgramOption,
   RedirectProgramOption,
   ShowProgramOption,
-  slotOrderOptions,
 } from '@/helpers/slotSchedulerUtil';
+import { slotOrderOptions } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
 import {
   Autocomplete,
@@ -17,7 +17,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import {
+import type {
   BaseSlot,
   CustomShowProgrammingTimeSlot,
   FlexProgrammingTimeSlot,
@@ -91,6 +91,7 @@ export const EditSlotProgrammingForm = ({
         } satisfies ShowProgrammingTimeSlot;
     }
     setValue(`programming`, newSlot, { shouldDirty: true, shouldTouch: true });
+    setValue('order', value === 'movie' ? 'alphanumeric' : 'next');
   };
 
   const showAutoCompleteOpts = useMemo(

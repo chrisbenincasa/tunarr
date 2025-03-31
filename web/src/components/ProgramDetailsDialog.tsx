@@ -1,7 +1,7 @@
 import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
 import { ProgramDebugDetailsMenu } from '@/dev/ProgramDebugDetailsMenu.tsx';
-import { Maybe } from '@/types/util.ts';
+import type { Maybe } from '@/types/util.ts';
 import { Close as CloseIcon, OpenInNew } from '@mui/icons-material';
 import {
   Box,
@@ -20,17 +20,13 @@ import {
 } from '@mui/material';
 import { createExternalId } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
-import { ChannelProgram, isContentProgram } from '@tunarr/types';
-import dayjs, { Dayjs } from 'dayjs';
+import type { ChannelProgram } from '@tunarr/types';
+import { isContentProgram } from '@tunarr/types';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { capitalize, compact, find, isUndefined } from 'lodash-es';
-import {
-  ReactEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { ReactEventHandler } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { P, match } from 'ts-pattern';
 import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
 import { useSettings } from '../store/settings/selectors';

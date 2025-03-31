@@ -1,4 +1,4 @@
-import { flatMap, isFunction, isNil } from 'lodash-es';
+import { flatMap, isFunction, isNil, sortBy } from 'lodash-es';
 
 export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
   return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
@@ -77,4 +77,24 @@ export function groupBy<T, Key extends string | number | symbol>(
 
 export function rotateArray<T>(arr: T[], positions: number): T[] {
   return arr.slice(positions, arr.length).concat(arr.slice(0, positions));
+}
+
+export function binarySearchRange(seq: readonly number[], target: number) {
+  let low = 0,
+    high = seq.length - 1;
+  const sorted = sortBy(seq);
+  if (seq.length === 0 || target < 0 || target > sorted[seq.length - 1]) {
+    return null;
+  }
+
+  while (low + 1 < high) {
+    const mid = low + ((high - low) >>> 1);
+    if (sorted[mid] > target) {
+      high = mid;
+    } else {
+      low = mid;
+    }
+  }
+
+  return low;
 }

@@ -32,7 +32,6 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
 
   const [weights, setWeights] = useState<number[]>(map(currentSlots, 'weight'));
   const totalWeight = sum(weights);
-  console.log(weights, totalWeight);
 
   const adjustRandomSlotWeights = useAdjustRandomSlotWeights();
   const programOptions = useSlotProgramOptions();
