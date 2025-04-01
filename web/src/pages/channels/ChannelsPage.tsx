@@ -587,6 +587,7 @@ export default function ChannelsPage() {
       setColumnVisibility(updater);
     },
     onPaginationChange: (updater) => setPaginationState(updater),
+    autoResetPageIndex: false,
   });
 
   return (
