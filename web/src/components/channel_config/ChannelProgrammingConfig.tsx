@@ -8,37 +8,48 @@ import {
 } from '@/store/channelEditor/actions.ts';
 import useStore from '@/store/index.ts';
 import { useChannelEditor } from '@/store/selectors.ts';
-import { Save, Undo } from '@mui/icons-material';
 import {
-  Alert,
+  CalendarViewDay,
+  CalendarViewMonth,
+  CalendarViewWeek,
+  List,
+  Save,
+  Undo,
+} from '@mui/icons-material';
+import {
   Box,
   Button,
   CircularProgress,
   IconButton,
-  Link,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { ZodiosError } from '@zodios/core';
 import dayjs, { type Dayjs } from 'dayjs';
 import { chain, findIndex, head, isUndefined, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ZodError } from 'zod';
+import type { CalendarState } from '../slot_scheduler/ProgramCalendarView.tsx';
+import { ProgramCalendarView } from '../slot_scheduler/ProgramCalendarView.tsx';
+import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView.tsx';
+import { ProgramWeekCalendarView } from '../slot_scheduler/ProgramWeekCalendarView.tsx';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelProgrammingList from './ChannelProgrammingList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
+type ViewType = 'list' | 'day' | 'week' | 'month';
+
 export function ChannelProgrammingConfig() {
   const {
     currentEntity: channel,
     originalEntity: originalChannel,
-    schedule,
     programList: newLineup,
   } = useChannelEditor();
   const theme = useTheme();
@@ -47,6 +58,26 @@ export function ChannelProgrammingConfig() {
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const snackbar = useSnackbar();
+
+  const [view, setView] = useState<ViewType>('list');
+  const [viewDate, setViewDate] = useState<Dayjs>(dayjs(channel?.startTime));
+  const calendarState = useMemo(
+    () =>
+      ({
+        month: viewDate.month(),
+        year: viewDate.year(),
+      }) satisfies CalendarState,
+    [viewDate],
+  );
+
+  const onCalendarStateChange = useCallback((date: CalendarState) => {
+    setViewDate((prev) => prev.month(date.month).year(date.year));
+  }, []);
+
+  const handleCalendarDaySelect = useCallback((date: Dayjs) => {
+    setViewDate(date);
+    setView('day');
+  }, []);
 
   const slideSchedule = useSlideSchedule();
 
@@ -157,37 +188,51 @@ export function ChannelProgrammingConfig() {
     });
   };
 
+  const renderView = () => {
+    switch (view) {
+      case 'list':
+        return (
+          <ChannelProgrammingList
+            type="selector"
+            virtualListProps={{
+              width: '100%',
+              height: 600,
+              itemSize: smallViewport ? 70 : 35,
+            }}
+          />
+        );
+      case 'day':
+        return (
+          <ProgramDayCalendarView
+            calendarState={viewDate}
+            onChange={setViewDate}
+          />
+        );
+      case 'week':
+        return (
+          <ProgramWeekCalendarView
+            calendarState={viewDate}
+            onChange={setViewDate}
+            onSelectDay={handleCalendarDaySelect}
+          />
+        );
+      case 'month':
+        return (
+          <ProgramCalendarView
+            calendarState={calendarState}
+            onChange={onCalendarStateChange}
+            onSelectDay={handleCalendarDaySelect}
+          />
+        );
+    }
+  };
+
   const startTime = channel ? dayjs(channel.startTime) : dayjs();
   return (
     <>
-      <Box display="flex" flexDirection="column">
-        {schedule && (
-          <Alert sx={{ mb: 2 }} severity="info">
-            This channel is set up to use{' '}
-            <Link
-              to={schedule.type === 'time' ? 'time-slot-editor' : 'slot-editor'}
-              component={RouterLink}
-            >
-              {schedule.type === 'time' ? 'Time ' : ' '}
-              Slots
-            </Link>{' '}
-            for programming. Any manual changes on this page will likely make
-            this channel stop adhering to that schedule.
-          </Alert>
-        )}
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          gap={{ xs: 1 }}
-          sx={{
-            display: 'flex',
-            pt: 1,
-            mb: 2,
-            columnGap: 1,
-            alignItems: 'center',
-          }}
-        >
-          <Box sx={{ mr: { sm: 2 }, flexGrow: 1 }}>
+      <Stack gap={2}>
+        <Stack direction="row" flexGrow={1} alignItems={'center'}>
+          <Box flex={1}>
             <DateTimePicker
               label="Programming Start"
               value={startTime}
@@ -195,6 +240,46 @@ export function ChannelProgrammingConfig() {
               slotProps={{ textField: { size: 'small' } }}
             />
           </Box>
+          <Box alignSelf={'flex-end'}>
+            <ToggleButtonGroup
+              value={view}
+              exclusive
+              onChange={(_, v) => setView(v as ViewType)}
+            >
+              <Tooltip title="List">
+                <ToggleButton value="list">
+                  <List />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title="Day">
+                <ToggleButton value="day">
+                  <CalendarViewDay />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title="Week">
+                <ToggleButton value="week">
+                  <CalendarViewWeek />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title="Month">
+                <ToggleButton value="month">
+                  <CalendarViewMonth />
+                </ToggleButton>
+              </Tooltip>
+            </ToggleButtonGroup>
+          </Box>
+        </Stack>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          gap={{ xs: 1 }}
+          sx={{
+            display: 'flex',
+            pt: 1,
+            columnGap: 1,
+            alignItems: 'center',
+            justifyContent: { sm: 'flex-end' },
+          }}
+        >
           <ChannelProgrammingTools />
           <ChannelProgrammingSort />
           <AddProgrammingButton />
@@ -258,16 +343,8 @@ export function ChannelProgrammingConfig() {
           )}
         </Stack>
 
-        <ChannelProgrammingList
-          type="selector"
-          virtualListProps={{
-            width: '100%',
-            height: 600,
-            itemSize: smallViewport ? 70 : 35,
-          }}
-          showProgramStartTime={false}
-        />
-      </Box>
+        {renderView()}
+      </Stack>
     </>
   );
 }

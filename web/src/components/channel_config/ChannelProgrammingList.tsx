@@ -22,8 +22,13 @@ import ListItemText from '@mui/material/ListItemText';
 import { type Channel, type ChannelProgram } from '@tunarr/types';
 import color from 'color';
 import dayjs, { type Dayjs } from 'dayjs';
-import { findIndex, isString, isUndefined, map, sumBy } from 'lodash-es';
-import React, { type CSSProperties, useCallback, useState } from 'react';
+import { findIndex, isString, isUndefined, map, maxBy, sumBy } from 'lodash-es';
+import React, {
+  type CSSProperties,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import {
   FixedSizeList,
@@ -31,7 +36,9 @@ import {
   type ListChildComponentProps,
 } from 'react-window';
 import { type MarkRequired } from 'ts-essentials';
-import { alternateColors, channelProgramUniqueId } from '../../helpers/util.ts';
+import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import { channelProgramUniqueId, grayBackground } from '../../helpers/util.ts';
 import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore, { type State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -103,6 +110,7 @@ type ListItemProps = {
   titleFormatter: (program: ChannelProgram) => string;
   channel: Channel;
   showProgramStartTime?: boolean;
+  relativeDuration?: number;
 };
 
 type ListDragItem = {
@@ -126,6 +134,7 @@ const ProgramListItem = ({
   titleFormatter,
   channel,
   showProgramStartTime,
+  relativeDuration,
 }: ListItemProps) => {
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -201,11 +210,21 @@ const ProgramListItem = ({
     icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
   }
 
-  const backgroundColor = color(
-    alternateColors(index, theme.palette.mode, theme),
-  );
-  // const key = getProgramGroupingKey(program);
-  // const backgroundColor = color(pickRandomColor(key, randomColorSet1));
+  // const backgroundColor = color(
+  //   alternateColors(index, theme.palette.mode, theme),
+  // );
+  const key = getProgramGroupingKey(program);
+  const backgroundColor =
+    program.type === 'flex'
+      ? color(grayBackground(theme.palette.mode))
+      : pickRandomColor(key, RandomPastels);
+  const relativePct = relativeDuration ? relativeDuration * 100.0 : null;
+  const bgHex = backgroundColor.hex();
+  const bgAlt = backgroundColor.darken(0.1).hex();
+
+  const bg = relativePct
+    ? `linear-gradient(to right, ${bgAlt} 0%, ${bgAlt} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`
+    : bgHex;
 
   return (
     <ListItem
@@ -214,15 +233,16 @@ const ProgramListItem = ({
         border: enableDrag
           ? isDragging
             ? '1px dashed gray'
-            : 'transparent'
-          : 'transparent',
+            : undefined
+          : undefined,
         cursor: enableDrag ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
+      divider
       sx={{
-        color: (theme) => theme.palette.getContrastText(backgroundColor.hex()),
-        backgroundColor: isDragging ? 'transparent' : backgroundColor.hex(),
+        color: (theme) => theme.palette.getContrastText(bgHex),
+        background: bg,
         '&:hover': {
-          backgroundColor: isDragging
+          background: isDragging
             ? 'transparent'
             : backgroundColor.lighten(0.05).hex(),
         },
@@ -348,6 +368,11 @@ export default function ChannelProgrammingList(props: Props) {
     ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
   >();
 
+  const maxDuration = useMemo(
+    () => maxBy(programList, (p) => p.duration),
+    [programList],
+  );
+
   const findProgram = useCallback(
     (originalIndex: number) => {
       return { index: findIndex(programList, { originalIndex }) };
@@ -380,6 +405,10 @@ export default function ChannelProgrammingList(props: Props) {
 
   const renderProgram = (idx: number, style?: CSSProperties) => {
     const program = programList[idx];
+    const maxDurationMs = maxDuration?.duration ?? 0;
+    const relativeDuration =
+      maxDurationMs > 0 ? program.duration / maxDurationMs : undefined;
+
     return (
       <ProgramListItem
         index={idx}
@@ -396,6 +425,7 @@ export default function ChannelProgrammingList(props: Props) {
         onEditClicked={openEditDialog}
         titleFormatter={titleFormatter}
         showProgramStartTime={showProgramStartTime}
+        relativeDuration={relativeDuration}
       />
     );
   };
@@ -456,20 +486,22 @@ export default function ChannelProgrammingList(props: Props) {
             </Typography>
           </Box>
         )}
-        {virtualListProps ? (
-          <FixedSizeList
-            {...virtualListProps}
-            itemCount={programList.length}
-            itemKey={itemKey}
-            itemData={programList}
-          >
-            {ProgramRow}
-          </FixedSizeList>
-        ) : (
-          <Box ref={drop} sx={{ flex: 1, maxHeight: 600, overflowY: 'auto' }}>
-            <List dense>{renderPrograms()}</List>
-          </Box>
-        )}
+        <Box>
+          {virtualListProps ? (
+            <FixedSizeList
+              {...virtualListProps}
+              itemCount={programList.length}
+              itemKey={itemKey}
+              itemData={programList}
+            >
+              {ProgramRow}
+            </FixedSizeList>
+          ) : (
+            <Box ref={drop} sx={{ flex: 1, maxHeight: 600, overflowY: 'auto' }}>
+              <List dense>{renderPrograms()}</List>
+            </Box>
+          )}
+        </Box>
         <ProgramDetailsDialog
           open={!isUndefined(focusedProgramDetails)}
           onClose={() => setFocusedProgramDetails(undefined)}

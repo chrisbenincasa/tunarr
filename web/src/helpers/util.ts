@@ -1,5 +1,6 @@
 import { type Nullable } from '@/types/util';
-import { type Theme } from '@mui/material';
+import type { PaletteMode } from '@mui/material';
+import { colors, type Theme } from '@mui/material';
 import { type MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
 import type {
   GenGroupedSubtypeMapping,
@@ -87,6 +88,14 @@ export const alternateColors = (
       ? theme.palette.grey[700]
       : theme.palette.grey[800];
 };
+
+export function grayBackground(mode: PaletteMode) {
+  if (mode === 'light') {
+    return colors.grey[100];
+  } else {
+    return colors.grey[600];
+  }
+}
 
 export const isResolutionString = (
   str: string,

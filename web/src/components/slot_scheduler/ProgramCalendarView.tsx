@@ -1,18 +1,22 @@
 import { Box, Button, Grid2, Stack, Typography } from '@mui/material';
+import { seq } from '@tunarr/shared/util';
+import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import 'dayjs/plugin/duration';
 import 'dayjs/plugin/localeData';
 import weekday from 'dayjs/plugin/weekday';
 import { countBy, range } from 'lodash-es';
 import pluralize from 'pluralize';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useDaysInMonth } from '../../hooks/calendarHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';
 import type { State } from '../../store/index.ts';
-import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import type { UIChannelProgram } from '../../types/index.ts';
+import type {
+  UIChannelProgram,
+  UIChannelProgramWithOffset,
+} from '../../types/index.ts';
 
 type SelectorBasedProgramListProps = {
   // type: 'selector';
@@ -20,23 +24,70 @@ type SelectorBasedProgramListProps = {
 };
 
 type Props = SelectorBasedProgramListProps & {
-  month?: number;
-  year?: number;
+  calendarState?: CalendarState;
+  onChange?: (date: CalendarState) => void;
+  onSelectDay?: (day: dayjs.Dayjs) => void;
 };
 
-type CalendarState = {
+export type CalendarState = {
   month: number;
   year: number;
 };
 
+type CalendarProgram = {
+  startTime: dayjs.Dayjs;
+  program: UIChannelProgramWithOffset;
+};
+
 dayjs.extend(weekday);
 
-export const ProgramCalendarView = ({ month, year }: Props) => {
+export const ProgramCalendarView = ({
+  calendarState: providedCalendarState,
+  onChange,
+  onSelectDay,
+}: Props) => {
   const providedDjs = useDayjs();
-  const [calendarState, setCalendarState] = useState<CalendarState>({
-    month: month ?? providedDjs().month(),
-    year: year ?? providedDjs().year(),
-  });
+  const prevCalendarDate = usePrevious(!!providedCalendarState);
+  const isControlled = !!providedCalendarState;
+
+  if (prevCalendarDate !== null && prevCalendarDate !== isControlled) {
+    console.error(
+      'Cannot switch between uncontrolled and controlled ProgramCalendarView.',
+    );
+  }
+
+  const [internalCalendarState, setInternalCalendarState] =
+    useState<CalendarState>({
+      month: providedCalendarState?.month ?? providedDjs().month(),
+      year: providedCalendarState?.year ?? providedDjs().year(),
+    });
+
+  const handleCalendarStateChange = useCallback(
+    (incoming: CalendarState) => {
+      setInternalCalendarState(incoming);
+      onChange?.(incoming);
+    },
+    [onChange],
+  );
+
+  const calendarState = providedCalendarState ?? internalCalendarState;
+
+  const addMonths = useCallback(
+    (num: number = 1) => {
+      handleCalendarStateChange({
+        ...calendarState,
+        month: calendarState.month + num,
+      });
+    },
+    [calendarState, handleCalendarStateChange],
+  );
+
+  const subtractMonths = useCallback(
+    (num: number = 1) => {
+      addMonths(-num);
+    },
+    [addMonths],
+  );
 
   const monthStart = useMemo(
     () =>
@@ -51,7 +102,7 @@ export const ProgramCalendarView = ({ month, year }: Props) => {
   const daysInMonth = useDaysInMonth(monthStart);
   const endPaddingDays = 6 - monthStart.date(daysInMonth).weekday();
 
-  const channel = useStore((s) => s.channelEditor.currentEntity);
+  const channel = useSuspendedStore((s) => s.channelEditor.currentEntity);
   const programList = useSuspendedStore(materializedProgramListSelector);
 
   const localeData = useMemo(() => monthStart.localeData(), [monthStart]);
@@ -63,42 +114,62 @@ export const ProgramCalendarView = ({ month, year }: Props) => {
   };
 
   const channelStartMs = channel?.startTime ?? 0;
-  // const channelStart = useMemo(
-  //   () => providedDjs(channel?.startTime),
-  //   [channel?.startTime, providedDjs],
-  // );
   const thisMonthProgramming = useMemo(() => {
-    return programList.filter((p) => {
-      const startDt = providedDjs(channelStartMs + p.startTimeOffset);
-      return (
-        startDt.year() === calendarState.year &&
-        startDt.month() === calendarState.month
-      );
-    });
+    const offsets = programList.map((p) => p.startTimeOffset);
+    const startOfMonth = dayjs()
+      .month(calendarState.month)
+      .year(calendarState.year)
+      .startOf('month');
+    const channelProgress =
+      (+startOfMonth - channelStartMs) % (channel?.duration ?? 0);
+    const idx =
+      offsets.length === 1
+        ? 0
+        : seq.binarySearchRange(offsets, channelProgress);
+    if (idx === null) {
+      return [];
+    }
+
+    const endOfMonth = startOfMonth.add(1, 'month').subtract(1);
+    const cyclesInMonth = endOfMonth.diff(startOfMonth) / channel.duration;
+    console.log(cyclesInMonth);
+
+    const programs: CalendarProgram[] = [];
+    let t = +startOfMonth;
+    let i = idx;
+    while (t < +endOfMonth) {
+      const program = programList[i];
+      if (program.type !== 'flex') {
+        programs.push({ startTime: dayjs(t), program });
+      }
+      t += program.duration;
+      i = (i + 1) % programList.length;
+    }
+
+    return programs;
   }, [
     calendarState.month,
     calendarState.year,
+    channel.duration,
     channelStartMs,
     programList,
-    providedDjs,
   ]);
 
   const countByDay = useMemo(() => {
-    return countBy(thisMonthProgramming, (p) =>
-      providedDjs(channelStartMs + p.startTimeOffset).date(),
-    );
-  }, [channelStartMs, providedDjs, thisMonthProgramming]);
+    return countBy(thisMonthProgramming, (p) => p.startTime.date());
+  }, [thisMonthProgramming]);
 
   const renderMonthDays = () => {
     return range(0, daysInMonth).map((idx) => {
       const day = monthStart.date(idx + 1).startOf('day');
-      // const offset = day.diff(channel?.startTime);
       const count = countByDay?.[day.date()] ?? 0;
       return (
         <Grid2
           key={`month_day_${idx}`}
           size={{ xs: 12 / 7 }}
-          sx={{ height: '100px', p: 1 }}
+          sx={{ height: '100px', p: 1, cursor: 'pointer' }}
+          component={Box}
+          onClick={() => onSelectDay?.(day)}
         >
           <Box sx={{ width: '100%', mb: 1 }}>{idx + 1}</Box>
           <Box
@@ -129,20 +200,8 @@ export const ProgramCalendarView = ({ month, year }: Props) => {
   return (
     <Box>
       <Stack direction="row">
-        <Button
-          onClick={() =>
-            setCalendarState((prev) => ({ ...prev, month: prev.month - 1 }))
-          }
-        >
-          Prev
-        </Button>
-        <Button
-          onClick={() =>
-            setCalendarState((prev) => ({ ...prev, month: prev.month + 1 }))
-          }
-        >
-          Next
-        </Button>
+        <Button onClick={() => subtractMonths(1)}>Prev</Button>
+        <Button onClick={() => addMonths(1)}>Next</Button>
       </Stack>
       <Typography>
         {localeData.months()[calendarState.month]} {calendarState.year}

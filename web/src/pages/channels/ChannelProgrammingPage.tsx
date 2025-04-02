@@ -3,20 +3,23 @@ import { useChannelAndProgramming } from '@/hooks/useChannelLineup.ts';
 import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
 import Edit from '@mui/icons-material/Edit';
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
+  Link,
   Paper,
   Stack,
   Typography,
 } from '@mui/material';
-import { Link } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
+import { useChannelEditor } from '../../store/selectors.ts';
 
 export default function ChannelProgrammingPage() {
   const { channelId } = Route.useParams();
@@ -24,6 +27,8 @@ export default function ChannelProgrammingPage() {
     data: { channel },
     isPending,
   } = useChannelAndProgramming(channelId);
+
+  const { schedule } = useChannelEditor();
 
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
 
@@ -47,7 +52,7 @@ export default function ChannelProgrammingPage() {
         </Typography>
         <Box>
           <Button
-            component={Link}
+            component={RouterLink}
             to="../edit"
             variant="outlined"
             startIcon={<Edit />}
@@ -56,6 +61,20 @@ export default function ChannelProgrammingPage() {
           </Button>
         </Box>
       </Stack>
+      {schedule && (
+        <Alert sx={{ mb: 2 }} severity="info" component={Paper} elevation={1}>
+          This channel is set up to use{' '}
+          <Link
+            to={schedule.type === 'time' ? 'time-slot-editor' : 'slot-editor'}
+            component={RouterLink}
+          >
+            {schedule.type === 'time' ? 'Time ' : ' '}
+            Slots
+          </Link>{' '}
+          for programming. Any manual changes on this page will likely make this
+          channel stop adhering to that schedule.
+        </Alert>
+      )}
       <Paper sx={{ p: 2 }}>
         <ChannelProgrammingConfig />
         <UnsavedNavigationAlert
