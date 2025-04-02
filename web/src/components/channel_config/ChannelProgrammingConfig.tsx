@@ -163,16 +163,12 @@ export function ChannelProgrammingConfig() {
       <Box display="flex" flexDirection="column">
         {schedule && (
           <Alert sx={{ mb: 2 }} severity="info">
-            This channel is setup to use{' '}
+            This channel is set up to use{' '}
             <Link
-              to={
-                schedule.type === 'time'
-                  ? 'time-slot-editor'
-                  : 'random-slot-editor'
-              }
+              to={schedule.type === 'time' ? 'time-slot-editor' : 'slot-editor'}
               component={RouterLink}
             >
-              {schedule.type === 'time' ? 'Time ' : 'Random '}
+              {schedule.type === 'time' ? 'Time ' : ' '}
               Slots
             </Link>{' '}
             for programming. Any manual changes on this page will likely make
@@ -269,6 +265,7 @@ export function ChannelProgrammingConfig() {
             height: 600,
             itemSize: smallViewport ? 70 : 35,
           }}
+          showProgramStartTime={false}
         />
       </Box>
     </>

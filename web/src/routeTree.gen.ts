@@ -46,7 +46,7 @@ import { Route as LibraryCustomShowsNewProgrammingImport } from './routes/librar
 import { Route as LibraryCustomShowsShowIdProgrammingImport } from './routes/library/custom-shows_/$showId/programming';
 import { Route as LibraryCustomShowsShowIdEditImport } from './routes/library/custom-shows_/$showId/edit';
 import { Route as ChannelsChannelIdProgrammingTimeSlotEditorImport } from './routes/channels_/$channelId/programming/time-slot-editor';
-import { Route as ChannelsChannelIdProgrammingRandomSlotEditorImport } from './routes/channels_/$channelId/programming/random-slot-editor';
+import { Route as ChannelsChannelIdProgrammingSlotEditorImport } from './routes/channels_/$channelId/programming/slot-editor';
 import { Route as ChannelsChannelIdProgrammingAddImport } from './routes/channels_/$channelId/programming/add';
 
 // Create/Update Routes
@@ -237,9 +237,9 @@ const ChannelsChannelIdProgrammingTimeSlotEditorRoute =
     getParentRoute: () => rootRoute,
   } as any);
 
-const ChannelsChannelIdProgrammingRandomSlotEditorRoute =
-  ChannelsChannelIdProgrammingRandomSlotEditorImport.update({
-    path: '/channels/$channelId/programming/random-slot-editor',
+const ChannelsChannelIdProgrammingSlotEditorRoute =
+  ChannelsChannelIdProgrammingSlotEditorImport.update({
+    path: '/channels/$channelId/programming/slot-editor',
     getParentRoute: () => rootRoute,
   } as any);
 
@@ -442,11 +442,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChannelsChannelIdProgrammingAddImport;
       parentRoute: typeof rootRoute;
     };
-    '/channels/$channelId/programming/random-slot-editor': {
-      id: '/channels/$channelId/programming/random-slot-editor';
-      path: '/channels/$channelId/programming/random-slot-editor';
-      fullPath: '/channels/$channelId/programming/random-slot-editor';
-      preLoaderRoute: typeof ChannelsChannelIdProgrammingRandomSlotEditorImport;
+    '/channels/$channelId/programming/slot-editor': {
+      id: '/channels/$channelId/programming/slot-editor';
+      path: '/channels/$channelId/programming/slot-editor';
+      fullPath: '/channels/$channelId/programming/slot-editor';
+      preLoaderRoute: typeof ChannelsChannelIdProgrammingSlotEditorImport;
       parentRoute: typeof rootRoute;
     };
     '/channels/$channelId/programming/time-slot-editor': {
@@ -547,7 +547,7 @@ export const routeTree = rootRoute.addChildren({
   LibraryCustomShowsNewRoute,
   LibraryFillersNewRoute,
   ChannelsChannelIdProgrammingAddRoute,
-  ChannelsChannelIdProgrammingRandomSlotEditorRoute,
+  ChannelsChannelIdProgrammingSlotEditorRoute,
   ChannelsChannelIdProgrammingTimeSlotEditorRoute,
   LibraryCustomShowsShowIdEditRoute,
   LibraryCustomShowsShowIdProgrammingRoute,
@@ -583,7 +583,7 @@ export const routeTree = rootRoute.addChildren({
         "/library/custom-shows/new",
         "/library/fillers/new",
         "/channels/$channelId/programming/add",
-        "/channels/$channelId/programming/random-slot-editor",
+        "/channels/$channelId/programming/slot-editor",
         "/channels/$channelId/programming/time-slot-editor",
         "/library/custom-shows/$showId/edit",
         "/library/custom-shows/$showId/programming",
@@ -702,8 +702,8 @@ export const routeTree = rootRoute.addChildren({
     "/channels/$channelId/programming/add": {
       "filePath": "channels_/$channelId/programming/add.tsx"
     },
-    "/channels/$channelId/programming/random-slot-editor": {
-      "filePath": "channels_/$channelId/programming/random-slot-editor.tsx"
+    "/channels/$channelId/programming/slot-editor": {
+      "filePath": "channels_/$channelId/programming/slot-editor.tsx"
     },
     "/channels/$channelId/programming/time-slot-editor": {
       "filePath": "channels_/$channelId/programming/time-slot-editor.tsx"

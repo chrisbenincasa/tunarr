@@ -1,8 +1,8 @@
-import { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Add } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import type { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { first, map, round, sortBy } from 'lodash-es';
 import { useCallback } from 'react';
@@ -97,6 +97,7 @@ export const AddRandomSlotButton = ({
         durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
       },
       direction: 'asc',
+      index: slotArray.fields.length,
     } satisfies RandomSlot;
 
     onAdd(newSlot);

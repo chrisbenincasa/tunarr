@@ -21,8 +21,6 @@ export const useAddSelectedItems = () => {
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log(selectedMedia);
-
   const addSelectedItems: MouseEventHandler = (e) => {
     e.preventDefault();
     e.stopPropagation();

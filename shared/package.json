@@ -12,7 +12,7 @@
     "build": "tsup --dts",
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./build/",
-    "dev": "tsc -p tsconfig.prod.json --watch --declaration",
+    "dev": "tsup --dts --watch",
     "test": "vitest"
   },
   "exports": {

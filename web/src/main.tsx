@@ -2,6 +2,7 @@ import { routeTree } from '@/routeTree.gen';
 import { createRouter } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en-gb';
+import localeData from 'dayjs/plugin/localeData';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -25,6 +26,7 @@ declare module '@tanstack/react-router' {
 }
 
 dayjs.extend(localizedFormat);
+dayjs.extend(localeData);
 dayjs.locale('en-gb');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -1,12 +1,8 @@
-import {
-  BreadcrumbsProps,
-  Link,
-  Breadcrumbs as MUIBreadcrumbs,
-  Typography,
-} from '@mui/material';
+import type { BreadcrumbsProps } from '@mui/material';
+import { Link, Breadcrumbs as MUIBreadcrumbs, Typography } from '@mui/material';
 import { Link as RouterLink, useLocation } from '@tanstack/react-router';
 import { isEmpty, map, reject } from 'lodash-es';
-import { useGetRouteName } from '../hooks/useRouteName.ts';
+import { useGetRouteDetails } from '../hooks/useRouteName.ts';
 
 export default function Breadcrumbs(props: BreadcrumbsProps) {
   const { sx = { mb: 2 }, separator = '›', ...restProps } = props;
@@ -17,7 +13,7 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
     reject(location.pathname.split('/'), isEmpty),
     (part) => part === 'web',
   );
-  const getRouteName = useGetRouteName();
+  const getRoute = useGetRouteDetails();
 
   return (
     <>
@@ -30,17 +26,23 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
         {map(pathnames, (_, index) => {
           const isLast = index === pathnames.length - 1;
           const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+          const route = getRoute(to);
+
+          if (!route?.name) {
+            return null;
+          }
+
           // Don't link the last item in a breadcrumb because you are on that page
           // Don't display crumbs for pages that aren't excplicely defined in useRouteNames hook
-          return isLast ? (
+          return isLast || !route?.isLink ? (
             <Typography color="text.primary" key={to}>
-              {getRouteName(to) ?? ''}
+              {route.name ?? ''}
             </Typography>
-          ) : getRouteName(to) ? (
+          ) : (
             <Link component={RouterLink} to={to} key={to}>
-              {getRouteName(to)}
+              {route.name}
             </Link>
-          ) : null;
+          );
         })}
       </MUIBreadcrumbs>
     </>

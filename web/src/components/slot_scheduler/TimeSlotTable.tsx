@@ -4,7 +4,7 @@ import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgr
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import { Dialog, DialogTitle, IconButton, Stack, Tooltip } from '@mui/material';
-import { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
+import type { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
@@ -18,10 +18,12 @@ import {
   sortBy,
   uniq,
 } from 'lodash-es';
-import {
+import type {
   MRT_ColumnDef,
   MRT_Row,
   MRT_TableInstance,
+} from 'material-react-table';
+import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
@@ -31,7 +33,7 @@ import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
 import { EditTimeSlotDialogContent } from './EditTimeSlotDialogContent.tsx';
-import { SlotWarning, TimeSlotTableRowType } from './SlotTypes.ts';
+import type { SlotWarning, TimeSlotTableRowType } from './SlotTypes.ts';
 import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
@@ -64,6 +66,7 @@ export const TimeSlotTable = () => {
   >(null);
 
   const rows = useMemo(() => {
+    console.log('here');
     return map(
       sortBy(
         map(slotArray.fields, (slot, index) => ({
@@ -276,6 +279,8 @@ export const TimeSlotTable = () => {
     // TODO: Can enable this with custom options to filter by show name
     enableGlobalFilter: false,
     enableFullScreenToggle: false,
+    enableRowDragging: true,
+    enableRowOrdering: true,
     renderRowActions: renderActionCell,
     renderTopToolbarCustomActions() {
       return (
@@ -293,12 +298,6 @@ export const TimeSlotTable = () => {
         </Stack>
       );
     },
-    muiTableBodyRowProps: () => ({
-      sx: {
-        // backgroundColor: (theme) => theme.palette.warning.main,
-        // color: (theme) => theme.palette.warning.contrastText,
-      },
-    }),
     initialState: {
       density: 'compact',
     },
