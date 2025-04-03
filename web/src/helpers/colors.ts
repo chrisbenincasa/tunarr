@@ -1,4 +1,4 @@
-import type { ColorLike } from 'color';
+import type { ColorInstance, ColorLike } from 'color';
 import color from 'color';
 
 export function generateAnalogousPalette(
@@ -35,12 +35,34 @@ export function generateTintsAndShadesPalette(
   return palette;
 }
 
+export function generatePastelPalette(baseColors: ColorLike[]) {
+  const pastelPalette = [];
+  for (const baseColor of baseColors) {
+    const colorInstance = color(baseColor);
+    const pastelColor = colorInstance.lightness(85).chroma(30); // Adjust L and C values for desired pastel effect
+    pastelPalette.push(pastelColor.hex());
+  }
+  return pastelPalette;
+}
+
+export function generateRandomPastelPalette(numColors: number) {
+  const pastelPalette = [];
+  for (let i = 0; i < numColors; i++) {
+    const hue = Math.random() * 360; // Random hue value (0-360)
+    const pastelColor = color.lch([80, 40, hue]); // Fixed lightness and chroma
+    pastelPalette.push(pastelColor.hex());
+  }
+  return pastelPalette;
+}
+
 export function pickRandomColor(
   input: string,
   palette: ColorLike[],
-): ColorLike {
+): ColorInstance {
   const seed = input
     .split('')
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return palette[seed % palette.length];
+  return color(palette[seed % palette.length]);
 }
+
+export const RandomPastels = generateRandomPastelPalette(100);
