@@ -712,6 +712,7 @@ export class TVGuideService {
             currentEndTimeMs
           ) {
             programs.push({
+              ...meldedProgram,
               startTimeMs:
                 meldedProgram.startTimeMs + meldedProgram.lineupItem.durationMs,
               lineupItem: {
@@ -727,6 +728,7 @@ export class TVGuideService {
       } else if (isProgramOffline(currentProgram, channelWithLineup.channel)) {
         melded = 0;
         programs.push({
+          ...program,
           startTimeMs: program.startTimeMs,
           lineupItem: {
             durationMs: currentProgram.durationMs,
@@ -779,6 +781,7 @@ export class TVGuideService {
     while (currentProgram.startTimeMs < currentEndTimeMs) {
       if (currentProgram.isPaused) {
         push(currentProgram);
+        console.log(programs);
         break;
       }
 
@@ -877,6 +880,7 @@ export class TVGuideService {
             d = duration;
           }
           const offlineItem = {
+            ...programs[i],
             startTimeMs: start,
             lineupItem: {
               durationMs: d,
@@ -1032,6 +1036,7 @@ export class TVGuideService {
     );
 
     return map(lineups, ({ channel, programs }) => {
+      console.log('programs', programs);
       return {
         icon: channel.icon,
         name: channel.name,
@@ -1113,7 +1118,10 @@ export class TVGuideService {
           : channel.name,
       }));
 
-    if (guideItem.isPaused && program.type === 'content') {
+    if (
+      guideItem.isPaused &&
+      (program.type === 'content' || program.type === 'flex')
+    ) {
       program.title += ' (paused)';
       program.isPaused = true;
     }
