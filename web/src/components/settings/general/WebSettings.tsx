@@ -1,7 +1,7 @@
 import DarkModeButton from '@/components/settings/DarkModeButton.tsx';
 import useStore from '@/store/index.ts';
 import { setUiLocale } from '@/store/settings/actions.ts';
-import { SupportedLocales } from '@/store/settings/store.ts';
+import type { SupportedLocales } from '@/store/settings/store.ts';
 import {
   Box,
   Stack,

@@ -7,26 +7,30 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
+  alpha,
   Box,
   Button,
   CircularProgress,
   Menu,
   MenuItem,
   type MenuProps,
+  styled,
   Tooltip,
   Typography,
-  alpha,
-  styled,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
+import type { ColorInstance } from 'color';
+import color from 'color';
 import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
+import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import {
   alternateColors,
   forTvGuideProgram,
@@ -93,11 +97,39 @@ const GridChild = styled(Box)<{ width: number }>(({ width }) => ({
   transition: 'width 0.5s ease-in',
 }));
 
-const GuideItem = styled(GridChild)<{ width: number; index: number }>(
-  ({ theme, width, index }) => ({
+const GuideItem = styled(GridChild)<{
+  program?: TvGuideProgram;
+  backgroundColor?: ColorInstance;
+  width: number;
+  index: number;
+}>(({ theme, width, index, backgroundColor, program }) => {
+  const bgColor =
+    backgroundColor?.hex() ?? alternateColors(index, theme.palette.mode, theme);
+  const bgLighter = color(bgColor).lighten(0.05).hex();
+  const bgDarker = color(bgColor).darken(0.05).hex();
+
+  const background =
+    isUndefined(program) || program.type === 'flex' || program.isPaused
+      ? `repeating-linear-gradient(-45deg,
+              ${bgColor},
+              ${bgColor} 10px,
+              ${bgDarker} 10px,
+              ${bgDarker} 20px)`
+      : bgColor;
+
+  const hoverBackground =
+    isUndefined(program) || program.type === 'flex' || program.isPaused
+      ? `repeating-linear-gradient(-45deg,
+  ${bgLighter},
+  ${bgLighter} 10px,
+  ${bgColor} 10px,
+  ${bgColor} 20px)`
+      : bgLighter;
+
+  return {
     display: 'flex',
     alignItems: 'flex-start',
-    backgroundColor: alternateColors(index, theme.palette.mode, theme),
+    background,
     borderCollapse: 'collapse',
     borderStyle: 'solid',
     borderWidth: '2px 5px 2px 5px',
@@ -115,11 +147,11 @@ const GuideItem = styled(GridChild)<{ width: number; index: number }>(
     justifyContent: 'flex-start',
     cursor: 'pointer',
     '&:hover': {
-      background: theme.palette.primary.light,
-      color: theme.palette.primary.contrastText,
+      background: hoverBackground,
+      color: theme.palette.getContrastText(bgLighter),
     },
-  }),
-);
+  };
+});
 
 const StyledButton = styled(Button)`
   & .MuiButton-endIcon {
@@ -333,7 +365,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         content: (p) => p.grandparent?.title ?? p.title,
         custom: (p) => p.program?.title ?? 'Custom Program',
         redirect: (p) => `Redirect to Channel ${p.channel}`,
-        flex: flexTitle,
+        flex: (p) => p.title ?? flexTitle,
       })(program);
 
       // Clean this up...
@@ -418,12 +450,16 @@ export function TvGuide({ channelId, start, end }: Props) {
         );
       }
 
+      const bg = pickRandomColor(getProgramGroupingKey(program), RandomPastels);
+
       return (
         <Fragment key={key}>
           <GuideItem
             width={pct}
             index={index}
             onClick={() => handleModalOpen(program)}
+            backgroundColor={bg}
+            program={program}
           >
             <Box sx={{ fontSize: '14px', fontWeight: '600' }}>{title}</Box>
             <Box sx={{ fontSize: '13px', fontStyle: 'italic' }}>
@@ -452,6 +488,7 @@ export function TvGuide({ channelId, start, end }: Props) {
   };
 
   const renderUnavailableProgramming = (width: number, index: number) => {
+    const bg = alternateColors(index, theme.palette.mode, theme);
     return (
       <Tooltip
         title={'No programming scheduled for this time period'}
@@ -464,10 +501,10 @@ export function TvGuide({ channelId, start, end }: Props) {
             border: 'none',
             background: `repeating-linear-gradient(
               45deg,
-              ${alternateColors(index, theme.palette.mode, theme)},
-              ${alternateColors(index, theme.palette.mode, theme)} 10px,
-              ${alternateColors(index, theme.palette.mode, theme)} 10px,
-              ${alternateColors(index, theme.palette.mode, theme)} 20px)`,
+              ${bg},
+              ${bg} 10px,
+              ${bg} 10px,
+              ${bg} 20px)`,
           }}
         >
           <Box

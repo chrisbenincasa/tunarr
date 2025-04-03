@@ -1,4 +1,4 @@
-import { get, isNil, isObject, merge } from 'lodash-es';
+import { get, isNil, isObject, isUndefined, merge } from 'lodash-es';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -19,6 +19,7 @@ import {
   type SettingsState,
   createSettingsSlice,
 } from './settings/store.ts';
+import type { ThemeEditorStateInner } from './themeEditor/store.ts';
 import {
   type ThemeEditorState,
   createThemeEditorState,
@@ -74,6 +75,19 @@ const useStore = create<State>()(
               persistedState,
               'settings',
             ) as unknown;
+
+            // Migrate to new setting.
+            if (
+              isObject(persistedTheme) &&
+              isUndefined(
+                (persistedTheme as ThemeEditorStateInner).themePreference,
+              )
+            ) {
+              const castedTheme = persistedTheme as ThemeEditorStateInner;
+              castedTheme.themePreference = castedTheme.darkMode
+                ? 'dark'
+                : 'light';
+            }
 
             return {
               ...currentState,
