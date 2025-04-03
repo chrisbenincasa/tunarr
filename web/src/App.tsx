@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Outlet, Link as RouterLink } from '@tanstack/react-router';
 import { isEmpty, isNull } from 'lodash-es';
@@ -119,147 +118,136 @@ export function Root({ children }: { children?: React.ReactNode }) {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
 
-        <AppBar
-          position="fixed"
-          sx={{
-            p: 0,
-            zIndex: theme.zIndex.drawer + 1,
-          }}
-        >
-          <Toolbar>
+      <AppBar
+        position="fixed"
+        sx={{
+          p: 0,
+          zIndex: theme.zIndex.drawer + 1,
+        }}
+      >
+        <Toolbar>
+          <Link underline="none" color="inherit" to="/" component={RouterLink}>
+            <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />
+          </Link>
+          <Typography
+            variant="h6"
+            component="h1"
+            noWrap
+            color="inherit"
+            sx={{ flexGrow: 1, pl: 1 }}
+          >
             <Link
               underline="none"
               color="inherit"
               to="/"
               component={RouterLink}
             >
-              <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />
+              Tunarr
             </Link>
-            <Typography
-              variant="h6"
-              component="h1"
-              noWrap
-              color="inherit"
-              sx={{ flexGrow: 1, pl: 1 }}
-            >
-              <Link
-                underline="none"
-                color="inherit"
-                to="/"
-                component={RouterLink}
+          </Typography>
+          <Box flexGrow={1}></Box>
+          <DarkModeButton iconOnly />
+          {smallViewport ? (
+            <>
+              <Button onClick={handleClick} color="inherit">
+                <MoreVert />
+              </Button>
+              <StyledMenu
+                MenuListProps={{
+                  'aria-labelledby': 'demo-customized-button',
+                }}
+                anchorEl={anchorEl}
+                open={mobileLinksOpen}
+                onClose={handleClose}
               >
-                Tunarr
-              </Link>
-            </Typography>
-            <Box flexGrow={1}></Box>
-            <DarkModeButton iconOnly />
-            {smallViewport ? (
-              <>
-                <Button onClick={handleClick} color="inherit">
-                  <MoreVert />
-                </Button>
-                <StyledMenu
-                  MenuListProps={{
-                    'aria-labelledby': 'demo-customized-button',
-                  }}
-                  anchorEl={anchorEl}
-                  open={mobileLinksOpen}
-                  onClose={handleClose}
-                >
-                  {TopBarLinks.map((link) => (
-                    <MenuItem
-                      disableRipple
-                      component={Link}
-                      href={link.path}
-                      target="_blank"
-                      color="inherit"
-                      sx={{ px: 1, ml: 0.5 }}
-                      key={`mobile-${link.name}`}
-                      divider={link.name === 'M3U'}
-                      onClick={(e) => handleNavItemLinkClick(e, link)}
-                    >
-                      {link.icon} {link.name}
-                    </MenuItem>
-                  ))}
-                </StyledMenu>
-              </>
-            ) : (
-              TopBarLinks.map((link) => {
-                return link.name === 'XMLTV' || link.name === 'M3U' ? (
-                  <Button
+                {TopBarLinks.map((link) => (
+                  <MenuItem
+                    disableRipple
+                    component={Link}
                     href={link.path}
                     target="_blank"
                     color="inherit"
-                    startIcon={link.icon}
                     sx={{ px: 1, ml: 0.5 }}
-                    key={link.name}
+                    key={`mobile-${link.name}`}
+                    divider={link.name === 'M3U'}
                     onClick={(e) => handleNavItemLinkClick(e, link)}
                   >
-                    {link.name}
-                  </Button>
-                ) : (
-                  <Tooltip title={link.name} key={link.name}>
-                    <IconButton
-                      href={link.path}
-                      target="_blank"
-                      color="inherit"
-                    >
-                      {link.icon}
-                    </IconButton>
-                  </Tooltip>
-                );
-              })
-            )}
-          </Toolbar>
-        </AppBar>
-        {!smallViewport ? <Drawer /> : <BottomNavBar />}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            // height: '100vh', // Uncommenting this breaks any use of scrollTo()
-            overflow: 'auto',
-            ml: [undefined, '60px'],
-          }}
+                    {link.icon} {link.name}
+                  </MenuItem>
+                ))}
+              </StyledMenu>
+            </>
+          ) : (
+            TopBarLinks.map((link) => {
+              return link.name === 'XMLTV' || link.name === 'M3U' ? (
+                <Button
+                  href={link.path}
+                  target="_blank"
+                  color="inherit"
+                  startIcon={link.icon}
+                  sx={{ px: 1, ml: 0.5 }}
+                  key={link.name}
+                  onClick={(e) => handleNavItemLinkClick(e, link)}
+                >
+                  {link.name}
+                </Button>
+              ) : (
+                <Tooltip title={link.name} key={link.name}>
+                  <IconButton href={link.path} target="_blank" color="inherit">
+                    {link.icon}
+                  </IconButton>
+                </Tooltip>
+              );
+            })
+          )}
+        </Toolbar>
+      </AppBar>
+      {!smallViewport ? <Drawer /> : <BottomNavBar />}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          // height: '100vh', // Uncommenting this breaks any use of scrollTo()
+          overflow: 'auto',
+          ml: [undefined, '60px'],
+        }}
+      >
+        <Toolbar />
+        <Container
+          disableGutters
+          maxWidth="xl"
+          sx={{ mt: 4, mb: 4, pl: 5, pr: 5 }}
         >
-          <Toolbar />
-          <Container
-            disableGutters
-            maxWidth="xl"
-            sx={{ mt: 4, mb: 4, pl: 5, pr: 5 }}
-          >
-            {version?.ffmpeg === 'unknown' ? (
-              <Alert
-                variant="filled"
-                severity="error"
-                sx={{ my: 2, display: 'flex', flexGrow: 1, width: '100%' }}
-                action={
-                  <Button
-                    to={'/settings/ffmpeg'}
-                    component={RouterLink}
-                    variant="outlined"
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      color: theme.palette.common.white,
-                    }}
-                  >
-                    Update Path
-                  </Button>
-                }
-              >
-                {strings.FFMPEG_MISSING}
-              </Alert>
-            ) : null}
-            {children ?? <Outlet />}
-          </Container>
-        </Box>
+          {version?.ffmpeg === 'unknown' ? (
+            <Alert
+              variant="filled"
+              severity="error"
+              sx={{ my: 2, display: 'flex', flexGrow: 1, width: '100%' }}
+              action={
+                <Button
+                  to={'/settings/ffmpeg'}
+                  component={RouterLink}
+                  variant="outlined"
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    color: theme.palette.common.white,
+                  }}
+                >
+                  Update Path
+                </Button>
+              }
+            >
+              {strings.FFMPEG_MISSING}
+            </Alert>
+          ) : null}
+          {children ?? <Outlet />}
+        </Container>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 }
 
