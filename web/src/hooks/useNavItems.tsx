@@ -68,11 +68,6 @@ export const useNavItems = () => {
         ],
       },
       {
-        name: 'Settings',
-        path: '/settings/general',
-        icon: <Settings />,
-      },
-      {
         name: 'System',
         path: '/system',
         icon: <Computer />,
@@ -93,6 +88,11 @@ export const useNavItems = () => {
             icon: <Notes />,
           },
         ],
+      },
+      {
+        name: 'Settings',
+        path: '/settings/general',
+        icon: <Settings />,
       },
     ];
 
