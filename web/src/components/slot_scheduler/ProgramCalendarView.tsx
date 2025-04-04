@@ -1,4 +1,5 @@
-import { Box, Button, Grid2, Stack, Typography } from '@mui/material';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Box, Grid2, IconButton, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
@@ -200,12 +201,20 @@ export const ProgramCalendarView = ({
   return (
     <Box>
       <Stack direction="row">
-        <Button onClick={() => subtractMonths(1)}>Prev</Button>
-        <Button onClick={() => addMonths(1)}>Next</Button>
+        <IconButton onClick={() => subtractMonths(1)}>
+          <ChevronLeft />
+        </IconButton>
+        <IconButton onClick={() => addMonths(1)}>
+          <ChevronRight />
+        </IconButton>
+        <Typography
+          variant="h5"
+          flex={1}
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
+          {localeData.months()[calendarState.month]} {calendarState.year}
+        </Typography>
       </Stack>
-      <Typography>
-        {localeData.months()[calendarState.month]} {calendarState.year}
-      </Typography>
       <Grid2
         container
         gridTemplateColumns="repeat(7, 1fr)"
@@ -222,7 +231,11 @@ export const ProgramCalendarView = ({
         }}
       >
         {localeData.weekdays().map((name) => (
-          <Grid2 key={`day_header_${name}`} size={{ xs: 12 / 7 }}>
+          <Grid2
+            key={`day_header_${name}`}
+            size={{ xs: 12 / 7 }}
+            sx={{ textAlign: 'center' }}
+          >
             {name}
           </Grid2>
         ))}
