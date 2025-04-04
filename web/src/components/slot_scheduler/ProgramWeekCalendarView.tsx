@@ -140,7 +140,7 @@ export const ProgramWeekCalendarView = ({
               left: 0,
               width: '90%',
               height: `${height}%`,
-              backgroundColor: `${bgColor.toString()}`,
+              backgroundColor: bgColor,
               borderRadius: '5px',
               zIndex: 100,
               border: '1px solid black',
