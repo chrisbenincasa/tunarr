@@ -142,6 +142,7 @@ export class Server {
     this.app = fastify({
       logger: false,
       bodyLimit: 50 * 1024 * 1024,
+      trustProxy: this.serverOptions.trustProxy,
     })
       .setValidatorCompiler(validatorCompiler)
       .setSerializerCompiler(serializerCompiler)

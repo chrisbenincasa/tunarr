@@ -78,3 +78,57 @@ docker run --rm \
   settings.ffmpeg.ffmpegExecutablePath="FFMEPG_PATH" \
   settings.ffmpeg.ffprobeExecutablePath="FFPROBE_PATH"
 ```
+
+## Trust proxy
+
+When running Tunarr behind a reverse proxy server for HTTPS support, you will need to enable "trust proxy" for the generated XMLTV and M3U files to contain the correct protocol (e.g., `http` or `https`) and host. Without "trust proxy" enabled, Tunarr will not honor the `X-Forwarded-Proto` and `X-Forwarded-Host` headers forwarded from the reverse proxy.
+
+There are several ways to enable "trust proxy".
+
+### Standalone script
+
+Pass the `--trustProxy` flag when running the script, e.g.:
+
+```bash
+ ./tunarr.sh --trustProxy
+```
+
+or on Windows:
+
+```powershell
+.\tunarr.bat --trustProxy
+```
+
+You can also use an environment variable:
+
+```bash
+TUNARR_SERVER_TRUST_PROXY=true ./tunarr.sh
+```
+
+and again on Windows (Powershell):
+
+```powershell
+$Env:TUNARR_SERVER_TRUST_PROXY='true'
+.\tunarr.bat
+```
+
+or Command Prompt:
+
+```
+set TUNARR_SERVER_TRUST_PROXY=true
+.\tunarr.bat
+```
+
+### Docker
+
+Start Tunarr server with the `trustProxy` argument
+
+```bash
+docker run ... chrisbenincasa/tunarr:latest -- /tunarr/bundle.js --trustProxy
+```
+
+or with the environment variable
+
+```bash
+docker run -e 'TUNARR_SERVER_TRUST_PROXY=true' ... chrisbenincasa/tunarr
+```
