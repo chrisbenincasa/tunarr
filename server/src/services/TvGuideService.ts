@@ -781,7 +781,6 @@ export class TVGuideService {
     while (currentProgram.startTimeMs < currentEndTimeMs) {
       if (currentProgram.isPaused) {
         push(currentProgram);
-        console.log(programs);
         break;
       }
 

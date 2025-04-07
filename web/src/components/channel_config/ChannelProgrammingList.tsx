@@ -20,7 +20,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { type Channel, type ChannelProgram } from '@tunarr/types';
-import color from 'color';
+import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
 import { findIndex, isString, isUndefined, map, maxBy, sumBy } from 'lodash-es';
 import React, {
@@ -36,9 +36,9 @@ import {
   type ListChildComponentProps,
 } from 'react-window';
 import { type MarkRequired } from 'ts-essentials';
-import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import { getTextContrast } from '../../helpers/colors.ts';
 import { channelProgramUniqueId, grayBackground } from '../../helpers/util.ts';
+import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { moveProgramInCurrentChannel } from '../../store/channelEditor/actions.ts';
 import useStore, { type State } from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -207,23 +207,24 @@ const ProgramListItem = ({
   }
 
   if (icon !== null) {
-    icon = <ListItemIcon sx={{ minWidth: 0, pr: 1 }}>{icon}</ListItemIcon>;
+    icon = (
+      <ListItemIcon sx={{ color: 'currentcolor', minWidth: 0, pr: 1 }}>
+        {icon}
+      </ListItemIcon>
+    );
   }
 
-  // const backgroundColor = color(
-  //   alternateColors(index, theme.palette.mode, theme),
-  // );
-  const key = getProgramGroupingKey(program);
+  const bgColorPicker = useRandomProgramBackgroundColor();
   const backgroundColor =
     program.type === 'flex'
-      ? color(grayBackground(theme.palette.mode))
-      : pickRandomColor(key, RandomPastels);
+      ? new Color(grayBackground(theme.palette.mode))
+      : bgColorPicker(program);
   const relativePct = relativeDuration ? relativeDuration * 100.0 : null;
-  const bgHex = backgroundColor.hex();
-  const bgAlt = backgroundColor.darken(0.1).hex();
+  const bgHex = backgroundColor.toString({ format: 'hex' });
+  const bgDarker = new Color(backgroundColor.clone().darken(0.1));
 
   const bg = relativePct
-    ? `linear-gradient(to right, ${bgAlt} 0%, ${bgAlt} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`
+    ? `linear-gradient(to right, ${bgDarker.display()} 0%, ${bgDarker.display()} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`
     : bgHex;
 
   return (
@@ -239,15 +240,24 @@ const ProgramListItem = ({
       }}
       divider
       sx={{
-        color: (theme) => theme.palette.getContrastText(bgHex),
+        color: getTextContrast(bgDarker, theme.palette.mode),
         background: bg,
         '&:hover': {
-          background: isDragging
-            ? 'transparent'
-            : backgroundColor.lighten(0.05).hex(),
+          background: (theme) =>
+            isDragging
+              ? 'transparent'
+              : new Color(
+                  backgroundColor
+                    .clone()
+                    .lighten(theme.palette.mode === 'dark' ? 0.025 : 0.05),
+                ).toString({ format: 'hex' }),
         },
         borderBottom: 'thin solid',
-        borderBottomColor: backgroundColor.darken(0.1).hex(),
+        borderBottomColor: new Color(
+          backgroundColor.clone().darken(0.2),
+        ).toString({
+          format: 'hex',
+        }),
       }}
       key={startTime}
       secondaryAction={
@@ -259,7 +269,11 @@ const ProgramListItem = ({
                 <IconButton
                   edge="end"
                   onClick={handleInfoButtonClick}
-                  sx={{ cursor: 'pointer', minWidth: 0 }}
+                  sx={{
+                    cursor: 'pointer',
+                    minWidth: 0,
+                    color: 'currentcolor',
+                  }}
                   size="small"
                 >
                   <InfoOutlined />
@@ -275,6 +289,7 @@ const ProgramListItem = ({
                 edge="end"
                 aria-label="delete"
                 size="small"
+                sx={{ color: 'currentcolor' }}
               >
                 <Edit />
               </IconButton>
@@ -285,6 +300,7 @@ const ProgramListItem = ({
                 edge="end"
                 aria-label="delete"
                 size="small"
+                sx={{ color: 'currentcolor' }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -300,7 +316,9 @@ const ProgramListItem = ({
       ) : (
         <>
           {enableDrag && (
-            <ListItemIcon sx={{ width: 24, minWidth: 0, mr: 2 }}>
+            <ListItemIcon
+              sx={{ color: 'currentcolor', width: 24, minWidth: 0, mr: 2 }}
+            >
               <DragIndicatorIcon />
             </ListItemIcon>
           )}

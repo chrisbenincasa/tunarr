@@ -11,9 +11,9 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { range } from 'lodash-es';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
-import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import { getTextContrast } from '../../helpers/colors.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
+import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
@@ -100,6 +100,8 @@ export const ProgramWeekCalendarView = ({
     [calendarState, onChange],
   );
 
+  const randomBackgroundColor = useRandomProgramBackgroundColor();
+
   const getProgramsForDay = (day: dayjs.Dayjs) => {
     return seq.collect(
       getCalendarProgramsForDay(day),
@@ -111,10 +113,7 @@ export const ProgramWeekCalendarView = ({
         const px = (calHeight ?? 0) * (duration / OneDayMillis);
         const dataRows = Math.floor((px - 8) / 15);
 
-        const bgColor = pickRandomColor(
-          getProgramGroupingKey(program),
-          RandomPastels,
-        ).hex();
+        const bgColor = randomBackgroundColor(program);
         return (
           <Paper
             key={+actualStartTime}
@@ -124,13 +123,13 @@ export const ProgramWeekCalendarView = ({
               left: 0,
               width: '90%',
               height: `${height}%`,
-              backgroundColor: `${bgColor}`,
+              backgroundColor: `${bgColor.toString()}`,
               borderRadius: '5px',
               zIndex: 100,
               border: 'thin solid',
               borderColor: 'black',
               cursor: 'pointer',
-              color: (theme) => theme.palette.getContrastText(bgColor),
+              color: (theme) => getTextContrast(bgColor, theme.palette.mode),
               overflow: 'hidden',
               lineHeight: 1,
               p: 0.5,

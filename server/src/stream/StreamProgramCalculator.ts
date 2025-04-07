@@ -472,15 +472,15 @@ export class StreamProgramCalculator {
     // When within 30 seconds of start time, just make the time 0 to smooth things out
     // Helps prevents losing first few seconds of an episode upon lineup change
     const beginningOffset = 0;
+    let streamDuration = activeProgram.duration - timeElapsed;
 
     if (activeProgram.type === 'error') {
-      const remaining = activeProgram.duration - timeElapsed;
       return {
         type: 'error',
         title: 'Error',
         error: activeProgram.error,
-        streamDuration: remaining,
-        duration: remaining,
+        streamDuration,
+        duration: streamDuration,
         startOffset: 0,
         beginningOffset,
         programBeginMs: activeProgram.programBeginMs,
@@ -489,7 +489,6 @@ export class StreamProgramCalculator {
 
     if (activeProgram.type === 'offline') {
       //offline case
-      let remaining = activeProgram.duration - timeElapsed;
       //look for a random filler to play
       const fillerPrograms = await this.fillerDB.getFillersFromChannel(
         channel.uuid,
@@ -507,16 +506,16 @@ export class StreamProgramCalculator {
       }
 
       // Pick a random filler, too
-      const randomResult = new FillerPicker().pickRandomWithMaxDuration(
+      const randomResult = new FillerPicker().pickFiller(
         channel,
         fillerPrograms,
-        remaining,
+        streamDuration,
       );
       filler = randomResult.filler;
 
       // Cap the filler at remaining time
-      if (isNil(filler) && remaining > randomResult.minimumWait) {
-        remaining = randomResult.minimumWait;
+      if (isNil(filler) && streamDuration > randomResult.minimumWait) {
+        streamDuration = randomResult.minimumWait;
       }
 
       // If we could not find a configured filler program, try to use the
@@ -531,8 +530,8 @@ export class StreamProgramCalculator {
         let fillerstart = 0;
         // If we have a special, push it on the lineup
         if (isSpecial) {
-          if (filler.duration > remaining) {
-            fillerstart = filler.duration - remaining;
+          if (filler.duration > streamDuration) {
+            fillerstart = filler.duration - streamDuration;
           } else {
             fillerstart = 0;
           }
@@ -558,11 +557,11 @@ export class StreamProgramCalculator {
             startOffset: fillerstart,
             streamDuration: Math.max(
               1,
-              Math.min(filler.duration - fillerstart, remaining),
+              Math.min(filler.duration - fillerstart, streamDuration),
             ),
             duration: filler.duration,
             programId: filler.uuid,
-            beginningOffset: beginningOffset,
+            beginningOffset,
             externalSourceId: externalInfo.externalSourceId!,
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
@@ -572,16 +571,16 @@ export class StreamProgramCalculator {
       }
 
       // pick the offline screen
-      remaining = Math.min(remaining, 10 * 60 * 1000);
+      streamDuration = Math.min(streamDuration, 10 * 60 * 1000);
       //don't display the offline screen for longer than 10 minutes. Maybe the
       //channel's admin might change the schedule during that time and then
       //it would be better to start playing the content.
       return {
         type: 'offline',
         title: 'Channel Offline',
-        streamDuration: remaining,
+        streamDuration,
         beginningOffset,
-        duration: remaining,
+        duration: streamDuration,
         startOffset: 0,
         programBeginMs: activeProgram.programBeginMs,
       };
@@ -591,7 +590,7 @@ export class StreamProgramCalculator {
       ...activeProgram,
       type: 'program',
       startOffset: timeElapsed,
-      streamDuration: activeProgram.duration - timeElapsed,
+      streamDuration,
       beginningOffset: timeElapsed,
       id: activeProgram.id,
     };

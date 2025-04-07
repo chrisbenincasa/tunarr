@@ -30,7 +30,7 @@ const LightTheme: PaletteOptions = {
 const DarkTheme: PaletteOptions = {
   mode: 'dark',
   primary: {
-    main: '#008c93',
+    main: '#00a0ab',
   },
   secondary: {
     main: '#004b79',

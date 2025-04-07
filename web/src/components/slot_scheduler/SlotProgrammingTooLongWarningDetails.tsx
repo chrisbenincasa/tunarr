@@ -1,4 +1,4 @@
-import {
+import type {
   ProgramTooLongWarning,
   SlotTableWarnings,
 } from '@/components/slot_scheduler/SlotTypes.ts';
@@ -21,11 +21,12 @@ import {
   Typography,
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { BaseSlot } from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { map, round, sum, values } from 'lodash-es';
 import pluralize from 'pluralize';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import type { ListChildComponentProps } from 'react-window';
+import { FixedSizeList } from 'react-window';
 
 type Props = {
   slot: BaseSlot & SlotTableWarnings;
@@ -58,7 +59,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
         style={props.style}
         sx={{
           backgroundColor: (theme) =>
-            alternateColors(props.index, theme.palette.mode, theme),
+            alternateColors(props.index, theme.palette.mode),
         }}
         key={programId}
         component="div"

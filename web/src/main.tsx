@@ -1,5 +1,6 @@
 import { routeTree } from '@/routeTree.gen';
 import { createRouter } from '@tanstack/react-router';
+import { ColorSpace, LCH, OKLCH, sRGB } from 'colorjs.io/fn';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en-gb';
 import localeData from 'dayjs/plugin/localeData';
@@ -24,6 +25,10 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 }
+
+ColorSpace.register(OKLCH);
+ColorSpace.register(LCH);
+ColorSpace.register(sRGB);
 
 dayjs.extend(localizedFormat);
 dayjs.extend(localeData);
