@@ -14,18 +14,14 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { MediaSourceSettings } from '@tunarr/types';
+import type { MediaSourceSettings } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
-import React, {
-  ForwardedRef,
-  MouseEvent,
-  forwardRef,
-  useCallback,
-  useState,
-} from 'react';
+import type { ForwardedRef, MouseEvent } from 'react';
+import React, { forwardRef, useCallback, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
+import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
-import {
+import type {
   JellyfinSelectedMedia,
   PlexSelectedMedia,
   SelectedMedia,
@@ -65,7 +61,7 @@ const MediaGridItemInner = <T,>(
     theme.palette.mode === 'light' ? 0.11 : 0.13,
   );
 
-  const darkMode = useStore((state) => state.theme.darkMode);
+  const darkMode = useIsDarkMode();
   const {
     item,
     metadata: {
@@ -171,8 +167,8 @@ const MediaGridItemInner = <T,>(
                     aspectRatio === 'square'
                       ? 100
                       : aspectRatio === 'landscape'
-                      ? 84
-                      : 225, // 84 accomodates episode img height
+                        ? 84
+                        : 225, // 84 accomodates episode img height
                   maxHeight: '100%',
                 }}
               >
@@ -203,8 +199,8 @@ const MediaGridItemInner = <T,>(
                       aspectRatio === 'square'
                         ? '1/1'
                         : aspectRatio === 'landscape'
-                        ? '1.77/1'
-                        : '2/3',
+                          ? '1.77/1'
+                          : '2/3',
                     width: '100%',
                     height: 'auto',
                     zIndex: 1,
@@ -215,8 +211,8 @@ const MediaGridItemInner = <T,>(
                       aspectRatio === 'square'
                         ? 100
                         : aspectRatio === 'landscape'
-                        ? 84
-                        : 225,
+                          ? 84
+                          : 225,
                   }}
                 ></Box>
               </Box>
@@ -229,8 +225,8 @@ const MediaGridItemInner = <T,>(
                   aspectRatio === 'square'
                     ? 144
                     : aspectRatio === 'landscape'
-                    ? 84
-                    : 250
+                      ? 84
+                      : 250
                 }
               />
             ))}

@@ -8,18 +8,6 @@ export const setGuideDurationState = (duration: number) => {
   });
 };
 
-export const setDarkMode = (dark: boolean) => {
-  useStore.setState((state) => {
-    state.theme.darkMode = dark;
-  });
-};
-
-export const toggleDarkMode = () => {
-  useStore.setState((state) => {
-    state.theme.darkMode = !state.theme.darkMode;
-  });
-};
-
 export const setThemePreference = (pref: 'light' | 'dark' | 'system') =>
   useStore.setState((state) => {
     state.theme.themePreference = pref;

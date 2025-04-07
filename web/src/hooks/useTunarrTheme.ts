@@ -58,26 +58,9 @@ const Theme = createTheme({
       palette: LightTheme,
     },
   },
-  // colorSchemes: {
-  //   dark: true,
-  //   light: true,
-  // },
-  // palette: darkMode ? DarkTheme : LightTheme,
 });
 
 export const useTunarrTheme = () => {
-  // const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  // const { mode, setMode } = useColorScheme();
-  // const darkMode = useStore((state) => state.theme.darkMode);
-  // const schemePreference = useStore(
-  //   (state) => state.theme.themePreference ?? 'system',
-  // );
-
-  // Fallback to browser preference if no user selection
-  // if (isUndefined(darkMode) && prefersDarkMode) {
-  //   toggleDarkMode();
-  //   setMode('dark');
-  // }
   const { mode, setMode } = useColorScheme();
   const preference = useStore(
     (state) => state.theme.themePreference ?? 'system',
@@ -91,4 +74,9 @@ export const useTunarrTheme = () => {
 
 export const useSetColorScheme = () => {
   return useColorScheme().setColorScheme;
+};
+
+export const useIsDarkMode = () => {
+  const theme = useTunarrTheme();
+  return theme.palette.mode === 'dark';
 };

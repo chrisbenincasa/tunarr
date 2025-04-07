@@ -1,8 +1,8 @@
-import { SVGProps } from 'react';
-import useStore from '../store';
+import type { SVGProps } from 'react';
+import { useIsDarkMode } from '../hooks/useTunarrTheme.ts';
 
 export default function TunarrLogo(props: SVGProps<SVGElement>) {
-  const darkMode = useStore((state) => state.theme.darkMode);
+  const darkMode = useIsDarkMode();
   const currentColor = darkMode ? '#616161' : '#231A12';
 
   return (

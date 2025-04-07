@@ -3,7 +3,7 @@ import {
   useKnownMedia,
 } from '@/store/programmingSelector/selectors.ts';
 import { Box, Collapse, List } from '@mui/material';
-import { MediaSourceSettings } from '@tunarr/types';
+import type { MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { chain, first } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,8 +14,8 @@ import {
   getEstimatedModalHeight,
   getImagesPerRow,
 } from '../helpers/inlineModalUtil';
-import useStore from '../store';
-import { GridInlineModalProps } from './channel_config/MediaItemGrid.tsx';
+import { useIsDarkMode } from '../hooks/useTunarrTheme.ts';
+import type { GridInlineModalProps } from './channel_config/MediaItemGrid.tsx';
 
 interface InlineModalProps<ItemType, ItemKind extends string>
   extends GridInlineModalProps<ItemType> {
@@ -49,7 +49,7 @@ export function InlineModal<ItemType, ItemKind extends string>(
   const ref = useRef<HTMLUListElement>(null);
   const gridItemRef = useRef<HTMLDivElement>(null);
   const inlineModalRef = useRef<HTMLDivElement>(null);
-  const darkMode = useStore((state) => state.theme.darkMode);
+  const darkMode = useIsDarkMode();
   const [childLimit, setChildLimit] = useState(9);
   const [imagesPerRow, setImagesPerRow] = useState(0);
   const currentMediaSource = useCurrentMediaSource(props.sourceType);
