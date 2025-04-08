@@ -67,12 +67,12 @@ export function Root({ children }: { children?: React.ReactNode }) {
       if (navItem.copyToClipboard) {
         e.preventDefault();
         copyToClipboard(
-          `${actualBackendUri}${navItem.path}`,
+          navItem.path,
           `Copied ${navItem.name} URL to clipboard`,
         ).catch(console.error);
       }
     },
-    [actualBackendUri, copyToClipboard],
+    [copyToClipboard],
   );
 
   const TopBarLinks: NavItem[] = useMemo(
