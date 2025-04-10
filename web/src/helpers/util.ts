@@ -1,6 +1,6 @@
 import { type Nullable } from '@/types/util';
 import type { PaletteMode } from '@mui/material';
-import { colors, type Theme } from '@mui/material';
+import { colors } from '@mui/material';
 import { type MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
 import type {
   GenGroupedSubtypeMapping,
@@ -75,25 +75,21 @@ export function prettyItemDuration(durationMs: number): string {
 }
 
 // Alternate row colors utility that supports dark mode & light mode
-export const alternateColors = (
-  index: number,
-  mode: string,
-  theme: Theme,
-): string => {
+export const alternateColors = (index: number, mode: PaletteMode): string => {
   return mode === 'light'
     ? index % 2 === 0
-      ? theme.palette.grey[100]
-      : theme.palette.grey[400]
+      ? colors.grey[100]
+      : colors.grey[400]
     : index % 2 === 0
-      ? theme.palette.grey[700]
-      : theme.palette.grey[800];
+      ? colors.grey[700]
+      : colors.grey[800];
 };
 
 export function grayBackground(mode: PaletteMode) {
   if (mode === 'light') {
     return colors.grey[100];
   } else {
-    return colors.grey[600];
+    return colors.grey[700];
   }
 }
 

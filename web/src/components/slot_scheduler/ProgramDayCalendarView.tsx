@@ -5,10 +5,10 @@ import { usePrevious } from '@uidotdev/usehooks';
 import type dayjs from 'dayjs';
 import { range } from 'lodash-es';
 import { useCallback, useRef, useState } from 'react';
-import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
+import { getTextContrast } from '../../helpers/colors.ts';
 import { OneDayMillis } from '../../helpers/constants.ts';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
+import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';
 import {
@@ -70,6 +70,7 @@ export const ProgramDayCalendarView = ({
   const calHeight = calRef?.current?.getBoundingClientRect().height;
 
   const getCalendarProgramsForDay = useGetProgramsForDayFunc(channel.id);
+  const randomBackgroundColor = useRandomProgramBackgroundColor();
 
   const getProgramsForDay = () => {
     return seq.collect(
@@ -84,6 +85,8 @@ export const ProgramDayCalendarView = ({
         const px = (calHeight ?? 0) * (duration / OneDayMillis);
         const dataRows = Math.floor((px - 8) / 15);
 
+        const backgroundColor = randomBackgroundColor(program);
+
         return (
           <Paper
             key={+actualStartTime}
@@ -93,13 +96,14 @@ export const ProgramDayCalendarView = ({
               left: 0,
               width: '90%',
               height: `${height}%`,
-              backgroundColor: `${pickRandomColor(getProgramGroupingKey(program), RandomPastels).hex()}`,
+              backgroundColor: `${backgroundColor.toString()}`,
               borderRadius: '5px',
               zIndex: 100,
               border: 'thin solid',
               borderColor: 'black',
               cursor: 'pointer',
-              color: 'black',
+              color: (theme) =>
+                getTextContrast(backgroundColor, theme.palette.mode),
               overflow: 'hidden',
               lineHeight: 1,
               p: 0.5,

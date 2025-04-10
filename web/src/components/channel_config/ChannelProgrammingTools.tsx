@@ -24,7 +24,7 @@ export function ChannelProgrammingTools() {
         startIcon={<OrganizeIcon />}
         endIcon={<KeyboardArrowDownIcon />}
         onClick={handleClick}
-        variant="contained"
+        variant="outlined"
       >
         Tools
       </Button>

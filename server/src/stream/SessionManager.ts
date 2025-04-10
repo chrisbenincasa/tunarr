@@ -300,6 +300,9 @@ export class SessionManager {
           session.on('stop', () => {
             this.deleteSession(channelId, sessionType);
             this.shutdownChildSessions(channelId, sessionType);
+            if (session) {
+              this.pauseChannelIfNecessary(session, connection).catch(() => {});
+            }
             this.eventService.push({
               type: 'stream',
               action: 'end',
@@ -317,6 +320,11 @@ export class SessionManager {
           });
 
           session.on('removeConnection', (_, connection) => {
+            this.#logger.debug(
+              'Connection removed for session %s: %O',
+              session?.id,
+              connection,
+            );
             // Error handled below
             if (session) {
               this.pauseChannelIfNecessary(session, connection).catch(() => {});
@@ -448,6 +456,11 @@ export class SessionManager {
         await this.onDemandChannelService.pauseChannel(
           session.keyObj.id,
           pauseTime,
+        );
+      } else {
+        this.#logger.debug(
+          'Detected %n remaining sessions. Not pausing session.',
+          nonTunarrConnections,
         );
       }
     } catch (e) {

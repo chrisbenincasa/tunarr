@@ -1,12 +1,39 @@
 // import colors from '@mui/material/colors';
-import { flatten } from 'lodash-es';
-import { generateTintsAndShadesPalette } from '../helpers/colors.ts';
-import { random } from '../helpers/random.ts';
+import { useColorScheme } from '@mui/material';
+import { common } from '@mui/material/colors';
+import { light } from '@mui/material/styles/createPalette';
+import type { ChannelProgram } from '@tunarr/types';
+import type Color from 'colorjs.io';
+import { useCallback } from 'react';
+import {
+  pickRandomColor,
+  RandomPastels,
+  RandomPastelsDarkMode,
+} from '../helpers/colors.ts';
+import { getProgramGroupingKey } from '../helpers/programUtil.ts';
 
-export const randomColorSet1 = random.shuffle(
-  flatten([
-    generateTintsAndShadesPalette('#008c93', 10, 0),
-    generateTintsAndShadesPalette('lightgreen', 10, 0),
-    generateTintsAndShadesPalette('red', 10, 0),
-  ]),
-);
+const useRandomColorPalette = () => {
+  const isDarkMode = useColorScheme().mode === 'dark';
+  return isDarkMode ? RandomPastelsDarkMode : RandomPastels;
+};
+
+export const useRandomProgramBackgroundColor = () => {
+  const palette = useRandomColorPalette();
+  return useCallback(
+    (program: ChannelProgram, paletteOverride?: Color[]) => {
+      return pickRandomColor(
+        getProgramGroupingKey(program),
+        paletteOverride ?? palette,
+      );
+    },
+    [palette],
+  );
+};
+
+export const useGetContrastText = () => {
+  return useCallback((color: Color) => {
+    return color.contrastWCAG21(common.white) > 3
+      ? common.white
+      : light.text.primary;
+  }, []);
+};

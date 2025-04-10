@@ -3,17 +3,18 @@ import {
   clearCurrentFillerList,
   updateCurrentFillerList,
 } from '@/store/fillerListEditor/action.ts';
-import { Tv } from '@mui/icons-material';
+import { Delete, Tv } from '@mui/icons-material';
 import { Button, Divider, Stack, TextField, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { FillerList } from '@tunarr/types';
+import type { FillerList } from '@tunarr/types';
 import { useCallback, useEffect } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { UIFillerListProgram } from '../../types/index.ts';
+import type { UIFillerListProgram } from '../../types/index.ts';
 import ChannelProgrammingList from '../channel_config/ChannelProgrammingList.tsx';
 
 export type FillerListMutationArgs = {
@@ -122,10 +123,19 @@ export function EditFillerListForm({
         <Divider />
 
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Stack direction="row" sx={{ alignItems: 'center', mb: 2 }} gap={2}>
             <Typography variant="h6" sx={{ flex: 1 }}>
               Programming
             </Typography>
+            <Button
+              disableRipple
+              component="button"
+              // onClick={() => navToProgramming()}
+              startIcon={<Delete />}
+              variant="outlined"
+            >
+              Clear All
+            </Button>
             <Tooltip title="Add TV Shows or Movies to filler" placement="right">
               <Button
                 disableRipple
@@ -137,7 +147,7 @@ export function EditFillerListForm({
                 Add Media
               </Button>
             </Tooltip>
-          </Box>
+          </Stack>
           <ChannelProgrammingList
             type="selector"
             programListSelector={(s) => s.fillerListEditor.programList}

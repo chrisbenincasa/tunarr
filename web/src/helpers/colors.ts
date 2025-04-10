@@ -1,5 +1,9 @@
-import type { ColorInstance, ColorLike } from 'color';
+import type { PaletteMode } from '@mui/material/styles/createPalette';
+import { dark, light } from '@mui/material/styles/createPalette';
+import type { ColorLike } from 'color';
 import color from 'color';
+import Color from 'colorjs.io';
+import { random } from './random.ts';
 
 export function generateAnalogousPalette(
   baseColor: ColorLike,
@@ -48,21 +52,52 @@ export function generatePastelPalette(baseColors: ColorLike[]) {
 export function generateRandomPastelPalette(numColors: number) {
   const pastelPalette = [];
   for (let i = 0; i < numColors; i++) {
-    const hue = Math.random() * 360; // Random hue value (0-360)
-    const pastelColor = color.lch([80, 40, hue]); // Fixed lightness and chroma
-    pastelPalette.push(pastelColor.hex());
+    const hue = random.integer(0, 360); // Random hue value (0-360)
+    const pastelColor = new Color('oklch', [0.8, 0.2, hue]); // Fixed lightness and chroma
+    pastelPalette.push(pastelColor);
   }
   return pastelPalette;
 }
 
-export function pickRandomColor(
-  input: string,
-  palette: ColorLike[],
-): ColorInstance {
+export function pickRandomColor(input: string, palette: Color[]): Color {
   const seed = input
     .split('')
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return color(palette[seed % palette.length]);
+  return palette[seed % palette.length];
+}
+
+function generateDarkModePalette(numColors = 5) {
+  const palette = [];
+  for (let i = 0; i < numColors; i++) {
+    // Generate a random hue (0-360)
+    const hue = random.integer(0, 360);
+
+    // For dark mode, we generally want lighter shades with lower saturation
+    // to provide contrast against a dark background.
+    // We'll aim for a lightness between 60% and 90% and saturation between 10% and 40%.
+    const lightness = random.integer(50, 70);
+    const saturation = random.integer(30, 40);
+
+    // Create the color in HSLuv color space, which is perceptually uniform
+    const colorInstance = new Color('hsluv', [hue, saturation, lightness]).to(
+      'srgb',
+    );
+    palette.push(colorInstance);
+  }
+  return palette;
+}
+
+export function getTextContrast(color: Color, mode: PaletteMode): string {
+  if (mode === 'dark') {
+    return color.contrastAPCA(light.text.primary) > 50
+      ? light.text.primary
+      : dark.text.primary;
+  } else {
+    return color.contrastAPCA(dark.text.primary) > 50
+      ? dark.text.primary
+      : light.text.primary;
+  }
 }
 
 export const RandomPastels = generateRandomPastelPalette(100);
+export const RandomPastelsDarkMode = generateDarkModePalette(100);

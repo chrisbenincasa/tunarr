@@ -23,19 +23,17 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
-import type { ColorInstance } from 'color';
-import color from 'color';
+import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
-import { pickRandomColor, RandomPastels } from '../../helpers/colors.ts';
-import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import {
   alternateColors,
   forTvGuideProgram,
   isNonEmptyString,
 } from '../../helpers/util';
+import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
@@ -97,34 +95,37 @@ const GridChild = styled(Box)<{ width: number }>(({ width }) => ({
   transition: 'width 0.5s ease-in',
 }));
 
-const GuideItem = styled(GridChild)<{
+const GuideItem = styled(GridChild, {
+  shouldForwardProp: (prop) => prop !== 'backgroundColor',
+})<{
   program?: TvGuideProgram;
-  backgroundColor?: ColorInstance;
+  backgroundColor?: Color;
   width: number;
   index: number;
 }>(({ theme, width, index, backgroundColor, program }) => {
   const bgColor =
-    backgroundColor?.hex() ?? alternateColors(index, theme.palette.mode, theme);
-  const bgLighter = color(bgColor).lighten(0.05).hex();
-  const bgDarker = color(bgColor).darken(0.05).hex();
+    backgroundColor?.toString({ format: 'hex' }) ??
+    alternateColors(index, theme.palette.mode);
+  const bgLighter = new Color(bgColor).set('oklch.l', (l) => l * 1.05);
+  const bgDarker = new Color(bgColor).set('oklch.l', (l) => l * 0.95);
 
   const background =
     isUndefined(program) || program.type === 'flex' || program.isPaused
       ? `repeating-linear-gradient(-45deg,
               ${bgColor},
               ${bgColor} 10px,
-              ${bgDarker} 10px,
-              ${bgDarker} 20px)`
+              ${bgDarker.toString()} 10px,
+              ${bgDarker.toString()} 20px)`
       : bgColor;
 
   const hoverBackground =
     isUndefined(program) || program.type === 'flex' || program.isPaused
       ? `repeating-linear-gradient(-45deg,
-  ${bgLighter},
-  ${bgLighter} 10px,
+  ${bgLighter.toString()},
+  ${bgLighter.toString()} 10px,
   ${bgColor} 10px,
   ${bgColor} 20px)`
-      : bgLighter;
+      : bgLighter.toString();
 
   return {
     display: 'flex',
@@ -148,7 +149,7 @@ const GuideItem = styled(GridChild)<{
     cursor: 'pointer',
     '&:hover': {
       background: hoverBackground,
-      color: theme.palette.getContrastText(bgLighter),
+      // color: getTextContrast(bgLighter, theme.palette.mode),
     },
   };
 });
@@ -346,6 +347,8 @@ export function TvGuide({ channelId, start, end }: Props) {
     ) : null;
   };
 
+  const randomBackgroundColor = useRandomProgramBackgroundColor();
+
   const renderProgram = ({
     id: channelId,
     name: channelName,
@@ -450,7 +453,7 @@ export function TvGuide({ channelId, start, end }: Props) {
         );
       }
 
-      const bg = pickRandomColor(getProgramGroupingKey(program), RandomPastels);
+      const bg = randomBackgroundColor(program);
 
       return (
         <Fragment key={key}>
@@ -488,7 +491,7 @@ export function TvGuide({ channelId, start, end }: Props) {
   };
 
   const renderUnavailableProgramming = (width: number, index: number) => {
-    const bg = alternateColors(index, theme.palette.mode, theme);
+    const bg = alternateColors(index, theme.palette.mode);
     return (
       <Tooltip
         title={'No programming scheduled for this time period'}

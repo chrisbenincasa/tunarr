@@ -1,53 +1,45 @@
 import type { Channel } from '@/db/schema/Channel.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
-import { isEmpty, isNil, isUndefined } from 'lodash-es';
+import { isEmpty, isNil } from 'lodash-es';
 import type {
   ChannelFillerShowWithContent,
   ProgramWithRelations,
 } from '../db/schema/derivedTypes.js';
+import type { IFillerPicker } from './interfaces/IFillerPicker.ts';
+import { EmptyFillerPickResult } from './interfaces/IFillerPicker.ts';
 
 const DefaultFillerCooldownMillis = 30 * 60 * 1000;
 const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
 const FiveMinutesMillis = 5 * 60 * 60 * 1000;
 
-export class FillerPicker {
+export class FillerPicker implements IFillerPicker {
   #channelCache: ChannelCache;
 
   constructor(channelCache: ChannelCache = new ChannelCache()) {
     this.#channelCache = channelCache;
   }
 
-  pickRandomWithMaxDuration(
+  pickFiller(
     channel: Channel,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
-  ): {
-    fillerId: Nullable<string>;
-    filler: Nullable<ProgramWithRelations>;
-    minimumWait: number;
-  } {
+  ) {
     if (isEmpty(fillers)) {
-      return {
-        fillerId: null,
-        filler: null,
-        minimumWait: Number.MAX_SAFE_INTEGER,
-      };
+      return EmptyFillerPickResult;
     }
 
     let pick1: Maybe<ProgramWithRelations>;
     const t0 = new Date().getTime();
     let minimumWait = 1000000000;
 
-    let fillerRepeatCooldownMs = 0;
-    if (isUndefined(channel.fillerRepeatCooldown)) {
-      fillerRepeatCooldownMs = DefaultFillerCooldownMillis;
-    }
+    const fillerRepeatCooldownMs =
+      channel.fillerRepeatCooldown ?? DefaultFillerCooldownMillis;
 
     let listM = 0;
-    let fillerId: Maybe<string>;
+    let fillerListId: Maybe<string>;
     for (const filler of fillers) {
       const fillerPrograms = filler.fillerContent;
       let pickedList = false;
@@ -80,7 +72,7 @@ export class FillerPicker {
               listM += filler.weight;
               if (random.bool(filler.weight, listM)) {
                 pickedList = true;
-                fillerId = filler.fillerShow.uuid;
+                fillerListId = filler.fillerShow.uuid;
                 n = 0;
               } else {
                 break;
@@ -111,14 +103,9 @@ export class FillerPicker {
     }
 
     return {
-      fillerId: fillerId!,
-      filler: isNil(pick1)
-        ? null
-        : {
-            ...pick1,
-            duration: pick1.duration,
-          },
-      minimumWait: minimumWait,
+      fillerListId: fillerListId!,
+      filler: isNil(pick1) ? null : pick1,
+      minimumWait,
     };
   }
 }
