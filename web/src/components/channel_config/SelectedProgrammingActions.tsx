@@ -4,18 +4,12 @@ import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
 import type { EmbyMediaSourceView } from '@/store/programmingSelector/store.ts';
 import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
+import { AddCircle, CheckBoxOutlined, Grading } from '@mui/icons-material';
 import {
-  AddCircle,
-  CheckBoxOutlineBlank,
-  CheckBoxOutlined,
-  Grading,
-} from '@mui/icons-material';
-import {
-  Backdrop,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  Typography,
+  Box,
+  Button,
+  Link,
+  Stack,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -27,6 +21,7 @@ import {
 } from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
 import { Emby, Jellyfin } from '../../helpers/constants.ts';
 import useStore from '../../store/index.ts';
@@ -97,11 +92,10 @@ export default function SelectedProgrammingActions({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectAllLoading, setSelectAllLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const [selectAllCount, setSelectAllCount] = useState(selectedMedia.length);
+  const [showSelectAll, setShowSelectAll] = useState(true);
   const snackbar = useSnackbar();
-  const { addSelectedItems, isLoading } = useAddSelectedItems();
+  const { addSelectedItems } = useAddSelectedItems();
   const removeAllItems = useCallback(() => {
     clearSelectedMedia();
   }, []);
@@ -198,72 +192,82 @@ export default function SelectedProgrammingActions({
     }
   };
 
+  const darkMode = useStore((state) => state.theme.darkMode);
+
   return (
-    <>
-      <Backdrop open={open} />
-      <SpeedDial
-        ariaLabel="Media Action Options"
-        sx={{
-          position: 'fixed',
-          bottom: smallViewport ? 64 : 32,
-          right: 32,
-        }}
-        icon={<SpeedDialIcon />}
-        onClose={handleClose}
-        onOpen={handleOpen}
-        open={open}
-        FabProps={{ disabled: isLoading || selectAllLoading }}
-      >
-        {selectedMedia.length > 0 && (
-          <SpeedDialAction
-            key={'add-selected-media'}
-            icon={smallViewport ? null : <AddCircle />}
-            tooltipTitle={<Typography noWrap>Add Media</Typography>}
-            tooltipOpen
-            delay={250}
-            onClick={(e) => addSelectedItems(e)}
-          />
-        )}
+    <Stack
+      direction={{ sm: 'column', md: 'row' }}
+      spacing={{ sm: 1, md: 4 }}
+      sx={{
+        display: 'flex',
+        justifyContent: 'start',
+        alignItems: 'center',
+        position: 'sticky',
+        top: '64px',
+        backgroundColor: (theme) =>
+          darkMode ? theme.palette.background.paper : theme.palette.grey[400],
+        zIndex: 9,
+        mx: -3,
+        pl: 3,
+        pr: 6,
+        py: 1,
+      }}
+    >
+      <Box>
+        {`${selectedMedia.length} ${pluralize('Selected Item', selectedMedia.length)}`}
 
         {selectedMedia.length > 0 && (
-          <SpeedDialAction
-            key={'review-selections'}
-            icon={smallViewport ? null : <Grading />}
-            tooltipTitle={<Typography noWrap>Review</Typography>}
-            tooltipOpen
-            delay={750}
-            onClick={() => toggleOrSetSelectedProgramsDrawer(true)}
-          />
+          <Link
+            onClick={() => removeAllItems()}
+            sx={{ ml: 1, cursor: 'pointer', mr: 4 }}
+          >
+            Clear
+          </Link>
         )}
+      </Box>
 
-        {selectAllEnabled && (
-          <SpeedDialAction
+      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+        {selectAllEnabled && showSelectAll && (
+          <Button
             key={'select-all-programs'}
-            icon={
+            variant="contained"
+            startIcon={
               smallViewport ? null : selectAllLoading ? (
                 <RotatingLoopIcon />
               ) : (
                 <CheckBoxOutlined />
               )
             }
-            tooltipTitle={<Typography noWrap>Select All</Typography>}
-            tooltipOpen
-            delay={500}
             onClick={() => selectAllItems()}
-          />
+            sx={{ m: 0.5, flexGrow: 1 }}
+          >
+            Select All
+          </Button>
         )}
 
         {selectedMedia.length > 0 && (
-          <SpeedDialAction
-            key={'unselect-all-programs'}
-            icon={<CheckBoxOutlineBlank />}
-            tooltipTitle={<Typography noWrap>Unselect All</Typography>}
-            tooltipOpen
-            delay={1000}
-            onClick={() => removeAllItems()}
-          />
+          <>
+            <Button
+              key={'review-selections'}
+              variant="contained"
+              startIcon={smallViewport ? null : <Grading />}
+              onClick={() => toggleOrSetSelectedProgramsDrawer(true)}
+              sx={{ m: 0.5, flexGrow: 1 }}
+            >
+              {smallViewport ? 'Review' : 'Review Selections'}
+            </Button>
+            <Button
+              key={'add-selected-media'}
+              variant="contained"
+              startIcon={smallViewport ? null : <AddCircle />}
+              onClick={(e) => addSelectedItems(e)}
+              sx={{ m: 0.5, flexGrow: 1 }}
+            >
+              {smallViewport ? 'Add Media' : 'Add Selected Media'}
+            </Button>
+          </>
         )}
-      </SpeedDial>
-    </>
+      </Box>
+    </Stack>
   );
 }

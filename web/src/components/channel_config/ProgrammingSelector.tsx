@@ -53,9 +53,13 @@ import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
 type Props = {
   initialMediaSourceId?: string;
   initialLibraryId?: string;
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
-export default function ProgrammingSelector({ initialMediaSourceId }: Props) {
+export default function ProgrammingSelector({
+  initialMediaSourceId,
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const { entityType } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
@@ -64,6 +68,7 @@ export default function ProgrammingSelector({ initialMediaSourceId }: Props) {
   const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
   const navigate = Route.useNavigate();
+  const [open, setOpen] = useState(false);
 
   // Convenience sub-selectors for specific library types
   const selectedPlexLibrary =
@@ -241,13 +246,37 @@ export default function ProgrammingSelector({ initialMediaSourceId }: Props) {
     if (selectedLibrary) {
       switch (selectedLibrary.type) {
         case Plex:
-          return <PlexProgrammingSelector />;
+          return (
+            <PlexProgrammingSelector
+              toggleOrSetSelectedProgramsDrawer={
+                toggleOrSetSelectedProgramsDrawer
+              }
+            />
+          );
         case Jellyfin:
-          return <JellyfinProgrammingSelector />;
+          return (
+            <JellyfinProgrammingSelector
+              toggleOrSetSelectedProgramsDrawer={
+                toggleOrSetSelectedProgramsDrawer
+              }
+            />
+          );
         case Emby:
-          return <EmbyProgrammingSelector />;
+          return (
+            <EmbyProgrammingSelector
+              toggleOrSetSelectedProgramsDrawer={
+                toggleOrSetSelectedProgramsDrawer
+              }
+            />
+          );
         case 'custom-show':
-          return <CustomShowProgrammingSelector />;
+          return (
+            <CustomShowProgrammingSelector
+              toggleOrSetSelectedProgramsDrawer={
+                toggleOrSetSelectedProgramsDrawer
+              }
+            />
+          );
       }
     }
 
@@ -400,7 +429,7 @@ export default function ProgrammingSelector({ initialMediaSourceId }: Props) {
                 value={
                   viewingCustomShows
                     ? 'custom-shows'
-                    : initialMediaSourceId ?? selectedServer?.id ?? ''
+                    : (initialMediaSourceId ?? selectedServer?.id ?? '')
                 }
                 onChange={(e) => onMediaSourceChange(e.target.value)}
               >

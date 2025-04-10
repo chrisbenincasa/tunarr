@@ -37,10 +37,11 @@ import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { JellyfinGridItem } from './JellyfinGridItem.tsx';
 import { JellyfinListItem } from './JellyfinListItem.tsx';
 import {
+  MediaItemGrid,
   type GridInlineModalProps,
   type GridItemProps,
-  MediaItemGrid,
 } from './MediaItemGrid.tsx';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 enum TabValues {
   Library = 0,
@@ -66,6 +67,10 @@ function isParentItem(item: JellyfinItem) {
   }
 }
 
+type Props = {
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
+};
+
 const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
   Season: 'Episode',
   Series: 'Season',
@@ -77,7 +82,9 @@ type Size = {
   height?: number;
 };
 
-export function JellyfinProgrammingSelector() {
+export function JellyfinProgrammingSelector({
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const selectedServer = useCurrentMediaSource(Jellyfin);
   const selectedLibrary = useCurrentMediaSourceView(Jellyfin);
   const prevSelectedLibrary = usePrevious(selectedLibrary?.view?.Id);
@@ -311,6 +318,11 @@ export function JellyfinProgrammingSelector() {
         >
           <ProgramViewToggleButton />
         </Stack>
+
+        <SelectedProgrammingActions
+          toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
+        />
+
         {isListView && renderContextBreadcrumbs()}
         <Tabs
           value={tabValue}
@@ -342,7 +354,6 @@ export function JellyfinProgrammingSelector() {
                 )} */}
         </Tabs>
       </Box>
-
       <MediaItemGrid
         getPageDataSize={(page) => ({
           total: page.TotalRecordCount,

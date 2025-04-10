@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CustomShow, isCustomProgram } from '@tunarr/types';
+import { isCustomProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
@@ -28,7 +28,7 @@ import {
   negate,
 } from 'lodash-es';
 import pluralize from 'pluralize';
-import { Fragment, MouseEvent, useCallback, useState } from 'react';
+import { Fragment, useCallback, useState, type MouseEvent } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle, typedProperty } from '../../helpers/util';
 import {
@@ -44,6 +44,10 @@ dayjs.extend(duration);
 type CustomShowListItemProps = {
   customShow: CustomShow;
   selectShow: (show: CustomShow) => Promise<void>;
+};
+
+type Props = {
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
 function CustomShowListItem({
@@ -125,7 +129,9 @@ function CustomShowListItem({
   );
 }
 
-export function CustomShowProgrammingSelector() {
+export function CustomShowProgrammingSelector({
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const apiClient = useTunarrApi();
   const { data: customShows, isPending } = useCustomShows();
   const viewType = useStore((state) => state.theme.programmingSelectorView);

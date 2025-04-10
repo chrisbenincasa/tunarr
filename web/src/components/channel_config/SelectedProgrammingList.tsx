@@ -9,14 +9,9 @@ import {
   type PlexSelectedMedia,
   type SelectedMedia,
 } from '@/store/programmingSelector/store.ts';
-import {
-  KeyboardArrowLeft,
-  KeyboardArrowRight,
-  Close as RemoveIcon,
-} from '@mui/icons-material';
+import { KeyboardArrowRight, Close as RemoveIcon } from '@mui/icons-material';
 import {
   Box,
-  Chip,
   ClickAwayListener,
   Drawer,
   IconButton,
@@ -33,7 +28,7 @@ import { isPlexDirectory } from '@tunarr/types/plex';
 import type { MediaSourceId } from '@tunarr/types/schemas';
 import { first, groupBy, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
@@ -41,9 +36,8 @@ import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
-import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { type KnownMedia } from '../../store/programmingSelector/KnownMedia.ts';
-import AddSelectedMediaButton from './AddSelectedMediaButton.tsx';
+import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
 
 type Props = {
   selectAllEnabled?: boolean;
@@ -371,29 +365,22 @@ export default function SelectedProgrammingList({
 
   const ProgrammingList = () => (
     <>
-      {selectedMedia.length > 0 && (
+      {selectedMedia.length > 0 && open && (
         <Paper
           sx={{
             position: 'fixed',
             top: 64,
             right: open ? drawerWidth : 0,
             mt: 1,
+            zIndex: 10,
           }}
         >
-          <Tooltip
-            title={
-              !open
-                ? `View selected ${pluralize('item', selectedMedia.length)}`
-                : 'Close'
-            }
-            placement="left"
-          >
+          <Tooltip title={'Close'} placement="left">
             <IconButton
               disableRipple
               onClick={() => toggleOrSetSelectedProgramsDrawer(!open)}
             >
-              {open ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
-              {!open && <Chip label={selectedMedia.length} />}
+              <KeyboardArrowRight />
             </IconButton>
           </Tooltip>
         </Paper>
@@ -435,20 +422,11 @@ export default function SelectedProgrammingList({
             Selected {pluralize('Item', selectedMedia.length)} (
             {selectedMedia.length}):
           </Typography>
-          <AddSelectedMediaButton
-            buttonText={`Add ${pluralize('Item', selectedMedia.length)}`}
-            variant="contained"
-            color={'primary'}
-            sx={{
-              borderRadius: '10px',
-              width: '100%',
-            }}
-          />
           {selectedMedia.length > 0 && renderSelectedItems()}
         </Drawer>
       </ClickAwayListener>
     </>
   );
 
-  return <ProgrammingList />;
+  return selectedMedia.length && <ProgrammingList />;
 }

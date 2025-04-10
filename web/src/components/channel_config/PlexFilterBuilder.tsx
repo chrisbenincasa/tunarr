@@ -18,11 +18,14 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
-  PlexFilter,
-  PlexFilterOperatorNode,
-  PlexFilterValueNode,
+  type PlexFilter,
+  type PlexFilterOperatorNode,
+  type PlexFilterValueNode,
 } from '@tunarr/types/api';
-import { PlexFilterResponseMeta, PlexFilterType } from '@tunarr/types/plex';
+import {
+  type PlexFilterResponseMeta,
+  type PlexFilterType,
+} from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { find, first, isEmpty, isUndefined, map, size } from 'lodash-es';
 import {
@@ -36,10 +39,10 @@ import {
 import {
   Controller,
   FormProvider,
-  SubmitHandler,
   useFieldArray,
   useForm,
   useFormContext,
+  type SubmitHandler,
 } from 'react-hook-form';
 import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters.ts';
 import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';

@@ -24,13 +24,10 @@ import {
   Tooltip,
 } from '@mui/material';
 import { tag } from '@tunarr/types';
-import { type PlexFilter } from '@tunarr/types/api';
-import {
-  isPlexParentItem,
-  type PlexChildListing,
-  type PlexMedia,
-} from '@tunarr/types/plex';
-import { type MediaSourceId } from '@tunarr/types/schemas';
+import type { PlexFilter } from '@tunarr/types/api';
+import type { PlexChildListing, PlexMedia } from '@tunarr/types/plex';
+import { isPlexParentItem } from '@tunarr/types/plex';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { usePrevious } from '@uidotdev/usehooks';
 import {
   chain,
@@ -73,15 +70,17 @@ import { TabPanel } from '../TabPanel.tsx';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectMediaSources from '../settings/ConnectMediaSources.tsx';
-import {
-  MediaItemGrid,
-  type GridInlineModalProps,
-  type GridItemProps,
-} from './MediaItemGrid.tsx';
+import type { GridInlineModalProps, GridItemProps } from './MediaItemGrid.tsx';
+import { MediaItemGrid } from './MediaItemGrid.tsx';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
 import { PlexListItem } from './PlexListItem.tsx';
 import { PlexSortField } from './PlexSortField.tsx';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
+
+type Props = {
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
+};
 
 function a11yProps(index: number) {
   return {
@@ -101,7 +100,9 @@ type Size = {
   height?: number;
 };
 
-export default function PlexProgrammingSelector() {
+export default function PlexProgrammingSelector({
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const { data: mediaSources } = useMediaSources();
   const plexServers = filter(mediaSources, { type: 'plex' });
   const selectedServer = useCurrentMediaSource('plex');
@@ -547,64 +548,75 @@ export default function PlexProgrammingSelector() {
       {!isNil(directoryChildren) &&
         directoryChildren.size > 0 &&
         selectedLibrary && (
-          <Box sx={{ mt: 1 }}>
-            {selectedLibrary.view.type !==
-              PlexMediaSourceLibraryViewType.Playlists && (
-              <>
-                <Stack direction="row" gap={1} sx={{ mt: 2 }}>
-                  <StandaloneToggleButton
-                    disabled={tabValue !== TabValues.Library}
-                    selected={searchVisible}
-                    onToggle={() => {
-                      toggleSearchVisible();
-                      setPlexFilter(undefined);
-                    }}
-                    toggleButtonProps={{
-                      size: 'small',
-                      sx: { mr: 1 },
-                      color: 'primary',
-                    }}
-                  >
-                    <FilterAlt />
-                  </StandaloneToggleButton>
-                  {searchVisible && (
-                    <Grow in={searchVisible}>
-                      <ToggleButtonGroup
-                        size="small"
-                        color="primary"
-                        exclusive
-                        value={useAdvancedSearch ? 'advanced' : 'basic'}
-                        onChange={() => setUseAdvancedSearch(toggle)}
-                      >
-                        <ToggleButton value="basic">Basic</ToggleButton>
-                        <ToggleButton value="advanced">Advanced</ToggleButton>
-                      </ToggleButtonGroup>
-                    </Grow>
-                  )}
-                  {tabValue === TabValues.Library && <PlexSortField />}
-                </Stack>
-                <Collapse in={searchVisible} mountOnEnter>
-                  <Box sx={{ py: 1 }}>
-                    <PlexFilterBuilder advanced={useAdvancedSearch} />
-                  </Box>
-                </Collapse>
-              </>
-            )}
-
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
+          <>
+            <Box
               sx={{
-                display: 'flex',
-                pt: 1,
-                columnGap: 1,
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end',
-                flexGrow: 1,
+                mt: 1,
               }}
             >
-              <ProgramViewToggleButton />
-            </Stack>
-          </Box>
+              {selectedLibrary.view.type !==
+                PlexMediaSourceLibraryViewType.Playlists && (
+                <>
+                  <Stack direction="row" gap={1} sx={{ mt: 2 }}>
+                    <StandaloneToggleButton
+                      selected={searchVisible}
+                      onToggle={() => {
+                        toggleSearchVisible();
+                        setPlexFilter(undefined);
+                      }}
+                      toggleButtonProps={{
+                        size: 'small',
+                        sx: { mr: 1 },
+                        color: 'primary',
+                      }}
+                    >
+                      <FilterAlt />
+                    </StandaloneToggleButton>
+                    {searchVisible && (
+                      <Grow in={searchVisible}>
+                        <ToggleButtonGroup
+                          size="small"
+                          color="primary"
+                          exclusive
+                          value={useAdvancedSearch ? 'advanced' : 'basic'}
+                          onChange={() => setUseAdvancedSearch(toggle)}
+                        >
+                          <ToggleButton value="basic">Basic</ToggleButton>
+                          <ToggleButton value="advanced">Advanced</ToggleButton>
+                        </ToggleButtonGroup>
+                      </Grow>
+                    )}
+
+                    <PlexSortField />
+                  </Stack>
+                  <Collapse in={searchVisible} mountOnEnter>
+                    <Box sx={{ py: 1 }}>
+                      <PlexFilterBuilder advanced={useAdvancedSearch} />
+                    </Box>
+                  </Collapse>
+                </>
+              )}
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                sx={{
+                  display: 'flex',
+                  py: 2,
+                  columnGap: 1,
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-end',
+                  flexGrow: 1,
+                }}
+              >
+                <ProgramViewToggleButton />
+              </Stack>
+            </Box>
+            <SelectedProgrammingActions
+              toggleOrSetSelectedProgramsDrawer={
+                toggleOrSetSelectedProgramsDrawer
+              }
+            />
+          </>
         )}
       {plexServers?.length === 0 ? (
         <Box

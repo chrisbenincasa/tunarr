@@ -38,16 +38,22 @@ import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { EmbyGridItem } from './EmbyGridItem.tsx';
 import { EmbyListItem } from './EmbyListItem.tsx';
 import {
+  MediaItemGrid,
   type GridInlineModalProps,
   type GridItemProps,
-  MediaItemGrid,
 } from './MediaItemGrid.tsx';
 
 enum TabValues {
   Library = 0,
 }
 
-export function EmbyProgrammingSelector() {
+type Props = {
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
+};
+
+export function EmbyProgrammingSelector({
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const selectedServer = useCurrentMediaSource(Emby);
   const selectedLibrary = useCurrentMediaSourceView(Emby);
   const prevSelectedLibrary = usePrevious(selectedLibrary?.view?.Id);
@@ -105,7 +111,7 @@ export function EmbyProgrammingSelector() {
   const itemsQuery = useInfiniteEmbyLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     isEmpty(parentContext)
-      ? selectedLibrary?.view.Id ?? ''
+      ? (selectedLibrary?.view.Id ?? '')
       : last(parentContext)!.Id,
     itemTypes,
     true,
