@@ -123,8 +123,13 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
           !user.Policy?.IsDisabled &&
           !!user.Policy?.EnableAllFolders,
       );
-    } catch (e) {
-      LoggerFactory.root.error(e, 'Error retrieving Jellyfin users', {
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.config) {
+          new JellyfinRequestRedacter().redact(error.config);
+        }
+      }
+      LoggerFactory.root.error(error, 'Error retrieving Jellyfin users', {
         className: JellyfinApiClient.name,
       });
       return;
