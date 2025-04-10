@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.18.17](https://github.com/chrisbenincasa/tunarr/compare/v0.18.16...v0.18.17) (2025-04-10)
+
+
+### Features
+
+* add calendar views for channel programming ([#1134](https://github.com/chrisbenincasa/tunarr/issues/1134)) ([8e8d10e](https://github.com/chrisbenincasa/tunarr/commit/8e8d10e6757c57ce8c5da74c3104a0e181933825))
+* add flag for enabling trust proxy ([#1140](https://github.com/chrisbenincasa/tunarr/issues/1140)) ([718af48](https://github.com/chrisbenincasa/tunarr/commit/718af48a1863351db5b7882d5d6fce4129222727))
+* support in-order slot scheduling ([#1132](https://github.com/chrisbenincasa/tunarr/issues/1132)) ([a8a5d52](https://github.com/chrisbenincasa/tunarr/commit/a8a5d5224cc990019ddc6bdb7db46024c1fb1e58))
+* support setting preferred theme setting to 'system' ([#1137](https://github.com/chrisbenincasa/tunarr/issues/1137)) ([9ad0a9b](https://github.com/chrisbenincasa/tunarr/commit/9ad0a9bbfa9f56124408e0df9c6c7d069c10fed1))
+
+
+### Bug Fixes
+
+* do not reset channel pagination state when data updates in background ([40a5984](https://github.com/chrisbenincasa/tunarr/commit/40a59849e385548300627537c5116bf1777b7206))
+* fix copy-to-clipboard links from top bar ([424b494](https://github.com/chrisbenincasa/tunarr/commit/424b49439162e6895f92aed6ebeb0c3ac85ec530))
+* fixes to rendering paused on-demand guides ([1d67a3d](https://github.com/chrisbenincasa/tunarr/commit/1d67a3df0c1c6a205afc5e381b25400e5877474a))
+* use correct state in dark mode selectors ([b3217ba](https://github.com/chrisbenincasa/tunarr/commit/b3217ba4fca927e8648656e1aba7cb0d585d4fdc))
+
+
+### UI Changes
+
+* fixes to colorization in dark mode ([#1143](https://github.com/chrisbenincasa/tunarr/issues/1143)) ([f7dfe39](https://github.com/chrisbenincasa/tunarr/commit/f7dfe3931541e9fee2c51eaf9ae6ed6521069903))
+* make settings link last in side drawer ([a81c02e](https://github.com/chrisbenincasa/tunarr/commit/a81c02e21145ca47bdf59db3e70e7593156b16ad))
+
 ## [0.18.16](https://github.com/chrisbenincasa/tunarr/compare/v0.18.15...v0.18.16) (2025-03-27)
 
 
