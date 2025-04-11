@@ -1,5 +1,17 @@
-import { ArrowBack, ArrowForward, ZoomIn, ZoomOut } from '@mui/icons-material';
-import { Box, IconButton, Paper, Stack, Typography } from '@mui/material';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+} from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import type { ContentProgram } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
@@ -10,7 +22,7 @@ import 'dayjs/plugin/localeData';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { range } from 'lodash-es';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { match, P } from 'ts-pattern';
+import { P, match } from 'ts-pattern';
 import { getTextContrast } from '../../helpers/colors.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
@@ -82,6 +94,11 @@ export const ProgramWeekCalendarView = ({
 
   const getCalendarProgramsForDay = useGetProgramsForDayFunc(channel.id);
 
+  const goToToday = useCallback(() => {
+    onChange?.(now);
+    setInternalCalendarState(now);
+  }, [onChange, now]);
+
   const moveBackwardDays = useCallback(
     (n: number = 1) => {
       const next = calendarState.subtract(n, 'days');
@@ -123,16 +140,15 @@ export const ProgramWeekCalendarView = ({
               left: 0,
               width: '90%',
               height: `${height}%`,
-              backgroundColor: `${bgColor.toString()}`,
+              backgroundColor: bgColor,
               borderRadius: '5px',
               zIndex: 100,
-              border: 'thin solid',
-              borderColor: 'black',
+              border: '1px solid black',
               cursor: 'pointer',
               color: (theme) => getTextContrast(bgColor, theme.palette.mode),
               overflow: 'hidden',
               lineHeight: 1,
-              p: 0.5,
+              px: 0.5,
             }}
             onClick={() =>
               program.type === 'content'
@@ -226,7 +242,7 @@ export const ProgramWeekCalendarView = ({
     return (
       <Box
         key={`week_header_${idx}`}
-        sx={{ textAlign: 'center', width: `${DayWidth}px` }}
+        sx={{ textAlign: 'center', width: `${DayWidth}px`, flexGrow: 1 }}
       >
         <Typography component="span">
           {localeData.weekdaysShort()[idx]}
@@ -265,21 +281,28 @@ export const ProgramWeekCalendarView = ({
   return (
     <Stack sx={{ width: '100%' }} gap={2}>
       <Stack direction="row">
-        <Typography variant="h5" flex={1}>
+        <Button onClick={() => goToToday()} variant="contained">
+          Today
+        </Button>
+        <IconButton onClick={() => moveBackwardDays(7)}>
+          <ChevronLeft />
+        </IconButton>
+        <IconButton onClick={() => moveForwardDays(7)}>
+          <ChevronRight />
+        </IconButton>
+        <Typography
+          variant="h5"
+          flex={1}
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
           {getCalendarHeader()}
         </Typography>
         <Box alignSelf={'flex-end'}>
-          <IconButton onClick={() => moveBackwardDays(7)}>
-            <ArrowBack />
-          </IconButton>
           <IconButton onClick={() => setBlockHeight((prev) => prev - 8)}>
             <ZoomOut />
           </IconButton>
           <IconButton onClick={() => setBlockHeight((prev) => prev + 8)}>
             <ZoomIn />
-          </IconButton>
-          <IconButton onClick={() => moveForwardDays(7)}>
-            <ArrowForward />
           </IconButton>
         </Box>
       </Stack>
@@ -351,6 +374,7 @@ export const ProgramWeekCalendarView = ({
                 borderColor: 'divider',
                 zIndex: 0,
                 position: 'relative',
+                flexGrow: 1,
               }}
             >
               {range(0, 24).map((hour) => (

@@ -1,11 +1,7 @@
 import { channelProgramUniqueId } from '@/helpers/util.ts';
-import { useSlideSchedule } from '@/hooks/programming_controls/useSlideSchedule.ts';
 import { useUpdateChannel } from '@/hooks/useUpdateChannel.ts';
 import { useUpdateLineup } from '@/hooks/useUpdateLineup.ts';
-import {
-  resetLineup,
-  setChannelStartTime,
-} from '@/store/channelEditor/actions.ts';
+import { resetLineup } from '@/store/channelEditor/actions.ts';
 import useStore from '@/store/index.ts';
 import { useChannelEditor } from '@/store/selectors.ts';
 import {
@@ -28,7 +24,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers';
 import { ZodiosError } from '@zodios/core';
 import dayjs, { type Dayjs } from 'dayjs';
 import { chain, findIndex, head, isUndefined, map, reject } from 'lodash-es';
@@ -60,7 +55,7 @@ export function ChannelProgrammingConfig() {
   const snackbar = useSnackbar();
 
   const [view, setView] = useState<ViewType>('list');
-  const [viewDate, setViewDate] = useState<Dayjs>(dayjs(channel?.startTime));
+  const [viewDate, setViewDate] = useState<Dayjs>(dayjs());
   const calendarState = useMemo(
     () =>
       ({
@@ -78,20 +73,6 @@ export function ChannelProgrammingConfig() {
     setViewDate(date);
     setView('day');
   }, []);
-
-  const slideSchedule = useSlideSchedule();
-
-  const handleStartTimeChange = (value: Dayjs | null) => {
-    if (value) {
-      const newStartTime = +value;
-      setChannelStartTime(newStartTime);
-      const prevStartTime = channel?.startTime;
-      if (prevStartTime) {
-        const diff = newStartTime - prevStartTime;
-        slideSchedule(diff);
-      }
-    }
-  };
 
   const updateLineupMutation = useUpdateLineup({
     onSettled: () => {
@@ -227,19 +208,11 @@ export function ChannelProgrammingConfig() {
     }
   };
 
-  const startTime = channel ? dayjs(channel.startTime) : dayjs();
   return (
     <>
       <Stack gap={2}>
         <Stack direction="row" flexGrow={1} alignItems={'center'}>
-          <Box flex={1}>
-            <DateTimePicker
-              label="Programming Start"
-              value={startTime}
-              onChange={(newDateTime) => handleStartTimeChange(newDateTime)}
-              slotProps={{ textField: { size: 'small' } }}
-            />
-          </Box>
+          <Box flex={1}></Box>
           <Box alignSelf={'flex-end'}>
             <ToggleButtonGroup
               value={view}

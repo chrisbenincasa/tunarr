@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { SaveChannelRequest } from '@tunarr/types';
+import type { SaveChannelRequest } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -20,11 +20,7 @@ import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 const DefaultIconPath = '';
 
-type Props = {
-  isNew: boolean;
-};
-
-export function ChannelPropertiesEditor({ isNew }: Props) {
+export function ChannelPropertiesEditor() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const {
@@ -171,30 +167,26 @@ export function ChannelPropertiesEditor({ isNew }: Props) {
                   />
                 )}
               />
-
-              {isNew && (
-                <Controller
-                  name="startTime"
-                  control={control}
-                  render={({ field }) => (
-                    <DateTimePicker
-                      label="Programming Start"
-                      slotProps={{
-                        textField: {
-                          margin: 'normal',
-                          fullWidth: true,
-                          onBlur: field.onBlur,
-                        },
-                      }}
-                      value={dayjs(field.value)}
-                      onChange={(newDateTime) =>
-                        field.onChange(+(newDateTime ?? dayjs()))
-                      }
-                    />
-                  )}
-                />
-              )}
-
+              <Controller
+                name="startTime"
+                control={control}
+                render={({ field }) => (
+                  <DateTimePicker
+                    label="Programming Start"
+                    slotProps={{
+                      textField: {
+                        margin: 'normal',
+                        fullWidth: true,
+                        onBlur: field.onBlur,
+                      },
+                    }}
+                    value={dayjs(field.value)}
+                    onChange={(newDateTime) =>
+                      field.onChange(+(newDateTime ?? dayjs()))
+                    }
+                  />
+                )}
+              />
               <Box sx={{ display: 'flex', alignItems: 'end' }}>
                 {DefaultIconPath !== imagePath ? (
                   <Box

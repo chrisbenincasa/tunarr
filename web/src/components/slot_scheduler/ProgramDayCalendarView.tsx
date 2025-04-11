@@ -179,21 +179,21 @@ export const ProgramDayCalendarView = ({
   return (
     <Stack sx={{ width: '100%' }} gap={2}>
       <Stack direction="row" alignItems={'center'}>
+        <IconButton onClick={() => moveBackwardDays(1)}>
+          <ArrowBack />
+        </IconButton>
+        <IconButton onClick={() => moveForwardDays(1)}>
+          <ArrowForward />
+        </IconButton>
         <Typography variant="h5" flex={1}>
-          {calendarState.format('l')}
+          {calendarState.format('LL')}
         </Typography>
         <Box alignSelf="flex-end">
-          <IconButton onClick={() => moveBackwardDays(1)}>
-            <ArrowBack />
-          </IconButton>
           <IconButton onClick={() => setBlockHeight((prev) => prev - 8)}>
             <ZoomOut />
           </IconButton>
           <IconButton onClick={() => setBlockHeight((prev) => prev + 8)}>
             <ZoomIn />
-          </IconButton>
-          <IconButton onClick={() => moveForwardDays(1)}>
-            <ArrowForward />
           </IconButton>
         </Box>
       </Stack>
