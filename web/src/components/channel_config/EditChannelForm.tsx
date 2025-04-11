@@ -6,14 +6,14 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useNavigate } from '@tanstack/react-router';
-import { Channel, SaveChannelRequest } from '@tunarr/types';
+import type { Channel, SaveChannelRequest } from '@tunarr/types';
 import { isEmpty, keys, reject, some } from 'lodash-es';
 import { useState } from 'react';
 import {
   FormProvider,
-  SubmitErrorHandler,
-  SubmitHandler,
   useForm,
+  type SubmitErrorHandler,
+  type SubmitHandler,
 } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
@@ -24,9 +24,9 @@ import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from './ChannelTranscodingConfig.tsx';
 import {
   EditChannelTabPanel,
-  EditChannelTabProps,
-  EditChannelTabs,
   EditChannelTabsProps,
+  type EditChannelTabProps,
+  type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
 
 function getDefaultFormValues(channel: Channel): SaveChannelRequest {
@@ -198,7 +198,7 @@ export function EditChannelForm({
           onSubmit={formMethods.handleSubmit(onSubmit, onInvalid)}
         >
           <EditChannelTabPanel value="properties" currentValue={currentTab}>
-            <ChannelPropertiesEditor isNew={isNew} />
+            <ChannelPropertiesEditor />
           </EditChannelTabPanel>
           <EditChannelTabPanel value="flex" currentValue={currentTab}>
             <ChannelFlexConfig />
