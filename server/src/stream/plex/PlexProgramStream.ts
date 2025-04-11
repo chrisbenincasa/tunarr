@@ -8,7 +8,10 @@ import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
-import type { UpdatePlexPlayStatusScheduledTask } from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
+import type {
+  UpdatePlexPlayStatusScheduledTask,
+  UpdatePlexPlayStatusScheduledTaskFactory,
+} from '@/tasks/plex/UpdatePlexPlayStatusTask.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { ifDefined } from '@/util/index.js';
@@ -16,7 +19,9 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import type { interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
+import { v4 } from 'uuid';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
+import { GlobalScheduler } from '../../services/Scheduler.ts';
 import type { PlexStreamDetails } from './PlexStreamDetails.js';
 
 export class PlexProgramStream extends ProgramStream {
@@ -34,6 +39,7 @@ export class PlexProgramStream extends ProgramStream {
     private plexStreamDetailsFactory: interfaces.AutoFactory<PlexStreamDetails>,
     cacheImageService: CacheImageService,
     ffmpegFactory: FFmpegFactory,
+    private plexPlayStatusUpdateTaskFactory: UpdatePlexPlayStatusScheduledTaskFactory,
     context: PlayerContext,
     outputFormat: OutputFormat,
   ) {
@@ -113,7 +119,7 @@ export class PlexProgramStream extends ProgramStream {
       duration: dayjs.duration(
         +start === 0
           ? lineupItem.duration
-          : lineupItem.streamDuration ?? lineupItem.duration,
+          : (lineupItem.streamDuration ?? lineupItem.duration),
       ),
       watermark,
       realtime: this.context.realtime,
@@ -127,19 +133,21 @@ export class PlexProgramStream extends ProgramStream {
     }
 
     if (plexSettings.updatePlayStatus) {
-      // this.updatePlexStatusTask = new UpdatePlexPlayStatusScheduledTask(
-      //   server,
-      //   {
-      //     channelNumber: this.context.sourceChannel.number,
-      //     duration: lineupItem.duration,
-      //     ratingKey: lineupItem.externalKey,
-      //     startTime: lineupItem.startOffset ?? 0,
-      //   },
-      // );
-      // GlobalScheduler.scheduleTask(
-      //   this.updatePlexStatusTask.id,
-      //   this.updatePlexStatusTask,
-      // );
+      this.updatePlexStatusTask = this.plexPlayStatusUpdateTaskFactory(
+        server,
+        {
+          channelNumber: this.context.sourceChannel.number,
+          duration: lineupItem.duration,
+          ratingKey: lineupItem.externalKey,
+          startTime: lineupItem.startOffset ?? 0,
+        },
+        v4(),
+      );
+
+      GlobalScheduler.scheduleTask(
+        this.updatePlexStatusTask.id,
+        this.updatePlexStatusTask,
+      );
     }
 
     return Result.success(transcodeSession);

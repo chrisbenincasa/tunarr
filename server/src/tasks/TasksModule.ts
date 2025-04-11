@@ -12,6 +12,7 @@ import { KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
 import { type IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import type { MediaSource } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
@@ -19,6 +20,11 @@ import { BackupTask } from './BackupTask.ts';
 import { SaveJellyfinProgramExternalIdsTask } from './jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
 import type { SavePlexProgramExternalIdsTaskFactory } from './plex/SavePlexProgramExternalIdsTask.ts';
 import { SavePlexProgramExternalIdsTask } from './plex/SavePlexProgramExternalIdsTask.ts';
+import type {
+  UpdatePlexPlayStatusScheduledTaskFactory,
+  UpdatePlexPlayStatusScheduleRequest,
+} from './plex/UpdatePlexPlayStatusTask.ts';
+import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
 
 const TasksModule = new ContainerModule((bind) => {
   bind(UpdateXmlTvTask).toSelf();
@@ -89,6 +95,23 @@ const TasksModule = new ContainerModule((bind) => {
     BackupTask.KEY,
     (ctx) => (conf) => () =>
       new BackupTask(conf, ctx.container.get(ArchiveDatabaseBackupKey)),
+  );
+
+  bindFactoryFunc<UpdatePlexPlayStatusScheduledTaskFactory>(
+    bind,
+    UpdatePlexPlayStatusScheduledTask.KEY,
+    (ctx) =>
+      (
+        plexServer: MediaSource,
+        request: UpdatePlexPlayStatusScheduleRequest,
+        sessionId: string,
+      ) =>
+        new UpdatePlexPlayStatusScheduledTask(
+          ctx.container.get<MediaSourceApiFactory>(MediaSourceApiFactory),
+          plexServer,
+          request,
+          sessionId,
+        ),
   );
 });
 

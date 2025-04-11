@@ -26,6 +26,8 @@ import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
+import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
@@ -57,6 +59,9 @@ const StreamModule = new ContainerModule((bind) => {
           ),
           ctx.container.get(CacheImageService),
           ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
+          ctx.container.get<UpdatePlexPlayStatusScheduledTaskFactory>(
+            UpdatePlexPlayStatusScheduledTask.KEY,
+          ),
           playerContext,
           outputFormat,
         );

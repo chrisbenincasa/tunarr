@@ -7,11 +7,11 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
+import { injectable } from 'inversify';
 import { RecurrenceRule } from 'node-schedule';
-import { v4 } from 'uuid';
 import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 
-type UpdatePlexPlayStatusScheduleRequest = {
+export type UpdatePlexPlayStatusScheduleRequest = {
   ratingKey: string;
   startTime: number;
   duration: number;
@@ -33,14 +33,23 @@ const StaticPlexHeaders = {
   'X-Plex-Client-Profile-Name': 'Generic',
 };
 
+export type UpdatePlexPlayStatusScheduledTaskFactory = (
+  plexServer: MediaSource,
+  request: UpdatePlexPlayStatusScheduleRequest,
+  sessionId: string,
+) => UpdatePlexPlayStatusScheduledTask;
+
+@injectable()
 export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
+  static KEY = Symbol.for(UpdatePlexPlayStatusScheduledTask.name);
+
   private playState: PlayState = 'playing';
 
   constructor(
     private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSource,
     private request: UpdatePlexPlayStatusScheduleRequest,
-    public sessionId: string = v4(),
+    public sessionId: string,
   ) {
     super(
       UpdatePlexPlayStatusScheduledTask.name,
