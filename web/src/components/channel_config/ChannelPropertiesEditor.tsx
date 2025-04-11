@@ -20,11 +20,7 @@ import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 const DefaultIconPath = '';
 
-type Props = {
-  isNew: boolean;
-};
-
-export function ChannelPropertiesEditor({ isNew }: Props) {
+export function ChannelPropertiesEditor() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const {
