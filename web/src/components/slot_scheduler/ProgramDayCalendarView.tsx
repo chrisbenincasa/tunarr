@@ -186,7 +186,7 @@ export const ProgramDayCalendarView = ({
           <ArrowForward />
         </IconButton>
         <Typography variant="h5" flex={1}>
-          {calendarState.format('MMMM D, YYYY')}
+          {calendarState.format('LL')}
         </Typography>
         <Box alignSelf="flex-end">
           <IconButton onClick={() => setBlockHeight((prev) => prev - 8)}>
