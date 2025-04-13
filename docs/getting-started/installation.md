@@ -40,8 +40,10 @@ Follow the on-screen instructions to set up the container, including mapping the
 
 ## Binaries
 
-Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM).
+Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend checking out [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) for pre-built FFmpeg. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
 
 Like Docker images, binaries are released with versions as well as a singular 'edge' build which is released bihourly.
 
-Prebuilt edge binaries can be found at [https://github.com/chrisbenincasa/tunarr/releases/tag/edge](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
+* [Latest release](http://github.com/chrisbenincasa/tunarr/releases/latest)
+* [Edge release](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
+* [All releases](https://github.com/chrisbenincasa/tunarr/releases)

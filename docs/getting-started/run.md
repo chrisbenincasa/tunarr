@@ -1,5 +1,22 @@
 # Run
 
+This page describes how to get Tunarr running with various methods and installation methods.
+
+## Migrating from dizqueTV
+
+!!! tip
+
+    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
+
+Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
+
+When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
+
+!!! note
+
+    You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
+
+
 ## Docker
 
 ```
@@ -50,19 +67,6 @@ If using Docker Desktop, before running the Tunarr container, you have to use th
 
 ![Docker Desktop Setup](../assets/docker-desktop.webp)
 
-## Migrating from dizqueTV
-
-!!! tip
-
-    We highly recommend that you use a copy of your `.dizquetv` database directory when starting out with Tunarr. While Tunarr does not alter or overwrite the `.dizquetv` database directory, it is still considered pre-release software and should be treated as such!
-
-Upon first launch, Tunarr will look for a `.dizquetv` folder relative to its working directory and attempt a migration. Tunarr will try and migrate all legacy dizqueTV settings, including channels, programs, Plex servers, etc.
-
-When using Docker, you can mount your a directory named `.dizquetv` when launching Tunarr to initiate the migration.
-
-!!! note
-
-    You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
 
 ## Hardware Encoding
 
@@ -143,10 +147,31 @@ services:
 
 ## Standalone binaries
 
+### *nix Setup
+
+After downloading the binary from Github, you must re-add executable permissions to the file. In Linux or macOS, this can be done by running
+
+```
+chmod +x ./tunarr-linux-64
+```
+
+Replace `tunarr-linux-64` with the path to the Tunarr binary you downloaded.
+
+### Run as a service
+
 It's recommended to run Tunarr as a service / background task. Below are examples depending on your host OS.
 
-### systemd (Linux)
+#### systemd (Linux)
 
+Below is a sample systemd service definition that can be used as a starting point to running Tunarr via systemd on Linux.
+
+Setup:
+
+1. In terminal, execute `sudo mkdir /opt/tunarr/`
+2. Execute `sudo mkdir /opt/tunarr/streams`
+3. Execute a `sudo mv tunarr-linux-x64 /opt/tunarr/tunarr-linux-x64` (replace the first path with the path you downloaded Tunarr too, which will include the version)
+4. Execute `sudo nano /etc/systemd/tunarr.service`
+5. Copy and paste the service definition below:
 ```systemd
 [Unit]
 Description=Tunarr
@@ -163,6 +188,7 @@ KillMode=process
 Restart=always
 RestartSec=15
 
+# Replace these values!
 User=YOUR_USER
 Group=YOUR_GROUP
 
@@ -173,7 +199,16 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-### launchd (macOS)
+
+6. Execute a `ctrl+o`, on the keyboard. When prompted to save the buffer, press Enter to save and exit.
+7. Execute `sudo systemctl daemon-reload`
+8. In terminal, execute `sudo systemctl enable tunarr.service`
+9. Execute `sudo systemctl start tunarr`
+
+
+#### launchd (macOS)
+
+Save the following launchd configuration to `~/Library/LaunchAgents/tunarr.xml`. Replace `/Path/to/tunarr` with the directory path in which you installed Tunarr. We recommend moving this to somewhere stable (i.e. out of your Downloads folder) like `$HOME/.local/bin`
 
 ```xml
 <?xml version=“1.0” encoding=“UTF-8”?>
@@ -195,13 +230,13 @@ WantedBy=multi-user.target
     <key>StandardOutPath</key>
     <string>/Path/to/tunarr/output.log</string>
     <key>UserName</key>
-    <string>useraccountyouruntunarrunder</string>
+    <string>USER_TO_RUN_TUNARR_AS</string>
     <key>HOME</key>
     <string>/Path/to/home</string>
 </dict>
 </plist>
 ```
 
-### NSSM (Windows)
+#### NSSM (Windows)
 
 [NSSM](https://nssm.cc/) is the recommended way to run Tunarr as a background task in Windows. It is recommended to configure NSSM to run Tunarr as the currently logged in user.

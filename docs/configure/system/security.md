@@ -2,7 +2,7 @@
 
 ## Admin mode
 
-Due to [this exploit](https://www.exploit-db.com/exploits/52079) Tunarr supports "admin mode". By default, admin mode is disabled. Some settings, like FFmpeg executable paths, can only be edited in the Tunarr UI when Tunarr is running in admin mode
+Due to [this exploit](https://www.exploit-db.com/exploits/52079) Tunarr supports "admin mode". By default, admin mode is disabled. Some settings, like FFmpeg executable paths, can only be edited in the Tunarr UI when Tunarr is running in admin mode. **NOTE**: This shouldn't be confused with Windows "run as administrator"!
 
 There are several ways to update sensitive settings that require admin mode.
 
