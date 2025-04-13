@@ -1,6 +1,7 @@
 import {
   CalendarMonth,
-  ImportExport,
+  Construction,
+  Delete,
   KeyboardArrowDown,
   Shuffle,
   Widgets,
@@ -16,6 +17,7 @@ import React, { useState } from 'react';
 import { useCustomShowBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useCustomShowRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useCustomShowReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
+import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import { useCustomShowEditor } from '../../store/selectors.ts';
 import { strings } from '../../strings.ts';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
@@ -49,11 +51,11 @@ export const CustomShowSortToolsMenu = () => {
     if (!selectedSort) {
       return (
         <Button
-          startIcon={<ImportExport />}
+          startIcon={<Construction />}
           endIcon={<KeyboardArrowDown />}
           onClick={handleClick}
         >
-          Sort
+          Tools
         </Button>
       );
     }
@@ -106,7 +108,7 @@ export const CustomShowSortToolsMenu = () => {
   return (
     <>
       <ButtonGroup
-        variant="contained"
+        variant="outlined"
         aria-label="Basic button group"
         disabled={programList.length === 0}
       >
@@ -171,6 +173,25 @@ export const CustomShowSortToolsMenu = () => {
               <Widgets />
             </ListItemIcon>
             <ListItemText>Block Shuffle</ListItemText>
+          </MenuItem>
+        </ElevatedTooltip>
+        <MenuItem divider disabled>
+          Delete
+        </MenuItem>
+        <ElevatedTooltip
+          title="Removes all programs from custom show"
+          placement="right"
+          elevation={10}
+        >
+          <MenuItem
+            disableRipple
+            onClick={() => {
+              setCurrentCustomShowProgramming([]);
+              handleClose();
+            }}
+          >
+            <Delete />
+            Clear All
           </MenuItem>
         </ElevatedTooltip>
       </StyledMenu>

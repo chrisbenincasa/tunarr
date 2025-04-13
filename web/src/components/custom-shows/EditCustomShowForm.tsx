@@ -9,7 +9,7 @@ import {
 } from '@/store/customShowEditor/actions.ts';
 import { removeCustomShowProgram } from '@/store/entityEditor/util';
 import { type UICustomShowProgram } from '@/types';
-import { Tv, Undo } from '@mui/icons-material';
+import { Save, Tv, Undo } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -23,7 +23,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { type CustomShow } from '@tunarr/types';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import ChannelProgrammingList from '../channel_config/ChannelProgrammingList';
 import { CustomShowSortToolsMenu } from './CustomShowSortToolsMenu.tsx';
@@ -95,10 +95,6 @@ export function EditCustomShowsForm({
     },
   });
 
-  const onCancel = useCallback(() => {
-    navigate({ to: '/library/custom-shows' }).catch(console.warn);
-  }, [navigate]);
-
   const saveCustomShow: SubmitHandler<CustomShowForm> = (
     data: CustomShowForm,
   ) => {
@@ -157,6 +153,19 @@ export function EditCustomShowsForm({
                   Add Media
                 </Button>
               </Tooltip>
+              <Button
+                disabled={
+                  saveShowMutation.isPending ||
+                  !isValid ||
+                  (!isDirty && !customShowProgrammingChanged) ||
+                  customShowPrograms.length === 0
+                }
+                variant="contained"
+                type="submit"
+                startIcon={<Save />}
+              >
+                Save
+              </Button>
             </Stack>
           </Box>
           <Paper>
@@ -173,7 +182,7 @@ export function EditCustomShowsForm({
             />
           </Paper>
         </Box>
-        <Stack
+        {/* <Stack
           spacing={2}
           direction="row"
           justifyContent="right"
@@ -192,7 +201,7 @@ export function EditCustomShowsForm({
           >
             Save
           </Button>
-        </Stack>
+        </Stack> */}
       </Stack>
     </Box>
   );

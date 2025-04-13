@@ -46,7 +46,6 @@ export default function FillerListsPage() {
     mutationFn: ({ id }: DeleteFillerListRequest) =>
       apiClient.deleteFillerList(undefined, { params: { id } }),
     onSuccess: () => {
-      setDeleteConfirmationId(undefined);
       return queryClient.invalidateQueries({
         queryKey: ['fillers'],
       });
@@ -63,6 +62,9 @@ export default function FillerListsPage() {
         variant: 'error',
       });
       console.error(e);
+    },
+    onSettled: () => {
+      setDeleteConfirmationId(undefined);
     },
   });
 
