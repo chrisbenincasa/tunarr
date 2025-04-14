@@ -47,7 +47,6 @@ Tunarr has the following goals:
 
 ## Limitations
 
-- If you want to play the TV channels in Plex using the spoofed HDHR, Plex Pass is required.
 - Like dizqueTV, Tunarr does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case. **NOTE** This feature is actively under development! (https://github.com/chrisbenincasa/tunarr/issues/15)
 
 ## Releases
