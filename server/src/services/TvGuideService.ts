@@ -1035,7 +1035,6 @@ export class TVGuideService {
     );
 
     return map(lineups, ({ channel, programs }) => {
-      console.log('programs', programs);
       return {
         icon: channel.icon,
         name: channel.name,
