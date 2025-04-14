@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.18.18](https://github.com/chrisbenincasa/tunarr/compare/v0.18.17...v0.18.18) (2025-04-14)
+
+
+### Bug Fixes
+
+* fix updating plex play status during stream ([f90f271](https://github.com/chrisbenincasa/tunarr/commit/f90f271c91783780e53b0c3c07140c6a54a5813d))
+* improve error logging and handling when HLS playlists are not found ([a3e806c](https://github.com/chrisbenincasa/tunarr/commit/a3e806ca7f68c220d1d0ad308dd3b24d2a7dd49b))
+* properly detect when running in a Podman container ([d53ec45](https://github.com/chrisbenincasa/tunarr/commit/d53ec450fe2d32a9340f0bae2a8d14f76c0e5aa9)), closes [#1147](https://github.com/chrisbenincasa/tunarr/issues/1147)
+* redact errors to /Users call in JellyfinApiClient ([5296259](https://github.com/chrisbenincasa/tunarr/commit/529625954000ff042c0cc0352a550f03bd7870b5)), closes [#1136](https://github.com/chrisbenincasa/tunarr/issues/1136)
+* show delete confirmation before deleting a custom show ([3dc56d6](https://github.com/chrisbenincasa/tunarr/commit/3dc56d6d5fc8d49578e7c1ba635477003016fb48))
+
+
+### UI Changes
+
+* calendar style tweaks ([9917af9](https://github.com/chrisbenincasa/tunarr/commit/9917af97ca59c85d6ae390b851d713647e99198d))
+
 ## [0.18.17](https://github.com/chrisbenincasa/tunarr/compare/v0.18.16...v0.18.17) (2025-04-10)
 
 
