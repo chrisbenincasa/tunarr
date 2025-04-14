@@ -32,7 +32,11 @@ import { SystemDevicesService } from '../services/SystemDevicesService.ts';
 import { Result } from '../types/result.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
-import { isDocker } from '../util/isDocker.ts';
+import {
+  isDocker,
+  isPodman,
+  isRunningInContainer,
+} from '../util/containerUtil.ts';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -80,6 +84,8 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
         response: {
           200: z.object({
             isDocker: z.boolean(),
+            isPodman: z.boolean(),
+            isInContainer: z.boolean(),
           }),
         },
       },
@@ -87,6 +93,8 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     async (_, res) => {
       return res.send({
         isDocker: isDocker(),
+        isPodman: isPodman(),
+        isInContainer: isRunningInContainer(),
       });
     },
   );

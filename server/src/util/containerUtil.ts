@@ -39,3 +39,11 @@ export function isDocker() {
   }
   return isDockerCached;
 }
+
+export function isPodman() {
+  return process.env['CONTAINER'] === 'podman';
+}
+
+export function isRunningInContainer() {
+  return isDocker() || isPodman();
+}

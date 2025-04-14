@@ -175,6 +175,7 @@ const systemState = makeEndpoint({
   alias: 'getSystemState',
   response: z.object({
     isDocker: z.boolean(),
+    isInContainer: z.boolean(),
   }),
 });
 

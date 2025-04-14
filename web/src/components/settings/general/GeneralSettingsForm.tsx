@@ -313,7 +313,7 @@ export function GeneralSettingsForm({
         <Typography variant="h5" sx={{ mb: 1 }}>
           Server Settings
         </Typography>
-        {!systemState.data.isDocker && (
+        {!systemState.data.isInContainer && (
           <NumericFormControllerText
             control={control}
             name="server.port"

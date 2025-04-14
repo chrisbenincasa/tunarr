@@ -1,8 +1,8 @@
 import type { SettingsDB } from '@/db/SettingsDB.js';
 import { asyncPool } from '@/util/asyncPool.js';
+import { isRunningInContainer } from '@/util/containerUtil.js';
 import { getDatabasePath } from '@/util/databaseDirectoryUtil.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { isDocker } from '@/util/isDocker.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { FileBackupOutput } from '@tunarr/types/schemas';
 import archiver from 'archiver';
@@ -29,7 +29,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   constructor(settings: SettingsDB, config: FileBackupOutput) {
     super(settings);
     this.#config = config;
-    if (isEmpty(config.outputPath) && isDocker()) {
+    if (isEmpty(config.outputPath) && isRunningInContainer()) {
       this.#normalizedOutputPath = '/config/tunarr/backups';
     } else {
       this.#normalizedOutputPath = path.resolve(

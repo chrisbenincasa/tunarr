@@ -3,9 +3,9 @@ import constants from '@tunarr/shared/constants';
 import { isNull, isUndefined } from 'lodash-es';
 import path from 'node:path';
 import { globalOptions } from '../globals.ts';
+import { isRunningInContainer } from './containerUtil.ts';
 import { DATABASE_LOCATION_ENV_VAR, SERVER_PORT_ENV_VAR } from './env.ts';
 import { isNonEmptyString, isProduction } from './index.js';
-import { isDocker } from './isDocker.js';
 import type { LogLevels } from './logging/LoggerFactory.ts';
 import {
   LogConfigEnvVars,
@@ -14,7 +14,7 @@ import {
 
 function getRuntimeSpecificPrefix() {
   let prefix: Nullable<string> = null;
-  if (isDocker()) {
+  if (isRunningInContainer()) {
     // Making a lot of assumptions here...
     prefix = '/config';
   } else if (process.env.APPDATA) {
