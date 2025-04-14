@@ -30,7 +30,7 @@ export abstract class Result<T, E extends Error = Error> {
     return new Success(d);
   }
 
-  abstract isSuccess(): this is Success<T>;
+  abstract isSuccess(): this is Success<T, E>;
 
   isFailure(): this is Failure<T, E> {
     return !this.isSuccess();
@@ -97,7 +97,7 @@ export class Success<T, E extends Error = Error> extends Result<T, E> {
     return this._data!;
   }
 
-  isSuccess(): this is Success<T> {
+  isSuccess(): this is Success<T, E> {
     return true;
   }
 }
@@ -113,7 +113,7 @@ export class Failure<T, E extends Error = Error> extends Result<T, E> {
     throw this._error;
   }
 
-  isSuccess(): this is Success<T> {
+  isSuccess(): this is Success<T, E> {
     return false;
   }
 

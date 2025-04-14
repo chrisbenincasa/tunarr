@@ -166,6 +166,10 @@ export abstract class BaseHlsSession<
       );
     }
   }
+
+  get m3uPlaylistPath() {
+    return this._m3u8PlaylistPath;
+  }
 }
 
 export type BaseHlsSessionOptions = SessionOptions & {

@@ -16,6 +16,7 @@ import { isNil, isNumber, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
+import { format } from 'node:util';
 import { v4 } from 'uuid';
 import z from 'zod';
 
@@ -322,13 +323,27 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
                   dayjs().subtract(30, 'seconds'),
                 );
 
-                if (playlistResult) {
-                  return res
-                    .type('application/vnd.apple.mpegurl')
-                    .send(playlistResult.playlist);
-                } else {
-                  throw new Error('Error trimming HLS playlist for playback');
+                if (playlistResult.isFailure()) {
+                  logger.error(playlistResult.error);
+                  throw new Error(
+                    'Error retrieving HLS playlist for playback',
+                    { cause: playlistResult.error },
+                  );
                 }
+
+                const playlist = playlistResult.get();
+
+                if (!playlist) {
+                  const fmtError = format(
+                    'No playlist found for channel %s at path %s. This could mean the stream is not ready.',
+                    channelId,
+                    session.m3uPlaylistPath,
+                  );
+                  logger.error(fmtError);
+                  throw new Error(fmtError);
+                }
+
+                return res.type('application/vnd.apple.mpegurl').send(playlist);
               }),
             );
 

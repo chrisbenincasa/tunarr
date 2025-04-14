@@ -61,7 +61,7 @@ export class HlsSession extends BaseHlsSession {
   }
 
   async trimPlaylist(filterBefore: Dayjs) {
-    try {
+    return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
         const playlistLines = await this.readPlaylist();
         if (playlistLines) {
@@ -70,21 +70,30 @@ export class HlsSession extends BaseHlsSession {
             filterBefore,
             playlistLines,
           );
-          if (dayjs().isAfter(this.#lastDelete.add(30, 'seconds'))) {
+          const now = dayjs();
+          if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
             this.logger.debug('Deleting old segments from stream');
             this.deleteOldSegments(trimResult.sequence).catch((e) =>
               this.logger.error(e),
             );
-            this.#lastDelete = dayjs();
+            this.#lastDelete = now;
+          } else {
+            this.logger.debug(
+              'Has only been %d seconds since last playlist trim, skipping',
+              dayjs.duration(now.diff(this.#lastDelete)).asSeconds(),
+            );
           }
+
           return trimResult;
         }
+
+        this.logger.debug(
+          'No playlist for HLS sessions at %s',
+          this._m3u8PlaylistPath,
+        );
         return;
       });
-    } catch (e) {
-      this.logger.error(e);
-      return;
-    }
+    });
   }
 
   protected async startInternal() {
@@ -353,13 +362,14 @@ export class HlsSession extends BaseHlsSession {
   }
 
   private async readPlaylist() {
-    if (await fileExists(this._m3u8PlaylistPath)) {
-      const playlistContents = await fs.readFile(this._m3u8PlaylistPath, {
-        encoding: 'utf-8',
-      });
-      return playlistContents.toString().split('\n');
+    if (!(await fileExists(this._m3u8PlaylistPath))) {
+      return;
     }
-    return;
+
+    const playlistContents = await fs.readFile(this._m3u8PlaylistPath, {
+      encoding: 'utf-8',
+    });
+    return playlistContents.toString().split('\n');
   }
 
   private async deleteOldSegments(sequenceNum: number) {
