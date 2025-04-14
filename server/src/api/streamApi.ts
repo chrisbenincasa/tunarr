@@ -343,7 +343,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
                   throw new Error(fmtError);
                 }
 
-                return res.type('application/vnd.apple.mpegurl').send(playlist);
+                return res
+                  .type('application/vnd.apple.mpegurl')
+                  .send(playlist.playlist);
               }),
             );
 
