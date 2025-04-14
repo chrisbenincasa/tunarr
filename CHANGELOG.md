@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.19](https://github.com/chrisbenincasa/tunarr/compare/v0.18.18...v0.18.19) (2025-04-14)
+
+
+### Bug Fixes
+
+* properly write m3u8 playlist string in response ([83269d1](https://github.com/chrisbenincasa/tunarr/commit/83269d13b678196a5a93bb9d1ae158620fe4adba))
+
 ## [0.18.18](https://github.com/chrisbenincasa/tunarr/compare/v0.18.17...v0.18.18) (2025-04-14)
 
 
