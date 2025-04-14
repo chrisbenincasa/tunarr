@@ -1,11 +1,11 @@
 export { mod as dayjsMod } from './dayjsExtensions.js';
 export * from './plexSearchUtil.js';
 export * as seq from './seq.js';
-import { ChannelProgram } from '@tunarr/types';
-import { PlexMedia } from '@tunarr/types/plex';
+import type { ChannelProgram } from '@tunarr/types';
+import type { PlexMedia } from '@tunarr/types/plex';
 import { isNull } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
-import { MarkRequired } from 'ts-essentials';
+import type { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
 
 export function applyOrValueNoRest<Super, X extends Super, T>(
@@ -125,3 +125,36 @@ export const flushEventLoop = async () => {
     setTimeout(resolve, 0);
   });
 };
+
+const RomanNumeralMap = new Map([
+  ['i', 1],
+  ['v', 5],
+  ['x', 10],
+  ['l', 50],
+  ['c', 100],
+  ['d', 500],
+  ['m', 1000],
+]);
+const RomanNumerRegex = /([MDCLXVI]+)/i;
+export function isValidRomanNumeral(input: string) {
+  return RomanNumerRegex.test(input);
+}
+
+export function romanNumeralToNumber(input: string): number {
+  if (input.length === 0) {
+    return 0;
+  }
+
+  const lowercased = input.toLowerCase();
+  let total = 0;
+  let previousValue = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < lowercased.length; i++) {
+    const current = RomanNumeralMap.get(input[i]);
+    if (!current) {
+      continue;
+    }
+    total += current > previousValue ? -previousValue : previousValue;
+    previousValue = current;
+  }
+  return total + previousValue;
+}
