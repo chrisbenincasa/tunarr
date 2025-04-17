@@ -279,8 +279,6 @@ export const TimeSlotTable = () => {
     // TODO: Can enable this with custom options to filter by show name
     enableGlobalFilter: false,
     enableFullScreenToggle: false,
-    enableRowDragging: true,
-    enableRowOrdering: true,
     renderRowActions: renderActionCell,
     renderTopToolbarCustomActions() {
       return (
