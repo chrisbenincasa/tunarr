@@ -330,3 +330,22 @@ export const JellyfinGetLibraryItemsQuerySchema = z.object({
   nameStartsWith: z.string().min(1).optional(),
   nameLessThan: z.string().min(1).optional(),
 });
+
+export const MediaSourceHealthyStatusSchema = z.object({
+  healthy: z.literal(true),
+});
+
+export const MediaSourceUnhealthyStatusSchema = z.object({
+  healthy: z.literal(false),
+  status: z.enum(['unreachable', 'auth', 'timeout', 'bad_response', 'unknown']),
+});
+
+export type MediaSourceUnhealthyStatus = z.infer<
+  typeof MediaSourceUnhealthyStatusSchema
+>;
+
+export const MediaSourceStatusSchema = MediaSourceHealthyStatusSchema.or(
+  MediaSourceUnhealthyStatusSchema,
+);
+
+export type MediaSourceStatus = z.infer<typeof MediaSourceStatusSchema>;

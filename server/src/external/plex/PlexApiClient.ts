@@ -4,6 +4,7 @@ import { getChannelId } from '@/util/channels.js';
 import { isSuccess } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
+import type { MediaSourceStatus } from '@tunarr/types/api';
 import type {
   PlexDvr,
   PlexDvrsResponse,
@@ -13,6 +14,7 @@ import type {
 import {
   PlexGenericMediaContainerResponseSchema,
   PlexMediaContainerResponseSchema,
+  PlexUserSchema,
 } from '@tunarr/types/plex';
 import type { AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
 import { isAxiosError } from 'axios';
@@ -70,7 +72,7 @@ export class PlexApiClient extends BaseApiClient {
   }
 
   get serverId() {
-    return this.opts.uuid;
+    return this.opts.mediaSourceUuid;
   }
 
   getFullUrl(path: string): string {
@@ -160,23 +162,38 @@ export class PlexApiClient extends BaseApiClient {
     return parsedResponse;
   }
 
-  async checkServerStatus() {
+  async checkServerStatus(): Promise<MediaSourceStatus> {
     try {
       const result = await this.doTypeCheckedGet(
         '/',
         PlexGenericMediaContainerResponseSchema,
       );
+
       if (isQueryError(result)) {
         throw new Error(result.message);
       } else if (isUndefined(result)) {
         // Parse error - indicates that the URL is probably not a Plex server
-        return false;
+        return {
+          healthy: false,
+          status: 'bad_response',
+        };
       }
-      return true;
+
+      return {
+        healthy: true,
+      };
     } catch (err) {
-      this.logger.error(err, 'Error getting Plex server status');
-      return false;
+      return {
+        healthy: false,
+        status: this.getHealthStatus(err),
+      } satisfies MediaSourceStatus;
     }
+  }
+
+  async getUser() {
+    return this.doTypeCheckedGet('/api/v2/user', PlexUserSchema, {
+      baseURL: 'https://clients.plex.tv',
+    });
   }
 
   async getDvrs() {
@@ -265,7 +282,7 @@ export class PlexApiClient extends BaseApiClient {
     upscale?: string;
   }) {
     return PlexApiClient.getThumbUrl({
-      uri: this.opts.uri,
+      uri: this.opts.url,
       accessToken: this.opts.accessToken,
       itemKey: opts.itemKey,
       width: opts.width,

@@ -91,7 +91,9 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
 
     await mapAsyncSeq(allMediaSources, async (plexServer) => {
       const plex =
-        await this.mediaSourceApiFactory.getPlexApiClient(plexServer);
+        await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+          plexServer,
+        );
       let dvrs: PlexDvr[] = [];
 
       if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {

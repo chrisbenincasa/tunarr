@@ -117,9 +117,10 @@ class UpdateJellyfinPlayStatusTask extends Task {
   }
 
   protected async runInternal(): Promise<boolean> {
-    const jellyfin = await this.mediaSourceApiFactory.getJellyfinApiClient(
-      this.jellyfinServer,
-    );
+    const jellyfin =
+      await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+        this.jellyfinServer,
+      );
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     try {

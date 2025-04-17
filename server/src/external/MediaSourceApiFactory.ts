@@ -2,8 +2,7 @@ import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { Maybe } from '@/types/util.js';
-import { isDefined } from '@/util/index.js';
-import { type Logger } from '@/util/logging/LoggerFactory.js';
+import { isDefined, isNonEmptyString } from '@/util/index.js';
 import type { FindChild } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
@@ -11,10 +10,15 @@ import { forEach, isBoolean, isEmpty, isNil } from 'lodash-es';
 import NodeCache from 'node-cache';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../types/inject.ts';
+import { Result } from '../types/result.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
-import type { ApiClientOptions, BaseApiClient } from './BaseApiClient.js';
-import { EmbyApiClient, EmbyApiClientOptions } from './emby/EmbyApiClient.ts';
-import type { JellyfinApiClientOptions } from './jellyfin/JellyfinApiClient.js';
+import { Logger } from '../util/logging/LoggerFactory.ts';
+import {
+  isQueryError,
+  type ApiClientOptions,
+  type BaseApiClient,
+} from './BaseApiClient.js';
+import { EmbyApiClient } from './emby/EmbyApiClient.ts';
 import { JellyfinApiClient } from './jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from './plex/PlexApiClient.js';
 
@@ -55,47 +59,103 @@ export class MediaSourceApiFactory {
     });
   }
 
-  getJellyfinApiClient(opts: JellyfinApiClientOptions) {
+  getJellyfinApiClientForMediaSource(mediaSource: MediaSource) {
+    return this.getJellyfinApiClient(mediaSourceToApiOptions(mediaSource));
+  }
+
+  getJellyfinApiClient(opts: ApiClientOptions) {
     return this.getTyped(MediaSourceType.Jellyfin, opts, async (opts) => {
+      let userId = opts.userId;
       if (isEmpty(opts.userId)) {
-        // We might have an admin token, so attempt to exchange it.
-        try {
-          const adminUser = await JellyfinApiClient.findAdminUser(
-            opts,
-            opts.accessToken,
+        const usersMeResult = await Result.attemptAsync(() =>
+          JellyfinApiClient.findUserId(opts, opts.accessToken, true),
+        ).then((_) => _.map((res) => res?.Id).filter(isNonEmptyString));
+
+        if (usersMeResult.isSuccess()) {
+          userId = usersMeResult.get();
+        } else {
+          const adminResult = await Result.attemptAsync(() =>
+            JellyfinApiClient.findAdminUser(opts, opts.accessToken),
           );
-          return new JellyfinApiClient({ ...opts, userId: adminUser?.Id });
-        } catch (e) {
-          this.logger.warn(
-            e,
-            'Could not retrieve admin user for Jellyfin server',
-          );
+
+          adminResult
+            .map((res) => res?.Id)
+            .filter(isNonEmptyString)
+            .forEach((adminUserId) => {
+              userId = adminUserId;
+            });
         }
       }
-      return new JellyfinApiClient(opts);
+      return new JellyfinApiClient({ ...opts, userId });
     });
   }
 
-  getEmbyApiClient(opts: EmbyApiClientOptions) {
+  getEmbyApiClientForMediaSource(mediaSource: MediaSource) {
+    return this.getEmbyApiClient(mediaSourceToApiOptions(mediaSource));
+  }
+
+  getEmbyApiClient(opts: ApiClientOptions) {
     return this.getTyped(MediaSourceType.Jellyfin, opts, async (opts) => {
-      if (isEmpty(opts.userId)) {
-        // We might have an admin token, so attempt to exchange it.
-        try {
-          const adminUser = await EmbyApiClient.findAdminUser(
-            opts,
-            opts.accessToken,
-          );
-          return new EmbyApiClient({ ...opts, userId: adminUser?.Id });
-        } catch (e) {
-          this.logger.warn(e, 'Could not retrieve admin user for Emby server');
+      let userId = opts.userId;
+      let username: Maybe<string>;
+      if (isEmpty(userId)) {
+        if (isEmpty(opts.userId)) {
+          const usersMeResult = await Result.attemptAsync(() =>
+            EmbyApiClient.findUserId(opts, opts.accessToken, true),
+          ).then((_) => _.filter((res) => isNonEmptyString(res?.Id)));
+
+          if (usersMeResult.isSuccess()) {
+            const user = usersMeResult.get();
+            userId = user!.Id!;
+            username = user!.Name ?? undefined;
+          } else {
+            const adminResult = await Result.attemptAsync(() =>
+              EmbyApiClient.findAdminUser(opts, opts.accessToken),
+            );
+
+            adminResult
+              .filter((res) => isNonEmptyString(res?.Id))
+              .forEach((adminUser) => {
+                userId = adminUser!.Id!;
+                username = adminUser!.Name ?? undefined;
+              });
+          }
         }
       }
-      return new EmbyApiClient(opts);
+
+      if (
+        isNonEmptyString(opts.mediaSourceUuid) &&
+        (isEmpty(opts.userId) ||
+          opts.userId !== userId ||
+          isEmpty(opts.username) ||
+          opts.username != username)
+      ) {
+        this.mediaSourceDB
+          .setMediaSourceUserInfo(opts.mediaSourceUuid, {
+            userId: userId ?? undefined,
+            username,
+          })
+          .catch((e) => {
+            this.logger.error(
+              e,
+              'Error updating Jellyfin media source user info',
+            );
+          });
+      }
+
+      return new EmbyApiClient({ ...opts, userId });
     });
+  }
+
+  getPlexApiClientForMediaSource(
+    mediaSource: MediaSource,
+  ): Promise<PlexApiClient> {
+    const opts = mediaSourceToApiOptions(mediaSource);
+    return this.getPlexApiClient(opts);
   }
 
   getPlexApiClient(opts: ApiClientOptions): Promise<PlexApiClient> {
-    const key = `${opts.uri}|${opts.accessToken}`;
+    const key = `${opts.url}|${opts.accessToken}`;
     return cacheGetOrSet(MediaSourceApiFactory.cache, key, () => {
       return Promise.resolve(
         new PlexApiClient({
@@ -108,10 +168,18 @@ export class MediaSourceApiFactory {
 
   async getPlexApiClientByName(name: string) {
     return this.getTypedByName(MediaSourceType.Plex, name, (mediaSource) => {
-      return new PlexApiClient({
+      const client = new PlexApiClient({
         ...mediaSource,
+        url: mediaSource.uri,
         enableRequestCache: this.requestCacheEnabledForServer(mediaSource.name),
       });
+
+      if (isEmpty(mediaSource.userId) || isEmpty(mediaSource.username)) {
+        // Swallow error, it's logged below.
+        this.backfillPlexUserId(mediaSource.uuid, client).catch(() => {});
+      }
+
+      return client;
     });
   }
 
@@ -119,7 +187,12 @@ export class MediaSourceApiFactory {
     return this.getTypedByName(
       MediaSourceType.Jellyfin,
       name,
-      (opts) => new JellyfinApiClient({ ...opts, userId }),
+      (opts) =>
+        new JellyfinApiClient({
+          ...opts,
+          url: opts.uri,
+          userId: opts.userId ?? userId ?? null,
+        }),
     );
   }
 
@@ -144,7 +217,7 @@ export class MediaSourceApiFactory {
   ): Promise<ApiClient> {
     return await cacheGetOrSet<ApiClient>(
       MediaSourceApiFactory.cache,
-      this.getCacheKey(typ, opts.uri, opts.accessToken),
+      this.getCacheKey(typ, opts.url, opts.accessToken),
       () => factory(opts),
     );
   }
@@ -188,4 +261,37 @@ export class MediaSourceApiFactory {
       mediaSource.accessToken,
     );
   }
+
+  private async backfillPlexUserId(
+    mediaSourceId: string,
+    client: PlexApiClient,
+  ) {
+    this.logger.debug('Attempting to backfill Plex user');
+    const result = await Result.attemptAsync(async () => {
+      const user = await client.getUser();
+      if (isQueryError(user)) {
+        throw new Error(user.message);
+      }
+
+      await this.mediaSourceDB.setMediaSourceUserInfo(mediaSourceId, {
+        userId: user.data.id?.toString(),
+        username: user.data.username,
+      });
+    });
+    if (result.isFailure()) {
+      this.logger.error(
+        result.error,
+        'Error while attempting to backfill Plex user information',
+      );
+    }
+  }
+}
+
+export function mediaSourceToApiOptions(
+  mediaSource: MediaSource,
+): ApiClientOptions {
+  return {
+    ...mediaSource,
+    url: mediaSource.uri,
+  };
 }

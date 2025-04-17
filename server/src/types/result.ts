@@ -84,6 +84,36 @@ export abstract class Result<T, E extends Error = Error> {
   either<U>(onSuccess: (data: T) => U, onError: (err: E) => U): U {
     return this.isSuccess() ? onSuccess(this._data!) : onError(this._error!);
   }
+
+  or(f: () => Result<T, E>): Result<T, E> {
+    if (this.isFailure()) {
+      return f();
+    }
+    return this;
+  }
+
+  filter<U extends T>(f: (t: T) => t is U): Result<U, Error>;
+  filter(f: (t: T) => boolean): Result<T, Error>;
+  filter<U extends T = T>(
+    f: (t: T) => boolean | ((t: T) => t is U),
+  ): Result<U, Error> {
+    if (this.isFailure()) {
+      return this as unknown as Result<U, Error>;
+    }
+
+    if (!f(this._data!)) {
+      return Result.failure(new Error('Filter was not a match'));
+    }
+
+    return this as unknown as Result<U, Error>;
+  }
+
+  orAsync(f: () => Promise<Result<T, E>>): Promise<Result<T, E>> {
+    if (this.isFailure()) {
+      return f();
+    }
+    return Promise.resolve(this);
+  }
 }
 
 export class Success<T, E extends Error = Error> extends Result<T, E> {

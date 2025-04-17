@@ -15,6 +15,13 @@
       "when": 1739896270684,
       "tag": "0001_orange_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1744916940644,
+      "tag": "0002_violet_sheva_callister",
+      "breakpoints": true
     }
   ]
 }

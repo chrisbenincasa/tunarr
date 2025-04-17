@@ -1,9 +1,16 @@
 import z from 'zod';
-import { FindChild } from '../util.js';
-
+import type { FindChild } from '../util.js';
 export * from './dvr.js';
 
 type Alias<t> = t & { _?: never };
+
+// https://clients.plex.tv/api/v2/user with a token
+// Only has the fields we really care about here.
+export const PlexUserSchema = z.object({
+  id: z.number(),
+  uuid: z.string(),
+  username: z.string(),
+});
 
 // Marker field used to allow directories and non-directories both have
 // this field. This is never defined for non-directories, but can be

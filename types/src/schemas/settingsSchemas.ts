@@ -161,6 +161,8 @@ const BaseMediaSourceSettingsSchema = z.object({
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),
+  userId: z.string().nullable(),
+  username: z.string().nullable(),
 });
 
 export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({

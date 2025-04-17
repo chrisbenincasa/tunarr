@@ -1,9 +1,9 @@
-import { plexLoginFlow, checkNewPlexServers } from '@/helpers/plexLogin.ts';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { InsertMediaSourceRequest } from '@tunarr/types/api';
+import { checkNewPlexServers, plexLoginFlow } from '@/helpers/plexLogin.ts';
+import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { InsertMediaSourceRequest } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCallback } from 'react';
 
 export const usePlexLogin = () => {
@@ -45,6 +45,9 @@ export const usePlexLogin = () => {
             uri: connection.uri,
             accessToken: server.accessToken,
             clientIdentifier: server.clientIdentifier,
+            // These will be backfilled later, they require use of a different API
+            userId: null,
+            username: null,
             type: 'plex',
           }),
         );

@@ -276,7 +276,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const plex =
-        await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server);
+        await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+          server,
+        );
       return res.send(await plex.doGetPath(req.query.path));
     },
   );

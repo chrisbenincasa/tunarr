@@ -15,6 +15,7 @@ import {
   type EmbyItemSortBy,
 } from '@tunarr/types/emby';
 
+import type { MediaSourceStatus } from '@tunarr/types/api';
 import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import {
@@ -69,10 +70,6 @@ function getEmbyAuthorization(apiKey: Maybe<string>, clientId: Maybe<string>) {
   return `Emby ${parts.join(', ')}`;
 }
 
-export type EmbyApiClientOptions = Omit<ApiClientOptions, 'type'> & {
-  userId?: string;
-};
-
 export type EmbyGetItemsQuery = {
   recursive?: boolean;
   searchTerm?: string;
@@ -87,12 +84,12 @@ export type EmbyGetItemsQuery = {
   artistType?: ('Artist' | 'AlbumArtist')[];
 };
 
-export class EmbyApiClient extends BaseApiClient<EmbyApiClientOptions> {
+export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
   protected redacter = new EmbyRequestRedacter();
 
-  constructor(options: EmbyApiClientOptions) {
-    if (!options.uri.endsWith('/emby')) {
-      options.uri += '/emby';
+  constructor(options: ApiClientOptions) {
+    if (!options.url.endsWith('/emby')) {
+      options.url += '/emby';
     }
 
     super({
@@ -106,12 +103,41 @@ export class EmbyApiClient extends BaseApiClient<EmbyApiClientOptions> {
     });
   }
 
+  static async findUserId(
+    server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
+    apiKey: string,
+    errorExpected: boolean = false,
+  ) {
+    try {
+      const response = await axios.get(`${server.url}/Users/Me`, {
+        headers: {
+          Authorization: getEmbyAuthorization(apiKey, undefined),
+        },
+      });
+
+      return EmbyUserSchema.parseAsync(response.data);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.config) {
+          new EmbyRequestRedacter().redact(error.config);
+        }
+      }
+
+      if (!errorExpected) {
+        LoggerFactory.root.error(error, 'Error retrieving Emby self user', {
+          className: EmbyApiClient.name,
+        });
+      }
+      return;
+    }
+  }
+
   static async findAdminUser(
     server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
     apiKey: string,
   ) {
     try {
-      const response = await axios.get(`${server.uri}/Users`, {
+      const response = await axios.get(`${server.url}/Users`, {
         headers: {
           Authorization: getEmbyAuthorization(apiKey, undefined),
         },
@@ -168,15 +194,41 @@ export class EmbyApiClient extends BaseApiClient<EmbyApiClientOptions> {
     }
   }
 
-  async ping() {
+  async ping(): Promise<MediaSourceStatus> {
     try {
       await this.doGet({
         url: '/System/Ping',
       });
-      return true;
+
+      // One of these should succeed. In the username/pw case
+      // we should be able to at least retrieve our own user.
+      // Access token based auth will not have a "me" but should be able
+      // to at least list all users.
+      const [meResult, allUsersResult] = await Promise.allSettled([
+        this.doGet({
+          url: '/Users/Me',
+        }),
+        this.doGet({
+          url: '/Users',
+        }),
+      ]);
+
+      if (
+        meResult.status === 'fulfilled' ||
+        allUsersResult.status === 'fulfilled'
+      ) {
+        return { healthy: true };
+      } else {
+        return {
+          healthy: false,
+          status: 'auth',
+        };
+      }
     } catch (e) {
-      this.logger.error(e);
-      return false;
+      return {
+        healthy: false,
+        status: this.getHealthStatus(e),
+      };
     }
   }
 
@@ -193,7 +245,7 @@ export class EmbyApiClient extends BaseApiClient<EmbyApiClientOptions> {
   }
 
   async getUserViews(userId?: string) {
-    userId ??= this.options.userId;
+    userId ??= this.options.userId ?? undefined;
     return this.doTypeCheckedGet(
       `/Users/${userId}/Views`,
       EmbyLibraryItemsResponse,
@@ -279,7 +331,7 @@ export class EmbyApiClient extends BaseApiClient<EmbyApiClientOptions> {
 
   getThumbUrl(id: string) {
     // Naive impl for now...
-    return `${this.options.uri}/Items/${id}/Images/Primary`;
+    return `${this.options.url}/Items/${id}/Images/Primary`;
   }
 
   async recordPlaybackStart(itemId: string, deviceId: string) {

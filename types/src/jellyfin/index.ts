@@ -957,28 +957,22 @@ const JellyfinUserPolicy = z.object({
   // SyncPlayAccess: SyncPlayUserAccessType.optional(),
 });
 
-export const JellyfinUser = z
-  .object({
-    Name: z.string().nullable().optional(),
-    ServerId: z.string().nullable().optional(),
-    ServerName: z.string().nullable().optional(),
-    Id: z.string(),
-    PrimaryImageTag: z.string().nullable().optional(),
-    HasPassword: z.boolean(),
-    HasConfiguredPassword: z.boolean(),
-    HasConfiguredEasyPassword: z.boolean(),
-    EnableAutoLogin: z.boolean().nullable().optional(),
-    LastLoginDate: z.string().datetime({ offset: true }).nullable().optional(),
-    LastActivityDate: z
-      .string()
-      .datetime({ offset: true })
-      .nullable()
-      .optional(),
-    Configuration: JellyfinUserConfiguration.nullable().optional(),
-    Policy: JellyfinUserPolicy.nullable().optional(),
-    PrimaryImageAspectRatio: z.number().nullable().optional(),
-  })
-  .partial();
+export const JellyfinUser = z.object({
+  Name: z.string().nullish(),
+  ServerId: z.string().nullish(),
+  ServerName: z.string().nullish(),
+  Id: z.string(),
+  PrimaryImageTag: z.string().nullish(),
+  HasPassword: z.boolean().nullish(),
+  HasConfiguredPassword: z.boolean().nullish(),
+  HasConfiguredEasyPassword: z.boolean().nullish(),
+  EnableAutoLogin: z.boolean().nullish().nullish(),
+  LastLoginDate: z.string().datetime({ offset: true }).nullish(),
+  LastActivityDate: z.string().datetime({ offset: true }).nullish(),
+  Configuration: JellyfinUserConfiguration.nullish(),
+  Policy: JellyfinUserPolicy.nullish(),
+  PrimaryImageAspectRatio: z.number().nullish(),
+});
 
 export const JellyfinAuthenticationResult = z
   .object({

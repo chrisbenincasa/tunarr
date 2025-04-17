@@ -258,9 +258,10 @@ export class LegacyDbMigrator {
           for (const entity of entities) {
             const plexApi = await this.mediaSourceApiFactory.getPlexApiClient({
               accessToken: entity.accessToken,
-              clientIdentifier: entity.clientIdentifier ?? null,
               name: entity.name,
-              uri: entity.uri,
+              url: entity.uri,
+              userId: null,
+              username: null,
             });
             const healthy = await plexApi.checkServerStatus();
             if (healthy) {

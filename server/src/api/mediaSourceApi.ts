@@ -8,10 +8,15 @@ import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { tag } from '@tunarr/types';
+import type {
+  MediaSourceStatus,
+  MediaSourceUnhealthyStatus,
+} from '@tunarr/types/api';
 import {
   BaseErrorSchema,
   BasicIdParamSchema,
   InsertMediaSourceRequestSchema,
+  MediaSourceStatusSchema,
   UpdateMediaSourceRequestSchema,
 } from '@tunarr/types/api';
 import {
@@ -59,6 +64,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               clientIdentifier: nullToUndefined(source.clientIdentifier),
               sendChannelUpdates: numberToBoolean(source.sendChannelUpdates),
               sendGuideUpdates: numberToBoolean(source.sendGuideUpdates),
+              userId: source.userId,
+              username: source.username,
             }))
             .otherwise(() => null);
         });
@@ -97,41 +104,37 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         const healthyPromise = match(server)
           .with({ type: 'plex' }, async (server) => {
             return (
-              await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server)
+              await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+                server,
+              )
             ).checkServerStatus();
           })
           .with({ type: 'jellyfin' }, async (server) => {
             return (
-              await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
+              await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
                 server,
               )
-            )
-              .getSystemInfo()
-              .then(() => true)
-              .catch(() => false);
+            ).ping();
           })
           .with({ type: 'emby' }, async (server) => {
             return (
-              await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient(server)
-            )
-              .getSystemInfo()
-              .then(() => true)
-              .catch(() => false);
+              await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
+                server,
+              )
+            ).ping();
           })
           .exhaustive();
 
         const status = await Promise.race([
           healthyPromise,
-          new Promise<false>((resolve) => {
+          new Promise<MediaSourceUnhealthyStatus>((resolve) => {
             setTimeout(() => {
-              resolve(false);
+              resolve({ healthy: false, status: 'timeout' });
             }, 60000);
           }),
         ]);
 
-        return res.send({
-          healthy: status,
-        });
+        return res.send(status);
       } catch (err) {
         logger.error(err);
         return res.status(500).send();
@@ -152,23 +155,23 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           username: z.string().optional(),
         }),
         response: {
-          200: z.object({
-            healthy: z.boolean(),
-          }),
+          200: MediaSourceStatusSchema,
           404: z.void(),
           500: z.void(),
         },
       },
     },
     async (req, res) => {
-      let healthyPromise: Promise<boolean>;
+      let healthyPromise: Promise<MediaSourceStatus>;
       switch (req.body.type) {
         case 'plex': {
           const plex =
             await req.serverCtx.mediaSourceApiFactory.getPlexApiClient({
               ...req.body,
+              url: req.body.uri,
+              userId: null,
+              username: null,
               name: req.body.name ?? 'unknown',
-              clientIdentifier: null,
             });
 
           healthyPromise = plex.checkServerStatus();
@@ -178,8 +181,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           const jellyfin =
             await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient({
               ...req.body,
+              url: req.body.uri,
+              userId: null,
+              username: null,
               name: req.body.name ?? 'unknown',
-              clientIdentifier: null,
             });
 
           healthyPromise = jellyfin.ping();
@@ -189,8 +194,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           const emby =
             await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient({
               ...req.body,
+              url: req.body.uri,
+              userId: null,
+              username: null,
               name: req.body.name ?? 'unknown',
-              clientIdentifier: null,
             });
 
           healthyPromise = emby.ping();
@@ -198,18 +205,17 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         }
       }
 
-      const healthy = await Promise.race([
+      const status = await Promise.race([
         healthyPromise,
-        new Promise<false>((resolve) => {
+        new Promise<MediaSourceUnhealthyStatus>((resolve) => {
           setTimeout(() => {
-            resolve(false);
+            resolve({ healthy: false, status: 'timeout' });
           }, 60000);
         }),
       ]);
+      console.log(status);
 
-      return res.send({
-        healthy,
-      });
+      return res.send(status);
     },
   );
 
@@ -385,9 +391,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           serverName: z.string(),
         }),
         response: {
-          200: z.object({
-            healthy: z.boolean(),
-          }),
+          200: MediaSourceStatusSchema,
           404: BaseErrorSchema,
           500: BaseErrorSchema,
         },
@@ -405,16 +409,22 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         }
 
         const plex =
-          await req.serverCtx.mediaSourceApiFactory.getPlexApiClient(server);
+          await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+            server,
+          );
 
-        const s = await Promise.race([
+        const s: MediaSourceStatus = await Promise.race([
           plex.checkServerStatus(),
-          wait(15000).then(() => false),
+          wait(15000).then(
+            () =>
+              ({
+                healthy: false,
+                status: 'timeout',
+              }) satisfies MediaSourceUnhealthyStatus,
+          ),
         ]);
 
-        return res.send({
-          healthy: s,
-        });
+        return res.send(s);
       } catch (err) {
         return res.status(500).send({
           message: isError(err) ? err.message : 'Unknown error occurred',

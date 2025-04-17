@@ -47,7 +47,6 @@ export type JellyfinServerSettingsForm = MarkOptional<
   JellyfinServerSettings,
   'id'
 > & {
-  username?: string;
   password?: string;
 };
 
@@ -58,6 +57,7 @@ const emptyDefaults: JellyfinServerSettingsForm = {
   accessToken: '',
   username: '',
   password: '',
+  userId: '',
 };
 
 export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
@@ -139,7 +139,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
 
     if (isNonEmptyString(accessToken)) {
       void handleSubmit(
-        (data) => updateSourceMutation.mutate(data),
+        (data) =>
+          updateSourceMutation.mutate({
+            ...data,
+            userId: null,
+            username: null,
+          }),
         showErrorSnack,
       )(e);
     } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
@@ -150,16 +155,23 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
           uri,
         });
 
-        if (isNonEmptyString(result.accessToken)) {
+        if (
+          isNonEmptyString(result.accessToken) &&
+          isNonEmptyString(result.userId)
+        ) {
           void handleSubmit(
             (data) =>
               updateSourceMutation.mutate({
                 ...data,
                 accessToken: result.accessToken!,
+                userId: result.userId!,
               }),
             showErrorSnack,
           )(e);
         } else {
+          showErrorSnack(
+            'Did not receive an accessToken or userId from Jellyfin server.',
+          );
           // Pop snackbar
         }
       } catch (e) {
@@ -212,7 +224,6 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
           id: server?.id && !isDirty ? server.id : undefined,
           accessToken: value.accessToken ?? '',
           uri: value.uri ?? '',
-          // type: 'jellyfin' as const,
         });
       }
     });
