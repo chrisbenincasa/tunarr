@@ -41,6 +41,11 @@ type Report = {
   modifiedPrograms: number;
 };
 
+type MediaSourceUserInfo = {
+  userId?: string;
+  username?: string;
+};
+
 @injectable()
 export class MediaSourceDB {
   constructor(
@@ -174,6 +179,9 @@ export class MediaSourceDB {
         sendGuideUpdates: booleanToNumber(sendGuideUpdates),
         sendChannelUpdates: booleanToNumber(sendChannelUpdates),
         updatedAt: +dayjs(),
+        // This allows clearing the values
+        userId: server.userId,
+        username: server.username,
       })
       .where('uuid', '=', server.id)
       // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
@@ -189,6 +197,26 @@ export class MediaSourceDB {
     );
 
     return report;
+  }
+
+  async setMediaSourceUserInfo(
+    mediaSourceId: string,
+    info: MediaSourceUserInfo,
+  ) {
+    if (isNonEmptyString(info.userId) && isNonEmptyString(info.username)) {
+      return;
+    }
+
+    await this.db
+      .updateTable('mediaSource')
+      .$if(isNonEmptyString(info.userId), (eb) =>
+        eb.set('mediaSource.userId', info.userId),
+      )
+      .$if(isNonEmptyString(info.username), (eb) =>
+        eb.set('mediaSource.username', info.username),
+      )
+      .where('mediaSource.uuid', '=', mediaSourceId)
+      .executeTakeFirstOrThrow();
   }
 
   async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
@@ -217,6 +245,8 @@ export class MediaSourceDB {
         updatedAt: now,
         index,
         type: server.type,
+        userId: isNonEmptyString(server.userId) ? server.userId : null,
+        username: isNonEmptyString(server.username) ? server.username : null,
       })
       .returning('uuid')
       .executeTakeFirstOrThrow();

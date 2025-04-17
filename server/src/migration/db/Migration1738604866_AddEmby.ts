@@ -1,6 +1,5 @@
 import { CompiledQuery, sql, type Kysely } from 'kysely';
 import { copyTable, swapTables } from '../../db/migrationUtil.ts';
-import { MediaSourceFields } from '../../db/schema/MediaSource.ts';
 
 export default {
   fullCopy: true,
@@ -244,10 +243,23 @@ CREATE TABLE IF NOT EXISTS "program_grouping_tmp" (
       )
       .execute();
 
+    const columns = [
+      'uuid',
+      'created_at',
+      'updated_at',
+      'name',
+      'uri',
+      'access_token',
+      'send_guide_updates',
+      'send_channel_updates',
+      'index',
+      'client_identifier',
+      'type',
+    ];
     await db
       .insertInto('media_source_alter_temp')
-      .columns(MediaSourceFields)
-      .expression(db.selectFrom('media_source').select(MediaSourceFields))
+      .columns(columns)
+      .expression(db.selectFrom('media_source').select(columns))
       .execute();
 
     await db.schema

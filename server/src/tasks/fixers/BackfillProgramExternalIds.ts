@@ -118,7 +118,9 @@ export class BackfillProgramExternalIds extends Fixer {
 
       for (const server of serverSettings) {
         plexConnections[server.name] =
-          await this.mediaSourceApiFactory.getPlexApiClient(server);
+          await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+            server,
+          );
       }
 
       for await (const result of asyncPool(

@@ -66,7 +66,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         req.serverCtx.settings.clientId(),
       );
 
-      return res.send({ accessToken: nullToUndefined(response.AccessToken) });
+      return res.send({
+        accessToken: nullToUndefined(response.AccessToken),
+        userId: nullToUndefined(response.User?.Id),
+      });
     },
   );
 
@@ -80,7 +83,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
         const api =
-          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
+          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
             mediaSource,
           );
 
@@ -154,7 +157,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
         const api =
-          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClient(
+          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
             mediaSource,
           );
 

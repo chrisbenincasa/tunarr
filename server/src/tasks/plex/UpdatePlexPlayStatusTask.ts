@@ -131,9 +131,10 @@ class UpdatePlexPlayStatusTask extends Task {
   }
 
   protected async runInternal(): Promise<boolean> {
-    const plex = await this.mediaSourceApiFactory.getPlexApiClient(
-      this.plexServer,
-    );
+    const plex =
+      await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+        this.plexServer,
+      );
 
     const deviceName = `tunarr-channel-${this.request.channelNumber}`;
     const params = {

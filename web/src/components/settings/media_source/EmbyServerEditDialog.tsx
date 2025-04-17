@@ -44,7 +44,6 @@ type Props = {
 };
 
 export type EmbyServerSettingsForm = MarkOptional<EmbyServerSettings, 'id'> & {
-  username?: string;
   password?: string;
 };
 
@@ -55,6 +54,7 @@ const emptyDefaults: EmbyServerSettingsForm = {
   accessToken: '',
   username: '',
   password: '',
+  userId: '',
 };
 
 export function EmbyServerEditDialog({ open, onClose, server }: Props) {
@@ -136,7 +136,12 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
 
     if (isNonEmptyString(accessToken)) {
       void handleSubmit(
-        (data) => updateSourceMutation.mutate(data),
+        (data) =>
+          updateSourceMutation.mutate({
+            ...data,
+            userId: null,
+            username: null,
+          }),
         showErrorSnack,
       )(e);
     } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
@@ -147,12 +152,16 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
           uri,
         });
 
-        if (isNonEmptyString(result.accessToken)) {
+        if (
+          isNonEmptyString(result.accessToken) &&
+          isNonEmptyString(result.userId)
+        ) {
           void handleSubmit(
             (data) =>
               updateSourceMutation.mutate({
                 ...data,
                 accessToken: result.accessToken!,
+                userId: result.userId!,
               }),
             showErrorSnack,
           )(e);

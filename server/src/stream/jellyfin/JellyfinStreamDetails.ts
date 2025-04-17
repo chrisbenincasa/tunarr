@@ -78,7 +78,9 @@ export class JellyfinStreamDetails {
     }
 
     this.jellyfin =
-      await this.mediaSourceApiFactory.getJellyfinApiClient(mediaSource);
+      await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+        mediaSource,
+      );
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);
@@ -192,9 +194,9 @@ export class JellyfinStreamDetails {
     let videoStreamDetails: Maybe<VideoStreamDetails>;
     if (isDefined(videoStream)) {
       const isAnamorphic =
-        videoStream.IsAnamorphic ??
+        (videoStream.IsAnamorphic ??
         (isNonEmptyString(videoStream.AspectRatio) &&
-          videoStream.AspectRatio.includes(':'))
+          videoStream.AspectRatio.includes(':')))
           ? extractIsAnamorphic(
               videoStream.Width ?? 1,
               videoStream.Height ?? 1,
@@ -282,8 +284,8 @@ export class JellyfinStreamDetails {
       // TODO Use our proxy endpoint here
       const placeholderThumbPath =
         media.Type === 'Audio'
-          ? media.AlbumId ?? first(media.ArtistItems)?.Id ?? media.Id
-          : media.SeasonId ?? media.Id;
+          ? (media.AlbumId ?? first(media.ArtistItems)?.Id ?? media.Id)
+          : (media.SeasonId ?? media.Id);
 
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {

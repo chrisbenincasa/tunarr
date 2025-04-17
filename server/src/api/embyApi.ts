@@ -66,7 +66,10 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
         req.serverCtx.settings.clientId(),
       );
 
-      return res.send({ accessToken: nullToUndefined(response.AccessToken) });
+      return res.send({
+        accessToken: nullToUndefined(response.AccessToken),
+        userId: nullToUndefined(response.User?.Id),
+      });
     },
   );
 
@@ -80,7 +83,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withEmbyMediaSource(req, res, async (mediaSource) => {
         const api =
-          await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient(
+          await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
             mediaSource,
           );
 
@@ -159,7 +162,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withEmbyMediaSource(req, res, async (mediaSource) => {
         const api =
-          await req.serverCtx.mediaSourceApiFactory.getEmbyApiClient(
+          await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
             mediaSource,
           );
 

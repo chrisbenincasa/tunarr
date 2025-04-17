@@ -2,10 +2,13 @@ import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { CloudDoneOutlined, CloudOff, Delete, Edit } from '@mui/icons-material';
 import { IconButton, Link, TableCell, TableRow } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { MediaSourceSettings } from '@tunarr/types';
+import type { MediaSourceSettings } from '@tunarr/types';
 import { capitalize, isNull, isUndefined } from 'lodash-es';
 import { useState } from 'react';
+import { match } from 'ts-pattern';
+import { Emby, Jellyfin, Plex } from '../../../helpers/constants.ts';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
+import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
 import { MediaSourceDeleteDialog } from './MediaSourceDeleteDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
@@ -31,24 +34,29 @@ export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
     backendStatus.healthy;
 
   const renderEditDialog = () => {
-    switch (server.type) {
-      case 'plex':
-        return (
-          <PlexServerEditDialog
-            open={editDialogOpen}
-            onClose={() => setEditDialogOpen(false)}
-            server={server}
-          />
-        );
-      case 'jellyfin':
-        return (
-          <JellyfinServerEditDialog
-            open={editDialogOpen}
-            onClose={() => setEditDialogOpen(false)}
-            server={server}
-          />
-        );
-    }
+    return match(server)
+      .with({ type: Plex }, (plex) => (
+        <PlexServerEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          server={plex}
+        />
+      ))
+      .with({ type: Jellyfin }, (jf) => (
+        <JellyfinServerEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          server={jf}
+        />
+      ))
+      .with({ type: Emby }, (emby) => (
+        <EmbyServerEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          server={emby}
+        />
+      ))
+      .exhaustive();
   };
 
   return (

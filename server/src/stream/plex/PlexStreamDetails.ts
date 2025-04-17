@@ -84,7 +84,8 @@ export class PlexStreamDetails {
       return null;
     }
 
-    this.plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
+    this.plex =
+      await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
 
     const expectedItemType = item.programType;
     const itemMetadataResult = await this.plex.getItemMetadata(
@@ -376,7 +377,7 @@ export class PlexStreamDetails {
     if (audioOnly) {
       // TODO Use our proxy endpoint here
       const placeholderThumbPath = isPlexMusicTrack(media)
-        ? media.parentThumb ?? media.grandparentThumb ?? media.thumb
+        ? (media.parentThumb ?? media.grandparentThumb ?? media.thumb)
         : media.thumb;
 
       // We have to check that we can hit this URL or the stream will not work

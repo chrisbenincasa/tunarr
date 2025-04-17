@@ -62,7 +62,7 @@ export class MissingSeasonNumbersFixer extends Fixer {
     const plexByName: Record<string, PlexApiClient> = {};
     for (const server of allPlexServers) {
       plexByName[server.name] =
-        await this.mediaSourceApiFactory.getPlexApiClient(server);
+        await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
     }
 
     const updatedPrograms: RawProgram[] = [];
@@ -219,7 +219,8 @@ export class MissingSeasonNumbersFixer extends Fixer {
         continue;
       }
 
-      const plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
+      const plex =
+        await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
       const plexResult = await plex.doGetPath<PlexSeasonView>(
         '/library/metadata/' + ref.externalKey,
       );

@@ -82,7 +82,9 @@ export function EditChannelForm({
   isNew,
   initialTab,
 }: EditChannelFormProps) {
-  const navigate = useNavigate({ from: '/channels/$channelId/edit' });
+  const navigate = useNavigate({
+    from: isNew ? '/channels/new' : '/channels/$channelId/edit',
+  });
   const [currentTab, setCurrentTab] = useState<EditChannelTabs>(
     initialTab ?? 'properties',
   );

@@ -27,7 +27,8 @@ export class AddPlexServerIdsFixer extends Fixer {
       .where('type', '=', MediaSourceType.Plex)
       .execute();
     for (const server of plexServers) {
-      const api = await this.mediaSourceApiFactory.getPlexApiClient(server);
+      const api =
+        await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
       const devices = await api.getDevices();
       if (!isNil(devices) && devices.MediaContainer.Device) {
         const matchingServer = find(

@@ -26,6 +26,7 @@ import Migration1738604866_AddEmby from './db/Migration1738604866_AddEmby.ts';
 import Migration1740691984_ProgramMediaSourceId from './db/Migration1740691984_ProgramMediaSourceId.ts';
 import Migration1741297998_AddProgramIndexes from './db/Migration1741297998_AddProgramIndexes.ts';
 import Migration1741658292_MediaSourceIndex from './db/Migration1741658292_MediaSourceIndex.ts';
+import Migration1744918641_AddMediaSourceUserInfo from './db/Migration1744918641_AddMediaSourceUserInfo.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -96,6 +97,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1740691984: Migration1740691984_ProgramMediaSourceId,
           migration1741297998: Migration1741297998_AddProgramIndexes,
           migration1741658292: Migration1741658292_MediaSourceIndex,
+          migration1744918641: Migration1744918641_AddMediaSourceUserInfo,
         },
         wrapWithTransaction,
       ),
@@ -117,4 +119,9 @@ function wrapWithTransaction(m: Migration): Migration {
       });
     },
   } satisfies Migration;
+}
+
+export interface TunarrDatabaseMigration extends Migration {
+  inPlace?: boolean;
+  fullCopy?: boolean;
 }

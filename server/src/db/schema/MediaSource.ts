@@ -32,6 +32,8 @@ export const MediaSource = sqliteTable(
     sendGuideUpdates: integer({ mode: 'boolean' }).default(false),
     type: text({ enum: MediaSourceTypes }).notNull(),
     uri: text().notNull(),
+    username: text(),
+    userId: text(),
   },
   (table) => [
     check(
@@ -52,6 +54,8 @@ export const MediaSourceFields: (keyof MediaSourceTable)[] = [
   'type',
   'updatedAt',
   'uri',
+  'userId',
+  'username',
   'uuid',
 ] as const;
 

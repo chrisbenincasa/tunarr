@@ -28,11 +28,12 @@ import {
   TextField,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexServerSettings } from '@tunarr/types';
+import type { PlexServerSettings } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
-import { FormEvent, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { MarkOptional } from 'ts-essentials';
+import type { MarkOptional } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
 
 type Props = {
@@ -54,6 +55,8 @@ const emptyDefaults: PlexServerSettingsForm = {
   sendGuideUpdates: false,
   index: 0,
   type: 'plex',
+  userId: '',
+  username: '',
 };
 
 export function PlexServerEditDialog({ open, onClose, server }: Props) {

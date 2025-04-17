@@ -3,6 +3,7 @@ import type { Maybe, Nilable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
+import type { MediaSourceStatus } from '@tunarr/types/api';
 import type {
   JellyfinItem,
   JellyfinItemFields,
@@ -72,9 +73,7 @@ function getJellyfinAuthorization(
   return `MediaBrowser ${parts.join(', ')}`;
 }
 
-export type JellyfinApiClientOptions = Omit<ApiClientOptions, 'type'> & {
-  userId?: string;
-};
+export type JellyfinApiClientOptions = Omit<ApiClientOptions, 'type'>;
 
 export type JellyfinGetItemsQuery = {
   recursive?: boolean;
@@ -89,10 +88,10 @@ export type JellyfinGetItemsQuery = {
   hasTvdbId?: boolean;
 };
 
-export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
+export class JellyfinApiClient extends BaseApiClient {
   protected redacter = new JellyfinRequestRedacter();
 
-  constructor(options: JellyfinApiClientOptions) {
+  constructor(options: ApiClientOptions) {
     super({
       ...options,
       extraHeaders: {
@@ -103,12 +102,41 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     });
   }
 
+  static async findUserId(
+    server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
+    apiKey: string,
+    errorExpected: boolean = false,
+  ) {
+    try {
+      const response = await axios.get(`${server.url}/Users/Me`, {
+        headers: {
+          Authorization: getJellyfinAuthorization(apiKey, undefined),
+        },
+      });
+
+      return JellyfinUser.parseAsync(response.data);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.config) {
+          new JellyfinRequestRedacter().redact(error.config);
+        }
+      }
+
+      if (!errorExpected) {
+        LoggerFactory.root.error(error, 'Error retrieving Jellyfin users', {
+          className: JellyfinApiClient.name,
+        });
+      }
+      return;
+    }
+  }
+
   static async findAdminUser(
     server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
     apiKey: string,
   ) {
     try {
-      const response = await axios.get(`${server.uri}/Users`, {
+      const response = await axios.get(`${server.url}/Users`, {
         headers: {
           Authorization: getJellyfinAuthorization(apiKey, undefined),
         },
@@ -170,15 +198,41 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
     }
   }
 
-  async ping() {
+  async ping(): Promise<MediaSourceStatus> {
     try {
       await this.doGet({
         url: '/System/Ping',
       });
-      return true;
+
+      // One of these should succeed. In the username/pw case
+      // we should be able to at least retrieve our own user.
+      // Access token based auth will not have a "me" but should be able
+      // to at least list all users.
+      const [meResult, allUsersResult] = await Promise.allSettled([
+        this.doGet({
+          url: '/Users/Me',
+        }),
+        this.doGet({
+          url: '/Users',
+        }),
+      ]);
+
+      if (
+        meResult.status === 'fulfilled' ||
+        allUsersResult.status === 'fulfilled'
+      ) {
+        return { healthy: true };
+      } else {
+        return {
+          healthy: false,
+          status: 'auth',
+        };
+      }
     } catch (e) {
-      this.logger.error(e);
-      return false;
+      return {
+        healthy: false,
+        status: this.getHealthStatus(e),
+      };
     }
   }
 
@@ -276,7 +330,7 @@ export class JellyfinApiClient extends BaseApiClient<JellyfinApiClientOptions> {
 
   getThumbUrl(id: string) {
     // Naive impl for now...
-    return `${this.options.uri}/Items/${id}/Images/Primary`;
+    return `${this.options.url}/Items/${id}/Images/Primary`;
   }
 
   async recordPlaybackStart(itemId: string, deviceId: string) {

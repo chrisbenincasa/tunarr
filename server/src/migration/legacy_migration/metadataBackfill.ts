@@ -185,7 +185,8 @@ export class LegacyMetadataBackfiller {
       }
 
       // Otherwise, we need to go and find details...
-      const plex = await this.mediaSourceApiFactory.getPlexApiClient(server);
+      const plex =
+        await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
 
       // This where the types have to diverge, because the Plex
       // API types differ.

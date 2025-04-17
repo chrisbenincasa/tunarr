@@ -141,7 +141,10 @@ const jellyfinLogin = makeEndpoint({
   path: '/api/jellyfin/login',
   parameters: parametersBuilder().addBody(JellyfinLoginRequest).build(),
   alias: 'jellyfinUserLogin',
-  response: z.object({ accessToken: z.string().optional() }),
+  response: z.object({
+    accessToken: z.string().optional(),
+    userId: z.string().optional(),
+  }),
 });
 
 const embyLogin = makeEndpoint({
@@ -149,7 +152,10 @@ const embyLogin = makeEndpoint({
   path: '/api/emby/login',
   parameters: parametersBuilder().addBody(EmbyLoginRequest).build(),
   alias: 'embyUserLogin',
-  response: z.object({ accessToken: z.string().optional() }),
+  response: z.object({
+    accessToken: z.string().optional(),
+    userId: z.string().optional(),
+  }),
 });
 
 const systemHealthChecks = makeEndpoint({

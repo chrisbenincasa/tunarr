@@ -1,9 +1,10 @@
 import type { AxiosRequestRedacter } from '@/external/Redacter.js';
 import type { Maybe, Try } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
-import { isDefined } from '@/util/index.js';
+import { isDefined, isNodeError } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import type { MediaSourceUnhealthyStatus } from '@tunarr/types/api';
 import type {
   AxiosHeaderValue,
   AxiosInstance,
@@ -11,19 +12,15 @@ import type {
 } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import { isError, isString } from 'lodash-es';
-import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import type { z } from 'zod';
-import type { MediaSource } from '../db/schema/MediaSource.ts';
 
-export type ApiClientOptions = StrictOmit<
-  MarkOptional<MediaSource, 'uuid'>,
-  | 'index'
-  | 'updatedAt'
-  | 'createdAt'
-  | 'type'
-  | 'sendChannelUpdates'
-  | 'sendGuideUpdates'
-> & {
+export type ApiClientOptions = {
+  name: string;
+  mediaSourceUuid?: string;
+  accessToken: string;
+  url: string;
+  userId: string | null;
+  username: string | null;
   extraHeaders?: {
     [key: string]: AxiosHeaderValue;
   };
@@ -72,9 +69,9 @@ export abstract class BaseApiClient<
       serverName: options.name,
     });
 
-    const url = options.uri.endsWith('/')
-      ? options.uri.slice(0, options.uri.length - 1)
-      : options.uri;
+    const url = options.url.endsWith('/')
+      ? options.url.slice(0, options.url.length - 1)
+      : options.url;
 
     this.axiosInstance = axios.create({
       baseURL: url,
@@ -164,7 +161,7 @@ export abstract class BaseApiClient<
 
   getFullUrl(path: string): string {
     const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${this.options.uri}${sanitizedPath}`);
+    const url = new URL(`${this.options.url}${sanitizedPath}`);
     return url.toString();
   }
 
@@ -190,7 +187,7 @@ export abstract class BaseApiClient<
             'API client response error: path: %O, status %d, params: %O, data: %O, headers: %O',
             error.config?.url ?? '',
             status,
-            error.config?.params,
+            error.config?.params ?? {},
             error.response.data,
             headers,
           );
@@ -220,5 +217,31 @@ export abstract class BaseApiClient<
         return new Error('Unknown error');
       }
     }
+  }
+
+  protected getHealthStatus(
+    err: unknown,
+  ): MediaSourceUnhealthyStatus['status'] {
+    let status: MediaSourceUnhealthyStatus['status'] = 'unknown';
+    if (isAxiosError(err)) {
+      if (err.status === 401 || err.status === 403) {
+        status = 'auth';
+      }
+    } else if (isNodeError(err)) {
+      switch (err.code) {
+        case 'ECONNREFUSED': {
+          status = 'unreachable';
+          break;
+        }
+        case 'ECONNRESET': {
+          status = 'timeout';
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
+    return status;
   }
 }
