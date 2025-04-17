@@ -1,6 +1,7 @@
 import { useConsolidatePrograms } from '@/hooks/programming_controls/useConcolidatePrograms';
 import {
   Merge,
+  ReadMore,
   ContentCopy as ReplicateIcon,
   Scale,
   Shuffle as ShuffleIcon,
@@ -14,12 +15,13 @@ import AddReplicateModal from '../programming_controls/AddReplicateModal';
 import AddRerunBlockModal from '../programming_controls/AddRerunBlockModal';
 import AdjustWeightsModal from '../programming_controls/AdjustWeightsModal';
 import { BalanceProgrammingModal } from '../programming_controls/BalanceProgrammingModal';
+import { IntersperseProgrammingModal } from '../programming_controls/IntersperseProgrammingModal.tsx';
 
 type Props = {
   onClose: () => void;
 };
 
-type OpenModal = 'replicate' | 'rerun' | 'weights' | 'balance';
+type OpenModal = 'replicate' | 'rerun' | 'weights' | 'balance' | 'intersperse';
 
 export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
   const [openModal, setOpenModal] = useState<OpenModal | null>(null);
@@ -86,6 +88,19 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
       >
         <MenuItem
           onClick={() => {
+            setOpenModal('intersperse');
+          }}
+        >
+          <ReadMore /> Intersperse...
+        </MenuItem>
+      </ElevatedTooltip>
+      <ElevatedTooltip
+        title="Consolidates contiguous match flex and redirect blocks into singular spans"
+        placement="right"
+        elevation={10}
+      >
+        <MenuItem
+          onClick={() => {
             consolidatePrograms();
             handleClose();
           }}
@@ -122,6 +137,10 @@ export function ChannelProgrammingOrganizeOptions({ onClose }: Props) {
       <BalanceProgrammingModal
         open={openModal === 'balance'}
         onClose={() => handleClose()}
+      />
+      <IntersperseProgrammingModal
+        open={openModal === 'intersperse'}
+        onClose={handleClose}
       />
     </>
   );

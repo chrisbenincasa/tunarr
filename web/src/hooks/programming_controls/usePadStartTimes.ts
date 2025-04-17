@@ -1,4 +1,5 @@
-import { Channel, CondensedChannelProgram, isFlexProgram } from '@tunarr/types';
+import type { Channel, CondensedChannelProgram } from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, flatMap, forEach, isEmpty, sortBy } from 'lodash-es';
 import filter from 'lodash-es/filter';
@@ -79,7 +80,6 @@ export function padStartTimes(
       60 * 1000,
     ),
   );
-  console.log(manualOffsets);
 
   let lastStartTime = newStartTime;
   const newProgramList: CondensedChannelProgram[] = [];
