@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.20](https://github.com/chrisbenincasa/tunarr/compare/v0.18.19...v0.18.20) (2025-04-17)
+
+
+### Bug Fixes
+
+* disable filtering on non-library tabs ([14b591c](https://github.com/chrisbenincasa/tunarr/commit/14b591c767fd9e81dadd9e99c694ccb356067710))
+* fix weekly calendar view stack overflow error ([c928bb8](https://github.com/chrisbenincasa/tunarr/commit/c928bb8992f01d0c957c09bac620aa0e2af10345))
+
 ## [0.18.19](https://github.com/chrisbenincasa/tunarr/compare/v0.18.18...v0.18.19) (2025-04-14)
 
 
