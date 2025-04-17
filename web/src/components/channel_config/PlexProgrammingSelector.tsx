@@ -24,13 +24,13 @@ import {
   Tooltip,
 } from '@mui/material';
 import { tag } from '@tunarr/types';
-import { PlexFilter } from '@tunarr/types/api';
+import { type PlexFilter } from '@tunarr/types/api';
 import {
-  PlexChildListing,
-  PlexMedia,
   isPlexParentItem,
+  type PlexChildListing,
+  type PlexMedia,
 } from '@tunarr/types/plex';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { type MediaSourceId } from '@tunarr/types/schemas';
 import { usePrevious } from '@uidotdev/usehooks';
 import {
   chain,
@@ -74,9 +74,9 @@ import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import StandaloneToggleButton from '../base/StandaloneToggleButton.tsx';
 import ConnectMediaSources from '../settings/ConnectMediaSources.tsx';
 import {
-  GridInlineModalProps,
-  GridItemProps,
   MediaItemGrid,
+  type GridInlineModalProps,
+  type GridItemProps,
 } from './MediaItemGrid.tsx';
 import { PlexFilterBuilder } from './PlexFilterBuilder.tsx';
 import { PlexGridItem } from './PlexGridItem.tsx';
@@ -553,6 +553,7 @@ export default function PlexProgrammingSelector() {
               <>
                 <Stack direction="row" gap={1} sx={{ mt: 2 }}>
                   <StandaloneToggleButton
+                    disabled={tabValue !== TabValues.Library}
                     selected={searchVisible}
                     onToggle={() => {
                       toggleSearchVisible();
@@ -580,8 +581,7 @@ export default function PlexProgrammingSelector() {
                       </ToggleButtonGroup>
                     </Grow>
                   )}
-
-                  <PlexSortField />
+                  {tabValue === TabValues.Library && <PlexSortField />}
                 </Stack>
                 <Collapse in={searchVisible} mountOnEnter>
                   <Box sx={{ py: 1 }}>
