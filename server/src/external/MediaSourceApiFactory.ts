@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { forEach, isBoolean, isEmpty, isNil } from 'lodash-es';
 import NodeCache from 'node-cache';
+import { MarkRequired } from 'ts-essentials';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
@@ -289,9 +290,10 @@ export class MediaSourceApiFactory {
 
 export function mediaSourceToApiOptions(
   mediaSource: MediaSource,
-): ApiClientOptions {
+): MarkRequired<ApiClientOptions, 'mediaSourceUuid'> {
   return {
     ...mediaSource,
     url: mediaSource.uri,
+    mediaSourceUuid: mediaSource.uuid,
   };
 }
