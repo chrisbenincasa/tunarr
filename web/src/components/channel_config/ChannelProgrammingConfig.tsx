@@ -16,6 +16,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   IconButton,
   Stack,
   ToggleButton,
@@ -49,7 +50,6 @@ export function ChannelProgrammingConfig() {
   } = useChannelEditor();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const mediumViewport = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const snackbar = useSnackbar();
@@ -211,109 +211,117 @@ export function ChannelProgrammingConfig() {
   return (
     <>
       <Stack gap={2}>
-        <Stack direction="row" flexGrow={1} alignItems={'center'}>
-          <Box flex={1}></Box>
-          <Box alignSelf={'flex-end'}>
-            <ToggleButtonGroup
-              value={view}
-              exclusive
-              onChange={(_, v) => setView(v as ViewType)}
-            >
-              <Tooltip title="List">
-                <ToggleButton value="list">
-                  <List />
-                </ToggleButton>
+        <Stack direction={{ md: 'column', lg: 'row' }} justifyContent="center">
+          <Stack
+            direction="row"
+            flexGrow={1}
+            alignItems={'center'}
+            alignSelf={['center']}
+            flex={1}
+          >
+            <Box>
+              <ToggleButtonGroup
+                value={view}
+                exclusive
+                onChange={(_, v) => setView(v as ViewType)}
+              >
+                <Tooltip title="List">
+                  <ToggleButton value="list">
+                    <List />
+                  </ToggleButton>
+                </Tooltip>
+                <Tooltip title="Day">
+                  <ToggleButton value="day">
+                    <CalendarViewDay />
+                  </ToggleButton>
+                </Tooltip>
+                <Tooltip title="Week">
+                  <ToggleButton value="week">
+                    <CalendarViewWeek />
+                  </ToggleButton>
+                </Tooltip>
+                <Tooltip title="Month">
+                  <ToggleButton value="month">
+                    <CalendarViewMonth />
+                  </ToggleButton>
+                </Tooltip>
+              </ToggleButtonGroup>
+            </Box>
+          </Stack>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            gap={{ xs: 1 }}
+            sx={{
+              display: 'flex',
+              columnGap: 1,
+              alignItems: 'center',
+              justifyContent: { sm: 'flex-end' },
+              alignSelf: ['center'],
+              mt: { xs: 1 },
+            }}
+          >
+            <ChannelProgrammingTools />
+            <ChannelProgrammingSort />
+            <AddProgrammingButton />
+            <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
+
+            {programsDirty && (
+              <Tooltip
+                title="Reset changes made to the channel's lineup"
+                placement="top"
+              >
+                {smallViewport ? (
+                  <IconButton
+                    onClick={() => resetLineup()}
+                    disabled={!programsDirty}
+                  >
+                    <Undo />
+                  </IconButton>
+                ) : (
+                  <Button
+                    onClick={() => resetLineup()}
+                    disabled={!programsDirty}
+                    startIcon={<Undo />}
+                  >
+                    Reset
+                  </Button>
+                )}
               </Tooltip>
-              <Tooltip title="Day">
-                <ToggleButton value="day">
-                  <CalendarViewDay />
-                </ToggleButton>
-              </Tooltip>
-              <Tooltip title="Week">
-                <ToggleButton value="week">
-                  <CalendarViewWeek />
-                </ToggleButton>
-              </Tooltip>
-              <Tooltip title="Month">
-                <ToggleButton value="month">
-                  <CalendarViewMonth />
-                </ToggleButton>
-              </Tooltip>
-            </ToggleButtonGroup>
-          </Box>
-        </Stack>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          gap={{ xs: 1 }}
-          sx={{
-            display: 'flex',
-            pt: 1,
-            columnGap: 1,
-            alignItems: 'center',
-            justifyContent: { sm: 'flex-end' },
-          }}
-        >
-          <ChannelProgrammingTools />
-          <ChannelProgrammingSort />
-          <AddProgrammingButton />
-          {programsDirty && (
-            <Tooltip
-              title="Reset changes made to the channel's lineup"
-              placement="top"
-            >
-              {mediumViewport ? (
-                <IconButton
-                  onClick={() => resetLineup()}
-                  disabled={!programsDirty}
-                  color="primary"
-                >
-                  <Undo />
-                </IconButton>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={() => resetLineup()}
-                  disabled={!programsDirty}
-                  startIcon={<Undo />}
-                >
-                  Reset
-                </Button>
-              )}
-            </Tooltip>
-          )}
-          {mediumViewport ? (
-            <IconButton
-              onClick={() => onSave()}
-              disabled={!programsDirty || isSubmitting}
-            >
-              {isSubmitting ? (
-                <CircularProgress
-                  size="20px"
-                  sx={{ mx: 1, color: 'inherit' }}
-                />
-              ) : (
-                <Save />
-              )}
-            </IconButton>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => onSave()}
-              disabled={!programsDirty || isSubmitting}
-              startIcon={
-                isSubmitting ? (
+            )}
+            {smallViewport ? (
+              <IconButton
+                onClick={() => onSave()}
+                disabled={!programsDirty || isSubmitting}
+              >
+                {isSubmitting ? (
                   <CircularProgress
                     size="20px"
                     sx={{ mx: 1, color: 'inherit' }}
                   />
                 ) : (
                   <Save />
-                )
-              }
-            >
-              Save
-            </Button>
-          )}
+                )}
+              </IconButton>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={() => onSave()}
+                disabled={!programsDirty || isSubmitting}
+                startIcon={
+                  isSubmitting ? (
+                    <CircularProgress
+                      size="20px"
+                      sx={{ mx: 1, color: 'inherit' }}
+                    />
+                  ) : (
+                    <Save />
+                  )
+                }
+              >
+                Save
+              </Button>
+            )}
+          </Stack>
         </Stack>
 
         {renderView()}

@@ -1,6 +1,7 @@
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
+import { Directions, Expand } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Edit from '@mui/icons-material/Edit';
@@ -185,15 +186,11 @@ const ProgramListItem = ({
   }
 
   let icon: React.ReactElement | null = null;
-  const underlyingProgram =
-    program.type === 'content'
-      ? program
-      : program.type === 'custom'
-        ? program.program
-        : null;
 
-  if (underlyingProgram) {
-    switch (underlyingProgram.subtype) {
+  if (program.type === 'content' || program.type === 'custom') {
+    const underlyingProgram =
+      program.type === 'content' ? program : program.program;
+    switch (underlyingProgram?.subtype) {
       case 'movie':
         icon = <TheatersIcon />;
         break;
@@ -204,6 +201,10 @@ const ProgramListItem = ({
         icon = <MusicNote />;
         break;
     }
+  } else if (program.type === 'flex') {
+    icon = <Expand />;
+  } else if (program.type === 'redirect') {
+    icon = <Directions />;
   }
 
   if (icon !== null) {
@@ -223,9 +224,19 @@ const ProgramListItem = ({
   const bgHex = backgroundColor.toString({ format: 'hex' });
   const bgDarker = new Color(backgroundColor.clone().darken(0.1));
 
-  const bg = relativePct
-    ? `linear-gradient(to right, ${bgDarker.display()} 0%, ${bgDarker.display()} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`
-    : bgHex;
+  let bg: string;
+  if (program.type === 'flex') {
+    const contrastColor = new Color(backgroundColor.clone().darken(0.05));
+    bg = `repeating-linear-gradient(-45deg,
+              ${bgHex},
+              ${bgHex} 10px,
+              ${contrastColor.toString()} 10px,
+              ${contrastColor.toString()} 20px)`;
+  } else if (relativePct) {
+    bg = `linear-gradient(to right, ${bgDarker.display()} 0%, ${bgDarker.display()} ${relativePct}%, ${bgHex} ${relativePct}%, ${bgHex} 100%)`;
+  } else {
+    bg = bgHex;
+  }
 
   return (
     <ListItem
@@ -323,19 +334,6 @@ const ProgramListItem = ({
             </ListItemIcon>
           )}
 
-          {/* {!smallViewport ? (
-            program.type === 'content' ? (
-              <ListItemIcon
-                onClick={handleInfoButtonClick}
-                sx={{ cursor: 'pointer', minWidth: 0, pr: 1 }}
-              >
-                <InfoOutlined />
-              </ListItemIcon>
-            ) : (
-              <Box sx={{ mr: 1, width: 24, height: '100%' }} />
-            )
-          ) : null} */}
-
           {!smallViewport
             ? (icon ?? <Box sx={{ mr: 1, width: 24, height: '100%' }} />)
             : null}
@@ -387,7 +385,7 @@ export default function ChannelProgrammingList(props: Props) {
   >();
 
   const maxDuration = useMemo(
-    () => maxBy(programList, (p) => p.duration),
+    () => maxBy(programList, (p) => (p.type === 'flex' ? 0 : p.duration)),
     [programList],
   );
 

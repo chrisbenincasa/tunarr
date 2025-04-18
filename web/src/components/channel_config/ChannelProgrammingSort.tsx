@@ -8,7 +8,7 @@ import {
   SortByAlpha as SortByAlphaIcon,
   LiveTv as SortTVIcon,
 } from '@mui/icons-material';
-import { Button, ButtonGroup, MenuItem, Tooltip } from '@mui/material';
+import { Button, ButtonGroup, MenuItem } from '@mui/material';
 import { useState } from 'react';
 import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
@@ -17,6 +17,7 @@ import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisod
 import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
 import { strings } from '../../strings.ts';
+import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu.tsx';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
 
@@ -56,7 +57,7 @@ export function ChannelProgrammingSort() {
 
   return (
     <>
-      <ButtonGroup variant="contained" aria-label="Basic button group">
+      <ButtonGroup aria-label="Sort tools button group">
         {!sort && (
           <Button
             startIcon={<ManualIcon />}
@@ -128,7 +129,11 @@ export function ChannelProgrammingSort() {
         <MenuItem divider disabled>
           Sort By...
         </MenuItem>
-        <Tooltip title={strings.SHUFFLE_TOOLTIP} placement="right">
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.SHUFFLE_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -139,9 +144,13 @@ export function ChannelProgrammingSort() {
           >
             <ShuffleIcon /> Random
           </MenuItem>
-        </Tooltip>
+        </ElevatedTooltip>
 
-        <Tooltip title={strings.CYCLIC_SHUFFLE_TOOLTIP} placement="right">
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.CYCLIC_SHUFFLE_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -153,9 +162,13 @@ export function ChannelProgrammingSort() {
             <CyclicIcon />
             Cyclic Shuffle
           </MenuItem>
-        </Tooltip>
+        </ElevatedTooltip>
 
-        <Tooltip title={strings.ALPHA_SORT_TOOLTIP} placement="right">
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.ALPHA_SORT_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -167,9 +180,13 @@ export function ChannelProgrammingSort() {
             <SortByAlphaIcon />
             Alphabetically
           </MenuItem>
-        </Tooltip>
+        </ElevatedTooltip>
 
-        <Tooltip title={strings.RELEASE_SORT_TOOLTIP} placement="right">
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.RELEASE_SORT_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -181,8 +198,12 @@ export function ChannelProgrammingSort() {
             <ReleaseDateIcon />
             Release Date
           </MenuItem>
-        </Tooltip>
-        <Tooltip title={strings.EPISODE_SORT_TOOLTIP} placement="right">
+        </ElevatedTooltip>
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.EPISODE_SORT_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -194,8 +215,12 @@ export function ChannelProgrammingSort() {
             <SortTVIcon />
             Sort TV Shows
           </MenuItem>
-        </Tooltip>
-        <Tooltip title={strings.BLOCK_SHUFFLE_TOOLTIP} placement="right">
+        </ElevatedTooltip>
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.BLOCK_SHUFFLE_TOOLTIP}
+          placement="right"
+        >
           <MenuItem
             disableRipple
             onClick={() => {
@@ -207,7 +232,7 @@ export function ChannelProgrammingSort() {
             <BlockShuffleIcon />
             Block Shuffle
           </MenuItem>
-        </Tooltip>
+        </ElevatedTooltip>
       </StyledMenu>
       <AddBlockShuffleModal
         open={addBlockShuffleModalOpen}

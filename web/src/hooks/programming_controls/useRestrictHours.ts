@@ -1,30 +1,33 @@
-import { CondensedChannelProgram, isFlexProgram } from '@tunarr/types';
+import type { CondensedChannelProgram } from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { forEach, inRange, reject } from 'lodash-es';
+import { inRange, reject } from 'lodash-es';
 import { OneDayMillis } from '../../helpers/constants.ts';
 import { createFlexProgram } from '../../helpers/util.ts';
-import useStore from '../../store/index.ts';
 import {
-  updateCurrentChannel,
   setCurrentLineup,
+  updateCurrentChannel,
 } from '../../store/channelEditor/actions.ts';
+import useStore from '../../store/index.ts';
 
 dayjs.extend(duration);
 
 export const restrictHours = (
   programs: CondensedChannelProgram[],
-  from: number,
-  to: number,
+  startOffset: number,
+  toOffset: number,
 ) => {
-  if (!inRange(from, 0, 24) || !inRange(to, 0, 24) || to <= from) {
+  if (
+    !inRange(startOffset, 0, OneDayMillis + 1) ||
+    !inRange(toOffset, startOffset + 1, startOffset + OneDayMillis + 1) ||
+    toOffset <= startOffset
+  ) {
     return { newStartTime: null, newPrograms: programs };
   }
 
-  const newStartTime = dayjs().hour(from).minute(0).second(0).millisecond(0);
-  const startTimeOffset = dayjs.duration(from, 'hours').asMilliseconds();
-  const endTimeOffset = dayjs.duration(to, 'hours').asMilliseconds();
-  const maxDuration = endTimeOffset - startTimeOffset;
+  const newStartTime = dayjs().startOf('day').add(startOffset);
+  const maxDuration = toOffset - startOffset;
   // Remove all flex and programs that will never fit in the restricted hours slot
   const workingPrograms = reject(
     programs,
@@ -34,7 +37,14 @@ export const restrictHours = (
   let currOffset = 0; // Offset from the channel start time
   const newPrograms: CondensedChannelProgram[] = [];
 
-  forEach(workingPrograms, (program) => {
+  if (workingPrograms.length === 0) {
+    return { newStartTime: null, newPrograms };
+  }
+
+  let idx = 0;
+  // let currOffset = dayjs(channelStartTime).mod({days: 1}).asMilliseconds();
+  while (idx < workingPrograms.length) {
+    const program = workingPrograms[idx];
     const timeLeft = maxDuration - currOffset;
     if (program.duration > timeLeft) {
       // Put the program back and try tomorrow.
@@ -44,11 +54,13 @@ export const restrictHours = (
         createFlexProgram(timeLeft + OneDayMillis - maxDuration),
       );
       currOffset = 0;
+      continue;
     }
 
     newPrograms.push(program);
     currOffset += program.duration;
-  });
+    idx++;
+  }
 
   return { newStartTime, newPrograms };
 };
@@ -56,11 +68,15 @@ export const restrictHours = (
 export const useRestrictHours = () => {
   const programs = useStore((s) => s.channelEditor.programList);
 
-  return (from: number, to: number) => {
-    const { newStartTime, newPrograms } = restrictHours(programs, from, to);
+  return (startOffset: number, toOffset: number) => {
+    const { newStartTime, newPrograms } = restrictHours(
+      programs,
+      startOffset,
+      toOffset,
+    );
 
     if (newStartTime) {
-      updateCurrentChannel({ startTime: newStartTime.unix() * 1000 });
+      updateCurrentChannel({ startTime: +newStartTime });
     }
     setCurrentLineup(newPrograms, true);
   };
