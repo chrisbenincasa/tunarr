@@ -8,10 +8,11 @@ import {
   Directions as RedirectIcon,
   Nightlight as RestrictHoursIcon,
 } from '@mui/icons-material';
-import { Button, ButtonGroup, MenuItem, Tooltip } from '@mui/material';
+import { Button, ButtonGroup, MenuItem } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { isNull } from 'lodash-es';
 import { useState } from 'react';
+import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu';
 import AddBreaksModal from '../programming_controls/AddBreaksModal';
 import AddFlexModal from '../programming_controls/AddFlexModal';
@@ -125,12 +126,8 @@ export default function AddProgrammingButton() {
         onClose={() => setAddBreaksModalOpen(false)}
       />
 
-      <ButtonGroup
-        variant="contained"
-        aria-label="Add Programming Button Group"
-      >
+      <ButtonGroup aria-label="Add Programming Button Group">
         <Button
-          variant="contained"
           onClick={addProgrammingOptions[lastSelection].callback}
           startIcon={addProgrammingOptions[lastSelection].icon}
         >
@@ -147,7 +144,12 @@ export default function AddProgrammingButton() {
               {item.name}
             </MenuItem>
           ) : (
-            <Tooltip key={item.name} title={item.description} placement="right">
+            <ElevatedTooltip
+              elevation={5}
+              key={item.name}
+              title={item.description}
+              placement="right"
+            >
               <MenuItem
                 disableRipple
                 onClick={() => {
@@ -158,7 +160,7 @@ export default function AddProgrammingButton() {
               >
                 {item.icon} {item.name}
               </MenuItem>
-            </Tooltip>
+            </ElevatedTooltip>
           ),
         )}
       </StyledMenu>

@@ -89,7 +89,7 @@ export function grayBackground(mode: PaletteMode) {
   if (mode === 'light') {
     return colors.grey[100];
   } else {
-    return colors.grey[700];
+    return colors.grey[600];
   }
 }
 

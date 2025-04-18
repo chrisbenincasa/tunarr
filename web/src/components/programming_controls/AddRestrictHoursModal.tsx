@@ -1,19 +1,14 @@
-import {
-  DialogContentText,
-  FormControl,
-  FormHelperText,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-} from '@mui/material';
+import { DialogContentText, Stack, Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import { isNumber, range } from 'lodash-es';
-import { useState } from 'react';
+import { TimePicker } from '@mui/x-date-pickers';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import { useCallback, useMemo, useState } from 'react';
+import { OneDayMillis } from '../../helpers/constants.ts';
 import { useRestrictHours } from '../../hooks/programming_controls/useRestrictHours.ts';
 
 type AddRestrictHoursModalProps = {
@@ -28,15 +23,68 @@ const AddRestrictHoursModal = ({
   open,
   onClose,
 }: AddRestrictHoursModalProps) => {
-  const [startHour, setStartHour] = useState<number>(0);
-  const [endHour, setEndHour] = useState<number>(4);
+  const [startOffset, setStartOffset] = useState(0);
+  const [endOffset, setEndOffset] = useState(
+    dayjs.duration({ hours: 4 }).asMilliseconds(),
+  );
 
   const restrictHours = useRestrictHours();
 
   const handleClick = () => {
-    restrictHours(startHour, endHour);
+    restrictHours(startOffset, endOffset);
     onClose();
   };
+
+  const start = useMemo(
+    () => dayjs().startOf('day').add(startOffset),
+    [startOffset],
+  );
+  const end = useMemo(() => dayjs().startOf('day').add(endOffset), [endOffset]);
+
+  const handleStartOffset = useCallback(
+    (value: Dayjs | null) => {
+      if (!value) {
+        return;
+      }
+
+      const offset = value.mod({ days: 1 }, true).asMilliseconds();
+
+      if (offset > endOffset) {
+        setEndOffset((prev) => prev + OneDayMillis);
+      }
+
+      setStartOffset(offset);
+    },
+    [endOffset],
+  );
+
+  const handleToOffset = useCallback(
+    (value: Dayjs | null) => {
+      if (!value) {
+        return;
+      }
+
+      let offset = value.mod({ days: 1 }, true).asMilliseconds();
+
+      if (offset < startOffset) {
+        offset += OneDayMillis;
+      }
+
+      // if (offset === 0) {
+      //   offset = OneDayMillis;
+      // }
+
+      setEndOffset(offset);
+    },
+    [startOffset],
+  );
+
+  const scheduleText = useMemo(() => {
+    let text = `Programming starts at ${start.format('LT')} and stops at ${end.format('LT')}`;
+    if (endOffset >= OneDayMillis) {
+      return (text += ' the following day.');
+    }
+  }, [end, endOffset, start]);
 
   return (
     <Dialog open={open}>
@@ -46,52 +94,42 @@ const AddRestrictHoursModal = ({
           The channel's regular programming between the specified hours. Flex
           time will fill up the remaining hours.
         </DialogContentText>
-        <Stack sx={{ display: 'flex', my: 1 }}>
-          <FormControl sx={{ my: 1, flexGrow: 1 }}>
-            <InputLabel id="restrict-hours-start-label">Start</InputLabel>
-            <Select
-              value={startHour}
-              label={'Start'}
-              labelId="restrict-hours-start-label"
-              id="restrict-hours-start"
-              onChange={(e) =>
-                setStartHour(
-                  isNumber(e.target.value)
-                    ? e.target.value
-                    : parseInt(e.target.value.split(':')[0]),
-                )
-              }
-            >
-              {range(0, 24).map((hour) => (
-                <MenuItem key={hour} value={hour}>{`${hour}:00`}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl sx={{ my: 1, flexGrow: 1 }}>
-            <InputLabel id="restrict-hours-end-label">End</InputLabel>
-            <Select
-              value={endHour}
-              label={'Type'}
-              labelId="restrict-hours-end-label"
-              id="restrict-hours-end"
-              onChange={(e) =>
-                setEndHour(
-                  isNumber(e.target.value)
-                    ? e.target.value
-                    : parseInt(e.target.value.split(':')[0]),
-                )
-              }
-            >
-              {range(0, 24).map((hour) => (
-                <MenuItem key={hour} value={hour}>{`${hour}:00`}</MenuItem>
-              ))}
-            </Select>
-            {startHour >= endHour && (
-              <FormHelperText error>Start must be before End</FormHelperText>
-            )}
-          </FormControl>
+        <Stack
+          direction="row"
+          sx={{ mt: 3, mb: 2 }}
+          gap={2}
+          alignItems="center"
+        >
+          <TimePicker
+            sx={{ flex: 1 }}
+            value={start}
+            onChange={handleStartOffset}
+            label="Start Time"
+            closeOnSelect={false}
+            slotProps={{
+              textField: {
+                error: start.isAfter(end),
+              },
+            }}
+          />
+          <Typography>TO</Typography>
+          <TimePicker
+            sx={{ flex: 1 }}
+            value={end}
+            maxTime={start.add(1, 'day')}
+            onChange={handleToOffset}
+            label="End Time"
+            closeOnSelect={false}
+            slotProps={{
+              textField: {
+                error: end.isBefore(start),
+              },
+            }}
+          />
         </Stack>
+        <DialogContentText variant="caption">{scheduleText}</DialogContentText>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
         <Button variant="contained" onClick={() => handleClick()}>
