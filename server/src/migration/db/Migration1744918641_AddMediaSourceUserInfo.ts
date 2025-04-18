@@ -4,7 +4,7 @@ import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
 
 // low-fi ... copied from the generated one by drizzle
 
-const expr = String.raw`
+export const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE "__new_program_external_id" (
 	"uuid" text PRIMARY KEY NOT NULL,
@@ -42,8 +42,6 @@ export default {
       .map((s) => s.trim())
       .filter(isNonEmptyString)
       .map((s) => CompiledQuery.raw(s));
-
-    console.log(queries);
 
     for (const query of queries) {
       await db.executeQuery(query);

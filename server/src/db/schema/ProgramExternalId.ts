@@ -40,8 +40,14 @@ export const ProgramExternalId = sqliteTable(
       .on(table.programUuid, table.sourceType, table.externalSourceId)
       .where(sql`\`external_source_id\` is not null`),
     uniqueIndex('unique_program_single_external_id')
-      .on(table.programUuid, table.sourceType, table.externalSourceId)
+      .on(table.programUuid, table.sourceType)
       .where(sql`\`external_source_id\` is null`),
+    uniqueIndex('unique_program_multiple_external_id_media_source')
+      .on(table.programUuid, table.sourceType, table.mediaSourceId)
+      .where(sql`\`media_source_id\` is not null`),
+    uniqueIndex('unique_program_single_external_id_media_source')
+      .on(table.programUuid, table.sourceType)
+      .where(sql`\`media_source_id\` is null`),
     check(
       'source_type',
       inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),

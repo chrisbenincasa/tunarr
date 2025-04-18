@@ -27,6 +27,7 @@ import Migration1740691984_ProgramMediaSourceId from './db/Migration1740691984_P
 import Migration1741297998_AddProgramIndexes from './db/Migration1741297998_AddProgramIndexes.ts';
 import Migration1741658292_MediaSourceIndex from './db/Migration1741658292_MediaSourceIndex.ts';
 import Migration1744918641_AddMediaSourceUserInfo from './db/Migration1744918641_AddMediaSourceUserInfo.ts';
+import Migration1745007030_ReaddMissingProgramExternalIdIndexes from './db/Migration1745007030_ReaddMissingProgramExternalIdIndexes.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -98,6 +99,8 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1741297998: Migration1741297998_AddProgramIndexes,
           migration1741658292: Migration1741658292_MediaSourceIndex,
           migration1744918641: Migration1744918641_AddMediaSourceUserInfo,
+          migration1745007030:
+            Migration1745007030_ReaddMissingProgramExternalIdIndexes,
         },
         wrapWithTransaction,
       ),

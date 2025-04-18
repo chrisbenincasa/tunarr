@@ -1,0 +1,4 @@
+DROP INDEX `unique_program_single_external_id`;--> statement-breakpoint
+CREATE UNIQUE INDEX `unique_program_multiple_external_id_media_source` ON `program_external_id` (`program_uuid`,`source_type`,`media_source_id`) WHERE `media_source_id` is not null;--> statement-breakpoint
+CREATE UNIQUE INDEX `unique_program_single_external_id_media_source` ON `program_external_id` (`program_uuid`,`source_type`) WHERE `media_source_id` is null;--> statement-breakpoint
+CREATE UNIQUE INDEX `unique_program_single_external_id` ON `program_external_id` (`program_uuid`,`source_type`) WHERE `external_source_id` is null;
