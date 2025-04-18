@@ -97,7 +97,7 @@ export const FfmpegSettingsSchema = z.object({
   languagePreferences: LanguagePreferencesSchema.default({
     preferences: [{ iso6391: 'en', iso6392: 'eng', displayName: 'English' }],
   }),
-  transcodeDirectory: z.string().optional(),
+  transcodeDirectory: z.string().default('').optional(),
   // DEPRECATED
   enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
   audioVolumePercent: z.number().default(100),

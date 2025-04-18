@@ -3,9 +3,9 @@ import languages from '@cospired/i18n-iso-languages';
 import en from '@cospired/i18n-iso-languages/langs/en.json';
 import { Autocomplete, Stack, TextField, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { LanguagePreference } from '@tunarr/types';
+import type { LanguagePreference } from '@tunarr/types';
 import { entries, map, reject, sortBy } from 'lodash-es';
-import { FieldError } from 'react-hook-form';
+import type { FieldError } from 'react-hook-form';
 
 // Initialize the languages database with English names
 languages.registerLocale(en);
@@ -37,7 +37,6 @@ export function LanguagePreferencesList({
   onChange,
   error,
 }: LanguagePreferencesListProps) {
-  console.log(error);
   const handleChange = (value: LanguagePreference[]) => {
     onChange(value);
   };

@@ -26,7 +26,7 @@ import { defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegLogLevels } from '@tunarr/types/schemas';
 import { capitalize, isEmpty, isEqual, isNull, map, some } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
@@ -44,7 +44,7 @@ type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
 
 export default function FfmpegSettingsPage() {
   const apiClient = useTunarrApi();
-  const { data, isPending, error } = useFfmpegSettings();
+  const { data: ffmpegSettings, error } = useFfmpegSettings();
   const ffmpegInfo = useApiQuery({
     queryKey: ['ffmpeg-info'],
     queryFn: (apiClient) => apiClient.getFfmpegInfo(),
@@ -65,8 +65,9 @@ export default function FfmpegSettingsPage() {
   } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
     defaultValues: {
       ...defaultFfmpegSettings,
+      ...ffmpegSettings,
+      transcodeDirectory: ffmpegSettings.transcodeDirectory ?? '',
     },
-    mode: 'onChange',
   });
 
   const [ffmpegConsoleLoggingEnabled, ffmpegFileLoggingEnabled] = watch([
@@ -110,12 +111,6 @@ export default function FfmpegSettingsPage() {
     }
   };
 
-  useEffect(() => {
-    if (data) {
-      reset(data);
-    }
-  }, [data, reset]);
-
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
   const snackbar = useSnackbar();
@@ -153,7 +148,7 @@ export default function FfmpegSettingsPage() {
     });
   };
 
-  if (isPending || error || ffmpegInfo.isPending || ffmpegInfo.isError) {
+  if (error || ffmpegInfo.isPending || ffmpegInfo.isError) {
     return <div></div>;
   }
 
@@ -384,7 +379,7 @@ export default function FfmpegSettingsPage() {
           <Button
             variant="outlined"
             onClick={() => {
-              reset(data);
+              reset(ffmpegSettings);
               setRestoreTunarrDefaults(false);
             }}
           >
