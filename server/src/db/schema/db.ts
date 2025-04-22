@@ -14,17 +14,23 @@ import type { ProgramTable } from './Program.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.ts';
 import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.ts';
+import type {
+  ChannelSubtitlePreferencesTable,
+  CustomShowSubtitlePreferencesTable,
+} from './SubtitlePreferences.ts';
 import type { TrannscodeConfigTable } from './TranscodeConfig.ts';
 
 export interface DB {
   cachedImage: CachedImageTable;
   channel: ChannelTable;
   channelPrograms: ChannelProgramsTable;
+  channelSubtitlePreferences: ChannelSubtitlePreferencesTable;
   channelFallback: ChannelFallbackTable;
   channelCustomShows: ChannelCustomShowsTable;
   channelFillerShow: ChannelFillerShowTable;
   customShow: CustomShowTable;
   customShowContent: CustomShowContentTable;
+  customShowSubtitlePreferences: CustomShowSubtitlePreferencesTable;
   fillerShow: FillerShowTable;
   fillerShowContent: FillerShowContentTable;
   mediaSource: MediaSourceTable;

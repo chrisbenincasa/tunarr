@@ -1,4 +1,5 @@
 import {
+  getTableConfig,
   integer,
   primaryKey,
   sqliteTable,
@@ -17,7 +18,7 @@ import { FillerShow } from './FillerShow.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { Program } from './Program.ts';
 
-const Channel = sqliteTable('channel', {
+export const Channel = sqliteTable('channel', {
   uuid: text().primaryKey(),
   createdAt: integer(),
   updatedAt: integer(),
@@ -37,6 +38,7 @@ const Channel = sqliteTable('channel', {
   transcoding: text({ mode: 'json' }).$type<ChannelTranscodingSettings>(),
   transcodeConfigId: text().notNull(),
   watermark: text({ mode: 'json' }).$type<ChannelWatermark>(),
+  subtitlesEnabled: integer({ mode: 'boolean' }).default(false),
 });
 
 export type ChannelTable = KyselifyBetter<typeof Channel>;
@@ -44,27 +46,9 @@ export type ChannelTable = KyselifyBetter<typeof Channel>;
 type ChannelFields<Alias extends string = 'channel'> =
   readonly `${Alias}.${keyof ChannelTable}`[];
 
-const ChannelTableKeys: (keyof ChannelTable)[] = [
-  'createdAt',
-  'disableFillerOverlay',
-  'duration',
-  'fillerRepeatCooldown',
-  'groupTitle',
-  'guideFlexTitle',
-  'guideMinimumDuration',
-  'icon',
-  'name',
-  'number',
-  'offline',
-  'startTime',
-  'stealth',
-  'streamMode',
-  'transcoding',
-  'transcodeConfigId',
-  'updatedAt',
-  'uuid',
-  'watermark',
-];
+const ChannelTableKeys = getTableConfig(Channel).columns.map(
+  (col) => col.name,
+) as (keyof (typeof Channel)['_']['columns'])[];
 
 export const AllChannelTableKeys: ChannelFields = ChannelTableKeys.map(
   (key) => `channel.${key}` as const,

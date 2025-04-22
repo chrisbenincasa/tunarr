@@ -1,1 +1,4 @@
-export const SETTINGS_JSON_FILENAME = 'settings.json';
+export const SettingsJsonFilename = 'settings.json';
+export const CacheFolderName = 'cache';
+export const SubtitlesCacheFolderName = 'subtitles';
+export const ImagesFolderName = 'images';

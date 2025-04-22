@@ -1,6 +1,6 @@
 import type { GlobalOptions } from '@/globals.js';
 import { KEYS } from '@/types/inject.js';
-import { SETTINGS_JSON_FILENAME } from '@/util/constants.js';
+import { SettingsJsonFilename } from '@/util/constants.js';
 import { inject, injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
@@ -31,10 +31,7 @@ export class SettingsDBFactory {
   ): SettingsDB {
     const actualPath =
       dbPath ??
-      path.resolve(
-        this.globalOptions.databaseDirectory,
-        SETTINGS_JSON_FILENAME,
-      );
+      path.resolve(this.globalOptions.databaseDirectory, SettingsJsonFilename);
 
     const instance = SettingsDBFactory.INSTANCES.get(actualPath);
     if (instance) {

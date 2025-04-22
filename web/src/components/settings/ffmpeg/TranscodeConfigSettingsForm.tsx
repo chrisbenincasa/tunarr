@@ -20,7 +20,7 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  Grid2 as Grid,
+  Grid,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -89,11 +89,11 @@ const VideoHardwareAccelerationOptions: DropdownOption<SupportedHardwareAccels>[
       value: 'cuda',
     },
     {
-      description: 'Video Acceleration API (VA-API) (Best Effort)',
+      description: 'Video Acceleration API (VA-API)',
       value: 'vaapi',
     },
     {
-      description: 'Intel QuickSync (Best Effort)',
+      description: 'Intel QuickSync',
       value: 'qsv',
     },
     {

@@ -16,9 +16,9 @@ const BaseGuideProgramSchema = z.object({
   timeRemaining: z.number().optional(),
 });
 
-export const ContentGuideProgramSchema = ContentProgramSchema.merge(
-  BaseGuideProgramSchema,
-);
+export const ContentGuideProgramSchema = ContentProgramSchema.required({
+  id: true,
+}).merge(BaseGuideProgramSchema);
 
 export const CustomGuideProgramSchema = CustomProgramSchema.merge(
   BaseGuideProgramSchema,

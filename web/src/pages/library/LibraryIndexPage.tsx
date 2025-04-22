@@ -21,7 +21,7 @@ export default function LibraryIndexPage() {
         columnSpacing={2}
         rowSpacing={2}
       >
-        <Grid item sm={16} md={8}>
+        <Grid size={{ sm: 16, md: 8 }}>
           <Card sx={{ minWidth: 275, pb: 1, pr: 1 }}>
             <CardContent>
               <Typography variant="h5" component="div">
@@ -46,7 +46,7 @@ export default function LibraryIndexPage() {
             </CardActions>
           </Card>
         </Grid>
-        <Grid item sm={16} md={8}>
+        <Grid size={{ sm: 16, md: 8 }}>
           <Card sx={{ minWidth: 275, pb: 1, pr: 1 }}>
             <CardContent>
               <Typography variant="h5" component="div">

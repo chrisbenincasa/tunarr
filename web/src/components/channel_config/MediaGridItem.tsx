@@ -6,7 +6,7 @@ import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import {
   Box,
   Fade,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   ImageListItem,
   ImageListItemBar,

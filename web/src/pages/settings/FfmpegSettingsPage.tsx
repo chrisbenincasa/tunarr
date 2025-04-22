@@ -13,6 +13,7 @@ import {
   Link as MuiLink,
   Select,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -346,9 +347,40 @@ export default function FfmpegSettingsPage() {
       </Stack>
       <Divider sx={{ my: 1 }} />
       <Typography variant="h5" sx={{ mb: 2 }}>
-        Audio Options
+        Audio &amp; Subtitle Options
       </Typography>
       <Stack spacing={3} sx={{ mb: 2 }}>
+        <Box>
+          <Typography variant="h6">Subtitles</Typography>
+          <FormControl fullWidth>
+            <Controller
+              control={control}
+              name="enableSubtitleExtraction"
+              render={({ field }) => (
+                <FormControlLabel
+                  control={<Switch {...field} checked={field.value} />}
+                  label="Enable embedded subtitle extraction"
+                />
+              )}
+            />
+
+            <FormHelperText>
+              Enabling embedded subtitle extaction will periodically scan your
+              upcoming programming for embedded text-based subtitle streams and
+              extract them to a local cache. This is necessary in order to
+              enable subtitle burning for text-based subtitles which are not
+              external streams.
+            </FormHelperText>
+          </FormControl>
+        </Box>
+
+        <Divider />
+        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+          Audio Language Preferences
+        </Typography>
+        <Typography variant="subtitle1" sx={{ mb: 2 }}>
+          Configure preferred audio languages globally.
+        </Typography>
         <FormControl fullWidth>
           <Controller
             control={control}

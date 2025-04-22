@@ -3,7 +3,7 @@ import ChannelProgrammingList from '@/components/channel_config/ChannelProgrammi
 import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
-import { DropdownOption } from '@/helpers/DropdownOption.ts';
+import type { DropdownOption } from '@/helpers/DropdownOption.ts';
 import {
   OneDayMillis,
   OneWeekMillis,
@@ -12,6 +12,7 @@ import {
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
 import { ArrowBack, Autorenew } from '@mui/icons-material';
+import type { SelectChangeEvent } from '@mui/material';
 import {
   Alert,
   Box,
@@ -24,7 +25,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   Stack,
   Typography,
   useMediaQuery,
@@ -33,7 +33,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
-import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
+import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -351,7 +351,7 @@ export default function TimeSlotEditorPage() {
               columns={16}
               justifyContent={'flex-start'}
             >
-              <Grid item sm={16} md={5}>
+              <Grid size={{ sm: 16, md: 5 }}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Period</InputLabel>
                   <Controller
@@ -378,7 +378,7 @@ export default function TimeSlotEditorPage() {
                   </FormHelperText>
                 </FormControl>
               </Grid>
-              <Grid item sm={16} md={5}>
+              <Grid size={{ sm: 16, md: 5 }}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Max Lateness</InputLabel>
                   <Controller
@@ -402,7 +402,7 @@ export default function TimeSlotEditorPage() {
                   </FormHelperText>
                 </FormControl>
               </Grid>
-              <Grid item sm={16} md={5}>
+              <Grid size={{ sm: 16, md: 5 }}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Pad Times</InputLabel>
                   <Controller
@@ -426,7 +426,7 @@ export default function TimeSlotEditorPage() {
                 </FormControl>
               </Grid>
 
-              <Grid item sm={16} md={5}>
+              <Grid size={{ sm: 16, md: 5 }}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Flex Style</InputLabel>
                   <Controller
@@ -451,7 +451,7 @@ export default function TimeSlotEditorPage() {
                   </FormHelperText>
                 </FormControl>
               </Grid>
-              <Grid item sm={16} md={5}>
+              <Grid size={{ sm: 16, md: 5 }}>
                 <FormGroup row>
                   <NumericFormControllerText
                     control={control}

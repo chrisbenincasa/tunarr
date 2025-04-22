@@ -158,7 +158,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         );
 
         this.#logger.info(
-          'Dumping last %n bytes from ffmpeg logging to console and file: %s. Please report this bug with the contents of this file attached!',
+          'Dumping last %d bytes from ffmpeg logging to console and file: %s. Please report this bug with the contents of this file attached!',
           bufferedOut.bufSizeBytes,
           outPath,
         );
@@ -168,7 +168,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         fs.writeFile(outPath, bufferedOut.getLastN()).catch((e) => {
           this.#logger.error(
             e,
-            'Failed to write last %n bytes to out path: %s',
+            'Failed to write last %d bytes to out path: %s',
             bufferedOut.bufSizeBytes,
             outPath,
           );

@@ -6,6 +6,11 @@ import { DBAccess } from './db/DBAccess.ts';
 import type { SettingsFile } from './db/SettingsDB.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { type GlobalOptions, globalOptions } from './globals.js';
+import {
+  CacheFolderName,
+  ImagesFolderName,
+  SubtitlesCacheFolderName,
+} from './util/constants.ts';
 import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 
@@ -28,9 +33,10 @@ async function initDbDirectories(opts: GlobalOptions) {
   // Early init, have to use the non-settings-based root Logger
   for (const subpaths of [
     ['channel-lineups'],
-    ['images'],
-    ['cache'],
-    ['cache', 'images'],
+    [ImagesFolderName],
+    [CacheFolderName],
+    [CacheFolderName, ImagesFolderName],
+    [CacheFolderName, SubtitlesCacheFolderName],
     ['backups'],
   ]) {
     const pathToCheck = path.join(opts.databaseDirectory, ...subpaths);

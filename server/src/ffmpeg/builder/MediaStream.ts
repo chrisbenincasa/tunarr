@@ -8,7 +8,7 @@ import { FrameSize } from './types.ts';
 export type MediaStream = {
   index: number;
   codec: string;
-  kind: StreamKind;
+  readonly kind: StreamKind;
 };
 
 type MediaStreamFields<T extends MediaStream> = Omit<
@@ -183,5 +183,55 @@ export class SyntheticVideoStream extends VideoStream {
       ...fields,
       filterDefinition: `testsrc=size=${size.width}x${size.height}${extraParams}`,
     });
+  }
+}
+
+export type SubtitleInputKind = 'embedded' | 'external';
+
+const ImageBasedSubtitles = [
+  'hdmv_pgs_subtitle',
+  'dvd_subtitle',
+  'dvdsub',
+  'vobsub',
+  'pgssub',
+  'pgs',
+];
+
+export const SubtitleMethods = {
+  None: 'none',
+  Burn: 'burn',
+  Convert: 'convert',
+  Copy: 'copy',
+} as const;
+
+export type SubtitleMethod =
+  (typeof SubtitleMethods)[keyof typeof SubtitleMethods];
+
+export abstract class SubtitleStream implements MediaStream {
+  readonly kind: 'subtitle';
+  readonly inputKind: SubtitleInputKind;
+
+  constructor(
+    public readonly codec: string,
+    public readonly index: number,
+    public readonly method: SubtitleMethod,
+  ) {}
+
+  get isImageBased() {
+    return ImageBasedSubtitles.includes(this.codec);
+  }
+}
+
+export class EmbeddedSubtitleStream extends SubtitleStream {
+  readonly kind = 'subtitle' as const;
+  readonly inputKind: SubtitleInputKind = 'embedded';
+}
+
+export class ExternalSubtitleStream extends SubtitleStream {
+  readonly kind = 'subtitle' as const;
+  readonly inputKind: SubtitleInputKind = 'external';
+
+  constructor(codec: string, method: SubtitleMethod) {
+    super(codec, 0, method);
   }
 }

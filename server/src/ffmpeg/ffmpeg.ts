@@ -18,18 +18,16 @@ import type {
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
 import { NvidiaHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.js';
+import { getPixelFormatForStream } from '@/stream/util.js';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { first, isEmpty, isNil, isUndefined, merge, round } from 'lodash-es';
 import path from 'node:path';
 import type { DeepReadonly, DeepRequired } from 'ts-essentials';
+import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { StreamDetails, StreamSource } from '../stream/types.js';
-import {
-  ErrorStreamSource,
-  OfflineStreamSource,
-  getPixelFormatForStream,
-} from '../stream/types.js';
+import { ErrorStreamSource, OfflineStreamSource } from '../stream/types.js';
 import {
   isDefined,
   isLinux,
@@ -140,6 +138,15 @@ export type StreamOptions = {
   outputFormat: OutputFormat;
   ptsOffset?: number;
   streamMode: ChannelStreamMode;
+};
+
+export type StreamSessionCreateArgs = {
+  stream: {
+    source: StreamSource;
+    details: StreamDetails;
+  };
+  options: StreamOptions;
+  lineupItem: ContentBackedStreamLineupItem;
 };
 
 export type StreamSessionOptions = StreamOptions & {
@@ -340,15 +347,16 @@ export class FFMPEG implements IFFMPEG {
   }
 
   createStreamSession({
-    streamSource,
-    streamDetails,
-    startTime,
-    duration,
-    watermark: enableIcon,
-    realtime = true,
-    outputFormat,
-    ptsOffset,
-  }: StreamSessionOptions) {
+    stream: { source: streamSource, details: streamDetails },
+    options: {
+      startTime,
+      duration,
+      watermark: enableIcon,
+      realtime = true,
+      outputFormat,
+      ptsOffset,
+    },
+  }: StreamSessionCreateArgs) {
     this.ffmpegName = 'Raw Stream FFMPEG';
     return this.createSession(
       streamSource,

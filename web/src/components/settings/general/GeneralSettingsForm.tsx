@@ -26,7 +26,7 @@ import {
   type SelectChangeEvent,
 } from '@mui/material';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import { TimePicker } from '@mui/x-date-pickers';
 import {

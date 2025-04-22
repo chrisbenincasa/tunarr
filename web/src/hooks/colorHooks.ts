@@ -1,7 +1,6 @@
 // import colors from '@mui/material/colors';
 import { useColorScheme } from '@mui/material';
 import { common } from '@mui/material/colors';
-import { light } from '@mui/material/styles/createPalette';
 import type { ChannelProgram } from '@tunarr/types';
 import type Color from 'colorjs.io';
 import { useCallback } from 'react';
@@ -34,6 +33,6 @@ export const useGetContrastText = () => {
   return useCallback((color: Color) => {
     return color.contrastWCAG21(common.white) > 3
       ? common.white
-      : light.text.primary;
+      : 'rgba(0, 0, 0, 0.87)';
   }, []);
 };

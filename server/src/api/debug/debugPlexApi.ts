@@ -20,7 +20,8 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const mediaSource = await req.serverCtx.mediaSourceDB.getByName(
+      const mediaSource = await req.serverCtx.mediaSourceDB.findByType(
+        'plex',
         req.query.mediaSource,
       );
       if (!mediaSource) {
@@ -37,13 +38,20 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
         return res.status(400).send('No program');
       }
 
-      const streamDetails = await container
-        .get(PlexStreamDetails)
-        .getStream(mediaSource, {
+      const streamDetails = await container.get(PlexStreamDetails).getStream({
+        server: mediaSource,
+        lineupItem: {
+          ...program,
           programId: program.id!,
           externalKey: req.query.key,
           programType: program.subtype,
-        });
+          streamDuration: 0,
+          externalSource: 'plex',
+          programBeginMs: 0,
+          duration: program.duration,
+          type: 'program',
+        },
+      });
 
       return res.send(streamDetails);
     },

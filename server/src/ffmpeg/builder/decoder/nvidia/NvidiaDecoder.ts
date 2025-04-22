@@ -5,14 +5,22 @@ import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 
 export abstract class NvidiaDecoder extends BaseDecoder {
-  protected outputFrameDataLocation: FrameDataLocation;
-
-  constructor(private hardwareAccelerationMode: HardwareAccelerationMode) {
+  constructor(private _hardwareAccelerationMode: HardwareAccelerationMode) {
     super();
-    this.outputFrameDataLocation =
-      hardwareAccelerationMode === HardwareAccelerationMode.None
-        ? FrameDataLocation.Software
-        : FrameDataLocation.Hardware;
+  }
+
+  protected get _outputFrameDataLocation() {
+    return this.hardwareAccelerationMode === HardwareAccelerationMode.None
+      ? FrameDataLocation.Software
+      : FrameDataLocation.Hardware;
+  }
+
+  get hardwareAccelerationMode() {
+    return this._hardwareAccelerationMode;
+  }
+
+  set hardwareAccelerationMode(mode: HardwareAccelerationMode) {
+    this._hardwareAccelerationMode = mode;
   }
 
   options(inputFile: InputSource): string[] {

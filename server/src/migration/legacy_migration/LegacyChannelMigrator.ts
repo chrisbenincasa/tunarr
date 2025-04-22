@@ -405,6 +405,7 @@ export class LegacyChannelMigrator {
       programCount: 0, // Not really needed here
       streamMode: ChannelStreamModes.Hls,
       transcodeConfigId: defaultConfig.uuid,
+      subtitlesEnabled: false,
     };
 
     let channelEntity: Channel;
@@ -433,6 +434,7 @@ export class LegacyChannelMigrator {
           guideMinimumDuration: channel.guideMinimumDuration,
           streamMode: ChannelStreamModes.Hls,
           transcodeConfigId: channel.transcodeConfigId,
+          subtitlesEnabled: false,
         },
       );
       channelEntity = updatedChannel;
@@ -458,6 +460,7 @@ export class LegacyChannelMigrator {
         guideMinimumDuration: channel.guideMinimumDuration,
         streamMode: ChannelStreamModes.Hls,
         transcodeConfigId: channel.transcodeConfigId,
+        subtitlesEnabled: false,
       });
 
       channelEntity = newChannel;

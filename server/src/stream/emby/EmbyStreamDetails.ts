@@ -35,6 +35,7 @@ import {
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.ts';
+import { StreamFetchRequest } from '../StreamDetailsFetcher.ts';
 import {
   type AudioStreamDetails,
   HttpStreamSource,
@@ -43,13 +44,6 @@ import {
   type StreamSource,
   type VideoStreamDetails,
 } from '../types.ts';
-
-// The minimum fields we need to get stream details about an item
-// TODO: See if we need separate types for JF and Plex and what is really necessary here
-type EmbyItemStreamDetailsQuery = Pick<
-  ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
->;
 
 // TODO: this is basically an exact copy of the Jellyfin one, can we consolidate?
 @injectable()
@@ -64,13 +58,13 @@ export class EmbyStreamDetails {
     private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {}
 
-  async getStream(server: MediaSource, item: EmbyItemStreamDetailsQuery) {
-    return this.getStreamInternal(server, item);
+  async getStream({ server, lineupItem }: StreamFetchRequest) {
+    return this.getStreamInternal(server, lineupItem);
   }
 
   private async getStreamInternal(
     mediaSource: MediaSource,
-    item: EmbyItemStreamDetailsQuery,
+    item: ContentBackedStreamLineupItem,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -169,7 +163,7 @@ export class EmbyStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: EmbyItemStreamDetailsQuery,
+    item: ContentBackedStreamLineupItem,
     media: EmbyItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);

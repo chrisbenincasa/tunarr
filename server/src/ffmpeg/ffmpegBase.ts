@@ -7,7 +7,7 @@ import type { Duration } from 'dayjs/plugin/duration.js';
 import type { DeepReadonly, StrictExclude } from 'ts-essentials';
 import type { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 import type { OutputFormat } from './builder/constants.ts';
-import type { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
+import type { ConcatOptions, StreamSessionCreateArgs } from './ffmpeg.ts';
 
 export type HlsWrapperOptions = DeepReadonly<
   Omit<ConcatOptions, 'mode'> & {
@@ -51,7 +51,7 @@ export abstract class IFFMPEG {
    * @param streamSessionOptions
    */
   abstract createStreamSession(
-    streamSessionOptions: StreamSessionOptions,
+    streamSessionOptions: StreamSessionCreateArgs,
   ): Promise<Maybe<FfmpegTranscodeSession>>;
 
   abstract createErrorSession(

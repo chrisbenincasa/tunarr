@@ -16,7 +16,7 @@ import {
 } from '../../ffmpeg/builder/constants.ts';
 import type { GetPlayerContextRequest } from '../PlayerStreamContext.ts';
 import { PlayerContext } from '../PlayerStreamContext.ts';
-import type { ProgramStreamFactoryType } from '../StreamModule.ts';
+import type { ProgramStreamFactory } from '../ProgramStreamFactory.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
 import { BaseHlsSession } from './BaseHlsSession.ts';
 
@@ -37,7 +37,7 @@ export class HlsSlowerSession extends BaseHlsSession {
     options: BaseHlsSessionOptions,
     programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
-    private programStreamFactory: ProgramStreamFactoryType,
+    private programStreamFactory: ProgramStreamFactory,
     private ffmpegFactory: FFmpegFactory,
   ) {
     super(channel, options);

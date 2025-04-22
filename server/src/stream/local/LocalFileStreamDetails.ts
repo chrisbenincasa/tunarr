@@ -5,9 +5,10 @@ import dayjs from '@/util/dayjs.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { inject, injectable } from 'inversify';
 import { filter, find, isEmpty, map } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
-import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import { StreamDetailsFetcher } from '../StreamDetailsFetcher.ts';
 import type {
   AudioStreamDetails,
   ProgramStreamResult,
@@ -15,23 +16,27 @@ import type {
 } from '../types.ts';
 import { FileStreamSource, HttpStreamSource } from '../types.ts';
 
-export class LocalFileStreamDetails {
+type LocalFileStreamDetailsRequest = {
+  path: string;
+};
+
+@injectable()
+export class LocalFileStreamDetails
+  implements StreamDetailsFetcher<LocalFileStreamDetailsRequest>
+{
   private logger = LoggerFactory.child({ className: this.constructor.name });
 
-  constructor(
-    private path: string,
-    private settingsDB: ISettingsDB,
-  ) {}
+  constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
 
-  async getStream(): Promise<Nullable<ProgramStreamResult>> {
-    if (!(await fileExists(this.path))) {
-      this.logger.warn('Cannot find file at path: %s', this.path);
+  async getStream({
+    path,
+  }: LocalFileStreamDetailsRequest): Promise<Nullable<ProgramStreamResult>> {
+    if (!(await fileExists(path))) {
+      this.logger.warn('Cannot find file at path: %s', path);
       return null;
     }
 
-    const ffmpegInfo = new FfmpegInfo(this.settingsDB);
-
-    const probeResult = await ffmpegInfo.probeFile(this.path);
+    const probeResult = await this.ffmpegInfo.probeFile(path);
 
     if (!probeResult) {
       return null;
@@ -98,9 +103,9 @@ export class LocalFileStreamDetails {
           : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
         duration: dayjs.duration({ seconds: probeResult.format.duration }),
       },
-      streamSource: this.path.startsWith('http')
-        ? new HttpStreamSource(this.path)
-        : new FileStreamSource(this.path),
+      streamSource: path.startsWith('http')
+        ? new HttpStreamSource(path)
+        : new FileStreamSource(path),
     };
   }
 }

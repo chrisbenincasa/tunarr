@@ -42,6 +42,11 @@ import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
+import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
+import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
+import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 
 export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -51,11 +56,13 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     audioInputFile: Nullable<AudioInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
   ) {
     super(
       videoInputFile,
       audioInputFile,
       watermarkInputSource,
+      subtitleInputSource,
       concatInputSource,
       binaryCapabilities,
     );
@@ -429,6 +436,59 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
           pf,
         ),
       );
+    }
+
+    return currentState;
+  }
+
+  protected addSubtitles(currentState: FrameState): FrameState {
+    if (!this.subtitleInputSource) {
+      return currentState;
+    }
+
+    if (this.context.isSubtitleTextContext()) {
+      this.videoInputSource.addOption(new CopyTimestampInputOption());
+      currentState = this.addFilterToVideoChain(
+        currentState,
+        new HardwareDownloadFilter(currentState),
+      );
+      currentState = this.addFilterToVideoChain(
+        currentState,
+        new SubtitleFilter(this.subtitleInputSource),
+      );
+    }
+
+    if (this.context.isSubtitleOverlay()) {
+      const fmt = new PixelFormatYuva420P();
+      this.subtitleInputSource.filterSteps.push(new PixelFormatFilter(fmt));
+      const desiredPixelFmt = this.desiredState.pixelFormat?.unwrap();
+
+      if (desiredPixelFmt) {
+        const needsScale = this.videoInputSource.hasAnyFilterStep([
+          ScaleQsvFilter,
+          ScaleFilter,
+          PadFilter,
+        ]);
+
+        if (needsScale) {
+          this.subtitleInputSource.addFilter(
+            new ImageScaleFilter(this.desiredState.paddedSize),
+          );
+        }
+
+        this.subtitleOverlayFilterChain.push(
+          new SubtitleOverlayFilter(desiredPixelFmt),
+        );
+
+        if (
+          this.videoInputSource.streams.some((s) => s.codec === 'vp9') &&
+          this.context.is10BitOutput
+        ) {
+          this.subtitleOverlayFilterChain.push(
+            new PixelFormatFilter(new PixelFormatYuv420P10Le()),
+          );
+        }
+      }
     }
 
     return currentState;

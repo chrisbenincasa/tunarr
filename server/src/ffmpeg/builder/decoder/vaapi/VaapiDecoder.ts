@@ -9,7 +9,7 @@ import { FrameDataLocation } from '../../types.ts';
 export class VaapiDecoder extends BaseDecoder {
   readonly name: string = 'implicit_vaapi';
 
-  protected outputFrameDataLocation = FrameDataLocation.Hardware;
+  protected _outputFrameDataLocation = FrameDataLocation.Hardware;
 
   options(): string[] {
     return ['-hwaccel_output_format', 'vaapi'];

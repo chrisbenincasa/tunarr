@@ -31,17 +31,30 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { isEmpty, isNil, isNull, reject, some } from 'lodash-es';
+import { NvidiaDecoder } from '../../decoder/nvidia/NvidiaDecoder.ts';
 import {
   NvidiaH264Encoder,
   NvidiaHevcEncoder,
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
+import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
+import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
+import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { OverlaySubtitleCudaFilter } from '../../filter/nvidia/OverlaySubtitleCudaFilter.ts';
+import { ScaleNppFilter } from '../../filter/nvidia/ScaleNppFilter.ts';
+import { SubtitleScaleCudaFilter } from '../../filter/nvidia/SubtitleScaleCudaFilter.ts';
+import { SubtitleScaleNppFilter } from '../../filter/nvidia/SubtitleScaleNppFilter.ts';
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
 import {
   PixelFormatNv12,
   PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
   PixelFormatYuva420P,
 } from '../../format/PixelFormat.ts';
+import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
+import { KnownFfmpegFilters } from '../../options/KnownFfmpegOptions.ts';
+import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 
 export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -51,11 +64,13 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     audioInputFile: Nullable<AudioInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
   ) {
     super(
       videoInputFile,
       audioInputFile,
       watermarkInputSource,
+      subtitleInputSource,
       concatInputSource,
       binaryCapabilities,
     );
@@ -161,7 +176,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         !isNil(currentState.pixelFormat) &&
         !desiredPixelFormat.equals(currentState.pixelFormat)
       ) {
-        this.logger.debug('adding pixel filter format for watermark!!!');
+        this.logger.trace('adding pixel filter format for watermark!!!');
         if (currentState.frameDataLocation === FrameDataLocation.Software) {
           const pixelFormatFilter = new PixelFormatFilter(desiredPixelFormat);
           currentState = pixelFormatFilter.nextState(currentState);
@@ -191,12 +206,15 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       // filter unless we're on >=5.0.0 because overlay_cuda does
       // not support the W/w/H/h params on earlier versions
       this.ffmpegState.isAtLeastVersion({ major: 5 }) &&
+      this.context.isSubtitleOverlay() &&
       !needsSoftwareWatermarkOverlay
     ) {
       const filter = new HardwareUploadCudaFilter(currentState);
       currentState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
     }
+
+    currentState = this.addSubtitles(currentState);
 
     // Overlay watermark in software if we have any timeline-enabled features
     // (e.g. intermittent watermarks or absolute duration)
@@ -289,7 +307,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       );
     } else {
       const hasOverlay =
-        this.context.hasWatermark || this.context.hasSubtitleOverlay;
+        this.context.hasWatermark || this.context.isSubtitleOverlay();
       const isHardwareDecodeAndSoftwareEncode =
         this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
         this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;
@@ -359,7 +377,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.desiredState.pixelFormat.toSoftwareFormat() ??
       this.desiredState.pixelFormat;
 
-    this.logger.debug('Desired pixel format: %s', desiredFormat.name);
+    this.logger.trace('Desired pixel format: %s', desiredFormat.name);
 
     // TODO vp9
     if (this.context.videoStream.codec === VideoFormats.Vp9) {
@@ -386,7 +404,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
     ) {
       if (!currentState.pixelFormat?.equals(desiredFormat)) {
-        this.logger.debug(
+        this.logger.trace(
           "Pixel format %s doesn't equal format %s",
           currentState.pixelFormat?.prettyPrint(),
           desiredFormat.prettyPrint(),
@@ -442,6 +460,127 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     this.context.filterChain.pixelFormatFilterSteps.push(...steps);
+
+    return currentState;
+  }
+
+  protected addSubtitles(currentState: FrameState): FrameState {
+    if (!this.subtitleInputSource) {
+      return currentState;
+    }
+
+    if (this.context.isSubtitleTextContext()) {
+      this.videoInputSource.addOption(new CopyTimestampInputOption());
+
+      const cuvidDecoder = this.videoInputSource.getInputOption(NvidiaDecoder);
+      if (this.videoInputSource.filterSteps.length === 0 && cuvidDecoder) {
+        // TODO: is this necessary
+        cuvidDecoder.hardwareAccelerationMode = HardwareAccelerationMode.None;
+      } else {
+        currentState = this.addFilterToVideoChain(
+          currentState,
+          new HardwareDownloadFilter(currentState),
+        );
+      }
+
+      currentState = this.addFilterToVideoChain(
+        currentState,
+        new SubtitleFilter(this.subtitleInputSource),
+      );
+
+      if (this.context.hasWatermark) {
+        currentState = this.addFilterToVideoChain(
+          currentState,
+          new HardwareUploadCudaFilter(currentState),
+        );
+      }
+
+      return currentState;
+    }
+
+    if (this.context.isSubtitleOverlay()) {
+      this.subtitleInputSource.filterSteps.push(
+        new PixelFormatFilter(new PixelFormatYuva420P()),
+      );
+
+      if (currentState.bitDepth === 8) {
+        const needsSubtitleScale = this.videoInputSource.hasAnyFilterStep([
+          ScaleCudaFilter,
+          ScaleNppFilter,
+          ScaleFilter,
+          PadFilter,
+        ]);
+        const hasNpp = this.ffmpegCapabilities.hasFilter(
+          KnownFfmpegFilters.ScaleNpp,
+        );
+        const hasCuda = this.ffmpegCapabilities.hasFilter(
+          KnownFfmpegFilters.ScaleCuda,
+        );
+        if (needsSubtitleScale && (hasNpp || hasCuda)) {
+          // Use a hardware scale
+          const hwUpload = new HardwareUploadCudaFilter(
+            currentState.updateFrameLocation(FrameDataLocation.Software),
+          );
+          this.subtitleInputSource.filterSteps.push(hwUpload);
+
+          let filter: FilterOption;
+          if (hasNpp) {
+            filter = new SubtitleScaleNppFilter(this.desiredState.paddedSize);
+          } else {
+            filter = new SubtitleScaleCudaFilter(this.desiredState.paddedSize);
+          }
+
+          this.subtitleInputSource.filterSteps.push(filter);
+        } else {
+          if (needsSubtitleScale) {
+            const filter = new ImageScaleFilter(this.desiredState.paddedSize);
+            this.subtitleInputSource.filterSteps.push(filter);
+          }
+
+          const hwUpload = new HardwareUploadCudaFilter(
+            currentState.updateFrameLocation(FrameDataLocation.Software),
+          );
+          this.subtitleInputSource.filterSteps.push(hwUpload);
+        }
+
+        this.context.filterChain.subtitleOverlayFilterSteps.push(
+          new OverlaySubtitleCudaFilter(),
+        );
+      } else {
+        if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+          currentState = this.addFilterToVideoChain(
+            currentState,
+            new HardwareDownloadCudaFilter(currentState.pixelFormat, null),
+          );
+        }
+
+        const needsScale = this.videoInputSource.hasAnyFilterStep([
+          ScaleCudaFilter,
+          ScaleNppFilter,
+          ScaleFilter,
+          PadFilter,
+        ]);
+
+        if (needsScale) {
+          this.subtitleInputSource.addFilter(
+            new ImageScaleFilter(this.desiredState.paddedSize),
+          );
+        }
+
+        this.subtitleOverlayFilterChain.push(
+          new SubtitleOverlayFilter(
+            this.desiredState.pixelFormat ?? new PixelFormatYuv420P(),
+          ),
+        );
+
+        if (currentState.bitDepth === 10) {
+          this.subtitleOverlayFilterChain.push(
+            new PixelFormatFilter(new PixelFormatYuv420P10Le()),
+          );
+        }
+      }
+      return currentState;
+    }
 
     return currentState;
   }

@@ -30,7 +30,13 @@ import {
   withProgramFillerShows,
 } from './programQueryHelpers.ts';
 import { DB } from './schema/db.ts';
-import { MediaSource, MediaSourceType } from './schema/MediaSource.ts';
+import {
+  EmbyMediaSource,
+  JellyfinMediaSource,
+  MediaSource,
+  MediaSourceType,
+  PlexMediaSource,
+} from './schema/MediaSource.ts';
 
 type Report = {
   type: 'channel' | 'custom-show' | 'filler';
@@ -75,6 +81,18 @@ export class MediaSourceDB {
       .executeTakeFirst();
   }
 
+  async findByType(
+    type: typeof MediaSourceType.Plex,
+    nameOrId: string,
+  ): Promise<PlexMediaSource | undefined>;
+  async findByType(
+    type: typeof MediaSourceType.Jellyfin,
+    nameOrId: string,
+  ): Promise<JellyfinMediaSource | undefined>;
+  async findByType(
+    type: typeof MediaSourceType.Emby,
+    nameOrId: string,
+  ): Promise<EmbyMediaSource | undefined>;
   async findByType(
     type: MediaSourceType,
     nameOrId: string,

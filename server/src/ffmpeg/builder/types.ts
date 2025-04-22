@@ -4,7 +4,13 @@ import type { AnyFunction } from 'ts-essentials';
 
 export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
-export const StreamKinds = ['audio', 'video', 'all', 'stillimage'] as const;
+export const StreamKinds = [
+  'audio',
+  'video',
+  'all',
+  'stillimage',
+  'subtitle',
+] as const;
 
 export type StreamKind = TupleToUnion<typeof StreamKinds>;
 

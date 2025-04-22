@@ -237,6 +237,15 @@ export const PlexMediaSubtitleStreamSchema = BasePlexMediaStreamSchema.extend({
   languageTag: z.string().optional(),
   languageCode: z.string().optional(),
   headerCompression: z.boolean().optional(),
+  selected: z.boolean().optional(),
+  title: z.string().optional(),
+  displayTitle: z.string().optional(),
+  extendedDisplayTitle: z.string().optional(),
+  key: z.string().optional(),
+  forced: z.coerce
+    .boolean()
+    .or(z.number().transform((i) => i === 1))
+    .optional(),
 }).partial({
   bitrate: true,
   index: true,

@@ -74,6 +74,10 @@ export abstract class BaseHlsSession<
 
   protected async cleanupDirectory() {
     try {
+      this.logger.debug(
+        'Cleaning up existing working directory: %s',
+        this._workingDirectory,
+      );
       const allItems = await fs.readdir(this._workingDirectory);
       await Promise.all(
         map(allItems, (item) =>

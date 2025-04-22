@@ -7,7 +7,7 @@ import { KnownFfmpegOptions } from '../../options/KnownFfmpegOptions.ts';
 export abstract class QsvDecoder extends BaseDecoder {
   affectsFrameState: boolean = true;
 
-  protected outputFrameDataLocation: FrameDataLocation = 'hardware';
+  protected _outputFrameDataLocation: FrameDataLocation = 'hardware';
 
   protected constructor(
     public name: string,

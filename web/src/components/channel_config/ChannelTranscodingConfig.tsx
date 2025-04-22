@@ -1,5 +1,6 @@
 import { useSettings } from '@/store/settings/selectors.ts';
 import {
+  Collapse,
   Divider,
   FormControl,
   FormControlLabel,
@@ -13,7 +14,7 @@ import {
   Switch,
 } from '@mui/material';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from '@tanstack/react-router';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
@@ -29,6 +30,7 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
+import { ChannelSubtitlePreferencesTable } from './ChannelSubtitlePreferencesTable.tsx';
 
 const watermarkPositionOptions: {
   value: Watermark['position'];
@@ -69,9 +71,10 @@ export default function ChannelTranscodingConfig() {
 
   const { control, watch, setValue, getValues } = useChannelFormContext();
 
-  const [watermark, transcodeConfigId] = watch([
+  const [watermark, transcodeConfigId, subtitlesEnabled] = watch([
     'watermark',
     'transcodeConfigId',
+    'subtitlesEnabled',
   ]);
 
   const transcodeConfig = useMemo(
@@ -105,10 +108,12 @@ export default function ChannelTranscodingConfig() {
 
   return (
     channel && (
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Stack divider={<Divider />} gap={2}>
         <Box>
-          <Typography variant="h5">Transcoding Settings</Typography>
-          <Typography variant="caption">
+          <Typography sx={{ mb: 1 }} variant="h5">
+            Transcoding Settings
+          </Typography>
+          <Typography variant="subtitle1">
             Use these settings to override global ffmpeg settings for this
             channel.
           </Typography>
@@ -171,7 +176,41 @@ export default function ChannelTranscodingConfig() {
             </FormControl>
           </Stack>
         </Box>
-        <Divider sx={{ my: 2 }} />
+        <Stack gap={1}>
+          <Stack>
+            <Typography sx={{ mb: 1 }} variant="h5">
+              Audio &amp; Subtitles
+            </Typography>
+            <Typography variant="subtitle1">
+              Override global audio and subtitle settings for this channel.
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+            <FormControlLabel
+              label="Enable Subtitles"
+              sx={{
+                width: 'auto',
+              }}
+              control={
+                <Controller
+                  control={control}
+                  name="subtitlesEnabled"
+                  render={({ field }) => (
+                    <Switch {...field} checked={field.value} />
+                  )}
+                />
+              }
+            />
+            <Collapse in={subtitlesEnabled}>
+              <Divider sx={{ my: 2 }} />
+              <Typography>
+                Configure subtitle preferences. Preferences are evaluated in
+                order of priority. The first matching subtitle stream on a
+                program will be used.
+              </Typography>
+              <ChannelSubtitlePreferencesTable />
+            </Collapse>
+          </Stack>
+        </Stack>
         <Box>
           <Typography variant="h5">Watermark</Typography>
           <FormControl fullWidth>
@@ -348,11 +387,9 @@ export default function ChannelTranscodingConfig() {
                         marks={range(0, 100, 10).map((i) => ({ value: i }))}
                         valueLabelDisplay="auto"
                         sx={{ width: '100%' }}
-                        onChange={(_, newValue) =>
-                          setOpacity(newValue as number)
-                        }
+                        onChange={(_, newValue) => setOpacity(newValue)}
                         onChangeCommitted={(_, newValue) =>
-                          setValue('watermark.opacity', newValue as number, {
+                          setValue('watermark.opacity', newValue, {
                             shouldDirty: true,
                           })
                         }
@@ -449,7 +486,7 @@ export default function ChannelTranscodingConfig() {
             </Stack>
           )}
         </Box>
-      </Box>
+      </Stack>
     )
   );
 }

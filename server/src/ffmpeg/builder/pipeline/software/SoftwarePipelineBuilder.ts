@@ -11,9 +11,13 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import dayjs from '@/util/dayjs.js';
 import type { Watermark } from '@tunarr/types';
 import { filter, first, isEmpty, isNull, some } from 'lodash-es';
+import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
+import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
 import { WatermarkFadeFilter } from '../../filter/watermark/WatermarkFadeFilter.ts';
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
+import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 import type { HasFilterOption } from '../../types/PipelineStep.ts';
 import {
   BasePipelineBuilder,
@@ -40,6 +44,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       currentState = this.setDeinterlace(currentState);
       currentState = this.setScale(currentState);
       currentState = this.setPad(currentState);
+      currentState = this.addSubtitles(currentState);
       currentState = this.setWatermark(currentState);
     }
 
@@ -233,5 +238,34 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
     }
 
     return filters;
+  }
+
+  protected addSubtitles(currentState: FrameState): FrameState {
+    if (!this.subtitleInputSource) {
+      return currentState;
+    }
+
+    if (this.context.isSubtitleTextContext()) {
+      this.videoInputSource.addOption(new CopyTimestampInputOption());
+      const filter = new SubtitleFilter(this.subtitleInputSource);
+      currentState = filter.nextState(currentState);
+      this.videoInputSource.filterSteps.push(filter);
+    } else if (this.context.isSubtitleOverlay()) {
+      const hasScaleOrPad = this.videoInputSource.filterSteps.some(
+        (step) => step instanceof ScaleFilter || step instanceof PadFilter,
+      );
+      if (hasScaleOrPad) {
+        const scaleFilter = new ImageScaleFilter(this.desiredState.paddedSize);
+        this.subtitleInputSource.filterSteps.push(scaleFilter);
+      }
+
+      if (this.desiredState.pixelFormat) {
+        const unwrapped = this.desiredState.pixelFormat.unwrap();
+        const overlayFilter = new SubtitleOverlayFilter(unwrapped);
+        this.context.filterChain.subtitleOverlayFilterSteps.push(overlayFilter);
+      }
+    }
+
+    return currentState;
   }
 }

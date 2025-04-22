@@ -23,37 +23,35 @@ import {
   isNull,
   isUndefined,
   map,
+  orderBy,
   replace,
-  sortBy,
   takeWhile,
   trimEnd,
   trimStart,
 } from 'lodash-es';
-import { type NonEmptyArray } from 'ts-essentials';
 import {
   ifDefined,
   isDefined,
+  isNonEmptyArray,
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.js';
+import {
+  ExternalStreamDetailsFetcher,
+  StreamFetchRequest,
+} from '../StreamDetailsFetcher.ts';
 import {
   type AudioStreamDetails,
   HttpStreamSource,
   type ProgramStreamResult,
   type StreamDetails,
   type StreamSource,
+  SubtitleStreamDetails,
   type VideoStreamDetails,
 } from '../types.js';
 
-// The minimum fields we need to get stream details about an item
-// TODO: See if we need separate types for JF and Plex and what is really necessary here
-type JellyfinItemStreamDetailsQuery = Pick<
-  ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
->;
-
 @injectable()
-export class JellyfinStreamDetails {
+export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
   private jellyfin: JellyfinApiClient;
 
   constructor(
@@ -62,15 +60,17 @@ export class JellyfinStreamDetails {
     @inject(JellyfinItemFinder) private jellyfinItemFinder: JellyfinItemFinder,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
-  ) {}
+  ) {
+    super();
+  }
 
-  async getStream(server: MediaSource, item: JellyfinItemStreamDetailsQuery) {
-    return this.getStreamInternal(server, item);
+  async getStream({ server, lineupItem: query }: StreamFetchRequest) {
+    return this.getStreamInternal(server, query);
   }
 
   private async getStreamInternal(
     mediaSource: MediaSource,
-    item: JellyfinItemStreamDetailsQuery,
+    item: ContentBackedStreamLineupItem,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -172,7 +172,7 @@ export class JellyfinStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: JellyfinItemStreamDetailsQuery,
+    item: ContentBackedStreamLineupItem,
     media: JellyfinItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
@@ -231,12 +231,12 @@ export class JellyfinStreamDetails {
     }
 
     const audioStreamDetails = map(
-      sortBy(
+      orderBy(
         filter(
           firstMediaSource?.MediaStreams,
           (stream) => stream.Type === 'Audio',
         ),
-        (stream) => [stream.Index ?? 0, !stream.IsDefault],
+        [(stream) => stream.Index ?? 0, (stream) => !stream.IsDefault],
       ),
       (audioStream) => {
         return {
@@ -261,6 +261,37 @@ export class JellyfinStreamDetails {
       },
     );
 
+    const subtitleStreamDetails = map(
+      orderBy(
+        filter(
+          firstMediaSource?.MediaStreams,
+          (stream) => stream.Type === 'Subtitle',
+        ),
+        [(stream) => stream.Index ?? 0, (stream) => !stream.IsDefault],
+      ),
+      (subtitleStream) => {
+        return {
+          codec: subtitleStream.Codec ?? 'unknown',
+          default: subtitleStream.IsDefault ?? false,
+          forced: subtitleStream.IsForced ?? false,
+          sdh: subtitleStream.IsHearingImpaired ?? false,
+          type: subtitleStream.IsExternal ? 'external' : 'embedded',
+          description: subtitleStream.Title ?? '',
+          index:
+            ifDefined(subtitleStream.Index, (streamIndex) => {
+              const index = streamIndex - externalStreamCount;
+              if (index >= 0) {
+                return index;
+              }
+              return;
+            }) ?? undefined,
+          languageCodeISO6392: subtitleStream.Language ?? undefined,
+          path: subtitleStream.Path ?? undefined,
+          title: subtitleStream.DisplayTitle ?? undefined,
+        } satisfies SubtitleStreamDetails;
+      },
+    );
+
     if (!videoStreamDetails && isEmpty(audioStreamDetails)) {
       this.logger.warn(
         'Could not find a video nor audio stream for Plex item %s',
@@ -275,9 +306,12 @@ export class JellyfinStreamDetails {
       serverPath: nullToUndefined(firstMediaSource?.Id),
       directFilePath: nullToUndefined(firstMediaSource?.Path),
       videoDetails: videoStreamDetails ? [videoStreamDetails] : undefined,
-      audioDetails: isEmpty(audioStreamDetails)
-        ? undefined
-        : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+      audioDetails: isNonEmptyArray(audioStreamDetails)
+        ? audioStreamDetails
+        : undefined,
+      subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
+        ? subtitleStreamDetails
+        : undefined,
     };
 
     if (audioOnly) {

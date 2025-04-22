@@ -219,11 +219,9 @@ export function ChannelPropertiesEditor() {
                 />
               </Box>
             </Box>
-            <Box>
-              <Typography variant="h5" sx={{ mb: 1 }}>
-                On-Demand
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
+            <Stack gap={2}>
+              <Typography variant="h5">On-Demand</Typography>
+              <Typography variant="body2">
                 On-Demand channels resume from where you left off. Programming
                 is paused when the channel is not streaming.
                 <br />
@@ -245,7 +243,7 @@ export function ChannelPropertiesEditor() {
                   />
                 )}
               />
-            </Box>
+            </Stack>
           </Stack>
         </Box>
       </>

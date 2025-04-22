@@ -2,6 +2,7 @@ import type { TupleToUnion } from '@tunarr/types';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { type Insertable, type Selectable } from 'kysely';
+import type { StrictOmit } from 'ts-essentials';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
 export const MediaSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
@@ -62,3 +63,20 @@ export const MediaSourceFields: (keyof MediaSourceTable)[] = [
 export type MediaSourceTable = KyselifyBetter<typeof MediaSource>;
 export type MediaSource = Selectable<MediaSourceTable>;
 export type NewMediaSource = Insertable<MediaSourceTable>;
+
+export type SpecificMediaSourceType<Typ extends MediaSourceType> = StrictOmit<
+  MediaSource,
+  'type'
+> & {
+  type: Typ;
+};
+
+export type PlexMediaSource = SpecificMediaSourceType<
+  typeof MediaSourceType.Plex
+>;
+export type JellyfinMediaSource = SpecificMediaSourceType<
+  typeof MediaSourceType.Jellyfin
+>;
+export type EmbyMediaSource = SpecificMediaSourceType<
+  typeof MediaSourceType.Emby
+>;

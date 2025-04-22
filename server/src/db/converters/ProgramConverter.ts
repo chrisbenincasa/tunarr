@@ -100,7 +100,7 @@ export class ProgramConverter {
   programDaoToContentProgram(
     program: ProgramWithRelations,
     externalIds: MinimalProgramExternalId[],
-  ): ContentProgram {
+  ): MarkRequired<ContentProgram, 'id'> {
     let extraFields: Partial<ContentProgram> = {};
     if (program.type === ProgramType.Episode) {
       extraFields = {
