@@ -77,6 +77,5 @@ export const useSetColorScheme = () => {
 };
 
 export const useIsDarkMode = () => {
-  const theme = useTunarrTheme();
-  return theme.palette.mode === 'dark';
+  return useColorScheme().mode === 'dark';
 };
