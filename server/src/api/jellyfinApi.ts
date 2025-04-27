@@ -96,8 +96,9 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
           ...response.data,
           Items: filter(response.data.Items, (library) => {
+            // Mixed collections don't have this set
             if (!library.CollectionType) {
-              return false;
+              return true;
             }
 
             return ValidJellyfinCollectionTypes.includes(
