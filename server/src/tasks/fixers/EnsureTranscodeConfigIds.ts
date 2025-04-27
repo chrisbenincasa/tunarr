@@ -1,18 +1,16 @@
-import { transcodeConfigFromLegacySettings } from '@/db/schema/TranscodeConfig.js';
+import { defaultTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import Fixer from '@/tasks/fixers/fixer.js';
 import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { head, isEmpty, map, reject } from 'lodash-es';
-import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { DB } from '../../db/schema/db.ts';
 
 @injectable()
 export class EnsureTranscodeConfigIds extends Fixer {
   constructor(
     @inject(KEYS.Logger) protected logger: Logger,
-    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {
     super();
@@ -73,12 +71,7 @@ export class EnsureTranscodeConfigIds extends Fixer {
     return (
       await this.db
         .insertInto('transcodeConfig')
-        .values(
-          transcodeConfigFromLegacySettings(
-            this.settingsDB.ffmpegSettings(),
-            true,
-          ),
-        )
+        .values(defaultTranscodeConfig(true))
         .returning('uuid')
         .executeTakeFirstOrThrow()
     ).uuid;

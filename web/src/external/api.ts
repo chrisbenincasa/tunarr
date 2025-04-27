@@ -21,6 +21,7 @@ import {
   FillerListSchema,
   SaveChannelRequestSchema,
   TaskSchema,
+  TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
 import {
   Zodios,
@@ -102,6 +103,13 @@ export const api = makeApi([
       })
       .build(),
     response: CondensedChannelProgrammingSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/transcode_config',
+    alias: 'getChannelTranscodeConfig',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    response: TranscodeConfigSchema,
   },
   {
     method: 'post',

@@ -50,7 +50,15 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
       logger.info(`\r\nStream starting. Channel: 1 (Tunarr)`);
 
+      const defaultConfig =
+        await req.serverCtx.transcodeConfigDB.getDefaultConfig();
+
+      if (!defaultConfig) {
+        throw new Error('No default transcode config found');
+      }
+
       const ffmpeg = new FfmpegText(
+        defaultConfig,
         ffmpegSettings,
         'Tunarr (No Channels Configured)',
         'Configure your channels using the Tunarr Web UI',

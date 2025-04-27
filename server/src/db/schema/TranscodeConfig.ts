@@ -1,11 +1,9 @@
 import type { Resolution, TupleToUnion } from '@tunarr/types';
-import { defaultFfmpegSettings } from '@tunarr/types';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import { v4 } from 'uuid';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
-import type { ReadableFfmpegSettings } from '../interfaces/ISettingsDB.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
 export const HardwareAccelerationModes = [
@@ -197,53 +195,29 @@ export type TranscodeConfig = Selectable<TrannscodeConfigTable>;
 export type NewTranscodeConfig = Insertable<TrannscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TrannscodeConfigTable>;
 
-export const transcodeConfigFromLegacySettings = (
-  legacySettings: ReadableFfmpegSettings,
+export const defaultTranscodeConfig = (
   isDefault?: boolean,
 ): NewTranscodeConfig => {
-  const audioSetting = TranscodeAudioOutputFormats.find(
-    (fmt) => legacySettings.audioEncoder === fmt,
-  );
-  const videoSetting = TranscodeVideoOutputFormats.find(
-    (fmt) => legacySettings.videoFormat === fmt,
-  );
-
-  const audioFormat = audioSetting ?? 'aac';
-  const videoFormat = videoSetting ?? 'h264';
-
   return {
-    audioBitRate: legacySettings.audioBitrate,
-    audioBufferSize: legacySettings.audioBufferSize,
-    audioChannels: legacySettings.audioChannels,
-    audioFormat,
-    audioSampleRate: legacySettings.audioSampleRate,
-    hardwareAccelerationMode: legacySettings.hardwareAccelerationMode,
-    name: isDefault
-      ? 'Default'
-      : `${videoFormat} @ ${legacySettings.targetResolution.widthPx}x${legacySettings.targetResolution.heightPx} ${audioFormat}`,
-    resolution: JSON.stringify(
-      legacySettings.targetResolution satisfies Resolution,
-    ),
-    threadCount: legacySettings.numThreads,
+    threadCount: 0,
+    audioBitRate: 192,
+    audioBufferSize: 192 * 2,
+    audioChannels: 2,
+    audioFormat: 'aac',
+    audioSampleRate: 48,
+    hardwareAccelerationMode: 'none',
+    name: isDefault ? 'Default' : `h264 @ 1920x1080`,
+    resolution: JSON.stringify({
+      widthPx: 1920,
+      heightPx: 1080,
+    } satisfies Resolution),
     uuid: v4(),
-    videoBitRate: legacySettings.videoBitrate,
-    videoBufferSize: legacySettings.videoBufferSize,
-    videoFormat,
-    audioVolumePercent: legacySettings.audioVolumePercent,
-    deinterlaceVideo: booleanToNumber(
-      legacySettings.deinterlaceFilter !== 'none',
-    ),
-    disableChannelOverlay: booleanToNumber(
-      legacySettings.disableChannelOverlay,
-    ),
-    errorScreen: legacySettings.errorScreen,
-    errorScreenAudio: legacySettings.errorAudio,
+    videoBitRate: 2000,
+    videoBufferSize: 4000,
+    videoFormat: 'h264',
+    disableChannelOverlay: booleanToNumber(false),
     normalizeFrameRate: booleanToNumber(false),
-    vaapiDevice: legacySettings.vaapiDevice,
     videoBitDepth: 8,
     isDefault: booleanToNumber(!!isDefault),
   };
 };
-
-export const DefaultTranscodeConfig = () =>
-  transcodeConfigFromLegacySettings(defaultFfmpegSettings, true);

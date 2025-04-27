@@ -73,9 +73,8 @@ export default function FfmpegSettingsPage() {
   const [ffmpegConsoleLoggingEnabled, ffmpegFileLoggingEnabled] = watch([
     'enableLogging',
     'enableFileLogging',
-    'hardwareAccelerationMode',
-    'useNewFfmpegPipeline',
   ]);
+
   let logSelectValue: FfmpegLogOptions = 'disable';
   if (ffmpegFileLoggingEnabled) {
     logSelectValue = 'file';

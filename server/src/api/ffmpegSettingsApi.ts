@@ -1,11 +1,8 @@
-import type { TranscodeConfig as TrannscodeConfigDao } from '@/db/schema/TranscodeConfig.js';
 import { serverOptions } from '@/globals.js';
 import type { RouterPluginCallback } from '@/types/serverType.js';
 import { makeWritable } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { sanitizeForExec } from '@/util/strings.js';
-import type { TranscodeConfig } from '@tunarr/types';
 import { defaultFfmpegSettings } from '@tunarr/types';
 import { IdPathParamSchema } from '@tunarr/types/api';
 import {
@@ -15,6 +12,7 @@ import {
 import { isError, map, merge, omit } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod';
+import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import { TranscodeConfigNotFoundError } from '../types/errors.ts';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
@@ -304,16 +302,3 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
 
   done();
 };
-
-function dbTranscodeConfigToApiSchema(
-  config: TrannscodeConfigDao,
-): TranscodeConfig {
-  return {
-    ...config,
-    id: config.uuid,
-    disableChannelOverlay: numberToBoolean(config.disableChannelOverlay),
-    normalizeFrameRate: numberToBoolean(config.normalizeFrameRate),
-    deinterlaceVideo: numberToBoolean(config.deinterlaceVideo),
-    isDefault: numberToBoolean(config.isDefault),
-  } satisfies TranscodeConfig;
-}

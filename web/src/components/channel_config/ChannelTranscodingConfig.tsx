@@ -1,6 +1,5 @@
 import { useSettings } from '@/store/settings/selectors.ts';
 import {
-  CircularProgress,
   Divider,
   FormControl,
   FormControlLabel,
@@ -16,19 +15,16 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from '@tanstack/react-router';
-import {
+import type {
   ChannelStreamMode,
   SaveChannelRequest,
   Watermark,
 } from '@tunarr/types';
-import { map, range, round } from 'lodash-es';
+import { find, map, range, round } from 'lodash-es';
 import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { typedProperty } from '../../helpers/util.ts';
-import {
-  useFfmpegSettings,
-  useTranscodeConfigs,
-} from '../../hooks/settingsHooks.ts';
+import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import {
@@ -70,28 +66,25 @@ const ChannelStreamModeOptions: {
 
 export default function ChannelTranscodingConfig() {
   const { backendUri } = useSettings();
-  const { data: ffmpegSettings, isPending: ffmpegSettingsLoading } =
-    useFfmpegSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const transcodeConfigs = useTranscodeConfigs();
 
   const { control, watch, setValue, getValues } =
     useFormContext<SaveChannelRequest>();
 
-  const [targetRes, watermark] = watch([
-    'transcoding.targetResolution',
+  const [watermark, transcodeConfigId] = watch([
     'watermark',
+    'transcodeConfigId',
   ]);
+
+  const transcodeConfig = find(
+    transcodeConfigs.data,
+    (conf) => conf.id === transcodeConfigId,
+  )!;
 
   const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
 
-  if (ffmpegSettingsLoading) {
-    return <CircularProgress />;
-  }
-
-  const targetResForPreview = (targetRes === 'global'
-    ? ffmpegSettings?.targetResolution
-    : targetRes) ?? { widthPx: 1920, heightPx: 1080 };
+  const targetResForPreview = transcodeConfig.resolution;
   const paddingPct = round(
     100 * (targetResForPreview.heightPx / targetResForPreview.widthPx),
     2,

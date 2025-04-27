@@ -1,4 +1,4 @@
-import { ApiClient } from '@/external/api.ts';
+import type { ApiClient } from '@/external/api.ts';
 import {
   queryOptions,
   useQueries,
@@ -106,4 +106,15 @@ export const useTranscodeConfig = (id: string) =>
   useApiSuspenseQuery({
     queryKey: ['settings', 'transcode_configs', id],
     queryFn: (apiClient) => fetchTranscodeConfigFunc(apiClient)(id),
+  });
+
+export const useChannelTranscodeConfig = (channelId: string) =>
+  useApiSuspenseQuery({
+    queryKey: ['channels', channelId, 'transcode_config'],
+    queryFn: (apiClient) =>
+      apiClient.getChannelTranscodeConfig({
+        params: {
+          id: channelId,
+        },
+      }),
   });
