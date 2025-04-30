@@ -22,6 +22,7 @@ import {
   CondensedChannelProgrammingSchema,
   ContentProgramSchema,
   SaveChannelRequestSchema,
+  TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
@@ -37,6 +38,7 @@ import {
   reduce,
 } from 'lodash-es';
 import z from 'zod';
+import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
 
 dayjs.extend(duration);
@@ -502,6 +504,26 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.send(guide);
+    },
+  );
+
+  fastify.get(
+    '/channels/:id/transcode_config',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+        response: {
+          200: TranscodeConfigSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const config = await req.serverCtx.transcodeConfigDB.getChannelConfig(
+        req.params.id,
+      );
+      return res.send(dbTranscodeConfigToApiSchema(config));
     },
   );
 

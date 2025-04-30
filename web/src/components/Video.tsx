@@ -6,7 +6,7 @@ import { useBlocker, useLocation } from '@tanstack/react-router';
 import Hls from 'hls.js';
 import { isError, isNil } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFfmpegSettings } from '../hooks/settingsHooks.ts';
+import { useChannelTranscodeConfig } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
 import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 import { useSettings } from '../store/settings/selectors.ts';
@@ -22,8 +22,7 @@ export default function Video({ channelId }: VideoProps) {
   const { hls, resetHls } = useHls();
   const hlsSupported = useMemo(() => Hls.isSupported(), []);
   const [loadedStream, setLoadedStream] = useState<boolean | Error>(false);
-  const { data: ffmpegSettings, isLoading: ffmpegSettingsLoading } =
-    useFfmpegSettings();
+  const { data: transcodeConfig } = useChannelTranscodeConfig(channelId);
   const { noAutoPlay } = Route.useSearch();
   const [manuallyStarted, setManuallyStarted] = useState(false);
   const location = useLocation();
@@ -34,11 +33,9 @@ export default function Video({ channelId }: VideoProps) {
     const initialized = !isNil(videoRef.current) && !isNil(hls);
     const alreadedLoadedOrError = isError(loadedStream) || loadedStream;
     const validSettings =
-      !ffmpegSettingsLoading &&
-      !isNil(ffmpegSettings) &&
-      !['ac3'].includes(ffmpegSettings.audioEncoder);
+      !isNil(transcodeConfig) && !['ac3'].includes(transcodeConfig.audioFormat);
     return initialized && !alreadedLoadedOrError && validSettings;
-  }, [videoRef, hls, loadedStream, ffmpegSettingsLoading, ffmpegSettings]);
+  }, [videoRef, hls, loadedStream, transcodeConfig]);
 
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -102,7 +99,7 @@ export default function Video({ channelId }: VideoProps) {
       );
     }
 
-    if (!isNil(ffmpegSettings) && ffmpegSettings.audioEncoder === 'ac3') {
+    if (!isNil(transcodeConfig) && transcodeConfig.audioFormat === 'ac3') {
       return (
         <Alert severity="warning" sx={{ my: 2 }}>
           Tunarr is currently configured to use the AC3 audio encoder. This

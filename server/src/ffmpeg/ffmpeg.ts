@@ -195,7 +195,8 @@ export class FFMPEG implements IFFMPEG {
     this.wantedW = transcodeConfig.resolution.widthPx;
     this.wantedH = transcodeConfig.resolution.heightPx;
     this.apad = true;
-    this.ensureResolution = this.settings.normalizeResolution;
+    // Deprecated
+    this.ensureResolution = true;
     this.volumePercent = this.transcodeConfig.audioVolumePercent;
   }
 

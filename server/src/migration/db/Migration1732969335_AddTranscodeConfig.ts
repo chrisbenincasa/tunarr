@@ -1,8 +1,5 @@
 import type { NewTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import {
-  TranscodeAudioOutputFormats,
-  TranscodeVideoOutputFormats,
-} from '@/db/schema/TranscodeConfig.js';
+import { defaultTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import type { DB } from '@/db/schema/db.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import type { Resolution } from '@tunarr/types';
@@ -10,8 +7,6 @@ import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import { isEmpty } from 'lodash-es';
 import { v4 } from 'uuid';
-import { SettingsDBFactory } from '../../db/SettingsDBFactory.ts';
-import { globalOptions } from '../../globals.ts';
 
 export default {
   async up(db: Kysely<DB>) {
@@ -96,56 +91,11 @@ export default {
       )
       .execute();
 
-    // Insert the initial config, this is the default that is based off of the users current
-    // settings file.
-    // Then we will need to associate the config with channels, creating new configs
-    // with channel-specific overrides wherever necessary.
-    // This process should happen exactly once, which is why we are putting it here.
-    // TODO: Dont do this
-    const existingFfmpegSettings = new SettingsDBFactory(globalOptions())
-      .get()
-      .ffmpegSettings();
-    const audioSetting = TranscodeAudioOutputFormats.find(
-      (fmt) => existingFfmpegSettings.audioEncoder === fmt,
-    );
-    const videoSetting = TranscodeVideoOutputFormats.find(
-      (fmt) => existingFfmpegSettings.videoFormat === fmt,
-    );
-    const defaultTranscodeConfig: NewTranscodeConfig = {
-      audioBitRate: existingFfmpegSettings.audioBitrate,
-      audioBufferSize: existingFfmpegSettings.audioBufferSize,
-      audioChannels: existingFfmpegSettings.audioChannels,
-      audioFormat: audioSetting ?? 'aac',
-      audioSampleRate: existingFfmpegSettings.audioSampleRate,
-      hardwareAccelerationMode: existingFfmpegSettings.hardwareAccelerationMode,
-      name: 'Default',
-      resolution: JSON.stringify(
-        existingFfmpegSettings.targetResolution satisfies Resolution,
-      ),
-      threadCount: existingFfmpegSettings.numThreads,
-      uuid: v4(),
-      videoBitRate: existingFfmpegSettings.videoBitrate,
-      videoBufferSize: existingFfmpegSettings.videoBufferSize,
-      videoFormat: videoSetting ?? 'h264',
-      audioVolumePercent: existingFfmpegSettings.audioVolumePercent,
-      deinterlaceVideo: booleanToNumber(
-        existingFfmpegSettings.deinterlaceFilter !== 'none',
-      ),
-      disableChannelOverlay: booleanToNumber(
-        existingFfmpegSettings.disableChannelOverlay,
-      ),
-      errorScreen: existingFfmpegSettings.errorScreen,
-      errorScreenAudio: existingFfmpegSettings.errorAudio,
-      normalizeFrameRate: booleanToNumber(false),
-      vaapiDevice: existingFfmpegSettings.vaapiDevice,
-      videoBitDepth: 8,
-      isDefault: booleanToNumber(true),
-    };
-
+    const defaultConfig = defaultTranscodeConfig(true);
     const transcodeConfigId = (
       await db
         .insertInto('transcodeConfig')
-        .values(defaultTranscodeConfig)
+        .values(defaultConfig)
         .returning('uuid')
         .executeTakeFirstOrThrow()
     ).uuid;
@@ -158,7 +108,7 @@ export default {
         // Needs an override config
         configIdToUse = v4();
         const newConfig: NewTranscodeConfig = {
-          ...defaultTranscodeConfig,
+          ...defaultConfig,
           uuid: configIdToUse,
           name: `Default + Channel ${channel.number} override`,
           isDefault: booleanToNumber(false),

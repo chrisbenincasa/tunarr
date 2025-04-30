@@ -1,6 +1,10 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { NewCachedImage } from '@/db/schema/CachedImage.js';
 import {
+  ErrorScreenAudioType,
+  ErrorScreenAudioTypes,
+  ErrorScreenType,
+  ErrorScreenTypes,
   NewTranscodeConfig,
   TranscodeAudioOutputFormats,
   TranscodeVideoOutputFormats,
@@ -12,14 +16,13 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { AnonymousTask } from '@/tasks/Task.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
-import { attempt } from '@/util/index.js';
+import { attempt, inConstArr } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import {
   FfmpegSettings,
   PlexServerSettings,
   PlexStreamSettings,
-  Resolution,
   defaultFfmpegSettings,
   defaultHdhrSettings,
   defaultPlexStreamSettings,
@@ -27,7 +30,6 @@ import {
 import {
   DefaultHardwareAccel,
   DefaultVideoFormat,
-  FfmpegSettingsSchema,
   SupportedHardwareAccels,
   SupportedVideoFormats,
 } from '@tunarr/types/schemas';
@@ -48,7 +50,6 @@ import {
 import fs from 'node:fs/promises';
 import path, { dirname, join } from 'node:path';
 import { v4 } from 'uuid';
-import { z } from 'zod';
 import { Settings, defaultXmlTvSettings } from '../../db/SettingsDB.ts';
 import {
   MediaSourceType,
@@ -337,61 +338,18 @@ export class LegacyDbMigrator {
                 dirname(ffmpegSettings['ffmpegPath'] as string),
                 'ffprobe',
               ),
-              numThreads: ffmpegSettings['threads'] as number,
-              concatMuxDelay: ffmpegSettings['concatMuxDelay'] as number,
               enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
               enableFileLogging: false,
               logLevel: 'warning',
-              // This is ignored now
-              enableTranscoding: true,
-              audioVolumePercent: ffmpegSettings[
-                'audioVolumePercent'
-              ] as number,
-              videoEncoder: ffmpegSettings['videoEncoder'] as string,
-              videoFormat,
-              hardwareAccelerationMode: hwAccel,
-              audioEncoder: ffmpegSettings['audioEncoder'] as string,
-              targetResolution:
-                tryParseResolution(
-                  ffmpegSettings['targetResolution'] as string,
-                ) ?? defaultFfmpegSettings.targetResolution,
-              videoBitrate: ffmpegSettings['videoBitrate'] as number,
-              videoBufferSize: ffmpegSettings['videoBufSize'] as number,
-              audioBitrate: ffmpegSettings['audioBitrate'] as number,
-              audioBufferSize: ffmpegSettings['audioBufSize'] as number,
-              audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
-              audioChannels: ffmpegSettings['audioChannels'] as number,
-              errorScreen: ffmpegSettings['errorScreen'] as z.infer<
-                typeof FfmpegSettingsSchema
-              >['errorScreen'],
-              errorAudio: ffmpegSettings['errorAudio'] as z.infer<
-                typeof FfmpegSettingsSchema
-              >['errorAudio'],
-              normalizeVideoCodec: ffmpegSettings[
-                'normalizeVideoCodec'
-              ] as boolean,
-              normalizeAudioCodec: ffmpegSettings[
-                'normalizeAudioCodec'
-              ] as boolean,
-              normalizeResolution: ffmpegSettings[
-                'normalizeResolution'
-              ] as boolean,
-              normalizeAudio: ffmpegSettings['normalizeAudio'] as boolean,
-              maxFPS: ffmpegSettings['maxFPS'] as number,
-              scalingAlgorithm: ffmpegSettings[
-                'scalingAlgorithm'
-              ] as (typeof defaultFfmpegSettings)['scalingAlgorithm'],
-              deinterlaceFilter: ffmpegSettings[
-                'deinterlaceFilter'
-              ] as (typeof defaultFfmpegSettings)['deinterlaceFilter'],
-              disableChannelOverlay: ffmpegSettings[
-                'disableChannelOverlay'
-              ] as (typeof defaultFfmpegSettings)['disableChannelOverlay'],
-              disableChannelPrelude:
-                (ffmpegSettings['disablePreludes'] as Maybe<boolean>) ?? false,
               useNewFfmpegPipeline: false,
               hlsDirectOutputFormat: 'mpegts',
               languagePreferences: defaultFfmpegSettings.languagePreferences,
+              scalingAlgorithm: ffmpegSettings[
+                'scalingAlgorithm'
+              ] as FfmpegSettings['scalingAlgorithm'],
+              deinterlaceFilter: ffmpegSettings[
+                'deinterlaceFilter'
+              ] as FfmpegSettings['deinterlaceFilter'],
             },
             defaultFfmpegSettings,
           );
@@ -402,40 +360,57 @@ export class LegacyDbMigrator {
           };
 
           const audioSetting = TranscodeAudioOutputFormats.find(
-            (fmt) => newFfmpegSettings.audioEncoder === fmt,
+            (fmt) => (ffmpegSettings['audioEncoder'] as string) === fmt,
           );
           const videoSetting = TranscodeVideoOutputFormats.find(
-            (fmt) => newFfmpegSettings.videoFormat === fmt,
+            (fmt) => videoFormat === fmt,
           );
 
+          const deinterlaceFilter = ffmpegSettings[
+            'deinterlaceFilter'
+          ] as string;
+
+          const errorScreen: ErrorScreenType = inConstArr(
+            ErrorScreenTypes,
+            ffmpegSettings['errorScreen'] as string,
+          )
+            ? (ffmpegSettings['errorScreen'] as ErrorScreenType)
+            : 'pic';
+
+          const errorAudio: ErrorScreenAudioType = inConstArr(
+            ErrorScreenAudioTypes,
+            ffmpegSettings['errorAudio'] as string,
+          )
+            ? (ffmpegSettings['errorAudio'] as ErrorScreenAudioType)
+            : 'silent';
+
           const defaultTranscodeConfig: NewTranscodeConfig = {
-            audioBitRate: newFfmpegSettings.audioBitrate,
-            audioBufferSize: newFfmpegSettings.audioBufferSize,
-            audioChannels: newFfmpegSettings.audioChannels,
+            audioBitRate: ffmpegSettings['audioBitrate'] as number,
+            audioBufferSize: ffmpegSettings['audioBufSize'] as number,
+            audioChannels: ffmpegSettings['audioChannels'] as number,
             audioFormat: audioSetting ?? 'aac',
-            audioSampleRate: newFfmpegSettings.audioSampleRate,
-            hardwareAccelerationMode:
-              newFfmpegSettings.hardwareAccelerationMode,
+            audioSampleRate: ffmpegSettings['audioSampleRate'] as number,
+            hardwareAccelerationMode: hwAccel,
             name: 'Default',
             resolution: JSON.stringify(
-              newFfmpegSettings.targetResolution satisfies Resolution,
+              tryParseResolution(
+                ffmpegSettings['targetResolution'] as string,
+              ) ?? { widthPx: 1920, heightPx: 1080 },
             ),
-            threadCount: newFfmpegSettings.numThreads,
+            threadCount: ffmpegSettings['threads'] as number,
             uuid: v4(),
-            videoBitRate: newFfmpegSettings.videoBitrate,
-            videoBufferSize: newFfmpegSettings.videoBufferSize,
+            videoBitRate: ffmpegSettings['videoBitrate'] as number,
+            videoBufferSize: ffmpegSettings['videoBufSize'] as number,
             videoFormat: videoSetting ?? 'h264',
-            audioVolumePercent: newFfmpegSettings.audioVolumePercent,
-            deinterlaceVideo: booleanToNumber(
-              newFfmpegSettings.deinterlaceFilter !== 'none',
-            ),
+            audioVolumePercent: ffmpegSettings['audioVolumePercent'] as number,
+            deinterlaceVideo: booleanToNumber(deinterlaceFilter !== 'none'),
             disableChannelOverlay: booleanToNumber(
-              newFfmpegSettings.disableChannelOverlay,
+              ffmpegSettings['disableChannelOverlay'] as boolean,
             ),
-            errorScreen: newFfmpegSettings.errorScreen,
-            errorScreenAudio: newFfmpegSettings.errorAudio,
+            errorScreen,
+            errorScreenAudio: errorAudio,
             normalizeFrameRate: booleanToNumber(false),
-            vaapiDevice: newFfmpegSettings.vaapiDevice,
+            vaapiDevice: undefined,
             videoBitDepth: 8,
             isDefault: booleanToNumber(true),
           };

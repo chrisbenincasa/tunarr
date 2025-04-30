@@ -520,3 +520,16 @@ export function gcd(a: number, b: number) {
 export function makeWritable<T>(obj: DeepReadonly<T>): DeepWritable<T> {
   return obj as DeepWritable<T>; // here be hacks
 }
+
+export function inConstArr<Arr extends readonly string[], S extends string>(
+  arr: Arr,
+  typ: S,
+): boolean {
+  for (const value of arr) {
+    if (value === typ) {
+      return true;
+    }
+  }
+
+  return false;
+}

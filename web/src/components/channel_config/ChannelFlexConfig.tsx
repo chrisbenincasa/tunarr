@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { SaveChannelRequest } from '@tunarr/types';
+import type { SaveChannelRequest } from '@tunarr/types';
 import {
   chain,
   find,

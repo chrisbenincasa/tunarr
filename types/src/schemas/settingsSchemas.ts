@@ -1,6 +1,5 @@
 import z from 'zod';
 import { type Tag, type TupleToUnion } from '../util.js';
-import { ResolutionSchema } from './miscSchemas.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
@@ -89,8 +88,8 @@ export const FfmpegSettingsSchema = z.object({
   configVersion: z.number().default(5),
   ffmpegExecutablePath: z.string().default('/usr/bin/ffmpeg'),
   ffprobeExecutablePath: z.string().default('/usr/bin/ffprobe'),
-  numThreads: z.number().default(4),
-  concatMuxDelay: z.number().default(0),
+  // numThreads: z.number().default(4),
+  // concatMuxDelay: z.number().default(0),
   enableLogging: z.boolean().default(false),
   enableFileLogging: z.boolean().default(false),
   logLevel: z.enum(FfmpegLogLevels).optional().default('warning'),
@@ -99,53 +98,41 @@ export const FfmpegSettingsSchema = z.object({
   }),
   transcodeDirectory: z.string().default('').optional(),
   // DEPRECATED
-  enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
-  audioVolumePercent: z.number().default(100),
+  // enableTranscoding: z.boolean().default(true).describe('DEPRECATED'),
+  // audioVolumePercent: z.number().default(100),
   // DEPRECATED
-  videoEncoder: z.string().default('libx264').describe('DEPRECATED'),
-  hardwareAccelerationMode: z
-    .enum(SupportedHardwareAccels)
-    .default(DefaultHardwareAccel),
-  videoFormat: z
-    .union([z.literal('h264'), z.literal('hevc'), z.literal('mpeg2')])
-    .default(DefaultVideoFormat),
-  audioEncoder: z.string().default('aac'),
-  targetResolution: ResolutionSchema.default({ widthPx: 1920, heightPx: 1080 }),
-  videoBitrate: z.number().default(10000),
-  videoBufferSize: z.number().default(1000),
-  audioBitrate: z.number().default(192),
-  audioBufferSize: z.number().default(50),
-  audioSampleRate: z.number().default(48),
-  audioChannels: z.number().default(2),
-  errorScreen: z.enum(SupportedErrorScreens).default('pic'),
-  errorAudio: z.enum(SupportedErrorAudioTypes).default('silent'),
-  normalizeVideoCodec: z.boolean().default(true),
-  normalizeAudioCodec: z.boolean().default(true),
-  normalizeResolution: z.boolean().default(true),
-  normalizeAudio: z.boolean().default(true),
-  maxFPS: z.coerce.number().min(1).max(240).default(60),
+  // videoEncoder: z.string().default('libx264').describe('DEPRECATED'),
+  // hardwareAccelerationMode: z
+  //   .enum(SupportedHardwareAccels)
+  //   .default(DefaultHardwareAccel),
+  // videoFormat: z
+  //   .union([z.literal('h264'), z.literal('hevc'), z.literal('mpeg2')])
+  //   .default(DefaultVideoFormat),
+  // audioEncoder: z.string().default('aac'),
+  // targetResolution: ResolutionSchema.default({ widthPx: 1920, heightPx: 1080 }),
+  // videoBitrate: z.number().default(10000),
+  // videoBufferSize: z.number().default(1000),
+  // audioBitrate: z.number().default(192),
+  // audioBufferSize: z.number().default(50),
+  // audioSampleRate: z.number().default(48),
+  // audioChannels: z.number().default(2),
+  // errorScreen: z.enum(SupportedErrorScreens).default('pic'),
+  // errorAudio: z.enum(SupportedErrorAudioTypes).default('silent'),
+  // normalizeVideoCodec: z.boolean().default(true),
+  // normalizeAudioCodec: z.boolean().default(true),
+  // normalizeResolution: z.boolean().default(true),
+  // normalizeAudio: z.boolean().default(true),
+  // maxFPS: z.coerce.number().min(1).max(240).default(60),
   scalingAlgorithm: z
-    .union([
-      z.literal('bicubic'),
-      z.literal('fast_bilinear'),
-      z.literal('lanczos'),
-      z.literal('spline'),
-    ])
+    .enum(['bicubic', 'fast_bilinear', 'lanczos', 'spline'])
     .default('bicubic'),
   deinterlaceFilter: z
-    .union([
-      z.literal('none'),
-      z.literal('bwdif=0'),
-      z.literal('bwdif=1'),
-      z.literal('w3fdif'),
-      z.literal('yadif=0'),
-      z.literal('yadif=1'),
-    ])
+    .enum(['none', 'bwdif=0', 'bwdif=1', 'w3fdif', 'yadif=0', 'yadif=1'])
     .default('none'),
-  disableChannelOverlay: z.boolean().default(false),
-  disableChannelPrelude: z.boolean().default(false),
-  vaapiDevice: z.string().optional(),
-  vaapiDriver: z.string().optional(),
+  // disableChannelOverlay: z.boolean().default(false),
+  // disableChannelPrelude: z.boolean().default(false),
+  // vaapiDevice: z.string().optional(),
+  // vaapiDriver: z.string().optional(),
   useNewFfmpegPipeline: z.boolean().default(true),
   hlsDirectOutputFormat: z.enum(['mkv', 'mpegts', 'mp4']).default('mpegts'),
 });
