@@ -1,4 +1,5 @@
-import { Channel, CondensedChannelProgram, isFlexProgram } from '@tunarr/types';
+import type { Channel, CondensedChannelProgram } from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, flatMap, forEach, isEmpty, sortBy } from 'lodash-es';
 import filter from 'lodash-es/filter';
@@ -69,7 +70,7 @@ export function padStartTimes(
 ) {
   const modMins = !padding || padding.mod <= 0 ? 1 : padding.mod;
   const mod = modMins * 60 * 1000;
-  const startTime = dayjs(channel?.startTime).unix() * 1000;
+  const startTime = +dayjs(channel?.startTime);
   const newStartTime = startTime - (startTime % mod);
   const filteredPrograms = filter(programs, negate(isFlexProgram));
 
@@ -79,7 +80,6 @@ export function padStartTimes(
       60 * 1000,
     ),
   );
-  console.log(manualOffsets);
 
   let lastStartTime = newStartTime;
   const newProgramList: CondensedChannelProgram[] = [];
@@ -109,23 +109,24 @@ export function padStartTimes(
     } else {
       // How many "slots" of time does this program take up?
       // We find the next available start time for a program
-      nextProgramTime = last.add(
-        Math.ceil(program.duration / mod) * mod,
-        'milliseconds',
-      );
+      nextProgramTime = last.add(Math.ceil(program.duration / mod) * mod);
     }
     // Advance by the duration of the program
     lastStartTime += program.duration;
     // How much padding do we need?
-    const paddingDuration = nextProgramTime.diff(lastStartTime);
-    if (paddingDuration > 30 * 1000) {
-      newProgramList.push({
-        type: 'flex',
-        duration: paddingDuration,
-        persisted: false,
-      });
-      lastStartTime += paddingDuration;
+    let paddingDuration = nextProgramTime.diff(lastStartTime);
+    // TODO: Make this configurable.
+    if (paddingDuration < 30 * 1000) {
+      // We don't want short flex periods, so round to the next padded
+      // start time.
+      paddingDuration += mod;
     }
+    newProgramList.push({
+      type: 'flex',
+      duration: paddingDuration,
+      persisted: false,
+    });
+    lastStartTime += paddingDuration;
   });
 
   return { newStartTime, newProgramList };
