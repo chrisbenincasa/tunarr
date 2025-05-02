@@ -16,7 +16,13 @@ import { KEYS } from '../../../types/inject.ts';
 import { Result } from '../../../types/result.ts';
 
 const NvidiaGpuArchPattern = /SM\s+(\d\.\d)/;
-const NvidiaGpuModelPattern = /(GTX\s+[0-9a-zA-Z]+[\sTtIi]+)/;
+const NvidiaGpuModelPattern = /(([G|R]TX|Quadro)\s+[0-9a-zA-Z]+[\sTtIi]+)/;
+
+type NvidiaGpuDetectionResponse = {
+  model?: string;
+  architecture?: number;
+  stdout: string;
+};
 
 export class NvidiaHardwareCapabilitiesFactory
   implements FfmpegHardwareCapabilitiesFactory
@@ -58,9 +64,10 @@ export class NvidiaHardwareCapabilitiesFactory
 
         const nvidiaGpu = nvidiaGpuResult.get();
 
-        if (!nvidiaGpu) {
+        if (!nvidiaGpu.model || !nvidiaGpu.architecture) {
           this.logger.warn(
-            'Could not parse ffmepg output for Nvidia capabilities',
+            'Could not parse ffmepg output for Nvidia capabilities. Raw output: %s',
+            nvidiaGpu.stdout,
           );
           return new NoHardwareCapabilities();
         }
@@ -87,7 +94,9 @@ export class NvidiaGpuDetectionHelper {
     }),
   ) {}
 
-  async getGpuFromFfmpeg(ffmpegExecutablePath: string) {
+  async getGpuFromFfmpeg(
+    ffmpegExecutablePath: string,
+  ): Promise<Result<NvidiaGpuDetectionResponse>> {
     return Result.attemptAsync(async () => {
       const processOutput = await new ChildProcessHelper().getStdout(
         ffmpegExecutablePath,
@@ -106,6 +115,8 @@ export class NvidiaGpuDetectionHelper {
           '-',
         ],
         true,
+        {},
+        true,
       );
 
       const lines = reject(
@@ -114,24 +125,48 @@ export class NvidiaGpuDetectionHelper {
       );
 
       for (const line of lines) {
-        const archMatch = line.match(NvidiaGpuArchPattern);
-        if (archMatch) {
-          const archString = archMatch[1];
-          const archNum = parseInt(archString.replaceAll('.', ''));
-          const model =
-            nth(line.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';
+        const maybeParsed = parseNvidiaModelAndArchitecture(line);
+        if (maybeParsed) {
           this.logger.debug(
-            `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
+            `Detected NVIDIA GPU (model = "${maybeParsed.model}", arch = "${maybeParsed.architecture}")`,
           );
 
           return {
-            model,
-            architecture: archNum,
-          };
+            model: maybeParsed.model,
+            architecture: maybeParsed.architecture,
+            stdout: processOutput,
+          } satisfies NvidiaGpuDetectionResponse;
         }
       }
 
-      return;
+      return {
+        stdout: processOutput,
+      };
     });
   }
+}
+
+export function parseNvidiaModelAndArchitecture(ffmpegDebugLine: string) {
+  const archMatch = ffmpegDebugLine.match(NvidiaGpuArchPattern);
+  if (archMatch) {
+    const archString = archMatch[1];
+    const archNum = parseInt(archString.replaceAll('.', ''));
+    const model =
+      nth(ffmpegDebugLine.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';
+    // this.logger.debug(
+    //   `Detected NVIDIA GPU (model = "${model}", arch = "${archString}")`,
+    // );
+
+    return {
+      model,
+      architecture: archNum,
+    };
+    // return {
+    //   model,
+    //   architecture: archNum,
+    //   stdout: processOutput,
+    // };
+  }
+
+  return;
 }

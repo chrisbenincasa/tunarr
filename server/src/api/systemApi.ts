@@ -225,7 +225,8 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
           )
           .then((res) =>
             res.either(
-              (gpu) => JSON.stringify(gpu, undefined, 4),
+              ({ model, architecture, stdout }) =>
+                `${JSON.stringify({ model, architecture }, undefined, 4)}\n${stdout}`,
               (err) => err.message,
             ),
           ),
