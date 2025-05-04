@@ -10,6 +10,7 @@ import {
   Select,
   Slider,
   Stack,
+  Switch,
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
@@ -21,7 +22,7 @@ import type {
   Watermark,
 } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { typedProperty } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
@@ -77,18 +78,26 @@ export default function ChannelTranscodingConfig() {
     'transcodeConfigId',
   ]);
 
-  const transcodeConfig = find(
-    transcodeConfigs.data,
-    (conf) => conf.id === transcodeConfigId,
-  )!;
+  const transcodeConfig = useMemo(
+    () => find(transcodeConfigs.data, (conf) => conf.id === transcodeConfigId)!,
+    [transcodeConfigId, transcodeConfigs.data],
+  );
 
   const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
+  const [safeTitleIndicatorVisible, setSafeTitleIndicatorVisible] =
+    useState(false);
 
   const targetResForPreview = transcodeConfig.resolution;
   const paddingPct = round(
     100 * (targetResForPreview.heightPx / targetResForPreview.widthPx),
     2,
   );
+  const aspectRatio = (
+    targetResForPreview.widthPx / targetResForPreview.heightPx
+  ).toFixed(2);
+  const [safeVerticalPct, safeHorizontalPct] =
+    aspectRatio === '1.33' ? [80, 80] : [90, 90];
+  // Only special case safe title area for 4:3
 
   const isRight =
     watermark?.position === 'bottom-right' ||
@@ -183,7 +192,7 @@ export default function ChannelTranscodingConfig() {
           </FormControl>
           {watermark?.enabled && (
             <Stack direction="row" mt={2} gap={2} useFlexGap>
-              <Box sx={{ minWidth: '33%' }}>
+              <Stack sx={{ minWidth: '33%' }} spacing={2}>
                 <Box
                   sx={{
                     width: '100%',
@@ -205,18 +214,53 @@ export default function ChannelTranscodingConfig() {
                           ? `${watermark.width}%`
                           : null,
                       opacity: opacity / 100,
-                      [isBottom ? 'bottom' : 'top']: watermark?.verticalMargin,
-                      [isRight ? 'right' : 'left']: watermark?.horizontalMargin,
+                      [isBottom ? 'bottom' : 'top']:
+                        `${watermark?.verticalMargin}%`,
+                      [isRight ? 'right' : 'left']:
+                        `${watermark?.horizontalMargin}%`,
                     }}
                     src={watermarkPath || `${backendUri}/images/tunarr.png`}
                   />
+                  {safeTitleIndicatorVisible && (
+                    <Box
+                      sx={{
+                        background: 'transparent',
+                        border: '1px red dashed',
+                        position: 'absolute',
+                        height: `${safeVerticalPct}%`,
+                        width: `${safeHorizontalPct}%`,
+                        left: `${(100 - safeHorizontalPct) / 2}%`,
+                        top: `${(100 - safeVerticalPct) / 2}%`,
+                      }}
+                    ></Box>
+                  )}
                 </Box>
-              </Box>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={safeTitleIndicatorVisible}
+                      onChange={(_, checked) =>
+                        setSafeTitleIndicatorVisible(checked)
+                      }
+                    />
+                  }
+                  label={
+                    <span>
+                      Toggle{' '}
+                      <Link
+                        href="https://en.wikipedia.org/wiki/Safe_area_(television)#:~:text=The%20title%2Dsafe%20area%20or,screen%20location%20and%20display%20type."
+                        target="_blank"
+                      >
+                        Safe Title Indicator
+                      </Link>{' '}
+                      lines in preview
+                    </span>
+                  }
+                />
+              </Stack>
               <Grid
                 container
-                rowSpacing={1}
-                columnSpacing={2}
-                rowGap={1}
+                spacing={2}
                 sx={{ flexGrow: 1, height: 'fit-content' }}
               >
                 <Grid size={{ xs: 12 }}>
@@ -241,7 +285,7 @@ export default function ChannelTranscodingConfig() {
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth margin="normal">
                     <InputLabel>Position</InputLabel>
                     <Controller
                       name="watermark.position"
