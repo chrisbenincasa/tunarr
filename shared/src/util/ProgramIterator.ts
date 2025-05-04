@@ -1,8 +1,8 @@
-import { ChannelProgram, ContentProgram } from '@tunarr/types';
-import { BaseSlot } from '@tunarr/types/api';
+import type { ChannelProgram, ContentProgram } from '@tunarr/types';
+import type { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { nth, orderBy, shuffle, slice } from 'lodash-es';
-import { StrictExclude } from 'ts-essentials';
+import type { StrictExclude } from 'ts-essentials';
 import { random } from '../services/RandomSlotsService.js';
 import { seq } from './index.js';
 
@@ -107,7 +107,6 @@ export class ProgramOrdereredIterator<ProgramType extends ChannelProgram>
     orderer: (program: ProgramType) => string | number,
     asc: boolean = true,
   ) {
-    console.log(asc);
     this.#programs = orderBy(programs, orderer, [asc ? 'asc' : 'desc']);
   }
 
