@@ -34,6 +34,7 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
     {},
   );
+  console.log(sublistStates);
   const drawerRef = useRef(null);
 
   const navItems = useNavItems();
@@ -59,6 +60,9 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
       case 'closed':
         onClose?.();
         break;
+      case 'closing':
+        setSublistStates({});
+        break;
       default:
         break;
     }
@@ -78,7 +82,6 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
         <MuiDrawer
           ref={drawerRef}
           sx={{
-            // width: drawerWidth,
             width:
               state === 'entered' || state === 'entering'
                 ? DrawerOpenWidth
@@ -150,18 +153,18 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
                         </ListItemIcon>
                       ) : null}
                     </ListItemButton>
-                    {item.children &&
-                    (drawerState === 'open' || drawerState === 'opening') ? (
+                    {item.children ? (
                       <Collapse
                         in={
-                          // drawerState === 'open' &&
+                          (drawerState === 'open' ||
+                            drawerState === 'opening') &&
                           sublistStates[item.name]
                         }
                         timeout={100}
                       >
                         <List component="div" disablePadding>
                           {item.children
-                            .filter((item) => item.hidden)
+                            .filter((item) => !item.hidden)
                             .map((child) => (
                               <ListItemButton
                                 key={child.name}
