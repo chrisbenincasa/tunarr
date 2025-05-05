@@ -542,6 +542,8 @@ export class Server {
       },
       level: 'success',
     });
+
+    return this.app;
   }
 
   getOpenApiDocument() {

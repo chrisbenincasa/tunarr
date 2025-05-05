@@ -7,7 +7,6 @@ import {
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
-import { describe, expect, test } from 'bun:test';
 
 describe('ScaleVaapiFilter', () => {
   test('format only, 8-bit, on hardware', () => {

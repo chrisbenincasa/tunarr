@@ -1,19 +1,18 @@
-import { file } from 'bun';
-import { expect, test } from 'bun:test';
 import { map } from 'lodash-es';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import tmp from 'tmp-promise';
 import { afterAll, beforeAll, describe } from 'vitest';
 import { bootstrapTunarr } from '../../bootstrap.ts';
 import { container } from '../../container.ts';
 import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { setGlobalOptions } from '../../globals.ts';
 import { KEYS } from '../../types/inject.ts';
 import { typedProperty } from '../../types/path.ts';
 import { LegacyChannelMigrator } from './LegacyChannelMigrator.ts';
 
 // Make this a fixture
-let dbResult: tmp.DirectoryResult;
+export let dbResult: tmp.DirectoryResult;
 
 beforeAll(async () => {
   dbResult = await tmp.dir({ unsafeCleanup: true });
@@ -32,12 +31,24 @@ afterAll(async () => {
 
 describe('Legacy DB Migration', () => {
   test('channel migration', async () => {
-    const channelPath = fileURLToPath(
-      import.meta.resolve('@/resources/test/legacy-migration/channels/1.json'),
+    const channelPath = path.resolve(
+      import.meta.dirname,
+      '../../resources/test/legacy-migration/channels/1.json',
     );
-
-    const legacyFileContents = await file(channelPath).json();
+    const legacyFileContents = await import(
+      '@/resources/test/legacy-migration/channels/1.json'
+    );
     const durations = map(legacyFileContents['programs'], 'duration');
+
+    const mediaSourceDB = container.get<MediaSourceDB>(MediaSourceDB);
+    await mediaSourceDB.addMediaSource({
+      accessToken: 'fake',
+      name: 'dionysus',
+      type: 'plex',
+      uri: 'http://plex.fake.local',
+      userId: null,
+      username: null,
+    });
 
     const migrator = container.get<LegacyChannelMigrator>(
       LegacyChannelMigrator,

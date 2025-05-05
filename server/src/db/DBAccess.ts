@@ -306,7 +306,10 @@ export class DBAccess {
       ) {
         await copyMigrator.migrate(dbPathToMigrate, migration.name);
       } else {
-        await conn.runDBMigrations(migration.name);
+        // Refresh the connection every time.
+        await this.getOrCreateConnection(dbPathToMigrate).runDBMigrations(
+          migration.name,
+        );
       }
     }
   }

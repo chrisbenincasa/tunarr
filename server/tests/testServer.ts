@@ -1,24 +1,25 @@
-import { v4 } from 'uuid';
-import { serverOptions, setServerOptions } from '../src/globals.js';
-import { initServer } from '../src/Server.js';
-import { initTestDb } from './testDb.js';
+import tmp from 'tmp-promise';
+import { bootstrapTunarr } from '../src/bootstrap.ts';
+import { container } from '../src/container.ts';
+import { setServerOptions } from '../src/globals.js';
+import { Server } from '../src/Server.js';
+
+// Make this a fixture
+export let dbResult: tmp.DirectoryResult;
 
 export async function initTestApp(port: number) {
+  dbResult = await tmp.dir({ unsafeCleanup: true });
   setServerOptions({
-    databaseDirectory: `/tmp/test_${v4()}`,
+    database: dbResult.path,
     force_migration: false,
-    log_level: 'info',
+    log_level: 'debug',
+    verbose: 0,
     port,
+    admin: false,
     printRoutes: false,
+    trustProxy: false,
   });
+  await bootstrapTunarr();
 
-  // this will create all the ORM services and cache them
-  await initTestDb();
-
-  // create the schema so we can use the database
-  // await orm.schema.createSchema();
-
-  const { app } = await initServer(serverOptions());
-
-  return app;
+  return await container.get(Server).initAndRun();
 }

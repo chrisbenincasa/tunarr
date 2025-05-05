@@ -11,8 +11,8 @@ beforeAll(async () => {
   settingsDB = getFakeSettingsDb();
 });
 
-test('Get last duration', async () => {
-  const task = new GetLastPtsDurationTask();
+test.skip('Get last duration', async () => {
+  const task = new GetLastPtsDurationTask(settingsDB);
   const result = await task.run(
     '/home/christian/Desktop/ffmpeg-test/test-out.ts',
   );
