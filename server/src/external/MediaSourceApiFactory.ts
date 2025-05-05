@@ -100,28 +100,19 @@ export class MediaSourceApiFactory {
       let userId = opts.userId;
       let username: Maybe<string>;
       if (isEmpty(userId)) {
-        if (isEmpty(opts.userId)) {
-          const usersMeResult = await Result.attemptAsync(() =>
-            EmbyApiClient.findUserId(opts, opts.accessToken, true),
-          ).then((_) => _.filter((res) => isNonEmptyString(res?.Id)));
+        this.logger.warn(
+          'Emby connection does not have a user ID set. This could lead to errors. Please reconnect Emby.',
+        );
+        const adminResult = await Result.attemptAsync(() =>
+          EmbyApiClient.findAdminUser(opts, opts.accessToken),
+        );
 
-          if (usersMeResult.isSuccess()) {
-            const user = usersMeResult.get();
-            userId = user!.Id!;
-            username = user!.Name ?? undefined;
-          } else {
-            const adminResult = await Result.attemptAsync(() =>
-              EmbyApiClient.findAdminUser(opts, opts.accessToken),
-            );
-
-            adminResult
-              .filter((res) => isNonEmptyString(res?.Id))
-              .forEach((adminUser) => {
-                userId = adminUser!.Id!;
-                username = adminUser!.Name ?? undefined;
-              });
-          }
-        }
+        adminResult
+          .filter((res) => isNonEmptyString(res?.Id))
+          .forEach((adminUser) => {
+            userId = adminUser!.Id!;
+            username = adminUser!.Name ?? undefined;
+          });
       }
 
       if (
