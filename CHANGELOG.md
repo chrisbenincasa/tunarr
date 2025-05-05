@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.19.0](https://github.com/chrisbenincasa/tunarr/compare/v0.18.20...v0.19.0) (2025-05-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* properly scope Jellyfin/Emby requests to the auth'd user ([#1163](https://github.com/chrisbenincasa/tunarr/issues/1163))
+
+### Features
+
+* add safe title area indicator on watermark page ([#1177](https://github.com/chrisbenincasa/tunarr/issues/1177)) ([474331e](https://github.com/chrisbenincasa/tunarr/commit/474331e683a77567927901cde0df0dc265ca60e9))
+* improvements to restrict hours tool ([#1165](https://github.com/chrisbenincasa/tunarr/issues/1165)) ([0065e2b](https://github.com/chrisbenincasa/tunarr/commit/0065e2b97686dd72de3d67e3e2f3fdb42298fedf)), closes [#1159](https://github.com/chrisbenincasa/tunarr/issues/1159)
+
+
+### Bug Fixes
+
+* always pass mediaSourceUuid for api clients created from sources ([8c2653c](https://github.com/chrisbenincasa/tunarr/commit/8c2653c4fdf15e19343a628bf3b5c2336af4af20))
+* do not allow start time padding to skew ([384ff75](https://github.com/chrisbenincasa/tunarr/commit/384ff75b404fc19d1365f7efb49d36c52ea4c3a0)), closes [#1175](https://github.com/chrisbenincasa/tunarr/issues/1175)
+* fix drawer subnav expansion ([82ca195](https://github.com/chrisbenincasa/tunarr/commit/82ca1950d7a9a134ae8b0ff82312c6a27eb3f183))
+* fix erroneous "unsaved changes" warning on ffmpeg page ([e5bd022](https://github.com/chrisbenincasa/tunarr/commit/e5bd022e105070b703d89326dfb7678239b70bbf))
+* get all tests passing and fix db migration bug ([c998163](https://github.com/chrisbenincasa/tunarr/commit/c99816373c5ec4b9d5b0a385f08898b8816ba435))
+* improve Nvidia card name detection and debug output ([0495023](https://github.com/chrisbenincasa/tunarr/commit/04950234a1776d79ac298627156721cbf59644ea))
+* properly scope Jellyfin/Emby requests to the auth'd user ([#1163](https://github.com/chrisbenincasa/tunarr/issues/1163)) ([d9483f4](https://github.com/chrisbenincasa/tunarr/commit/d9483f4036fed8d48431dfd674ff521e407686aa))
+* re-add program_external_id indexes, removed by mistake ([d2338f7](https://github.com/chrisbenincasa/tunarr/commit/d2338f7d96062eed08a582de1fdde52a67d9066f))
+* remove unusable drag indicator in time slot table ([541e650](https://github.com/chrisbenincasa/tunarr/commit/541e6506e4a9ea97c3b49f2d19dbca365c412755)), closes [#1158](https://github.com/chrisbenincasa/tunarr/issues/1158)
+* set recursive=true certain types of Jellyfin "libraries" ([#1168](https://github.com/chrisbenincasa/tunarr/issues/1168)) ([8f81791](https://github.com/chrisbenincasa/tunarr/commit/8f817917f3b1eb40e718a415fe6922ddd47a2695))
+* support Jellyfin mixed library types ([#1171](https://github.com/chrisbenincasa/tunarr/issues/1171)) ([222b0bb](https://github.com/chrisbenincasa/tunarr/commit/222b0bbaeb35120e1069b1bad2186c57092f8a31))
+
 ## [0.18.20](https://github.com/chrisbenincasa/tunarr/compare/v0.18.19...v0.18.20) (2025-04-17)
 
 
