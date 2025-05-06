@@ -38,6 +38,7 @@ import {
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 dayjs.extend(duration);
 
@@ -173,7 +174,6 @@ export function CustomShowProgrammingSelector({
   );
 
   const renderListItems = () => {
-    console.log(customShows);
     return map(customShows, (cs) => {
       return (
         <CustomShowListItem
@@ -194,6 +194,10 @@ export function CustomShowProgrammingSelector({
           marginTop: 1,
         }}
       />
+
+      <SelectedProgrammingActions
+        toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
+      />
       <List
         component="nav"
         sx={{
@@ -210,7 +214,6 @@ export function CustomShowProgrammingSelector({
         {renderListItems()}
         <div style={{ height: 40 }} ref={ref}></div>
       </List>
-
       <Divider sx={{ mt: 3, mb: 2 }} />
     </Box>
   );

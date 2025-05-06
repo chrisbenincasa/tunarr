@@ -92,8 +92,6 @@ export default function SelectedProgrammingActions({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectAllLoading, setSelectAllLoading] = useState(false);
-  const [selectAllCount, setSelectAllCount] = useState(selectedMedia.length);
-  const [showSelectAll, setShowSelectAll] = useState(true);
   const snackbar = useSnackbar();
   const { addSelectedItems } = useAddSelectedItems();
   const removeAllItems = useCallback(() => {
@@ -227,7 +225,7 @@ export default function SelectedProgrammingActions({
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-        {selectAllEnabled && showSelectAll && (
+        {selectAllEnabled && (
           <Button
             key={'select-all-programs'}
             variant="contained"

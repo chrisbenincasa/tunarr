@@ -68,7 +68,6 @@ export default function ProgrammingSelector({
   const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
   const navigate = Route.useNavigate();
-  const [open, setOpen] = useState(false);
 
   // Convenience sub-selectors for specific library types
   const selectedPlexLibrary =

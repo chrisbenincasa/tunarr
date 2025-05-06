@@ -42,6 +42,7 @@ import {
   type GridInlineModalProps,
   type GridItemProps,
 } from './MediaItemGrid.tsx';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 enum TabValues {
   Library = 0,
@@ -287,6 +288,11 @@ export function EmbyProgrammingSelector({
         >
           <ProgramViewToggleButton />
         </Stack>
+
+        <SelectedProgrammingActions
+          toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
+        />
+
         {isListView && renderContextBreadcrumbs()}
         <Tabs
           value={tabValue}
