@@ -102,7 +102,6 @@ const MediaGridItemInner = <T,>(
 
   const handleItem = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
-      console.log('handle');
       e.stopPropagation();
       if (isSelected) {
         removeSelectedMedia([selectedMediaItem]);

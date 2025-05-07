@@ -1,4 +1,3 @@
-import SelectedProgrammingActions from '@/components/channel_config/SelectedProgrammingActions.tsx';
 import SelectedProgrammingList from '@/components/channel_config/SelectedProgrammingList.tsx';
 import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -28,13 +27,12 @@ export default function ProgrammingSelectorPage({
         <ProgrammingSelector
           initialMediaSourceId={initialMediaSourceId}
           initialLibraryId={initialLibraryId}
+          toggleOrSetSelectedProgramsDrawer={toggleDrawer}
         />
+
         <SelectedProgrammingList
           toggleOrSetSelectedProgramsDrawer={toggleDrawer}
           isOpen={open}
-        />
-        <SelectedProgrammingActions
-          toggleOrSetSelectedProgramsDrawer={toggleDrawer}
         />
       </PaddedPaper>
     </>

@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CustomShow, isCustomProgram } from '@tunarr/types';
+import { isCustomProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
@@ -28,7 +28,7 @@ import {
   negate,
 } from 'lodash-es';
 import pluralize from 'pluralize';
-import { Fragment, MouseEvent, useCallback, useState } from 'react';
+import { Fragment, useCallback, useState, type MouseEvent } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { toggle, typedProperty } from '../../helpers/util';
 import {
@@ -38,12 +38,17 @@ import {
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store';
 import { addSelectedMedia } from '../../store/programmingSelector/actions';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 dayjs.extend(duration);
 
 type CustomShowListItemProps = {
   customShow: CustomShow;
   selectShow: (show: CustomShow) => Promise<void>;
+};
+
+type Props = {
+  toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
 function CustomShowListItem({
@@ -125,7 +130,9 @@ function CustomShowListItem({
   );
 }
 
-export function CustomShowProgrammingSelector() {
+export function CustomShowProgrammingSelector({
+  toggleOrSetSelectedProgramsDrawer,
+}: Props) {
   const apiClient = useTunarrApi();
   const { data: customShows, isPending } = useCustomShows();
   const viewType = useStore((state) => state.theme.programmingSelectorView);
@@ -167,7 +174,6 @@ export function CustomShowProgrammingSelector() {
   );
 
   const renderListItems = () => {
-    console.log(customShows);
     return map(customShows, (cs) => {
       return (
         <CustomShowListItem
@@ -188,6 +194,10 @@ export function CustomShowProgrammingSelector() {
           marginTop: 1,
         }}
       />
+
+      <SelectedProgrammingActions
+        toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
+      />
       <List
         component="nav"
         sx={{
@@ -204,7 +214,6 @@ export function CustomShowProgrammingSelector() {
         {renderListItems()}
         <div style={{ height: 40 }} ref={ref}></div>
       </List>
-
       <Divider sx={{ mt: 3, mb: 2 }} />
     </Box>
   );

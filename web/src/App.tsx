@@ -211,7 +211,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
         sx={{
           flexGrow: 1,
           // height: '100vh', // Uncommenting this breaks any use of scrollTo()
-          overflow: 'auto',
+          // overflow: 'auto', // Commenting out to support position: sticky
           ml: [undefined, '60px'],
         }}
       >
