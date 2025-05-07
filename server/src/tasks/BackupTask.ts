@@ -50,7 +50,7 @@ export class BackupTask extends Task {
 
     for (const output of validOutputs) {
       try {
-        const result = await this.dbBackupFactory(output).backup();
+        const result = await this.dbBackupFactory().backup(output);
         if (result.type === 'success') {
           this.logger.info('Successfully generated backup to %s', result.data);
         }

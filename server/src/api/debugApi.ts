@@ -250,14 +250,14 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (_, res) => {
       await container
-        .get<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey)({
+        .get<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey)()
+        .backup({
           type: 'file',
           outputPath: os.tmpdir(),
           archiveFormat: 'tar',
           gzip: true,
           maxBackups: 3,
-        })
-        .backup();
+        });
 
       return res.send();
     },

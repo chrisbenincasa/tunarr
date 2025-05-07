@@ -1,47 +1,52 @@
-import type { SettingsDB } from '@/db/SettingsDB.js';
 import { asyncPool } from '@/util/asyncPool.js';
-import { isRunningInContainer } from '@/util/containerUtil.js';
 import { getDatabasePath } from '@/util/databaseDirectoryUtil.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { FileBackupOutput } from '@tunarr/types/schemas';
 import archiver from 'archiver';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { compact, isEmpty, isNull, map, sortBy, take } from 'lodash-es';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { dbOptions } from '../../globals.ts';
+import { dbOptions, GlobalOptions } from '../../globals.ts';
+import { KEYS } from '../../types/inject.ts';
+import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
 import { SqliteDatabaseBackup } from './SqliteDatabaseBackup.ts';
 
-export type ArchiveDatabaseBackupFactory = (
-  config: FileBackupOutput,
-) => ArchiveDatabaseBackup;
+export type ArchiveDatabaseBackupFactory = () => ArchiveDatabaseBackup;
 
+@injectable()
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
-  #config: FileBackupOutput;
   #normalizedOutputPath: string;
 
-  constructor(settings: SettingsDB, config: FileBackupOutput) {
+  constructor(
+    @inject(KEYS.SettingsDB) settings: ISettingsDB,
+    @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
+  ) {
     super(settings);
-    this.#config = config;
-    if (isEmpty(config.outputPath) && isRunningInContainer()) {
-      this.#normalizedOutputPath = '/config/tunarr/backups';
+  }
+
+  async backup(config: FileBackupOutput): Promise<BackupResult<string>> {
+    if (isEmpty(config.outputPath)) {
+      this.#normalizedOutputPath = path.join(
+        this.globalOptions.databaseDirectory,
+        'backups',
+      );
     } else {
       this.#normalizedOutputPath = path.resolve(
         process.cwd(),
-        this.#config.outputPath,
+        config.outputPath,
       );
     }
-  }
 
-  async backup(): Promise<BackupResult<string>> {
     const workingDirectory = path.join(
-      path.resolve(this.#config.tempDir ?? os.tmpdir()),
+      path.resolve(config.tempDir ?? os.tmpdir()),
       `tunarr-backup-`,
     );
 
@@ -59,7 +64,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       throw e;
     }
 
-    const isGzip = !!this.#config.gzip && this.#config.archiveFormat === 'tar';
+    const isGzip = !!config.gzip && config.archiveFormat === 'tar';
 
     if (!(await fileExists(this.#normalizedOutputPath))) {
       this.logger.debug(
@@ -72,14 +77,14 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     const backupFileName = path.join(
       this.#normalizedOutputPath,
       `tunarr-backup-${dayjs().format('YYYYMMDD_HHmmss')}.${
-        this.#config.archiveFormat
+        config.archiveFormat
       }${isGzip ? '.gz' : ''}`,
     );
 
     this.logger.info(`Writing backup to ${backupFileName}`);
 
     const outStream = createWriteStream(backupFileName);
-    const archive = archiver(this.#config.archiveFormat, { gzip: isGzip });
+    const archive = archiver(config.archiveFormat, { gzip: isGzip });
     const finishedPromise = new Promise<void>((resolve, reject) => {
       archive.on('end', () => resolve(void 0));
       archive.on('error', reject);
@@ -111,7 +116,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
     this.logger.trace('Deleted temp backup directory');
 
-    await this.deleteOldBackupIfNecessary();
+    await this.deleteOldBackupIfNecessary(config);
 
     return finishedPromise
       .then(() => ({ type: 'success' as const, data: backupFileName }))
@@ -121,8 +126,8 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       });
   }
 
-  private async deleteOldBackupIfNecessary() {
-    if (this.#config.maxBackups <= 0) {
+  private async deleteOldBackupIfNecessary(config: FileBackupOutput) {
+    if (config.maxBackups <= 0) {
       return;
     }
 
@@ -149,15 +154,15 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       ([, sort]) => sort,
     );
 
-    if (relevantListings.length > this.#config.maxBackups) {
+    if (relevantListings.length > config.maxBackups) {
       this.logger.debug(
         'Found %d old backups. The limit is %d',
         relevantListings.length,
-        this.#config.maxBackups,
+        config.maxBackups,
       );
       const listingsToDelete = take(
         relevantListings,
-        relevantListings.length - this.#config.maxBackups,
+        relevantListings.length - config.maxBackups,
       );
 
       for await (const result of asyncPool(
