@@ -62,7 +62,7 @@ type NodeProps = {
   index: number;
   depth: number;
   formKey: '' | `children.${number}`;
-  remove(index: number): void;
+  remove: (index: number) => void;
 };
 type PlexValueNodeProps = NodeProps & {
   formKey: '' | `children.${number}`;
@@ -143,6 +143,9 @@ export function PlexValueNode({
         if (operators.length > 0) {
           setValue(getFieldName('op'), operators[0].key);
         }
+        if (newPlexFilter.type === 'boolean') {
+          setValue(getFieldName('value'), '1');
+        }
       }
     },
     [findPlexField, getFieldName, lookupFieldOperators, plexFilter, setValue],
@@ -220,6 +223,8 @@ export function PlexValueNode({
           )}
         />
       );
+    } else if (plexFilter?.type === 'boolean') {
+      return null;
     } else {
       return (
         <Controller
