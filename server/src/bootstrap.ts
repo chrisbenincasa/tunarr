@@ -31,6 +31,7 @@ async function initDbDirectories(opts: GlobalOptions) {
     ['images'],
     ['cache'],
     ['cache', 'images'],
+    ['backups'],
   ]) {
     const pathToCheck = path.join(opts.databaseDirectory, ...subpaths);
     if (!(await fileExists(pathToCheck))) {

@@ -82,19 +82,20 @@ const TasksModule = new ContainerModule((bind) => {
       );
   });
 
-  bindFactoryFunc<ArchiveDatabaseBackupFactory>(
-    bind,
-    ArchiveDatabaseBackupKey,
-    (ctx) =>
-      (...args: Parameters<ArchiveDatabaseBackupFactory>) =>
-        new ArchiveDatabaseBackup(ctx.container.get(KEYS.SettingsDB), ...args),
+  bind<ArchiveDatabaseBackupFactory>(ArchiveDatabaseBackupKey).toAutoFactory(
+    ArchiveDatabaseBackup,
   );
 
   bindFactoryFunc<BackupTaskFactory>(
     bind,
     BackupTask.KEY,
     (ctx) => (conf) => () =>
-      new BackupTask(conf, ctx.container.get(ArchiveDatabaseBackupKey)),
+      new BackupTask(
+        conf,
+        ctx.container.get<ArchiveDatabaseBackupFactory>(
+          ArchiveDatabaseBackupKey,
+        ),
+      ),
   );
 
   bindFactoryFunc<UpdatePlexPlayStatusScheduledTaskFactory>(

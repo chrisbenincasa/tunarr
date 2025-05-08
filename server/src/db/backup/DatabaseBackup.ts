@@ -1,4 +1,5 @@
-import type { SettingsDB } from '@/db/SettingsDB.js';
+import type { FileBackupOutput } from '@tunarr/types/schemas';
+import type { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 
 export type SuccessfulBackupResult<T> = {
   type: 'success';
@@ -14,7 +15,7 @@ export type BackupResult<T = void> =
   | FailureBackupResult;
 
 export abstract class DatabaseBackup<ResultType> {
-  constructor(protected settings: SettingsDB) {}
+  constructor(protected settings: ISettingsDB) {}
 
-  abstract backup(): Promise<BackupResult<ResultType>>;
+  abstract backup(config: FileBackupOutput): Promise<BackupResult<ResultType>>;
 }
