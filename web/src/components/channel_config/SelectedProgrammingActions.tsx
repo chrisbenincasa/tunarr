@@ -24,6 +24,7 @@ import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
 import { Emby, Jellyfin } from '../../helpers/constants.ts';
+import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import {
   addEmbySelectedMedia,
@@ -190,7 +191,7 @@ export default function SelectedProgrammingActions({
     }
   };
 
-  const darkMode = useStore((state) => state.theme.darkMode);
+  const darkMode = useIsDarkMode();
 
   return (
     <Stack

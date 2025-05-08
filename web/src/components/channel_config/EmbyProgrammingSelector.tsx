@@ -274,26 +274,33 @@ export function EmbyProgrammingSelector({
 
   return (
     <>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }} ref={itemContainer}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          sx={{
-            display: 'flex',
-            pt: 1,
-            columnGap: 1,
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
-            flexGrow: 1,
-          }}
-        >
-          <ProgramViewToggleButton />
-        </Stack>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{
+          display: 'flex',
+          pt: 1,
+          pb: 2,
+          columnGap: 1,
+          alignItems: 'flex-end',
+          justifyContent: 'flex-end',
+          flexGrow: 1,
+        }}
+      >
+        <ProgramViewToggleButton />
+      </Stack>
 
-        <SelectedProgrammingActions
-          toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
-        />
+      <SelectedProgrammingActions
+        toggleOrSetSelectedProgramsDrawer={toggleOrSetSelectedProgramsDrawer}
+      />
 
-        {isListView && renderContextBreadcrumbs()}
+      {isListView && renderContextBreadcrumbs()}
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+        ref={itemContainer}
+      >
         <Tabs
           value={tabValue}
           onChange={(_, value: number) => setTabValue(value)}
@@ -301,50 +308,30 @@ export function EmbyProgrammingSelector({
           variant="scrollable"
           allowScrollButtonsMobile
         >
-          <Tab
-            value={TabValues.Library}
-            label="Library"
-            // {...a11yProps(0)}
-          />
-          {/* {!isUndefined(collectionsData) &&
-                sumBy(collectionsData.pages, (page) => page.size) > 0 && (
-                  <Tab
-                    value={TabValues.Collections}
-                    label="Collections"
-                    {...a11yProps(1)}
-                  />
-                )}
-              {!isUndefined(playlistData) &&
-                sumBy(playlistData.pages, 'size') > 0 && (
-                  <Tab
-                    value={TabValues.Playlists}
-                    label="Playlists"
-                    {...a11yProps(1)}
-                  />
-                )} */}
+          <Tab value={TabValues.Library} label="Library" />
         </Tabs>
-      </Box>
 
-      <MediaItemGrid
-        getPageDataSize={(page) => ({
-          total: page.TotalRecordCount,
-          size: page.Items.length,
-        })}
-        extractItems={(page) => page.Items}
-        getItemKey={useCallback((item: EmbyItem) => item.Id, [])}
-        renderGridItem={renderGridItem}
-        renderListItem={({ item, index, style }) => (
-          <EmbyListItem
-            key={item.Id}
-            item={item}
-            index={index}
-            style={style}
-            onPushParent={pushParentContext}
-          />
-        )}
-        infiniteQuery={itemsQuery}
-        handleAlphaNumFilter={setAlphanumericFilter}
-      />
+        <MediaItemGrid
+          getPageDataSize={(page) => ({
+            total: page.TotalRecordCount,
+            size: page.Items.length,
+          })}
+          extractItems={(page) => page.Items}
+          getItemKey={useCallback((item: EmbyItem) => item.Id, [])}
+          renderGridItem={renderGridItem}
+          renderListItem={({ item, index, style }) => (
+            <EmbyListItem
+              key={item.Id}
+              item={item}
+              index={index}
+              style={style}
+              onPushParent={pushParentContext}
+            />
+          )}
+          infiniteQuery={itemsQuery}
+          handleAlphaNumFilter={setAlphanumericFilter}
+        />
+      </Box>
     </>
   );
 }
