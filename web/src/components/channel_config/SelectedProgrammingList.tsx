@@ -428,5 +428,5 @@ export default function SelectedProgrammingList({
     </>
   );
 
-  return selectedMedia.length && <ProgrammingList />;
+  return <ProgrammingList />;
 }
