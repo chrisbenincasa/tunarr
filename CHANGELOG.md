@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.19.1](https://github.com/chrisbenincasa/tunarr/compare/v0.19.0...v0.19.1) (2025-05-09)
+
+
+### Bug Fixes
+
+* allow adding Jellyfin media of type Video/MusicVideo ([ff3ad43](https://github.com/chrisbenincasa/tunarr/commit/ff3ad43d1f4e385d1abb7dc3c30da3a274f72c59)), closes [#862](https://github.com/chrisbenincasa/tunarr/issues/862)
+* default backup path to tunarr data directory when unset ([#1183](https://github.com/chrisbenincasa/tunarr/issues/1183)) ([daf6d34](https://github.com/chrisbenincasa/tunarr/commit/daf6d3434655c44d47dbce3d02b37ada61cf3049))
+* do not hit non-existent /Users/Me endpoint for Emby ([e93ffe3](https://github.com/chrisbenincasa/tunarr/commit/e93ffe34df7a2f94ce698c9dcab86e1abafda3a2))
+* fix new sticky header for Jellyfin/Emby program selectors ([#1185](https://github.com/chrisbenincasa/tunarr/issues/1185)) ([cecdecb](https://github.com/chrisbenincasa/tunarr/commit/cecdecbd66ae2497757925cd86e240b0d3e98efe))
+* properly handle boolean Plex filters ([#1186](https://github.com/chrisbenincasa/tunarr/issues/1186)) ([53307f8](https://github.com/chrisbenincasa/tunarr/commit/53307f81efbd80305ecd5217e296cd1d4c98f0f3))
+* remove erroneous flashing 0 when switching media sources ([f075b15](https://github.com/chrisbenincasa/tunarr/commit/f075b1576640146f1e4611edef0215259d1c0fc1))
+
+
+### UI Changes
+
+* add weekday headers to time slot scheduler ([#1184](https://github.com/chrisbenincasa/tunarr/issues/1184)) ([caf4200](https://github.com/chrisbenincasa/tunarr/commit/caf420066109ce866ec74b95390a2cbc56c6d9d6))
+* added sticky bar for programming selector actions ([ac93725](https://github.com/chrisbenincasa/tunarr/commit/ac937257e980bfada305752280125e3ec2256c42))
+
 ## [0.19.0](https://github.com/chrisbenincasa/tunarr/compare/v0.18.20...v0.19.0) (2025-05-05)
 
 
