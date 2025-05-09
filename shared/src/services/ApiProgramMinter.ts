@@ -56,7 +56,7 @@ export class ApiProgramMinter {
       .with(
         {
           sourceType: 'jellyfin',
-          program: { Type: P.union('Movie', 'Audio', 'Episode') },
+          program: { Type: P.union('Movie', 'Audio', 'Episode', 'Video') },
         },
         ({ program }) => this.mintProgramForJellyfinItem(mediaSource, program),
       )
@@ -248,7 +248,9 @@ export class ApiProgramMinter {
 
   private static mintProgramForJellyfinItem(
     server: MediaSourceDetails,
-    item: Omit<JellyfinItem, 'Type'> & { Type: 'Movie' | 'Episode' | 'Audio' },
+    item: Omit<JellyfinItem, 'Type'> & {
+      Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo';
+    },
   ): ContentProgram {
     const id = createExternalId('jellyfin', server.name, item.Id);
     const parentIdentifier = item.ParentId ?? item.SeasonId ?? item.AlbumId;
@@ -264,7 +266,10 @@ export class ApiProgramMinter {
       title: item.Name ?? '',
       type: 'content',
       subtype: match(item.Type)
-        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
+        .with(
+          P.union('Movie', 'Video', 'MusicVideo'),
+          () => ContentProgramTypeSchema.enum.movie,
+        )
         .with('Episode', () => ContentProgramTypeSchema.enum.episode)
         .with('Audio', () => ContentProgramTypeSchema.Enum.track)
         .exhaustive(),
