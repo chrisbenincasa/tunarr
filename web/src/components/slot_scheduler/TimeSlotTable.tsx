@@ -3,7 +3,16 @@ import { OneWeekMillis, getTimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
-import { Dialog, DialogTitle, IconButton, Stack, Tooltip } from '@mui/material';
+import {
+  Box,
+  Dialog,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Tab,
+  Tabs,
+  Tooltip,
+} from '@mui/material';
 import type { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -15,6 +24,7 @@ import {
   isNil,
   map,
   nth,
+  range,
   sortBy,
   uniq,
 } from 'lodash-es';
@@ -29,6 +39,7 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
+import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
@@ -39,6 +50,8 @@ import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 dayjs.extend(localizedFormat);
 
 export const TimeSlotTable = () => {
+  const providedDjs = useDayjs();
+  const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
   const { watch, slotArray } = useTimeSlotFormContext();
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
   const { dropdownOpts: programOptions } = useSlotProgramOptions();
@@ -48,6 +61,7 @@ export const TimeSlotTable = () => {
       uniq(map(slotArray.fields, (slot) => getTimeSlotId(slot.programming))),
     [slotArray.fields],
   );
+  const [selectedDay, setSelectedDay] = useState(0);
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -66,13 +80,22 @@ export const TimeSlotTable = () => {
   >(null);
 
   const rows = useMemo(() => {
-    console.log('here');
     return map(
       sortBy(
-        map(slotArray.fields, (slot, index) => ({
-          ...slot,
-          originalIndex: index,
-        })),
+        map(
+          slotArray.fields.filter((slot) => {
+            if (currentPeriod !== 'week') {
+              return true;
+            }
+            const start = OneDayMillis * selectedDay;
+            const end = start + OneDayMillis;
+            return slot.startTime >= start && slot.startTime < end;
+          }),
+          (slot, index) => ({
+            ...slot,
+            originalIndex: index,
+          }),
+        ),
         (slot) => slot.startTime,
       ),
       (slot, i, slots) => {
@@ -112,7 +135,13 @@ export const TimeSlotTable = () => {
         } satisfies TimeSlotTableRowType;
       },
     );
-  }, [currentPeriod, detailsBySlotId, latenessMs, slotArray.fields]);
+  }, [
+    currentPeriod,
+    detailsBySlotId,
+    latenessMs,
+    selectedDay,
+    slotArray.fields,
+  ]);
 
   const columns = useMemo<MRT_ColumnDef<TimeSlotTableRowType>[]>(() => {
     return [
@@ -308,6 +337,24 @@ export const TimeSlotTable = () => {
 
   return (
     <>
+      {currentPeriod === 'week' && (
+        <Box
+          sx={{ width: '100%', borderBottom: 1, borderColor: 'divider', mb: 2 }}
+        >
+          <Tabs
+            value={selectedDay}
+            onChange={(_, v) => setSelectedDay(v as number)}
+          >
+            {range(0, 7).map((idx) => (
+              <Tab
+                key={idx}
+                value={idx}
+                label={<span>{localeData.weekdaysShort()[idx]}</span>}
+              />
+            ))}
+          </Tabs>
+        </Box>
+      )}
       <MaterialReactTable table={table} />
       <Dialog
         maxWidth="sm"
