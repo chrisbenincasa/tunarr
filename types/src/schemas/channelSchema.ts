@@ -1,4 +1,3 @@
-import type { ZodTypeAny } from 'zod';
 import z from 'zod';
 import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
@@ -145,27 +144,25 @@ export const ChannelSchema = z.object({
   sessions: z.array(ChannelSessionSchema).optional(),
 });
 
-function addOrTransform<T extends ZodTypeAny>(x: T) {
-  return x.or(z.literal('global')).transform((val) => {
-    if (val === 'global') {
-      return undefined;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return val;
-  });
-}
-
-export const SaveChannelRequestSchema = ChannelSchema.omit({
+export const SaveableChannelSchema = ChannelSchema.omit({
   fallback: true, // Figure out how to update this
   programCount: true,
-})
-  .partial({
-    onDemand: true,
-  })
-  .extend({
-    transcoding: ChannelTranscodingOptionsSchema.extend({
-      targetResolution: addOrTransform(ResolutionSchema.optional()),
-      videoBitrate: addOrTransform(z.number().optional()),
-      videoBufferSize: addOrTransform(z.number().optional()),
-    }),
-  });
+  transcoding: true,
+}).partial({
+  onDemand: true,
+});
+
+export const NewChannelSaveRequestSchema = z.object({
+  type: z.literal('new'),
+  channel: SaveableChannelSchema,
+});
+
+export const CopyChannelSaveRequestSchema = z.object({
+  type: z.literal('copy'),
+  channelId: z.string().uuid(),
+});
+
+export const CreateChannelRequestSchema = z.discriminatedUnion('type', [
+  NewChannelSaveRequestSchema,
+  CopyChannelSaveRequestSchema,
+]);

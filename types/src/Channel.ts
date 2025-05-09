@@ -4,8 +4,11 @@ import type {
   ChannelSchema,
   ChannelSessionSchema,
   ChannelTranscodingOptionsSchema,
+  CopyChannelSaveRequestSchema,
+  CreateChannelRequestSchema,
   FillerCollectionSchema,
-  SaveChannelRequestSchema,
+  NewChannelSaveRequestSchema,
+  SaveableChannelSchema,
   WatermarkSchema,
 } from './schemas/channelSchema.js';
 import {
@@ -30,7 +33,15 @@ export type ChannelSession = z.infer<typeof ChannelSessionSchema>;
 
 export type Channel = z.infer<typeof ChannelSchema>;
 
-export type SaveChannelRequest = z.infer<typeof SaveChannelRequestSchema>;
+export type SaveableChannel = z.infer<typeof SaveableChannelSchema>;
+
+export type NewChannelSaveRequest = z.infer<typeof NewChannelSaveRequestSchema>;
+
+export type CopyChannelSaveRequest = z.infer<
+  typeof CopyChannelSaveRequestSchema
+>;
+
+export type CreateChannelRequest = z.infer<typeof CreateChannelRequestSchema>;
 
 export const ChannelStreamModes = ChannelStreamModesArr;
 

@@ -98,7 +98,7 @@ export function ChannelProgrammingConfig() {
     },
   });
 
-  const updateChannelMutation = useUpdateChannel(/*isNewChannel=*/ false);
+  const updateChannelMutation = useUpdateChannel();
 
   const onSave = () => {
     setIsSubmitting(true);
@@ -107,15 +107,7 @@ export function ChannelProgrammingConfig() {
       !isUndefined(originalChannel) &&
       channel.startTime !== originalChannel.startTime
     ) {
-      updateChannelMutation.mutate({
-        ...channel,
-        // This is a little wonky...
-        transcoding: {
-          targetResolution: channel.transcoding?.targetResolution ?? 'global',
-          videoBitrate: channel.transcoding?.videoBitrate ?? 'global',
-          videoBufferSize: channel.transcoding?.videoBufferSize ?? 'global',
-        },
-      });
+      updateChannelMutation.mutate(channel);
     }
 
     // Group programs by their unique ID. This will disregard their durations,

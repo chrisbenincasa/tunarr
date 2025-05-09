@@ -1,30 +1,26 @@
 import type { UseMutationOptions } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Channel, SaveableChannel } from '@tunarr/types';
+import type { Channel, CreateChannelRequest } from '@tunarr/types';
 import { ZodiosError } from '@zodios/core';
 import { z } from 'zod';
-import { useTunarrApi } from './useTunarrApi';
+import { useTunarrApi } from './useTunarrApi.ts';
 
-export const useUpdateChannel = (
-  opts?: UseMutationOptions<Channel, Error, SaveableChannel>,
+export const useCreateChannel = (
+  opts?: UseMutationOptions<Channel, Error, CreateChannelRequest>,
 ) => {
   const queryClient = useQueryClient();
   const apiClient = useTunarrApi();
 
-  const updateChannel = useMutation({
-    mutationKey: ['channels', 'update'],
-    mutationFn: async (channelUpdates: SaveableChannel) => {
-      return apiClient.updateChannel(channelUpdates, {
-        params: { id: channelUpdates.id },
-      });
+  return useMutation({
+    mutationKey: ['channels', 'create'],
+    mutationFn: async (createReq: CreateChannelRequest) => {
+      return apiClient.createChannel(createReq);
     },
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({
         exact: false,
         queryKey: ['channels'],
       });
-
-      updateChannel.reset();
 
       if (opts?.onSuccess) {
         opts?.onSuccess(...args);
@@ -46,6 +42,4 @@ export const useUpdateChannel = (
       }
     },
   });
-
-  return updateChannel;
 };

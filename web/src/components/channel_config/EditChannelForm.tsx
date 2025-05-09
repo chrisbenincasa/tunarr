@@ -6,9 +6,9 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useNavigate } from '@tanstack/react-router';
-import type { Channel, SaveChannelRequest } from '@tunarr/types';
+import type { Channel, SaveableChannel } from '@tunarr/types';
 import { isEmpty, keys, reject, some } from 'lodash-es';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   FormProvider,
   useForm,
@@ -16,6 +16,7 @@ import {
   type SubmitHandler,
 } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
+import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
 import ChannelEditActions from './ChannelEditActions.tsx';
 import ChannelEpgConfig from './ChannelEpgConfig.tsx';
@@ -29,7 +30,7 @@ import {
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
 
-function getDefaultFormValues(channel: Channel): SaveChannelRequest {
+function getDefaultFormValues(channel: Channel): SaveableChannel {
   return {
     ...channel,
     fillerCollections: channel.fillerCollections ?? [],
@@ -39,13 +40,6 @@ function getDefaultFormValues(channel: Channel): SaveChannelRequest {
         : DefaultChannel.fillerRepeatCooldown!) / 1000,
     guideFlexTitle: channel.guideFlexTitle ?? '',
     guideMinimumDuration: channel.guideMinimumDuration / 1000,
-    transcoding: {
-      targetResolution:
-        channel.transcoding?.targetResolution ?? ('global' as const),
-      videoBitrate: channel.transcoding?.videoBitrate ?? ('global' as const),
-      videoBufferSize:
-        channel.transcoding?.videoBufferSize ?? ('global' as const),
-    },
     offline: {
       ...channel.offline,
       picture: channel.offline.picture ?? DefaultChannel.offline.picture,
@@ -89,14 +83,14 @@ export function EditChannelForm({
     initialTab ?? 'properties',
   );
 
-  const formMethods = useForm<SaveChannelRequest>({
+  const formMethods = useForm<SaveableChannel>({
     mode: 'onChange',
     // Change this so we only load the form on initial...
     defaultValues: getDefaultFormValues(channel),
   });
 
-  const updateChannelMutation = useUpdateChannel(isNew, {
-    onSuccess: (data) => {
+  const createUpdateSuccessCallback = useCallback(
+    (data: Channel) => {
       formMethods.reset(getDefaultFormValues(data), {
         keepDefaultValues: false,
         keepDirty: false,
@@ -108,21 +102,30 @@ export function EditChannelForm({
         }).catch(console.warn);
       }
     },
+    [formMethods, isNew, navigate],
+  );
+
+  const updateChannelMutation = useUpdateChannel({
+    onSuccess: createUpdateSuccessCallback,
+  });
+
+  const createChannelMutation = useCreateChannel({
+    onSuccess: createUpdateSuccessCallback,
   });
 
   const formIsValid = formMethods.formState.isValid;
   const formErrorKeys = keys(
     formMethods.formState.errors,
-  ) as (keyof SaveChannelRequest)[];
+  ) as (keyof SaveableChannel)[];
   const formIsDirty = formMethods.formState.isDirty;
 
-  const onSubmit: SubmitHandler<SaveChannelRequest> = (data) => {
+  const onSubmit: SubmitHandler<SaveableChannel> = (data) => {
     const fadeConfigs = reject(
       data.watermark?.fadeConfig,
       (conf) => conf.periodMins <= 0,
     );
 
-    const dataTransform: SaveChannelRequest = {
+    const dataTransform = {
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
@@ -139,12 +142,19 @@ export function EditChannelForm({
             fadeConfig: isEmpty(fadeConfigs) ? undefined : fadeConfigs,
           }
         : undefined,
-    };
+    } satisfies SaveableChannel;
 
-    updateChannelMutation.mutate(dataTransform);
+    if (isNew) {
+      createChannelMutation.mutate({
+        type: 'new',
+        channel: dataTransform,
+      });
+    } else {
+      updateChannelMutation.mutate(dataTransform);
+    }
   };
 
-  const onInvalid: SubmitErrorHandler<SaveChannelRequest> = (data) => {
+  const onInvalid: SubmitErrorHandler<SaveableChannel> = (data) => {
     console.error(data, formMethods.getValues());
   };
 

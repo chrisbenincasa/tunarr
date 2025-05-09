@@ -1,23 +1,12 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import {
   setChannelPaginationState,
   setChannelTableColumnModel,
 } from '@/store/settings/actions.ts';
 import type { Maybe } from '@/types/util.ts';
-import {
-  Check,
-  Close,
-  Delete,
-  MoreVert,
-  Settings,
-  Stop,
-  PlayArrow as WatchIcon,
-} from '@mui/icons-material';
+import { Check, Close, MoreVert, Settings } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import EditIcon from '@mui/icons-material/Edit';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import type { BoxProps } from '@mui/material';
 import {
   Box,
@@ -29,10 +18,6 @@ import {
   DialogTitle,
   IconButton,
   Link,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
   Paper,
   TableContainer,
   Tooltip,
@@ -51,7 +36,7 @@ import {
   type TranscodeConfig,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { find, isEmpty, map, sum, trimEnd } from 'lodash-es';
+import { find, isEmpty, map, sum } from 'lodash-es';
 import type { MRT_Row } from 'material-react-table';
 import {
   MaterialReactTable,
@@ -59,10 +44,11 @@ import {
   type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
 } from 'material-react-table';
 import pluralize from 'pluralize';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
+import { ChannelsTableOptionsMenu } from '../../components/channels/ChannelsTableOptionsMenu.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
@@ -98,7 +84,6 @@ const GlowingCircle = styled(Box, {
 }));
 
 export default function ChannelsPage() {
-  const { backendUri } = useSettings();
   const apiClient = useTunarrApi();
   const { data: channels } = useChannelsSuspense();
   const { data: transcodeConfigs } = useTranscodeConfigs();
@@ -157,10 +142,8 @@ export default function ChannelsPage() {
     setAnchorEl(event.currentTarget);
   };
 
-  const copyToClipboard = useCopyToClipboard();
-
-  const handleChannelMenuClose = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
+  const handleChannelMenuClose = (e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     setChannelMenuOpen(null);
     setAnchorEl(null);
   };
@@ -172,26 +155,6 @@ export default function ChannelsPage() {
   //   setAnchorEl(null);
   //   setChannelMenu(null);
   // }, [channelsFetching]);
-
-  const stopSessionsMutation = useMutation({
-    mutationKey: ['channels', 'stop-sessions'],
-    mutationFn: ({ id }: { id: string }) => {
-      return apiClient.stopChannelSessions(undefined, { params: { id } });
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: ['channels', 'sessions'],
-        exact: true,
-      });
-    },
-  });
-
-  const handleStopSessions = useCallback(
-    (channelId: string) => {
-      stopSessionsMutation.mutate({ id: channelId });
-    },
-    [stopSessionsMutation],
-  );
 
   const handleChannelNavigation = (
     _: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -259,119 +222,13 @@ export default function ChannelsPage() {
   };
 
   const renderChannelMenu = (row: ChannelRow) => {
-    const { id: channelId, name: channelName, sessions } = row;
     return (
-      <Menu
-        id="channel-options-menu"
+      <ChannelsTableOptionsMenu
         anchorEl={anchorEl}
+        onClose={() => handleChannelMenuClose()}
         open={channelMenuOpen === row.id}
-        onClose={handleChannelMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        MenuListProps={{
-          'aria-labelledby': 'channel-options-button',
-        }}
-      >
-        {mediumViewport ? (
-          <MenuItem
-            to={`/channels/${channelId}/edit`}
-            component={RouterLink}
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <ListItemIcon>
-              <EditIcon />
-            </ListItemIcon>
-            <ListItemText>Edit</ListItemText>
-          </MenuItem>
-        ) : null}
-
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            const base = isNonEmptyString(backendUri)
-              ? backendUri
-              : window.location.origin;
-            const url = `${trimEnd(
-              base,
-              '/',
-            )}/stream/channels/${channelId}.m3u8`;
-            copyToClipboard(
-              url,
-              `Copied channel "${channelName}" m3u link to clipboard`,
-              'Error copying channel m3u link to clipboard',
-            )
-              .catch(console.error)
-              .finally(() => {
-                setChannelMenuOpen(null);
-              });
-          }}
-        >
-          <ListItemIcon>
-            <TextSnippetIcon />
-          </ListItemIcon>
-          <ListItemText>Copy M3U URL</ListItemText>
-        </MenuItem>
-        <MenuItem
-          disableRipple
-          onClick={(e) => {
-            e.stopPropagation();
-            copyToClipboard(channelId, 'Copied Channel ID!')
-              .catch(console.error)
-              .finally(() => {
-                setChannelMenuOpen(null);
-              });
-          }}
-        >
-          <ListItemIcon>
-            <TextSnippetIcon />
-          </ListItemIcon>
-          <ListItemText>Copy Channel ID</ListItemText>
-        </MenuItem>
-        <MenuItem
-          component={RouterLink}
-          to={`/channels/${channelId}/watch`}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <ListItemIcon>
-            <WatchIcon />
-          </ListItemIcon>
-          <ListItemText>Watch Channel</ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStopSessions(channelId);
-            handleChannelMenuClose(e);
-          }}
-          disabled={isEmpty(sessions)}
-        >
-          <ListItemIcon>
-            <Stop />
-          </ListItemIcon>
-          <ListItemText primary={`Stop Transcode Session`} />
-        </MenuItem>
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteChannelConfirmation(row);
-          }}
-        >
-          <ListItemIcon>
-            <Delete />
-          </ListItemIcon>
-          <ListItemText>Delete Channel</ListItemText>
-        </MenuItem>
-      </Menu>
+        row={row}
+      />
     );
   };
 
@@ -544,15 +401,6 @@ export default function ChannelsPage() {
     ],
     [transcodeConfigs],
   );
-
-  // const channelTableData = useMemo(() => {
-  //   return map(channels, (channel) => {
-  //     return {
-  //       ...channel,
-  //       sessions: channelSessions ? channelSessions[channel.id] : undefined,
-  //     };
-  //   });
-  // }, [channels, channelSessions]);
 
   const table = useMaterialReactTable({
     columns: columnsNew,
