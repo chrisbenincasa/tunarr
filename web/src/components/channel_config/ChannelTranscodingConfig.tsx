@@ -352,9 +352,11 @@ export default function ChannelTranscodingConfig() {
                         marks={range(0, 100, 10).map((i) => ({ value: i }))}
                         valueLabelDisplay="auto"
                         sx={{ width: '100%' }}
-                        onChange={(_, newValue) => setOpacity(newValue)}
+                        onChange={(_, newValue) =>
+                          setOpacity(newValue as number)
+                        }
                         onChangeCommitted={(_, newValue) =>
-                          setValue('watermark.opacity', newValue, {
+                          setValue('watermark.opacity', newValue as number, {
                             shouldDirty: true,
                           })
                         }
