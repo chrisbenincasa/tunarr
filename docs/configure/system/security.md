@@ -8,38 +8,38 @@ There are several ways to update sensitive settings that require admin mode.
 
 ### Running in admin mode
 
-### Standalone script
+### Standalone binary
 
-Pass the `--admin` flag when running the script, e.g.:
+Pass the `--admin` flag when running the executable, e.g.:
 
 ```bash
- ./tunarr.sh --admin
+ ./tunarr --admin
 ```
 
 or on Windows:
 
 ```powershell
-.\tunarr.bat --admin
+.\tunarr.exe --admin
 ```
 
 You can also use an environment variable:
 
 ```bash
-TUNARR_SERVER_ADMIN_MODE=true ./tunarr.sh
+TUNARR_SERVER_ADMIN_MODE=true ./tunarr
 ```
 
 and again on Windows (Powershell):
 
 ```powershell
 $Env:TUNARR_SERVER_ADMIN_MODE='true'
-.\tunarr.bat
+.\tunarr.exe
 ```
 
 or Command Prompt:
 
 ```
 set TUNARR_SERVER_ADMIN_MODE=true
-.\tunarr.bat
+.\tunarr.exe
 ```
 
 ### Docker
@@ -47,7 +47,7 @@ set TUNARR_SERVER_ADMIN_MODE=true
 Start Tunarr server with the `admin` argument
 
 ```bash
-docker run ... chrisbenincasa/tunarr:latest -- /tunarr/bundle.js --admin
+docker run ... chrisbenincasa/tunarr:latest -- /tunarr/tunarr --admin
 ```
 
 !!! note
@@ -73,7 +73,7 @@ This also works with Docker
 ```bash
 docker run --rm \
   ...
-  chrisbenincasa/tunarr -- /tunarr/bundle.js \
+  chrisbenincasa/tunarr -- /tunarr/tunarr \
   settings update \
   settings.ffmpeg.ffmpegExecutablePath="FFMEPG_PATH" \
   settings.ffmpeg.ffprobeExecutablePath="FFPROBE_PATH"
@@ -90,33 +90,33 @@ There are several ways to enable "trust proxy".
 Pass the `--trustProxy` flag when running the script, e.g.:
 
 ```bash
- ./tunarr.sh --trustProxy
+ ./tunarr --trustProxy
 ```
 
 or on Windows:
 
 ```powershell
-.\tunarr.bat --trustProxy
+.\tunarr.exe --trustProxy
 ```
 
 You can also use an environment variable:
 
 ```bash
-TUNARR_SERVER_TRUST_PROXY=true ./tunarr.sh
+TUNARR_SERVER_TRUST_PROXY=true ./tunarr
 ```
 
 and again on Windows (Powershell):
 
 ```powershell
 $Env:TUNARR_SERVER_TRUST_PROXY='true'
-.\tunarr.bat
+.\tunarr.exe
 ```
 
 or Command Prompt:
 
 ```
 set TUNARR_SERVER_TRUST_PROXY=true
-.\tunarr.bat
+.\tunarr.exe
 ```
 
 ### Docker
@@ -124,7 +124,7 @@ set TUNARR_SERVER_TRUST_PROXY=true
 Start Tunarr server with the `trustProxy` argument
 
 ```bash
-docker run ... chrisbenincasa/tunarr:latest -- /tunarr/bundle.js --trustProxy
+docker run ... chrisbenincasa/tunarr:latest -- /tunarr/tunarr --trustProxy
 ```
 
 or with the environment variable
