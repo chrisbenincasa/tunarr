@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import { Link as RouterLink } from '@tanstack/react-router';
-import type { SaveChannelRequest } from '@tunarr/types';
 import {
   chain,
   find,
@@ -34,9 +33,10 @@ import {
   sumBy,
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
-import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
+import { Controller, useFieldArray } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
 import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
+import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
@@ -46,7 +46,7 @@ export function ChannelFlexConfig() {
   const { backendUri } = useSettings();
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const { data: fillerLists, isPending: fillerListsLoading } = useFillerLists();
-  const { control, watch } = useFormContext<SaveChannelRequest>();
+  const { control, watch } = useChannelFormContext();
   const collectionControls = useFieldArray({
     control,
     name: 'fillerCollections',

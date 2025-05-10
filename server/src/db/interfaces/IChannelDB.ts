@@ -15,7 +15,7 @@ import type { ChannelAndLineup } from '@/types/internal.js';
 import type { MarkNullable, Maybe, Nullable } from '@/types/util.js';
 import type {
   CondensedChannelProgramming,
-  SaveChannelRequest,
+  SaveableChannel,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { MarkOptional, MarkRequired } from 'ts-essentials';
@@ -47,7 +47,7 @@ export interface IChannelDB {
 
   getChannelFallbackPrograms(uuid: string): Promise<ProgramDao[]>;
 
-  saveChannel(createReq: SaveChannelRequest): Promise<ChannnelAndLineup>;
+  saveChannel(createReq: SaveableChannel): Promise<ChannnelAndLineup>;
 
   deleteChannel(
     channelId: string,
@@ -56,8 +56,10 @@ export interface IChannelDB {
 
   updateChannel(
     id: string,
-    updateReq: SaveChannelRequest,
+    updateReq: SaveableChannel,
   ): Promise<ChannelAndLineup>;
+
+  copyChannel(id: string): Promise<ChannelAndLineup>;
 
   loadLineup(channelId: string, forceRead?: boolean): Promise<Lineup>;
 

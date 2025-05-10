@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
-import { SaveChannelRequest } from '@tunarr/types';
-import { FieldPath } from 'react-hook-form';
+import type { SaveableChannel } from '@tunarr/types';
+import type { FieldPath } from 'react-hook-form';
 
 export function EditChannelTabPanel(props: EditChannelTabPanelProps) {
   const { children, value, currentValue, ...other } = props;
@@ -27,7 +27,7 @@ export type EditChannelTabs = 'properties' | 'flex' | 'epg' | 'ffmpeg';
 export type EditChannelTabProps = {
   value: EditChannelTabs;
   description: string;
-  fields: FieldPath<SaveChannelRequest>[];
+  fields: FieldPath<SaveableChannel>[];
 };
 
 export const EditChannelTabsProps: EditChannelTabProps[] = [
@@ -49,6 +49,6 @@ export const EditChannelTabsProps: EditChannelTabProps[] = [
   {
     value: 'ffmpeg',
     description: 'Transcoding',
-    fields: ['transcoding', 'watermark', 'streamMode'],
+    fields: ['watermark', 'streamMode'],
   },
 ];

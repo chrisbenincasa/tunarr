@@ -428,11 +428,6 @@ export class LegacyChannelMigrator {
           number: channel.number,
           startTime: channel.startTime,
           stealth: channel.stealth,
-          transcoding: channel.transcoding ?? {
-            targetResolution: 'global',
-            videoBitrate: 'global',
-            videoBufferSize: 'global',
-          },
           watermark: channel.watermark,
           offline: channel.offline,
           guideMinimumDuration: channel.guideMinimumDuration,
@@ -458,11 +453,6 @@ export class LegacyChannelMigrator {
         number: channel.number,
         startTime: channel.startTime,
         stealth: channel.stealth,
-        transcoding: channel.transcoding ?? {
-          targetResolution: 'global',
-          videoBitrate: 'global',
-          videoBufferSize: 'global',
-        },
         watermark: channel.watermark,
         offline: channel.offline,
         guideMinimumDuration: channel.guideMinimumDuration,

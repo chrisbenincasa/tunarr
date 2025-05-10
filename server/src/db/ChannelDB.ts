@@ -23,7 +23,7 @@ import {
   CondensedChannelProgram,
   CondensedChannelProgramming,
   ContentProgram,
-  SaveChannelRequest,
+  SaveableChannel,
   Watermark,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
@@ -62,6 +62,7 @@ import { join } from 'node:path';
 import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { ChannelAndLineup } from '../types/internal.ts';
 import {
   groupByFunc,
   groupByUniqProp,
@@ -105,7 +106,6 @@ import {
   Channel as RawChannel,
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
-import { ChannelTranscodingSettings } from './schema/base.ts';
 import { DB } from './schema/db.ts';
 import {
   ChannelWithPrograms,
@@ -138,12 +138,7 @@ function sanitizeChannelWatermark(
   };
 }
 
-function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
-  const transcoding: ChannelTranscodingSettings = omitBy(
-    updateReq.transcoding,
-    (val) => val === 'global' || isNil(val),
-  );
-
+function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
   const sanitizedWatermark = sanitizeChannelWatermark(updateReq.watermark);
 
   return {
@@ -158,13 +153,6 @@ function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
     startTime: updateReq.startTime,
     offline: JSON.stringify(updateReq.offline),
     name: updateReq.name,
-    transcoding: isEmpty(transcoding)
-      ? undefined
-      : JSON.stringify({
-          targetResolution: transcoding?.targetResolution,
-          videoBitrate: transcoding?.videoBitrate,
-          videoBufferSize: transcoding?.videoBufferSize,
-        }),
     duration: updateReq.duration,
     stealth: booleanToNumber(updateReq.stealth),
     fillerRepeatCooldown: updateReq.fillerRepeatCooldown,
@@ -174,12 +162,7 @@ function updateRequestToChannel(updateReq: SaveChannelRequest): ChannelUpdate {
   } satisfies ChannelUpdate;
 }
 
-function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
-  const transcoding: ChannelTranscodingSettings = omitBy(
-    saveReq.transcoding,
-    (val) => val === 'global' || isNil(val),
-  );
-
+function createRequestToChannel(saveReq: SaveableChannel): NewChannel {
   const now = +dayjs();
 
   return {
@@ -195,13 +178,6 @@ function createRequestToChannel(saveReq: SaveChannelRequest): NewChannel {
     startTime: saveReq.startTime,
     offline: JSON.stringify(saveReq.offline),
     name: saveReq.name,
-    transcoding: isEmpty(transcoding)
-      ? null
-      : JSON.stringify({
-          targetResolution: transcoding?.targetResolution,
-          videoBitrate: transcoding?.videoBitrate,
-          videoBufferSize: transcoding?.videoBufferSize,
-        }),
     duration: saveReq.duration,
     stealth: saveReq.stealth ? 1 : 0,
     fillerRepeatCooldown: saveReq.fillerRepeatCooldown,
@@ -347,7 +323,7 @@ export class ChannelDB implements IChannelDB {
     return result?.programs ?? [];
   }
 
-  async saveChannel(createReq: SaveChannelRequest) {
+  async saveChannel(createReq: SaveableChannel) {
     const existing = await this.getChannel(createReq.number);
     if (!isNil(existing)) {
       throw new Error(
@@ -406,7 +382,7 @@ export class ChannelDB implements IChannelDB {
     };
   }
 
-  async updateChannel(id: string, updateReq: SaveChannelRequest) {
+  async updateChannel(id: string, updateReq: SaveableChannel) {
     const channel = await this.getChannel(id);
 
     if (isNil(channel)) {
@@ -485,6 +461,99 @@ export class ChannelDB implements IChannelDB {
     return {
       channel: (await this.getChannel(id, true))!,
       lineup: await this.loadLineup(id),
+    };
+  }
+
+  async copyChannel(id: string): Promise<ChannelAndLineup> {
+    const existingChannel = await this.loadChannelAndLineup(id);
+    if (!existingChannel) {
+      throw new Error(`Cannot copy channel: channel ID: ${id} not found`);
+    }
+
+    const { channel, lineup } = existingChannel;
+
+    const newChannelId = v4();
+    const now = +dayjs();
+    // have to get all channel relations...
+    const newChannel = await this.db.transaction().execute(async (tx) => {
+      const { number: maxId } = await tx
+        .selectFrom('channel')
+        .select('number')
+        .orderBy('number desc')
+        .limit(1)
+        .executeTakeFirstOrThrow();
+      const newChannel = await tx
+        .insertInto('channel')
+        .values({
+          ...channel,
+          uuid: newChannelId,
+          name: `${channel.name} - Copy`,
+          number: maxId + 1,
+          icon: JSON.stringify(channel.icon),
+          offline: JSON.stringify(channel.offline),
+          watermark: JSON.stringify(channel.watermark),
+          createdAt: now,
+          updatedAt: now,
+          transcoding: null, // Deprecated
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      // Copy filler shows
+      await tx
+        .insertInto('channelFillerShow')
+        .columns(['channelUuid', 'cooldown', 'fillerShowUuid', 'weight'])
+        .expression((eb) =>
+          eb
+            .selectFrom('channelFillerShow')
+            .select([
+              eb.val(newChannelId).as('channelUuid'),
+              'channelFillerShow.cooldown',
+              'channelFillerShow.fillerShowUuid',
+              'channelFillerShow.weight',
+            ])
+            .where('channelFillerShow.channelUuid', '=', channel.uuid),
+        )
+        .executeTakeFirstOrThrow();
+
+      // Copy programs
+      await tx
+        .insertInto('channelPrograms')
+        .columns(['channelUuid', 'programUuid'])
+        .expression((eb) =>
+          eb
+            .selectFrom('channelPrograms')
+            .select([
+              eb.val(newChannelId).as('channelUuid'),
+              'channelPrograms.programUuid',
+            ])
+            .where('channelPrograms.channelUuid', '=', channel.uuid),
+        )
+        .executeTakeFirstOrThrow();
+
+      // Copy custom shows
+      await tx
+        .insertInto('channelCustomShows')
+        .columns(['channelUuid', 'customShowUuid'])
+        .expression((eb) =>
+          eb
+            .selectFrom('channelCustomShows')
+            .select([
+              eb.val(newChannelId).as('channelUuid'),
+              'channelCustomShows.customShowUuid',
+            ])
+            .where('channelCustomShows.channelUuid', '=', channel.uuid),
+        )
+        .executeTakeFirstOrThrow();
+
+      return newChannel;
+    });
+
+    const newLineup = await this.saveLineup(newChannel.uuid, lineup);
+
+    return {
+      channel: newChannel,
+      lineup: newLineup,
     };
   }
 
@@ -1134,7 +1203,10 @@ export class ChannelDB implements IChannelDB {
    * Some values accept 'null', which will clear their value
    * Other values can be left undefined, which will leave them untouched
    */
-  async saveLineup(channelId: string, newLineup: UpdateChannelLineupRequest) {
+  async saveLineup(
+    channelId: string,
+    newLineup: UpdateChannelLineupRequest,
+  ): Promise<Lineup> {
     const db = await this.getFileDb(channelId);
     await db.update((data) => {
       if (isDefined(newLineup.items)) {

@@ -14,12 +14,13 @@ import {
   ChannelSchema,
   CondensedChannelProgrammingSchema,
   ContentProgramSchema,
+  CreateChannelRequestSchema,
   CustomProgramSchema,
   CustomShowSchema,
   ExternalSourceTypeSchema,
   FillerListProgrammingSchema,
   FillerListSchema,
-  SaveChannelRequestSchema,
+  SaveableChannelSchema,
   TaskSchema,
   TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
@@ -53,7 +54,7 @@ export const api = makeApi([
   },
   {
     method: 'post',
-    parameters: parametersBuilder().addBody(SaveChannelRequestSchema).build(),
+    parameters: parametersBuilder().addBody(CreateChannelRequestSchema).build(),
     path: '/api/channels',
     alias: 'createChannel',
     status: 201,
@@ -62,7 +63,7 @@ export const api = makeApi([
   {
     method: 'put',
     parameters: parametersBuilder()
-      .addBody(SaveChannelRequestSchema)
+      .addBody(SaveableChannelSchema)
       .addPath('id', z.string())
       .build(),
     path: '/api/channels/:id',

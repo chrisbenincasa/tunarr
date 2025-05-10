@@ -8,10 +8,10 @@ import {
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import type { SaveChannelRequest } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useRef } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
+import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import useStore from '../../store/index.ts';
 import TunarrLogo from '../TunarrLogo.tsx';
@@ -29,7 +29,7 @@ export function ChannelPropertiesEditor() {
     getValues,
     setValue,
     formState: { defaultValues },
-  } = useFormContext<SaveChannelRequest>();
+  } = useChannelFormContext();
   const { data: channels } = useChannels();
 
   const onloadstart = () => {};

@@ -16,16 +16,13 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from '@tanstack/react-router';
-import type {
-  ChannelStreamMode,
-  SaveChannelRequest,
-  Watermark,
-} from '@tunarr/types';
+import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
 import { useMemo, useState } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 import { typedProperty } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
+import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import useStore from '../../store/index.ts';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import {
@@ -70,8 +67,7 @@ export default function ChannelTranscodingConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const transcodeConfigs = useTranscodeConfigs();
 
-  const { control, watch, setValue, getValues } =
-    useFormContext<SaveChannelRequest>();
+  const { control, watch, setValue, getValues } = useChannelFormContext();
 
   const [watermark, transcodeConfigId] = watch([
     'watermark',

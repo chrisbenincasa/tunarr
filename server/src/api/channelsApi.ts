@@ -3,11 +3,11 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { attempt, isDefined } from '@/util/index.js';
+import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
 import { scheduleTimeSlots } from '@tunarr/shared';
-import type { ChannelSession } from '@tunarr/types';
+import type { ChannelSession, CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
@@ -21,14 +21,14 @@ import {
   ChannelSchema,
   CondensedChannelProgrammingSchema,
   ContentProgramSchema,
-  SaveChannelRequestSchema,
+  CreateChannelRequestSchema,
+  SaveableChannelSchema,
   TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import {
   groupBy,
-  isError,
   isNil,
   isNull,
   isUndefined,
@@ -40,6 +40,8 @@ import {
 import z from 'zod';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
+import type { ChannelAndLineup } from '../types/internal.ts';
+import { Result } from '../types/result.ts';
 
 dayjs.extend(duration);
 
@@ -172,20 +174,42 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         operationId: 'createChannelV2',
         tags: ['Channels'],
-        body: SaveChannelRequestSchema,
+        body: CreateChannelRequestSchema,
         response: {
           201: ChannelSchema,
+          400: z.string(),
           500: z.object({}),
         },
       },
     },
     async (req, res) => {
-      const inserted = await attempt(() =>
-        req.serverCtx.channelDB.saveChannel(req.body),
-      );
-      if (isError(inserted)) {
-        return res.status(500).send(inserted);
+      const body: CreateChannelRequest = req.body;
+      let insertResult: Result<ChannelAndLineup>;
+      switch (body.type) {
+        case 'copy':
+          insertResult = await Result.attemptAsync(() =>
+            req.serverCtx.channelDB.copyChannel(body.channelId),
+          );
+          break;
+        case 'new':
+          insertResult = await Result.attemptAsync(() =>
+            req.serverCtx.channelDB.saveChannel(body.channel),
+          );
+          break;
       }
+
+      if (insertResult.isFailure()) {
+        throw insertResult.error;
+      }
+
+      const inserted = insertResult.get();
+
+      // const inserted = await attempt(() =>
+      //   req.serverCtx.channelDB.saveChannel(req.body),
+      // );
+      // if (isError(inserted)) {
+      //   return res.status(500).send(inserted);
+      // }
 
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
@@ -200,7 +224,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     '/channels/:id',
     {
       schema: {
-        body: SaveChannelRequestSchema,
+        body: SaveableChannelSchema,
         tags: ['Channels'],
         params: z.object({ id: z.string() }),
         response: {
