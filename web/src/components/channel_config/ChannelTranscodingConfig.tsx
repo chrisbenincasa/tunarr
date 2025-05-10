@@ -56,12 +56,12 @@ const ChannelStreamModeOptions: {
     label: 'HLS Alt',
   },
   {
-    value: 'mpegts',
-    label: 'MPEG-TS',
-  },
-  {
     value: 'hls_direct',
     label: 'HLS Direct',
+  },
+  {
+    value: 'mpegts',
+    label: 'MPEG-TS (legacy)',
   },
 ] as const;
 
@@ -140,7 +140,10 @@ export default function ChannelTranscodingConfig() {
                 process used to create the channel's video stream.
                 <br />
                 Learn more about Tunarr's stream modes{' '}
-                <Link target="_blank" href="https://tunarr.com/">
+                <Link
+                  target="_blank"
+                  href="https://tunarr.com/configure/channels/transcoding/#stream-mode"
+                >
                   here
                 </Link>
                 !
@@ -349,11 +352,9 @@ export default function ChannelTranscodingConfig() {
                         marks={range(0, 100, 10).map((i) => ({ value: i }))}
                         valueLabelDisplay="auto"
                         sx={{ width: '100%' }}
-                        onChange={(_, newValue) =>
-                          setOpacity(newValue as number)
-                        }
+                        onChange={(_, newValue) => setOpacity(newValue)}
                         onChangeCommitted={(_, newValue) =>
-                          setValue('watermark.opacity', newValue as number, {
+                          setValue('watermark.opacity', newValue, {
                             shouldDirty: true,
                           })
                         }

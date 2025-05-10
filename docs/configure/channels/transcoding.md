@@ -32,6 +32,16 @@ This mode creates two FFMPEG processes. The first runs per-program and applies s
 
 The downside to this mode is that the one of the steps (the per-program process) _requires_ software encoding. This can put a lot of stress on certain systems. The stream setup can also lead to quality loss, due to generation loss. However, it does have the potential to create a more reliable / robust stream.
 
+### HLS Direct
+
+#### How does it work?
+
+This mode does not perform any stream normalization. When the channel m3u8 playlist is requested, it returns a playlist with a single item URL set to the duration of the current item in the channel. The URL returns a direct stream of the item, remuxed to the container configured in the ffmpeg settings (MPEG-TS, MKV, or MP4).
+
+#### Things to consider
+
+Because this mode does not perform stream normalization, there may be issues when transitioning between programs; the mode requires clients to essentially "reset" themselves between each program for transitions to function as expected. Some clients that are known to work in this mode are Jellyfin and MPV, but there are almost certainly others. 
+
 ### MPEG-TS
 
 This mode is the closest to the DizqueTV experience.
