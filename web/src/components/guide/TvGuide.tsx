@@ -26,14 +26,7 @@ import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import {
   alternateColors,
@@ -187,7 +180,6 @@ export function TvGuide({ channelId, start, end }: Props) {
   // Workaround for issue with page jumping on-zoom or nav caused by collapsing
   // div when loading new guide data
   const ref = useRef<HTMLDivElement | null>(null);
-  const indicatorRef = useRef<HTMLDivElement | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = !isNull(anchorEl);
   const [minHeight, setMinHeight] = useState(0);
@@ -296,12 +288,6 @@ export function TvGuide({ channelId, start, end }: Props) {
       setMinHeight(ref.current.offsetHeight);
     }
   }, [channelLineup]);
-
-  const indicatorWidth = useMemo(
-    () => indicatorRef.current?.getBoundingClientRect().width,
-    [],
-  );
-  console.log(indicatorRef.current?.getBoundingClientRect().width);
 
   const renderChannelMenu = () => {
     return channelMenu ? (
