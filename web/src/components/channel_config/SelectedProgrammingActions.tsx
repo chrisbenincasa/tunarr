@@ -94,7 +94,8 @@ export default function SelectedProgrammingActions({
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectAllLoading, setSelectAllLoading] = useState(false);
   const snackbar = useSnackbar();
-  const { addSelectedItems } = useAddSelectedItems();
+  const { addSelectedItems, isLoading: addSelectedLoading } =
+    useAddSelectedItems();
   const removeAllItems = useCallback(() => {
     clearSelectedMedia();
   }, []);
@@ -242,9 +243,14 @@ export default function SelectedProgrammingActions({
               )
             }
             onClick={() => selectAllItems()}
+            disabled={selectAllLoading || addSelectedLoading}
             sx={{ m: 0.5, flexGrow: 1 }}
           >
-            Select All
+            {smallViewport && selectAllEnabled ? (
+              <RotatingLoopIcon />
+            ) : (
+              'Select All'
+            )}
           </Button>
         )}
 
@@ -262,8 +268,15 @@ export default function SelectedProgrammingActions({
             <Button
               key={'add-selected-media'}
               variant="contained"
-              startIcon={smallViewport ? null : <AddCircle />}
+              startIcon={
+                smallViewport ? null : addSelectedLoading ? (
+                  <RotatingLoopIcon />
+                ) : (
+                  <AddCircle />
+                )
+              }
               onClick={(e) => addSelectedItems(e)}
+              disabled={selectAllLoading || addSelectedLoading}
               sx={{ m: 0.5, flexGrow: 1 }}
             >
               {smallViewport ? 'Add Media' : 'Add Selected Media'}
