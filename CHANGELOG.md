@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.19.2](https://github.com/chrisbenincasa/tunarr/compare/v0.19.1...v0.19.2) (2025-05-12)
+
+
+### Features
+
+* add ability to duplicate a channel ([#1187](https://github.com/chrisbenincasa/tunarr/issues/1187)) ([707a814](https://github.com/chrisbenincasa/tunarr/commit/707a81439d38b803af7e2f11c1d850e91b3eed43))
+
+
+### Bug Fixes
+
+* fix select all for Jellyfin libraries ([c872ad9](https://github.com/chrisbenincasa/tunarr/commit/c872ad98bc8d8d3690c9cbdbc71f0c44d1914e30))
+
+
+### UI Changes
+
+* add loading indicator when adding selected media to channel ([50344a4](https://github.com/chrisbenincasa/tunarr/commit/50344a4d62feced355cca77cdaa57e5b0fba5a64))
+
 ## [0.19.1](https://github.com/chrisbenincasa/tunarr/compare/v0.19.0...v0.19.1) (2025-05-09)
 
 
