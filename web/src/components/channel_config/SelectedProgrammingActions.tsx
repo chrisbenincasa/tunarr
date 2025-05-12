@@ -138,6 +138,10 @@ export default function SelectedProgrammingActions({
                 itemTypes: jellyfinCollectionTypeToItemTypes(
                   nullToUndefined(library.view.CollectionType),
                 ),
+                recursive:
+                  library.view.Type === 'UserView' ||
+                  library.view.Type === 'UserRootFolder' ||
+                  library.view.Type === 'Folder',
               },
             })
             .then((response) => {
