@@ -7,7 +7,7 @@ import { ChannelNotFoundError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Result } from '@/types/result.js';
-import { Maybe } from '@/types/util.js';
+import { Maybe, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
@@ -27,6 +27,7 @@ import {
   Watermark,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import { ContentProgramType } from '@tunarr/types/schemas';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -37,6 +38,7 @@ import {
   filter,
   forEach,
   groupBy,
+  identity,
   isEmpty,
   isNil,
   isNull,
@@ -94,11 +96,15 @@ import {
   AllProgramGroupingFields,
   MinimalProgramGroupingFields,
   withFallbackPrograms,
+  withMusicArtistAlbums,
+  withProgramExternalIds,
+  withProgramGroupingExternalIds,
   withPrograms,
   withTrackAlbum,
   withTrackArtist,
   withTvSeason,
   withTvShow,
+  withTvShowSeasons,
 } from './programQueryHelpers.ts';
 import {
   ChannelUpdate,
@@ -107,7 +113,8 @@ import {
   NewChannelProgram,
   Channel as RawChannel,
 } from './schema/Channel.ts';
-import { programExternalIdString } from './schema/Program.ts';
+import { programExternalIdString, ProgramType } from './schema/Program.ts';
+import { ProgramGroupingType } from './schema/ProgramGrouping.ts';
 import {
   ChannelSubtitlePreferences,
   NewChannelSubtitlePreference,
@@ -116,6 +123,9 @@ import { DB } from './schema/db.ts';
 import {
   ChannelWithPrograms,
   ChannelWithRelations,
+  MusicArtistWithExternalIds,
+  ProgramWithRelations,
+  TvShowWithExternalIds,
 } from './schema/derivedTypes.js';
 
 // We use this to chunk super huge channel / program relation updates because
@@ -264,6 +274,7 @@ export class ChannelDB implements IChannelDB {
 
   getChannelAndPrograms(
     uuid: string,
+    typeFilter?: ContentProgramType,
   ): Promise<ChannelWithPrograms | undefined> {
     return this.db
       .selectFrom('channel')
@@ -275,39 +286,166 @@ export class ChannelDB implements IChannelDB {
         'channelPrograms.channelUuid',
       )
       .select((eb) =>
-        withPrograms(eb, {
-          joins: {
-            customShows: true,
-            tvShow: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            tvSeason: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            trackArtist: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
-            trackAlbum: [
-              'programGrouping.uuid',
-              'programGrouping.title',
-              'programGrouping.summary',
-              'programGrouping.type',
-            ],
+        withPrograms(
+          eb,
+          {
+            joins: {
+              customShows: true,
+              tvShow: [
+                'programGrouping.uuid',
+                'programGrouping.title',
+                'programGrouping.summary',
+                'programGrouping.type',
+              ],
+              tvSeason: [
+                'programGrouping.uuid',
+                'programGrouping.title',
+                'programGrouping.summary',
+                'programGrouping.type',
+              ],
+              trackArtist: [
+                'programGrouping.uuid',
+                'programGrouping.title',
+                'programGrouping.summary',
+                'programGrouping.type',
+              ],
+              trackAlbum: [
+                'programGrouping.uuid',
+                'programGrouping.title',
+                'programGrouping.summary',
+                'programGrouping.type',
+              ],
+            },
           },
-        }),
+          typeFilter
+            ? (eb) => eb.where('program.type', '=', typeFilter)
+            : identity,
+        ),
       )
       .groupBy('channel.uuid')
       .orderBy('channel.number asc')
       .executeTakeFirst();
+  }
+
+  async getChannelTvShows(
+    id: string,
+    pageParams?: PageParams,
+  ): Promise<PagedResult<TvShowWithExternalIds>> {
+    const baseQuery = this.db
+      .selectFrom('channelPrograms')
+      .where('channelPrograms.channelUuid', '=', id)
+      .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
+      .innerJoin(
+        'programGrouping',
+        'program.tvShowUuid',
+        'programGrouping.uuid',
+      )
+      .where('program.type', '=', 'episode')
+      .where('program.tvShowUuid', 'is not', null)
+      .where('programGrouping.type', '=', ProgramGroupingType.Show);
+
+    const countPromise = baseQuery
+      .select((eb) =>
+        eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
+      )
+      .executeTakeFirstOrThrow();
+    const showPromise = baseQuery
+      .selectAll('programGrouping')
+      .select(withProgramGroupingExternalIds)
+      .select(withTvShowSeasons)
+      .groupBy('program.tvShowUuid')
+      .orderBy('programGrouping.uuid asc')
+      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+        eb.offset(pageParams!.offset),
+      )
+      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+        eb.limit(pageParams!.limit),
+      )
+      .execute() as Promise<TvShowWithExternalIds[]>;
+
+    const [{ count }, shows] = await Promise.all([countPromise, showPromise]);
+
+    return {
+      total: count,
+      results: shows,
+    };
+  }
+
+  async getChannelMusicArtists(
+    id: string,
+    pageParams?: PageParams,
+  ): Promise<PagedResult<MusicArtistWithExternalIds>> {
+    const baseQuery = this.db
+      .selectFrom('channelPrograms')
+      .where('channelPrograms.channelUuid', '=', id)
+      .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
+      .innerJoin(
+        'programGrouping',
+        'program.artistUuid',
+        'programGrouping.uuid',
+      )
+      .where('program.type', '=', ProgramType.Track)
+      .where('program.artistUuid', 'is not', null)
+      .where('programGrouping.type', '=', ProgramGroupingType.Artist);
+
+    const countPromise = baseQuery
+      .select((eb) =>
+        eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
+      )
+      .executeTakeFirstOrThrow();
+    const artistsPromise = baseQuery
+      .selectAll('programGrouping')
+      .select(withProgramGroupingExternalIds)
+      .select(withMusicArtistAlbums)
+      .groupBy('program.artistUuid')
+      .orderBy('programGrouping.uuid asc')
+      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+        eb.offset(pageParams!.offset),
+      )
+      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+        eb.limit(pageParams!.limit),
+      )
+      .execute() as Promise<MusicArtistWithExternalIds[]>;
+
+    const [{ count }, artists] = await Promise.all([
+      countPromise,
+      artistsPromise,
+    ]);
+
+    return {
+      total: count,
+      results: artists,
+    };
+  }
+
+  getChannelPrograms(
+    id: string,
+    pageParams?: PageParams,
+    typeFilter?: ContentProgramType,
+  ): Promise<ProgramWithRelations[]> {
+    return (
+      this.db
+        .selectFrom('channelPrograms')
+        .where('channelPrograms.channelUuid', '=', id)
+        // .select(eb => withPrograms(eb, defaultWithProgramOptions, qb => qb.$if(!!typeFilter, b => b.where('program.type', ))))
+        .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
+        .$if(!!typeFilter, (eb) => eb.where('program.type', '=', typeFilter!))
+        .selectAll('program')
+        .select(withProgramExternalIds)
+        .select(withTrackAlbum)
+        .select(withTrackArtist)
+        .select(withTvSeason)
+        .select(withTvShow)
+        .orderBy('program.uuid asc')
+        // TODO: Implement as cursor
+        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+          eb.offset(pageParams!.offset),
+        )
+        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+          eb.limit(pageParams!.limit),
+        )
+        .execute()
+    );
   }
 
   getChannelProgramExternalIds(uuid: string) {

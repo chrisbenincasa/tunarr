@@ -25,6 +25,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import type {
+  EmbySelectedMedia,
   JellyfinSelectedMedia,
   PlexSelectedMedia,
   SelectedMedia,
@@ -39,7 +40,7 @@ export type GridItemMetadata = {
   title: string;
   subtitle: JSX.Element | string | null;
   thumbnailUrl: string;
-  selectedMedia: SelectedMedia;
+  selectedMedia?: SelectedMedia;
   isFolder?: boolean;
 };
 
@@ -53,6 +54,8 @@ type Props<T> = {
   onClick: (item: T) => void;
   onSelect: (item: T) => void;
   depth: number;
+  enableSelection?: boolean;
+  disablePadding?: boolean;
 };
 
 const MediaGridItemInner = <T,>(
@@ -84,6 +87,8 @@ const MediaGridItemInner = <T,>(
     isModalOpen,
     onClick,
     depth,
+    enableSelection = true,
+    disablePadding = false,
   } = props;
 
   const [imageLoaded, setImageLoaded] = useState<
@@ -94,7 +99,9 @@ const MediaGridItemInner = <T,>(
     useShallow((s) =>
       filter(
         s.selectedMedia,
-        (p): p is PlexSelectedMedia | JellyfinSelectedMedia =>
+        (
+          p,
+        ): p is PlexSelectedMedia | JellyfinSelectedMedia | EmbySelectedMedia =>
           p.type !== 'custom-show',
       ),
     ),
@@ -116,13 +123,15 @@ const MediaGridItemInner = <T,>(
   const handleItem = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
       e.stopPropagation();
-      if (isSelected) {
-        removeSelectedMedia([selectedMediaItem]);
-      } else {
-        addSelectedMedia(selectedMediaItem);
+      if (enableSelection && selectedMediaItem) {
+        if (isSelected) {
+          removeSelectedMedia([selectedMediaItem]);
+        } else {
+          addSelectedMedia(selectedMediaItem);
+        }
       }
     },
-    [isSelected, selectedMediaItem],
+    [enableSelection, isSelected, selectedMediaItem],
   );
 
   const { isIntersecting: isInViewport, ref: imageContainerRef } =
@@ -180,9 +189,9 @@ const MediaGridItemInner = <T,>(
             display: 'flex',
             flexDirection: 'column',
             flexGrow: 1,
-            paddingLeft: '8px !important',
-            paddingRight: '8px',
-            paddingTop: '8px',
+            paddingLeft: disablePadding ? undefined : '8px !important',
+            paddingRight: disablePadding ? undefined : '8px',
+            paddingTop: disablePadding ? undefined : '8px',
             height: 'auto',
             backgroundColor: backgroundColor,
             ...style,
@@ -270,14 +279,16 @@ const MediaGridItemInner = <T,>(
             subtitle={subtitle}
             position="below"
             actionIcon={
-              <IconButton
-                aria-label={`star ${title}`}
-                onClick={(event: MouseEvent<HTMLButtonElement>) =>
-                  handleItem(event)
-                }
-              >
-                {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
-              </IconButton>
+              enableSelection ? (
+                <IconButton
+                  aria-label={`star ${title}`}
+                  onClick={(event: MouseEvent<HTMLButtonElement>) =>
+                    handleItem(event)
+                  }
+                >
+                  {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
+                </IconButton>
+              ) : null
             }
             actionPosition="right"
           />

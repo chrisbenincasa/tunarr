@@ -45,7 +45,7 @@ import { ProgramCalendarView } from '../slot_scheduler/ProgramCalendarView.tsx';
 import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView.tsx';
 import { ProgramWeekCalendarView } from '../slot_scheduler/ProgramWeekCalendarView.tsx';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
-import ChannelProgrammingList from './ChannelProgrammingList.tsx';
+import ChannelLineupList from './ChannelLineupList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
@@ -175,7 +175,7 @@ export function ChannelProgrammingConfig() {
     switch (view) {
       case 'list':
         return (
-          <ChannelProgrammingList
+          <ChannelLineupList
             type="selector"
             virtualListProps={{
               width: '100%',

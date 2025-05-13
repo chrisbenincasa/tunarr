@@ -12,7 +12,7 @@ import {
   type SavePlexProgramExternalIdsTaskFactory,
 } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { KEYS } from '@/types/inject.js';
-import { MarkNonNullable, Maybe } from '@/types/util.js';
+import { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
 import { LoggerFactory, type Logger } from '@/util/logging/LoggerFactory.js';
@@ -73,6 +73,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from './custom_types/ProgramSourceType.ts';
+import { PageParams } from './interfaces/IChannelDB.ts';
 import {
   AllProgramJoins,
   ProgramUpsertFields,
@@ -110,8 +111,11 @@ import {
 } from './schema/ProgramGroupingExternalId.ts';
 import { DB } from './schema/db.ts';
 import type {
+  MusicAlbumWithExternalIds,
   ProgramGroupingWithExternalIds,
+  ProgramWithExternalIds,
   ProgramWithRelations,
+  TvSeasonWithExternalIds,
 } from './schema/derivedTypes.ts';
 
 type ValidatedContentProgram = MarkRequired<
@@ -264,6 +268,98 @@ export class ProgramDB implements IProgramDB {
     }
 
     return;
+  }
+
+  getChildren(
+    parentId: string,
+    parentType: 'season' | 'album',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<ProgramWithExternalIds>>;
+  getChildren(
+    parentId: string,
+    parentType: 'artist',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
+  getChildren(
+    parentId: string,
+    parentType: 'show',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<TvSeasonWithExternalIds>>;
+  async getChildren(
+    parentId: string,
+    parentType: ProgramGroupingType,
+    pageParams?: PageParams,
+  ): Promise<
+    PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
+  > {
+    if (parentType === 'album' || parentType === 'season') {
+      const baseQuery = this.db
+        .selectFrom('program')
+        .where('type', '=', parentType === 'album' ? 'track' : 'episode')
+        .where(
+          parentType === 'album' ? 'albumUuid' : 'seasonUuid',
+          '=',
+          parentId,
+        );
+
+      const countPromise = baseQuery
+        .select((eb) => eb.fn.count<number>('uuid').as('count'))
+        .executeTakeFirstOrThrow();
+
+      const resultPromise = baseQuery
+        .select(withProgramExternalIds)
+        .selectAll()
+        .orderBy('episode asc')
+        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+          eb.offset(pageParams!.offset),
+        )
+        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+          eb.limit(pageParams!.limit),
+        )
+        .execute();
+
+      const [{ count }, results] = await Promise.all([
+        countPromise,
+        resultPromise,
+      ]);
+
+      return {
+        total: count,
+        results,
+      };
+    } else {
+      const childType = parentType === 'artist' ? 'album' : 'season';
+      const baseQuery = this.db
+        .selectFrom('programGrouping')
+        .where('type', '=', childType)
+        .where(
+          childType === 'season' ? 'showUuid' : 'artistUuid',
+          '=',
+          parentId,
+        );
+
+      const [{ count }, results] = await Promise.all([
+        baseQuery
+          .select((eb) => eb.fn.count<number>('uuid').as('count'))
+          .executeTakeFirstOrThrow(),
+        baseQuery
+          .selectAll()
+          .orderBy(childType === 'season' ? 'title asc' : 'year asc')
+          .select(withProgramGroupingExternalIds)
+          .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+            eb.offset(pageParams!.offset),
+          )
+          .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+            eb.limit(pageParams!.limit),
+          )
+          .execute(),
+      ]);
+
+      return {
+        total: count,
+        results,
+      };
+    }
   }
 
   async lookupByExternalId(eid: {
@@ -957,6 +1053,21 @@ export class ProgramDB implements IProgramDB {
         foundGroupingRatingKeys.includes(parent),
       );
 
+      // const existingParents = seq.collect(
+      //   existingParentKeys,
+      //   (key) => existingGroupingsByKey[key],
+      // );
+      // Fix mappings if we have to...
+      // const existingParentsNeedingUpdate = existingParents.filter(parent => {
+      //   if (parent.type === ProgramGroupingType.Album && parent.artistUuid !== grandparentGrouping.uuid) {
+      //     parent.artistUuid = grandparentGrouping.uuid;
+      //     return true;
+      //   } else if (parent.type === ProgramGroupingType.Season && parent.showUuid !== grandparentGrouping.uuid) {
+      //     return true;
+      //   }
+      //   return false;
+      // });
+
       for (const parentKey of parents) {
         const programIds = parentRatingKeyToProgramId[parentKey];
         if (!programIds || programIds.size === 0) {
@@ -990,13 +1101,13 @@ export class ProgramDB implements IProgramDB {
           if (program.type === ProgramType.Episode) {
             program.seasonUuid = parentGrouping.uuid;
             updatesByType[ProgramGroupingType.Season].add(program.uuid);
-          } else {
+          } else if (program.type === ProgramType.Track) {
             program.albumUuid = parentGrouping.uuid;
             updatesByType[ProgramGroupingType.Album].add(program.uuid);
           }
         });
 
-        if (parentGrouping.type === ProgramGroupingType.Show) {
+        if (parentGrouping.type === ProgramGroupingType.Season) {
           parentGrouping.showUuid = grandparentGrouping.uuid;
         } else if (parentGrouping.type === ProgramGroupingType.Album) {
           parentGrouping.artistUuid = grandparentGrouping.uuid;

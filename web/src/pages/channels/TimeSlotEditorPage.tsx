@@ -1,5 +1,5 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
-import ChannelProgrammingList from '@/components/channel_config/ChannelProgrammingList.tsx';
+import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx';
 import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
@@ -471,7 +471,7 @@ export default function TimeSlotEditorPage() {
             disabled
             slotProps={{ textField: { size: 'small' } }}
           />
-          <ChannelProgrammingList
+          <ChannelLineupList
             type="selector"
             enableDnd={false}
             enableRowDelete={false}

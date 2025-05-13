@@ -57,14 +57,15 @@ const thumbOptsSchema = z.object({
 
 const ExternalMetadataQuerySchema = z.object({
   id: externalIdSchema,
-  asset: z.union([z.literal('thumb'), z.literal('external-link')]),
-  mode: z.union([z.literal('json'), z.literal('redirect'), z.literal('proxy')]),
+  asset: z.enum(['thumb', 'external-link', 'image']),
+  mode: z.enum(['json', 'redirect', 'proxy']),
   cache: TruthyQueryParam.optional().default(true),
   thumbOptions: z
     .string()
     .transform((s) => JSON.parse(s) as unknown)
     .pipe(thumbOptsSchema)
     .optional(),
+  imageType: z.enum(['poster', 'background']).default('poster'),
 });
 
 type ExternalMetadataQuery = z.infer<typeof ExternalMetadataQuerySchema>;
@@ -191,13 +192,15 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       return null;
     }
 
-    if (query.asset === 'thumb') {
+    if (query.asset === 'thumb' || query.asset === 'image') {
       return plexApi.getThumbUrl({
         itemKey: query.id.externalItemId,
         width: query.thumbOptions?.width,
         height: query.thumbOptions?.height,
         upscale: '1',
+        imageType: query.imageType,
       });
+    } else if (query.asset === 'external-link') {
     }
 
     return null;
@@ -213,14 +216,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       return null;
     }
 
-    if (query.asset === 'thumb') {
+    if (query.asset === 'thumb' || query.asset === 'image') {
       return jellyfinClient.getThumbUrl(query.id.externalItemId);
-      // return jellyfinClient.getThumbUrl({
-      //   itemKey: query.id.externalItemId,
-      //   width: query.thumbOptions?.width,
-      //   height: query.thumbOptions?.height,
-      //   upscale: '1',
-      // });
+    } else if (query.asset === 'external-link') {
+      return jellyfinClient.getExternalUrl(query.id.externalItemId);
     }
 
     return null;

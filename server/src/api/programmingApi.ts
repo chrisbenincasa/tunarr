@@ -4,11 +4,11 @@ import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { TruthyQueryParam } from '@/types/schemas.js';
+import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { BasicIdParamSchema } from '@tunarr/types/api';
+import { BasicIdParamSchema, ProgramChildrenResult } from '@tunarr/types/api';
 import { ContentProgramSchema } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
 import type { HttpHeader } from 'fastify/types/utils.js';
@@ -90,6 +90,76 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           [],
         ),
       );
+    },
+  );
+
+  fastify.get(
+    '/programs/:id/children',
+    {
+      schema: {
+        tags: ['Programs'],
+        params: BasicIdParamSchema,
+        querystring: PagingParams,
+        response: {
+          200: ProgramChildrenResult,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const grouping = await req.serverCtx.programDB.getProgramGrouping(
+        req.params.id,
+      );
+      if (!grouping) {
+        return res.status(404).send();
+      }
+
+      if (grouping.type === 'album' || grouping.type === 'season') {
+        const { total, results } = await req.serverCtx.programDB.getChildren(
+          req.params.id,
+          grouping.type,
+          req.query,
+        );
+        const result = results.map((program) =>
+          req.serverCtx.programConverter.programDaoToContentProgram(
+            program,
+            program.externalIds,
+          ),
+        );
+
+        return res.send({
+          total,
+          result: {
+            type: grouping.type === 'album' ? 'track' : 'episode',
+            programs: result,
+          },
+        });
+      } else if (grouping.type === 'artist') {
+        const { total, results } = await req.serverCtx.programDB.getChildren(
+          req.params.id,
+          grouping.type,
+          req.query,
+        );
+        const result = results.map((program) =>
+          req.serverCtx.programConverter.programGroupingDaoToDto(program),
+        );
+        return res.send({ total, result: { type: 'album', programs: result } });
+      } else if (grouping.type === 'show') {
+        const { total, results } = await req.serverCtx.programDB.getChildren(
+          req.params.id,
+          grouping.type,
+          req.query,
+        );
+        const result = results.map((program) =>
+          req.serverCtx.programConverter.programGroupingDaoToDto(program),
+        );
+        return res.send({
+          total,
+          result: { type: 'season', programs: result },
+        });
+      }
+
+      return res.status(400).send();
     },
   );
 
@@ -185,7 +255,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               albumExternalIds,
               (ref) =>
                 ref.sourceType === program.sourceType &&
-                ref.externalSourceId === program.externalSourceId,
+                (ref.mediaSourceId === program.mediaSourceId ||
+                  ref.externalSourceId === program.externalSourceId),
             ),
             (ref) => {
               keyToUse = ref.externalKey;
@@ -204,7 +275,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               showExternalIds,
               (ref) =>
                 ref.sourceType === program.sourceType &&
-                ref.externalSourceId === program.externalSourceId,
+                (ref.mediaSourceId === program.mediaSourceId ||
+                  ref.externalSourceId === program.externalSourceId),
             ),
             (ref) => {
               keyToUse = ref.externalKey;
@@ -216,17 +288,18 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(500).send();
         }
 
-        switch (program.sourceType) {
+        switch (mediaSource.type) {
           case ProgramSourceType.PLEX: {
             return handleResult(
               mediaSource,
-              PlexApiClient.getThumbUrl({
+              PlexApiClient.getImageUrl({
                 uri: mediaSource.uri,
                 itemKey: keyToUse,
                 accessToken: mediaSource.accessToken,
                 height: req.query.height,
                 width: req.query.width,
                 upscale: req.query.upscale.toString(),
+                imageType: 'poster',
               }),
             );
           }
@@ -261,27 +334,30 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(500).send();
         }
 
-        const mediaSource = await req.serverCtx.mediaSourceDB.getByExternalId(
-          // This was asserted above
-          source.sourceType as 'plex' | 'jellyfin',
-          source.externalSourceId,
-        );
+        const mediaSource = await (isNonEmptyString(source.mediaSourceId)
+          ? req.serverCtx.mediaSourceDB.getById(source.mediaSourceId)
+          : req.serverCtx.mediaSourceDB.getByExternalId(
+              // This was asserted above
+              source.sourceType as 'plex' | 'jellyfin',
+              source.externalSourceId,
+            ));
 
         if (isNil(mediaSource)) {
           return res.status(404).send();
         }
 
-        switch (source.sourceType) {
+        switch (mediaSource.type) {
           case ProgramExternalIdType.PLEX:
             return handleResult(
               mediaSource,
-              PlexApiClient.getThumbUrl({
+              PlexApiClient.getImageUrl({
                 uri: mediaSource.uri,
                 itemKey: source.externalKey,
                 accessToken: mediaSource.accessToken,
                 height: req.query.height,
                 width: req.query.width,
                 upscale: req.query.upscale.toString(),
+                imageType: 'poster',
               }),
             );
           case ProgramExternalIdType.JELLYFIN:
@@ -377,6 +453,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
           return res.redirect(url, 302).send();
         }
+        default:
+          return res.status(405).send();
       }
     },
   );

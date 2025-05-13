@@ -163,7 +163,7 @@ export default function ChannelsPage() {
     id: string,
   ) => {
     navigate({
-      to: `/channels/$channelId/programming`,
+      to: `/channels/$channelId`,
       params: { channelId: id },
     }).catch(console.error);
   };

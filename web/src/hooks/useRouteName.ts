@@ -40,7 +40,6 @@ const namedRoutes: Route[] = [
       store.channelEditor.currentEntity?.id === maybeId
         ? store.channelEditor.currentEntity.name
         : undefined,
-    isLink: false,
     // name: (store) => store.channelEditor.,
   },
   {

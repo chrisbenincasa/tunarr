@@ -9,13 +9,17 @@ import type {
 } from '@/db/schema/ProgramExternalId.js';
 import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
 import type {
+  MusicAlbumWithExternalIds,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
+  TvSeasonWithExternalIds,
 } from '@/db/schema/derivedTypes.js';
-import type { Maybe } from '@/types/util.js';
+import type { Maybe, PagedResult } from '@/types/util.js';
 import type { ChannelProgram, ContentProgram } from '@tunarr/types';
 import type { MarkOptional } from 'ts-essentials';
+import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
+import type { PageParams } from './IChannelDB.ts';
 
 export interface IProgramDB {
   getProgramById(id: string): Promise<Maybe<ProgramWithExternalIds>>;
@@ -41,6 +45,29 @@ export interface IProgramDB {
   getProgramParent(
     programId: string,
   ): Promise<Maybe<ProgramGroupingWithExternalIds>>;
+
+  getChildren(
+    parentId: string,
+    parentType: 'season' | 'album',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<ProgramWithExternalIds>>;
+  getChildren(
+    parentId: string,
+    parentType: 'artist',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
+  getChildren(
+    parentId: string,
+    parentType: 'show',
+    pageParams?: PageParams,
+  ): Promise<PagedResult<TvSeasonWithExternalIds>>;
+  getChildren(
+    parentId: string,
+    parentType: ProgramGroupingType,
+    pageParams?: PageParams,
+  ): Promise<
+    PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
+  >;
 
   lookupByExternalId(eid: {
     sourceType: ProgramSourceType;

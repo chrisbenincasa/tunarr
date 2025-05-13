@@ -1,6 +1,6 @@
 import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import type { MarkNonNullable } from '@/types/util.js';
-import type { DeepNullable, MarkRequired } from 'ts-essentials';
+import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Channel, ChannelFillerShow } from './Channel.ts';
 import type { FillerShow } from './FillerShow.ts';
 import type { ProgramDao } from './Program.ts';
@@ -61,3 +61,38 @@ export type ProgramWithExternalIds = ProgramDao & {
 export type ProgramGroupingWithExternalIds = ProgramGrouping & {
   externalIds: ProgramGroupingExternalId[];
 };
+
+type SpecificSubtype<BaseType, Value extends BaseType['type']> = StrictOmit<
+  BaseType,
+  'type'
+> & { type: Value };
+
+export type TvSeasonWithExternalIds = SpecificSubtype<
+  ProgramGroupingWithExternalIds,
+  'season'
+>;
+
+export type TvShowWithExternalIds = SpecificSubtype<
+  ProgramGroupingWithExternalIds,
+  'show'
+> & {
+  seasons?: TvSeasonWithExternalIds[];
+};
+
+export type MusicAlbumWithExternalIds = SpecificSubtype<
+  ProgramGroupingWithExternalIds,
+  'album'
+>;
+
+export type MusicArtistWithExternalIds = SpecificSubtype<
+  ProgramGroupingWithExternalIds,
+  'artist'
+> & {
+  albums?: MusicAlbumWithExternalIds[];
+};
+
+export type GeneralizedProgramGroupingWithExternalIds =
+  | TvShowWithExternalIds
+  | TvSeasonWithExternalIds
+  | MusicAlbumWithExternalIds
+  | MusicArtistWithExternalIds;

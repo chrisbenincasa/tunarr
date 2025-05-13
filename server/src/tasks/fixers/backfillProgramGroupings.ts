@@ -340,5 +340,14 @@ export class BackfillProgramGroupings extends Fixer {
         stillMissing?.count,
       );
     }
+
+    await this.db
+      .updateTable('programGrouping')
+      .where('programGrouping.showUuid', 'is not', null)
+      .where('programGrouping.type', '=', 'show')
+      .set({
+        type: ProgramGroupingType.Season,
+      })
+      .executeTakeFirst();
   }
 }
