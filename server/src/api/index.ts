@@ -13,7 +13,8 @@ import { isEmpty, isError, isNil } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { run } from '../util/index.js';
+import { TruthyQueryParam } from '../types/schemas.ts';
+import { isNonEmptyString, run } from '../util/index.js';
 import { channelsApi } from './channelsApi.js';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -221,12 +222,25 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   fastify.route({
     url: '/channels.m3u',
     schema: {
+      querystring: z.object({
+        forceHttps: TruthyQueryParam.optional(),
+        hostOverride: z.string().optional(),
+      }),
       tags: ['Streaming'],
     },
     method: ['HEAD', 'GET'],
     handler: async (req, res) => {
       try {
-        const host = `${req.protocol}://${req.host}`;
+        let protocol = req.protocol;
+        if (req.query.forceHttps) {
+          protocol = 'https';
+        }
+        let reqHost = req.host;
+        if (isNonEmptyString(req.query.hostOverride)) {
+          reqHost = req.query.hostOverride;
+        }
+
+        const host = `${protocol}://${reqHost}`;
         const data = await req.serverCtx.m3uService.getChannelsM3U(host);
 
         return res.type('text').send(data);
