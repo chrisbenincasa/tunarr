@@ -1,4 +1,6 @@
-import { HlsOutputFormat } from './HlsOutputFormat.ts';
+import path from 'node:path';
+import type { HlsOutputFormatType } from '../constants.ts';
+import { HlsFormatOutputOption } from './HlsFormatOutputOption.ts';
 import { OutputOption } from './OutputOption.ts';
 
 export class HlsConcatOutputFormat extends OutputOption {
@@ -10,21 +12,30 @@ export class HlsConcatOutputFormat extends OutputOption {
     super();
   }
 
+  static create(format: HlsOutputFormatType) {
+    const base = path.join(format.segmentBaseDirectory, format.streamBasePath);
+    return new HlsConcatOutputFormat(
+      path.join(base, format.segmentNameFormat),
+      path.join(base, format.streamNameFormat),
+      format.streamBaseUrl,
+    );
+  }
+
   options(): string[] {
     const segmentType = this.segmentTemplate.includes('m4s')
       ? 'fmp4'
       : 'mpegts';
     return [
       '-g',
-      `${HlsOutputFormat.SegmentSeconds}/2`,
+      `${HlsFormatOutputOption.SegmentSeconds}/2`,
       '-force_key_frames',
-      `expr:gte(t,n_forced*${HlsOutputFormat.SegmentSeconds}/2)`,
+      `expr:gte(t,n_forced*${HlsFormatOutputOption.SegmentSeconds}/2)`,
       '-f',
       'hls',
       '-hls_segment_type',
       segmentType,
       '-hls_time',
-      `${HlsOutputFormat.SegmentSeconds}`,
+      `${HlsFormatOutputOption.SegmentSeconds}`,
       '-hls_list_size',
       '25',
       '-segment_list_flags',

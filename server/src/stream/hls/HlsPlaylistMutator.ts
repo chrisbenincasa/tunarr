@@ -14,6 +14,7 @@ import {
   takeRight,
   trimEnd,
 } from 'lodash-es';
+import type { Nullable } from '../../types/util.ts';
 
 export class HlsPlaylistMutator {
   trimPlaylistWithDiscontinuity(
@@ -38,7 +39,7 @@ export class HlsPlaylistMutator {
     maxSegments: number = 10,
     endWithDiscontinuity: boolean = false,
   ): TrimPlaylistResult {
-    const { items, discontinuitySeq } = this.parsePlaylist(
+    const { items, discontinuitySeq, xMapLine } = this.parsePlaylist(
       start,
       playlistLines,
       endWithDiscontinuity,
@@ -49,6 +50,7 @@ export class HlsPlaylistMutator {
       filterBefore,
       discontinuitySeq,
       maxSegments,
+      xMapLine,
     );
 
     return {
@@ -70,6 +72,7 @@ export class HlsPlaylistMutator {
     let discontinuitySeq = 0;
     let i = 0;
     let currentTime = start;
+    let xMapLine: Nullable<string> = null;
 
     while (
       i < playlistLines.length &&
@@ -83,6 +86,8 @@ export class HlsPlaylistMutator {
         }
       } else if (line.startsWith('#EXT-X-DISCONTINUITY')) {
         items.push(PlaylistDiscontinuity());
+      } else if (line.startsWith('#EXT-X-MAP:URI')) {
+        xMapLine = line;
       }
 
       i++;
@@ -116,6 +121,7 @@ export class HlsPlaylistMutator {
     return {
       items,
       discontinuitySeq,
+      xMapLine,
     };
   }
 
@@ -124,6 +130,7 @@ export class HlsPlaylistMutator {
     filterBefore: Dayjs,
     discontinuitySequence: number,
     maxSegments: number,
+    xMapLine: Nullable<string>,
   ) {
     if (first(items)?.type === 'discontinuity') {
       discontinuitySequence++;
@@ -166,6 +173,11 @@ export class HlsPlaylistMutator {
       `#EXT-X-DISCONTINUITY-SEQUENCE:${discontinuitySequence}`,
       '#EXT-X-INDEPENDENT-SEGMENTS',
     ];
+
+    // Preserve fmp4 init file declaration
+    if (isNonEmptyString(xMapLine)) {
+      lines.push(xMapLine);
+    }
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];

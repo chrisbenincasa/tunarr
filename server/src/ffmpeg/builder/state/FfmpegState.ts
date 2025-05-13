@@ -1,18 +1,13 @@
 import type { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import type { DataProps } from '@/ffmpeg/builder/types.js';
 import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import type { Nullable } from '@/types/util.js';
 import type { FfmpegLogLevel } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { isNil, merge } from 'lodash-es';
-import path from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
 import type { OutputFormat } from '../constants.ts';
-import {
-  MpegTsOutputFormat,
-  OutputFormatTypes,
-  OutputLocation,
-} from '../constants.ts';
+import { MpegTsOutputFormat, OutputLocation } from '../constants.ts';
 
 export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
   threadCount: null,
@@ -52,36 +47,6 @@ export class FfmpegState {
   outputFormat: OutputFormat = MpegTsOutputFormat; // TODO: No
   outputLocation: OutputLocation = OutputLocation.Stdout;
   ptsOffset?: number;
-
-  // HLS
-  get hlsPlaylistPath(): Maybe<string> {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
-      return path.join(
-        this.outputFormat.hlsOptions.segmentBaseDirectory,
-        this.outputFormat.hlsOptions.streamBasePath,
-        this.outputFormat.hlsOptions.streamNameFormat,
-      );
-    }
-    return;
-  }
-
-  get hlsSegmentTemplate(): Maybe<string> {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
-      return path.join(
-        this.outputFormat.hlsOptions.segmentBaseDirectory,
-        this.outputFormat.hlsOptions.streamBasePath,
-        this.outputFormat.hlsOptions.segmentNameFormat,
-      );
-    }
-    return;
-  }
-
-  get hlsBaseStreamUrl() {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
-      return this.outputFormat.hlsOptions.streamBaseUrl;
-    }
-    return;
-  }
 
   private constructor(fields: FfmpegStateFields) {
     merge(this, fields);

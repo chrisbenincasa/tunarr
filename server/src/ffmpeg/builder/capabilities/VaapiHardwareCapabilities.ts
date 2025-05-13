@@ -59,7 +59,7 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   }
 
   canDecode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {
