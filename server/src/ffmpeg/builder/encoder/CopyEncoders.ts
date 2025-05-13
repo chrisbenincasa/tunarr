@@ -1,7 +1,7 @@
 import { AudioEncoder, BaseEncoder, VideoEncoder } from './BaseEncoder.ts';
 
 export class CopyVideoEncoder extends VideoEncoder {
-  protected videoFormat: string;
+  protected videoFormat;
   constructor() {
     super('copy');
   }

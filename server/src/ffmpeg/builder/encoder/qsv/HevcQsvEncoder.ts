@@ -4,7 +4,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { QsvEncoder } from './QsvEncoders.ts';
 
 export class HevcQsvEncoder extends QsvEncoder {
-  protected videoFormat: string = VideoFormats.Hevc;
+  protected videoFormat = VideoFormats.Hevc;
 
   constructor(private videoPreset: Nullable<string>) {
     super('hevc_qsv');

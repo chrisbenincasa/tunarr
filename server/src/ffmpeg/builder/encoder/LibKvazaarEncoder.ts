@@ -6,7 +6,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class LibKvazaarEncoder extends VideoEncoder {
-  protected readonly videoFormat: string = VideoFormats.Hevc;
+  protected readonly videoFormat = VideoFormats.Hevc;
   readonly affectsFrameState = true;
 
   get filter() {

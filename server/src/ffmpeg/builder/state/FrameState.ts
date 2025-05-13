@@ -4,6 +4,7 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { merge } from 'lodash-es';
 import type { MarkOptional } from 'ts-essentials';
+import type { VideoFormats } from '../constants.ts';
 
 type FrameStateFields = DataProps<FrameState>;
 
@@ -32,7 +33,7 @@ export class FrameState {
   croppedSize?: FrameSize;
   isAnamorphic: boolean;
   realtime: boolean;
-  videoFormat: string;
+  videoFormat: VideoFormats;
   videoPreset: Nullable<string>;
   videoProfile: Nullable<string>;
   frameRate: Nullable<number>;

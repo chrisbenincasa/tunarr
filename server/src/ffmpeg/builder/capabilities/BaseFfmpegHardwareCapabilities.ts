@@ -30,19 +30,19 @@ export abstract class BaseFfmpegHardwareCapabilities {
   }
 
   abstract canDecode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Nilable<string>,
     pixelFormat: Nilable<PixelFormat>,
   ): boolean;
 
   abstract canEncode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Nilable<string>,
     pixelFormat: Nilable<PixelFormat>,
   ): boolean;
 
   getRateControlMode(
-    _videoFormat: string,
+    _videoFormat,
     _pixelFormat: Maybe<PixelFormat>,
   ): Maybe<RateControlMode> {
     return;

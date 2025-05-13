@@ -247,19 +247,19 @@ export class HlsSession extends BaseHlsSession {
   }
 
   private getProgramStream(context: PlayerContext) {
+    const segmentType = this.settingsDB.ffmpegSettings().hlsSegmentType;
     return this.programStreamFactory(
       context,
       HlsOutputFormat({
-        hlsDeleteThreshold: 3,
-        streamNameFormat: 'stream.m3u8',
-        segmentNameFormat: 'data%06d.ts',
-        segmentBaseDirectory: dirname(this.workingDirectory),
-        streamBasePath: basename(this.workingDirectory),
-        streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
-        hlsTime: 4,
-        hlsListSize: 0,
-        deleteThreshold: null,
+        deleteThreshold: 3,
+        segmentType,
+        listSize: 0,
+        targetSegmentDuration: 4,
         appendSegments: true,
+        sessionId: this.channel.uuid,
+        hlsSessionType: this.sessionType,
+        streamBasePath: basename(this.workingDirectory),
+        segmentBaseDirectory: dirname(this.workingDirectory),
       }),
     );
   }
@@ -378,10 +378,10 @@ export class HlsSession extends BaseHlsSession {
       seq.collect(
         filter(workingDirectoryFiles, (f) => {
           const ext = extname(f);
-          return ext === '.ts' || ext === '.mp4';
+          return ext === '.ts' || ext === '.mp4' || ext === '.m4s';
         }),
         (file) => {
-          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+          const matches = file.match(/[A-z/]+(\d+)\.[ts|mp4|m4s]/);
           if (matches && matches.length > 0) {
             return {
               file,

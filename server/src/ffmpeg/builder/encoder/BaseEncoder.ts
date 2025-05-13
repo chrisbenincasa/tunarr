@@ -2,6 +2,7 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { StreamKinds } from '@/ffmpeg/builder/types.js';
 import type { TupleToUnion } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
+import type { VideoFormats } from '../constants.ts';
 import type { Encoder } from './Encoder.ts';
 
 export abstract class BaseEncoder implements Encoder {
@@ -47,7 +48,7 @@ export class AudioEncoder extends BaseEncoder {
 }
 
 export abstract class VideoEncoder extends BaseEncoder {
-  protected abstract videoFormat: string;
+  protected abstract videoFormat: VideoFormats;
 
   constructor(encoder: string) {
     super(encoder, 'video');

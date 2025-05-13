@@ -350,6 +350,7 @@ export class LegacyDbMigrator {
               deinterlaceFilter: ffmpegSettings[
                 'deinterlaceFilter'
               ] as FfmpegSettings['deinterlaceFilter'],
+              hlsSegmentType: 'mpegts',
             },
             defaultFfmpegSettings,
           );

@@ -390,4 +390,54 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       });
     },
   );
+
+  // Support requesting init.mp4 files with special compound file names
+  fastify.get(
+    '/stream/channels/:file.mp4',
+    {
+      schema: {
+        params: z.object({
+          file: z.string(),
+        }),
+        hide: true,
+      },
+      config: {
+        disableRequestLogging: true,
+      },
+    },
+    async (req, res) => {
+      // Name is in the format: (channel ID)|(sessionType)|init.mp4
+      // This will help us locate where to serve the file from.
+      const [channelId, sessionType, init] = req.params.file.split('|', 3);
+      if (!init.endsWith('init')) {
+        return res.status(400).send('Only supports init.mp4 files');
+      }
+
+      let session: Maybe<BaseHlsSession>;
+      switch (sessionType) {
+        case 'hls':
+          session = req.serverCtx.sessionManager.getHlsSession(channelId);
+          break;
+        case 'hls_slower':
+          session = req.serverCtx.sessionManager.getHlsSlowerSession(channelId);
+          break;
+        default:
+          return res
+            .status(400)
+            .send(
+              `Invalid sesssion type for fragment file serving: ${sessionType}`,
+            );
+      }
+
+      if (isUndefined(session)) {
+        return res.status(404).send('No session found');
+      }
+
+      session.recordHeartbeat(req.ip);
+
+      return res.sendFile(`${req.params.file}.mp4`, session.workingDirectory, {
+        acceptRanges: false,
+      });
+    },
+  );
 };

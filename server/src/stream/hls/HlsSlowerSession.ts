@@ -161,9 +161,10 @@ export class HlsSlowerSession extends BaseHlsSession {
         ...defaultHlsOptions,
         segmentBaseDirectory: this.baseDirectory,
         streamBasePath: basename(this.workingDirectory),
-        streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
-        hlsTime: 4,
-        hlsListSize: 25,
+        sessionId: this.channel.uuid,
+        hlsSessionType: this.sessionType,
+        targetSegmentDuration: 4,
+        listSize: 25,
       }),
     });
 

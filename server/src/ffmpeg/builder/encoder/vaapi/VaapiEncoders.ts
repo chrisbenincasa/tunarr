@@ -23,7 +23,7 @@ abstract class VaapiEncoder extends VideoEncoder {
 }
 
 export class Mpeg2VaapiEncoder extends VaapiEncoder {
-  protected videoFormat: string = VideoFormats.Mpeg2Video;
+  protected videoFormat = VideoFormats.Mpeg2Video;
 
   constructor(rateControlMode: RateControlMode) {
     super('mpeg2_vaapi', rateControlMode);
@@ -37,7 +37,7 @@ export class Mpeg2VaapiEncoder extends VaapiEncoder {
 }
 
 export class H264VaapiEncoder extends VaapiEncoder {
-  protected videoFormat: string = VideoFormats.H264;
+  protected videoFormat = VideoFormats.H264;
 
   constructor(
     private videoProfile: Maybe<string>,
@@ -62,7 +62,7 @@ export class H264VaapiEncoder extends VaapiEncoder {
 }
 
 export class HevcVaapiEncoder extends VaapiEncoder {
-  protected videoFormat: string = VideoFormats.Hevc;
+  protected videoFormat = VideoFormats.Hevc;
 
   constructor(rateControlMode: RateControlMode) {
     super('hevc_vaapi', rateControlMode);
