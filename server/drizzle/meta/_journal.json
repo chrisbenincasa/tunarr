@@ -50,6 +50,13 @@
       "when": 1746127991060,
       "tag": "0006_young_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1747248331646,
+      "tag": "0007_wise_scream",
+      "breakpoints": true
     }
   ]
 }
