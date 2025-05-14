@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.3](https://github.com/chrisbenincasa/tunarr/compare/v0.19.2...v0.19.3) (2025-05-12)
+
+
+### Bug Fixes
+
+* fix tv guide current time indicator alignment ([c74aa14](https://github.com/chrisbenincasa/tunarr/commit/c74aa146f6067273d9c5b8b48fb14344cba295aa))
+
 ## [0.19.2](https://github.com/chrisbenincasa/tunarr/compare/v0.19.1...v0.19.2) (2025-05-12)
 
 
