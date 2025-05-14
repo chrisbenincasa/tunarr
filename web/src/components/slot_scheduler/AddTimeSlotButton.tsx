@@ -1,4 +1,4 @@
-import {
+import type {
   CustomShowProgramOption,
   ProgramOption,
   ShowProgramOption,
@@ -6,25 +6,40 @@ import {
 import { useTimeSlotFormContext } from '@/hooks/useTimeSlotFormContext.ts';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
-import { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
+import type { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { groupBy, isEmpty, maxBy, sortBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
+import { OneDayMillis } from '../../helpers/constants.ts';
 
 export const AddTimeSlotButton = ({
   onAdd,
   programOptions,
+  dayOffset,
 }: AddTimeSlotButtonProps) => {
   const {
+    watch,
     slotArray: { fields: slots, append },
   } = useTimeSlotFormContext();
+  const currentPeriod = watch('period');
+
+  const relevantSlots = useMemo(() => {
+    return slots.filter((slot) => {
+      if (currentPeriod !== 'week') {
+        return true;
+      }
+      const start = OneDayMillis * dayOffset;
+      const end = start + OneDayMillis;
+      return slot.startTime >= start && slot.startTime < end;
+    });
+  }, [currentPeriod, dayOffset, slots]);
 
   const optionsByType = useMemo(() => {
     return groupBy(programOptions, (opt) => opt.type);
   }, [programOptions]);
 
   const addSlot = useCallback(() => {
-    const maxSlot = maxBy(slots, (p) => p.startTime);
+    const maxSlot = maxBy(relevantSlots, (p) => p.startTime);
     const newStartTime = maxSlot
       ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
       : dayjs.duration(0);
@@ -64,7 +79,7 @@ export const AddTimeSlotButton = ({
     } satisfies TimeSlot;
     onAdd(newSlot);
     append(newSlot);
-  }, [slots, optionsByType, append, onAdd]);
+  }, [relevantSlots, optionsByType, onAdd, append]);
 
   return (
     <Button
@@ -80,4 +95,5 @@ export const AddTimeSlotButton = ({
 type AddTimeSlotButtonProps = {
   onAdd: (slot: TimeSlot) => void;
   programOptions: ProgramOption[];
+  dayOffset: number;
 };

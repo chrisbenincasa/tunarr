@@ -82,8 +82,12 @@ export const TimeSlotTable = () => {
   const rows = useMemo(() => {
     return map(
       sortBy(
-        map(
-          slotArray.fields.filter((slot) => {
+        slotArray.fields
+          .map((slot, index) => ({
+            ...slot,
+            originalIndex: index,
+          }))
+          .filter((slot) => {
             if (currentPeriod !== 'week') {
               return true;
             }
@@ -91,11 +95,6 @@ export const TimeSlotTable = () => {
             const end = start + OneDayMillis;
             return slot.startTime >= start && slot.startTime < end;
           }),
-          (slot, index) => ({
-            ...slot,
-            originalIndex: index,
-          }),
-        ),
         (slot) => slot.startTime,
       ),
       (slot, i, slots) => {
@@ -317,6 +316,7 @@ export const TimeSlotTable = () => {
               setCurrentEditingSlot({ slot, index: slotArray.fields.length })
             }
             programOptions={programOptions}
+            dayOffset={selectedDay}
           />
           <ClearSlotsButton
             fields={slotArray.fields}

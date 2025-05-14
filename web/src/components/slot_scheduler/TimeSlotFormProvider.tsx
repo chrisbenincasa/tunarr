@@ -1,6 +1,6 @@
-import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
+import type { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
 import React from 'react';
-import { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
+import type { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
 
 export type TimeSlotFormContextType = UseFormReturn<TimeSlotForm> & {
   slotArray: UseFieldArrayReturn<TimeSlotForm, 'slots'>;
