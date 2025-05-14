@@ -15,6 +15,7 @@ import { ContainerModule } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import { KEYS } from '../../../types/inject.ts';
 import { bindFactoryFunc } from '../../../util/inject.ts';
+import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import type { PipelineBuilder } from './PipelineBuilder.js';
 import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
@@ -48,6 +49,7 @@ class PipelineBuilderFactory$Builder {
   private audioInputSource: Nullable<AudioInputSource> = null;
   private concatInputSource: Nullable<ConcatInputSource> = null;
   private watermarkInputSource: Nullable<WatermarkInputSource> = null;
+  private subtiitleInputSource: Nullable<SubtitlesInputSource> = null;
   private hardwareAccelerationMode: HardwareAccelerationMode =
     HardwareAccelerationMode.None;
 
@@ -83,6 +85,13 @@ class PipelineBuilderFactory$Builder {
     return this;
   }
 
+  setSubtitleInputSource(
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
+  ): PipelineBuilderFactory$Builder {
+    this.subtiitleInputSource = subtitleInputSource;
+    return this;
+  }
+
   setHardwareAccelerationMode(
     hardwareAccelerationMode: HardwareAccelerationMode,
   ): PipelineBuilderFactory$Builder {
@@ -112,6 +121,7 @@ class PipelineBuilderFactory$Builder {
           this.audioInputSource,
           this.concatInputSource,
           this.watermarkInputSource,
+          this.subtiitleInputSource,
         );
       case HardwareAccelerationMode.Qsv:
         return new QsvPipelineBuilder(
@@ -121,6 +131,7 @@ class PipelineBuilderFactory$Builder {
           this.audioInputSource,
           this.concatInputSource,
           this.watermarkInputSource,
+          this.subtiitleInputSource,
         );
       case HardwareAccelerationMode.Vaapi:
         return new VaapiPipelineBuilder(
@@ -129,6 +140,7 @@ class PipelineBuilderFactory$Builder {
           this.videoInputSource,
           this.audioInputSource,
           this.watermarkInputSource,
+          this.subtiitleInputSource,
           this.concatInputSource,
         );
       case HardwareAccelerationMode.Videotoolbox:
@@ -139,12 +151,14 @@ class PipelineBuilderFactory$Builder {
           this.audioInputSource,
           this.concatInputSource,
           this.watermarkInputSource,
+          this.subtiitleInputSource,
         );
       default:
         return new SoftwarePipelineBuilder(
           this.videoInputSource,
           this.audioInputSource,
           this.watermarkInputSource,
+          this.subtiitleInputSource,
           this.concatInputSource,
           binaryCapabilities,
         );

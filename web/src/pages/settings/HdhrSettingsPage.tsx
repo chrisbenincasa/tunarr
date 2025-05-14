@@ -8,10 +8,13 @@ import {
   Stack,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { HdhrSettings, defaultHdhrSettings } from '@tunarr/types';
-import _ from 'lodash-es';
+import type { HdhrSettings } from '@tunarr/types';
+import { defaultHdhrSettings } from '@tunarr/types';
+import { isEqual } from 'lodash-es';
+import { useSnackbar } from 'notistack';
 import React, { useEffect } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
@@ -19,7 +22,6 @@ import {
 } from '../../components/util/TypedController.tsx';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-import { useSnackbar } from 'notistack';
 
 export default function HdhrSettingsPage() {
   const apiClient = useTunarrApi();
@@ -77,7 +79,7 @@ export default function HdhrSettingsPage() {
 
   return (
     <Box component="form" onSubmit={handleSubmit(updateHdhrSettings)}>
-      <Grid item xs={12} sm={6}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth>
           <FormControlLabel
             control={
@@ -110,7 +112,7 @@ export default function HdhrSettingsPage() {
           justifyContent="left"
           sx={{ mt: 2, flexGrow: 1 }}
         >
-          {!_.isEqual(defaultValues, defaultHdhrSettings) && (
+          {!isEqual(defaultValues, defaultHdhrSettings) && (
             <Button
               variant="outlined"
               onClick={() => {

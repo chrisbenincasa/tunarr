@@ -1,4 +1,5 @@
-import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.js';
+import type { PlexBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import { isContentBackedLineupIteam as isContentBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
@@ -57,7 +58,10 @@ export class PlexProgramStream extends ProgramStream {
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
-    if (!isContentBackedLineupIteam(lineupItem)) {
+    if (
+      !isContentBackedLineupItem(lineupItem) ||
+      lineupItem.externalSource !== 'plex'
+    ) {
       return Result.failure(
         new Error(
           'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
@@ -69,6 +73,7 @@ export class PlexProgramStream extends ProgramStream {
       MediaSourceType.Plex,
       lineupItem.externalSourceId,
     );
+
     if (isNil(server)) {
       return Result.failure(
         new Error(
@@ -91,7 +96,10 @@ export class PlexProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await plexStreamDetails.getStream(server, lineupItem);
+    const stream = await plexStreamDetails.getStream({
+      server,
+      lineupItem: lineupItem as PlexBackedStreamLineupItem,
+    });
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Plex'),
@@ -113,19 +121,24 @@ export class PlexProgramStream extends ProgramStream {
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
     const transcodeSession = await ffmpeg.createStreamSession({
-      streamSource: stream.streamSource,
-      streamDetails: stream.streamDetails,
-      startTime: start,
-      duration: dayjs.duration(
-        +start === 0
-          ? lineupItem.duration
-          : (lineupItem.streamDuration ?? lineupItem.duration),
-      ),
-      watermark,
-      realtime: this.context.realtime,
-      outputFormat: this.outputFormat,
-      streamMode: this.context.streamMode,
-      ...(opts ?? {}),
+      stream: {
+        source: stream.streamSource,
+        details: stream.streamDetails,
+      },
+      options: {
+        startTime: start,
+        duration: dayjs.duration(
+          +start === 0
+            ? lineupItem.duration
+            : (lineupItem.streamDuration ?? lineupItem.duration),
+        ),
+        watermark,
+        realtime: this.context.realtime,
+        outputFormat: this.outputFormat,
+        streamMode: this.context.streamMode,
+        ...(opts ?? {}),
+      },
+      lineupItem,
     });
 
     if (isUndefined(transcodeSession)) {

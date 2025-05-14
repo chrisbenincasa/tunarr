@@ -13,6 +13,7 @@ import { isEmpty, isError, isNil } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { isNonEmptyString, run } from '../util/index.js';
 import { channelsApi } from './channelsApi.js';
@@ -75,9 +76,9 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         },
       },
     },
-    async (req, res) => {
+    async (_, res) => {
       try {
-        const v = await new FfmpegInfo(req.serverCtx.settings).getVersion();
+        const v = await container.get<FfmpegInfo>(FfmpegInfo).getVersion();
         return res.send({
           tunarr: getTunarrVersion(),
           ffmpeg: v.versionString,
@@ -97,8 +98,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['System'],
       },
     },
-    async (req, res) => {
-      const info = new FfmpegInfo(req.serverCtx.settings);
+    async (_, res) => {
+      const info = container.get<FfmpegInfo>(FfmpegInfo);
       const [audioEncoders, videoEncoders] = await Promise.all([
         run(async () => {
           const res = await info.getAvailableAudioEncoders();

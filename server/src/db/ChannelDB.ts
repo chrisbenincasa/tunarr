@@ -106,6 +106,10 @@ import {
   Channel as RawChannel,
 } from './schema/Channel.ts';
 import { programExternalIdString } from './schema/Program.ts';
+import {
+  ChannelSubtitlePreferences,
+  NewChannelSubtitlePreference,
+} from './schema/SubtitlePreferences.ts';
 import { DB } from './schema/db.ts';
 import {
   ChannelWithPrograms,
@@ -159,6 +163,7 @@ function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
     guideFlexTitle: updateReq.guideFlexTitle,
     transcodeConfigId: updateReq.transcodeConfigId,
     streamMode: updateReq.streamMode,
+    subtitlesEnabled: booleanToNumber(updateReq.subtitlesEnabled),
   } satisfies ChannelUpdate;
 }
 
@@ -184,6 +189,7 @@ function createRequestToChannel(saveReq: SaveableChannel): NewChannel {
     guideFlexTitle: saveReq.guideFlexTitle,
     streamMode: saveReq.streamMode,
     transcodeConfigId: saveReq.transcodeConfigId,
+    subtitlesEnabled: booleanToNumber(saveReq.subtitlesEnabled),
   } satisfies NewChannel;
 }
 
@@ -360,6 +366,25 @@ export class ChannelDB implements IChannelDB {
           .execute();
       }
 
+      const subtitlePreferences = createReq.subtitlePreferences?.map(
+        (pref) =>
+          ({
+            channelId: channel.uuid,
+            uuid: v4(),
+            languageCode: pref.langugeCode,
+            allowExternal: booleanToNumber(pref.allowExternal),
+            allowImageBased: booleanToNumber(pref.allowImageBased),
+            filterType: pref.filter,
+            priority: pref.priority,
+          }) satisfies NewChannelSubtitlePreference,
+      );
+      if (subtitlePreferences) {
+        await tx
+          .insertInto('channelSubtitlePreferences')
+          .values(subtitlePreferences)
+          .executeTakeFirstOrThrow();
+      }
+
       return channel;
     });
 
@@ -440,6 +465,30 @@ export class ChannelDB implements IChannelDB {
         await tx
           .insertInto('channelFillerShow')
           .values(channelFillerShows)
+          .executeTakeFirstOrThrow();
+      }
+      const subtitlePreferences = updateReq.subtitlePreferences?.map(
+        (pref) =>
+          ({
+            channelId: channel.uuid,
+            uuid: v4(),
+            languageCode: pref.langugeCode,
+            allowExternal: booleanToNumber(pref.allowExternal),
+            allowImageBased: booleanToNumber(pref.allowImageBased),
+            filterType: pref.filter,
+            priority: pref.priority,
+          }) satisfies NewChannelSubtitlePreference,
+      );
+      console.log(updateReq.subtitlePreferences);
+      await tx
+        .deleteFrom('channelSubtitlePreferences')
+        .where('channelSubtitlePreferences.channelId', '=', channel.uuid)
+        .executeTakeFirstOrThrow();
+      if (subtitlePreferences) {
+        console.log('inserting subtitle');
+        await tx
+          .insertInto('channelSubtitlePreferences')
+          .values(subtitlePreferences)
           .executeTakeFirstOrThrow();
       }
     });
@@ -1159,7 +1208,7 @@ export class ChannelDB implements IChannelDB {
           externalIdsByProgramId[program.uuid] ?? [],
         );
 
-        ret[converted.id!] = converted;
+        ret[converted.id] = converted;
       });
 
       return ret;
@@ -1303,6 +1352,17 @@ export class ChannelDB implements IChannelDB {
         items: newLineupItems,
       });
     }
+  }
+
+  async getChannelSubtitlePreferences(
+    id: string,
+  ): Promise<ChannelSubtitlePreferences[]> {
+    return this.db
+      .selectFrom('channelSubtitlePreferences')
+      .selectAll()
+      .where('channelId', '=', id)
+      .orderBy('priority asc')
+      .execute();
   }
 
   private async createLineup(channelId: string) {

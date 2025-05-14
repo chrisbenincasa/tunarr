@@ -29,6 +29,8 @@ import {
 } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
+import type { SubtitleExtractorTaskFactory } from '../tasks/SubtitleExtractorTask.ts';
+import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 
 const { isDayjs } = dayjs;
 
@@ -220,6 +222,22 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     ),
   );
 
+  GlobalScheduler.scheduleTask(
+    SubtitleExtractorTask.ID,
+    new ScheduledTask(
+      SubtitleExtractorTask.name,
+      hoursCrontab(1),
+      () =>
+        container.get<SubtitleExtractorTaskFactory>(SubtitleExtractorTask.KEY)(
+          {},
+        ),
+      [],
+      {
+        runAtStartup: true,
+      },
+    ),
+  );
+
   scheduleBackupJobs(serverContext.settings.backup);
 
   forEach(
@@ -228,6 +246,7 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
       (job) => job.runAtStartup,
     ),
     (job) => {
+      LoggerFactory.root.debug('Running task %s', job.name);
       job
         .runNow(true)
         .catch((e) =>

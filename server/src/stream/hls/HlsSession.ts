@@ -347,7 +347,10 @@ export class HlsSession extends BaseHlsSession {
 
         await fs.writeFile(this._m3u8PlaylistPath, trimResult.playlist);
 
-        this.logger.trace('Deleting old segments from stream');
+        this.logger.trace(
+          'Deleting old segments (<%d) from stream',
+          trimResult.sequence,
+        );
         this.deleteOldSegments(trimResult.sequence).catch((e) => {
           this.logger.error(e);
         });

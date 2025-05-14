@@ -140,18 +140,29 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.channelDB.loadChannelAndLineup(req.params.id);
 
         if (!isNil(channelAndLineup)) {
-          const apiChannel = dbChannelToApiChannel(channelAndLineup);
           // TODO: This is super gnarly and we're doing this sorta custom everywhere.
           // We need a centralized way to either load ALL of the relevant metadata
           // for channels OR have the frontend request which fields it needs and we
           // service that.
-          const channelFillters =
-            await req.serverCtx.fillerDB.getFillersFromChannel(req.params.id);
+          const [channelFillers, channelSubtitles] = await Promise.all([
+            req.serverCtx.fillerDB.getFillersFromChannel(req.params.id),
+            req.serverCtx.channelDB.getChannelSubtitlePreferences(
+              req.params.id,
+            ),
+          ]);
+
+          const apiChannel = dbChannelToApiChannel({
+            ...channelAndLineup,
+            channel: {
+              ...channelAndLineup.channel,
+              subtitlePreferences: channelSubtitles,
+            },
+          });
           // const loadedFillers =
           //   await channelAndLineup.channel.channelFillers.load();
           const channelWithFillers = {
             ...apiChannel,
-            fillerCollections: channelFillters.map((cf) => ({
+            fillerCollections: channelFillers.map((cf) => ({
               id: cf.fillerShow.uuid,
               cooldownSeconds: cf.cooldown,
               weight: cf.weight,
@@ -245,6 +256,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             channel.uuid,
             channelUpdate,
           );
+          const subtitlePreferences =
+            await req.serverCtx.channelDB.getChannelSubtitlePreferences(
+              channel.uuid,
+            );
 
           const needsGuideRegen =
             channel.guideMinimumDuration !==
@@ -258,7 +273,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           await req.serverCtx.m3uService.regenerateCache();
 
           const apiChannel = omit(
-            dbChannelToApiChannel(updatedChannel),
+            dbChannelToApiChannel({
+              ...updatedChannel,
+              channel: {
+                ...updatedChannel.channel,
+                subtitlePreferences,
+              },
+            }),
             'programs',
           );
 

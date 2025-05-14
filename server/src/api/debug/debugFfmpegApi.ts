@@ -6,6 +6,8 @@ import dayjs from 'dayjs';
 import { z } from 'zod';
 import { container } from '../../container.ts';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import type { FfmpegEncoder } from '../../ffmpeg/ffmpegInfo.ts';
+import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
 import { KEYS } from '../../types/inject.ts';
 
 export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
@@ -23,13 +25,31 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      const details = new LocalFileStreamDetails(
-        req.query.path,
-        req.serverCtx.settings,
-      );
-      return res.send(await details.getStream());
+      const details = await container
+        .get<LocalFileStreamDetails>(LocalFileStreamDetails)
+        .getStream({ path: req.query.path });
+      return res.send(details);
     },
   );
+
+  fastify.get('/ffmpeg/capabilities', async (_, res) => {
+    const info = container.get(FfmpegInfo);
+    const capabilities = await info.getCapabilities();
+    return res.send({
+      options: [...capabilities.allOptions()],
+      filters: [...capabilities.allFilters()],
+      videoEncoders: capabilities
+        .allVideoEncoders()
+        .entries()
+        .reduce(
+          (acc, [key, value]) => {
+            acc[key] = value;
+            return acc;
+          },
+          {} as Record<string, FfmpegEncoder>,
+        ),
+    });
+  });
 
   fastify.get(
     '/ffmpeg/pipeline',
@@ -54,11 +74,9 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       const transcodeConfig =
         await req.serverCtx.transcodeConfigDB.getChannelConfig(channel.uuid);
 
-      const details = new LocalFileStreamDetails(
-        req.query.path,
-        req.serverCtx.settings,
-      );
-      const streamDetails = await details.getStream();
+      const streamDetails = await container
+        .get<LocalFileStreamDetails>(LocalFileStreamDetails)
+        .getStream({ path: req.query.path });
 
       if (!streamDetails) {
         return res.status(500).send();
@@ -70,13 +88,29 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       )(transcodeConfig, channel, channel.streamMode);
 
       const session = await ffmpeg.createStreamSession({
-        ...streamDetails,
-        duration: dayjs.duration({ seconds: 30 }),
-        outputFormat: MpegTsOutputFormat,
-        realtime: false,
-        startTime: dayjs.duration(0),
-        watermark: channel.watermark ?? undefined,
-        streamMode: channel.streamMode,
+        stream: {
+          details: streamDetails.streamDetails,
+          source: streamDetails.streamSource,
+        },
+        lineupItem: {
+          duration: +dayjs.duration({ seconds: 30 }),
+          externalKey: 'none',
+          externalSource: 'emby',
+          externalSourceId: 'none',
+          programBeginMs: 0,
+          programId: '',
+          programType: 'movie',
+          type: 'program',
+          title: req.query.path,
+        },
+        options: {
+          duration: dayjs.duration({ seconds: 30 }),
+          outputFormat: MpegTsOutputFormat,
+          realtime: false,
+          startTime: dayjs.duration(0),
+          watermark: channel.watermark ?? undefined,
+          streamMode: channel.streamMode,
+        },
       });
 
       return res.send({

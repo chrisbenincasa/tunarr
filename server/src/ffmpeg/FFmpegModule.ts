@@ -8,6 +8,7 @@ import { KEYS } from '@/types/inject.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import { ChannelStreamModes } from '@tunarr/types';
 import { ContainerModule } from 'inversify';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
@@ -29,6 +30,7 @@ const FFmpegModule = new ContainerModule((bind) => {
         ctx.container.get(FfmpegInfo),
         settingsDB,
         ctx.container.get<PipelineBuilderFactory>(KEYS.PipelineBuilderFactory),
+        ctx.container.get<IChannelDB>(KEYS.ChannelDB),
       );
     };
   }).whenTargetNamed(FfmpegStreamFactory.name);

@@ -202,14 +202,14 @@ export function ChannelFlexConfig() {
 
       return (
         <Grid container key={cfl.id} sx={{ mb: 2 }} columnSpacing={2}>
-          <Grid item xs={3}>
+          <Grid size={{ xs: 3 }}>
             <FormControl key={cfl.id} sx={{ width: '100%' }}>
               <Select value={cfl.id} disabled={unclaimedLists.length === 0}>
                 {listOpts}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item>
+          <Grid>
             <NumericFormController
               control={control}
               name={`fillerCollections.${index}.cooldownSeconds`}
@@ -220,10 +220,10 @@ export function ChannelFlexConfig() {
             />
           </Grid>
           {channelFillerLists && channelFillerLists.length > 1 && (
-            <Grid item xs={5}>
+            <Grid size={{ xs: 5 }}>
               <FormControl sx={{ width: '100%', mb: 1 }} key={cfl.id}>
                 <Grid container spacing={2}>
-                  <Grid item xs={9}>
+                  <Grid size={{ xs: 9 }}>
                     <Slider
                       min={0}
                       max={1000}
@@ -231,15 +231,13 @@ export function ChannelFlexConfig() {
                       // Gnarly - we cast onChange to the void so react-form-hook
                       // doesn't try to do anything. Instead we wait for the onChangeCommited
                       // event, which fires on onMouseUp, and then handle the change.
-                      onChange={(_, value) =>
-                        adjustWeights(index, value as number, 10)
-                      }
+                      onChange={(_, value) => adjustWeights(index, value, 10)}
                       onChangeCommitted={(_, value) =>
-                        adjustWeights(index, value as number, 10)
+                        adjustWeights(index, value, 10)
                       }
                     />
                   </Grid>
-                  <Grid item xs>
+                  <Grid>
                     <TextField
                       type="number"
                       label="Weight %"
@@ -251,7 +249,7 @@ export function ChannelFlexConfig() {
               </FormControl>
             </Grid>
           )}
-          <Grid item alignSelf={'center'}>
+          <Grid alignSelf={'center'}>
             <IconButton onClick={() => removeSelectedFillerList(index)}>
               <Delete />
             </IconButton>

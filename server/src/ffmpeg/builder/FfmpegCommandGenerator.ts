@@ -4,6 +4,7 @@ import { filter, findIndex, first, flatMap, partition } from 'lodash-es';
 import type { Dictionary } from 'ts-essentials';
 import { BaseEncoder } from './encoder/BaseEncoder.ts';
 import { ComplexFilter } from './filter/ComplexFilter.ts';
+import { StreamSeekFilter } from './filter/StreamSeekFilter.ts';
 import type { AudioInputSource } from './input/AudioInputSource.ts';
 import type { ConcatInputSource } from './input/ConcatInputSource.ts';
 import type { VideoInputSource } from './input/VideoInputSource.ts';
@@ -83,7 +84,8 @@ export class FfmpegCommandGenerator {
 
     const [complexFilterSteps, otherSteps] = partition(
       filter(steps, isOutputOption),
-      (step) => step instanceof ComplexFilter,
+      (step) =>
+        step instanceof ComplexFilter || step instanceof StreamSeekFilter,
     );
     // sort, filter complex, etc
 

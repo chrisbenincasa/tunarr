@@ -5,9 +5,11 @@ import { isEmpty } from 'lodash-es';
 import type { ExecOptions } from 'node:child_process';
 import { exec } from 'node:child_process';
 import PQueue from 'p-queue';
+import { LoggerFactory } from './logging/LoggerFactory.ts';
 
 export class ChildProcessHelper {
   private static execQueue = new PQueue({ concurrency: 3 });
+  private logger = LoggerFactory.child({ className: ChildProcessHelper.name });
 
   getStdout(
     executable: string,
@@ -27,6 +29,10 @@ export class ChildProcessHelper {
         if (!isEmpty(env)) {
           opts.env = env;
         }
+
+        this.logger.debug(
+          `Executing child process: "${sanitizedPath}" ${args.join(' ')}`,
+        );
 
         return await new Promise((resolve, reject) => {
           exec(

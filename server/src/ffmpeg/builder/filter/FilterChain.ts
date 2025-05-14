@@ -3,6 +3,7 @@ import type { FilterOption } from './FilterOption.ts';
 
 export class FilterChain {
   videoFilterSteps: HasFilterOption[] = [];
+  subtitleOverlayFilterSteps: FilterOption[] = [];
   watermarkOverlayFilterSteps: FilterOption[] = [];
   pixelFormatFilterSteps: HasFilterOption[] = [];
 }

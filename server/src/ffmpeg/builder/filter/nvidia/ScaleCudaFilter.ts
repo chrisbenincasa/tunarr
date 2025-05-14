@@ -10,7 +10,7 @@ import type {
 import { PixelFormats } from '../../format/PixelFormat.ts';
 
 export class ScaleCudaFilter extends FilterOption {
-  readonly filter: string;
+  public filter: string;
   readonly affectsFrameState: boolean = true;
 
   static supportedPixelFormats: ValidPixelFormatName[] = [
@@ -57,13 +57,13 @@ export class ScaleCudaFilter extends FilterOption {
     return nextState;
   }
 
-  private generateFilter(): string {
+  protected generateFilter(): string {
     let scale: string = '';
 
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
       const targetPixelFormat = this.supportedPixelFormat;
       if (targetPixelFormat) {
-        scale = `scale_cuda=format=${targetPixelFormat.name}`;
+        scale = `${this.filterName}=format=${targetPixelFormat.name}`;
       }
     } else {
       let aspectRatio = '';
@@ -80,12 +80,12 @@ export class ScaleCudaFilter extends FilterOption {
       }
 
       if (this.currentState.isAnamorphic) {
-        squareScale = `scale_cuda=iw*sar:ih,setsar=1,`;
+        squareScale = `${this.filterName}=iw*sar:ih,setsar=1,`;
       } else {
         aspectRatio += `,setsar=1`;
       }
 
-      scale = `${squareScale}scale_cuda=${targetSize}${format}${aspectRatio}`;
+      scale = `${squareScale}${this.filterName}=${targetSize}${format}${aspectRatio}`;
     }
 
     if (isEmpty(scale)) {
@@ -107,4 +107,6 @@ export class ScaleCudaFilter extends FilterOption {
       ? this.currentState.pixelFormat
       : this.currentState.pixelFormat.toHardwareFormat();
   }
+
+  protected filterName = 'scale_cuda';
 }

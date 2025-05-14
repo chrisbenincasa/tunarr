@@ -29,13 +29,10 @@ import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
+import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
+import { ExternalStreamDetailsFetcherFactory } from './StreamDetailsFetcher.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
-
-export type ProgramStreamFactoryType = (
-  playerContext: PlayerContext,
-  outputFormat: OutputFormat,
-) => ProgramStream;
 
 export type OfflineStreamFactoryType = interfaces.MultiFactory<
   ProgramStream,
@@ -46,7 +43,7 @@ export type OfflineStreamFactoryType = interfaces.MultiFactory<
 const StreamModule = new ContainerModule((bind) => {
   bind(SessionManager).toSelf().inSingletonScope();
 
-  bindFactoryFunc<ProgramStreamFactoryType>(
+  bindFactoryFunc<ProgramStreamFactory>(
     bind,
     KEYS.ProgramStreamFactory,
     (ctx) => {
@@ -69,7 +66,7 @@ const StreamModule = new ContainerModule((bind) => {
     },
   ).whenTargetNamed('plex');
 
-  bindFactoryFunc<ProgramStreamFactoryType>(
+  bindFactoryFunc<ProgramStreamFactory>(
     bind,
     KEYS.ProgramStreamFactory,
     (ctx) => {
@@ -89,7 +86,7 @@ const StreamModule = new ContainerModule((bind) => {
     },
   ).whenTargetNamed('jellyfin');
 
-  bindFactoryFunc<ProgramStreamFactoryType>(
+  bindFactoryFunc<ProgramStreamFactory>(
     bind,
     KEYS.ProgramStreamFactory,
     (ctx) => {
@@ -127,13 +124,13 @@ const StreamModule = new ContainerModule((bind) => {
     )
     .whenTargetNamed('offline');
 
-  bind<ProgramStreamFactoryType>(KEYS.ProgramStreamFactory)
+  bind<ProgramStreamFactory>(KEYS.ProgramStreamFactory)
     .toFactory<ProgramStream, [PlayerContext, OutputFormat]>((ctx) => {
       return (playerContext: PlayerContext, outputFormat: OutputFormat) => {
         switch (playerContext.lineupItem.type) {
           case 'program':
           case 'commercial': {
-            return ctx.container.getNamed<ProgramStreamFactoryType>(
+            return ctx.container.getNamed<ProgramStreamFactory>(
               KEYS.ProgramStreamFactory,
               playerContext.lineupItem.externalSource,
             )(playerContext, outputFormat);
@@ -166,7 +163,7 @@ const StreamModule = new ContainerModule((bind) => {
         ctx.container.get(StreamProgramCalculator),
         ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
         ctx.container.get(OnDemandChannelService),
-        ctx.container.get<ProgramStreamFactoryType>(KEYS.ProgramStreamFactory),
+        ctx.container.get<ProgramStreamFactory>(KEYS.ProgramStreamFactory),
       );
     };
   });
@@ -181,7 +178,7 @@ const StreamModule = new ContainerModule((bind) => {
         options,
         ctx.container.get(StreamProgramCalculator),
         ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
-        ctx.container.get<ProgramStreamFactoryType>(KEYS.ProgramStreamFactory),
+        ctx.container.get<ProgramStreamFactory>(KEYS.ProgramStreamFactory),
         ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
       );
     };
@@ -223,6 +220,8 @@ const StreamModule = new ContainerModule((bind) => {
       return new ConcatStream(channel, streamMode, ffmpegFactory);
     };
   });
+
+  bind(ExternalStreamDetailsFetcherFactory).toSelf().inSingletonScope();
 });
 
 export { StreamModule };

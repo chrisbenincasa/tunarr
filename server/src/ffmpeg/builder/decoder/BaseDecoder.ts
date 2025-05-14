@@ -9,7 +9,7 @@ export abstract class BaseDecoder extends Decoder {
   readonly affectsFrameState: boolean = true;
 
   abstract readonly name: string;
-  protected abstract outputFrameDataLocation: FrameDataLocation;
+  protected abstract _outputFrameDataLocation: FrameDataLocation;
 
   appliesToInput(input: InputSource): boolean {
     return input.type === 'video';
@@ -20,7 +20,7 @@ export abstract class BaseDecoder extends Decoder {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return currentState.updateFrameLocation(this.outputFrameDataLocation);
+    return currentState.updateFrameLocation(this._outputFrameDataLocation);
   }
 
   protected inputBitDepth(inputFile: InputSource): number {

@@ -10,10 +10,7 @@ import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { AllTranscodeConfigColumns } from '@/db/schema/TranscodeConfig.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
-import type {
-  OfflineStreamFactoryType,
-  ProgramStreamFactoryType,
-} from '@/stream/StreamModule.js';
+import type { OfflineStreamFactoryType } from '@/stream/StreamModule.js';
 import { KEYS } from '@/types/inject.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -22,6 +19,7 @@ import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
 import { z } from 'zod';
+import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -301,7 +299,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       'mpegts',
     );
 
-    const stream = container.getNamed<ProgramStreamFactoryType>(
+    const stream = container.getNamed<ProgramStreamFactory>(
       KEYS.ProgramStreamFactory,
       program.sourceType,
     )(ctx, MpegTsOutputFormat);
@@ -322,7 +320,6 @@ function createStreamItemFromProgram(
     type: 'program',
     programType: program.type,
     programId: program.uuid,
-    id: program.uuid,
     // HACK
     externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
     plexFilePath: program.plexFilePath ?? undefined,

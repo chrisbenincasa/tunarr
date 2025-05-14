@@ -419,7 +419,7 @@ export class StreamProgramCalculator {
               duration: backingItem.duration,
               programId: backingItem.uuid,
               title: backingItem.title,
-              id: backingItem.uuid,
+              // id: backingItem.uuid,
               programType: backingItem.type,
               programBeginMs: timestamp - timeElapsed,
             };
@@ -592,7 +592,6 @@ export class StreamProgramCalculator {
       startOffset: timeElapsed,
       streamDuration,
       beginningOffset: timeElapsed,
-      id: activeProgram.id,
     };
   }
 }

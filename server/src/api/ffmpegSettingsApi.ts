@@ -13,6 +13,8 @@ import { isError, map, merge, omit } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
+import { GlobalScheduler } from '../services/Scheduler.ts';
+import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 import { TranscodeConfigNotFoundError } from '../types/errors.ts';
 
 export const ffmpegSettingsRouter: RouterPluginCallback = (
@@ -62,13 +64,14 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
+        const currentSettings = req.serverCtx.settings.ffmpegSettings();
         // Disallow updating ffmpeg/ffprobe executable paths if we are not running
         // in admin mode.
         let newSettings = req.body;
         if (!serverOptions().admin) {
           newSettings = merge(
             {},
-            req.serverCtx.settings.ffmpegSettings(),
+            currentSettings,
             omit(newSettings, [
               'ffmpegExecutablePath',
               'ffprobeExecutablePath',
@@ -85,6 +88,22 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
 
         await req.serverCtx.settings.updateSettings('ffmpeg', newSettings);
         const ffmpeg = req.serverCtx.settings.ffmpegSettings();
+
+        if (
+          !currentSettings.enableSubtitleExtraction &&
+          req.body.enableSubtitleExtraction
+        ) {
+          GlobalScheduler.runScheduledJobNow(
+            SubtitleExtractorTask.ID,
+            true,
+          ).catch((e) => {
+            logger.error(
+              e,
+              'Error running SubtitleExtractorTask after settings change',
+            );
+          });
+        }
+
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: 'FFMPEG configuration updated.',

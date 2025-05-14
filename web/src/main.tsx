@@ -1,4 +1,6 @@
 import { routeTree } from '@/routeTree.gen';
+import languages from '@cospired/i18n-iso-languages';
+import en from '@cospired/i18n-iso-languages/langs/en.json';
 import { createRouter } from '@tanstack/react-router';
 import { ColorSpace, LCH, OKLCH, sRGB } from 'colorjs.io/fn';
 import dayjs from 'dayjs';
@@ -33,6 +35,10 @@ ColorSpace.register(sRGB);
 dayjs.extend(localizedFormat);
 dayjs.extend(localeData);
 dayjs.locale('en-gb');
+
+// Initialize the languages database with English names
+// TODO: localize this and make it a context provider
+languages.registerLocale(en);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

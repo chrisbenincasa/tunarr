@@ -1,5 +1,5 @@
 import type { Func } from '@/types/func.js';
-import type { Try } from '@/types/util.js';
+import type { Nilable, Try } from '@/types/util.js';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -31,7 +31,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { format } from 'node:util';
 import { isPromise } from 'node:util/types';
-import type { DeepReadonly, DeepWritable } from 'ts-essentials';
+import type { DeepReadonly, DeepWritable, NonEmptyArray } from 'ts-essentials';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from './env.ts';
 
 dayjs.extend(duration);
@@ -532,4 +532,10 @@ export function inConstArr<Arr extends readonly string[], S extends string>(
   }
 
   return false;
+}
+
+export function isNonEmptyArray<T>(
+  t: Nilable<ReadonlyArray<T> | Array<T>>,
+): t is NonEmptyArray<T> {
+  return t ? t.length > 0 : false;
 }

@@ -8,7 +8,7 @@ export const Route = createFileRoute('/library/custom-shows/new')({
   loader() {
     const customShow = {
       id: UnsavedId,
-      name: 'New Custom Show',
+      name: '',
       contentCount: 0,
       totalDuration: 0,
     };

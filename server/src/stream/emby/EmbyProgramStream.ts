@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { type interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { type FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import type { StreamOptions } from '../../ffmpeg/ffmpeg.ts';
 import type { EmbyStreamDetails } from './EmbyStreamDetails.ts';
 
 export class EmbyProgramStream extends ProgramStream {
@@ -48,7 +49,9 @@ export class EmbyProgramStream extends ProgramStream {
     });
   }
 
-  async setupInternal(): Promise<Result<FfmpegTranscodeSession>> {
+  async setupInternal(
+    opts?: StreamOptions,
+  ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
     if (!isContentBackedLineupIteam(lineupItem)) {
       return Result.failure(
@@ -81,7 +84,7 @@ export class EmbyProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await streamDetails.getStream(server, lineupItem);
+    const stream = await streamDetails.getStream({ server, lineupItem });
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Emby'),
@@ -102,18 +105,24 @@ export class EmbyProgramStream extends ProgramStream {
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
 
     const ffmpegOutStream = await this.ffmpeg.createStreamSession({
-      streamSource: stream.streamSource,
-      streamDetails: stream.streamDetails,
-      startTime: start,
-      duration:
-        +start === 0
-          ? dayjs.duration(lineupItem.duration)
-          : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
-      watermark,
-      realtime: this.context.realtime,
-      extraInputHeaders: {},
-      outputFormat: this.outputFormat,
-      streamMode: this.context.streamMode,
+      stream: {
+        source: stream.streamSource,
+        details: stream.streamDetails,
+      },
+      options: {
+        startTime: start,
+        duration:
+          +start === 0
+            ? dayjs.duration(lineupItem.duration)
+            : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
+        watermark,
+        realtime: this.context.realtime,
+        extraInputHeaders: {},
+        outputFormat: this.outputFormat,
+        streamMode: this.context.streamMode,
+        ...(opts ?? {}),
+      },
+      lineupItem,
     });
 
     if (isUndefined(ffmpegOutStream)) {

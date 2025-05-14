@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { Box, Grid2, IconButton, Stack, Typography } from '@mui/material';
+import { Box, Grid, IconButton, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
@@ -110,7 +110,7 @@ export const ProgramCalendarView = ({
 
   const renderEmptyDay = (key: string) => {
     return (
-      <Grid2 size={{ xs: 12 / 7 }} key={key} sx={{ height: '100px' }}></Grid2>
+      <Grid size={{ xs: 12 / 7 }} key={key} sx={{ height: '100px' }}></Grid>
     );
   };
 
@@ -165,7 +165,7 @@ export const ProgramCalendarView = ({
       const day = monthStart.date(idx + 1).startOf('day');
       const count = countByDay?.[day.date()] ?? 0;
       return (
-        <Grid2
+        <Grid
           key={`month_day_${idx}`}
           size={{ xs: 12 / 7 }}
           sx={{ height: '100px', p: 1, cursor: 'pointer' }}
@@ -193,7 +193,7 @@ export const ProgramCalendarView = ({
           >
             {count} {pluralize('program', count)}
           </Box>
-        </Grid2>
+        </Grid>
       );
     });
   };
@@ -215,7 +215,7 @@ export const ProgramCalendarView = ({
           {localeData.months()[calendarState.month]} {calendarState.year}
         </Typography>
       </Stack>
-      <Grid2
+      <Grid
         container
         gridTemplateColumns="repeat(7, 1fr)"
         sx={{
@@ -231,20 +231,20 @@ export const ProgramCalendarView = ({
         }}
       >
         {localeData.weekdays().map((name) => (
-          <Grid2
+          <Grid
             key={`day_header_${name}`}
             size={{ xs: 12 / 7 }}
             sx={{ textAlign: 'center' }}
           >
             {name}
-          </Grid2>
+          </Grid>
         ))}
         {range(0, paddingDays).map((i) => renderEmptyDay(`padding_${i}`))}
         {renderMonthDays()}
         {range(0, endPaddingDays).map((i) =>
           renderEmptyDay(`end_padding_${i}`),
         )}
-      </Grid2>
+      </Grid>
     </Box>
   );
 };

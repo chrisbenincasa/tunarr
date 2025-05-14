@@ -8,7 +8,7 @@ export class ScaleFilter extends FilterOption {
 
   readonly affectsFrameState = true;
 
-  private constructor(
+  constructor(
     private currentState: FrameState,
     private ffmpegState: FfmpegState,
     private desiredScaledSize: FrameSize,

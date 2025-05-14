@@ -30,8 +30,8 @@ import {
   find,
   first,
   flatMap,
-  inRange,
   includes,
+  inRange,
   isEmpty,
   isNil,
   isNull,
@@ -44,9 +44,8 @@ import {
   uniq,
   values,
 } from 'lodash-es';
-import * as syncRetry from 'retry';
 import { DeepReadonly } from 'ts-essentials';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { Channel } from '../db/schema/Channel.ts';
@@ -64,6 +63,7 @@ import {
   run,
   wait,
 } from '../util/index.ts';
+import { booleanToNumber } from '../util/sqliteUtil.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
@@ -155,24 +155,25 @@ export class TVGuideService {
    * @returns The current cached guide
    */
   get() {
-    if (!isNil(this.cachedGuide)) {
+    if (!isEmpty(this.cachedGuide)) {
       return this.cachedGuide;
     }
 
-    return new Promise((resolve, reject) => {
-      const operation = syncRetry.operation({
-        retries: 600,
-        factor: 1,
-        maxRetryTime: 100,
-      });
-      operation.attempt(() => {
-        if (!isEmpty(this.cachedGuide)) {
-          resolve(this.cachedGuide);
-        } else if (!operation.retry()) {
-          reject(new Error('Timed out waiting for TV guide'));
+    return retry(
+      // eslint-disable-next-line @typescript-eslint/require-await
+      async () => {
+        const guide = this.cachedGuide;
+        if (isEmpty(guide)) {
+          throw new Error('Still waiting for guide to generate.');
         }
-      });
-    });
+        return guide;
+      },
+      {
+        retries: 10,
+        factor: 1.2,
+        maxRetryTime: 10_000,
+      },
+    );
   }
 
   async buildAllChannels(guideDuration: Duration, force: boolean = false) {
@@ -1097,7 +1098,7 @@ export class TVGuideService {
           ? channel.guideFlexTitle
           : channel.name,
       }))
-      .with({ type: 'content' }, (content) => ({
+      .with({ type: 'content', id: P.string }, (content) => ({
         ...baseItem,
         ...content,
         type: 'content',
@@ -1193,6 +1194,7 @@ export class TVGuideService {
           .orderBy('isDefault desc')
           .executeTakeFirstOrThrow()
       ).uuid,
+      subtitlesEnabled: booleanToNumber(false),
     };
 
     // Placeholder channel with random ID.

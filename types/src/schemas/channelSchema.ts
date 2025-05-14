@@ -5,6 +5,7 @@ import {
   ContentProgramTypeSchema,
   ProgramSchema,
 } from './programmingSchema.js';
+import { SubtitlePreference } from './subtitleSchema.js';
 import { ChannelIconSchema } from './utilSchemas.js';
 
 export const WatermarkSchema = z.object({
@@ -142,6 +143,8 @@ export const ChannelSchema = z.object({
   streamMode: ChannelStreamModeSchema,
   transcodeConfigId: z.string(),
   sessions: z.array(ChannelSessionSchema).optional(),
+  subtitlesEnabled: z.boolean(),
+  subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
 });
 
 export const SaveableChannelSchema = ChannelSchema.omit({

@@ -1,5 +1,6 @@
-import { Grid2 as Grid } from '@mui/material';
-import { ForwardedRef, forwardRef } from 'react';
+import { Grid } from '@mui/material';
+import type { ForwardedRef } from 'react';
+import { forwardRef } from 'react';
 import useStore from '../store';
 
 type TabPanelProps = {

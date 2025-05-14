@@ -19,13 +19,14 @@ export default function EditCustomShowPage({ isNew }: Props) {
     showId,
   );
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
+  const header = isNew ? 'New Custom Show' : customShow.name;
 
   return (
     <Box>
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {isNew ? 'New' : 'Edit'} Custom Show
+          {header}
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

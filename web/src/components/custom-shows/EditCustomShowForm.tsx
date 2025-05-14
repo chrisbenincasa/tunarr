@@ -182,26 +182,6 @@ export function EditCustomShowsForm({
             />
           </Paper>
         </Box>
-        {/* <Stack
-          spacing={2}
-          direction="row"
-          justifyContent="right"
-          sx={{ mt: 2 }}
-        >
-          <Button onClick={() => onCancel()}>Cancel</Button>
-          <Button
-            disabled={
-              saveShowMutation.isPending ||
-              !isValid ||
-              (!isDirty && !customShowProgrammingChanged) ||
-              customShowPrograms.length === 0
-            }
-            variant="contained"
-            type="submit"
-          >
-            Save
-          </Button>
-        </Stack> */}
       </Stack>
     </Box>
   );

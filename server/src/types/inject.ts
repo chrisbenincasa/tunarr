@@ -35,7 +35,6 @@ const KEYS = {
   FFmpegFactory: Symbol.for('FFmpegFactory'),
   ConcatStreamFactory: Symbol.for('ConcatStreamFactory'),
   PipelineBuilderFactory: Symbol.for('PipelineBuilderFactory'),
-
   UpdateXmlTvTaskFactory: Symbol.for('Factory<UpdateXmlTvTask>'),
 
   // Services

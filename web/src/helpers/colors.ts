@@ -1,5 +1,4 @@
-import type { PaletteMode } from '@mui/material/styles/createPalette';
-import { dark, light } from '@mui/material/styles/createPalette';
+import type { PaletteMode } from '@mui/material/styles';
 import type { ColorLike } from 'color';
 import color from 'color';
 import Color from 'colorjs.io';
@@ -87,15 +86,15 @@ function generateDarkModePalette(numColors = 5) {
   return palette;
 }
 
+const lightModePrimaryText = 'rgba(0, 0, 0, 0.87)';
+
 export function getTextContrast(color: Color, mode: PaletteMode): string {
   if (mode === 'dark') {
-    return color.contrastAPCA(light.text.primary) > 50
-      ? light.text.primary
-      : dark.text.primary;
+    return color.contrastAPCA(lightModePrimaryText) > 50
+      ? lightModePrimaryText
+      : '#fff';
   } else {
-    return color.contrastAPCA(dark.text.primary) > 50
-      ? dark.text.primary
-      : light.text.primary;
+    return color.contrastAPCA('#fff') > 50 ? '#fff' : lightModePrimaryText;
   }
 }
 

@@ -1,15 +1,5 @@
-import type { Nullable } from '@/types/util.js';
-import { isNonEmptyString } from '@/util/index.js';
 import type { Duration } from 'dayjs/plugin/duration.js';
-import { first, isNull, isUndefined } from 'lodash-es';
-import type { Dictionary } from 'ts-essentials';
-import type { PixelFormat } from '../ffmpeg/builder/format/PixelFormat.ts';
-import {
-  KnownPixelFormats,
-  PixelFormatUnknown,
-  PixelFormatYuv420P,
-  PixelFormatYuv420P10Le,
-} from '../ffmpeg/builder/format/PixelFormat.ts';
+import type { Dictionary, NonEmptyArray } from 'ts-essentials';
 
 export type StreamDetails = {
   duration?: Duration;
@@ -17,8 +7,9 @@ export type StreamDetails = {
   bitrate?: number;
 
   // If defined, there is at least one video stream
-  videoDetails?: [VideoStreamDetails, ...VideoStreamDetails[]];
-  audioDetails?: [AudioStreamDetails, ...AudioStreamDetails[]];
+  videoDetails?: NonEmptyArray<VideoStreamDetails>;
+  audioDetails?: NonEmptyArray<AudioStreamDetails>;
+  subtitleDetails?: NonEmptyArray<SubtitleStreamDetails>;
 
   audioOnly?: boolean;
   placeholderImage?: StreamSource;
@@ -58,38 +49,21 @@ export type AudioStreamDetails = {
   forced?: boolean;
 };
 
-// TODO: Move me
-export function getPixelFormatForStream(details: StreamDetails) {
-  if (isUndefined(first(details.videoDetails))) {
-    return PixelFormatUnknown();
-  }
+export type SubtitleType = 'embedded' | 'external';
 
-  const videoStream = first(details.videoDetails)!;
-
-  let format: Nullable<PixelFormat> = null;
-  if (isNonEmptyString(videoStream.pixelFormat)) {
-    format = KnownPixelFormats.forPixelFormat(videoStream.pixelFormat) ?? null;
-  }
-
-  if (isNull(format)) {
-    switch (videoStream.bitDepth) {
-      case 8: {
-        format = new PixelFormatYuv420P();
-        break;
-      }
-      case 10: {
-        format = new PixelFormatYuv420P10Le();
-        break;
-      }
-      default: {
-        format = PixelFormatUnknown(videoStream.bitDepth);
-        break;
-      }
-    }
-  }
-
-  return format;
-}
+export type SubtitleStreamDetails = {
+  type: SubtitleType;
+  title?: string;
+  description?: string;
+  index?: number; // External subs have no index
+  codec: string;
+  default: boolean;
+  forced: boolean;
+  sdh: boolean;
+  languageCodeISO6391?: string;
+  languageCodeISO6392?: string;
+  path?: string; // For external
+};
 
 export interface IStreamSource {
   type: string;

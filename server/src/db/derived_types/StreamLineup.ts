@@ -3,6 +3,7 @@
 // active streaming session
 
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod';
 
 const baseStreamLineupItemSchema = z.object({
@@ -54,6 +55,15 @@ export type ContentBackedStreamLineupItem =
   | CommercialStreamLineupItem
   | ProgramStreamLineupItem;
 
+export type SpecificSourceContentBackedStreamLineupItem<
+  Typ extends MediaSourceType,
+> = StrictOmit<ContentBackedStreamLineupItem, 'externalSource'> & {
+  externalSource: Typ;
+};
+
+export type PlexBackedStreamLineupItem =
+  SpecificSourceContentBackedStreamLineupItem<typeof MediaSourceType.Plex>;
+
 export const OfflineStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
   type: z.literal('offline'),
 });
@@ -99,7 +109,6 @@ export type CommercialStreamLineupItem = z.infer<
 const ProgramStreamLineupItemSchema =
   BaseContentBackedStreamLineupItemSchema.extend({
     type: z.literal('program'),
-    id: z.string().uuid(),
   }).required({ title: true });
 
 export type ProgramStreamLineupItem = z.infer<

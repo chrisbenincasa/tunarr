@@ -18,6 +18,6 @@ export class StreamSeekInputOption extends InputOption {
   }
 
   options() {
-    return ['-ss', `${this.start.asSeconds()}s`];
+    return ['-ss', `${this.start.asMilliseconds()}ms`];
   }
 }

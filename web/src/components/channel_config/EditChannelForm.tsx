@@ -6,8 +6,12 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import { useNavigate } from '@tanstack/react-router';
-import type { Channel, SaveableChannel } from '@tunarr/types';
-import { isEmpty, keys, reject, some } from 'lodash-es';
+import type {
+  Channel,
+  SaveableChannel,
+  SubtitlePreference,
+} from '@tunarr/types';
+import { isEmpty, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import {
   FormProvider,
@@ -15,6 +19,7 @@ import {
   type SubmitErrorHandler,
   type SubmitHandler,
 } from 'react-hook-form';
+import type { NonEmptyArray } from 'ts-essentials';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
@@ -68,6 +73,8 @@ function getDefaultFormValues(channel: Channel): SaveableChannel {
     onDemand: {
       enabled: channel.onDemand.enabled,
     },
+    subtitlesEnabled: channel.subtitlesEnabled,
+    subtitlePreferences: channel.subtitlePreferences,
   };
 }
 
@@ -118,12 +125,21 @@ export function EditChannelForm({
     formMethods.formState.errors,
   ) as (keyof SaveableChannel)[];
   const formIsDirty = formMethods.formState.isDirty;
+  console.log(formMethods.formState.dirtyFields);
 
   const onSubmit: SubmitHandler<SaveableChannel> = (data) => {
     const fadeConfigs = reject(
       data.watermark?.fadeConfig,
       (conf) => conf.periodMins <= 0,
     );
+
+    const preferences =
+      !data.subtitlePreferences || data.subtitlePreferences.length === 0
+        ? undefined
+        : map(data.subtitlePreferences, (pref, idx) => ({
+            ...pref,
+            priority: idx,
+          }));
 
     const dataTransform = {
       ...data,
@@ -142,6 +158,7 @@ export function EditChannelForm({
             fadeConfig: isEmpty(fadeConfigs) ? undefined : fadeConfigs,
           }
         : undefined,
+      subtitlePreferences: preferences as NonEmptyArray<SubtitlePreference>,
     } satisfies SaveableChannel;
 
     if (isNew) {

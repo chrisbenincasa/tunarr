@@ -20,6 +20,7 @@ import {
   VideoToolboxH264Encoder,
   VideoToolboxHevcEncoder,
 } from '../../encoder/videotoolbox/VideoToolboxEncoders.ts';
+import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 
 export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -29,11 +30,13 @@ export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
     audioInputFile: Nullable<AudioInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
   ) {
     super(
       videoInputFile,
       audioInputFile,
       watermarkInputSource,
+      subtitleInputSource,
       concatInputSource,
       binaryCapabilities,
     );

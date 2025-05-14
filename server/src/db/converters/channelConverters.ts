@@ -1,17 +1,34 @@
 import { DefaultChannelIcon } from '@/db/schema/base.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
-import type { Channel } from '@tunarr/types';
-import { filter } from 'lodash-es';
+import type { Channel, SubtitlePreference } from '@tunarr/types';
+import { filter, orderBy } from 'lodash-es';
 import {
   isDefined,
+  isNonEmptyArray,
   nilToUndefined,
   nullToUndefined,
 } from '../../util/index.ts';
+import { numberToBoolean } from '../../util/sqliteUtil.ts';
 
 export const dbChannelToApiChannel = ({
   channel,
   lineup,
 }: ChannelAndLineup): Channel => {
+  const subtitlePreferences = orderBy(
+    channel.subtitlePreferences?.map(
+      (pref) =>
+        ({
+          ...pref,
+          allowExternal: numberToBoolean(pref.allowExternal),
+          allowImageBased: numberToBoolean(pref.allowImageBased),
+          filter: pref.filterType,
+          langugeCode: pref.languageCode,
+        }) satisfies SubtitlePreference,
+    ),
+    (pref) => pref.priority,
+    'asc',
+  );
+
   return {
     id: channel.uuid,
     number: channel.number,
@@ -39,5 +56,9 @@ export const dbChannelToApiChannel = ({
     programCount: filter(lineup.items, { type: 'content' }).length,
     streamMode: channel.streamMode,
     transcodeConfigId: channel.transcodeConfigId,
+    subtitlesEnabled: numberToBoolean(channel.subtitlesEnabled),
+    subtitlePreferences: isNonEmptyArray(subtitlePreferences)
+      ? subtitlePreferences
+      : undefined,
   };
 };

@@ -6,6 +6,8 @@ import type { Nullable } from '@/types/util.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import { filter, forEach, isNull, some } from 'lodash-es';
+import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
+import { SubtitleMethods } from '../MediaStream.ts';
 import type {
   FilterOptionPipelineStep,
   HasFilterOption,
@@ -18,6 +20,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
   constructor(
     private videoInputSource: VideoInputSource,
     private audioInputSource: Nullable<AudioInputSource>,
+    private subtitleInputSource: Nullable<SubtitlesInputSource>,
     private watermarkInputSource: Nullable<WatermarkInputSource>,
     private filterChain: FilterChain,
   ) {}
@@ -32,6 +35,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
     let audioLabel = '0:a';
     let videoLabel = '0:v';
     let watermarkLabel: Nullable<string> = null;
+    let subtitleLabel: Nullable<string> = null;
     const result: string[] = [];
     const distinctPaths: string[] = [this.videoInputSource.path];
 
@@ -48,11 +52,19 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       }
     });
 
+    ifDefined(this.subtitleInputSource, (subtitle) => {
+      if (!distinctPaths.includes(subtitle.path)) {
+        distinctPaths.push(subtitle.path);
+      }
+    });
+
     // Consider using arrays here.
     let videoFilterComplex = '';
     let audioFilterComplex = '';
     let watermarkFilterComplex = '';
     let watermarkOverlayFilterComplex = '';
+    let subtitleFilterComplex = '';
+    let subtitleOverlayFilterComplex = '';
 
     const videoInputIndex = distinctPaths.indexOf(this.videoInputSource.path);
     forEach(this.videoInputSource.streams, (stream) => {
@@ -91,6 +103,24 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       });
     });
 
+    ifDefined(this.subtitleInputSource, (subtitle) => {
+      if (subtitle.method !== SubtitleMethods.Burn) {
+        return;
+      }
+
+      const inputIndex = distinctPaths.indexOf(subtitle.path);
+      subtitle.streams.forEach((stream) => {
+        subtitleLabel = `${inputIndex}:${stream.index}`;
+        const filterSteps = collectSteps(subtitle.filterSteps);
+        if (filterSteps.length > 0) {
+          subtitleLabel = '[sub]';
+          subtitleFilterComplex += `[${inputIndex}:${stream.index}]${filterSteps.join(',')}${subtitleLabel}`;
+        } else {
+          subtitleLabel = `[${subtitleLabel}]`;
+        }
+      });
+    });
+
     if (
       isNonEmptyString(watermarkLabel) &&
       this.filterChain.watermarkOverlayFilterSteps.length > 0
@@ -103,6 +133,20 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       )}${filterString}`;
       videoLabel = '[vwm]';
       watermarkOverlayFilterComplex += videoLabel;
+    }
+
+    if (
+      isNonEmptyString(subtitleLabel) &&
+      this.filterChain.subtitleOverlayFilterSteps.length > 0
+    ) {
+      const filterString = collectAndJoinSteps(
+        this.filterChain.subtitleOverlayFilterSteps,
+      );
+      subtitleOverlayFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
+        subtitleLabel,
+      )}${filterString}`;
+      videoLabel = '[vsub]';
+      subtitleOverlayFilterComplex += videoLabel;
     }
 
     ifDefined(this.audioInputSource, (audioInput) => {
@@ -138,7 +182,9 @@ export class ComplexFilter implements FilterOptionPipelineStep {
     const allFilters = [
       videoFilterComplex,
       audioFilterComplex,
+      subtitleFilterComplex,
       watermarkFilterComplex,
+      subtitleOverlayFilterComplex,
       watermarkOverlayFilterComplex,
       pixelFormatFilterComplex,
     ];

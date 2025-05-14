@@ -9,6 +9,6 @@ export class VideoToolboxDecoder extends BaseDecoder {
     return [];
   }
 
-  protected outputFrameDataLocation: 'unknown' | 'hardware' | 'software' =
+  protected _outputFrameDataLocation: 'unknown' | 'hardware' | 'software' =
     'software';
 }

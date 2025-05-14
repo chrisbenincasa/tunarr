@@ -26,6 +26,8 @@ export class ReadrateInputOption extends InputOption {
       }
       case 'audio':
         return !(input instanceof NullAudioInputSource);
+      case 'subtitle':
+        return false;
     }
   }
 

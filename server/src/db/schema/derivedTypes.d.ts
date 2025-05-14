@@ -7,6 +7,7 @@ import type { ProgramDao } from './Program.ts';
 import type { MinimalProgramExternalId } from './ProgramExternalId.ts';
 import type { ProgramGrouping } from './ProgramGrouping.ts';
 import type { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
+import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
 
 export type ProgramWithRelations = ProgramDao & {
   tvShow?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
@@ -22,6 +23,7 @@ export type ChannelWithRelations = Channel & {
   fillerContent?: ProgramWithRelations[];
   fillerShows?: ChannelFillerShow[];
   transcodeConfig?: TranscodeConfig;
+  subtitlePreferences?: ChannelSubtitlePreferences[];
 };
 
 export type ChannelWithTranscodeConfig = MarkRequired<
@@ -45,6 +47,11 @@ export type ChannelFillerShowWithRelations = ChannelFillerShow & {
 export type ChannelFillerShowWithContent = MarkRequired<
   ChannelFillerShowWithRelations,
   'fillerContent'
+>;
+
+export type ChannelWithSubtitlePreferences = MarkRequired<
+  ChannelWithRelations,
+  'subtitlePreferences'
 >;
 
 export type ProgramWithExternalIds = ProgramDao & {

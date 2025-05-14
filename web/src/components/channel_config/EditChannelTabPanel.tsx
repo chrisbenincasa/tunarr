@@ -48,7 +48,12 @@ export const EditChannelTabsProps: EditChannelTabProps[] = [
   },
   {
     value: 'ffmpeg',
-    description: 'Transcoding',
-    fields: ['watermark', 'streamMode'],
+    description: 'Streaming',
+    fields: [
+      'watermark',
+      'streamMode',
+      'subtitlesEnabled',
+      'subtitlePreferences',
+    ],
   },
 ];

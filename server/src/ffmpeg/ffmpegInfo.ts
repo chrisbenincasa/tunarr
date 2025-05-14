@@ -5,7 +5,7 @@ import { Nullable } from '@/types/util.js';
 import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import { inject, injectable } from 'inversify';
 import {
@@ -32,6 +32,7 @@ const CacheKeys = {
   OPTIONS: 'options',
   NVIDIA: 'nvidia',
   VAINFO: 'vainfo_%s_%s',
+  FILTERS: 'filters',
 } as const;
 
 export type FfmpegVersionResult = {
@@ -51,15 +52,11 @@ export type FfmpegEncoder = {
 const VersionExtractionPattern = /version\s+([^\s]+)\s+.*Copyright/;
 const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
-export const FFmpegOptionsExtractionPattern = /^-([a-z_]+)\s+.*/;
+export const FFmpegOptionsExtractionPattern = /^-([a-z_]+)\s+.*/m;
+const FfmpegFilterExtractionPattern = /^\s*?[A-Z.]+\s+(\w+).*/m;
 
 @injectable()
 export class FfmpegInfo {
-  private logger = LoggerFactory.child({
-    caller: import.meta,
-    className: this.constructor.name,
-  });
-
   private static resultCache: NodeCache = new NodeCache({
     stdTTL: dayjs.duration({ hours: 1 }).asSeconds(),
   });
@@ -72,7 +69,10 @@ export class FfmpegInfo {
     return format(`${path}_${CacheKeys[command]}`, ...args);
   }
 
-  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {}
+  constructor(
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.Logger) private logger: Logger,
+  ) {}
 
   private get ffmpegPath() {
     return this.settingsDB.ffmpegSettings().ffmpegExecutablePath;
@@ -90,6 +90,7 @@ export class FfmpegInfo {
         this.getAvailableVideoEncoders(),
         this.getHwAccels(),
         this.getOptions(),
+        this.getFilters(),
       ]);
     } catch (e) {
       this.logger.error(e, 'Unexpected error during ffmpeg info seed');
@@ -169,7 +170,7 @@ export class FfmpegInfo {
       );
 
       const matchingLines = seq.collect(
-        filter(split(out, '\n'), (line) => /^\s*A/.test(line)),
+        filter(split(out, '\n'), (line) => /^\s*?A/.test(line)),
         (line) => line.trim().match(CoderExtractionPattern),
       );
       return map(
@@ -188,7 +189,7 @@ export class FfmpegInfo {
       );
 
       const matchingLines = seq.collect(
-        filter(split(out, '\n'), (line) => /^\s*V/.test(line)),
+        filter(split(out, '\n'), (line) => /^\s*?V/.test(line)),
         (line) => line.trim().match(CoderExtractionPattern),
       );
 
@@ -240,6 +241,24 @@ export class FfmpegInfo {
     });
   }
 
+  async getFilters() {
+    return Result.attemptAsync(async () => {
+      const out = await cacheGetOrSet(
+        FfmpegInfo.resultCache,
+        this.cacheKey('FILTERS'),
+        () => this.getFfmpegStdout(['-hide_banner', '-filters']),
+      );
+
+      const nonEmptyLines = reject(map(drop(split(out, '\n'), 1), trim), (s) =>
+        isEmpty(s),
+      );
+
+      return seq.collect(nonEmptyLines, (line) => {
+        return line.match(FfmpegFilterExtractionPattern)?.[1];
+      });
+    });
+  }
+
   async hasOption(
     option: string,
     defaultOnMissing: boolean = false,
@@ -253,10 +272,12 @@ export class FfmpegInfo {
   }
 
   async getCapabilities() {
-    const [optionsResult, encodersResult] = await Promise.allSettled([
-      this.getOptions(),
-      this.getAvailableVideoEncoders(),
-    ]);
+    const [optionsResult, encodersResult, filtersResult] =
+      await Promise.allSettled([
+        this.getOptions(),
+        this.getAvailableVideoEncoders(),
+        this.getFilters(),
+      ]);
 
     return new FfmpegCapabilities(
       optionsResult.status === 'rejected'
@@ -274,6 +295,11 @@ export class FfmpegInfo {
                 ),
             )
             .getOrElse(() => new Map<string, FfmpegEncoder>()),
+      filtersResult.status === 'rejected'
+        ? new Set()
+        : filtersResult.value
+            .map((arr) => new Set(arr))
+            .getOrElse(() => new Set()),
     );
   }
 

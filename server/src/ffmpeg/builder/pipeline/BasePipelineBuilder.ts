@@ -1,5 +1,10 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import type { AudioStream, VideoStream } from '@/ffmpeg/builder/MediaStream.js';
+import {
+  SubtitleMethods,
+  type AudioStream,
+  type SubtitleStream,
+  type VideoStream,
+} from '@/ffmpeg/builder/MediaStream.js';
 import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
 import { Av1Decoder } from '@/ffmpeg/builder/decoder/Av1Decoder.js';
 import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
@@ -37,6 +42,7 @@ import { UserAgentInputOption } from '@/ffmpeg/builder/options/input/UserAgentIn
 import type { AudioState } from '@/ffmpeg/builder/state/AudioState.js';
 import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import type { DataProps } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type {
   IPipelineStep,
@@ -47,7 +53,7 @@ import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
-import { filter, first, isNil, isNull, isUndefined } from 'lodash-es';
+import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
@@ -66,6 +72,9 @@ import { LibOpenH264Encoder } from '../encoder/LibOpenH264Encoder.ts';
 import { Libx264Encoder } from '../encoder/Libx264Encoder.ts';
 import { Libx265Encoder } from '../encoder/Libx265Encoder.ts';
 import { RawVideoEncoder } from '../encoder/RawVideoEncoder.ts';
+import type { FilterOption } from '../filter/FilterOption.ts';
+import { StreamSeekFilter } from '../filter/StreamSeekFilter.ts';
+import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import {
   AudioBitrateOutputOption,
   AudioBufferSizeOutputOption,
@@ -123,21 +132,64 @@ export type PipelineAudioFunctionArgs = {
   pipelineSteps: IPipelineStep[];
 };
 
-export type PipelineBuilderContext = {
+// export type PipelineBuilderContext = {
+//   videoStream?: VideoStream;
+//   audioStream?: AudioStream;
+//   ffmpegState: FfmpegState;
+//   desiredState: FrameState;
+//   desiredAudioState?: AudioState;
+//   pipelineSteps: PipelineStep[];
+//   filterChain: FilterChain;
+
+//   hasWatermark: boolean;
+//   hasSubtitleOverlay: boolean;
+//   shouldDeinterlace: boolean;
+//   is10BitOutput: boolean;
+//   isIntelVaapiOrQsv: boolean;
+// };
+
+type PipelineBuilderContextProps = DataProps<PipelineBuilderContext>;
+export class PipelineBuilderContext {
   videoStream?: VideoStream;
   audioStream?: AudioStream;
+  subtitleStream?: SubtitleStream;
   ffmpegState: FfmpegState;
   desiredState: FrameState;
   desiredAudioState?: AudioState;
   pipelineSteps: PipelineStep[];
   filterChain: FilterChain;
-
   hasWatermark: boolean;
-  hasSubtitleOverlay: boolean;
   shouldDeinterlace: boolean;
   is10BitOutput: boolean;
   isIntelVaapiOrQsv: boolean;
-};
+
+  constructor(props: PipelineBuilderContextProps) {
+    merge(this, props);
+  }
+
+  isSubtitleOverlay(): this is MarkRequired<
+    PipelineBuilderContext,
+    'subtitleStream'
+  > {
+    return (
+      (this.subtitleStream?.isImageBased &&
+        this.subtitleStream?.method === SubtitleMethods.Burn) ??
+      false
+    );
+  }
+
+  isSubtitleTextContext(): this is MarkRequired<
+    PipelineBuilderContext,
+    'subtitleStream'
+  > {
+    return (
+      (this.subtitleStream &&
+        !this.subtitleStream.isImageBased &&
+        this.subtitleStream.method === SubtitleMethods.Burn) ??
+      false
+    );
+  }
+}
 
 export type PipelineBuilderContextWithVideo = MarkRequired<
   PipelineBuilderContext,
@@ -174,6 +226,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     protected nullableVideoInputSource: Nullable<VideoInputSource>,
     private audioInputSource: Nullable<AudioInputSource>,
     protected watermarkInputSource: Nullable<WatermarkInputSource>,
+    protected subtitleInputSource: Nullable<SubtitlesInputSource>,
     protected concatInputSource: Nullable<ConcatInputSource>,
     protected ffmpegCapabilities: FfmpegCapabilities,
   ) {}
@@ -276,20 +329,20 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   build(ffmpegState: FfmpegState, desiredState: FrameState): Pipeline {
-    this.context = {
+    this.context = new PipelineBuilderContext({
       videoStream: first(this.videoInputSource.streams),
       audioStream: first(this.audioInputSource?.streams),
+      subtitleStream: first(this.subtitleInputSource?.streams),
       ffmpegState,
       desiredState,
       desiredAudioState: this.audioInputSource?.desiredState,
       pipelineSteps: [],
       filterChain: new FilterChain(),
       hasWatermark: !!this.watermarkInputSource,
-      hasSubtitleOverlay: false, // TODO:
       is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
       shouldDeinterlace: desiredState.deinterlace,
       isIntelVaapiOrQsv: false,
-    };
+    });
 
     this.logger.debug(
       'Creating ffmpeg transcode pipeline with context: %O',
@@ -415,6 +468,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new ComplexFilter(
         this.videoInputSource,
         this.audioInputSource,
+        this.subtitleInputSource,
         this.watermarkInputSource,
         this.context.filterChain,
       ),
@@ -446,6 +500,14 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected get pipelineSteps() {
     return this.context.pipelineSteps;
+  }
+
+  protected get filterChain() {
+    return this.context.filterChain;
+  }
+
+  protected get subtitleOverlayFilterChain() {
+    return this.filterChain.subtitleOverlayFilterSteps;
   }
 
   protected buildVideoPipeline() {
@@ -644,6 +706,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       const option = new StreamSeekInputOption(this.ffmpegState.start);
       this.audioInputSource?.addOption(option);
       this.videoInputSource.addOption(option);
+
+      if (this.context.isSubtitleTextContext()) {
+        this.pipelineSteps.push(new StreamSeekFilter(this.ffmpegState.start));
+      }
     }
   }
 
@@ -770,5 +836,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
   protected getIsIntelQsvOrVaapi() {
     return false;
+  }
+
+  protected addFilterToVideoChain(
+    currentState: FrameState,
+    filter: FilterOption,
+  ): FrameState {
+    this.videoInputSource.filterSteps.push(filter);
+    return filter.nextState(currentState);
   }
 }

@@ -6,7 +6,7 @@ import type { Channel } from '@/db/schema/Channel.js';
 import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type { AudioStreamDetails } from '@/stream/types.js';
-import { HttpStreamSource } from '@/stream/types.js';
+import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -16,12 +16,18 @@ import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { isUndefined } from 'lodash-es';
 import type { DeepReadonly, NonEmptyArray } from 'ts-essentials';
+import { match, P } from 'ts-pattern';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
+import { SubtitleStreamPicker } from './SubtitleStreamPicker.ts';
 import {
   AudioStream,
+  EmbeddedSubtitleStream,
+  ExternalSubtitleStream,
   StillImageStream,
+  SubtitleMethods,
   VideoStream,
 } from './builder/MediaStream.ts';
 import type { OutputFormat } from './builder/constants.ts';
@@ -40,6 +46,7 @@ import {
 } from './builder/input/AudioInputSource.ts';
 import { ConcatInputSource } from './builder/input/ConcatInputSource.ts';
 import { LavfiVideoInputSource } from './builder/input/LavfiVideoInputSource.ts';
+import { SubtitlesInputSource } from './builder/input/SubtitlesInputSource.ts';
 import { VideoInputSource } from './builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from './builder/input/WatermarkInputSource.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
@@ -47,7 +54,7 @@ import { AudioState } from './builder/state/AudioState.ts';
 import { FfmpegState } from './builder/state/FfmpegState.ts';
 import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
-import type { ConcatOptions, StreamSessionOptions } from './ffmpeg.ts';
+import type { ConcatOptions, StreamSessionCreateArgs } from './ffmpeg.ts';
 import type { HlsWrapperOptions } from './ffmpegBase.ts';
 import { IFFMPEG } from './ffmpegBase.ts';
 import type { FfmpegInfo } from './ffmpegInfo.ts';
@@ -62,6 +69,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
     private ffmpegInfo: FfmpegInfo,
     private settingsDB: ISettingsDB,
     private pipelineBuilderFactory: PipelineBuilderFactory,
+    private channelDB: IChannelDB,
   ) {
     super();
   }
@@ -268,16 +276,18 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
   async createStreamSession({
     // TODO Fix these dumb params
-    streamSource,
-    streamDetails,
-    ptsOffset,
-    startTime,
-    outputFormat,
-    duration,
-    realtime,
-    watermark,
-    streamMode,
-  }: StreamSessionOptions): Promise<Maybe<FfmpegTranscodeSession>> {
+    stream: { source: streamSource, details: streamDetails },
+    options: {
+      ptsOffset,
+      startTime,
+      outputFormat,
+      duration,
+      realtime,
+      watermark,
+      streamMode,
+    },
+    lineupItem,
+  }: StreamSessionCreateArgs): Promise<Maybe<FfmpegTranscodeSession>> {
     if (streamSource.type !== 'http' && streamSource.type !== 'file') {
       throw new Error('Unsupported stream source format: ' + streamSource.type);
     }
@@ -411,11 +421,66 @@ export class FfmpegStreamFactory extends IFFMPEG {
       );
     }
 
+    let subtitleSource: Nullable<SubtitlesInputSource> = null;
+    if (
+      isDefined(streamDetails.subtitleDetails) &&
+      this.channel.subtitlesEnabled
+    ) {
+      const subtitlePreferences =
+        await this.channelDB.getChannelSubtitlePreferences(this.channel.uuid);
+      const pickedSubtitleStream = await SubtitleStreamPicker.pickSubtitles(
+        subtitlePreferences,
+        lineupItem,
+        streamDetails.subtitleDetails,
+      );
+
+      if (pickedSubtitleStream) {
+        this.logger.trace('Using subtitle stream: %O', pickedSubtitleStream);
+
+        const source = match(pickedSubtitleStream.path)
+          .with(
+            P.string.startsWith('http'),
+            (path) => new HttpStreamSource(path),
+          )
+          .with(P.string, (path) => new FileStreamSource(path))
+          .otherwise(() => streamSource);
+
+        const stream = match(pickedSubtitleStream.type)
+          .with(
+            'embedded',
+            () =>
+              new EmbeddedSubtitleStream(
+                pickedSubtitleStream.codec,
+                pickedSubtitleStream.index ?? 0,
+                SubtitleMethods.Burn,
+              ),
+          )
+          .with(
+            'external',
+            () =>
+              new ExternalSubtitleStream(
+                pickedSubtitleStream.codec,
+                SubtitleMethods.Burn,
+              ),
+          )
+          .otherwise(() => null);
+
+        if (stream) {
+          subtitleSource = new SubtitlesInputSource(
+            source,
+            [stream],
+            SubtitleMethods.Burn,
+          );
+        }
+      }
+    }
+
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(playbackParams.hwAccel)
       .setVideoInputSource(videoInputSource)
       .setAudioInputSource(audioInput)
       .setWatermarkInputSource(watermarkSource)
+      .setSubtitleInputSource(subtitleSource)
       .build();
 
     const scaledSize = videoStream.squarePixelFrameSize(

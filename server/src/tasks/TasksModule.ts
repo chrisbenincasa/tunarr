@@ -11,9 +11,15 @@ import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
+import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { type IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import type { MediaSource } from '../db/schema/MediaSource.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import { MediaSourceDB } from '../db/mediaSourceDB.ts';
+import type { MediaSource } from '../db/schema/MediaSource.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
+import type { GlobalOptions } from '../globals.ts';
+import { TVGuideService } from '../services/TvGuideService.ts';
+import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
 import { BackupTask } from './BackupTask.ts';
@@ -25,6 +31,11 @@ import type {
   UpdatePlexPlayStatusScheduleRequest,
 } from './plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
+import type {
+  SubtitleExtractorTaskFactory,
+  SubtitleExtractorTaskRequest,
+} from './SubtitleExtractorTask.ts';
+import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 
 const TasksModule = new ContainerModule((bind) => {
   bind(UpdateXmlTvTask).toSelf();
@@ -113,6 +124,24 @@ const TasksModule = new ContainerModule((bind) => {
           request,
           sessionId,
         ),
+  );
+
+  bindFactoryFunc<SubtitleExtractorTaskFactory>(
+    bind,
+    SubtitleExtractorTask.KEY,
+    (ctx) => (req: SubtitleExtractorTaskRequest) =>
+      new SubtitleExtractorTask(
+        ctx.container.get(KEYS.Logger),
+        ctx.container.get<TVGuideService>(TVGuideService),
+        ctx.container.get<IChannelDB>(KEYS.ChannelDB),
+        ctx.container.get<ExternalStreamDetailsFetcherFactory>(
+          ExternalStreamDetailsFetcherFactory,
+        ),
+        ctx.container.get<MediaSourceDB>(MediaSourceDB),
+        ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
+        ctx.container.get<GlobalOptions>(KEYS.GlobalOptions),
+        req,
+      ),
   );
 });
 

@@ -38,12 +38,20 @@ import {
   HevcVaapiEncoder,
   Mpeg2VaapiEncoder,
 } from '../../encoder/vaapi/VaapiEncoders.ts';
+import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
+import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { ScaleSubtitlesVaapiFilter } from '../../filter/vaapi/ScaleSubtitlesVaapiFilter.ts';
+import { VaapiOverlayFilter } from '../../filter/vaapi/VaapiOverlayFilter.ts';
+import { VaapiSubtitlePixelFormatFilter } from '../../filter/vaapi/VaapiSubtitlePixelFormatFilter.ts';
 import {
   KnownPixelFormats,
   PixelFormatNv12,
   PixelFormatYuva420P,
   PixelFormats,
 } from '../../format/PixelFormat.ts';
+import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
+import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 import {
   NoAutoScaleOutputOption,
   PixelFormatOutputOption,
@@ -57,12 +65,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     videoInputFile: Nullable<VideoInputSource>,
     audioInputFile: Nullable<AudioInputSource>,
     watermarkInputSource: Nullable<WatermarkInputSource>,
+    subtitleInputSource: Nullable<SubtitlesInputSource>,
     concatInputSource: Nullable<ConcatInputSource>,
   ) {
     super(
       videoInputFile,
       audioInputFile,
       watermarkInputSource,
+      subtitleInputSource,
       concatInputSource,
       binaryCapabilities,
     );
@@ -158,18 +168,20 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     // TODO: Make vaapi driver a union
     const forceSoftwareOverlay =
-      (this.context.hasWatermark && this.context.hasSubtitleOverlay) ||
+      (this.context.hasWatermark && this.context.isSubtitleOverlay()) ||
       ffmpegState.vaapiDriver === 'radeonsi';
+
+    currentState.forceSoftwareOverlay = forceSoftwareOverlay;
 
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
-      this.context.hasSubtitleOverlay &&
+      this.context.isSubtitleOverlay() &&
       !forceSoftwareOverlay
     ) {
       // Hardware upload
     } else if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
-      (!this.context.hasSubtitleOverlay || forceSoftwareOverlay) &&
+      (!this.context.isSubtitleOverlay() || forceSoftwareOverlay) &&
       this.context.hasWatermark
     ) {
       // download for watermark (or forced software subtitle)
@@ -178,10 +190,10 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(filter);
     }
 
-    // TODO Subtitle
+    currentState = this.addSubtitles(currentState);
 
     // Watermark
-    this.setWatermark(currentState);
+    currentState = this.setWatermark(currentState);
 
     const noEncoderSteps = every(
       this.getEncoderSteps(),
@@ -379,6 +391,70 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     return nextState;
   }
 
+  protected addSubtitles(currentState: FrameState): FrameState {
+    if (!this.subtitleInputSource) {
+      return currentState;
+    }
+
+    if (this.context.isSubtitleTextContext()) {
+      this.videoInputSource.addOption(new CopyTimestampInputOption());
+      currentState = this.addFilterToVideoChain(
+        currentState,
+        new HardwareDownloadFilter(currentState),
+      );
+      currentState = this.addFilterToVideoChain(
+        currentState,
+        new SubtitleFilter(this.subtitleInputSource),
+      );
+    }
+
+    if (this.context.isSubtitleOverlay()) {
+      this.subtitleInputSource.addFilter(new VaapiSubtitlePixelFormatFilter());
+      const needsScale = this.videoInputSource.hasAnyFilterStep([
+        ScaleVaapiFilter,
+        ScaleFilter,
+        PadFilter,
+      ]);
+
+      if (currentState.forceSoftwareOverlay) {
+        currentState = this.addFilterToVideoChain(
+          currentState,
+          new HardwareDownloadFilter(currentState),
+        );
+        if (this.desiredState.pixelFormat) {
+          const targetFmt = this.desiredState.pixelFormat.unwrap();
+          if (needsScale) {
+            this.subtitleInputSource.filterSteps.push(
+              new ImageScaleFilter(this.desiredState.paddedSize),
+            );
+          }
+          this.subtitleOverlayFilterChain.push(
+            new SubtitleOverlayFilter(targetFmt),
+          );
+        }
+      } else {
+        this.subtitleInputSource.addFilter(
+          new HardwareUploadVaapiFilter(false),
+        );
+        if (needsScale) {
+          this.subtitleInputSource.addFilter(
+            new ScaleSubtitlesVaapiFilter(this.desiredState.paddedSize),
+          );
+        }
+
+        this.subtitleOverlayFilterChain.push(new VaapiOverlayFilter());
+      }
+
+      if (this.context.hasWatermark && !currentState.forceSoftwareOverlay) {
+        const hwDownload = new HardwareDownloadFilter(currentState);
+        currentState = hwDownload.nextState(currentState);
+        this.subtitleOverlayFilterChain.push(hwDownload);
+      }
+    }
+
+    return currentState;
+  }
+
   protected setWatermark(currentState: FrameState): FrameState {
     if (!isVideoPipelineContext(this.context)) {
       return currentState;
@@ -446,5 +522,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     return currentState;
+  }
+
+  protected getIsIntelQsvOrVaapi(): boolean {
+    return (
+      (this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Vaapi ||
+        this.ffmpegState.encoderHwAccelMode ===
+          HardwareAccelerationMode.Vaapi) &&
+      !(this.ffmpegState.vaapiDriver ?? '').toLowerCase().startsWith('radeon')
+    );
   }
 }

@@ -1,21 +1,26 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
+import type { PlexMediaSource } from '@/db/schema/MediaSource.js';
 import { isQueryError, isQuerySuccess } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { attempt, isNonEmptyString } from '@/util/index.js';
+import {
+  attempt,
+  isDefined,
+  isNonEmptyArray,
+  isNonEmptyString,
+} from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import {
   PlexEpisode,
   PlexMediaAudioStream,
   PlexMediaContainerResponseSchema,
+  PlexMediaSubtitleStream,
   PlexMediaVideoStream,
   PlexMovie,
   PlexMusicTrack,
@@ -37,21 +42,20 @@ import {
   sortBy,
   trimEnd,
 } from 'lodash-es';
-import { NonEmptyArray } from 'ts-essentials';
+import { PlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import {
+  ExternalStreamDetailsFetcher,
+  StreamFetchRequest,
+} from '../StreamDetailsFetcher.ts';
 import {
   AudioStreamDetails,
   HttpStreamSource,
   ProgramStreamResult,
   StreamDetails,
   StreamSource,
+  SubtitleStreamDetails,
   VideoStreamDetails,
 } from '../types.ts';
-
-// The minimum fields we need to get stream details about an item
-type PlexItemStreamDetailsQuery = Pick<
-  ContentBackedStreamLineupItem,
-  'programType' | 'externalKey' | 'plexFilePath' | 'filePath' | 'programId'
->;
 
 /**
  * A 'new' version of the PlexTranscoder class that does not
@@ -60,35 +64,35 @@ type PlexItemStreamDetailsQuery = Pick<
  * leaving normalization up to the Tunarr FFMPEG pipeline.
  */
 @injectable()
-export class PlexStreamDetails {
-  private plex: PlexApiClient;
-
+export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
-  ) {}
+  ) {
+    super();
+  }
 
-  async getStream(server: MediaSource, item: PlexItemStreamDetailsQuery) {
-    return this.getStreamInternal(server, item);
+  async getStream({ server, lineupItem }: StreamFetchRequest<'plex'>) {
+    return this.getStreamInternal(server, lineupItem);
   }
 
   private async getStreamInternal(
-    server: MediaSource,
-    item: PlexItemStreamDetailsQuery,
+    server: PlexMediaSource,
+    item: PlexBackedStreamLineupItem,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }
 
-    this.plex =
+    const plexApiClient =
       await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
 
     const expectedItemType = item.programType;
-    const itemMetadataResult = await this.plex.getItemMetadata(
+    const itemMetadataResult = await plexApiClient.getItemMetadata(
       item.externalKey,
     );
 
@@ -106,7 +110,7 @@ export class PlexStreamDetails {
           (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
         )?.externalKey;
         if (isNonEmptyString(plexGuid)) {
-          const byGuidResult = await this.plex.doTypeCheckedGet(
+          const byGuidResult = await plexApiClient.doTypeCheckedGet(
             '/library/all',
             PlexMediaContainerResponseSchema,
             {
@@ -174,7 +178,11 @@ export class PlexStreamDetails {
       return null;
     }
 
-    const details = await this.getItemStreamDetails(item, itemMetadata);
+    const details = await this.getItemStreamDetails(
+      item,
+      itemMetadata,
+      plexApiClient,
+    );
 
     if (isNull(details)) {
       return null;
@@ -262,8 +270,9 @@ export class PlexStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: PlexItemStreamDetailsQuery,
+    item: PlexBackedStreamLineupItem,
     media: PlexMovie | PlexEpisode | PlexMusicTrack,
+    plexApiClient: PlexApiClient,
   ): Promise<Nullable<StreamDetails>> {
     const relevantMedia = maxBy(
       filter(media.Media, (m) => (m.Part?.length ?? 0) > 0) ?? [],
@@ -354,13 +363,51 @@ export class PlexStreamDetails {
       },
     );
 
+    const subtitleStreamDetails = map(
+      sortBy(
+        filter(mediaStreams, (stream): stream is PlexMediaSubtitleStream => {
+          return stream.streamType === 3;
+        }),
+        (stream) => [
+          stream.selected ? -1 : 0,
+          // stream.default ? 0 : 1,
+          stream.index,
+        ],
+      ),
+      (stream) => {
+        const sdh = !![
+          stream.title,
+          stream.displayTitle,
+          stream.extendedDisplayTitle,
+        ]
+          .filter(isNonEmptyString)
+          .find((s) => s.toLocaleLowerCase().includes('sdh'));
+        return {
+          type: isDefined(stream.index) ? 'embedded' : 'external',
+          codec: stream.codec,
+          default: stream.default ?? false,
+          index: stream.index,
+          title: stream.displayTitle,
+          description: stream.extendedDisplayTitle,
+          sdh,
+          path: stream.key ? plexApiClient.getFullUrl(stream.key) : undefined,
+          languageCodeISO6391: stream.languageTag,
+          languageCodeISO6392: stream.languageCode,
+          forced: stream.forced ?? false,
+        } satisfies SubtitleStreamDetails;
+      },
+    );
+
     const streamDetails: StreamDetails = {
       serverPath: relevantPart?.key,
       directFilePath: relevantPart?.file,
       videoDetails: videoDetails ? [videoDetails] : undefined,
-      audioDetails: isEmpty(audioStreamDetails)
-        ? undefined
-        : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+      audioDetails: isNonEmptyArray(audioStreamDetails)
+        ? audioStreamDetails
+        : undefined,
+      subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
+        ? subtitleStreamDetails
+        : undefined,
     };
 
     if (
@@ -383,11 +430,11 @@ export class PlexStreamDetails {
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const result = await attempt(() =>
-          this.plex.doHead({ url: placeholderThumbPath }),
+          plexApiClient.doHead({ url: placeholderThumbPath }),
         );
         if (!isError(result)) {
           streamDetails.placeholderImage = new HttpStreamSource(
-            this.plex.getFullUrl(placeholderThumbPath),
+            plexApiClient.getFullUrl(placeholderThumbPath),
           );
         }
       }

@@ -35,11 +35,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlexStreamSettings, defaultPlexStreamSettings } from '@tunarr/types';
+import type { PlexStreamSettings } from '@tunarr/types';
+import { defaultPlexStreamSettings } from '@tunarr/types';
 import { fill, isEqual, map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 const supportedPaths = [
   { value: 'network', string: 'Network' },
@@ -184,7 +186,7 @@ export default function MediaSourceSettingsPage() {
           Path Replacements
         </Typography>
         <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth sx={{ my: 1 }}>
               <Controller
                 control={control}
@@ -253,7 +255,7 @@ export default function MediaSourceSettingsPage() {
         </Typography>
 
         <Grid flex="1 0 50%" container spacing={3}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth>
               <InputLabel id="stream-path-label">Stream Path</InputLabel>
               <TypedController
@@ -285,7 +287,7 @@ export default function MediaSourceSettingsPage() {
               </FormHelperText>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth>
               <FormControlLabel
                 control={

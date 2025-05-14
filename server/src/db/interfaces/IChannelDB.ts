@@ -19,6 +19,7 @@ import type {
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { MarkOptional, MarkRequired } from 'ts-essentials';
+import type { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 
 export type ChannnelAndLineup = { channel: Channel; lineup: Lineup };
 
@@ -119,6 +120,10 @@ export interface IChannelDB {
   ): Promise<Channel | null>;
 
   updateChannelStartTime(id: string, newTime: number): Promise<void>;
+
+  getChannelSubtitlePreferences(
+    id: string,
+  ): Promise<ChannelSubtitlePreferences[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
   MarkNullable<

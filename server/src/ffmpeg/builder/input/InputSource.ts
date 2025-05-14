@@ -3,14 +3,17 @@ import { HttpHeadersInputOption } from '@/ffmpeg/builder/options/input/HttpHeade
 import type { InputOption } from '@/ffmpeg/builder/options/input/InputOption.js';
 import type { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { flatMap } from 'lodash-es';
+import type { Newable, NonEmptyArray } from 'ts-essentials';
 import type {
   FileStreamSource,
   FilterStreamSource,
   HttpStreamSource,
 } from '../../../stream/types.ts';
+import type { Nullable } from '../../../types/util.ts';
+import type { FilterOption } from '../filter/FilterOption.ts';
 import type { VideoInputSource } from './VideoInputSource.ts';
 
-export type InputSourceType = 'video' | 'audio';
+export type InputSourceType = 'video' | 'audio' | 'subtitle';
 export type InputSourceProtocol = 'file' | 'http' | 'filter';
 export type InputSourceContinuity = 'discrete' | 'infinite';
 
@@ -50,6 +53,17 @@ export abstract class InputSource<
     this.addOptions(option);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  hasInputOption(typ: Newable<InputOption> | Function) {
+    return this.inputOptions.some((io) => io instanceof typ);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  getInputOption<Inst>(inst: Newable<Inst> | Function): Nullable<Inst> {
+    return (this.inputOptions.find((io) => io instanceof inst) ??
+      null) as Nullable<Inst>;
+  }
+
   addOptions(...options: InputOption[]) {
     for (const opt of options) {
       if (opt.appliesToInput(this)) {
@@ -69,5 +83,16 @@ export abstract class InputSource<
 
   getInputOptions(): string[] {
     return flatMap(this.inputOptions, (opt) => opt.options(this));
+  }
+
+  hasAnyFilterStep(stepTs: NonEmptyArray<Newable<HasFilterOption>>): boolean {
+    return this.filterSteps.some((filterStep) => {
+      return stepTs.some((s) => filterStep instanceof s);
+    });
+  }
+
+  addFilter(opt: FilterOption): this {
+    this.filterSteps.push(opt);
+    return this;
   }
 }
