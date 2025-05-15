@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import type { Adapter } from 'lowdb';
 
@@ -23,10 +24,11 @@ export class InMemoryCachedDbAdapter<T> implements Adapter<T> {
   }
 
   async write(data: T): Promise<void> {
-    const now = new Date().getTime();
+    const now = +dayjs();
     // Start with 30 second flush interval
     this.#cached = data;
     if (this.#lastFlushTime < 0 || now - this.#lastFlushTime > 30 * 1000) {
+      this.#lastFlushTime = now;
       await this.#underlying.write(data);
     }
   }
