@@ -164,7 +164,7 @@ export class ChannelCache {
 
     if (isCommercialLineupItem(lineupItem)) {
       await persistentChannelCache.setFillerPlayTime(
-        this.getKey(channelId, lineupItem.programId),
+        this.getKey(channelId, lineupItem.fillerId),
         t0 + remaining,
       );
     }

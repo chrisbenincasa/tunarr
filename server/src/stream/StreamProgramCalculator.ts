@@ -19,6 +19,7 @@ import { StrictExclude } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
+  CommercialStreamLineupItem,
   EnrichedLineupItem,
   RedirectStreamLineupItem,
   StreamLineupItem,
@@ -566,7 +567,8 @@ export class StreamProgramCalculator {
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
             programBeginMs: activeProgram.programBeginMs,
-          };
+            fillerId: filler.uuid,
+          } satisfies CommercialStreamLineupItem;
         }
       }
 

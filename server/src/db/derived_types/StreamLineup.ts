@@ -100,6 +100,7 @@ const BaseContentBackedStreamLineupItemSchema =
 const CommercialStreamLineupItemSchema =
   BaseContentBackedStreamLineupItemSchema.extend({
     type: z.literal('commercial'),
+    fillerId: z.string(),
   }).required({ streamDuration: true, beginningOffset: true });
 
 export type CommercialStreamLineupItem = z.infer<
