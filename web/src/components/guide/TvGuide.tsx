@@ -7,13 +7,10 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
-  alpha,
   Box,
   Button,
   CircularProgress,
-  Menu,
   MenuItem,
-  type MenuProps,
   styled,
   Tooltip,
   Typography,
@@ -22,17 +19,15 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
+import type { Channel } from '@tunarr/types';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
 import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { match, P } from 'ts-pattern';
 import { useInterval } from 'usehooks-ts';
-import {
-  alternateColors,
-  forTvGuideProgram,
-  isNonEmptyString,
-} from '../../helpers/util';
+import { alternateColors, isNonEmptyString } from '../../helpers/util';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
@@ -41,45 +36,7 @@ import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
-
-const StyledMenu = styled((props: MenuProps) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{
-      vertical: 'bottom',
-      horizontal: 'right',
-    }}
-    transformOrigin={{
-      vertical: 'top',
-      horizontal: 'right',
-    }}
-    {...props}
-  />
-))(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: 6,
-    marginTop: theme.spacing(1),
-    minWidth: 180,
-    backgroundColor: theme.palette.background.paper,
-    boxShadow:
-      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
-    '& .MuiMenu-list': {
-      padding: '4px 0',
-    },
-    '& .MuiMenuItem-root': {
-      '& .MuiSvgIcon-root': {
-        fontSize: 18,
-        marginRight: theme.spacing(1.5),
-      },
-      '&:active': {
-        backgroundColor: alpha(
-          theme.palette.primary.main,
-          theme.palette.action.selectedOpacity,
-        ),
-      },
-    },
-  },
-}));
+import { StyledMenu } from '../base/StyledMenu.tsx';
 
 const GridParent = styled(Box)({
   borderStyle: 'solid',
@@ -185,7 +142,7 @@ export function TvGuide({ channelId, start, end }: Props) {
   const [minHeight, setMinHeight] = useState(0);
   const smallViewport = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [channelMenu, setChannelMenu] = useState<ChannelLineup>();
+  const [channelMenu, setChannelMenu] = useState<Channel>();
 
   const [progress, setProgress] = useState(calcProgress(start, end));
   const [currentTime, setCurrentTime] = useState(dayjs().format('LT'));
@@ -239,7 +196,7 @@ export function TvGuide({ channelId, start, end }: Props) {
 
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
-    channel: ChannelLineup,
+    channel: Channel,
   ) => {
     setAnchorEl(event.currentTarget);
     setChannelMenu(channel);
@@ -364,27 +321,39 @@ export function TvGuide({ channelId, start, end }: Props) {
       index: number,
       lineup: TvGuideProgram[],
     ) => {
-      const title = forTvGuideProgram({
-        content: (p) => p.grandparent?.title ?? p.title,
-        custom: (p) => p.program?.title ?? 'Custom Program',
-        redirect: (p) => `Redirect to Channel ${p.channel}`,
-        flex: (p) => p.title ?? flexTitle,
-      })(program);
+      const title = match(program)
+        .with(
+          { type: 'content', grandparent: { title: P.nonNullable } },
+          ({ grandparent }) => grandparent.title,
+        )
+        .with({ type: 'content' }, (p) => p.title)
+        .with(
+          { type: 'custom', program: { title: P.nonNullable } },
+          ({ program: { title } }) => title,
+        )
+        .with({ type: 'custom' }, () => 'Custom Program')
+        .with({ type: 'redirect' }, (p) => `Redirect to Channel ${p.channel}`)
+        .with({ type: 'flex' }, (p) => p.title ?? flexTitle)
+        .exhaustive();
 
-      // Clean this up...
-      const episodeTitle = forTvGuideProgram({
-        custom: (p) =>
-          p.program?.subtype === 'movie'
-            ? compact([
-                p.program.date ? dayjs(p.program.date).year() : null,
-              ]).join(',')
-            : (p.program?.title ?? ''),
-        content: (p) =>
-          p.subtype === 'movie'
-            ? compact([p.date ? dayjs(p.date).year() : null]).join(',')
-            : p.title,
-        default: '',
-      })(program);
+      const episodeTitle = match(program)
+        .with(
+          { type: 'custom', program: { subtype: 'movie' } },
+          ({ program }) =>
+            compact([program.date ? dayjs(program.date).year() : null]).join(
+              ',',
+            ),
+        )
+        .with(
+          { type: 'custom', program: P.nonNullable },
+          ({ program }) => program.title,
+        )
+        .with({ type: 'custom' }, () => '')
+        .with({ type: 'content', subtype: 'movie' }, (p) =>
+          compact([p.date ? dayjs(p.date).year() : null]).join(','),
+        )
+        .with({ type: 'content' }, (p) => p.title)
+        .otherwise(() => '');
 
       const key = `${title}_${program.start}_${program.stop}`;
       const programStart = dayjs(program.start);
@@ -570,7 +539,12 @@ export function TvGuide({ channelId, start, end }: Props) {
   });
 
   return (
-    <PaddedPaper sx={{ minHeight: minHeight >= 0 ? minHeight : undefined }}>
+    <PaddedPaper
+      sx={{
+        width: 'inherit',
+        minHeight: minHeight >= 0 ? minHeight : undefined,
+      }}
+    >
       <ProgramDetailsDialog
         open={!isUndefined(modalProgram)}
         onClose={() => handleModalClose()}
@@ -583,10 +557,10 @@ export function TvGuide({ channelId, start, end }: Props) {
           display="flex"
           position="relative"
           flexDirection="column"
-          sx={{ width: `${smallViewport ? '10%' : '15%'}` }}
+          sx={{ maxWidth: `${smallViewport ? '10%' : '15%'}` }}
         >
           <Box sx={{ height: '4rem' }}></Box>
-          {channelLineup?.map((channel) => (
+          {channelsInfo.map((channel) => (
             <Box
               sx={{ height: '4rem' }}
               key={channel.number}
@@ -625,113 +599,124 @@ export function TvGuide({ channelId, start, end }: Props) {
         </Box>
         <Box
           sx={{
-            display: 'flex',
-            position: 'relative',
-            flexDirection: 'column',
-            width: `${smallViewport ? '90%' : '85%'}`,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            width: isPending ? '100%' : undefined,
+            flex: 1,
           }}
         >
           <Box
             sx={{
-              width: `100%`,
-              height: '2rem',
-              textAlign: 'center',
-              fontWeight: 'bold',
-            }}
-          >
-            {start.format('MMMM D')}
-          </Box>
-          <GridParent
-            sx={{
               display: 'flex',
-              flex: 1,
+              position: 'relative',
+              flexDirection: 'column',
+              width: isPending ? '100%' : 'fit-content',
+              height: isPending ? '100%' : undefined,
             }}
           >
-            {intervalArray.map((slot) => (
-              <GridChild
-                width={100 / intervalArray.length}
-                sx={{
-                  height: '2rem',
-                  borderLeft: '1px solid white',
-                  textAlign: 'center',
-                  '&:last-child': {
-                    borderRight: '1px solid white',
-                  },
-                }}
-                key={slot}
-              >
-                {start
-                  .add(slot * increments, 'minutes')
-                  .format(`${smallViewport ? 'h:mm' : 'LT'}`)}
-              </GridChild>
-            ))}
-          </GridParent>
-          {error ? (
             <Box
+              sx={{
+                width: `100%`,
+                height: '2rem',
+                textAlign: 'center',
+                fontWeight: 'bold',
+              }}
+            >
+              {start.format('MMMM D')}
+            </Box>
+            <GridParent
               sx={{
                 display: 'flex',
-                justifyContent: 'center',
-                marginLeft: '-250px',
-                my: 2,
+                flex: 1,
               }}
             >
-              <Typography sx={{ m: 4 }}>
-                An error occurred: {error.message}
-              </Typography>
-            </Box>
-          ) : isPending ? (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                marginLeft: '-250px',
-                my: 2,
-              }}
-            >
-              <CircularProgress color="secondary" sx={{ m: 4 }} />
-            </Box>
-          ) : (
-            channels
-          )}
-          {dayjs().isBetween(start, end) && (
-            <Box
-              sx={{
-                position: 'absolute',
-                left: `${progress}%`,
-                transition: 'left 0.5s linear',
-                height: '100%',
-                zIndex: 10,
-              }}
-            >
+              {intervalArray.map((slot) => (
+                <GridChild
+                  width={100 / intervalArray.length}
+                  sx={{
+                    height: '2rem',
+                    borderLeft: '1px solid white',
+                    textAlign: 'center',
+                    '&:last-child': {
+                      borderRight: '1px solid white',
+                    },
+                  }}
+                  key={slot}
+                >
+                  {start
+                    .add(slot * increments, 'minutes')
+                    .format(`${smallViewport ? 'h:mm' : 'LT'}`)}
+                </GridChild>
+              ))}
+            </GridParent>
+            {error ? (
               <Box
                 sx={{
-                  position: 'relative',
-                  background: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  minWidth: '50px',
-                  width: 'max-content',
-                  px: 1,
-                  borderRadius: '5px',
-                  fontSize: '14px',
-                  textAlign: 'center',
-                  zIndex: 2,
-                  marginLeft: '-50%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginLeft: '-250px',
+                  my: 2,
                 }}
               >
-                {currentTime}
+                <Typography sx={{ m: 4 }}>
+                  An error occurred: {error.message}
+                </Typography>
               </Box>
+            ) : isPending ? (
               <Box
                 sx={{
-                  position: 'relative',
-                  top: '-18px',
-                  width: '2px',
-                  background: theme.palette.primary.main,
-                  height: '100%',
-                  mt: '-2px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexBasis: '100%',
+                  my: 2,
                 }}
-              ></Box>
-            </Box>
-          )}
+              >
+                <CircularProgress color="secondary" sx={{ m: 4 }} />
+              </Box>
+            ) : (
+              channels
+            )}
+            {dayjs().isBetween(start, end) && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: `${progress}%`,
+                  transition: 'left 0.5s linear',
+                  height: '100%',
+                  zIndex: 10,
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'relative',
+                    background: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    minWidth: '50px',
+                    width: 'max-content',
+                    px: 1,
+                    borderRadius: '5px',
+                    fontSize: '14px',
+                    textAlign: 'center',
+                    zIndex: 2,
+                    marginLeft: '-50%',
+                  }}
+                >
+                  {currentTime}
+                </Box>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    top: '-18px',
+                    width: '2px',
+                    background: theme.palette.primary.main,
+                    height: '100%',
+                    mt: '-2px',
+                  }}
+                ></Box>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
     </PaddedPaper>
