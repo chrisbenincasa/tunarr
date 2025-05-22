@@ -6,31 +6,28 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Link,
   Paper,
   Stack,
   Typography,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
-import useStore from '../../store/index.ts';
 import { useChannelEditor } from '../../store/selectors.ts';
 
 export default function ChannelProgrammingPage() {
   const { channelId } = Route.useParams();
   const {
     data: { channel },
-    isPending,
   } = useChannelAndProgramming(channelId);
 
-  const { schedule } = useChannelEditor();
-
-  const programsDirty = useStore((s) => s.channelEditor.dirty.programs);
+  const {
+    schedule,
+    dirty: { programs: programsDirty },
+  } = useChannelEditor();
 
   // Force this page to load at the top
   // Fixes issue where some browsers maintain previous page scroll position
@@ -39,11 +36,7 @@ export default function ChannelProgrammingPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  return isUndefined(channel) || isPending ? (
-    <div>
-      <CircularProgress />
-    </div>
-  ) : (
+  return (
     <div>
       <Breadcrumbs />
       <Stack direction="row">

@@ -24,15 +24,6 @@ export async function preloadChannelAndProgramming({
   params,
   context,
 }: ChannelArgs) {
-  const channelEditor = useStore.getState().channelEditor;
-
-  if (
-    channelEditor?.currentEntity?.id === params.channelId &&
-    channelEditor.programsLoaded
-  ) {
-    return;
-  }
-
   const [channel, programming] = await Promise.allSettled([
     context.queryClient.ensureQueryData(
       channelQuery(context.tunarrApiClientProvider(), params.channelId),

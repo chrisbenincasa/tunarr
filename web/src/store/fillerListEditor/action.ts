@@ -52,6 +52,7 @@ export const setCurrentFillerList = (
     fillerListEditor.currentEntity = show;
     fillerListEditor.originalEntity = show;
     fillerListEditor.dirty.programs = false;
+    fillerListEditor.programsLoaded = true;
     const zippedPrograms = zipWithIndex(programs);
     fillerListEditor.originalProgramList = [...zippedPrograms];
     fillerListEditor.programList = [...zippedPrograms];

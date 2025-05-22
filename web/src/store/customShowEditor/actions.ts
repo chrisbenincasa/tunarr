@@ -47,6 +47,7 @@ export const setCurrentCustomShow = (
     customShowEditor.currentEntity = show;
     customShowEditor.originalEntity = show;
     customShowEditor.dirty.programs = false;
+    customShowEditor.programsLoaded = true;
     // These come in order; unwrap to get the content programs underneath
     // The frontend manages the order from here on out.
     const unwrappedPrograms = seq.collect(programs, ({ program }) => program);

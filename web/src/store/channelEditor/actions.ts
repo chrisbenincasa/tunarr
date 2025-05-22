@@ -96,9 +96,16 @@ export const safeSetCurrentChannel = (
   programming?: CondensedChannelProgramming,
 ) =>
   useStore.setState(({ channelEditor }) => {
+    console.log(channelEditor.currentEntity?.id, channel.id);
     if (channelEditor.currentEntity?.id !== channel.id) {
       channelEditor.currentEntity = channel;
       channelEditor.originalEntity = channel;
+      channelEditor.programsLoaded = false;
+      channelEditor.dirty.programs = false;
+      channelEditor.programList = [];
+      channelEditor.originalProgramList = [];
+      channelEditor.schedule = undefined;
+      channelEditor.programLookup = {};
       if (programming) {
         updateProgramList(channelEditor, programming);
       }

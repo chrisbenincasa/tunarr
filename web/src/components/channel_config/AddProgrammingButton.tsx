@@ -140,7 +140,7 @@ export default function AddProgrammingButton() {
       <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
         {addProgrammingOptions.map((item, index) =>
           item.divider ? (
-            <MenuItem divider disabled>
+            <MenuItem divider disabled key={item.name}>
               {item.name}
             </MenuItem>
           ) : (

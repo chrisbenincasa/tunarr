@@ -1,7 +1,6 @@
 import { channelQuery } from '@/hooks/useChannels';
 import EditChannelPage from '@/pages/channels/EditChannelPage';
-import { setCurrentChannel } from '@/store/channelEditor/actions';
-import useStore from '@/store/index.ts';
+import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isUndefined } from 'lodash-es';
 import { z } from 'zod';
@@ -22,10 +21,7 @@ export const Route = createFileRoute('/channels/$channelId/edit/')({
       throw notFound();
     }
 
-    const currentChannel = useStore.getState().channelEditor.currentEntity;
-    if (currentChannel?.id !== channel.id) {
-      setCurrentChannel(channel);
-    }
+    safeSetCurrentChannel(channel);
 
     return channel;
   },

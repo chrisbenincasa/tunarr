@@ -34,7 +34,6 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
   const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
     {},
   );
-  console.log(sublistStates);
   const drawerRef = useRef(null);
 
   const navItems = useNavItems();
