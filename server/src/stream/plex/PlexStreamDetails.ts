@@ -25,6 +25,7 @@ import {
   PlexMovie,
   PlexMusicTrack,
   isPlexMusicTrack,
+  isTerminalItem,
 } from '@tunarr/types/plex';
 import { inject, injectable } from 'inversify';
 import {
@@ -168,7 +169,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
 
     const itemMetadata = itemMetadataResult.data;
 
-    if (expectedItemType !== itemMetadata.type) {
+    if (!isTerminalItem(itemMetadata)) {
       this.logger.warn(
         'Got unexpected item type %s from Plex (ID = %s) when starting stream. Expected item type %s',
         itemMetadata.type,

@@ -81,7 +81,6 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
         mediaSource,
       );
 
-    const expectedItemType = item.programType;
     const itemMetadataResult = await this.jellyfin.getItem(item.externalKey);
 
     if (isQueryError(itemMetadataResult)) {
