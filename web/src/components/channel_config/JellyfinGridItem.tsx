@@ -9,7 +9,6 @@ import {
   useState,
 } from 'react';
 import {
-  forJellyfinItem,
   isNonEmptyString,
   prettyItemDuration,
   toggle,
@@ -19,55 +18,76 @@ import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
-import {
-  type JellyfinItem,
-  type JellyfinItemKind,
-} from '@tunarr/types/jellyfin';
+import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import { match, P } from 'ts-pattern';
 import { type GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
 import { type GridItemProps } from './MediaItemGrid.tsx';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface JellyfinGridItemProps extends GridItemProps<JellyfinItem> {}
 
-const extractChildCount = forJellyfinItem({
-  Season: (s) => s.ChildCount,
-  Series: (s) => s.ChildCount,
-  CollectionFolder: (s) => s.ChildCount,
-  Playlist: (s) => s.ChildCount,
-  default: 0,
-});
+function extractChildCount(jfItem: JellyfinItem) {
+  return match(jfItem)
+    .with(
+      {
+        Type: P.union(
+          'Season',
+          'Series',
+          'MusicAlbum',
+          'MusicArtist',
+          'CollectionFolder',
+          'Playlist',
+          'Folder',
+        ),
+      },
+      (s) => s.ChildCount ?? null,
+    )
+    .otherwise(() => 0);
+}
 
-const childItemType = forJellyfinItem({
-  Season: 'episode',
-  Series: 'season',
-  CollectionFolder: 'item',
-  Playlist: (pl) => (pl.MediaType === 'Audio' ? 'track' : 'video'),
-  MusicArtist: 'album',
-  MusicAlbum: 'track',
-});
+function childItemType(item: JellyfinItem) {
+  return match(item)
+    .with({ Type: 'Season' }, () => 'episode')
+    .with({ Type: 'Series' }, () => 'season')
+    .with({ Type: 'CollectionFolder' }, () => 'item')
+    .with({ Type: 'Playlist' }, (pl) =>
+      pl.MediaType === 'Audio' ? 'track' : 'video',
+    )
+    .with({ Type: 'MusicArtist' }, () => 'album')
+    .with({ Type: 'MusicAlbum' }, () => 'track')
+    .otherwise(() => null);
+}
 
-const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
-  Season: 'Episode',
-  Series: 'Season',
-});
+function childJellyfinType(item: JellyfinItem) {
+  return match(item)
+    .returnType<JellyfinItemKind | null>()
+    .with({ Type: 'Season' }, () => 'Episode')
+    .with({ Type: 'Series' }, () => 'Season')
+    .with({ Type: 'MusicAlbum' }, () => 'Audio')
+    .with({ Type: 'MusicArtist' }, () => 'MusicAlbum')
+    .otherwise(() => null);
+}
 
-const subtitle = forJellyfinItem({
-  Movie: (item) => (
-    <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
-  ),
-  default: (item) => {
-    const childCount = extractChildCount(item);
-    if (isNil(childCount)) {
-      return null;
-    }
+function subtitle(item: JellyfinItem) {
+  return match(item)
+    .with({ Type: 'Movie' }, () => (
+      <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
+    ))
+    .otherwise(() => {
+      const childCount = extractChildCount(item);
+      if (isNil(childCount)) {
+        return null;
+      }
 
-    return (
-      <span>{`${childCount} ${pluralize(
-        childItemType(item) ?? 'item',
-        childCount,
-      )}`}</span>
-    );
-  },
-});
+      return (
+        <span>{`${childCount} ${pluralize(
+          childItemType(item) ?? 'item',
+          childCount,
+        )}`}</span>
+      );
+    });
+}
 
 export const JellyfinGridItem = memo(
   forwardRef(
@@ -124,7 +144,7 @@ export const JellyfinGridItem = memo(
             type: 'jellyfin',
             serverId: currentServer!.id,
             serverName: currentServer!.name,
-            childCount: extractChildCount(item),
+            childCount: extractChildCount(item) ?? undefined,
             id: item.Id,
           };
         },

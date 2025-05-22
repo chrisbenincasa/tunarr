@@ -1,20 +1,15 @@
-import { type Nullable } from '@/types/util';
 import type { PaletteMode } from '@mui/material';
 import { colors } from '@mui/material';
-import { type MakeRequired } from '@mui/x-date-pickers/internals/models/helpers';
 import type {
   GenGroupedSubtypeMapping,
   PerTypeCallback,
 } from '@tunarr/shared/types';
-import { applyOrValue, applyOrValueNoRest } from '@tunarr/shared/util';
+import { applyOrValueNoRest } from '@tunarr/shared/util';
 import {
   type ChannelProgram,
   type FlexProgram,
   type Resolution,
-  type TvGuideProgram,
 } from '@tunarr/types';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
-import { type PlexMedia } from '@tunarr/types/plex';
 import dayjs, { type Dayjs } from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
@@ -36,7 +31,7 @@ import {
 } from 'lodash-es';
 import { type Path, type PathValue } from 'react-hook-form';
 import { type SelectedMedia } from '../store/programmingSelector/store';
-import { type AddedMedia, type UIChannelProgram, type UIIndex } from '../types';
+import { type UIChannelProgram, type UIIndex } from '../types';
 
 dayjs.extend(duration);
 
@@ -184,34 +179,6 @@ export const numericFormChangeHandler = (
   };
 };
 
-export function forSelectedMediaType<T, Args extends unknown[] = []>(
-  choices: MakeRequired<PerTypeCallback<SelectedMedia, T, Args>, 'default'>,
-): (m: SelectedMedia, ...rest: Args) => NonNullable<T>;
-export function forSelectedMediaType<T, Args extends unknown[] = []>(
-  choices: PerTypeCallback<SelectedMedia, T, Args>,
-): (m: SelectedMedia, ...rest: Args) => T | null;
-export function forSelectedMediaType<T, Args extends unknown[] = []>(
-  choices:
-    | PerTypeCallback<SelectedMedia, T, Args>
-    | MakeRequired<PerTypeCallback<SelectedMedia, T, Args>, 'default'>,
-): (m: SelectedMedia, ...rest: Args) => T | null {
-  // Unfortunately we still have to enumerate the types here
-  // in order to get proper type guarding
-  return (m: SelectedMedia, ...rest: Args) => {
-    if (m.type === 'custom-show' && choices['custom-show']) {
-      return applyOrValue(choices['custom-show'], m, rest);
-    } else if (m.type === 'plex' && choices['plex']) {
-      return applyOrValue(choices['plex'], m, rest);
-    } else if (m.type === 'jellyfin' && choices.jellyfin) {
-      return applyOrValue(choices.jellyfin, m, rest);
-    } else if (choices.default) {
-      return applyOrValue(choices['default'], m, rest);
-    }
-
-    return null;
-  };
-}
-
 // Produces a Record for each 'type' of SelectedMedia where the values
 // are the properly downcasted subtypes
 export function groupSelectedMedia(
@@ -265,161 +232,6 @@ export const forUIProgramType = <T>(
     return null;
   };
 };
-
-// Unclear if we can generalize this since we need to know we
-// are dealing with a type that has subclasses, otherwise
-// PerTypeCallback will have nevers
-export const forTvGuideProgram = <T>(
-  choices: PerTypeCallback<TvGuideProgram, T>,
-) => {
-  return (m: TvGuideProgram) => {
-    switch (m.type) {
-      case 'content':
-        if (choices.content) {
-          return applyOrValueNoRest(choices.content, m);
-        }
-        break;
-      case 'custom':
-        if (choices.custom) {
-          return applyOrValueNoRest(choices.custom, m);
-        }
-        break;
-      case 'redirect':
-        if (choices.redirect) {
-          return applyOrValueNoRest(choices.redirect, m);
-        }
-        break;
-      case 'flex':
-        if (choices.flex) {
-          return applyOrValueNoRest(choices.flex, m);
-        }
-        break;
-    }
-
-    // If we made it this far try to do the default
-    if (choices.default) {
-      return applyOrValueNoRest(choices.default, m);
-    }
-
-    return null;
-  };
-};
-
-export function forPlexMedia<T>(
-  choices:
-    | Omit<Required<PerTypeCallback<PlexMedia, T>>, 'default'>
-    | MakeRequired<PerTypeCallback<PlexMedia, T>, 'default'>,
-): (m: PlexMedia) => NonNullable<T>;
-export function forPlexMedia<T>(
-  choices: PerTypeCallback<PlexMedia, T>,
-): (m: PlexMedia) => Nullable<T>;
-export function forPlexMedia<T>(
-  choices:
-    | PerTypeCallback<PlexMedia, T>
-    | MakeRequired<PerTypeCallback<PlexMedia, T>, 'default'>,
-) {
-  return (m: PlexMedia) => {
-    switch (m.type) {
-      case 'movie':
-        if (choices.movie) return applyOrValueNoRest(choices.movie, m);
-        break;
-      case 'show':
-        if (choices.show) return applyOrValueNoRest(choices.show, m);
-        break;
-      case 'season':
-        if (choices.season) return applyOrValueNoRest(choices.season, m);
-        break;
-      case 'episode':
-        if (choices.episode) return applyOrValueNoRest(choices.episode, m);
-        break;
-      case 'artist':
-        if (choices.artist) return applyOrValueNoRest(choices.artist, m);
-        break;
-      case 'album':
-        if (choices.album) return applyOrValueNoRest(choices.album, m);
-        break;
-      case 'track':
-        if (choices.track) return applyOrValueNoRest(choices.track, m);
-        break;
-      case 'collection':
-        if (choices.collection)
-          return applyOrValueNoRest(choices.collection, m);
-        break;
-      case 'playlist':
-        if (choices.playlist) return applyOrValueNoRest(choices.playlist, m);
-        break;
-    }
-
-    if (choices.default) {
-      return applyOrValueNoRest(choices.default, m);
-    }
-
-    return null;
-  };
-}
-
-type JellyfinCallback<T, Args extends unknown[] = []> = {
-  [X in JellyfinItem['Type']]?: ((m: JellyfinItem, ...rest: Args) => T) | T;
-} & {
-  default?: ((m: JellyfinItem, ...rest: Args) => T) | T;
-};
-
-export function forJellyfinItem<T>(
-  choices:
-    | Omit<Required<JellyfinCallback<T>>, 'default'>
-    | MakeRequired<JellyfinCallback<T>, 'default'>,
-): (m: JellyfinItem) => NonNullable<T>;
-export function forJellyfinItem<T>(
-  choices: JellyfinCallback<T>,
-): (m: JellyfinItem) => Nullable<T>;
-export function forJellyfinItem<T>(
-  choices: JellyfinCallback<T> | MakeRequired<JellyfinCallback<T>, 'default'>,
-) {
-  return (m: JellyfinItem) => {
-    if (choices[m.Type]) {
-      return applyOrValueNoRest(choices[m.Type], m);
-    }
-
-    if (choices.default) {
-      return applyOrValueNoRest(choices.default, m);
-    }
-
-    return null;
-  };
-}
-
-export function forAddedMediaType<T>(
-  choices:
-    | Omit<Required<PerTypeCallback<AddedMedia, T>>, 'default'>
-    | MakeRequired<PerTypeCallback<AddedMedia, T>, 'default'>,
-): (m: AddedMedia) => NonNullable<T>;
-export function forAddedMediaType<T>(
-  choices: PerTypeCallback<AddedMedia, T>,
-): (m: AddedMedia) => T | null;
-export function forAddedMediaType<T>(
-  choices:
-    | PerTypeCallback<AddedMedia, T>
-    | MakeRequired<PerTypeCallback<AddedMedia, T>, 'default'>,
-): (m: AddedMedia) => T | null {
-  return (m: AddedMedia) => {
-    switch (m.type) {
-      case 'plex':
-        if (choices.plex) return applyOrValueNoRest(choices.plex, m);
-        break;
-      case 'jellyfin':
-        if (choices.jellyfin) return applyOrValueNoRest(choices.jellyfin, m);
-        break;
-      case 'custom-show':
-        if (choices['custom-show'])
-          return applyOrValueNoRest(choices['custom-show'], m);
-        break;
-    }
-
-    if (choices.default) return applyOrValueNoRest(choices.default, m);
-
-    return null;
-  };
-}
 
 export const unwrapNil = <T>(x: T | null | undefined) => x!;
 

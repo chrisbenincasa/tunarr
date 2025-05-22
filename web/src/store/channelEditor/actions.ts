@@ -1,4 +1,4 @@
-import { forAddedMediaType, unwrapNil } from '@/helpers/util.ts';
+import { unwrapNil } from '@/helpers/util.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
 import { forProgramType } from '@tunarr/shared/util';
 import {
@@ -270,14 +270,19 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
-      const addedDuration = sumBy(
-        programs,
-        forAddedMediaType({
-          plex: ({ media }) => media.duration ?? 0,
-          jellyfin: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
-          emby: ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
-          'custom-show': ({ program }) => program.duration ?? 0,
-        }),
+      const addedDuration = sumBy(programs, (program) =>
+        match(program)
+          .with({ type: Plex }, ({ media }) => media.duration ?? 0)
+          .with(
+            { type: Jellyfin },
+            ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
+          )
+          .with(
+            { type: Emby },
+            ({ media }) => (media.RunTimeTicks ?? 0) / 10_000,
+          )
+          .with({ type: 'custom-show' }, ({ program }) => program.duration ?? 0)
+          .exhaustive(),
       );
 
       // Convert any external program types to our internal representation

@@ -472,6 +472,7 @@ export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
   loudnessAnalysisVersion: z.string().optional(), // "1"
   musicAnalysisVersion: z.string().optional(), // "1"
   Media: z.array(PlexMediaDescriptionSchema).optional(),
+  leafCount: z.number().optional(),
 }).merge(neverDirectory);
 
 export type PlexMusicTrack = Alias<z.infer<typeof PlexMusicTrackSchema>>;

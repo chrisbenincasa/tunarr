@@ -125,7 +125,6 @@ export function EditChannelForm({
     formMethods.formState.errors,
   ) as (keyof SaveableChannel)[];
   const formIsDirty = formMethods.formState.isDirty;
-  console.log(formMethods.formState.dirtyFields);
 
   const onSubmit: SubmitHandler<SaveableChannel> = (data) => {
     const fadeConfigs = reject(

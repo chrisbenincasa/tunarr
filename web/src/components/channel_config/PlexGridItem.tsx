@@ -16,7 +16,6 @@ import {
   type ForwardedRef,
 } from 'react';
 import {
-  forPlexMedia,
   isNonEmptyString,
   prettyItemDuration,
   toggle,
@@ -32,40 +31,50 @@ import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts'
 import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
+import { match, P } from 'ts-pattern';
 import { MediaGridItem, type GridItemMetadata } from './MediaGridItem.tsx';
 import type { GridItemProps } from './MediaItemGrid.tsx';
 
-const genPlexChildPath = forPlexMedia({
-  collection: (collection) =>
-    `/library/collections/${collection.ratingKey}/children`,
-  playlist: (playlist) => `/playlists/${playlist.ratingKey}/items`,
-  default: (item) => `/library/metadata/${item.ratingKey}/children`,
-});
+function genPlexChildPath(media: PlexMedia) {
+  return match(media)
+    .with(
+      { type: 'collection' },
+      (collection) => `/library/collections/${collection.ratingKey}/children`,
+    )
+    .with(
+      { type: 'playlist' },
+      (playlist) => `/playlists/${playlist.ratingKey}/items`,
+    )
+    .otherwise((item) => `/library/metadata/${item.ratingKey}/children`);
+}
 
-const extractChildCount = forPlexMedia({
-  season: (s) => s.leafCount,
-  show: (s) => s.childCount,
-  collection: (s) => parseInt(s.childCount),
-  playlist: (s) => s.leafCount,
-  default: 0,
-});
+function extractChildCount(media: PlexMedia) {
+  return match(media)
+    .with({ type: P.union('season', 'playlist') }, (s) => s.leafCount ?? 0)
+    .with({ type: P.union('show') }, (s) => s.childCount)
+    .with({ type: 'collection' }, (c) => parseInt(c.childCount))
+    .otherwise(() => 0);
+}
 
-const subtitle = forPlexMedia({
-  movie: (item) => <span>{prettyItemDuration(item.duration ?? 0)}</span>,
-  default: (item) => {
-    const childCount = extractChildCount(item);
-    if (isNil(childCount)) {
-      return null;
-    }
+function subtitle(media: PlexMedia) {
+  return match(media)
+    .with({ type: 'movie' }, (m) => (
+      <span>{prettyItemDuration(m.duration ?? 0)}</span>
+    ))
+    .otherwise((item) => {
+      const childCount = extractChildCount(item);
+      if (isNil(childCount)) {
+        return null;
+      }
 
-    return (
-      <span>{`${childCount} ${pluralize(
-        getPlexMediaChildType(item) ?? 'item',
-        childCount,
-      )}`}</span>
-    );
-  },
-});
+      return (
+        <span>{`${childCount} ${pluralize(
+          getPlexMediaChildType(item) ?? 'item',
+          childCount,
+        )}`}</span>
+      );
+    });
+}
 
 export const PlexGridItem = memo(
   forwardRef(

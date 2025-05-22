@@ -1,7 +1,7 @@
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { Button, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import type { PlexMedia } from '@tunarr/types/plex';
 import {
-  PlexMedia,
   isPlexCollection,
   isPlexMusicAlbum,
   isPlexMusicArtist,
@@ -12,18 +12,15 @@ import {
 } from '@tunarr/types/plex';
 import { filter, first, map } from 'lodash-es';
 import pluralize from 'pluralize';
-import React, { Fragment, MouseEvent, useCallback } from 'react';
-import {
-  forPlexMedia,
-  prettyItemDuration,
-  typedProperty,
-} from '../../helpers/util.ts';
+import type { MouseEvent } from 'react';
+import React, { Fragment, useCallback } from 'react';
+import { prettyItemDuration, typedProperty } from '../../helpers/util.ts';
 import useStore from '../../store/index.ts';
 import {
   addPlexSelectedMedia,
   removePlexSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
-import { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+import type { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
@@ -34,17 +31,23 @@ export interface PlexListItemProps<T extends PlexMedia> {
   onPushParent: (item: T) => void;
 }
 
-const plexTypeString = forPlexMedia({
-  show: 'Series',
-  collection: 'Collection',
-  movie: 'Movie',
-  episode: 'Episode',
-  track: 'Track',
-  album: 'Album',
-  artist: 'Artist',
-  playlist: 'Playlist',
-  default: 'All',
-});
+function plexTypeString(media: PlexMedia): string {
+  switch (media.type) {
+    case 'movie':
+    case 'collection':
+    case 'artist':
+    case 'album':
+    case 'season':
+    case 'episode':
+    case 'track':
+    case 'playlist':
+      return media.type.toLocaleUpperCase();
+    case 'show':
+      return 'Series';
+    default:
+      return 'All';
+  }
+}
 
 export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
   const { item, style } = props;
@@ -111,8 +114,8 @@ export function PlexListItem<T extends PlexMedia>(props: PlexListItemProps<T>) {
             {hasChildren
               ? `Add ${plexTypeString(item)}`
               : selectedMediaIds.includes(item.guid)
-              ? 'Remove'
-              : `Add ${plexTypeString(item)}`}
+                ? 'Remove'
+                : `Add ${plexTypeString(item)}`}
           </Button>
         </ListItemButton>
       </ListItem>

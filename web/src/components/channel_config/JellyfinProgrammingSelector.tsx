@@ -1,9 +1,5 @@
 import { jellyfinChildType } from '@/helpers/jellyfinUtil.ts';
-import {
-  estimateNumberOfColumns,
-  forJellyfinItem,
-  typedProperty,
-} from '@/helpers/util.ts';
+import { estimateNumberOfColumns, typedProperty } from '@/helpers/util.ts';
 import { useInfiniteJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi';
 import useStore from '@/store/index.ts';
 import {
@@ -71,11 +67,16 @@ type Props = {
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
-const childJellyfinType = forJellyfinItem<JellyfinItemKind>({
-  Season: 'Episode',
-  Series: 'Season',
-  default: 'Video',
-});
+function childJellyfinType(item: JellyfinItem): JellyfinItemKind {
+  switch (item.Type) {
+    case 'Season':
+      return 'Episode';
+    case 'Series':
+      return 'Season';
+    default:
+      return 'Video';
+  }
+}
 
 type Size = {
   width?: number;
