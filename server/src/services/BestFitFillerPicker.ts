@@ -1,5 +1,5 @@
 import type { Channel } from '@/db/schema/Channel.js';
-import { ChannelCache } from '@/stream/ChannelCache.js';
+import { LastPlayTimeCache } from '@/stream/LastPlayTimeCache.ts';
 import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
@@ -21,9 +21,9 @@ const FiveMinutesMillis = 5 * 60 * 60 * 1000;
 
 @injectable()
 export class BestFitFillerPicker implements IFillerPicker {
-  #channelCache: ChannelCache;
+  #channelCache: LastPlayTimeCache;
 
-  constructor(channelCache: ChannelCache) {
+  constructor(channelCache: LastPlayTimeCache) {
     this.#channelCache = channelCache;
   }
 

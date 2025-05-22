@@ -1,8 +1,10 @@
 import type { Channel } from '@/db/schema/Channel.js';
-import { ChannelCache } from '@/stream/ChannelCache.js';
+import { LastPlayTimeCache } from '@/stream/LastPlayTimeCache.ts';
 import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
+import dayjs from 'dayjs';
+import { injectable } from 'inversify';
 import { isEmpty, isNil } from 'lodash-es';
 import type {
   ChannelFillerShowWithContent,
@@ -11,14 +13,15 @@ import type {
 import type { IFillerPicker } from './interfaces/IFillerPicker.ts';
 import { EmptyFillerPickResult } from './interfaces/IFillerPicker.ts';
 
-const DefaultFillerCooldownMillis = 30 * 60 * 1000;
-const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
-const FiveMinutesMillis = 5 * 60 * 60 * 1000;
+const DefaultFillerCooldownMillis = +dayjs.duration({ seconds: 30 });
+const OneWeekMillis = +dayjs.duration({ weeks: 1 });
+const FiveMinutesMillis = +dayjs.duration({ minutes: 5 });
 
+@injectable()
 export class FillerPicker implements IFillerPicker {
-  #channelCache: ChannelCache;
+  #channelCache: LastPlayTimeCache;
 
-  constructor(channelCache: ChannelCache = new ChannelCache()) {
+  constructor(channelCache: LastPlayTimeCache) {
     this.#channelCache = channelCache;
   }
 
@@ -42,7 +45,7 @@ export class FillerPicker implements IFillerPicker {
     let fillerListId: Maybe<string>;
     for (const filler of fillers) {
       const fillerPrograms = filler.fillerContent;
-      let pickedList = false;
+      let pickedList = fillers.length > 1; // Always pick the first list if there's only 1
       let n = 0;
 
       for (const clip of fillerPrograms) {
@@ -52,7 +55,7 @@ export class FillerPicker implements IFillerPicker {
             channel.uuid,
             clip.uuid,
           );
-          let timeSince = t1 == 0 ? OneDayMillis : t0 - t1;
+          let timeSince = t1 == 0 ? OneWeekMillis : t0 - t1;
 
           if (timeSince < fillerRepeatCooldownMs - constants.SLACK) {
             const w = fillerRepeatCooldownMs - timeSince;
@@ -66,7 +69,7 @@ export class FillerPicker implements IFillerPicker {
               channel.uuid,
               filler.fillerShow.uuid,
             );
-            const timeSince = t1 == 0 ? OneDayMillis : t0 - t1;
+            const timeSince = t1 == 0 ? OneWeekMillis : t0 - t1;
             if (timeSince + constants.SLACK >= filler.cooldown) {
               //should we pick this list?
               listM += filler.weight;

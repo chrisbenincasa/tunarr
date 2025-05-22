@@ -1,5 +1,5 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { ChannelCache } from '@/stream/ChannelCache.js';
+import { LastPlayTimeCache } from '@/stream/LastPlayTimeCache.ts';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
 import {
@@ -43,7 +43,7 @@ import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
 @injectable()
 export class FillerDB {
   constructor(
-    @inject(ChannelCache) private channelCache: ChannelCache,
+    @inject(LastPlayTimeCache) private channelCache: LastPlayTimeCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
     @inject(KEYS.Database) private db: Kysely<DB>,

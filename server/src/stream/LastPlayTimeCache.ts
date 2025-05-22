@@ -28,15 +28,15 @@ const channelCacheSchema = z.object({
   programPlayTimeCache: z.record(z.number()).default({}),
 });
 
-type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;
+type LastPlayCacheSchema = z.infer<typeof channelCacheSchema>;
 
-class PersistentChannelCache {
+class PersistentLastPlayTimeCache {
   #initialized: boolean = false;
-  #db: Low<ChannelCacheSchema>;
+  #db: Low<LastPlayCacheSchema>;
 
   async init() {
     if (!this.#initialized) {
-      this.#db = new Low<ChannelCacheSchema>(
+      this.#db = new Low<LastPlayCacheSchema>(
         new InMemoryCachedDbAdapter(
           new SchemaBackedDbAdapter(
             channelCacheSchema,
@@ -90,12 +90,31 @@ class PersistentChannelCache {
   }
 }
 
-const persistentChannelCache = new PersistentChannelCache();
+const persistentChannelCache = new PersistentLastPlayTimeCache();
 
 export const initPersistentStreamCache = () => persistentChannelCache.init();
 
+interface ILastPlayTimeCache {
+  getCurrentLineupItem(
+    channelId: string,
+    timeNow: number,
+  ): StreamLineupItem | undefined;
+
+  getProgramLastPlayTime(channelId: string, programId: string): number;
+
+  getFillerLastPlayTime(channelId: string, fillerId: string): number;
+
+  recordPlayback(
+    channelId: string,
+    t0: number,
+    lineupItem: StreamLineupItem,
+  ): Promise<void>;
+
+  clearPlayback(channelId: string): Promise<void>;
+}
+
 @injectable()
-export class ChannelCache {
+export class LastPlayTimeCache implements ILastPlayTimeCache {
   getCurrentLineupItem(
     channelId: string,
     timeNow: number,

@@ -56,8 +56,8 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
       }
 
       this.logger.error(
-        `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
         parseResult.error,
+        `Error while parsing schema-backed JSON file ${this.path.toString()}. Returning null. This could mean the DB got corrupted somehow`,
       );
       return null;
     }

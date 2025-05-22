@@ -30,7 +30,7 @@ import {
   nullToUndefined,
   zipWithIndex,
 } from '../util/index.js';
-import { ChannelCache } from './ChannelCache.js';
+import { LastPlayTimeCache } from './LastPlayTimeCache.ts';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
 const SLACK = constants.SLACK;
@@ -79,8 +79,9 @@ export class StreamProgramCalculator {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(FillerDB) private fillerDB: FillerDB,
     @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
-    @inject(ChannelCache) private channelCache: ChannelCache,
+    @inject(LastPlayTimeCache) private channelCache: LastPlayTimeCache,
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
+    @inject(FillerPicker) private fillerPicker: FillerPicker,
   ) {}
 
   async getCurrentLineupItem(
@@ -507,7 +508,7 @@ export class StreamProgramCalculator {
       }
 
       // Pick a random filler, too
-      const randomResult = new FillerPicker().pickFiller(
+      const randomResult = this.fillerPicker.pickFiller(
         channel,
         fillerPrograms,
         streamDuration,

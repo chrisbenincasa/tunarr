@@ -1,10 +1,9 @@
-import { findKey, forEach, merge } from 'lodash-es';
+import { findKey, merge } from 'lodash-es';
 import isUndefined from 'lodash-es/isUndefined.js';
 import once from 'lodash-es/once.js';
 import path, { resolve } from 'node:path';
 import type { ServerArgsType } from './cli/RunServerCommand.ts';
 import type { GlobalArgsType } from './cli/types.ts';
-import type { ServerContext } from './ServerContext.ts';
 import type { LogLevels } from './util/logging/LoggerFactory.ts';
 
 export type GlobalOptions = GlobalArgsType & {
@@ -81,22 +80,3 @@ export const dbOptions = () => {
     dbName: path.join(_globalOptions.databaseDirectory, 'db.db'),
   };
 };
-
-type Initializer<T> = (ctx: ServerContext) => T;
-let initalized = false;
-const initializers: Initializer<unknown>[] = [];
-
-export const registerSingletonInitializer = <T>(f: Initializer<T>) => {
-  if (initalized) {
-    throw new Error(
-      'Attempted to register singleton after intialization. This singleton will never be initialized!!',
-    );
-  }
-
-  initializers.push(f);
-};
-
-export const initializeSingletons = once((ctx: ServerContext) => {
-  forEach(initializers, (f) => f(ctx));
-  initalized = true;
-});

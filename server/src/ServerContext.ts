@@ -24,7 +24,7 @@ import { M3uService } from './services/M3UService.ts';
 import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { TVGuideService } from './services/TvGuideService.ts';
 import { CacheImageService } from './services/cacheImageService.js';
-import { ChannelCache } from './stream/ChannelCache.js';
+import { LastPlayTimeCache } from './stream/LastPlayTimeCache.ts';
 import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
 
@@ -44,7 +44,7 @@ export class ServerContext {
   @inject(TVGuideService) public guideService: TVGuideService;
   @inject(HdhrService) public hdhrService: HdhrService;
   @inject(CustomShowDB) public customShowDB: CustomShowDB;
-  @inject(ChannelCache) public channelCache: ChannelCache;
+  @inject(LastPlayTimeCache) public channelCache: LastPlayTimeCache;
   @inject(MediaSourceDB) public mediaSourceDB: MediaSourceDB;
   @inject(KEYS.ProgramDB) public programDB: IProgramDB;
   @inject(TranscodeConfigDB) public transcodeConfigDB: TranscodeConfigDB;

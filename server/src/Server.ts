@@ -36,14 +36,10 @@ import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
 import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
-import {
-  type ServerOptions,
-  initializeSingletons,
-  serverOptions,
-} from './globals.js';
+import { type ServerOptions, serverOptions } from './globals.js';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
-import { initPersistentStreamCache } from './stream/ChannelCache.js';
+import { initPersistentStreamCache } from './stream/LastPlayTimeCache.ts';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
 import { fileExists } from './util/fsUtil.js';
@@ -82,8 +78,6 @@ export class Server {
       this.serverOptions.databaseDirectory,
     );
 
-    // TODO: Use injector
-    initializeSingletons(this.serverContext);
     await this.serverContext.m3uService.clearCache();
     await this.serverContext.channelLineupMigrator.run();
 
