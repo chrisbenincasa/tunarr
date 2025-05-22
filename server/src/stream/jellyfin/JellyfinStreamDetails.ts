@@ -1,7 +1,6 @@
 import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
-import { ProgramType } from '@/db/schema/Program.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
@@ -111,16 +110,6 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
     }
 
     const itemMetadata = itemMetadataResult.data;
-
-    if (expectedItemType !== jellyfinItemTypeToProgramType(itemMetadata)) {
-      this.logger.warn(
-        'Got unexpected item type %s from Jellyfin (ID = %s) when starting stream. Expected item type %s',
-        itemMetadata.Type,
-        item.externalKey,
-        expectedItemType,
-      );
-      return null;
-    }
 
     const details = await this.getItemStreamDetails(item, itemMetadata);
 
@@ -359,19 +348,4 @@ function extractIsAnamorphic(
   }
 
   return Math.abs(resolutionRatio - num / den) > 0.01;
-}
-
-function jellyfinItemTypeToProgramType(item: JellyfinItem) {
-  switch (item.Type) {
-    case 'Movie':
-      return ProgramType.Movie;
-    case 'Episode':
-    case 'Video':
-    case 'MusicVideo':
-      return ProgramType.Episode;
-    case 'Audio':
-      return ProgramType.Track;
-    default:
-      return null;
-  }
 }
