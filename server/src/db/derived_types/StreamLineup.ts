@@ -5,7 +5,7 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
 import type { StrictOmit } from 'ts-essentials';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const baseStreamLineupItemSchema = z.object({
   originalTimestamp: z.number().nonnegative().optional(),

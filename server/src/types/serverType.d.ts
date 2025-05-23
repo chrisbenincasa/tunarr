@@ -6,12 +6,13 @@ import type {
   RawServerDefault,
   RouteGenericInterface,
 } from 'fastify';
-import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+// import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { FastifyRequest } from 'fastify/types/request.d.ts';
 import type { FastifySchema } from 'fastify/types/schema.d.ts';
 import type { ResolveFastifyRequestType } from 'fastify/types/type-provider.d.ts';
 import type { IncomingMessage, ServerResponse } from 'http';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
+import type { ZodTypeProvider } from '../util/zod.ts';
 
 export type ServerType = FastifyInstance<
   RawServerDefault,

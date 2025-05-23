@@ -7,7 +7,6 @@ import {
 } from '@tanstack/react-query';
 import { type CustomProgram, type CustomShow } from '@tunarr/types';
 import { type ApiClient } from '../external/api.ts';
-import { type ZodiosAliasReturnType } from '../types/index.ts';
 import { makeQueryOptions } from './useQueryHelpers.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 
@@ -34,18 +33,12 @@ export const useCustomShows = <TOut = CustomShow[]>(
 };
 
 export const customShowQuery = (apiClient: ApiClient, id: string) => ({
-  queryKey: ['custom-shows', id] as DataTag<
-    ['custom-shows', string],
-    ZodiosAliasReturnType<'getCustomShow'>
-  >,
+  queryKey: ['custom-shows', id],
   queryFn: () => apiClient.getCustomShow({ params: { id } }),
 });
 
 export const customShowProgramsQuery = (apiClient: ApiClient, id: string) => ({
-  queryKey: ['custom-shows', id, 'programs'] as DataTag<
-    ['custom-shows', string, 'programs'],
-    ZodiosAliasReturnType<'getCustomShowPrograms'>
-  >,
+  queryKey: ['custom-shows', id, 'programs'],
   queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
 });
 

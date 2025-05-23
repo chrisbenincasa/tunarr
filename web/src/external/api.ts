@@ -31,10 +31,10 @@ import {
   makeApi,
   makeErrors,
   parametersBuilder,
-} from '@zodios/core';
+} from '@tunarr/zodios-core';
 import { isEmpty } from 'lodash-es';
 import querystring from 'query-string';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { embyEndpoints } from './embyApi.ts';
 import { getFfmpegInfoEndpoint } from './ffmpegApi.ts';
 import { jellyfinEndpoints } from './jellyfinApi.ts';
@@ -151,7 +151,7 @@ export const api = makeApi([
   {
     method: 'get',
     path: '/api/sessions',
-    response: z.record(z.array(ChannelSessionsResponseSchema)),
+    response: z.record(z.string(), z.array(ChannelSessionsResponseSchema)),
     alias: 'getAllChannelSessions',
   },
   {
@@ -187,7 +187,7 @@ export const api = makeApi([
     parameters: parametersBuilder()
       .addBody(BatchLookupExternalProgrammingSchema)
       .build(),
-    response: z.record(ContentProgramSchema),
+    response: z.record(z.string(), ContentProgramSchema),
   },
   {
     method: 'get',

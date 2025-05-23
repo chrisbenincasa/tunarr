@@ -4,7 +4,7 @@ import {
   SchedulingOperationSchema,
 } from '@tunarr/types/api';
 import { first } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const BaseLineupItemSchema = z.object({
   durationMs: z.number().positive(), // Add a max
@@ -92,7 +92,7 @@ export const LineupSchema = z.object({
       if (
         first(issue?.path) === 'version' &&
         issue?.code === 'invalid_type' &&
-        issue?.received === 'undefined'
+        issue?.input === undefined
       ) {
         return 0;
       }

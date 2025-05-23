@@ -1,13 +1,13 @@
 import { parseIntOrNull } from '@/util/index.js';
 import { isNull, split } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const BaseFfprobeMediaStreamSchema = z.object({
   index: z.number(),
   codec_name: z.string(),
   codec_long_name: z.string().optional(),
   profile: z.string().optional(),
-  tags: z.record(z.string()).optional(),
+  tags: z.record(z.string(), z.string()).optional(),
 });
 
 export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({

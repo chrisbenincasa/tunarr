@@ -15,7 +15,7 @@ import {
 } from '@tunarr/types/jellyfin';
 import type { FastifyReply } from 'fastify/types/reply.js';
 import { filter, isEmpty, isNil, uniq } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type {
   RouterPluginCallback,
   ZodFastifyRequest,

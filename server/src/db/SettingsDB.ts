@@ -35,7 +35,7 @@ import path from 'node:path';
 import { setImmediate } from 'node:timers';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   getDefaultLogDirectory,
   getDefaultLogLevel,

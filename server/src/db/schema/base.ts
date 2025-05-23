@@ -4,7 +4,7 @@ import {
   ResolutionSchema,
 } from '@tunarr/types/schemas';
 import type { ColumnType } from 'kysely';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface WithCreatedAt {
   createdAt: ColumnType<number, number, never>;

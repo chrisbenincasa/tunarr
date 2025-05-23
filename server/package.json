@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
+    "@fastify/error": "^4.1.0",
     "@fastify/multipart": "^9.0.1",
     "@fastify/static": "^8.0.1",
     "@fastify/swagger": "^9.0.1",
@@ -71,7 +72,7 @@
     "tslib": "^2.6.2",
     "uuid": "^9.0.1",
     "yargs": "^17.7.2",
-    "zod": "^3.23.8"
+    "zod": "^3.25.20"
   },
   "devDependencies": {
     "@rollup/plugin-swc": "^0.4.0",

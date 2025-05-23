@@ -3,7 +3,7 @@ import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { container } from '../../container.ts';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import type { FfmpegEncoder } from '../../ffmpeg/ffmpegInfo.ts';

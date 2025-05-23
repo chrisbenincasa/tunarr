@@ -16,8 +16,8 @@ import {
   TranscodeConfigSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
-import { makeEndpoint, parametersBuilder } from '@zodios/core';
-import { z } from 'zod';
+import { makeEndpoint, parametersBuilder } from '@tunarr/zodios-core';
+import { z } from 'zod/v4';
 
 const getMediaSourcesEndpoint = makeEndpoint({
   method: 'get',
@@ -162,7 +162,7 @@ const systemHealthChecks = makeEndpoint({
   method: 'get',
   path: '/api/system/health',
   alias: 'getSystemHealth',
-  response: z.record(HealthCheckSchema),
+  response: z.record(z.string(), HealthCheckSchema),
 });
 
 const runSystemFixer = makeEndpoint({

@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { type Tag, type TupleToUnion } from '../util.js';
 import { ScheduleSchema } from './utilSchemas.js';
 

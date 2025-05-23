@@ -1,5 +1,5 @@
 import { FfmpegInfoResponse } from '@tunarr/types/api';
-import { makeEndpoint } from '@zodios/core';
+import { makeEndpoint } from '@tunarr/zodios-core';
 
 export const getFfmpegInfoEndpoint = makeEndpoint({
   method: 'get',

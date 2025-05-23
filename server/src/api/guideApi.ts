@@ -4,7 +4,7 @@ import { groupByUniq } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import { isNull } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
   const logger = LoggerFactory.child({
@@ -58,7 +58,7 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
           dateTo: z.coerce.date(),
         }),
         response: {
-          200: z.record(ChannelLineupSchema),
+          200: z.record(z.string(), ChannelLineupSchema),
           400: z.string(),
         },
       },
@@ -87,8 +87,8 @@ export const guideRouter: RouterPluginCallback = (fastify, _opts, done) => {
           id: z.string(),
         }),
         querystring: z.object({
-          dateFrom: z.string().pipe(z.date()),
-          dateTo: z.string().pipe(z.date()),
+          dateFrom: z.string().pipe(z.coerce.date()),
+          dateTo: z.string().pipe(z.coerce.date()),
         }),
       },
     },

@@ -12,7 +12,7 @@ import { fileTypeFromStream } from 'file-type';
 import { isEmpty, isError, isNil } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { isNonEmptyString, run } from '../util/index.js';

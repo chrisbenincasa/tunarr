@@ -7,7 +7,7 @@ import {
 } from '@tunarr/types/api';
 import { CustomProgramSchema, CustomShowSchema } from '@tunarr/types/schemas';
 import { isNil, isNull, map, sumBy } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {

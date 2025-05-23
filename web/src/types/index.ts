@@ -11,12 +11,12 @@ import {
   type Program,
   type RedirectProgram,
 } from '@tunarr/types';
-import { type ApiOf } from '@zodios/core';
+import { type ApiOf } from '@tunarr/zodios-core';
 import {
   type ZodiosAliases,
   type ZodiosQueryParamsByAlias,
   type ZodiosResponseByAlias,
-} from '@zodios/core/lib/zodios.types';
+} from '@tunarr/zodios-core/lib/zodios.types';
 import type { MarkRequired } from 'ts-essentials';
 import { type ApiClient } from '../external/api.ts';
 import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';

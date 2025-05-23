@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { PlexSearchSchema } from './plexSearch.js';
 
 const SlotProgrammingOrderSchema = z.enum([

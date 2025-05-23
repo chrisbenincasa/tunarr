@@ -8,7 +8,7 @@ import type { XmlTvSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { XmlTvSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const xmlTvSettingsRouter: RouterPluginCallback = (
   fastify,

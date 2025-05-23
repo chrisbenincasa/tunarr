@@ -25,12 +25,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { ZodiosError } from '@zodios/core';
+import { ZodiosError } from '@tunarr/zodios-core';
 import dayjs, { type Dayjs } from 'dayjs';
 import { chain, findIndex, head, isUndefined, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
-import { ZodError } from 'zod';
+import { ZodError } from 'zod/v4';
 import type { CalendarState } from '../slot_scheduler/ProgramCalendarView.tsx';
 import { ProgramCalendarView } from '../slot_scheduler/ProgramCalendarView.tsx';
 import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView.tsx';

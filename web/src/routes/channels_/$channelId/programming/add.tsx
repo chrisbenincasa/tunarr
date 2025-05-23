@@ -7,7 +7,7 @@ import { addMediaToCurrentChannel } from '@/store/channelEditor/actions';
 import { setPlexFilter } from '@/store/programmingSelector/actions';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
 const channelProgrammingSchema = z.object({

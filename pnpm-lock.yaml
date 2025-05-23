@@ -95,6 +95,9 @@ importers:
       '@fastify/cors':
         specifier: ^10.0.1
         version: 10.0.1
+      '@fastify/error':
+        specifier: ^4.1.0
+        version: 4.1.0
       '@fastify/multipart':
         specifier: ^9.0.1
         version: 9.0.1
@@ -169,7 +172,7 @@ importers:
         version: 3.2.0
       fastify-type-provider-zod:
         specifier: ^4.0.1
-        version: 4.0.2(fastify@5.0.0)(zod@3.23.8)
+        version: 4.0.2(fastify@5.0.0)(zod@3.25.20)
       file-type:
         specifier: ^19.6.0
         version: 19.6.0
@@ -231,8 +234,8 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.25.20
+        version: 3.25.20
     devDependencies:
       '@rollup/plugin-swc':
         specifier: ^0.4.0
@@ -376,8 +379,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.25.20
+        version: 3.25.20
     devDependencies:
       '@types/lodash-es':
         specifier: 4.17.9
@@ -404,8 +407,8 @@ importers:
   types:
     dependencies:
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.25.20
+        version: 3.25.20
     devDependencies:
       '@microsoft/api-extractor':
         specifier: ^7.43.0
@@ -470,15 +473,15 @@ importers:
       '@tunarr/types':
         specifier: workspace:*
         version: link:../types
+      '@tunarr/zodios-core':
+        specifier: ^11.0.2
+        version: 11.0.2(axios@1.6.0)(zod@3.25.20)
       '@uidotdev/usehooks':
         specifier: ^2.4.1
         version: 2.4.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@zodios/core':
-        specifier: ^10.9.6
-        version: 10.9.6(axios@1.6.0)(zod@3.23.8)
       '@zodios/plugins':
         specifier: ^10.6.0
-        version: 10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.23.8))(axios@1.6.0)
+        version: 10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20))(axios@1.6.0)
       axios:
         specifier: ^1.6.0
         version: 1.6.0
@@ -552,8 +555,8 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.25.20
+        version: 3.25.20
       zustand:
         specifier: ^4.4.6
         version: 4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0)
@@ -757,12 +760,20 @@ packages:
     resolution: {integrity: sha512-4A/SCr/2KLd5jrtOMFzaKjVtAei3+2r/NChoBNoZ3EyP/+GlhoaEGoWOZUmFmoITP7zOJyHIMm+DYRd8o3PvHA==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/helper-string-parser@7.27.1':
+    resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/helper-validator-identifier@7.24.7':
     resolution: {integrity: sha512-rR+PBcQ1SMQDDyF6X0wxtG8QyLCgUB0eRAGguqRLfkCA87l7yAP7ehq8SNj96OOGTO8OBV70KhuFYcIkHXOg0w==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-identifier@7.25.9':
     resolution: {integrity: sha512-Ed61U6XJc3CVRfkERJWDz4dJwKe7iLmmJsbOGu9wSloNSFttHV0I8g6UAgb7qnK5ly5bGLPd4oXZlxCdANBOWQ==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/helper-validator-identifier@7.27.1':
+    resolution: {integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-validator-option@7.24.7':
@@ -786,8 +797,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  '@babel/parser@7.27.0':
-    resolution: {integrity: sha512-iaepho73/2Pz7w2eMS0Q5f83+0RKI7i4xmiYeBmDzfRVbQtTOG7Ts0S4HzJVsTMGI9keU8rNfuZr8DKfSt7Yyg==}
+  '@babel/parser@7.27.2':
+    resolution: {integrity: sha512-QYLs8299NA7WM/bZAdp+CviYYkVoYXlDW2rzliy3chxd1PQjej7JORuMJDJXJUb9g0TT+B99EwaVLKmX+sPXWw==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -863,8 +874,8 @@ packages:
     resolution: {integrity: sha512-t8kDRGrKXyp6+tjUh7hw2RLyclsW4TRoRvRHtSyAX9Bb5ldlFh+90YAYY6awRXrlB4G5G2izNeGySpATlFzmOg==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/types@7.27.0':
-    resolution: {integrity: sha512-H45s8fVLYjbhFH62dIJ3WtmJ6RSPt/3DRO0ZcT2SUiYiQyz3BLVb9ADEnLl91m74aQPS3AzzeajZHYOalWe3bg==}
+  '@babel/types@7.27.1':
+    resolution: {integrity: sha512-+EzkxvLNfiUeKMgy/3luqfsCWFRXLb7U6wNQTk60tovuckwB15B191tJWvpp4HjiQWdJkCxO3Wbvc6jlk3Xb2Q==}
     engines: {node: '>=6.9.0'}
 
   '@changesets/apply-release-plan@7.0.4':
@@ -1683,8 +1694,8 @@ packages:
   '@fastify/deepmerge@2.0.0':
     resolution: {integrity: sha512-fsaybTGDyQ5KpPsplQqb9yKdCf2x/pbNpMNk8Tvp3rRz7lVcupKysH4b2ELMN2P4Hak1+UqTYdTj/u4FNV2p0g==}
 
-  '@fastify/error@4.0.0':
-    resolution: {integrity: sha512-OO/SA8As24JtT1usTUTKgGH7uLvhfwZPwlptRi2Dp5P4KKmJI3gvsZ8MIHnNwDs4sLf/aai5LzTyl66xr7qMxA==}
+  '@fastify/error@4.1.0':
+    resolution: {integrity: sha512-KeFcciOr1eo/YvIXHP65S94jfEEqn1RxTRBT1aJaHxY5FK0/GDXYozsQMMWlZoHgi8i0s+YtrLsgj/JkUUjSkQ==}
 
   '@fastify/fast-json-stringify-compiler@5.0.1':
     resolution: {integrity: sha512-f2d3JExJgFE3UbdFcpPwqNUEoHWmt8pAKf8f+9YuLESdefA0WgqxeT6DrGL4Yrf/9ihXNSKOqpjEmurV405meA==}
@@ -2537,6 +2548,12 @@ packages:
 
   '@tunarr/playlist@1.1.0':
     resolution: {integrity: sha512-MxwRLHEqEsg+7nmPPnBAVenpi9LjgzUkaS3QxHiHEHW0H0cLagms7EH3fwuW8PQXglRXSHjshVcZBipcwbxTJw==}
+
+  '@tunarr/zodios-core@11.0.2':
+    resolution: {integrity: sha512-4v0BTrfbdgLe+AE5m72+vXiJupPINtV2Y6Ok1dDeNiYWC+/7kRo+d2O1OFkNOkIsHe60RLrH32PspwdaaSfcWA==}
+    peerDependencies:
+      axios: ^0.x || ^1.0.0
+      zod: ^3.25.20
 
   '@types/archiver@6.0.2':
     resolution: {integrity: sha512-KmROQqbQzKGuaAbmK+ZcytkJ51+YqDa7NmbXjmtC5YBLSyQYo21YaUnQ3HbaPFKL1ooo6RQ6OPYPIDyxfpDDXw==}
@@ -7625,8 +7642,8 @@ packages:
     peerDependencies:
       zod: ^3.23.3
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.25.20:
+    resolution: {integrity: sha512-z03fqpTMDF1G02VLKUMt6vyACE7rNWkh3gpXVHgPTw28NPtDFRGvcpTtPwn2kMKtQ0idtYJUTxchytmnqYswcw==}
 
   zustand@4.4.6:
     resolution: {integrity: sha512-Rb16eW55gqL4W2XZpJh0fnrATxYEG3Apl2gfHTyDSE965x/zxslTikpNch0JgNjJA9zK6gEFW8Fl6d1rTZaqgg==}
@@ -7824,9 +7841,15 @@ snapshots:
 
   '@babel/helper-string-parser@7.25.9': {}
 
+  '@babel/helper-string-parser@7.27.1':
+    optional: true
+
   '@babel/helper-validator-identifier@7.24.7': {}
 
   '@babel/helper-validator-identifier@7.25.9': {}
+
+  '@babel/helper-validator-identifier@7.27.1':
+    optional: true
 
   '@babel/helper-validator-option@7.24.7': {}
 
@@ -7852,9 +7875,9 @@ snapshots:
     dependencies:
       '@babel/types': 7.26.7
 
-  '@babel/parser@7.27.0':
+  '@babel/parser@7.27.2':
     dependencies:
-      '@babel/types': 7.27.0
+      '@babel/types': 7.27.1
     optional: true
 
   '@babel/plugin-syntax-jsx@7.24.7(@babel/core@7.24.7)':
@@ -7948,10 +7971,10 @@ snapshots:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
 
-  '@babel/types@7.27.0':
+  '@babel/types@7.27.1':
     dependencies:
-      '@babel/helper-string-parser': 7.25.9
-      '@babel/helper-validator-identifier': 7.25.9
+      '@babel/helper-string-parser': 7.27.1
+      '@babel/helper-validator-identifier': 7.27.1
     optional: true
 
   '@changesets/apply-release-plan@7.0.4':
@@ -8680,7 +8703,7 @@ snapshots:
 
   '@fastify/deepmerge@2.0.0': {}
 
-  '@fastify/error@4.0.0': {}
+  '@fastify/error@4.1.0': {}
 
   '@fastify/fast-json-stringify-compiler@5.0.1':
     dependencies:
@@ -8694,7 +8717,7 @@ snapshots:
     dependencies:
       '@fastify/busboy': 3.0.0
       '@fastify/deepmerge': 2.0.0
-      '@fastify/error': 4.0.0
+      '@fastify/error': 4.1.0
       fastify-plugin: 5.0.1
       secure-json-parse: 3.0.0
 
@@ -9433,7 +9456,7 @@ snapshots:
   '@tanstack/router-generator@1.35.4':
     dependencies:
       prettier: 3.5.1
-      zod: 3.23.8
+      zod: 3.25.20
 
   '@tanstack/router-vite-plugin@1.35.4(vite@5.4.1(@types/node@22.10.7))':
     dependencies:
@@ -9452,7 +9475,7 @@ snapshots:
       '@types/babel__template': 7.4.4
       '@types/babel__traverse': 7.20.6
       '@vitejs/plugin-react': 4.3.1(vite@5.4.1(@types/node@22.10.7))
-      zod: 3.23.8
+      zod: 3.25.20
     transitivePeerDependencies:
       - supports-color
       - vite
@@ -9480,6 +9503,11 @@ snapshots:
     optional: true
 
   '@tunarr/playlist@1.1.0': {}
+
+  '@tunarr/zodios-core@11.0.2(axios@1.6.0)(zod@3.25.20)':
+    dependencies:
+      axios: 1.6.0
+      zod: 3.25.20
 
   '@types/archiver@6.0.2':
     dependencies:
@@ -10151,14 +10179,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@zodios/core@10.9.6(axios@1.6.0)(zod@3.23.8)':
+  '@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20)':
     dependencies:
       axios: 1.6.0
-      zod: 3.23.8
+      zod: 3.25.20
 
-  '@zodios/plugins@10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.23.8))(axios@1.6.0)':
+  '@zodios/plugins@10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20))(axios@1.6.0)':
     dependencies:
-      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.23.8)
+      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.25.20)
       axios: 1.6.0
       qs: 6.12.0
 
@@ -10179,9 +10207,9 @@ snapshots:
     dependencies:
       acorn: 8.11.3
 
-  acorn-jsx@5.3.2(acorn@8.14.0):
+  acorn-jsx@5.3.2(acorn@8.14.1):
     dependencies:
-      acorn: 8.14.0
+      acorn: 8.14.1
 
   acorn-walk@8.3.2: {}
 
@@ -10196,8 +10224,7 @@ snapshots:
 
   acorn@8.14.0: {}
 
-  acorn@8.14.1:
-    optional: true
+  acorn@8.14.1: {}
 
   acquerello@2.0.8: {}
 
@@ -10412,7 +10439,7 @@ snapshots:
 
   avvio@9.0.0:
     dependencies:
-      '@fastify/error': 4.0.0
+      '@fastify/error': 4.1.0
       fastq: 1.17.1
 
   axios@1.6.0:
@@ -11587,8 +11614,8 @@ snapshots:
 
   espree@10.3.0:
     dependencies:
-      acorn: 8.14.0
-      acorn-jsx: 5.3.2(acorn@8.14.0)
+      acorn: 8.14.1
+      acorn-jsx: 5.3.2(acorn@8.14.1)
       eslint-visitor-keys: 4.2.0
 
   esprima@4.0.1: {}
@@ -11729,17 +11756,17 @@ snapshots:
       fastify-plugin: 4.5.1
       table: 6.8.2
 
-  fastify-type-provider-zod@4.0.2(fastify@5.0.0)(zod@3.23.8):
+  fastify-type-provider-zod@4.0.2(fastify@5.0.0)(zod@3.25.20):
     dependencies:
-      '@fastify/error': 4.0.0
+      '@fastify/error': 4.1.0
       fastify: 5.0.0
-      zod: 3.23.8
-      zod-to-json-schema: 3.23.3(zod@3.23.8)
+      zod: 3.25.20
+      zod-to-json-schema: 3.23.3(zod@3.25.20)
 
   fastify@5.0.0:
     dependencies:
       '@fastify/ajv-compiler': 4.0.1
-      '@fastify/error': 4.0.0
+      '@fastify/error': 4.1.0
       '@fastify/fast-json-stringify-compiler': 5.0.1
       abstract-logging: 2.0.1
       avvio: 9.0.0
@@ -12780,8 +12807,8 @@ snapshots:
 
   magicast@0.3.5:
     dependencies:
-      '@babel/parser': 7.27.0
-      '@babel/types': 7.27.0
+      '@babel/parser': 7.27.2
+      '@babel/types': 7.27.1
       source-map-js: 1.2.1
     optional: true
 
@@ -13354,7 +13381,7 @@ snapshots:
     dependencies:
       '@apidevtools/swagger-parser': 10.1.0(openapi-types@12.1.3)
       '@liuli-util/fs-extra': 0.1.0
-      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.23.8)
+      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.25.20)
       axios: 1.6.0
       cac: 6.7.14
       handlebars: 4.7.8
@@ -13365,7 +13392,7 @@ snapshots:
       tanu: 0.1.13
       ts-pattern: 5.4.0
       whence: 2.0.0
-      zod: 3.23.8
+      zod: 3.25.20
     transitivePeerDependencies:
       - debug
       - react
@@ -15470,11 +15497,11 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.4.2
 
-  zod-to-json-schema@3.23.3(zod@3.23.8):
+  zod-to-json-schema@3.23.3(zod@3.25.20):
     dependencies:
-      zod: 3.23.8
+      zod: 3.25.20
 
-  zod@3.23.8: {}
+  zod@3.25.20: {}
 
   zustand@4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0):
     dependencies:

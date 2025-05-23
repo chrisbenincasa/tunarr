@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // Some of this is generated from the Jellyfin 10.9.7 OpenAPI Schema
 
@@ -280,10 +280,10 @@ export const JellyfinMediaStream = z.object({
 });
 
 export const JellyfinImageBlurHashes = z.object({
-  Backdrop: z.record(z.string()).nullable().optional(),
-  Primary: z.record(z.string()).nullable().optional(),
-  Logo: z.record(z.string()).nullable().optional(),
-  Thumb: z.record(z.string()).nullable().optional(),
+  Backdrop: z.record(z.string(), z.string()).nullable().optional(),
+  Primary: z.record(z.string(), z.string()).nullable().optional(),
+  Logo: z.record(z.string(), z.string()).nullable().optional(),
+  Thumb: z.record(z.string(), z.string()).nullable().optional(),
 });
 
 export const JellyfinJoinItem = z.object({
@@ -613,7 +613,7 @@ const MediaSourceInfo = z
     Bitrate: z.number().int().nullable().optional(),
     // Timestamp: TransportStreamTimestamp.nullable().optional(),
     RequiredHttpHeaders: z
-      .record(z.string().nullable().optional())
+      .record(z.string(), z.string().nullable().optional())
       .nullable()
       .optional(),
     TranscodingUrl: z.string().nullable().optional(),
@@ -680,7 +680,10 @@ export const JellyfinItem = z.object({
   IndexNumberEnd: z.number().int().nullable().optional(),
   ParentIndexNumber: z.number().int().nullable().optional(),
   // RemoteTrailers: z.array(MediaUrl).nullable().optional(),
-  ProviderIds: z.record(z.string().nullable().optional()).nullable().optional(),
+  ProviderIds: z
+    .record(z.string(), z.string().nullable().optional())
+    .nullable()
+    .optional(),
   IsHD: z.boolean().nullable().optional(),
   IsFolder: z.boolean().nullable().optional(),
   ParentId: z.string().nullable().optional(),
@@ -720,7 +723,7 @@ export const JellyfinItem = z.object({
   VideoType: VideoType.nullable().optional(),
   PartCount: z.number().int().nullable().optional(),
   MediaSourceCount: z.number().int().nullable().optional(),
-  ImageTags: z.record(z.string()).nullable().optional(),
+  ImageTags: z.record(z.string(), z.string()).nullable().optional(),
   BackdropImageTags: z.array(z.string()).nullable().optional(),
   ScreenshotImageTags: z.array(z.string()).nullable().optional(),
   ParentLogoImageTag: z.string().nullable().optional(),
@@ -729,19 +732,19 @@ export const JellyfinItem = z.object({
   SeriesThumbImageTag: z.string().nullable().optional(),
   ImageBlurHashes: z
     .object({
-      Primary: z.record(z.string()),
-      Art: z.record(z.string()),
-      Backdrop: z.record(z.string()),
-      Banner: z.record(z.string()),
-      Logo: z.record(z.string()),
-      Thumb: z.record(z.string()),
-      Disc: z.record(z.string()),
-      Box: z.record(z.string()),
-      Screenshot: z.record(z.string()),
-      Menu: z.record(z.string()),
-      Chapter: z.record(z.string()),
-      BoxRear: z.record(z.string()),
-      Profile: z.record(z.string()),
+      Primary: z.record(z.string(), z.string()),
+      Art: z.record(z.string(), z.string()),
+      Backdrop: z.record(z.string(), z.string()),
+      Banner: z.record(z.string(), z.string()),
+      Logo: z.record(z.string(), z.string()),
+      Thumb: z.record(z.string(), z.string()),
+      Disc: z.record(z.string(), z.string()),
+      Box: z.record(z.string(), z.string()),
+      Screenshot: z.record(z.string(), z.string()),
+      Menu: z.record(z.string(), z.string()),
+      Chapter: z.record(z.string(), z.string()),
+      BoxRear: z.record(z.string(), z.string()),
+      Profile: z.record(z.string(), z.string()),
     })
     .partial()
     // .passthrough()

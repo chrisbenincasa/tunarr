@@ -16,7 +16,7 @@ import {
 import NodeCache from 'node-cache';
 import { createHash } from 'node:crypto';
 import type stream from 'node:stream';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   ProgramSourceType,
   programSourceTypeFromString,

@@ -37,7 +37,7 @@ import {
   orderBy,
   reduce,
 } from 'lodash-es';
-import z from 'zod';
+import z from 'zod/v4';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
 import type { ChannelAndLineup } from '../types/internal.ts';

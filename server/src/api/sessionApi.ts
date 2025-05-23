@@ -4,7 +4,7 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { run } from '@/util/index.js';
 import { ChannelSessionsResponseSchema } from '@tunarr/types/api';
 import { isEmpty, isNil, isNumber, map } from 'lodash-es';
-import z from 'zod';
+import z from 'zod/v4';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -17,7 +17,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         tags: ['Sessions'],
         response: {
-          200: z.record(z.array(ChannelSessionsResponseSchema)),
+          200: z.record(z.string(), z.array(ChannelSessionsResponseSchema)),
         },
       },
     },
