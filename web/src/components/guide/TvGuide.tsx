@@ -678,43 +678,53 @@ export function TvGuide({ channelId, start, end }: Props) {
               channels
             )}
             {dayjs().isBetween(start, end) && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: `${progress}%`,
-                  transition: 'left 0.5s linear',
-                  height: '100%',
-                  zIndex: 10,
-                }}
-              >
+              <>
                 <Box
                   sx={{
-                    position: 'relative',
-                    background: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
-                    minWidth: '50px',
-                    width: 'max-content',
-                    px: 1,
-                    borderRadius: '5px',
-                    fontSize: '14px',
-                    textAlign: 'center',
-                    zIndex: 2,
-                    marginLeft: '-50%',
+                    position: 'absolute',
+                    left: `${progress}%`,
+                    transition: 'left 0.5s linear',
+                    zIndex: 11,
                   }}
                 >
-                  {currentTime}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      background: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                      minWidth: '50px',
+                      width: 'max-content',
+                      px: 1,
+                      borderRadius: '5px',
+                      fontSize: '14px',
+                      textAlign: 'center',
+                      zIndex: 2,
+                      marginLeft: '-50%',
+                    }}
+                  >
+                    {currentTime}
+                  </Box>
                 </Box>
                 <Box
                   sx={{
-                    position: 'relative',
-                    top: '-18px',
-                    width: '2px',
-                    background: theme.palette.primary.main,
+                    position: 'absolute',
+                    left: `${progress}%`,
+                    transition: 'left 0.5s linear',
                     height: '100%',
-                    mt: '-2px',
+                    zIndex: 10,
                   }}
-                ></Box>
-              </Box>
+                >
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '2px',
+                      background: theme.palette.primary.main,
+                      height: '100%',
+                      mt: '-2px',
+                    }}
+                  ></Box>
+                </Box>
+              </>
             )}
           </Box>
         </Box>
