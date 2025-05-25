@@ -4,6 +4,7 @@ import { Box, Button, IconButton, Stack, Tooltip } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { TranscodeConfig } from '@tunarr/types';
+import type { SupportedHardwareAccels } from '@tunarr/types/schemas';
 import { isNull } from 'lodash-es';
 import type { MRT_ColumnDef, MRT_Row } from 'material-react-table';
 import {
@@ -101,6 +102,25 @@ export const TranscodeConfigsTable = () => {
         header: 'Resolution',
         accessorFn(originalRow) {
           return `${originalRow.resolution.widthPx}x${originalRow.resolution.heightPx}`;
+        },
+      },
+      {
+        header: 'Hardware Accel.',
+        accessorKey: 'hardwareAccelerationMode',
+        Cell({ cell }) {
+          const value = cell.getValue<SupportedHardwareAccels>();
+          switch (value) {
+            case 'none':
+              return 'Software (No GPU)';
+            case 'cuda':
+              return 'CUDA';
+            case 'vaapi':
+              return 'VA-API';
+            case 'qsv':
+              return 'QuickSync';
+            case 'videotoolbox':
+              return 'VideoToolbox';
+          }
         },
       },
       {
