@@ -53,7 +53,7 @@ const GridChild = styled(Box)<{ width: number }>(({ width }) => ({
 }));
 
 const GuideItem = styled(GridChild, {
-  shouldForwardProp: (prop) => prop !== 'backgroundColor',
+  shouldForwardProp: (prop) => prop !== 'backgroundColor' && prop !== 'program',
 })<{
   program?: TvGuideProgram;
   backgroundColor?: Color;
