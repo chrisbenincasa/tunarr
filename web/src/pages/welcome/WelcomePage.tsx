@@ -1,5 +1,5 @@
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
-import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
+import { ArrowBack, ArrowForward } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -9,18 +9,19 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { isEmpty } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, { useEffect } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
+import { ConfigureFfmpegWelcomeStep } from '../../components/welcome/ConfigureFfmpegWelcomeStep.tsx';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.tsx';
 import { updateShowWelcomeState } from '../../store/themeEditor/actions.ts';
 
-const steps = ['Connect Sources', 'Install FFMPEG', 'All Set!'];
+const steps = ['Connect Sources', 'Configure FFmpeg', 'All Set!'];
 
 export default function WelcomePage() {
   const [hasMediaSource, setHasMediaSource] = React.useState<boolean>(false);
@@ -147,53 +148,7 @@ export default function WelcomePage() {
               {hasMediaSource && <ConnectMediaSources />}
             </>
           )}
-          {activeStep === 1 && (
-            <>
-              <Typography
-                variant="h6"
-                fontWeight={600}
-                align="left"
-                sx={{ mt: 3 }}
-              >
-                Install FFMPEG
-              </Typography>
-              <Typography sx={{ mb: 3 }} align="left">
-                FFMPEG transcoding is required for some features like channel
-                overlay, subtitles, and measures to prevent issues when
-                switching episodes.
-              </Typography>
-
-              {isFfmpegInstalled ? (
-                <Alert variant="filled" severity="success">
-                  FFMPEG is installed. Detected version {version?.ffmpeg}
-                </Alert>
-              ) : (
-                <>
-                  <Alert
-                    variant="filled"
-                    severity="warning"
-                    action={
-                      <Button
-                        component={RouterLink}
-                        to={`/settings/ffmpeg`}
-                        color="inherit"
-                        startIcon={<Edit />}
-                      >
-                        Edit
-                      </Button>
-                    }
-                  >
-                    FFMPEG is not detected.
-                  </Alert>
-                  <Typography sx={{ my: 3 }} align="left">
-                    If you are confident FFMPEG is installed, you may just need
-                    to update the executable path in the settings. To do so,
-                    simply click Edit above to update the path.
-                  </Typography>
-                </>
-              )}
-            </>
-          )}
+          {activeStep === 1 && <ConfigureFfmpegWelcomeStep />}
           {activeStep === 2 && (
             <>
               {' '}

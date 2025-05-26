@@ -13,5 +13,6 @@ export const useSystemHealthChecks = (
     ...opts,
     queryKey: ['system', 'health'],
     queryFn: (api) => api.getSystemHealth(),
+    staleTime: 10_000,
   });
 };

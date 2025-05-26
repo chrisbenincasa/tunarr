@@ -1,5 +1,6 @@
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Badge,
   Box,
   Collapse,
   Divider,
@@ -12,9 +13,12 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useToggle } from '@uidotdev/usehooks';
+import { some } from 'lodash-es';
 import { Transition } from 'notistack';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { AllKnownChecks } from '../helpers/healthCheckConstants.ts';
 import { useNavItems } from '../hooks/useNavItems.tsx';
+import { useSystemHealthChecks } from '../hooks/useSystemHealthChecks.ts';
 import VersionFooter from './VersionFooter.tsx';
 
 export const DrawerClosedWidth = 60;
@@ -37,6 +41,19 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
   const drawerRef = useRef(null);
 
   const navItems = useNavItems();
+
+  const { isPending: healthChecksPending, data: healthChecks } =
+    useSystemHealthChecks();
+  const hasWarning = useMemo(
+    () =>
+      some(
+        AllKnownChecks,
+        (check) =>
+          healthChecks?.[check].type !== 'healthy' &&
+          healthChecks?.[check].type !== 'info',
+      ),
+    [healthChecks],
+  );
 
   const handleOpenClick = useCallback(
     (ev: React.MouseEvent, itemName: string) => {
@@ -135,7 +152,14 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
                     >
                       {item.icon && (
                         <ListItemIcon sx={{ minWidth: 45 }}>
-                          {item.icon}
+                          {item.name === 'System' && hasWarning ? (
+                            <Badge variant="dot" color="warning">
+                              {item.icon}
+                            </Badge>
+                          ) : (
+                            <>{item.icon}</>
+                          )}
+                          {/* {item.icon} */}
                         </ListItemIcon>
                       )}
                       <ListItemText primary={item.name} />

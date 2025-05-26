@@ -37,24 +37,15 @@ import { useSnackbar } from 'notistack';
 import { useState, useTransition } from 'react';
 import Markdown from 'react-markdown';
 import { match } from 'ts-pattern';
-
-// TODO: Get these from server.
-const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
-const FfmpegVersionCheck = 'FfmpegVersion';
-const HardwareAccelerationCheck = 'HardwareAcceleration';
-const FfmpegDebugLoggingCheck = 'FfmpegDebugLogging';
-const MissingProgramAssociationsHealthCheck =
-  'MissingProgramAssociationsHealthCheck';
-const FfmpegTranscodeDirectory = 'FfmpegTranscodeDirectory';
-
-const AllKnownChecks = [
+import {
+  AllKnownChecks,
+  FfmpegDebugLoggingCheck,
+  FfmpegTranscodeDirectory,
   FfmpegVersionCheck,
   HardwareAccelerationCheck,
-  FfmpegTranscodeDirectory,
-  FfmpegDebugLoggingCheck,
-  MissingSeasonNumbersCheck,
   MissingProgramAssociationsHealthCheck,
-] as const;
+  MissingSeasonNumbersCheck,
+} from '../../helpers/healthCheckConstants.ts';
 
 const CopyToClipboardButton = (
   props: IconButtonProps & { content: string },
