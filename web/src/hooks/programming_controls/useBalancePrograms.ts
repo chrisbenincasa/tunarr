@@ -1,9 +1,10 @@
 import { setCurrentLineup } from '@/store/channelEditor/actions.ts';
 import useStore from '@/store/index.ts';
 import { materializedProgramListSelector } from '@/store/selectors.ts';
-import { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram } from '@tunarr/types';
 import { every, flatMap, forEach, maxBy, range, values } from 'lodash-es';
 import { match } from 'ts-pattern';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { removeDuplicatePrograms } from './useRemoveDuplicates.ts';
 
 type BalanceGroup = {
@@ -38,7 +39,7 @@ export const useBalancePrograms = () => {
         return;
       }
 
-      const key = programKey(p);
+      const key = getProgramGroupingKey(p);
       groups[key] ??= {
         totalDuration: 0,
         programs: [],
@@ -81,23 +82,3 @@ export const useBalancePrograms = () => {
     setCurrentLineup(newProgramList, true);
   };
 };
-
-function programKey(p: Exclude<ChannelProgram, { type: 'flex' }>): string {
-  switch (p.type) {
-    case 'content': {
-      switch (p.subtype) {
-        case 'movie':
-          return `content.movie`;
-        case 'episode':
-          return `content.show.${p.showId}`;
-        case 'track':
-          return `content.track.${p.artistId}`;
-      }
-    }
-    // eslint-disable-next-line no-fallthrough
-    case 'custom':
-      return `custom.${p.customShowId}`;
-    case 'redirect':
-      return `redirect.${p.channel}`;
-  }
-}

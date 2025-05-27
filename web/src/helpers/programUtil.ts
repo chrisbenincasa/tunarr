@@ -1,5 +1,6 @@
 import { createExternalId } from '@tunarr/shared';
 import type { ChannelProgram, ContentProgram } from '@tunarr/types';
+import { match, P } from 'ts-pattern';
 
 function getGrandparentExternalId(program: ContentProgram) {
   const sourceType = program.externalSourceType;
@@ -21,27 +22,21 @@ function getGrandparentExternalId(program: ContentProgram) {
 }
 
 export function getProgramGroupingKey(program: ChannelProgram) {
-  switch (program.type) {
-    case 'content': {
-      switch (program.subtype) {
-        case 'movie':
-          return 'movie';
-        case 'episode':
-        case 'track': {
-          // This will go away soon, but we still have to handle non-persisted items for now.
-          const grandparentId =
-            program.grandparent?.id ?? getGrandparentExternalId(program);
-          return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
-        }
-      }
-    }
-    // eslint-disable-next-line no-fallthrough
-    case 'custom': {
-      return `custom.${program.customShowId}`;
-    }
-    case 'redirect':
-      return `redirect.${program.channel}`;
-    case 'flex':
-      return 'flex';
-  }
+  return match(program)
+    .with(
+      {
+        type: 'content',
+        subtype: P.select(P.union('movie', 'music_video', 'other_video')),
+      },
+      (typ) => typ,
+    )
+    .with({ type: 'content' }, (program) => {
+      const grandparentId =
+        program.grandparent?.id ?? getGrandparentExternalId(program);
+      return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
+    })
+    .with({ type: 'custom' }, (program) => `custom.${program.customShowId}`)
+    .with({ type: 'redirect' }, (program) => `redirect.${program.channel}`)
+    .with({ type: 'flex' }, () => 'flex')
+    .exhaustive();
 }

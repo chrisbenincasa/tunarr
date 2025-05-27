@@ -1,7 +1,12 @@
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
 import { useSuspendedStore } from '@/hooks/useSuspendedStore.ts';
 import { deleteProgram } from '@/store/entityEditor/util.ts';
-import { Directions, Expand } from '@mui/icons-material';
+import {
+  Directions,
+  Expand,
+  MusicVideo,
+  VideoCameraBackOutlined,
+} from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Edit from '@mui/icons-material/Edit';
@@ -37,6 +42,7 @@ import {
   type ListChildComponentProps,
 } from 'react-window';
 import { type MarkRequired } from 'ts-essentials';
+import { match, P } from 'ts-pattern';
 import { getTextContrast } from '../../helpers/colors.ts';
 import { channelProgramUniqueId, grayBackground } from '../../helpers/util.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
@@ -190,17 +196,14 @@ const ProgramListItem = ({
   if (program.type === 'content' || program.type === 'custom') {
     const underlyingProgram =
       program.type === 'content' ? program : program.program;
-    switch (underlyingProgram?.subtype) {
-      case 'movie':
-        icon = <TheatersIcon />;
-        break;
-      case 'episode':
-        icon = <TvIcon />;
-        break;
-      case 'track':
-        icon = <MusicNote />;
-        break;
-    }
+    icon = match(underlyingProgram?.subtype)
+      .with('movie', () => <TheatersIcon />)
+      .with('episode', () => <TvIcon />)
+      .with('track', () => <MusicNote />)
+      .with('music_video', () => <MusicVideo />)
+      .with('other_video', () => <VideoCameraBackOutlined />)
+      .with(P.nullish, () => null)
+      .exhaustive();
   } else if (program.type === 'flex') {
     icon = <Expand />;
   } else if (program.type === 'redirect') {

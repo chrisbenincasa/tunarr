@@ -309,7 +309,7 @@ export class ProgramDB implements IProgramDB {
           program.externalIds ?? [],
         ),
       ),
-      (item) => item.id!,
+      (item) => item.id,
     );
   }
 
@@ -589,15 +589,15 @@ export class ProgramDB implements IProgramDB {
                     })),
                   ),
               )
-              .onConflict((oc) =>
-                oc
-                  .columns(['sourceType', 'mediaSourceId', 'externalKey'])
-                  .doUpdateSet((eb) =>
-                    mapToObj(ProgramUpsertFields, (f) => ({
-                      [f.replace('excluded.', '')]: eb.ref(f),
-                    })),
-                  ),
-              )
+              // .onConflict((oc) =>
+              //   oc
+              //     .columns(['sourceType', 'mediaSourceId', 'externalKey'])
+              //     .doUpdateSet((eb) =>
+              //       mapToObj(ProgramUpsertFields, (f) => ({
+              //         [f.replace('excluded.', '')]: eb.ref(f),
+              //       })),
+              //     ),
+              // )
               .returningAll()
               .$narrowType<{ mediaSourceId: NotNull }>()
               .execute(),

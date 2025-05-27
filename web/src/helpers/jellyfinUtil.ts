@@ -36,7 +36,9 @@ export const JellyfinTerminalTypes = new Set<JellyfinItemKind>([
   'Episode',
   'Video',
   'Trailer',
+  'MusicVideo',
 ]);
+
 export const sortJellyfinLibraries = (item: JellyfinItem) => {
   if (item.CollectionType) {
     switch (item.CollectionType) {

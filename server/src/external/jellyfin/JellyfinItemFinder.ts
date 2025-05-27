@@ -173,6 +173,8 @@ export class JellyfinItemFinder {
           .with(ProgramType.Movie, () => 'Movie')
           .with(ProgramType.Episode, () => 'Episode')
           .with(ProgramType.Track, () => 'Audio')
+          .with(ProgramType.MusicVideo, () => 'MusicVideo')
+          .with(ProgramType.OtherVideo, () => 'Video')
           .exhaustive();
 
         const queryResult = await jfClient.getItems(

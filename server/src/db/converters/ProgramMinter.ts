@@ -146,11 +146,10 @@ class ProgramDaoMinter {
       summary: item.Overview,
       title: item.Name ?? '',
       type: match(item.Type)
-        .with(P.union('Movie', 'Trailer'), () => ProgramType.Movie)
-        .with(
-          P.union('Episode', 'Video', 'MusicVideo'),
-          () => ProgramType.Episode,
-        )
+        .with('Movie', () => ProgramType.Movie)
+        .with(P.union('Trailer', 'Video'), () => ProgramType.OtherVideo)
+        .with('MusicVideo', () => ProgramType.MusicVideo)
+        .with('Episode', () => ProgramType.Episode)
         .with('Audio', () => ProgramType.Track)
         .exhaustive(),
       year: item.ProductionYear,
