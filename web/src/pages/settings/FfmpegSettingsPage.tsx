@@ -269,25 +269,24 @@ export default function FfmpegSettingsPage() {
               control={
                 <CheckboxFormController
                   control={control}
+                  negate
                   name="useNewFfmpegPipeline"
                 />
               }
-              label={
-                <span>
-                  <strong>Experimental: </strong> Use new FFmpeg Pipeline
-                </span>
-              }
+              label="Use Old FFmpeg Pipeline"
             />
             <FormHelperText>
-              Generate FFmpeg commands using Tunarr's new FFmpeg pipeline code.
-              The new code is more advanced than the original pipeline code. If
-              using hardware acceleration, the new code attempts to push as much
-              of the pipeline onto hardware as possible whereas the original
-              code would only encode using hardware. However, this code is still
-              considered experimental as bugs are discovered and fixed.
-              <br />
-              Additionally, some options on this page will change (or disappear)
-              when using the new pipeline code.
+              Generate FFmpeg commands using Tunarr's old FFmpeg pipeline code.
+              The old code is similar to the original FFmpeg code from dizqueTV.
+              The new code is more advanced than the original pipeline code and
+              is recommended in most scenarios. The old pipeline is considered
+              deprecated and will be removed in a future release. <br />
+              If you are using hardware acceleration (recommended), it is also
+              highly recommended to use the new pipeline, as it attempts to push
+              as much of the pipeline onto hardware as possible whereas the
+              original code would only encode using hardware. Additionally, some
+              options on this page will change (or disappear) depending on which
+              mode is chosen.
             </FormHelperText>
           </FormControl>
         </Stack>

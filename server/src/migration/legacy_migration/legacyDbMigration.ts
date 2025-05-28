@@ -341,7 +341,7 @@ export class LegacyDbMigrator {
               enableLogging: ffmpegSettings['logFfmpeg'] as boolean,
               enableFileLogging: false,
               logLevel: 'warning',
-              useNewFfmpegPipeline: false,
+              useNewFfmpegPipeline: true,
               hlsDirectOutputFormat: 'mpegts',
               languagePreferences: defaultFfmpegSettings.languagePreferences,
               scalingAlgorithm: ffmpegSettings[

@@ -1,9 +1,5 @@
-import {
-  Checkbox,
-  CheckboxProps,
-  TextField,
-  TextFieldProps,
-} from '@mui/material';
+import type { CheckboxProps, TextFieldProps } from '@mui/material';
+import { Checkbox, TextField } from '@mui/material';
 import {
   get,
   has,
@@ -14,9 +10,8 @@ import {
   isUndefined,
   mapValues,
 } from 'lodash-es';
-import { useCallback } from 'react';
-import {
-  Controller,
+import React, { useCallback } from 'react';
+import type {
   ControllerFieldState,
   ControllerRenderProps,
   FieldError,
@@ -29,7 +24,9 @@ import {
   Validate,
   ValidationRule,
 } from 'react-hook-form';
-import { Primitive, type DeepRequired } from 'ts-essentials';
+import { Controller } from 'react-hook-form';
+import type { Primitive } from 'ts-essentials';
+import { type DeepRequired } from 'ts-essentials';
 import {
   handleNumericFormValue,
   isNonEmptyString,
@@ -91,7 +88,7 @@ export const TypedController = <
 ) => {
   const extractor = props.valueExtractor ?? defaultValueExtractor;
   // Try this out and see if it works...
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
   // TODO(http://github.com/chrisbenincasa/tunarr/issues/279) - fix decimal support
   // const rawField = props.control?._getWatch(props.name, props.defaultValue);
   // const [rawValue, setRawValue] = useState<string | undefined>(
@@ -341,15 +338,28 @@ export const CheckboxFormController = <
   Value = FieldPathValue<TFieldValues, TName> extends boolean ? boolean : never,
 >(
   props: Omit<Props<TFieldValues, TName, Value>, 'transformer' | 'render'> & {
+    negate?: boolean;
     CheckboxProps?: CheckboxProps;
   },
 ) => {
+  const renderCheckbox = (
+    field: ControllerRenderProps<TFieldValues, TName>,
+  ) => {
+    const onChange = props.negate
+      ? (_: React.SyntheticEvent, value: boolean) => field.onChange(!value)
+      : field.onChange;
+    const checked = props.negate ? !field.value : field.value;
+    return (
+      <Checkbox
+        {...props.CheckboxProps}
+        {...field}
+        checked={checked}
+        onChange={onChange}
+      />
+    );
+  };
+
   return (
-    <Controller
-      {...props}
-      render={({ field }) => (
-        <Checkbox {...props.CheckboxProps} {...field} checked={field.value} />
-      )}
-    />
+    <Controller {...props} render={({ field }) => renderCheckbox(field)} />
   );
 };
