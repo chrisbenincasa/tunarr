@@ -12,10 +12,10 @@ Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jelly
 </p>
 
 > [!IMPORTANT]
-
-- ⚠️ Tunarr is a work in progress and is under **very active** development.
-- ⚠️ Please report any issues you encounter or suggest any ideas you have in the [issues](https://github.com/chrisbenincasa/tunarr/issues)
-  section or in [Tunarr's discord server](https://discord.gg/svgSBYkEK5).
+>
+> - ⚠️ Tunarr is a work in progress and is under **very active** development.
+> - ⚠️ Please report any issues you encounter or suggest any ideas you have in the [issues](https://github.com/chrisbenincasa/tunarr/issues)
+>   section or in [Tunarr's discord server](https://discord.gg/svgSBYkEK5).
 
 ## What is this?
 
