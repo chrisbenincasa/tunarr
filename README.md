@@ -11,10 +11,11 @@ Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jelly
 <img src="./design/tunarr-channels.png">
 </p>
 
-## Disclaimer
+> [!IMPORTANT]
 
-- ⚠️ Tunarr is under **very active** development.
-- ⚠️ Expect bugs and breaking changes!
+- ⚠️ Tunarr is a work in progress and is under **very active** development.
+- ⚠️ Please report any issues you encounter or suggest any ideas you have in the [issues](https://github.com/chrisbenincasa/tunarr/issues)
+  section or in [Tunarr's discord server](https://discord.gg/svgSBYkEK5).
 
 ## What is this?
 
@@ -30,7 +31,7 @@ Tunarr has the following goals:
 
 ## Features
 
-- **NEW** Jellyfin library support!
+- **NEW** Jellyfin / Emby library support!
 - **NEW** Stream your channels directly in the [browser](https://github.com/chrisbenincasa/tunarr/pull/116)
 - **NEW** Complete rewrite of streaming pipeline, offering better stability and improved performance
 - **NEW** New and more powerful scheduling options!
@@ -38,12 +39,13 @@ Tunarr has the following goals:
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
 - **NEW** Scheduled, configurable backups - never lose your channels and configuration!
 - **NEW** Support multiple transcode configurations and set them per-channel
+- **NEW** Audio language preference support
 - **NEW** Improved UI for time/random slot scheduling
+- **NEW** Improved Subtitle support: support for image and text based subtitles. Supports extracting embedded text based subtitles. Configure subtitle preferences (language, subtitle type, etc) per-channel.
 - Spoofed [HDHR](https://www.silicondust.com/hdhomerun/) tuner and a IPTV channel list, providing a large amount of flexibility and easing integration with [xTeVe](https://github.com/xteve-project/xTeVe) or [Threadfin](https://github.com/Threadfin/Threadfin) and Plex, or the IPTV client of your choice.
 - Customize channels with a logo, filler content ("commercials", music videos, prerolls, channel branding videos) between programming, and more!
 - View channel lineups on the web-based TV Guide
-- Support for hardware accelerated transcoding, including Nvidia, VAAPI, QuickSync, and macOS VideoToolbox.
-- ~~Subtitle support~~ Subtitle support is currently in flux; it was removed to simplify the backend and stabilize the stream. Bringing this functionality back is tracked in [#462](https://github.com/chrisbenincasa/tunarr/issues/462).
+- Support for hardware accelerated transcoding, including Nvidia, VAAPI, QuickSync, and macOS VideoToolbox. (AMF; #1131 and Vulkann #1172 are coming soon!)
 
 ## Limitations
 
