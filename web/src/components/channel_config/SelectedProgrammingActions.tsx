@@ -55,6 +55,8 @@ function jellyfinCollectionTypeToItemTypes(
       return ['Series'];
     case 'music':
       return ['MusicArtist'];
+    case 'musicvideos':
+      return ['MusicVideo'];
     default:
       return ['Movie', 'Series', 'MusicArtist'];
   }

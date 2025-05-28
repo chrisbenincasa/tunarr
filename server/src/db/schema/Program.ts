@@ -15,11 +15,19 @@ import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource, MediaSourceTypes } from './MediaSource.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
-export const ProgramTypes = ['movie', 'episode', 'track'] as const;
+export const ProgramTypes = [
+  'movie',
+  'episode',
+  'track',
+  'music_video',
+  'other_video',
+] as const;
 export const ProgramType = {
   Movie: 'movie',
   Episode: 'episode',
   Track: 'track',
+  MusicVideo: 'music_video',
+  OtherVideo: 'other_video',
 } as const;
 export type ProgramType = TupleToUnion<typeof ProgramTypes>;
 

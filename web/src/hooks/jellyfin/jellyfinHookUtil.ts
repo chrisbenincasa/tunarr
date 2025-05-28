@@ -1,8 +1,8 @@
-import { ApiClient } from '@/external/api.ts';
+import type { ApiClient } from '@/external/api.ts';
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
 import { sequentialPromises } from '@/helpers/util.ts';
-import { JellyfinItem } from '@tunarr/types/jellyfin';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import type { JellyfinItem } from '@tunarr/types/jellyfin';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
 
 export type EnrichedJellyfinItem = JellyfinItem & {
@@ -42,8 +42,6 @@ export const enumerateJellyfinItem = (
             flattenDeep,
           );
         }
-
-        console.log('making api call');
 
         return (
           apiClient

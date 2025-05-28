@@ -31,6 +31,7 @@ import Migration1745007030_ReaddMissingProgramExternalIdIndexes from './db/Migra
 import Migration1746042667_AddSubtitles from './db/Migration1746042667_AddSubtitles.ts';
 import Migration1746123876_ReworkSubtitleFilter from './db/Migration1746123876_ReworkSubtitleFilter.ts';
 import Migration1746128022_FixSubtitlePriorityType from './db/Migration1746128022_FixSubtitlePriorityType.ts';
+import Migration1748345299_AddMoreProgramTypes from './db/Migration1748345299_AddMoreProgramTypes.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -108,6 +109,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1746042667: Migration1746042667_AddSubtitles,
           migration1746123876: Migration1746123876_ReworkSubtitleFilter,
           migration1746128022: Migration1746128022_FixSubtitlePriorityType,
+          migration1748345299: Migration1748345299_AddMoreProgramTypes,
         },
         wrapWithTransaction,
       ),

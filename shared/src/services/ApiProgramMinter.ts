@@ -56,14 +56,18 @@ export class ApiProgramMinter {
       .with(
         {
           sourceType: 'jellyfin',
-          program: { Type: P.union('Movie', 'Audio', 'Episode', 'Video') },
+          program: {
+            Type: P.union('Movie', 'Audio', 'Episode', 'Video', 'MusicVideo'),
+          },
         },
         ({ program }) => this.mintProgramForJellyfinItem(mediaSource, program),
       )
       .with(
         {
           sourceType: 'emby',
-          program: { Type: P.union('Movie', 'Audio', 'Episode') },
+          program: {
+            Type: P.union('Movie', 'Audio', 'Episode', 'Video', 'MusicVideo'),
+          },
         },
         ({ program }) => this.mintProgramForEmbyItem(mediaSource, program),
       )
@@ -266,10 +270,9 @@ export class ApiProgramMinter {
       title: item.Name ?? '',
       type: 'content',
       subtype: match(item.Type)
-        .with(
-          P.union('Movie', 'Video', 'MusicVideo'),
-          () => ContentProgramTypeSchema.enum.movie,
-        )
+        .with('Movie', () => ContentProgramTypeSchema.enum.movie)
+        .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
+        .with('Video', () => ContentProgramTypeSchema.enum.other_video)
         .with('Episode', () => ContentProgramTypeSchema.enum.episode)
         .with('Audio', () => ContentProgramTypeSchema.Enum.track)
         .exhaustive(),
@@ -318,7 +321,9 @@ export class ApiProgramMinter {
 
   private static mintProgramForEmbyItem(
     server: MediaSourceDetails,
-    item: Omit<EmbyItem, 'Type'> & { Type: 'Movie' | 'Episode' | 'Audio' },
+    item: Omit<EmbyItem, 'Type'> & {
+      Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo';
+    },
   ): ContentProgram {
     const id = createExternalId('emby', server.name, item.Id);
     const parentIdentifier = item.ParentId ?? item.SeasonId ?? item.AlbumId;
@@ -335,6 +340,8 @@ export class ApiProgramMinter {
       type: 'content',
       subtype: match(item.Type)
         .with('Movie', () => ContentProgramTypeSchema.enum.movie)
+        .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
+        .with('Video', () => ContentProgramTypeSchema.enum.other_video)
         .with('Episode', () => ContentProgramTypeSchema.enum.episode)
         .with('Audio', () => ContentProgramTypeSchema.Enum.track)
         .exhaustive(),

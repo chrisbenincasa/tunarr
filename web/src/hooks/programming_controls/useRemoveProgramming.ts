@@ -1,7 +1,8 @@
 import { createFlexProgram } from '@/helpers/util.ts';
 import { seq } from '@tunarr/shared/util';
-import { ChannelProgram, ContentProgram } from '@tunarr/types';
+import type { ChannelProgram, ContentProgram } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
+import { match, P } from 'ts-pattern';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -50,23 +51,32 @@ export const removeProgramming = (
   const showIdsSet = new Set(request.showIds ?? []);
   const artistsSet = new Set(request.artistIds ?? []);
   const shouldRemoveContentProgram = (program: ContentProgram) => {
-    switch (program.subtype) {
-      case 'movie':
-        return request.movies ?? false;
-      case 'episode': {
-        const basedOnShow = isEmpty(request.showIds)
-          ? false
-          : showIdsSet.has(program.showId ?? program.grandparent?.title ?? '');
-        const basedOnSpecial = !!request.specials && program.seasonNumber === 0;
-        return basedOnShow || basedOnSpecial;
-      }
-      case 'track':
-        return isEmpty(request.artistIds)
-          ? false
-          : artistsSet.has(
-              program.artistId ?? program.grandparent?.title ?? '',
-            );
-    }
+    return (
+      match(program)
+        // TODO: Handle these other types separately
+        .with(
+          { subtype: P.union('movie', 'music_video', 'other_video') },
+          () => request.movies ?? false,
+        )
+        .with({ subtype: 'episode' }, () => {
+          const basedOnShow = isEmpty(request.showIds)
+            ? false
+            : showIdsSet.has(
+                program.showId ?? program.grandparent?.title ?? '',
+              );
+          const basedOnSpecial =
+            !!request.specials && program.seasonNumber === 0;
+          return basedOnShow || basedOnSpecial;
+        })
+        .with({ subtype: 'track' }, () => {
+          return isEmpty(request.artistIds)
+            ? false
+            : artistsSet.has(
+                program.artistId ?? program.grandparent?.title ?? '',
+              );
+        })
+        .exhaustive()
+    );
   };
 
   return seq.collect(programs, (program) => {

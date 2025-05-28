@@ -40,6 +40,7 @@ import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
 import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
@@ -145,28 +146,7 @@ export default function RandomSlotEditorPage() {
   const programFrequency = useMemo(() => {
     const total = newLineup.length;
     const sums = mapValues(
-      groupBy(newLineup, (program) => {
-        switch (program.type) {
-          case 'content':
-            {
-              switch (program.subtype) {
-                case 'movie':
-                  return 'movie';
-                case 'episode':
-                  return `show.${program.showId}`;
-                case 'track':
-                  return `artist.${program.artistId}`;
-              }
-            }
-            break;
-          case 'custom':
-            return `custom-show.${program.customShowId}`;
-          case 'flex':
-            return 'flex';
-          case 'redirect':
-            return `redirect.${program.channel}`;
-        }
-      }),
+      groupBy(newLineup, getProgramGroupingKey),
       (group) => group.length,
     );
 

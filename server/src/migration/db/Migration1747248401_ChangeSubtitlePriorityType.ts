@@ -2,7 +2,7 @@ import { CompiledQuery } from 'kysely';
 import { isNonEmptyString } from '../../util/index.ts';
 import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
 
-const expr = String.raw`
+export const expr = String.raw`
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE "__new_channel_subtitle_preferences" (
 	"uuid" text PRIMARY KEY NOT NULL,

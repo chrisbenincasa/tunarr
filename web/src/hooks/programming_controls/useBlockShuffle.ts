@@ -13,6 +13,7 @@ import {
   shuffle,
   values,
 } from 'lodash-es';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -113,21 +114,6 @@ export function useCustomShowBlockShuffle() {
   };
 }
 
-function groupProgram(program: UIContentProgram | UICustomProgram) {
-  if (program.type === 'content') {
-    switch (program.subtype) {
-      case 'movie':
-        return 'movie';
-      case 'episode':
-        return `show_${program.showId ?? program.grandparent?.title}`;
-      case 'track':
-        return `track_${program.albumId ?? program.parent?.title}`;
-    }
-  } else {
-    return `custom_${program.customShowId}`;
-  }
-}
-
 function blockShuffle(
   programs: UIChannelProgram[],
   options: BlockShuffleConfig | null,
@@ -149,7 +135,7 @@ function blockShuffle(
     .thru((arr) => {
       return options?.shuffleType === 'Random' ? shuffle(arr) : arr;
     })
-    .groupBy(groupProgram)
+    .groupBy(getProgramGroupingKey)
     .thru((groups) => {
       if (options?.shuffleType === 'Random') {
         return groups;
@@ -251,7 +237,7 @@ function canUsePerfectSync(programs: UIChannelProgram[], blockSize: number) {
       (p): p is UIContentProgram | UICustomProgram =>
         isUIContentProgram(p) || isUICustomProgram(p),
     )
-    .groupBy(groupProgram)
+    .groupBy(getProgramGroupingKey)
     .value();
 
   const programCountArr = map(values(groupByShow), (programs) => {

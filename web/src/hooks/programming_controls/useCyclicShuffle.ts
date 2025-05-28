@@ -1,10 +1,11 @@
 import { random } from '@/helpers/random.ts';
 import { removeDuplicatePrograms } from '@/hooks/programming_controls/useRemoveDuplicates.ts';
 import { chain, keys, some, sortBy } from 'lodash-es';
+import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
-import {
+import type {
   UIChannelProgram,
   UIContentProgram,
   UICustomProgram,
@@ -26,23 +27,7 @@ export function useCyclicShuffle() {
       .filter(
         (program) => program.type === 'content' || program.type === 'custom',
       )
-      .groupBy((program) => {
-        if (program.type === 'content') {
-          switch (program.subtype) {
-            case 'movie':
-              // Group all movies together, this way they are more evenly distributed throughout the timeline
-              // since they have less chance of being randomly selected
-              return 'movie';
-            case 'episode':
-              return program.showId; //Groups unique shows
-            case 'track':
-              // Group unique albums
-              return program.albumId;
-          }
-        } else if (program.type === 'custom') {
-          return program.customShowId;
-        }
-      })
+      .groupBy(getProgramGroupingKey)
       .mapValues((programs) => {
         const firstProgram = programs[0];
         if (firstProgram.type === 'content') {

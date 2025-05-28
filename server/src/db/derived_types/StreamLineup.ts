@@ -3,6 +3,7 @@
 // active streaming session
 
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
 import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod';
 
@@ -82,8 +83,6 @@ export type LoadingStreamLineupItem = z.infer<
   typeof LoadingStreamLineupItemSchema
 >;
 
-const ProgramTypeEnum = z.enum(['movie', 'episode', 'track']);
-
 const BaseContentBackedStreamLineupItemSchema =
   baseStreamLineupItemSchema.extend({
     // ID in the program DB table
@@ -93,7 +92,7 @@ const BaseContentBackedStreamLineupItemSchema =
     externalSourceId: z.string(),
     filePath: z.string().optional(),
     externalKey: z.string(),
-    programType: ProgramTypeEnum,
+    programType: ContentProgramTypeSchema,
     externalSource: z.nativeEnum(MediaSourceType),
   });
 

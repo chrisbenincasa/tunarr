@@ -16,6 +16,7 @@ import { seq } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
 import {
   every,
+  identity,
   includes,
   isEmpty,
   map,
@@ -27,11 +28,10 @@ import {
 } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
+import { match, P } from 'ts-pattern';
 import { useCounter } from 'usehooks-ts';
-import {
-  RemoveProgrammingRequest,
-  useRemoveProgramming,
-} from '../../hooks/programming_controls/useRemoveProgramming';
+import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming';
+import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming';
 import useStore from '../../store';
 import { materializedProgramListSelector } from '../../store/selectors';
 
@@ -54,25 +54,18 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
     return reduce(
       programs,
       (acc, curr) => {
-        let key: string | undefined;
-        switch (curr.type) {
-          case 'content': {
-            switch (curr.subtype) {
-              case 'movie':
-                key = 'movie';
-                break;
-              case 'episode':
-                key = curr.showId;
-                break;
-              case 'track':
-                key = curr.artistId;
-                break;
-            }
-            break;
-          }
-          default:
-            break;
-        }
+        const key = match(curr)
+          .with(
+            {
+              type: 'content',
+              subtype: P.select(P.union('movie', 'music_video', 'other_video')),
+            },
+            identity,
+          )
+          .with({ type: 'content', subtype: 'episode' }, (curr) => curr.showId)
+          .with({ type: 'content', subtype: 'track' }, (curr) => curr.artistId)
+          .with({ type: P._ }, () => undefined)
+          .exhaustive();
 
         if (key) {
           acc[key] ??= { totalDuration: 0, totalPrograms: 0 };

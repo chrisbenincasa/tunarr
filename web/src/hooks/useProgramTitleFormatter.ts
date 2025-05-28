@@ -31,6 +31,8 @@ export const useProgramTitleFormatter = () => {
         content: (p) => {
           switch (p.subtype) {
             case 'movie':
+            case 'music_video':
+            case 'other_video':
               return p.title;
             case 'episode': {
               // TODO: this makes some assumptions about number of seasons

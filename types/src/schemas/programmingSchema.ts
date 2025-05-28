@@ -111,7 +111,13 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   duration: z.number().min(0),
 });
 
-export const ContentProgramTypeSchema = z.enum(['movie', 'episode', 'track']);
+export const ContentProgramTypeSchema = z.enum([
+  'movie',
+  'episode',
+  'track',
+  'music_video',
+  'other_video',
+]);
 
 export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
 

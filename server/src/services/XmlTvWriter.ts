@@ -108,6 +108,8 @@ export class XmlTvWriter {
       .with({ type: 'content' }, (c) => {
         switch (c.subtype) {
           case 'movie':
+          case 'music_video':
+          case 'other_video':
             return c.title;
           case 'episode':
           case 'track':
