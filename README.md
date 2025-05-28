@@ -2,7 +2,7 @@
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen) ![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen) ![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)
 
-Create and configure live TV channels from media on your Plex & Jellyfin servers.
+Create and configure live TV channels using media on your Plex, Jellyfin, or Emby servers.
 
 Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jellyfin, or Emby. Or utilize the m3u URL with any IPTV player app (we love [UHF](https://www.uhfapp.com/) and [Tivimate](https://tivimate.com/)).
 
@@ -25,7 +25,7 @@ Tunarr has the following goals:
 
 - Modernize the stack, both backend and frontend
 - Provide an migration path for existing users
-- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on [Bun](https://bun.sh/) 1.2.0, which offers serious performance improvements over Node in various areas)
+- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on Node 22, [non-trivial performance improvements](https://blog.rafaelgss.dev/state-of-nodejs-performance-2023) over previous versions)
 - Modernize and "prettify" the Web UI
 - And of course, **Add a ton great new features!**
 
