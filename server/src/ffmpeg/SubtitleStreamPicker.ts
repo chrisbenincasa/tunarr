@@ -109,6 +109,8 @@ export class SubtitleStreamPicker {
           if (streamWithUpdatedPath) {
             return streamWithUpdatedPath;
           }
+
+          continue;
         }
 
         return stream;
