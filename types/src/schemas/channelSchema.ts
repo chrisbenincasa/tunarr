@@ -66,21 +66,25 @@ export const HlsSlowerChannelStreamMode = 'hls_slower';
 export const HlsSlowerConcatChannelStreamMode = 'hls_slower_concat';
 export const MpegTsChannelStreamMode = 'mpegts';
 export const MpegTsConcatChannelStreamMode = 'mpegts_concat';
-export const HlsSDirectStreamMode = 'hls_direct';
-export const HlsSDirectConcatStreamMode = 'hls_direct_concat';
+export const HlsDirectStreamMode = 'hls_direct';
+export const HlsDirectConcatStreamMode = 'hls_direct_concat';
+export const HlsDirectV2StreamMode = 'hls_direct_v2';
+export const HlsDirectV2ConcatStreamMode = 'hls_direct_v2_concat';
 
 export const ChannelStreamMode = {
   Hls: HlsChannelStreamMode,
   HlsSlower: HlsSlowerChannelStreamMode,
   MpegTs: MpegTsChannelStreamMode,
-  HlsDirect: HlsSDirectStreamMode,
+  HlsDirect: HlsDirectStreamMode,
+  HlsDirectV2: HlsDirectV2StreamMode,
 } as const;
 
 export const ChannelConcatStreamMode = {
   Hls: HlsConcatChannelStreamMode,
   HlsSlower: HlsSlowerConcatChannelStreamMode,
   MpegTs: MpegTsConcatChannelStreamMode,
-  HlsDirect: HlsSDirectConcatStreamMode,
+  HlsDirect: HlsDirectConcatStreamMode,
+  HlsDirectV2: HlsDirectV2ConcatStreamMode,
 } as const;
 
 export const ChannelStreamModes = [
@@ -88,6 +92,7 @@ export const ChannelStreamModes = [
   ChannelStreamMode.HlsSlower,
   ChannelStreamMode.MpegTs,
   ChannelStreamMode.HlsDirect,
+  ChannelStreamMode.HlsDirectV2,
 ] as const;
 
 export const ChannelConcatStreamModes = [
@@ -95,6 +100,7 @@ export const ChannelConcatStreamModes = [
   ChannelConcatStreamMode.HlsSlower,
   ChannelConcatStreamMode.MpegTs,
   ChannelConcatStreamMode.HlsDirect,
+  ChannelConcatStreamMode.HlsDirectV2,
 ] as const;
 
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;

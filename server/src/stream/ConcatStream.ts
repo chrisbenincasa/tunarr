@@ -29,7 +29,8 @@ export class ConcatStream {
       // the m3u8 URL
       case 'hls_concat':
       case 'hls_slower_concat':
-      case 'hls_direct_concat': {
+      case 'hls_direct_concat':
+      case 'hls_direct_v2_concat': {
         const childStreamMode = ConcatStreamModeToChildMode[this.streamMode];
         return ffmpeg.createHlsWrapperSession(
           makeLocalUrl(`/stream/channels/${this.channel.uuid}.m3u8`, {

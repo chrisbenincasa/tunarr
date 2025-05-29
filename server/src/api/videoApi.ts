@@ -175,6 +175,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         case 'hls':
         case 'mpegts':
         case 'hls_direct':
+        case 'hls_direct_v2':
           contentType = 'video/mp2t';
           break;
         case 'hls_slower':

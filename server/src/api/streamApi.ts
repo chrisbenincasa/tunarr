@@ -243,7 +243,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       let session: Maybe<BaseHlsSession>;
       switch (req.params.sessionType) {
         case 'hls':
-          session = req.serverCtx.sessionManager.getHlsSession(req.params.id);
+        case 'hls_direct_v2':
+          session = req.serverCtx.sessionManager.getHlsSession(
+            req.params.id,
+            req.params.sessionType,
+          );
           break;
         case 'hls_slower':
           session = req.serverCtx.sessionManager.getHlsSlowerSession(
@@ -312,9 +316,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       let sessionResult: Result<FastifyReply>;
       switch (mode) {
         case 'hls':
+        case 'hls_direct_v2':
           sessionResult = await req.serverCtx.sessionManager
             .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {
               useNewPipeline: req.query.useNewPipeline,
+              streamMode: mode,
             })
             .then((result) =>
               result.mapAsync(async (session) => {

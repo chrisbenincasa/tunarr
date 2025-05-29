@@ -26,7 +26,7 @@ import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
 
 export type HlsSessionProvider = (
   channel: ChannelWithTranscodeConfig,
-  options: BaseHlsSessionOptions,
+  options: HlsSessionOptions,
 ) => HlsSession;
 
 export type HlsSlowerSessionProvider = (
@@ -34,12 +34,15 @@ export type HlsSlowerSessionProvider = (
   options: BaseHlsSessionOptions,
 ) => HlsSlowerSession;
 
+export interface HlsSessionOptions extends BaseHlsSessionOptions {
+  streamMode: 'hls' | 'hls_direct_v2';
+}
+
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
  * endpoint and outputs an HLS format + segments
  */
-export class HlsSession extends BaseHlsSession {
-  public readonly sessionType = 'hls' as const;
+export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #playlistStart: Dayjs;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
@@ -48,7 +51,7 @@ export class HlsSession extends BaseHlsSession {
 
   constructor(
     channel: ChannelWithTranscodeConfig,
-    options: BaseHlsSessionOptions,
+    options: HlsSessionOptions,
     private programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
     private onDemandService: OnDemandChannelService,
@@ -58,6 +61,10 @@ export class HlsSession extends BaseHlsSession {
     >,
   ) {
     super(channel, options);
+  }
+
+  public get sessionType(): HlsSessionOptions['streamMode'] {
+    return this.sessionOptions.streamMode;
   }
 
   async trimPlaylist(filterBefore: Dayjs) {
@@ -72,13 +79,13 @@ export class HlsSession extends BaseHlsSession {
           );
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
-            this.logger.debug('Deleting old segments from stream');
+            this.logger.trace('Deleting old segments from stream');
             this.deleteOldSegments(trimResult.sequence).catch((e) =>
               this.logger.error(e),
             );
             this.#lastDelete = now;
           } else {
-            this.logger.debug(
+            this.logger.trace(
               'Has only been %d seconds since last playlist trim, skipping',
               dayjs.duration(now.diff(this.#lastDelete)).asSeconds(),
             );
@@ -87,7 +94,7 @@ export class HlsSession extends BaseHlsSession {
           return trimResult;
         }
 
-        this.logger.debug(
+        this.logger.trace(
           'No playlist for HLS sessions at %s',
           this._m3u8PlaylistPath,
         );

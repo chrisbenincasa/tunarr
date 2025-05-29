@@ -1,4 +1,7 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import {
+  HardwareAccelerationMode,
+  TranscodeAudioOutputFormat,
+} from '@/db/schema/TranscodeConfig.js';
 import {
   SubtitleMethods,
   type AudioStream,
@@ -110,6 +113,7 @@ import {
   VideoBufferSizeOutputOption,
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption.ts';
+import { RealtimeBufferSizeInputOption } from '../options/input/RealtimeBufferSizeInputOption.ts';
 import { Pipeline } from './Pipeline.ts';
 import type { PipelineBuilder } from './PipelineBuilder.ts';
 
@@ -304,7 +308,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       input.addOption(new ConcatHttpReconnectOptions());
     }
 
-    input.addOption(new ReadrateInputOption(this.ffmpegCapabilities, 0));
+    input.addOption(new RealtimeBufferSizeInputOption('15M'));
+    input.addOption(
+      new ReadrateInputOption(this.ffmpegCapabilities, 0 /*, 1.5*/),
+    );
     if (state.metadataServiceName) {
       pipelineSteps.push(
         MetadataServiceNameOutputOption(state.metadataServiceName),
@@ -573,6 +580,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
     this.pipelineSteps.push(encoder);
 
+    if (
+      this.context.desiredAudioState.audioEncoder ===
+      TranscodeAudioOutputFormat.Copy
+    ) {
+      return;
+    }
+
     if (!isNull(this.context.desiredAudioState.audioChannels)) {
       this.pipelineSteps.push(
         AudioChannelsOutputOption(
@@ -714,7 +728,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   protected setRealtime() {
-    const initialBurst = this.desiredState.realtime ? 0 : 45;
+    const initialBurst = this.desiredState.realtime ? 0 : 60;
     const option = new ReadrateInputOption(
       this.ffmpegCapabilities,
       initialBurst,

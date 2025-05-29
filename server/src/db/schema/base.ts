@@ -37,10 +37,9 @@ export const ChannelStreamModes = [
   'hls_slower',
   'mpegts',
   'hls_direct',
+  'hls_direct_v2',
 ] as const;
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
-
-// export const DefaultChannelIcon = ChannelIconSchema.parse({});
 
 const ChannelIconSchema = z
   .object({
