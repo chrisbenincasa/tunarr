@@ -143,7 +143,7 @@ export class VideoStream {
           );
 
           let outputFormat: OutputFormat = MpegTsOutputFormat;
-          if (streamMode === 'hls_direct') {
+          if (streamMode === 'hls_direct' || streamMode === 'hls_direct_v2') {
             switch (ffmpegSettings.hlsDirectOutputFormat) {
               case 'mkv':
                 outputFormat = MkvOutputFormat;

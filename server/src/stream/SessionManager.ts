@@ -26,6 +26,7 @@ import {
 import { HlsConcatSessionType, Session } from './Session.js';
 import {
   HlsSession,
+  HlsSessionOptions,
   type HlsSessionProvider,
   type HlsSlowerSessionProvider,
 } from './hls/HlsSession.js';
@@ -91,8 +92,11 @@ export class SessionManager {
     return this.getSession(id, 'hls_slower') as Maybe<HlsSlowerSession>;
   }
 
-  getHlsSession(id: string): Maybe<HlsSession> {
-    return this.getSession(id, 'hls') as Maybe<HlsSession>;
+  getHlsSession(
+    id: string,
+    mode: 'hls' | 'hls_direct_v2' = 'hls',
+  ): Maybe<HlsSession> {
+    return this.getSession(id, mode) as Maybe<HlsSession>;
   }
 
   getConcatSession(id: string): Maybe<ConcatSession> {
@@ -231,18 +235,19 @@ export class SessionManager {
     channelId: string,
     token: string,
     connection: StreamConnectionDetails,
-    options?: Partial<BaseHlsSessionOptions>,
+    options?: Partial<HlsSessionOptions>,
   ) {
     return this.getOrCreateSession(
       channelId,
       token,
       connection,
-      'hls',
+      options?.streamMode ?? 'hls',
       (channel) =>
         this.hlsSessionFactory(channel, {
           initialSegmentCount: 2, // 8 seconds of content
           transcodeDirectory:
             this.settingsDB.ffmpegSettings().transcodeDirectory,
+          streamMode: options?.streamMode ?? 'hls',
           ...options,
         }),
     );

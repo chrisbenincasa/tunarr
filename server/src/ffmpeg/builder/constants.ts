@@ -78,6 +78,8 @@ export const OutputFormatTypes = {
   MpegTs: 'mpegts',
   Mp4: 'mp4',
   Hls: 'hls',
+  HlsDirect: 'hls_direct',
+  HlsDirectV2: 'hls_direct_v2',
   Nut: 'nut',
   Dash: 'dash',
 } as const;
@@ -86,6 +88,11 @@ export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
 export type HlsOutputFormat = {
   type: typeof OutputFormatTypes.Hls;
+  hlsOptions: HlsOptions;
+};
+
+export type HlsDirectOutputFormat = {
+  type: typeof OutputFormatTypes.HlsDirectV2;
   hlsOptions: HlsOptions;
 };
 
@@ -133,6 +140,13 @@ export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormat {
   };
 }
 
+export function HlsDirectOutputFormat(opts: HlsOptions): HlsDirectOutputFormat {
+  return {
+    type: OutputFormatTypes.HlsDirectV2,
+    hlsOptions: opts,
+  };
+}
+
 export function MpegDashOutputFormat(
   opts?: Partial<MpegDashOptions>,
 ): MpegDashOutputFormat {
@@ -144,6 +158,7 @@ export function MpegDashOutputFormat(
 
 export type OutputFormat =
   | HlsOutputFormat
+  | HlsDirectOutputFormat
   | NutOutputFormat
   | MkvOutputFormat
   | MpegDashOutputFormat

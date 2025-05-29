@@ -3,7 +3,10 @@ import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import { HlsOutputFormat } from '@/ffmpeg/builder/constants.js';
+import {
+  HlsDirectOutputFormat,
+  HlsOutputFormat,
+} from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
@@ -17,7 +20,7 @@ import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import type { interfaces } from 'inversify';
-import { filter, isEmpty, last, sortBy } from 'lodash-es';
+import { filter, isEmpty, last, maxBy, sortBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.js';
@@ -26,7 +29,7 @@ import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
 
 export type HlsSessionProvider = (
   channel: ChannelWithTranscodeConfig,
-  options: BaseHlsSessionOptions,
+  options: HlsSessionOptions,
 ) => HlsSession;
 
 export type HlsSlowerSessionProvider = (
@@ -34,12 +37,15 @@ export type HlsSlowerSessionProvider = (
   options: BaseHlsSessionOptions,
 ) => HlsSlowerSession;
 
+export interface HlsSessionOptions extends BaseHlsSessionOptions {
+  streamMode: 'hls' | 'hls_direct_v2';
+}
+
 /**
  * Initializes an ffmpeg process that concatenates via the /playlist
  * endpoint and outputs an HLS format + segments
  */
-export class HlsSession extends BaseHlsSession {
-  public readonly sessionType = 'hls' as const;
+export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #playlistStart: Dayjs;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
@@ -48,7 +54,7 @@ export class HlsSession extends BaseHlsSession {
 
   constructor(
     channel: ChannelWithTranscodeConfig,
-    options: BaseHlsSessionOptions,
+    options: HlsSessionOptions,
     private programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,
     private onDemandService: OnDemandChannelService,
@@ -58,6 +64,14 @@ export class HlsSession extends BaseHlsSession {
     >,
   ) {
     super(channel, options);
+  }
+
+  public get sessionType(): HlsSessionOptions['streamMode'] {
+    return this.sessionOptions.streamMode;
+  }
+
+  async getPlaylist() {
+    return this.readPlaylist();
   }
 
   async trimPlaylist(filterBefore: Dayjs) {
@@ -72,7 +86,7 @@ export class HlsSession extends BaseHlsSession {
           );
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
-            this.logger.debug(
+            this.logger.trace(
               'Deleting old segments from stream (channel id = %s, number = %d)',
               this.channel.uuid,
               this.channel.number,
@@ -81,17 +95,12 @@ export class HlsSession extends BaseHlsSession {
               this.logger.error(e),
             );
             this.#lastDelete = now;
-          } else {
-            this.logger.trace(
-              'Has only been %d seconds since last playlist trim, skipping',
-              dayjs.duration(now.diff(this.#lastDelete)).asSeconds(),
-            );
           }
 
           return trimResult;
         }
 
-        this.logger.debug(
+        this.logger.trace(
           'No playlist for HLS sessions at %s',
           this._m3u8PlaylistPath,
         );
@@ -109,13 +118,6 @@ export class HlsSession extends BaseHlsSession {
 
     this.state = 'started';
     this.#playlistStart = this.transcodedUntil = dayjs();
-    // this.transcodedUntil = dayjs(
-    //   await this.onDemandService.getLiveTimestamp(
-    //     this.channel.uuid,
-    //     +this.#playlistStart,
-    //   ),
-    // );
-
     // Fire-and-forget
     this.run().catch((e) => this.logger.error(e));
   }
@@ -128,11 +130,16 @@ export class HlsSession extends BaseHlsSession {
 
       if (transcodeBuffer <= 60) {
         const realtime = transcodeBuffer >= 30;
+        this.logger.trace(
+          'Transcode buffer is %d. Starting next transcode (realtime = %s)',
+          transcodeBuffer,
+          realtime,
+        );
         await this.transcode(realtime);
         this.#isFirstTranscode = false;
       } else {
         // trim and delete
-        await this.trimPlaylistAndDeleteSegments();
+        // await this.trimPlaylistAndDeleteSegments();
         await wait(dayjs.duration({ seconds: 5 }));
       }
     }
@@ -230,7 +237,9 @@ export class HlsSession extends BaseHlsSession {
         this.#currentSession = transcodeSession;
       });
 
-      await this.trimPlaylistAndDeleteSegments();
+      if (this.sessionOptions.streamMode === 'hls') {
+        await this.trimPlaylistAndDeleteSegments();
+      }
       await programStream.start();
       return programStream.transcodeSession.wait();
     });
@@ -246,21 +255,26 @@ export class HlsSession extends BaseHlsSession {
   }
 
   private getProgramStream(context: PlayerContext) {
-    return this.programStreamFactory(
-      context,
-      HlsOutputFormat({
-        hlsDeleteThreshold: 3,
-        streamNameFormat: 'stream.m3u8',
-        segmentNameFormat: 'data%06d.ts',
-        segmentBaseDirectory: dirname(this.workingDirectory),
-        streamBasePath: basename(this.workingDirectory),
-        streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
-        hlsTime: 4,
-        hlsListSize: 0,
-        deleteThreshold: null,
-        appendSegments: true,
-      }),
-    );
+    const hlsOptions = {
+      hlsDeleteThreshold: 3,
+      streamNameFormat: 'stream.m3u8',
+      segmentNameFormat: 'data%06d.ts',
+      segmentBaseDirectory: dirname(this.workingDirectory),
+      streamBasePath: basename(this.workingDirectory),
+      streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
+      hlsTime: 4,
+      hlsListSize: 0,
+      deleteThreshold: null,
+      appendSegments: true,
+    };
+
+    const outputFormat =
+      this.sessionType === 'hls_direct_v2'
+        ? HlsDirectOutputFormat(hlsOptions)
+        : HlsOutputFormat(hlsOptions);
+    console.log(outputFormat);
+
+    return this.programStreamFactory(context, outputFormat);
   }
 
   private async getPtsOffset() {
@@ -326,12 +340,11 @@ export class HlsSession extends BaseHlsSession {
     try {
       const playlistLines = await this.readPlaylist();
       if (playlistLines) {
-        const dur = dayjs.duration(this.#playlistStart.diff(dayjs()));
-        if (dur.asSeconds() <= 60) {
-          this.logger.trace(
-            'Skipping trim. %d seconds since last',
-            dur.asSeconds(),
-          );
+        const dur = Math.round(
+          dayjs().diff(this.#playlistStart, 'seconds', true),
+        );
+        if (dur <= 60) {
+          this.logger.trace('Skipping trim. %d seconds since last', dur);
           return;
         }
 
@@ -371,6 +384,7 @@ export class HlsSession extends BaseHlsSession {
     const playlistContents = await fs.readFile(this._m3u8PlaylistPath, {
       encoding: 'utf-8',
     });
+
     return playlistContents.toString().split('\n');
   }
 
@@ -395,6 +409,14 @@ export class HlsSession extends BaseHlsSession {
       ),
       ({ seq }) => seq < sequenceNum,
     );
+
+    if (segments.length > 0) {
+      this.logger.trace(
+        'Deleting %d segments. Max segment number: %d',
+        segments.length,
+        maxBy(segments, (seg) => seg.seq)?.seq ?? 0,
+      );
+    }
 
     for (const { file } of segments) {
       try {

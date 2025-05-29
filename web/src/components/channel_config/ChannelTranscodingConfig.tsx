@@ -55,6 +55,10 @@ const ChannelStreamModeOptions: {
     label: 'HLS Alt',
   },
   {
+    value: 'hls_direct_v2',
+    label: 'HLS Direct v2',
+  },
+  {
     value: 'hls_direct',
     label: 'HLS Direct',
   },
@@ -71,11 +75,18 @@ export default function ChannelTranscodingConfig() {
 
   const { control, watch, setValue, getValues } = useChannelFormContext();
 
-  const [watermark, transcodeConfigId, subtitlesEnabled, fadePeriod] = watch([
+  const [
+    watermark,
+    transcodeConfigId,
+    subtitlesEnabled,
+    fadePeriod,
+    streamMode,
+  ] = watch([
     'watermark',
     'transcodeConfigId',
     'subtitlesEnabled',
     'watermark.fadeConfig.0.periodMins',
+    'streamMode',
   ]);
 
   const transcodeConfig = useMemo(
@@ -220,6 +231,7 @@ export default function ChannelTranscodingConfig() {
                 <CheckboxFormController
                   control={control}
                   name="watermark.enabled"
+                  disabled={streamMode === 'hls_direct'}
                 />
               }
               label="Enable Watermark"
@@ -229,7 +241,7 @@ export default function ChannelTranscodingConfig() {
               Graphic) on top of the channel's stream.
             </FormHelperText>
           </FormControl>
-          {watermark?.enabled && (
+          {watermark?.enabled && streamMode !== 'hls_direct' && (
             <Stack direction="row" mt={2} gap={2} useFlexGap>
               <Stack sx={{ minWidth: '33%' }} spacing={2}>
                 <Box
