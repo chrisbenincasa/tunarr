@@ -2,10 +2,10 @@ import { seq } from '@tunarr/shared/util';
 import { ContentGuideProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
-import path, { dirname } from 'node:path';
+import path, { dirname, extname } from 'node:path';
 import { tmpName } from 'tmp-promise';
 import { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
@@ -17,6 +17,7 @@ import { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
+import { KEYS } from '../types/inject.ts';
 import { OpenDateTimeRange } from '../types/OpenDateTimeRange.ts';
 import { Result } from '../types/result.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
@@ -70,13 +71,14 @@ export class SubtitleExtractorTask extends Task {
   public ID = SubtitleExtractorTask.ID;
 
   constructor(
-    logger: Logger,
-    private guideService: TVGuideService,
-    private channelDB: IChannelDB,
+    @inject(KEYS.Logger) logger: Logger,
+    @inject(TVGuideService) private guideService: TVGuideService,
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(ExternalStreamDetailsFetcherFactory)
     private streamDetailsFetcher: ExternalStreamDetailsFetcherFactory,
-    private mediaSourceDB: MediaSourceDB,
-    private settingsDB: ISettingsDB,
-    private globalOptions: GlobalOptions,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     private request: SubtitleExtractorTaskRequest,
   ) {
     super(logger);
@@ -208,7 +210,11 @@ export class SubtitleExtractorTask extends Task {
           const fullPath = path.join(cacheFolder, filePath);
 
           if (!(await fileExists(fullPath))) {
-            return { subtitle, outPath: fullPath, tmpPath: await tmpName() };
+            return {
+              subtitle,
+              outPath: fullPath,
+              tmpPath: await tmpName({ postfix: extname(filePath) }),
+            };
           }
           this.logger.debug(
             'Skipping existing subtitle extraction (stream index = %d) path for program %s (%s). File already exists: %s',

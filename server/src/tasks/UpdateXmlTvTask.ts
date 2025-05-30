@@ -15,6 +15,8 @@ import { type Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
+import { GlobalScheduler } from '../services/Scheduler.ts';
+import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 import { Task, TaskMetadata } from './Task.js';
 
 @injectable()
@@ -78,6 +80,10 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
           false,
         );
       }
+
+      GlobalScheduler.getScheduledJob(SubtitleExtractorTask.ID)
+        .runNow(true)
+        .catch((err) => this.logger.error(err));
 
       this.logger.info('XMLTV Updated at %s', dayjs().format());
     } catch (err) {

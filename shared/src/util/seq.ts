@@ -1,4 +1,4 @@
-import { flatMap, isFunction, isNil, sortBy } from 'lodash-es';
+import { compact, flatMap, isFunction, isNil, sortBy } from 'lodash-es';
 
 export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
   return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
@@ -27,6 +27,30 @@ export function collect<T, U>(
   }
 
   return results;
+}
+
+export async function asyncCollect<T, U>(
+  arr: T[] | null | undefined,
+  f: (
+    t: T,
+    index: number,
+    arr: T[],
+  ) => Promise<U | null | undefined> | null | undefined,
+): Promise<U[]> {
+  if (isNil(arr)) {
+    return [];
+  }
+
+  const promises: Promise<U | null | undefined>[] = [];
+  let i = 0;
+  for (const el of arr) {
+    const promise = f(el, i++, arr);
+    if (promise) {
+      promises.push(promise);
+    }
+  }
+  const out = await Promise.all(promises);
+  return compact(out);
 }
 
 export function collectMapValues<ValueType, ReturnType>(

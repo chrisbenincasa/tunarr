@@ -121,20 +121,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       });
     });
 
-    if (
-      isNonEmptyString(watermarkLabel) &&
-      this.filterChain.watermarkOverlayFilterSteps.length > 0
-    ) {
-      const filterString = collectAndJoinSteps(
-        this.filterChain.watermarkOverlayFilterSteps,
-      );
-      watermarkOverlayFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
-        watermarkLabel,
-      )}${filterString}`;
-      videoLabel = '[vwm]';
-      watermarkOverlayFilterComplex += videoLabel;
-    }
-
+    // Overlay subtitles first
     if (
       isNonEmptyString(subtitleLabel) &&
       this.filterChain.subtitleOverlayFilterSteps.length > 0
@@ -147,6 +134,21 @@ export class ComplexFilter implements FilterOptionPipelineStep {
       )}${filterString}`;
       videoLabel = '[vsub]';
       subtitleOverlayFilterComplex += videoLabel;
+    }
+
+    // Then watermarks
+    if (
+      isNonEmptyString(watermarkLabel) &&
+      this.filterChain.watermarkOverlayFilterSteps.length > 0
+    ) {
+      const filterString = collectAndJoinSteps(
+        this.filterChain.watermarkOverlayFilterSteps,
+      );
+      watermarkOverlayFilterComplex += `${formatLabel(videoLabel)}${formatLabel(
+        watermarkLabel,
+      )}${filterString}`;
+      videoLabel = '[vwm]';
+      watermarkOverlayFilterComplex += videoLabel;
     }
 
     ifDefined(this.audioInputSource, (audioInput) => {

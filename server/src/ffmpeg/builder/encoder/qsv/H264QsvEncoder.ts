@@ -4,7 +4,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { QsvEncoder } from './QsvEncoders.ts';
 
 export class H264QsvEncoder extends QsvEncoder {
-  protected videoFormat: string = VideoFormats.H264;
+  protected videoFormat = VideoFormats.H264;
 
   constructor(
     private videoPreset: Nullable<string>,

@@ -1,7 +1,7 @@
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class CopyVideoEncoder extends VideoEncoder {
-  protected readonly videoFormat: string = '';
+  protected readonly videoFormat = '';
 
   constructor() {
     super('copy');

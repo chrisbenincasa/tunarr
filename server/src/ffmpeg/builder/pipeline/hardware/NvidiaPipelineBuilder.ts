@@ -42,7 +42,6 @@ import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
 import { OverlaySubtitleCudaFilter } from '../../filter/nvidia/OverlaySubtitleCudaFilter.ts';
 import { ScaleNppFilter } from '../../filter/nvidia/ScaleNppFilter.ts';
-import { SubtitleScaleCudaFilter } from '../../filter/nvidia/SubtitleScaleCudaFilter.ts';
 import { SubtitleScaleNppFilter } from '../../filter/nvidia/SubtitleScaleNppFilter.ts';
 import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityFilter.ts';
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
@@ -164,6 +163,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
+    this.videoInputSource.frameDataLocation = currentState.frameDataLocation;
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
@@ -193,12 +193,18 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       }
     }
 
+    // If we're using intermittent watermarks, we're gonna force software overlay
+    // to avoid issues with overlay_cuda producing green lines.
+    // TODO: is this necessary?
+    // See: https://trac.ffmpeg.org/ticket/9442
     const needsSoftwareWatermarkOverlay =
       (this.context.hasWatermark &&
         !isEmpty(this.watermarkInputSource?.watermark.fadeConfig)) ||
       (isDefined(this.watermarkInputSource?.watermark.duration) &&
         this.watermarkInputSource.watermark.duration > 0);
 
+    // If we're certain that we're about to use a hardware overlay of some sort
+    // then ensure the video stream is uploaded to hardware.
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
       currentState.bitDepth === 8 &&
@@ -206,8 +212,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       // filter unless we're on >=5.0.0 because overlay_cuda does
       // not support the W/w/H/h params on earlier versions
       this.ffmpegState.isAtLeastVersion({ major: 5 }) &&
-      this.context.isSubtitleOverlay() &&
-      !needsSoftwareWatermarkOverlay
+      !this.context.isSubtitleTextContext() &&
+      (this.context.isSubtitleOverlay() ||
+        (this.context.hasWatermark && !needsSoftwareWatermarkOverlay))
     ) {
       const filter = new HardwareUploadCudaFilter(currentState);
       currentState = filter.nextState(currentState);
@@ -216,8 +223,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.addSubtitles(currentState);
 
-    // Overlay watermark in software if we have any timeline-enabled features
-    // (e.g. intermittent watermarks or absolute duration)
+    // If we are in hardware after adding subtitles and need to use software
+    // for the watermark, do a download
     if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
       needsSoftwareWatermarkOverlay
@@ -226,8 +233,37 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         currentState.pixelFormat,
         null,
       );
+
       currentState = hwDownloadFilter.nextState(currentState);
-      this.videoInputSource.filterSteps.push(hwDownloadFilter);
+
+      // If we overlaid subtitles, we need to download that stream
+      // and now the video stream, since that's where we're going to overlay
+      // the watermark
+      if (
+        this.context.isSubtitleOverlay() &&
+        this.subtitleOverlayFilterChain.length > 0
+      ) {
+        // Watermark will get overlaid on top of the video+sub stream
+        this.subtitleOverlayFilterChain.push(hwDownloadFilter);
+      } else {
+        // Otherwise we hwdownload the
+        this.videoInputSource.filterSteps.push(hwDownloadFilter);
+      }
+    } else if (
+      currentState.frameDataLocation === FrameDataLocation.Software &&
+      !needsSoftwareWatermarkOverlay
+    ) {
+      const hwUpload = new HardwareUploadCudaFilter(currentState);
+      currentState = hwUpload.nextState(currentState);
+
+      if (
+        this.context.isSubtitleOverlay() &&
+        this.subtitleOverlayFilterChain.length > 0
+      ) {
+        this.subtitleOverlayFilterChain.push(hwUpload);
+      } else {
+        currentState = this.addFilterToVideoChain(currentState, hwUpload);
+      }
     }
 
     currentState = this.setWatermark(currentState);
@@ -488,12 +524,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         new SubtitleFilter(this.subtitleInputSource),
       );
 
-      if (this.context.hasWatermark) {
-        currentState = this.addFilterToVideoChain(
-          currentState,
-          new HardwareUploadCudaFilter(currentState),
-        );
-      }
+      // if (this.context.hasWatermark) {
+      //   currentState = this.addFilterToVideoChain(
+      //     currentState,
+      //     new HardwareUploadCudaFilter(currentState),
+      //   );
+      // }
 
       return currentState;
     }
@@ -513,24 +549,32 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         const hasNpp = this.ffmpegCapabilities.hasFilter(
           KnownFfmpegFilters.ScaleNpp,
         );
-        const hasCuda = this.ffmpegCapabilities.hasFilter(
-          KnownFfmpegFilters.ScaleCuda,
-        );
-        if (needsSubtitleScale && (hasNpp || hasCuda)) {
-          // Use a hardware scale
-          const hwUpload = new HardwareUploadCudaFilter(
-            currentState.updateFrameLocation(FrameDataLocation.Software),
-          );
-          this.subtitleInputSource.filterSteps.push(hwUpload);
 
-          let filter: FilterOption;
+        if (needsSubtitleScale) {
           if (hasNpp) {
-            filter = new SubtitleScaleNppFilter(this.desiredState.paddedSize);
-          } else {
-            filter = new SubtitleScaleCudaFilter(this.desiredState.paddedSize);
-          }
+            // Use a hardware scale. Only scale_npp supports yuva
+            const hwUpload = new HardwareUploadCudaFilter(
+              currentState.updateFrameLocation(FrameDataLocation.Software),
+            );
+            this.subtitleInputSource.frameDataLocation =
+              FrameDataLocation.Hardware;
+            this.subtitleInputSource.filterSteps.push(hwUpload);
 
-          this.subtitleInputSource.filterSteps.push(filter);
+            const filter = new SubtitleScaleNppFilter(
+              this.desiredState.paddedSize,
+            );
+            this.subtitleInputSource.filterSteps.push(filter);
+          } else {
+            // Otherwise perform the scale on software and the upload to the GPU
+            this.subtitleInputSource.addFilter(
+              new ImageScaleFilter(this.desiredState.paddedSize),
+            );
+            this.subtitleInputSource.addFilter(
+              new HardwareUploadCudaFilter(
+                currentState.updateFrameLocation(FrameDataLocation.Software),
+              ),
+            );
+          }
         } else {
           if (needsSubtitleScale) {
             const filter = new ImageScaleFilter(this.desiredState.paddedSize);
@@ -540,6 +584,8 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           const hwUpload = new HardwareUploadCudaFilter(
             currentState.updateFrameLocation(FrameDataLocation.Software),
           );
+          this.subtitleInputSource.frameDataLocation =
+            FrameDataLocation.Hardware;
           this.subtitleInputSource.filterSteps.push(hwUpload);
         }
 
@@ -552,6 +598,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
             currentState,
             new HardwareDownloadCudaFilter(currentState.pixelFormat, null),
           );
+          this.videoInputSource.frameDataLocation = FrameDataLocation.Software;
         }
 
         const needsScale = this.videoInputSource.hasAnyFilterStep([

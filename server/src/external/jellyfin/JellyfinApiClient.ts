@@ -23,6 +23,7 @@ import {
   find,
   isBoolean,
   isEmpty,
+  isError,
   isNil,
   isNumber,
   mapValues,
@@ -326,6 +327,27 @@ export class JellyfinApiClient extends BaseApiClient {
         (v) => isNil(v) || (!isNumber(v) && isEmpty(v)),
       ),
     });
+  }
+
+  async getSubtitles(
+    itemId: string,
+    mediaItemId: string,
+    streamIndex: number,
+    subtitleExt: string,
+    tickOffset: number = 0,
+  ): Promise<QueryResult<string>> {
+    const subtitlesResult = await this.doGet<string>({
+      url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
+      params: {
+        userId: this.options.userId,
+      },
+    });
+
+    if (isError(subtitlesResult)) {
+      return this.makeErrorResult('generic_request_error');
+    }
+
+    return this.makeSuccessResult(subtitlesResult);
   }
 
   getThumbUrl(id: string) {

@@ -10,6 +10,7 @@ import type { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
+import { seq } from '@tunarr/shared/util';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { inject, injectable } from 'inversify';
 import {
@@ -28,6 +29,9 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
+import fs from 'node:fs/promises';
+import path, { dirname } from 'node:path';
+import { FileSystemService } from '../../services/FileSystemService.ts';
 import {
   ifDefined,
   isDefined,
@@ -35,6 +39,10 @@ import {
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.js';
+import {
+  getSubtitleCacheFilePath,
+  subtitleCodecToExt,
+} from '../../util/subtitles.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
@@ -59,6 +67,8 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
     @inject(JellyfinItemFinder) private jellyfinItemFinder: JellyfinItemFinder,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(FileSystemService)
+    private fileSystemService: FileSystemService,
   ) {
     super();
   }
@@ -165,6 +175,10 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
 
+    if (!firstMediaSource) {
+      return null;
+    }
+
     // Jellyfin orders media streams with external ones first
     // We count these and then use the count as the offset for the
     // actual indexes of the embedded streams.
@@ -249,7 +263,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
       },
     );
 
-    const subtitleStreamDetails = map(
+    const subtitleStreamDetails = await seq.asyncCollect(
       orderBy(
         filter(
           firstMediaSource?.MediaStreams,
@@ -257,26 +271,85 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
         ),
         [(stream) => stream.Index ?? 0, (stream) => !stream.IsDefault],
       ),
-      (subtitleStream) => {
-        return {
-          codec: subtitleStream.Codec ?? 'unknown',
+      async (subtitleStream) => {
+        let index: Maybe<number> = undefined;
+        if (isDefined(subtitleStream.Index)) {
+          if (subtitleStream.IsExternal) {
+            index = subtitleStream.Index;
+          } else {
+            const streamRelativeIndex =
+              subtitleStream.Index - externalStreamCount;
+            if (streamRelativeIndex >= 0) {
+              index = streamRelativeIndex;
+            }
+          }
+        }
+
+        const details = {
+          codec: subtitleStream.Codec?.toLowerCase() ?? 'unknown',
           default: subtitleStream.IsDefault ?? false,
           forced: subtitleStream.IsForced ?? false,
           sdh: subtitleStream.IsHearingImpaired ?? false,
           type: subtitleStream.IsExternal ? 'external' : 'embedded',
           description: subtitleStream.Title ?? '',
-          index:
-            ifDefined(subtitleStream.Index, (streamIndex) => {
-              const index = streamIndex - externalStreamCount;
-              if (index >= 0) {
-                return index;
-              }
-              return;
-            }) ?? undefined,
+          index,
           languageCodeISO6392: subtitleStream.Language ?? undefined,
           path: subtitleStream.Path ?? undefined,
           title: subtitleStream.DisplayTitle ?? undefined,
         } satisfies SubtitleStreamDetails;
+
+        if (details.type === 'external' && isDefined(index)) {
+          const outPath = getSubtitleCacheFilePath(
+            {
+              externalKey: item.externalKey,
+              externalSourceId: item.externalSourceId,
+              externalSourceType: item.externalSource,
+              id: item.programId,
+            },
+            details,
+          );
+          const ext = subtitleCodecToExt(details.codec);
+
+          if (!outPath || !ext) {
+            return;
+          }
+
+          const fullPath = path.join(
+            this.fileSystemService.getSubtitleCacheFolder(),
+            outPath,
+          );
+
+          console.log(dirname(fullPath));
+          await fs.mkdir(dirname(fullPath), { recursive: true });
+
+          if (!(await fileExists(fullPath))) {
+            const subtitlesRes = await this.jellyfin.getSubtitles(
+              item.externalKey,
+              firstMediaSource.Id!,
+              index,
+              ext,
+            );
+
+            if (subtitlesRes.type === 'error') {
+              this.logger.warn(
+                'Error while requesting external subtitle stream from Jellyfin: %s',
+                subtitlesRes.message ?? '',
+              );
+              return;
+            }
+
+            try {
+              await fs.writeFile(fullPath, subtitlesRes.data);
+            } catch (e) {
+              this.logger.warn(e);
+              return;
+            }
+          }
+
+          details.path = fullPath;
+        }
+
+        return details;
       },
     );
 

@@ -3,6 +3,7 @@ import path from 'path';
 import { match, P } from 'ts-pattern';
 import type { MediaSourceType } from '../db/schema/MediaSource.ts';
 import type { SubtitleStreamDetails } from '../stream/types.ts';
+import type { Nullable } from '../types/util.ts';
 
 type MinimalProgram = {
   id: string;
@@ -11,16 +12,20 @@ type MinimalProgram = {
   externalKey: string;
 };
 
+export function subtitleCodecToExt(codec: string): Nullable<string> {
+  return match(codec)
+    .with(P.union('srt', 'subrip', 'mov_text'), () => 'srt')
+    .with('ass', () => '.ass')
+    .with('webvtt', () => 'vtt')
+    .otherwise(() => null);
+}
+
 export function getSubtitleCacheFilePath(
   program: MinimalProgram,
   subtitleStream: SubtitleStreamDetails,
 ) {
   const outputPath = getSubtitleCacheFileName(program, subtitleStream);
-  const ext = match(subtitleStream.codec)
-    .with(P.union('srt', 'subrip', 'mov_text'), () => 'srt')
-    .with('ass', () => '.ass')
-    .with('webvtt', () => 'vtt')
-    .otherwise(() => null);
+  const ext = subtitleCodecToExt(subtitleStream.codec.toLowerCase());
   if (!ext) {
     return null;
   }

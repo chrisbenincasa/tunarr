@@ -1,6 +1,6 @@
 import type { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isEmpty, isNull, merge } from 'lodash-es';
-import type { AnyFunction, MarkOptional } from 'ts-essentials';
+import type { AnyFunction, MarkOptional, StrictOmit } from 'ts-essentials';
 import type { PixelFormat } from './format/PixelFormat.ts';
 import type { DataProps, StreamKind } from './types.ts';
 import { FrameSize } from './types.ts';
@@ -128,7 +128,7 @@ export class VideoStream implements MediaStream {
   }
 }
 
-type StillImageStreamFields = Omit<
+type StillImageStreamFields = StrictOmit<
   DataProps<StillImageStream>,
   | 'codec'
   | 'kind'

@@ -21,6 +21,7 @@ import type { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
+import type { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
 import { BackupTask } from './BackupTask.ts';
 import { SaveJellyfinProgramExternalIdsTask } from './jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
@@ -131,7 +132,9 @@ const TasksModule = new ContainerModule((bind) => {
     SubtitleExtractorTask.KEY,
     (ctx) => (req: SubtitleExtractorTaskRequest) =>
       new SubtitleExtractorTask(
-        ctx.container.get(KEYS.Logger),
+        ctx.container
+          .get<typeof LoggerFactory>(KEYS.LoggerFactory)
+          .child({ className: SubtitleExtractorTask.name }),
         ctx.container.get<TVGuideService>(TVGuideService),
         ctx.container.get<IChannelDB>(KEYS.ChannelDB),
         ctx.container.get<ExternalStreamDetailsFetcherFactory>(

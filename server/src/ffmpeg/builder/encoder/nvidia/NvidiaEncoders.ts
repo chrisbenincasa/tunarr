@@ -4,7 +4,7 @@ import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 
 export class NvidiaHevcEncoder extends VideoEncoder {
-  protected videoFormat: string = VideoFormats.Hevc;
+  protected videoFormat = VideoFormats.Hevc;
 
   constructor(private videoPreset: Nullable<string>) {
     super('hevc_nvenc');
@@ -21,7 +21,7 @@ export class NvidiaHevcEncoder extends VideoEncoder {
 }
 
 export class NvidiaH264Encoder extends VideoEncoder {
-  protected videoFormat: string = VideoFormats.H264;
+  protected videoFormat = VideoFormats.H264;
 
   constructor(
     private videoProfile: Nullable<string>,

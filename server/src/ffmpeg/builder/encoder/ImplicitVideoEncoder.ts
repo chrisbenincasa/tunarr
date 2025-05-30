@@ -1,7 +1,7 @@
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class ImplicitVideoEncoder extends VideoEncoder {
-  protected readonly videoFormat: string = '';
+  protected readonly videoFormat = '';
 
   constructor() {
     super('');

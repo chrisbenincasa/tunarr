@@ -714,7 +714,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   protected setRealtime() {
-    const initialBurst = this.desiredState.realtime ? 0 : 45;
+    const initialBurst = this.desiredState.realtime ? 0 : 60;
     const option = new ReadrateInputOption(
       this.ffmpegCapabilities,
       initialBurst,
@@ -843,6 +843,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     filter: FilterOption,
   ): FrameState {
     this.videoInputSource.filterSteps.push(filter);
-    return filter.nextState(currentState);
+    const nextState = filter.nextState(currentState);
+    this.videoInputSource.frameDataLocation = nextState.frameDataLocation;
+    return nextState;
   }
 }
