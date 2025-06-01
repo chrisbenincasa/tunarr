@@ -156,10 +156,7 @@ export function JellyfinProgrammingSelector({
           ? alphanumericFilter.toUpperCase()
           : undefined,
       sortBy,
-      recursive:
-        selectedLibrary?.view.Type === 'UserView' ||
-        selectedLibrary?.view.Type === 'UserRootFolder' ||
-        selectedLibrary?.view.Type === 'Folder',
+      recursive: true,
     },
   );
 
