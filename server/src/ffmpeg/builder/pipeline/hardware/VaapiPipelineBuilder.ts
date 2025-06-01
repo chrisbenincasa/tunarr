@@ -178,7 +178,9 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.context.isSubtitleOverlay() &&
       !forceSoftwareOverlay
     ) {
-      // Hardware upload
+      const filter = new HardwareUploadVaapiFilter(true);
+      currentState = this.addFilterToVideoChain(currentState, filter);
+      this.videoInputSource.frameDataLocation = FrameDataLocation.Hardware;
     } else if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
       (!this.context.isSubtitleOverlay() || forceSoftwareOverlay) &&
@@ -187,6 +189,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       // download for watermark (or forced software subtitle)
       const filter = new HardwareDownloadFilter(currentState);
       currentState = filter.nextState(currentState);
+      this.videoInputSource.frameDataLocation = FrameDataLocation.Software;
       this.videoInputSource.filterSteps.push(filter);
     }
 

@@ -53,6 +53,6 @@ export default defineConfig({
     },
   },
   server: {
-    host: process.env['TUNARR_BIND_ADDR'] ?? 'localhost',
+    host: true, // process.env['TUNARR_BIND_ADDR'] ?? 'localhost',
   },
 });

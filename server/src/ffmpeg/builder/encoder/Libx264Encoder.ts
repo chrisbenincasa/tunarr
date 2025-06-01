@@ -4,7 +4,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { VideoEncoder } from './BaseEncoder.js';
 
 export class Libx264Encoder extends VideoEncoder {
-  protected readonly videoFormat: string = VideoFormats.H264;
+  protected readonly videoFormat = VideoFormats.H264;
 
   constructor(
     private videoProfile: Nullable<string>,

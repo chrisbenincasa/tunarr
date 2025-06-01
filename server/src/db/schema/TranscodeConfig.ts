@@ -3,6 +3,7 @@ import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import { v4 } from 'uuid';
+import { VideoFormats } from '../../ffmpeg/builder/constants.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
@@ -39,9 +40,9 @@ export const VaapiDrivers = [
 export type VaapiDriver = TupleToUnion<typeof VaapiDrivers>;
 
 export const TranscodeVideoOutputFormats = [
-  'h264',
-  'hevc',
-  'mpeg2video',
+  VideoFormats.H264,
+  VideoFormats.Hevc,
+  VideoFormats.Mpeg2Video,
 ] as const;
 
 export type TranscodeVideoOutputFormat = TupleToUnion<

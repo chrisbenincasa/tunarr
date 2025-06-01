@@ -385,7 +385,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
           .find((s) => s.toLocaleLowerCase().includes('sdh'));
         return {
           type: isDefined(stream.index) ? 'embedded' : 'external',
-          codec: stream.codec,
+          codec: stream.codec.toLocaleLowerCase(),
           default: stream.default ?? false,
           index: stream.index,
           title: stream.displayTitle,

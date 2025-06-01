@@ -10,7 +10,7 @@ export class VideoToolboxHevcEncoder extends VideoEncoder {
     super('hevc_videotoolbox');
   }
 
-  protected videoFormat: string = VideoFormats.Hevc;
+  protected videoFormat = VideoFormats.Hevc;
 
   options(): string[] {
     return [
@@ -35,7 +35,7 @@ export class VideoToolboxH264Encoder extends VideoEncoder {
     super('h264_videotoolbox');
   }
 
-  protected videoFormat: string = VideoFormats.H264;
+  protected videoFormat = VideoFormats.H264;
 
   affectsFrameState: boolean = true;
 

@@ -75,28 +75,41 @@ export class SubtitleStreamPicker {
       for (const stream of subtitleStreams) {
         // TODO: map a present 2 letter code to its 3 letter code and check that.
         if (stream.languageCodeISO6392 !== pref.languageCode) {
-          this.logger.debug('Skipping subtitle index %d, not a language match');
+          this.logger.debug(
+            'Skipping subtitle index %d, not a language match',
+            stream.index,
+          );
           continue;
         }
 
         // Check filter types
         if (pref.filterType === 'forced' && !stream.forced) {
-          this.logger.debug('Skipping subtitle index %d, wanted forced');
+          this.logger.debug(
+            'Skipping subtitle index %d, wanted forced',
+            stream.index,
+          );
           continue;
         } else if (pref.filterType === 'default' && !stream.default) {
-          this.logger.debug('Skipping subtitle index %d, wanted default');
+          this.logger.debug(
+            'Skipping subtitle index %d, wanted default',
+            stream.index,
+          );
           continue;
         }
 
         // Check subtitle type
         if (!pref.allowExternal && stream.type === 'external') {
-          this.logger.debug('Skipping subtitle index %d, disallowed external');
+          this.logger.debug(
+            'Skipping subtitle index %d, disallowed external',
+            stream.index,
+          );
           continue;
         }
 
         if (!pref.allowImageBased && isImageBasedSubtitle(stream.codec)) {
           this.logger.debug(
             'Skipping subtitle index %d, disallowed image-based',
+            stream.index,
           );
           continue;
         }
@@ -136,7 +149,11 @@ export class SubtitleStreamPicker {
     );
 
     if (!filePath) {
-      this.logger.debug('Unsupported subtitle codec: %s', stream.codec);
+      this.logger.debug(
+        'Unsupported subtitle codec at index %d: %s',
+        stream.index,
+        stream.codec,
+      );
       return;
     }
 

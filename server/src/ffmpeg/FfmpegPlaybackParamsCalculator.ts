@@ -9,7 +9,7 @@ import { gcd } from '@/util/index.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
 import type { Resolution } from '@tunarr/types';
 import { ChannelStreamModes } from '@tunarr/types';
-import type { OutputFormat } from './builder/constants.ts';
+import type { OutputFormat, VideoFormat } from './builder/constants.ts';
 import type { PixelFormat } from './builder/format/PixelFormat.ts';
 import { PixelFormatYuv420P } from './builder/format/PixelFormat.ts';
 import { FrameSize } from './builder/types.ts';
@@ -146,7 +146,7 @@ export type FfmpegPlaybackParams = {
   realtime?: boolean;
 
   // video details
-  videoFormat: string;
+  videoFormat: VideoFormat;
   videoBitrate?: number;
   videoBufferSize?: number;
   pixelFormat?: PixelFormat;

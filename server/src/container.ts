@@ -28,6 +28,7 @@ import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
+import { FileSystemService } from './services/FileSystemService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { Timer } from './util/Timer.ts';
@@ -91,6 +92,7 @@ const RootModule = new ContainerModule((bind) => {
   bind(EventService).toSelf().inSingletonScope();
   bind(HdhrService).toSelf().inSingletonScope();
   bind(SystemDevicesService).toSelf().inSingletonScope();
+  bind(FileSystemService).toSelf().inSingletonScope();
 });
 
 container.load(RootModule);

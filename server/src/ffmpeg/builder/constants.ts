@@ -17,6 +17,8 @@ export const VideoFormats = {
   Undetermined: '',
 } as const;
 
+export type VideoFormat = (typeof VideoFormats)[keyof typeof VideoFormats];
+
 export const AudioFormats = {
   Aac: 'aac',
   Ac3: 'ac3',
