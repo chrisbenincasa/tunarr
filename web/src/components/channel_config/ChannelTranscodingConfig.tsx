@@ -71,10 +71,11 @@ export default function ChannelTranscodingConfig() {
 
   const { control, watch, setValue, getValues } = useChannelFormContext();
 
-  const [watermark, transcodeConfigId, subtitlesEnabled] = watch([
+  const [watermark, transcodeConfigId, subtitlesEnabled, fadePeriod] = watch([
     'watermark',
     'transcodeConfigId',
     'subtitlesEnabled',
+    'watermark.fadeConfig.0.periodMins',
   ]);
 
   const transcodeConfig = useMemo(
@@ -451,24 +452,26 @@ export default function ChannelTranscodingConfig() {
                     }}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, lg: 6 }}>
-                  <FormControl fullWidth>
-                    <FormControlLabel
-                      control={
-                        <CheckboxFormController
-                          control={control}
-                          name="watermark.fadeConfig.0.leadingEdge"
-                        />
-                      }
-                      label="Display Watermark on Leading Edge"
-                    />
-                    <FormHelperText>
-                      When enabled, intermittent watermarks fade in immediately
-                      when a stream is initialized. When disabled, the first
-                      watermark fade-in occurs after a full period.
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
+                {fadePeriod > 0 && (
+                  <Grid size={{ xs: 12, lg: 6 }}>
+                    <FormControl fullWidth>
+                      <FormControlLabel
+                        control={
+                          <CheckboxFormController
+                            control={control}
+                            name="watermark.fadeConfig.0.leadingEdge"
+                          />
+                        }
+                        label="Display Watermark on Leading Edge"
+                      />
+                      <FormHelperText>
+                        When enabled, intermittent watermarks fade in
+                        immediately when a stream is initialized. When disabled,
+                        the first watermark fade-in occurs after a full period.
+                      </FormHelperText>
+                    </FormControl>
+                  </Grid>
+                )}
                 <Grid size={{ xs: 12, lg: 6 }}>
                   <NumericFormControllerText
                     control={control}
