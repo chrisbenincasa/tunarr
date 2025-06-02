@@ -22,10 +22,8 @@ export class HardwareDownloadCudaFilter extends FilterOption {
   get filter() {
     let f = 'hwdownload';
     if (this.currentPixelFormat) {
-      const fmt =
-        this.currentPixelFormat.toHardwareFormat() ?? this.currentPixelFormat;
-      f += `,format=${fmt.name}`;
-      if (fmt instanceof PixelFormatNv12) {
+      f += `,format=${this.currentPixelFormat.name}`;
+      if (this.currentPixelFormat instanceof PixelFormatNv12) {
         if (!this.targetPixelFormat) {
           const target = this.currentPixelFormat.unwrap();
           if (target) {

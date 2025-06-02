@@ -17,6 +17,7 @@ export const PixelFormats = {
   NV12: 'nv12',
   VAAPI: 'vaapi',
   P010: 'p010',
+  CUDA: 'cuda',
 } as const;
 
 export const ValidHardwarePixelFormats = {
@@ -68,8 +69,23 @@ export abstract class BasePixelFormat implements PixelFormat {
 }
 
 abstract class HardwarePixelFormat extends BasePixelFormat {
+  constructor(protected readonly underlying: PixelFormat) {
+    super();
+  }
   toHardwareFormat(): Maybe<PixelFormat> {
     return this;
+  }
+
+  toSoftwareFormat(): Maybe<PixelFormat> {
+    return this.underlying;
+  }
+
+  unwrap(): PixelFormat {
+    return this.underlying;
+  }
+
+  equals(other: PixelFormat): boolean {
+    return super.equals(other) && this.unwrap().equals(other.unwrap());
   }
 }
 
@@ -128,41 +144,25 @@ export class PixelFormatYuv444P16Le extends SoftwarePixelFormat {
 
 // HW decoders output this (in general) when decoding 8-bit inputs
 export class PixelFormatNv12 extends HardwarePixelFormat {
-  constructor(private readonly underlying: PixelFormat) {
-    super();
-  }
-
   readonly name = PixelFormats.NV12;
 
   readonly bitDepth: number = 8;
-
-  toSoftwareFormat(): Maybe<PixelFormat> {
-    return this.underlying;
-  }
-
-  unwrap(): PixelFormat {
-    return this.underlying;
-  }
-
-  equals(other: PixelFormat): boolean {
-    return super.equals(other) && this.unwrap().equals(other.unwrap());
-  }
 }
 
 // Special-case frames for VA-API
 export class PixelFormatVaapi extends HardwarePixelFormat {
-  constructor(private readonly underlying: PixelFormat) {
-    super();
+  constructor(readonly underlying: PixelFormat) {
+    super(underlying);
     this.name = this.underlying.name;
     this.bitDepth = this.underlying.bitDepth;
   }
+}
 
-  toSoftwareFormat(): Maybe<PixelFormat> {
-    return this.underlying;
-  }
-
-  unwrap(): PixelFormat {
-    return this.underlying;
+export class PixelFormatCuda extends HardwarePixelFormat {
+  constructor(readonly underlying: PixelFormat) {
+    super(underlying);
+    this.name = this.underlying.name;
+    this.bitDepth = this.underlying.bitDepth;
   }
 }
 
@@ -171,8 +171,8 @@ export class PixelFormatP010 extends HardwarePixelFormat {
   readonly name = PixelFormats.P010;
   readonly bitDepth: number = 10;
 
-  toSoftwareFormat(): Maybe<PixelFormat> {
-    return new PixelFormatYuv420P10Le();
+  constructor() {
+    super(new PixelFormatYuv420P10Le());
   }
 }
 
