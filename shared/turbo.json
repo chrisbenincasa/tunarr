@@ -11,6 +11,7 @@
       "outputs": ["build/**"]
     },
     "build-dev": {
+      "dependsOn": ["@tunarr/types#build"],
       "cache": false
     }
   }

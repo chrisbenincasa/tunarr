@@ -26,6 +26,16 @@ export const EmbyMediaType = z.enum([
   'Book',
 ]);
 
+const EmbyMediaStreamType = z.enum([
+  'Unknown',
+  'Audio',
+  'Video',
+  'Subtitle',
+  'EmbeddedImage',
+  'Attachment',
+  'Data',
+]);
+
 export const EmbyItemFields = z.enum([
   'Budget',
   'Chapters',
@@ -45,6 +55,25 @@ export const EmbyItemFields = z.enum([
   'SortName',
   'Studios',
   'Taglines',
+]);
+
+const EmbyMediaProtocol = z.enum([
+  'File',
+  'Http',
+  'Rtmp',
+  'Rtsp',
+  'Udp',
+  'Rtp',
+  'Ftp',
+  'Mms',
+]);
+
+const EmbySubtitleDeliveryMethod = z.enum([
+  'Encode',
+  'Embed',
+  'External',
+  'Hls',
+  'VideoSideData',
 ]);
 
 export type EmbyItemField = z.infer<typeof EmbyItemFields>;
@@ -109,131 +138,23 @@ export const EmbyItemSortBy = z.enum([
   'Runtime',
 ]);
 
+const EmbyPersonType = z.enum([
+  'Actor',
+  'Director',
+  'Writer',
+  'Producer',
+  'GuestStar',
+  'Composer',
+  'Conductor',
+  'Lyricist',
+]);
+
 export type EmbyItemSortBy = z.infer<typeof EmbyItemSortBy>;
 
-export type EmbyMediaStream = z.infer<typeof EmbyMediaStreamSchema>;
-
-export const EmbyMediaStreamSchema = z.object({
-  Codec: z.string().optional(),
-  CodecTag: z.string().optional(),
-  Language: z.string().optional(),
-  ColorTransfer: z.string().optional(),
-  ColorPrimaries: z.string().optional(),
-  ColorSpace: z.string().optional(),
-  Comment: z.string().optional(),
-  TimeBase: z.string().optional(),
-  CodecTimeBase: z.string().optional(),
-  Title: z.string().optional(),
-  Extradata: z.string().optional(),
-  VideoRange: z.string().optional(),
-  DisplayTitle: z.string().optional(),
-  DisplayLanguage: z.string().optional(),
-  NalLengthSize: z.string().optional(),
-  IsInterlaced: z.boolean().optional(),
-  IsAVC: z.boolean().nullish(),
-  ChannelLayout: z.string().optional(),
-  BitRate: z.number().nullish(),
-  BitDepth: z.number().nullish(),
-  RefFrames: z.number().nullish(),
-  PacketLength: z.number().nullish(),
-  Channels: z.number().nullish(),
-  SampleRate: z.number().nullish(),
-  IsDefault: z.boolean().optional(),
-  IsForced: z.boolean().optional(),
-  Height: z.number().nullish(),
-  Width: z.number().nullish(),
-  AverageFrameRate: z.number().nullish(),
-  RealFrameRate: z.number().nullish(),
-  Profile: z.string().optional(),
-  Type: z
-    .union([
-      z.literal('Audio'),
-      z.literal('Video'),
-      z.literal('Subtitle'),
-      z.literal('EmbeddedImage'),
-    ])
-    .optional(),
-  AspectRatio: z.string().optional(),
-  Index: z.number().optional(),
-  Score: z.number().nullish(),
-  IsExternal: z.boolean().optional(),
-  DeliveryMethod: z
-    .union([
-      z.literal('Encode'),
-      z.literal('Embed'),
-      z.literal('External'),
-      z.literal('Hls'),
-    ])
-    .optional(),
-  DeliveryUrl: z.string().optional(),
-  IsExternalUrl: z.boolean().nullish(),
-  IsTextSubtitleStream: z.boolean().optional(),
-  SupportsExternalStream: z.boolean().optional(),
-  Path: z.string().optional(),
-  PixelFormat: z.string().optional(),
-  Level: z.number().nullish(),
-  IsAnamorphic: z.boolean().nullish(),
-});
-
-export type EmbyMediaSourceInfo = z.infer<typeof EmbyMediaSourceInfoSchema>;
-
-export const EmbyMediaSourceInfoSchema = z.object({
-  Protocol: z
-    .enum(['File', 'Http', 'Rtmp', 'Rtsp', 'Udp', 'Rtp', 'Ftp', 'Mms'])
-    .optional(),
-  Id: z.string().optional(),
-  Path: z.string().optional(),
-  EncoderPath: z.string().optional(),
-  EncoderProtocol: z
-    .enum(['File', 'Http', 'Rtmp', 'Rtsp', 'Udp', 'Rtp', 'Ftp', 'Mms'])
-    .optional(),
-  Type: z
-    .union([
-      z.literal('Default'),
-      z.literal('Grouping'),
-      z.literal('Placeholder'),
-    ])
-    .optional(),
-  Container: z.string().optional(),
-  Size: z.number().nullish(),
-  Name: z.string().optional(),
-  IsRemote: z.boolean().optional(),
-  RunTimeTicks: z.number().nullish(),
-  SupportsTranscoding: z.boolean().optional(),
-  SupportsDirectStream: z.boolean().optional(),
-  SupportsDirectPlay: z.boolean().optional(),
-  IsInfiniteStream: z.boolean().optional(),
-  RequiresOpening: z.boolean().optional(),
-  OpenToken: z.string().optional(),
-  RequiresClosing: z.boolean().optional(),
-  LiveStreamId: z.string().optional(),
-  BufferMs: z.number().nullish(),
-  RequiresLooping: z.boolean().optional(),
-  SupportsProbing: z.boolean().optional(),
-  Video3DFormat: z
-    .union([
-      z.literal('HalfSideBySide'),
-      z.literal('FullSideBySide'),
-      z.literal('FullTopAndBottom'),
-      z.literal('HalfTopAndBottom'),
-      z.literal('MVC'),
-    ])
-    .optional(),
-  MediaStreams: z.array(EmbyMediaStreamSchema).optional(),
-  Formats: z.array(z.string()).optional(),
-  Bitrate: z.number().nullish(),
-  Timestamp: z
-    .union([z.literal('None'), z.literal('Zero'), z.literal('Valid')])
-    .optional(),
-  RequiredHttpHeaders: z.unknown().optional(),
-  TranscodingUrl: z.string().optional(),
-  TranscodingSubProtocol: z.string().optional(),
-  TranscodingContainer: z.string().optional(),
-  AnalyzeDurationMs: z.number().nullish(),
-  ReadAtNativeFramerate: z.boolean().optional(),
-  DefaultAudioStreamIndex: z.number().nullish(),
-  DefaultSubtitleStreamIndex: z.number().nullish(),
-});
+const EmbyMediaUrl = z
+  .object({ Url: z.string(), Name: z.string() })
+  .partial()
+  .passthrough();
 
 export type EmbyNameIdPair = z.infer<typeof EmbyNameIdPairSchema>;
 export const EmbyNameIdPairSchema = z.object({
@@ -241,202 +162,422 @@ export const EmbyNameIdPairSchema = z.object({
   Id: z.string().or(z.number()).optional(),
 });
 
+export const EmbyNameLongIdPair = z
+  .object({ Name: z.string(), Id: z.number().int() })
+  .partial()
+  .passthrough();
+
+const EmbyMarkerType = z.enum([
+  'Chapter',
+  'IntroStart',
+  'IntroEnd',
+  'CreditsStart',
+]);
+
 export type EmbyChapterInfo = z.infer<typeof EmbyChapterInfoSchema>;
-export const EmbyChapterInfoSchema = z.object({
-  StartPositionTicks: z.number().optional(),
-  Name: z.string().optional(),
-  ImageTag: z.string().optional(),
-});
+
+export const EmbyChapterInfoSchema = z
+  .object({
+    StartPositionTicks: z.number().int(),
+    Name: z.string(),
+    ImageTag: z.string(),
+    MarkerType: EmbyMarkerType,
+    ChapterIndex: z.number().int(),
+  })
+  .partial()
+  .passthrough();
+
+const ExtendedVideoTypes = z.enum([
+  'None',
+  'Hdr10',
+  'Hdr10Plus',
+  'HyperLogGamma',
+  'DolbyVision',
+]);
+const ExtendedVideoSubTypes = z.enum([
+  'None',
+  'Hdr10',
+  'HyperLogGamma',
+  'Hdr10Plus0',
+  'DoviProfile02',
+  'DoviProfile10',
+  'DoviProfile22',
+  'DoviProfile30',
+  'DoviProfile42',
+  'DoviProfile50',
+  'DoviProfile61',
+  'DoviProfile76',
+  'DoviProfile81',
+  'DoviProfile82',
+  'DoviProfile83',
+  'DoviProfile84',
+  'DoviProfile85',
+  'DoviProfile92',
+]);
+
+const SubtitleLocationType = z.enum(['InternalStream', 'VideoSideData']);
+
+export type EmbyMediaStream = z.infer<typeof EmbyMediaStreamSchema>;
+
+export const EmbyMediaStreamSchema = z
+  .object({
+    Codec: z.string(),
+    CodecTag: z.string(),
+    Language: z.string(),
+    ColorTransfer: z.string(),
+    ColorPrimaries: z.string(),
+    ColorSpace: z.string(),
+    Comment: z.string(),
+    StreamStartTimeTicks: z.number().int().nullable(),
+    TimeBase: z.string(),
+    Title: z.string(),
+    Extradata: z.string(),
+    VideoRange: z.string(),
+    DisplayTitle: z.string(),
+    DisplayLanguage: z.string(),
+    NalLengthSize: z.string(),
+    IsInterlaced: z.boolean(),
+    IsAVC: z.boolean().nullable(),
+    ChannelLayout: z.string(),
+    BitRate: z.number().int().nullable(),
+    BitDepth: z.number().int().nullable(),
+    RefFrames: z.number().int().nullable(),
+    Rotation: z.number().int().nullable(),
+    Channels: z.number().int().nullable(),
+    SampleRate: z.number().int().nullable(),
+    IsDefault: z.boolean(),
+    IsForced: z.boolean(),
+    IsHearingImpaired: z.boolean(),
+    Height: z.number().int().nullable(),
+    Width: z.number().int().nullable(),
+    AverageFrameRate: z.number().nullable(),
+    RealFrameRate: z.number().nullable(),
+    Profile: z.string(),
+    Type: EmbyMediaStreamType,
+    AspectRatio: z.string(),
+    Index: z.number().int(),
+    IsExternal: z.boolean(),
+    DeliveryMethod: EmbySubtitleDeliveryMethod,
+    DeliveryUrl: z.string(),
+    IsExternalUrl: z.boolean().nullable(),
+    IsTextSubtitleStream: z.boolean(),
+    SupportsExternalStream: z.boolean(),
+    Path: z.string(),
+    Protocol: EmbyMediaProtocol,
+    PixelFormat: z.string(),
+    Level: z.number().nullable(),
+    IsAnamorphic: z.boolean().nullable(),
+    ExtendedVideoType: ExtendedVideoTypes,
+    ExtendedVideoSubType: ExtendedVideoSubTypes,
+    ExtendedVideoSubTypeDescription: z.string(),
+    ItemId: z.string(),
+    ServerId: z.string(),
+    AttachmentSize: z.number().int().nullable(),
+    MimeType: z.string(),
+    SubtitleLocationType: SubtitleLocationType,
+  })
+  .partial()
+  .passthrough();
+
+const EmbyMediaSourceType = z.enum(['Default', 'Grouping', 'Placeholder']);
+
+const EmbyVideo3DFormat = z.enum([
+  'HalfSideBySide',
+  'FullSideBySide',
+  'FullTopAndBottom',
+  'HalfTopAndBottom',
+  'MVC',
+]);
+
+const TransportStreamTimestamp = z.enum(['None', 'Zero', 'Valid']);
+
+export type EmbyMediaSourceInfo = z.infer<typeof EmbyMediaSourceInfoSchema>;
+
+export const EmbyMediaSourceInfoSchema = z
+  .object({
+    Chapters: z.array(EmbyChapterInfoSchema),
+    Protocol: EmbyMediaProtocol,
+    Id: z.string(),
+    Path: z.string(),
+    EncoderPath: z.string(),
+    EncoderProtocol: EmbyMediaProtocol,
+    Type: EmbyMediaSourceType,
+    ProbePath: z.string(),
+    ProbeProtocol: EmbyMediaProtocol,
+    Container: z.string(),
+    Size: z.number().int().nullable(),
+    Name: z.string(),
+    SortName: z.string(),
+    IsRemote: z.boolean(),
+    HasMixedProtocols: z.boolean(),
+    RunTimeTicks: z.number().int().nullable(),
+    ContainerStartTimeTicks: z.number().int().nullable(),
+    SupportsTranscoding: z.boolean(),
+    TrancodeLiveStartIndex: z.number().int().nullable(),
+    WallClockStart: z.string().datetime({ offset: true }).nullable(),
+    SupportsDirectStream: z.boolean(),
+    SupportsDirectPlay: z.boolean(),
+    IsInfiniteStream: z.boolean(),
+    RequiresOpening: z.boolean(),
+    OpenToken: z.string(),
+    RequiresClosing: z.boolean(),
+    LiveStreamId: z.string(),
+    BufferMs: z.number().int().nullable(),
+    RequiresLooping: z.boolean(),
+    SupportsProbing: z.boolean(),
+    Video3DFormat: EmbyVideo3DFormat,
+    MediaStreams: z.array(EmbyMediaStreamSchema),
+    Formats: z.array(z.string()),
+    Bitrate: z.number().int().nullable(),
+    Timestamp: TransportStreamTimestamp,
+    RequiredHttpHeaders: z.record(z.string()),
+    DirectStreamUrl: z.string(),
+    AddApiKeyToDirectStreamUrl: z.boolean(),
+    TranscodingUrl: z.string(),
+    TranscodingSubProtocol: z.string(),
+    TranscodingContainer: z.string(),
+    AnalyzeDurationMs: z.number().int().nullable(),
+    ReadAtNativeFramerate: z.boolean(),
+    DefaultAudioStreamIndex: z.number().int().nullable(),
+    DefaultSubtitleStreamIndex: z.number().int().nullable(),
+    ItemId: z.string(),
+    ServerId: z.string(),
+  })
+  .partial()
+  .passthrough();
 
 export type EmbyItem = z.infer<typeof EmbyItemSchema>;
 
-export const EmbyItemSchema = z.object({
-  Name: z.string().optional(),
-  OriginalTitle: z.string().optional(),
-  ServerId: z.string().optional(),
-  Id: z.string(),
-  Etag: z.string().optional(),
-  PlaylistItemId: z.string().optional(),
-  DateCreated: z.string().nullish(),
-  ExtraType: z.string().optional(),
-  AirsBeforeSeasonNumber: z.number().nullish(),
-  AirsAfterSeasonNumber: z.number().nullish(),
-  AirsBeforeEpisodeNumber: z.number().nullish(),
-  DisplaySpecialsWithSeasons: z.boolean().nullish(),
-  CanDelete: z.boolean().nullish(),
-  CanDownload: z.boolean().nullish(),
-  HasSubtitles: z.boolean().nullish(),
-  SupportsResume: z.boolean().nullish(),
-  PreferredMetadataLanguage: z.string().optional(),
-  PreferredMetadataCountryCode: z.string().optional(),
-  SupportsSync: z.boolean().nullish(),
-  Container: z.string().optional(),
-  SortName: z.string().optional(),
-  ForcedSortName: z.string().optional(),
-  Video3DFormat: z
-    .union([
-      z.literal('HalfSideBySide'),
-      z.literal('FullSideBySide'),
-      z.literal('FullTopAndBottom'),
-      z.literal('HalfTopAndBottom'),
-      z.literal('MVC'),
-    ])
-    .optional(),
-  PremiereDate: z.string().nullish(),
-  // ExternalUrls: z.array(ExternalUrl).optional(),
-  MediaSources: z.array(EmbyMediaSourceInfoSchema).optional(),
-  CriticRating: z.number().nullish(),
-  GameSystemId: z.number().nullish(),
-  GameSystem: z.string().optional(),
-  ProductionLocations: z.array(z.string()).optional(),
-  Path: z.string().optional(),
-  OfficialRating: z.string().optional(),
-  CustomRating: z.string().optional(),
-  ChannelId: z.string().optional(),
-  ChannelName: z.string().optional(),
-  Overview: z.string().optional(),
-  Taglines: z.array(z.string()).optional(),
-  Genres: z.array(z.string()).optional(),
-  CommunityRating: z.number().nullish(),
-  RunTimeTicks: z.number().nullish(),
-  PlayAccess: z.union([z.literal('Full'), z.literal('None')]).optional(),
-  AspectRatio: z.string().optional(),
-  ProductionYear: z.number().nullish(),
-  Number: z.string().optional(),
-  ChannelNumber: z.string().optional(),
-  IndexNumber: z.number().nullish(),
-  IndexNumberEnd: z.number().nullish(),
-  ParentIndexNumber: z.number().nullish(),
-  // RemoteTrailers: z.array(MediaUrl).optional(),
-  ProviderIds: z.record(z.string()).optional(),
-  IsFolder: z.boolean().nullish(),
-  ParentId: z.string().optional(),
-  Type: EmbyItemKind.optional(),
-  // People: z.array(BaseItemPerson).optional(),
-  Studios: z.array(EmbyNameIdPairSchema).optional(),
-  GenreItems: z.array(EmbyNameIdPairSchema).optional(),
-  ParentLogoItemId: z.string().optional(),
-  ParentBackdropItemId: z.string().optional(),
-  ParentBackdropImageTags: z.array(z.string()).optional(),
-  LocalTrailerCount: z.number().nullish(),
-  // UserData: UserItemDataDto.optional(),
-  RecursiveItemCount: z.number().nullish(),
-  ChildCount: z.number().nullish(),
-  SeriesName: z.string().optional(),
-  SeriesId: z.string().optional(),
-  SeasonId: z.string().optional(),
-  SpecialFeatureCount: z.number().nullish(),
-  DisplayPreferencesId: z.string().optional(),
-  Status: z.string().optional(),
-  AirTime: z.string().optional(),
-  AirDays: z
-    .array(
-      z.union([
-        z.literal('Sunday'),
-        z.literal('Monday'),
-        z.literal('Tuesday'),
-        z.literal('Wednesday'),
-        z.literal('Thursday'),
-        z.literal('Friday'),
-        z.literal('Saturday'),
+export const EmbyItemSchema = z
+  .object({
+    Name: z.string(),
+    OriginalTitle: z.string(),
+    ServerId: z.string(),
+    Id: z.string(),
+    Guid: z.string(),
+    Etag: z.string(),
+    Prefix: z.string(),
+    TunerName: z.string(),
+    PlaylistItemId: z.string(),
+    DateCreated: z.string().datetime({ offset: true }).nullable(),
+    ExtraType: z.string(),
+    SortIndexNumber: z.number().int().nullable(),
+    SortParentIndexNumber: z.number().int().nullable(),
+    CanDelete: z.boolean().nullable(),
+    CanDownload: z.boolean().nullable(),
+    CanEditItems: z.boolean().nullable(),
+    SupportsResume: z.boolean().nullable(),
+    PresentationUniqueKey: z.string(),
+    PreferredMetadataLanguage: z.string(),
+    PreferredMetadataCountryCode: z.string(),
+    SupportsSync: z.boolean().nullable(),
+    SyncStatus: z.enum([
+      'Queued',
+      'Converting',
+      'ReadyToTransfer',
+      'Transferring',
+      'Synced',
+      'Failed',
+    ]),
+    CanManageAccess: z.boolean().nullable(),
+    CanLeaveContent: z.boolean().nullable(),
+    CanMakePublic: z.boolean().nullable(),
+    Container: z.string(),
+    SortName: z.string(),
+    ForcedSortName: z.string(),
+    Video3DFormat: EmbyVideo3DFormat,
+    PremiereDate: z.string().datetime({ offset: true }).nullable(),
+    ExternalUrls: z.array(
+      z.object({ Name: z.string(), Url: z.string() }).partial().passthrough(),
+    ),
+    MediaSources: z.array(EmbyMediaSourceInfoSchema),
+    CriticRating: z.number().nullable(),
+    GameSystemId: z.number().int().nullable(),
+    AsSeries: z.boolean().nullable(),
+    GameSystem: z.string(),
+    ProductionLocations: z.array(z.string()),
+    Path: z.string(),
+    OfficialRating: z.string(),
+    CustomRating: z.string(),
+    ChannelId: z.string(),
+    ChannelName: z.string(),
+    Overview: z.string(),
+    Taglines: z.array(z.string()),
+    Genres: z.array(z.string()),
+    CommunityRating: z.number().nullable(),
+    RunTimeTicks: z.number().int().nullable(),
+    Size: z.number().int().nullable(),
+    FileName: z.string(),
+    Bitrate: z.number().int().nullable(),
+    ProductionYear: z.number().int().nullable(),
+    Number: z.string(),
+    ChannelNumber: z.string(),
+    IndexNumber: z.number().int().nullable(),
+    IndexNumberEnd: z.number().int().nullable(),
+    ParentIndexNumber: z.number().int().nullable(),
+    RemoteTrailers: z.array(EmbyMediaUrl),
+    ProviderIds: z.record(z.string()),
+    IsFolder: z.boolean().nullable(),
+    ParentId: z.string(),
+    Type: EmbyItemKind,
+    People: z.array(
+      z
+        .object({
+          Name: z.string(),
+          Id: z.string(),
+          Role: z.string(),
+          Type: EmbyPersonType,
+          PrimaryImageTag: z.string(),
+        })
+        .partial()
+        .passthrough(),
+    ),
+    Studios: z.array(EmbyNameLongIdPair),
+    GenreItems: z.array(EmbyNameLongIdPair),
+    TagItems: z.array(EmbyNameLongIdPair),
+    ParentLogoItemId: z.string(),
+    ParentBackdropItemId: z.string(),
+    ParentBackdropImageTags: z.array(z.string()),
+    LocalTrailerCount: z.number().int().nullable(),
+    UserData: z
+      .object({
+        Rating: z.number().nullable(),
+        PlayedPercentage: z.number().nullable(),
+        UnplayedItemCount: z.number().int().nullable(),
+        PlaybackPositionTicks: z.number().int(),
+        PlayCount: z.number().int().nullable(),
+        IsFavorite: z.boolean(),
+        LastPlayedDate: z.string().datetime({ offset: true }).nullable(),
+        Played: z.boolean(),
+        Key: z.string(),
+        ItemId: z.string(),
+        ServerId: z.string(),
+      })
+      .partial()
+      .passthrough(),
+    RecursiveItemCount: z.number().int().nullable(),
+    ChildCount: z.number().int().nullable(),
+    SeasonCount: z.number().int().nullable(),
+    SeriesName: z.string(),
+    SeriesId: z.string(),
+    SeasonId: z.string(),
+    SpecialFeatureCount: z.number().int().nullable(),
+    DisplayPreferencesId: z.string(),
+    Status: z.string(),
+    AirDays: z.array(
+      z.enum([
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
       ]),
-    )
-    .optional(),
-  Tags: z.array(z.string()).optional(),
-  PrimaryImageAspectRatio: z.number().nullish(),
-  Artists: z.array(z.string()).optional(),
-  ArtistItems: z.array(EmbyNameIdPairSchema).optional(),
-  Album: z.string().optional(),
-  CollectionType: z.string().optional(),
-  DisplayOrder: z.string().optional(),
-  AlbumId: z.string().optional(),
-  AlbumPrimaryImageTag: z.string().optional(),
-  SeriesPrimaryImageTag: z.string().optional(),
-  AlbumArtist: z.string().optional(),
-  AlbumArtists: z.array(EmbyNameIdPairSchema).optional(),
-  SeasonName: z.string().optional(),
-  MediaStreams: z.array(EmbyMediaStreamSchema).optional(),
-  PartCount: z.number().nullish(),
-  ImageTags: z.record(z.string()).optional(),
-  BackdropImageTags: z.array(z.string()).optional(),
-  ParentLogoImageTag: z.string().optional(),
-  ParentArtItemId: z.string().optional(),
-  ParentArtImageTag: z.string().optional(),
-  SeriesThumbImageTag: z.string().optional(),
-  SeriesStudio: z.string().optional(),
-  ParentThumbItemId: z.string().optional(),
-  ParentThumbImageTag: z.string().optional(),
-  ParentPrimaryImageItemId: z.string().optional(),
-  ParentPrimaryImageTag: z.string().optional(),
-  Chapters: z.array(EmbyChapterInfoSchema).optional(),
-  LocationType: z
-    .union([z.literal('FileSystem'), z.literal('Virtual')])
-    .optional(),
-  MediaType: z.string().optional(),
-  EndDate: z.string().nullish(),
-  LockedFields: z
-    .array(
-      z.union([
-        z.literal('Cast'),
-        z.literal('Genres'),
-        z.literal('ProductionLocations'),
-        z.literal('Studios'),
-        z.literal('Tags'),
-        z.literal('Name'),
-        z.literal('Overview'),
-        z.literal('Runtime'),
-        z.literal('OfficialRating'),
+    ),
+    Tags: z.array(z.string()),
+    PrimaryImageAspectRatio: z.number().nullable(),
+    Artists: z.array(z.string()),
+    ArtistItems: z.array(EmbyNameIdPairSchema),
+    Composers: z.array(EmbyNameIdPairSchema),
+    Album: z.string(),
+    CollectionType: z.string(),
+    DisplayOrder: z.string(),
+    AlbumId: z.string(),
+    AlbumPrimaryImageTag: z.string(),
+    SeriesPrimaryImageTag: z.string(),
+    AlbumArtist: z.string(),
+    AlbumArtists: z.array(EmbyNameIdPairSchema),
+    SeasonName: z.string(),
+    MediaStreams: z.array(EmbyMediaStreamSchema),
+    PartCount: z.number().int().nullable(),
+    ImageTags: z.record(z.string()),
+    BackdropImageTags: z.array(z.string()),
+    ParentLogoImageTag: z.string(),
+    SeriesStudio: z.string(),
+    PrimaryImageItemId: z.string(),
+    PrimaryImageTag: z.string(),
+    ParentThumbItemId: z.string(),
+    ParentThumbImageTag: z.string(),
+    Chapters: z.array(EmbyChapterInfoSchema),
+    LocationType: z.enum(['FileSystem', 'Virtual']),
+    MediaType: z.string(),
+    EndDate: z.string().datetime({ offset: true }).nullable(),
+    LockedFields: z.array(
+      z.enum([
+        'Cast',
+        'Genres',
+        'ProductionLocations',
+        'Studios',
+        'Tags',
+        'Name',
+        'Overview',
+        'Runtime',
+        'OfficialRating',
+        'Collections',
+        'ChannelNumber',
+        'SortName',
+        'OriginalTitle',
+        'SortIndexNumber',
+        'SortParentIndexNumber',
+        'CommunityRating',
+        'CriticRating',
+        'Tagline',
+        'Composers',
+        'Artists',
+        'AlbumArtists',
       ]),
-    )
-    .optional(),
-  LockData: z.boolean().nullish(),
-  Width: z.number().nullish(),
-  Height: z.number().nullish(),
-  CameraMake: z.string().optional(),
-  CameraModel: z.string().optional(),
-  Software: z.string().optional(),
-  ExposureTime: z.number().nullish(),
-  FocalLength: z.number().nullish(),
-  ImageOrientation: z
-    .union([
-      z.literal('TopLeft'),
-      z.literal('TopRight'),
-      z.literal('BottomRight'),
-      z.literal('BottomLeft'),
-      z.literal('LeftTop'),
-      z.literal('RightTop'),
-      z.literal('RightBottom'),
-      z.literal('LeftBottom'),
-    ])
-    .optional(),
-  Aperture: z.number().nullish(),
-  ShutterSpeed: z.number().nullish(),
-  Latitude: z.number().nullish(),
-  Longitude: z.number().nullish(),
-  Altitude: z.number().nullish(),
-  IsoSpeedRating: z.number().nullish(),
-  SeriesTimerId: z.string().optional(),
-  ChannelPrimaryImageTag: z.string().optional(),
-  StartDate: z.string().nullish(),
-  CompletionPercentage: z.number().nullish(),
-  IsRepeat: z.boolean().nullish(),
-  IsNew: z.boolean().nullish(),
-  EpisodeTitle: z.string().optional(),
-  IsMovie: z.boolean().nullish(),
-  IsSports: z.boolean().nullish(),
-  IsSeries: z.boolean().nullish(),
-  IsLive: z.boolean().nullish(),
-  IsNews: z.boolean().nullish(),
-  IsKids: z.boolean().nullish(),
-  IsPremiere: z.boolean().nullish(),
-  TimerId: z.string().optional(),
-  // CurrentProgram: EmbyItemSchema.optional(),
-  MovieCount: z.number().nullish(),
-  SeriesCount: z.number().nullish(),
-  AlbumCount: z.number().nullish(),
-  SongCount: z.number().nullish(),
-  MusicVideoCount: z.number().nullish(),
-});
+    ),
+    LockData: z.boolean().nullable(),
+    Width: z.number().int().nullable(),
+    Height: z.number().int().nullable(),
+    CameraMake: z.string(),
+    CameraModel: z.string(),
+    Software: z.string(),
+    ExposureTime: z.number().nullable(),
+    FocalLength: z.number().nullable(),
+    // ImageOrientation: Drawing_ImageOrientation,
+    Aperture: z.number().nullable(),
+    ShutterSpeed: z.number().nullable(),
+    Latitude: z.number().nullable(),
+    Longitude: z.number().nullable(),
+    Altitude: z.number().nullable(),
+    IsoSpeedRating: z.number().int().nullable(),
+    SeriesTimerId: z.string(),
+    ChannelPrimaryImageTag: z.string(),
+    StartDate: z.string().datetime({ offset: true }).nullable(),
+    CompletionPercentage: z.number().nullable(),
+    IsRepeat: z.boolean().nullable(),
+    IsNew: z.boolean().nullable(),
+    EpisodeTitle: z.string(),
+    IsMovie: z.boolean().nullable(),
+    IsSports: z.boolean().nullable(),
+    IsSeries: z.boolean().nullable(),
+    IsLive: z.boolean().nullable(),
+    IsNews: z.boolean().nullable(),
+    IsKids: z.boolean().nullable(),
+    IsPremiere: z.boolean().nullable(),
+    // TimerType: LiveTv_TimerType,
+    Disabled: z.boolean().nullable(),
+    ManagementId: z.string(),
+    TimerId: z.string(),
+    // CurrentProgram: BaseItemDto,
+    MovieCount: z.number().int().nullable(),
+    SeriesCount: z.number().int().nullable(),
+    AlbumCount: z.number().int().nullable(),
+    SongCount: z.number().int().nullable(),
+    MusicVideoCount: z.number().int().nullable(),
+    Subviews: z.array(z.string()),
+    ListingsProviderId: z.string(),
+    ListingsChannelId: z.string(),
+    ListingsPath: z.string(),
+    ListingsId: z.string(),
+    ListingsChannelName: z.string(),
+    ListingsChannelNumber: z.string(),
+    AffiliateCallSign: z.string(),
+  })
+  .partial()
+  .required({ Id: true });
 
 const EmbyUserPolicySchema = z.object({
   IsAdministrator: z.boolean().optional(),
@@ -497,26 +638,34 @@ const EmbyUserPolicySchema = z.object({
 
 export const EmbyUserSchema = z
   .object({
-    Name: z.string().nullable().optional(),
-    ServerId: z.string().nullable().optional(),
-    ServerName: z.string().nullable().optional(),
+    Name: z.string(),
+    ServerId: z.string(),
+    ServerName: z.string(),
+    Prefix: z.string(),
+    ConnectUserName: z.string(),
+    DateCreated: z.string().datetime({ offset: true }).nullable(),
+    // ConnectLinkType: Connect_UserLinkType,
     Id: z.string(),
-    PrimaryImageTag: z.string().nullable().optional(),
+    PrimaryImageTag: z.string(),
     HasPassword: z.boolean(),
     HasConfiguredPassword: z.boolean(),
+    EnableAutoLogin: z.boolean().nullable(),
+    LastLoginDate: z.string().datetime({ offset: true }).nullable(),
+    LastActivityDate: z.string().datetime({ offset: true }).nullable(),
+    // Configuration: UserConfiguration,
+    Policy: EmbyUserPolicySchema,
+    PrimaryImageAspectRatio: z.number().nullable(),
     HasConfiguredEasyPassword: z.boolean(),
-    EnableAutoLogin: z.boolean().nullable().optional(),
-    LastLoginDate: z.string().datetime({ offset: true }).nullable().optional(),
-    LastActivityDate: z
-      .string()
-      .datetime({ offset: true })
-      .nullable()
-      .optional(),
-    // Configuration: EmbyUserConfiguration.nullable().optional(),
-    Policy: EmbyUserPolicySchema.nullable().optional(),
-    PrimaryImageAspectRatio: z.number().nullable().optional(),
+    UserItemShareLevel: z.enum([
+      'None',
+      'Read',
+      'Write',
+      'Manage',
+      'ManageDelete',
+    ]),
   })
-  .partial();
+  .partial()
+  .passthrough();
 
 const EmbySessionInfoSchema = z
   .object({
@@ -570,6 +719,7 @@ export const EmbyLibraryItemsResponse = z.object({
 export type EmbyLibraryItemsResponse = z.infer<typeof EmbyLibraryItemsResponse>;
 
 export type EmbySystemInfo = z.infer<typeof EmbySystemInfo>;
+
 export const EmbySystemInfo = z.object({
   SystemUpdateLevel: z.enum(['Release', 'Beta', 'Dev']).optional(),
   OperatingSystemDisplayName: z.string().optional(),
