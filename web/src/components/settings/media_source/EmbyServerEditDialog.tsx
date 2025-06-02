@@ -218,7 +218,6 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
           id: server?.id && !isDirty ? server.id : undefined,
           accessToken: value.accessToken ?? '',
           uri: value.uri ?? '',
-          // type: 'jellyfin' as const,
         });
       }
     });
@@ -235,10 +234,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
   ]);
 
   const { data: serverStatus, isLoading: serverStatusLoading } =
-    useMediaSourceBackendStatus(
-      { ...serverStatusDetails, type: 'jellyfin' },
-      open,
-    );
+    useMediaSourceBackendStatus({ ...serverStatusDetails, type: 'emby' }, open);
 
   // TODO: Block creation if an existing server with the same URL/name
   // already exist
@@ -325,7 +321,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                   helperText={
                     error && isNonEmptyString(error.message)
                       ? error.message
-                      : 'Enter a name for your Jellyfin Server'
+                      : 'Enter a name for your Emby Server'
                   }
                 />
               )}
@@ -339,16 +335,10 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                   minLength: 1,
                 }}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl
-                    sx={{ flex: 1 }}
-                    variant="outlined"
-                    // disabled={isNonEmptyString(accessToken)}
-                  >
-                    <InputLabel htmlFor="jellyfin-username">
-                      Username{' '}
-                    </InputLabel>
+                  <FormControl sx={{ flex: 1 }} variant="outlined">
+                    <InputLabel htmlFor="emby-username">Username </InputLabel>
                     <OutlinedInput
-                      id="jellyfin-username"
+                      id="emby-username"
                       type="text"
                       error={!isUndefined(error)}
                       label="Access Token"
@@ -370,16 +360,10 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                   minLength: 1,
                 }}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl
-                    sx={{ flex: 1 }}
-                    variant="outlined"
-                    // disabled={isNonEmptyString(accessToken)}
-                  >
-                    <InputLabel htmlFor="jellyfin-password">
-                      Password{' '}
-                    </InputLabel>
+                  <FormControl sx={{ flex: 1 }} variant="outlined">
+                    <InputLabel htmlFor="emby-password">Password </InputLabel>
                     <OutlinedInput
-                      id="jellyfin-password"
+                      id="emby-password"
                       type={showPassword ? 'text' : 'password'}
                       error={!isUndefined(error)}
                       endAdornment={
@@ -408,7 +392,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                 )}
               />
               <FormHelperText sx={{ ml: '14px', mt: -1, flexBasis: '100%' }}>
-                Enter your Jellyfin password to generate a new access token.
+                Enter your Emby password to generate a new access token.
               </FormHelperText>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -462,7 +446,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                         </>
                       )}
                       <span>
-                        Manually add an access token from your Jellyfin server
+                        Manually add an access token from your Emby server
                       </span>
                     </>
                   </FormHelperText>
