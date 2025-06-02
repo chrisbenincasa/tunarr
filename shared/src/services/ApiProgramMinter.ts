@@ -19,6 +19,7 @@ import {
   type SingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { compact, find, first, isError, isNil } from 'lodash-es';
+import type { StrictOmit } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import { createExternalId } from '../index.js';
 import { nullToUndefined, seq } from '../util/index.js';
@@ -321,7 +322,7 @@ export class ApiProgramMinter {
 
   private static mintProgramForEmbyItem(
     server: MediaSourceDetails,
-    item: Omit<EmbyItem, 'Type'> & {
+    item: StrictOmit<EmbyItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo';
     },
   ): ContentProgram {

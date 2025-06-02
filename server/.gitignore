@@ -12,3 +12,4 @@ bin/
 src/generated/**
 !src/generated/web-imports.d.ts
 !src/generated/.gitkeep
+emby.ts
