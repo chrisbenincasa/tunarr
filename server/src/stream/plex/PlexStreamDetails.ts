@@ -411,10 +411,19 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
               details,
               () => plexApiClient.getSubtitles(key),
             );
+
           if (fullPath) {
             details.path = fullPath;
+            return details;
           }
+
+          this.logger.warn(
+            'Skipping external subtitles at index %d because download failed. Please check logs and file an issue for assistance.',
+          );
+
+          return;
         }
+
         return details;
       },
     );

@@ -55,20 +55,17 @@ export class ExternalSubtitleDownloader {
       return;
     }
 
-    const fullPath = path.join(
-      this.fileSystemService.getSubtitleCacheFolder(),
-      outPath,
-    );
+    // This should've been created on startup but double-check
+    const cacheFolder = this.fileSystemService.getSubtitleCacheFolder();
+    if (!(await fileExists(cacheFolder))) {
+      await fs.mkdir(cacheFolder);
+    }
+
+    const fullPath = path.join(cacheFolder, outPath);
 
     await fs.mkdir(dirname(fullPath), { recursive: true });
 
     if (!(await fileExists(fullPath))) {
-      // const subtitlesRes = await this.jellyfin.getSubtitles(
-      //   item.externalKey,
-      //   firstMediaSource.Id!,
-      //   index,
-      //   ext,
-      // );
       const subtitlesRes = await getSubtitlesCb({ extension: ext });
 
       if (subtitlesRes.type === 'error') {
