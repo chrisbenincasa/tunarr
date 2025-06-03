@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.20.0](https://github.com/chrisbenincasa/tunarr/compare/v0.19.3...v0.20.0) (2025-06-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* official DB support for music / other video program types ([#1207](https://github.com/chrisbenincasa/tunarr/issues/1207))
+* add subtitle support with multi-level configuration ([#1167](https://github.com/chrisbenincasa/tunarr/issues/1167))
+
+### Features
+
+* add subtitle support with multi-level configuration ([#1167](https://github.com/chrisbenincasa/tunarr/issues/1167)) ([a5a072e](https://github.com/chrisbenincasa/tunarr/commit/a5a072ef03408b899f313ff57914e8803864fc8a))
+* official DB support for music / other video program types ([#1207](https://github.com/chrisbenincasa/tunarr/issues/1207)) ([6f7c4d3](https://github.com/chrisbenincasa/tunarr/commit/6f7c4d33bff5cec39bd4bdeaedb560625c356e63))
+
+
+### Bug Fixes
+
+* allow clicking directly next to guide timeline indicator ([b12c40e](https://github.com/chrisbenincasa/tunarr/commit/b12c40e5336e9df8e31ae72b266835cb9764edcb)), closes [#1205](https://github.com/chrisbenincasa/tunarr/issues/1205)
+* always request recurisve=true for JF libraries ([8b609e0](https://github.com/chrisbenincasa/tunarr/commit/8b609e04dbc7251bd97a00c7048d7eb39a7b39ba))
+* change subtitle preferences priority column from numeric to integer ([236b6a1](https://github.com/chrisbenincasa/tunarr/commit/236b6a116e34f6d902f3e9a7ee8dcebafcec399e))
+* do not pick unextracted subtitle streams ([477d25f](https://github.com/chrisbenincasa/tunarr/commit/477d25f1d8a3a66448a1b2206f820a0b90112592))
+* download external subtitles to local cache ([132a206](https://github.com/chrisbenincasa/tunarr/commit/132a206ab729a76d429aa2cfdd2f73dfb379642d))
+* ensure correct channel/programming data always fetched ([c759101](https://github.com/chrisbenincasa/tunarr/commit/c7591019ca80e4d0c78326b4de56619a2605ea9a)), closes [#1194](https://github.com/chrisbenincasa/tunarr/issues/1194)
+* fix weekly time slot deleting and editing issues ([bd253fd](https://github.com/chrisbenincasa/tunarr/commit/bd253fdafd6a944be82a652d947b33b262a2d3fa))
+* invert checkbox for old/new ffmpeg pipeline ([7635225](https://github.com/chrisbenincasa/tunarr/commit/7635225f4b7a9224b9ef678b3dd366bc167bbef0))
+* multiple fixes to subtitle streaming / extraction ([#1208](https://github.com/chrisbenincasa/tunarr/issues/1208)) ([9a61543](https://github.com/chrisbenincasa/tunarr/commit/9a61543e8acfceac2a3b03c2e698f3759ec2ee25))
+* properly set filler list play cache entry ([7b32acb](https://github.com/chrisbenincasa/tunarr/commit/7b32acbbeb2cc7cdd2bad242db8dcec0ec968021))
+* properly set lastFlushTime in InMemoryCachedDbAdapter ([1f54a89](https://github.com/chrisbenincasa/tunarr/commit/1f54a8935acacec65148f75d83f721daee6cd765))
+* properly set output pixel format when using CUDA hardware download filter ([5e45dbf](https://github.com/chrisbenincasa/tunarr/commit/5e45dbf5f83273af129916742e77362150d50696))
+* remove jellyfin item type checking when starting stream ([ff5a4e7](https://github.com/chrisbenincasa/tunarr/commit/ff5a4e7b283fc90380e578d0fecb44944006ee22))
+* remove other program type checks for media sources ([fbc903e](https://github.com/chrisbenincasa/tunarr/commit/fbc903e05b21cdeddbbecde13f44657df332faee))
+* update Emby types with more recent OpenAPI definition ([#1211](https://github.com/chrisbenincasa/tunarr/issues/1211)) ([350b7c0](https://github.com/chrisbenincasa/tunarr/commit/350b7c022fe4376f9ba85b7433be3e9674f5713e))
+* use default subtitle stream if channel has no preferences but subtitles enabled ([1653a05](https://github.com/chrisbenincasa/tunarr/commit/1653a050c32665a9a5e86bc742fe645246ec8948))
+
+
+### UI Changes
+
+* hide leading edge checkbox is intemrittent watermarks are disabled ([143121c](https://github.com/chrisbenincasa/tunarr/commit/143121c1e8342fab4c618a38fcf20808cc4f88d9))
+* implement horizontal scrolling in guide page ([98331d0](https://github.com/chrisbenincasa/tunarr/commit/98331d004164631ca5dd891ad7fe20bd966d1408)), closes [#1197](https://github.com/chrisbenincasa/tunarr/issues/1197)
+* show hardware acceleration value in Transcode config table by default ([f66cfc6](https://github.com/chrisbenincasa/tunarr/commit/f66cfc6344960ead34be9e6801d53d3827da3496))
+
 ## [0.19.3](https://github.com/chrisbenincasa/tunarr/compare/v0.19.2...v0.19.3) (2025-05-12)
 
 
