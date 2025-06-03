@@ -10,7 +10,6 @@ import type { ChildProcessByStdio } from 'node:child_process';
 import { exec, spawn } from 'node:child_process';
 import events from 'node:events';
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 import type { WritableOptions } from 'node:stream';
 import stream from 'node:stream';
@@ -90,7 +89,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         this.logDirectory,
         `ffmpeg-report-${normalizedName}-%t.log`,
       );
-      if (os.platform() === 'win32') {
+      if (isWindows()) {
         logPath = logPath.replaceAll('\\', '/').replaceAll(':/', '\\:/');
       }
       env['FFREPORT'] = `file=${logPath}:level=${

@@ -22,6 +22,7 @@ import {
   find,
   isBoolean,
   isEmpty,
+  isError,
   isNil,
   isNumber,
   mapValues,
@@ -332,6 +333,23 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
   getThumbUrl(id: string) {
     // Naive impl for now...
     return `${this.options.url}/Items/${id}/Images/Primary`;
+  }
+
+  async getSubtitles(
+    itemId: string,
+    mediaItemId: string,
+    streamIndex: number,
+    subtitleFormat: string,
+  ) {
+    const subtitlesResult = await this.doGet<string>({
+      url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/Stream.${subtitleFormat}`,
+    });
+
+    if (isError(subtitlesResult)) {
+      return this.makeErrorResult('generic_request_error');
+    }
+
+    return this.makeSuccessResult(subtitlesResult);
   }
 
   async recordPlaybackStart(itemId: string, deviceId: string) {

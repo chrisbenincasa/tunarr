@@ -1,5 +1,6 @@
 import type { Maybe } from '@/types/util.js';
 import { isEmpty } from 'lodash-es';
+import { isWindows } from './index.ts';
 
 /**
  * Performs a naive sanitization for passing user-inputted text to
@@ -12,7 +13,7 @@ export function sanitizeForExec(executable: string): string {
   let cleaned = executable.replace(/[|;<>"'`$()&\n]/gm, '');
 
   // Workaround to keep \ for Windows paths...
-  if (process.platform !== 'win32') {
+  if (!isWindows()) {
     cleaned = cleaned.replace('\\', '');
   }
 

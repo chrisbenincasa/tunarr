@@ -8,6 +8,7 @@ import type { Maybe, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
+import { seq } from '@tunarr/shared/util';
 import { type EmbyItem } from '@tunarr/types/emby';
 import { inject, injectable } from 'inversify';
 import {
@@ -20,6 +21,7 @@ import {
   isNull,
   isUndefined,
   map,
+  orderBy,
   replace,
   sortBy,
   takeWhile,
@@ -31,9 +33,11 @@ import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import {
   ifDefined,
   isDefined,
+  isNonEmptyArray,
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
 import { StreamFetchRequest } from '../StreamDetailsFetcher.ts';
 import {
   type AudioStreamDetails,
@@ -41,6 +45,7 @@ import {
   type ProgramStreamResult,
   type StreamDetails,
   type StreamSource,
+  SubtitleStreamDetails,
   type VideoStreamDetails,
 } from '../types.ts';
 
@@ -52,9 +57,10 @@ export class EmbyStreamDetails {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
-    // @inject(EmbyItemFinder) private jellyfinItemFinder: EmbyItemFinder,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(ExternalSubtitleDownloader)
+    private externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {}
 
   async getStream({ server, lineupItem }: StreamFetchRequest) {
@@ -156,6 +162,10 @@ export class EmbyStreamDetails {
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
 
+    if (!firstMediaSource) {
+      return null;
+    }
+
     // Emby orders media streams with external ones first
     // We count these and then use the count as the offset for the
     // actual indexes of the embedded streams.
@@ -240,6 +250,64 @@ export class EmbyStreamDetails {
       },
     );
 
+    const subtitleStreamDetails = await seq.asyncCollect(
+      orderBy(
+        filter(
+          firstMediaSource?.MediaStreams,
+          (stream) => stream.Type === 'Subtitle',
+        ),
+        [(stream) => stream.Index ?? 0, (stream) => !stream.IsDefault],
+      ),
+      async (subtitleStream) => {
+        let index: Maybe<number> = undefined;
+        if (isDefined(subtitleStream.Index)) {
+          if (subtitleStream.IsExternal) {
+            index = subtitleStream.Index;
+          } else {
+            const streamRelativeIndex =
+              subtitleStream.Index - externalStreamCount;
+            if (streamRelativeIndex >= 0) {
+              index = streamRelativeIndex;
+            }
+          }
+        }
+
+        const details = {
+          codec: subtitleStream.Codec?.toLowerCase() ?? 'unknown',
+          default: subtitleStream.IsDefault ?? false,
+          forced: subtitleStream.IsForced ?? false,
+          sdh: subtitleStream.IsHearingImpaired ?? false,
+          type: subtitleStream.IsExternal ? 'external' : 'embedded',
+          description: subtitleStream.Title ?? '',
+          index,
+          languageCodeISO6392: subtitleStream.Language ?? undefined,
+          path: subtitleStream.Path ?? undefined,
+          title: subtitleStream.DisplayTitle ?? undefined,
+        } satisfies SubtitleStreamDetails;
+
+        if (details.type === 'external' && isDefined(index)) {
+          const fullPath =
+            await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+              item,
+              details,
+              ({ extension: ext }) =>
+                this.emby.getSubtitles(
+                  item.externalKey,
+                  firstMediaSource.Id!,
+                  index,
+                  ext,
+                ),
+            );
+
+          if (fullPath) {
+            details.path = fullPath;
+          }
+        }
+
+        return details;
+      },
+    );
+
     if (!videoStreamDetails && isEmpty(audioStreamDetails)) {
       this.logger.warn(
         'Could not find a video nor audio stream for Plex item %s',
@@ -257,6 +325,9 @@ export class EmbyStreamDetails {
       audioDetails: isEmpty(audioStreamDetails)
         ? undefined
         : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+      subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
+        ? subtitleStreamDetails
+        : undefined,
     };
 
     if (audioOnly) {

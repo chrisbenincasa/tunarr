@@ -16,6 +16,7 @@ import {
 } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
+import { seq } from '@tunarr/shared/util';
 import {
   PlexEpisode,
   PlexMediaAudioStream,
@@ -44,6 +45,7 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { PlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
@@ -72,6 +74,8 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(ExternalSubtitleDownloader)
+    private externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super();
   }
@@ -214,18 +218,20 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
+      const replacedPath = replace(
+        filePath,
+        streamSettings.pathReplace,
+        streamSettings.pathReplaceWith,
+      );
       this.logger.debug(
-        'Plex server %s configured to use "direct" streaming. Attempting to load program at %s',
+        'Plex server %s configured to use "direct" streaming. Attempting to load program from disk. Plex-reported path %s. Path after replace: %S',
         server.name,
         filePath,
+        replacedPath,
       );
       streamSource = {
         type: 'file',
-        path: replace(
-          filePath,
-          streamSettings.pathReplace,
-          streamSettings.pathReplaceWith,
-        ),
+        path: replacedPath,
       };
     } else {
       const existsAtPath =
@@ -364,7 +370,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
       },
     );
 
-    const subtitleStreamDetails = map(
+    const subtitleStreamDetails = await seq.asyncCollect(
       sortBy(
         filter(mediaStreams, (stream): stream is PlexMediaSubtitleStream => {
           return stream.streamType === 3;
@@ -375,7 +381,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
           stream.index,
         ],
       ),
-      (stream) => {
+      async (stream) => {
         const sdh = !![
           stream.title,
           stream.displayTitle,
@@ -383,7 +389,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
         ]
           .filter(isNonEmptyString)
           .find((s) => s.toLocaleLowerCase().includes('sdh'));
-        return {
+        const details = {
           type: isDefined(stream.index) ? 'embedded' : 'external',
           codec: stream.codec.toLocaleLowerCase(),
           default: stream.default ?? false,
@@ -396,6 +402,20 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
           languageCodeISO6392: stream.languageCode,
           forced: stream.forced ?? false,
         } satisfies SubtitleStreamDetails;
+
+        if (details.type === 'external' && isNonEmptyString(stream.key)) {
+          const key = stream.key;
+          const fullPath =
+            await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+              item,
+              details,
+              () => plexApiClient.getSubtitles(key),
+            );
+          if (fullPath) {
+            details.path = fullPath;
+          }
+        }
+        return details;
       },
     );
 
