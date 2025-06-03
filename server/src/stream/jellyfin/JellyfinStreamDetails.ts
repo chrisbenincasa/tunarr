@@ -29,9 +29,6 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
-import fs from 'node:fs/promises';
-import path, { dirname } from 'node:path';
-import { FileSystemService } from '../../services/FileSystemService.ts';
 import {
   ifDefined,
   isDefined,
@@ -39,10 +36,7 @@ import {
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.js';
-import {
-  getSubtitleCacheFilePath,
-  subtitleCodecToExt,
-} from '../../util/subtitles.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
@@ -67,8 +61,8 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
     @inject(JellyfinItemFinder) private jellyfinItemFinder: JellyfinItemFinder,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
-    @inject(FileSystemService)
-    private fileSystemService: FileSystemService,
+    @inject(ExternalSubtitleDownloader)
+    private externalSubtitleDownloader: ExternalSubtitleDownloader,
   ) {
     super();
   }
@@ -299,54 +293,22 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
         } satisfies SubtitleStreamDetails;
 
         if (details.type === 'external' && isDefined(index)) {
-          const outPath = getSubtitleCacheFilePath(
-            {
-              externalKey: item.externalKey,
-              externalSourceId: item.externalSourceId,
-              externalSourceType: item.externalSource,
-              id: item.programId,
-            },
-            details,
-          );
-          const ext = subtitleCodecToExt(details.codec);
-
-          if (!outPath || !ext) {
-            return;
-          }
-
-          const fullPath = path.join(
-            this.fileSystemService.getSubtitleCacheFolder(),
-            outPath,
-          );
-
-          console.log(dirname(fullPath));
-          await fs.mkdir(dirname(fullPath), { recursive: true });
-
-          if (!(await fileExists(fullPath))) {
-            const subtitlesRes = await this.jellyfin.getSubtitles(
-              item.externalKey,
-              firstMediaSource.Id!,
-              index,
-              ext,
+          const fullPath =
+            await this.externalSubtitleDownloader.downloadSubtitlesIfNecessary(
+              item,
+              details,
+              ({ extension: ext }) =>
+                this.jellyfin.getSubtitles(
+                  item.externalKey,
+                  firstMediaSource.Id!,
+                  index,
+                  ext,
+                ),
             );
 
-            if (subtitlesRes.type === 'error') {
-              this.logger.warn(
-                'Error while requesting external subtitle stream from Jellyfin: %s',
-                subtitlesRes.message ?? '',
-              );
-              return;
-            }
-
-            try {
-              await fs.writeFile(fullPath, subtitlesRes.data);
-            } catch (e) {
-              this.logger.warn(e);
-              return;
-            }
+          if (fullPath) {
+            details.path = fullPath;
           }
-
-          details.path = fullPath;
         }
 
         return details;

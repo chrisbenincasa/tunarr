@@ -162,6 +162,18 @@ export class PlexApiClient extends BaseApiClient {
     return parsedResponse;
   }
 
+  async getSubtitles(key: string): Promise<QueryResult<string>> {
+    const subtitlesResult = await this.doGet<string>({
+      url: key,
+    });
+
+    if (isError(subtitlesResult)) {
+      return this.makeErrorResult('generic_request_error');
+    }
+
+    return this.makeSuccessResult(subtitlesResult);
+  }
+
   async checkServerStatus(): Promise<MediaSourceStatus> {
     try {
       const result = await this.doTypeCheckedGet(

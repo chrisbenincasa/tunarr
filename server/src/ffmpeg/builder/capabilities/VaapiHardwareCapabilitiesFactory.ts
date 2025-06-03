@@ -5,7 +5,7 @@ import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardware
 import { VaapiHardwareCapabilitiesParser } from '@/ffmpeg/builder/capabilities/VaapiHardwareCapabilitiesParser.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
-import { attempt, isLinux, isNonEmptyString } from '@/util/index.js';
+import { attempt, isLinux, isNonEmptyString, isWindows } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isEmpty, isError, isNull, isUndefined } from 'lodash-es';
 import NodeCache from 'node-cache';
@@ -30,7 +30,7 @@ export class VaapiHardwareCapabilitiesFactory
 
   async getCapabilities() {
     // windows check bail!
-    if (process.platform === 'win32') {
+    if (isWindows()) {
       this.logger.debug(
         'Cannot detect VAAPI capabilities on Windows. Using default hw capabilities',
       );
