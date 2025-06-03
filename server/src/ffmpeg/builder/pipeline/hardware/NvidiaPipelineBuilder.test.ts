@@ -90,4 +90,82 @@ describe('NvidiaPipelineBuilder', () => {
 
     console.log(out.getCommandArgs().join(' '));
   });
+
+  test('updates pixel format for non-scaled input', () => {
+    const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+    const binaryCapabilities = new FfmpegCapabilities(
+      new Set(),
+      new Map(),
+      new Set(),
+    );
+
+    const videoSource = new FileStreamSource('/path/to/video.mkv');
+
+    const video = VideoInputSource.withStream(
+      videoSource,
+      VideoStream.create({
+        codec: 'h264',
+        displayAspectRatio: '16:9',
+        frameSize: FrameSize.FHD,
+        index: 0,
+        pixelFormat: new PixelFormatYuv420P(),
+        sampleAspectRatio: null,
+      }),
+    );
+
+    const watermark = new WatermarkInputSource(
+      new FileStreamSource('/path/to/watermark.jpg'),
+      StillImageStream.create({
+        frameSize: FrameSize.withDimensions(800, 600),
+        index: 0,
+      }),
+      {
+        duration: 5,
+        enabled: true,
+        horizontalMargin: 5,
+        opacity: 100,
+        position: 'bottom-right',
+        verticalMargin: 5,
+        width: 10,
+      },
+    );
+
+    const builder = new NvidiaPipelineBuilder(
+      capabilities,
+      binaryCapabilities,
+      video,
+      null,
+      null,
+      watermark,
+      new SubtitlesInputSource(
+        videoSource,
+        [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
+        SubtitleMethods.Burn,
+      ),
+    );
+
+    const state = FfmpegState.create({
+      version: {
+        versionString: 'n7.0.2-15-g0458a86656-20240904',
+        majorVersion: 7,
+        minorVersion: 0,
+        patchVersion: 2,
+        isUnknown: false,
+      },
+      // start: +dayjs.duration(0),
+    });
+
+    const out = builder.build(
+      state,
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+        deinterlace: true,
+      }),
+    );
+
+    console.log(out.getCommandArgs().join(' '));
+  });
 });

@@ -170,7 +170,10 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
 
-    if (currentState.bitDepth === 8 && this.watermarkInputSource) {
+    if (
+      currentState.bitDepth === 8 &&
+      (this.watermarkInputSource || this.context.isSubtitleOverlay())
+    ) {
       const desiredPixelFormat = new PixelFormatYuv420P();
       if (
         !isNil(currentState.pixelFormat) &&
@@ -182,10 +185,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           currentState = pixelFormatFilter.nextState(currentState);
           this.videoInputSource.filterSteps.push(pixelFormatFilter);
         } else {
-          const filter = new ScaleCudaFilter(
-            currentState.update({ pixelFormat: desiredPixelFormat }),
-            currentState.scaledSize,
-            currentState.paddedSize,
+          const filter = ScaleCudaFilter.formatOnly(
+            currentState,
+            desiredPixelFormat,
           );
           currentState = filter.nextState(currentState);
           this.videoInputSource.filterSteps.push(filter);
@@ -306,9 +308,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           ? new DeinterlaceFilter(this.ffmpegState, currentState)
           : new YadifCudaFilter(currentState);
       this.videoInputSource.filterSteps.push(filter);
-      if (filter.affectsFrameState) {
-        return filter.nextState(currentState);
-      }
+      currentState = filter.nextState(currentState);
     }
     return currentState;
   }
@@ -365,9 +365,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       );
     }
 
-    if (scaleStep.affectsFrameState) {
-      nextState = scaleStep.nextState(nextState);
-    }
+    nextState = scaleStep.nextState(nextState);
 
     if (isNonEmptyString(scaleStep.filter)) {
       this.videoInputSource.filterSteps.push(scaleStep);
