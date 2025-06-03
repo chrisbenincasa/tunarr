@@ -1,4 +1,4 @@
-import { range } from 'lodash-es';
+import { floor, range } from 'lodash-es';
 import { estimateNumberOfColumns } from './util';
 
 // Magic Numbers
@@ -17,9 +17,7 @@ export function getImagesPerRow(
     return containerWidth > 0 ? estimateNumberOfColumns(containerWidth) : 8; // some default value
   }
 
-  const roundedImageWidth = Math.round(imageWidth * 100) / 100;
-
-  return Math.round(((containerWidth / roundedImageWidth) * 100) / 100);
+  return floor(containerWidth / imageWidth);
 }
 
 // Estimate the modal height to prevent div collapse while new modal images load
@@ -53,21 +51,21 @@ export function getEstimatedModalHeight(
   return Math.ceil(maxRows * heightPerItem + inlineModalTopPadding); // 16px padding added to top
 }
 
-export function isNewModalAbove(
+export function isNewModalBelow(
   previousModalIndex: number,
   newModalIndex: number,
   itemsPerRow: number,
 ) {
+  //Modal is opening or closing, not moving
+  if (previousModalIndex === -1 || newModalIndex === -1) {
+    return false;
+  }
+
   // Calculate the row number of the current item
   const previousRowNumber = Math.floor(previousModalIndex / itemsPerRow);
   const newRowNumber = Math.floor(newModalIndex / itemsPerRow);
 
-  if (previousModalIndex === -1 || newModalIndex === -1) {
-    //Modal is opening or closing, not moving
-    return false;
-  } else {
-    return newRowNumber > previousRowNumber;
-  }
+  return newRowNumber > previousRowNumber;
 }
 
 /**

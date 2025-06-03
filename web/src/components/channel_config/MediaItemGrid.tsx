@@ -1,54 +1,53 @@
 import {
   findLastItemInRowIndex,
   getImagesPerRow,
-  isNewModalAbove,
 } from '@/helpers/inlineModalUtil.ts';
-import useStore from '@/store/index.ts';
-import { Nullable } from '@/types/util';
+import type { Nullable } from '@/types/util';
 import {
   Box,
-  Button,
   CircularProgress,
   Grid,
   LinearProgress,
   Typography,
 } from '@mui/material';
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import type {
+  InfiniteData,
+  UseInfiniteQueryResult,
+} from '@tanstack/react-query';
 import { usePrevious } from '@uidotdev/usehooks';
 import {
   compact,
   first,
   flatMap,
-  isEmpty,
   isNil,
+  isUndefined,
   map,
-  range,
   sumBy,
 } from 'lodash-es';
+import type { ComponentType, ForwardedRef } from 'react';
 import {
-  ForwardedRef,
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import {
-  FixedSizeList,
-  ListChildComponentProps,
-  ListOnItemsRenderedProps,
-} from 'react-window';
+
 import {
   useDebounceCallback,
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
+import { InlineModal } from '../InlineModal.tsx';
+import { AlphanumericFilters } from './AlphanumericFilters.tsx';
 
 export interface GridItemProps<ItemType> {
   item: ItemType;
   index: number;
   isModalOpen: boolean;
   moveModal: (index: number, item: ItemType) => void;
+  depth: number;
   ref: ForwardedRef<HTMLDivElement>;
 }
 
@@ -58,222 +57,206 @@ export interface ListItemProps<ItemType> {
   style?: React.CSSProperties;
 }
 
-export interface GridInlineModalProps<ItemType> {
-  open: boolean;
-  modalItemGuid: Nullable<string>;
-  modalIndex: number;
-  rowSize: number;
-  renderChildren: (
-    gridItemProps: GridItemProps<ItemType>,
-    modalProps: GridInlineModalProps<ItemType>,
-  ) => JSX.Element;
+export type RenderGridItem<ItemType> = ComponentType<GridItemProps<ItemType>>;
+
+export interface NestedGridProps<ItemType> {
+  parent: Nullable<ItemType>;
+  depth: number;
 }
 
-type Props<PageDataType, ItemType> = {
+export type RenderNestedGrid<ItemType> = (
+  props: NestedGridProps<ItemType>,
+) => JSX.Element;
+
+export interface GridInlineModalProps<ItemType> {
+  open: boolean;
+  modalItem: Nullable<ItemType>;
+  modalIndex: number;
+  rowSize: number;
+  depth: number;
+}
+
+export type MediaItemGridProps<PageDataType, ItemType> = {
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
   extractItems: (page: PageDataType) => ItemType[];
-  renderGridItem: (
-    gridItemProps: GridItemProps<ItemType>,
-    modalProps: GridInlineModalProps<ItemType>,
-  ) => JSX.Element;
-  renderListItem: (listItemProps: ListItemProps<ItemType>) => JSX.Element;
   getItemKey: (item: ItemType) => string;
   infiniteQuery: UseInfiniteQueryResult<InfiniteData<PageDataType>>;
   showAlphabetFilter?: boolean;
   // Generally this applies some filter on the underlying
   // query, changing the items displayed.
   handleAlphaNumFilter?: (key: string | null) => void;
+  renderNestedGrid: RenderNestedGrid<ItemType>;
+  renderGridItem: (props: GridItemProps<ItemType>) => JSX.Element;
+  depth?: number;
 };
 
-type Size = {
-  width?: number;
-  height?: number;
-};
-
-type ModalState = {
+type ModalState<ItemType> = {
   modalIndex: number;
-  modalGuid: Nullable<string>;
+  modalItem: Nullable<ItemType>;
 };
 
 // magic number for top bar padding; TODO: calc it off ref
-const TopBarPadddingPx = 64;
+export const TopBarPadddingPx = 64;
+export const StickyHeaderPaddingPx = 60.5;
 
-const AlphanumericCharCodes = [
-  '#'.charCodeAt(0),
-  ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),
-];
-
-export function MediaItemGrid<PageDataType, ItemType>({
-  getPageDataSize,
-  renderGridItem,
-  renderListItem,
-  getItemKey,
-  extractItems,
-  infiniteQuery: {
-    data,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    isLoading,
-  },
-  showAlphabetFilter = true,
-  handleAlphaNumFilter,
-}: Props<PageDataType, ItemType>) {
-  const viewType = useStore((state) => state.theme.programmingSelectorView);
+export function MediaItemGrid<PageDataType, ItemType>(
+  props: MediaItemGridProps<PageDataType, ItemType>,
+) {
+  const {
+    getPageDataSize,
+    getItemKey,
+    extractItems,
+    infiniteQuery: {
+      data,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage,
+      isLoading,
+    },
+    showAlphabetFilter = true,
+    handleAlphaNumFilter,
+    renderNestedGrid,
+    renderGridItem,
+    depth = 0,
+  } = props;
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [rowSize, setRowSize] = useState(9);
-  const [{ modalIndex, modalGuid }, setModalState] = useState<ModalState>({
-    modalGuid: null,
+  const [{ modalIndex, modalItem }, setModalState] = useState<
+    ModalState<ItemType>
+  >({
+    modalItem: null,
     modalIndex: -1,
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedModalItemRef = useRef<HTMLDivElement>(null);
-  const [alphanumericFilter, setAlphanumericFilter] = useState<string | null>(
-    null,
-  );
 
   // We only need a single grid item ref because all grid items are the same
   // width. This ref is simply used to determine the width of grid items based
   // on window/container size in order to derive other details about the grid.
   // If the modal is open, this ref points to the selected dmain grid element,
   // otherwise, it uses the first element in the grid
-  const gridItemRef = useRef<HTMLDivElement>(null);
+  const [gridItemRef, setGridItemRef] = useState<HTMLDivElement | null>(null);
   const alphaFilterRef = useRef<HTMLDivElement>(null);
 
   const loadedItems = compact(flatMap(data?.pages, extractItems));
 
   const containerMinHeight = useMemo(() => {
-    if (viewType === 'grid') {
-      const height = gridItemRef?.current?.getBoundingClientRect()?.height;
-      const alphaFilterHeight =
-        alphaFilterRef?.current?.getBoundingClientRect()?.height || 775; // 775 is approx desktop size as backup
-
-      if (isNil(height)) {
-        return alphaFilterHeight;
-      }
-
-      const page = first(data?.pages);
-      if (isNil(page)) {
-        return alphaFilterHeight;
-      }
-
-      const total = getPageDataSize(page)?.total;
-
-      if (isNil(total)) {
-        return alphaFilterHeight;
-      }
-
-      const maxHeight =
-        Math.ceil(total / rowSize) * height + (hasNextPage ? height : 48);
-
-      const numRows = Math.ceil(loadedItems.length / rowSize);
-
-      // Either set the height of the container to 3 extra rows on top of what is loaded
-      // or the max height
-      const calculatedMinHeight = Math.min((numRows + 3) * height, maxHeight);
-
-      // If the calculated min height is less than the height of Alphabet Filters, use filter height
-      return Math.max(calculatedMinHeight, alphaFilterHeight);
+    if (depth > 0) {
+      return;
     }
+
+    const height = gridItemRef?.getBoundingClientRect()?.height;
+    const alphaFilterHeight =
+      alphaFilterRef?.current?.getBoundingClientRect()?.height || 775; // 775 is approx desktop size as backup
+
+    if (isNil(height)) {
+      return alphaFilterHeight;
+    }
+
+    const page = first(data?.pages);
+    if (isNil(page)) {
+      return alphaFilterHeight;
+    }
+
+    const total = getPageDataSize(page)?.total;
+
+    if (isNil(total)) {
+      return alphaFilterHeight;
+    }
+
+    const maxHeight =
+      Math.ceil(total / rowSize) * height + (hasNextPage ? height : 48);
+
+    const numRows = Math.ceil(loadedItems.length / rowSize);
+
+    // Either set the height of the container to 3 extra rows on top of what is loaded
+    // or the max height
+    const calculatedMinHeight = Math.min((numRows + 3) * height, maxHeight);
+
+    // If the calculated min height is less than the height of Alphabet Filters, use filter height
+    return Math.max(calculatedMinHeight, alphaFilterHeight);
   }, [
+    depth,
+    gridItemRef,
     data?.pages,
     getPageDataSize,
+    rowSize,
     hasNextPage,
     loadedItems.length,
-    rowSize,
-    viewType,
   ]);
 
-  let containerHeight: number | undefined;
-  if (viewType === 'list') {
-    const totalHeight = window.innerHeight;
-    const containerOffset =
-      gridContainerRef.current?.getBoundingClientRect().top;
-    containerHeight = containerOffset
-      ? totalHeight - containerOffset - TopBarPadddingPx
-      : undefined;
-  }
-
   const handleAlphaFilterChange = useCallback(
-    (key: string) => {
-      if (isEmpty(key.trim())) {
-        return;
-      }
-
-      const anum = key[0];
-      if (!AlphanumericCharCodes.includes(anum.charCodeAt(0))) {
-        return;
-      }
-
-      setAlphanumericFilter((prev) => (prev === anum ? null : anum));
-
+    (key: string | null) => {
       scrollTo({
         top: 0,
         left: 0,
         behavior: 'smooth',
       });
 
-      handleAlphaNumFilter?.(anum === alphanumericFilter ? null : anum);
+      handleAlphaNumFilter?.(key);
     },
-    [handleAlphaNumFilter, alphanumericFilter],
+    [handleAlphaNumFilter],
   );
 
   const previousModalIndex = usePrevious(modalIndex);
 
-  const [{ width }, setSize] = useState<Size>({
-    width: undefined,
-    height: undefined,
-  });
-
-  const onResize = useDebounceCallback(setSize, 200);
+  const setSizeDependentFields = useDebounceCallback(
+    (containerWidth?: number, gridItemWidth?: number) => {
+      const newRowSize = getImagesPerRow(
+        containerWidth ? containerWidth + 16 : 0,
+        isNil(gridItemWidth) ? 0 : gridItemWidth + 16,
+      );
+      if (newRowSize !== rowSize) {
+        setRowSize(newRowSize);
+        setScrollParams(({ max }) => ({ max, limit: newRowSize * 4 }));
+      }
+    },
+    500,
+  );
 
   useResizeObserver({
     ref: gridContainerRef,
-    onResize,
-  });
-
-  useEffect(() => {
-    if (viewType === 'grid') {
-      // 16 is additional padding available in the parent container
-      const rowSize = getImagesPerRow(
-        width ? width + 16 : 0,
-        gridItemRef.current?.getBoundingClientRect().width ?? 0,
+    onResize: (size) => {
+      setSizeDependentFields(
+        size?.width,
+        gridItemRef?.getBoundingClientRect()?.width,
       );
-      setRowSize(rowSize);
-      setScrollParams(({ max }) => ({ max, limit: rowSize * 4 }));
-    }
-  }, [width, viewType, modalGuid, gridItemRef]);
+    },
+  });
 
   const scrollToGridItem = useCallback(
     (index: number) => {
+      // Don't scroll when closing the modal.
       if (index === -1) {
         return;
       }
 
       const selectedElement = selectedModalItemRef.current;
-      const includeModalInHeightCalc = isNewModalAbove(
-        previousModalIndex,
-        index,
-        rowSize,
-      );
+      const previousRowNumber = Math.floor(previousModalIndex / rowSize);
+      const newRowNumber = Math.floor(index / rowSize);
 
-      if (selectedElement) {
-        // New modal is opening in a row above previous modal
-        const modalMovesUp = selectedElement.offsetTop - TopBarPadddingPx;
-        // New modal is opening in the same row or a row below the current modal
-        const modalMovesDown =
-          selectedElement.offsetTop -
-          selectedElement.offsetHeight -
-          TopBarPadddingPx;
+      // Don't scroll is the row is the same
+      if (previousRowNumber === newRowNumber) {
+        return;
+      }
 
+      const top = selectedElement?.getBoundingClientRect().top;
+      const scroll = window.scrollY;
+
+      if (selectedElement && !isUndefined(top)) {
+        // Take nested items into account
+        const nestedHeight =
+          (gridItemRef?.getBoundingClientRect().height ?? 0) *
+          Math.max(depth - 1, 0);
+        const newTop = top + scroll - TopBarPadddingPx - StickyHeaderPaddingPx;
         window.scrollTo({
-          top: includeModalInHeightCalc ? modalMovesDown : modalMovesUp,
+          top: newTop + nestedHeight,
           behavior: 'smooth',
         });
       }
     },
-    [previousModalIndex, rowSize],
+    [depth, gridItemRef, previousModalIndex, rowSize],
   );
 
   // Scroll to new selected item when modalIndex changes
@@ -282,19 +265,16 @@ export function MediaItemGrid<PageDataType, ItemType>({
     scrollToGridItem(modalIndex);
   }, [modalIndex, scrollToGridItem]);
 
-  const handleMoveModal = useCallback(
-    (index: number, item: ItemType) => {
-      const key = getItemKey(item);
-      setModalState((prev) => {
-        if (prev.modalIndex === index) {
-          return { modalGuid: null, modalIndex: -1 };
-        } else {
-          return { modalGuid: key, modalIndex: index };
-        }
-      });
-    },
-    [getItemKey],
-  );
+  const handleMoveModal = useCallback((index: number, item: ItemType) => {
+    // const key = getItemKey(item);
+    setModalState((prev) => {
+      if (prev.modalIndex === index) {
+        return { modalItem: null, modalIndex: -1 };
+      } else {
+        return { modalItem: item, modalIndex: index };
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (data?.pages.length === 1) {
@@ -307,7 +287,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
         }));
       }
     }
-  }, [data?.pages, getPageDataSize, scrollParams.max]);
+  }, [data?.pages, getPageDataSize, scrollParams.max, depth]);
 
   const maybeTriggerFetchNext = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -345,78 +325,47 @@ export function MediaItemGrid<PageDataType, ItemType>({
     [modalIndex, rowSize, data?.pages, getPageDataSize],
   );
 
-  const renderLoadMoreIntersection = () => {
-    return (
-      !isLoading &&
-      hasNextPage && (
-        <div
-          style={{
-            height:
-              gridItemRef?.current?.getBoundingClientRect()?.height ?? 200,
-          }}
-          ref={ref}
-        ></div>
-      )
-    );
-  };
+  const totalItems = useMemo(() => {
+    const page = first(data?.pages);
+    if (page) {
+      return getPageDataSize(page)?.total ?? 0;
+    }
+    return 0;
+  }, [data?.pages, getPageDataSize]);
 
   const renderGridItems = () => {
     return map(loadedItems, (item, index) => {
       const isOpen = index === lastItemIndex;
-
-      return renderGridItem(
-        {
-          item,
-          index,
-          isModalOpen: modalIndex === index,
-          moveModal: handleMoveModal,
-          ref:
-            index === 0
-              ? gridItemRef
-              : modalIndex === index
-                ? selectedModalItemRef
-                : null,
-        },
-        {
-          open: isOpen,
-          modalItemGuid: modalGuid,
-          modalIndex: modalIndex,
-          rowSize: rowSize,
-          renderChildren: renderGridItem,
-        },
+      const isLast = index === totalItems - 1;
+      const renderModal = (index + 1) % rowSize === 0 || isLast;
+      const gridItem = renderGridItem({
+        item,
+        index,
+        isModalOpen: modalIndex === index,
+        depth,
+        moveModal: handleMoveModal,
+        ref:
+          index === 0
+            ? (ref) => setGridItemRef(ref)
+            : modalIndex === index
+              ? selectedModalItemRef
+              : null,
+      });
+      return (
+        <Fragment key={getItemKey(item)}>
+          {gridItem}
+          {renderModal && (
+            <InlineModal<ItemType>
+              open={isOpen}
+              modalItem={modalItem}
+              depth={depth + 1}
+              extractItemId={getItemKey}
+              getChildGrid={(props) => renderNestedGrid(props)}
+            />
+          )}
+        </Fragment>
       );
     });
-  };
-
-  const renderListRow = (props: ListChildComponentProps) => {
-    if (props.index === loadedItems.length) {
-      return renderLoadMoreIntersection();
-    }
-
-    const item = loadedItems[props.index];
-    return renderListItem({
-      item,
-      index: props.index,
-      style: props.style,
-    });
-  };
-
-  const pageSize = useMemo(() => {
-    const firstPage = data?.pages?.[0];
-    return firstPage ? getPageDataSize(firstPage)?.size : undefined;
-  }, [data?.pages, getPageDataSize]);
-
-  const onListItemsRendered = (props: ListOnItemsRenderedProps) => {
-    if (props.visibleStopIndex >= loadedItems.length - (pageSize ?? 50)) {
-      if (scrollParams.limit < scrollParams.max) {
-        setScrollParams(({ limit: prevLimit, max }) => ({
-          max,
-          limit: Math.ceil((prevLimit + rowSize * 5) / rowSize) * rowSize,
-        }));
-      }
-
-      maybeTriggerFetchNext();
-    }
   };
 
   return (
@@ -424,95 +373,48 @@ export function MediaItemGrid<PageDataType, ItemType>({
       ref={containerRef}
       sx={{
         position: 'relative',
-        minHeight: viewType === 'grid' ? containerMinHeight : 'auto',
+        minHeight: containerMinHeight,
+        pt: depth > 0 ? 1 : undefined,
       }}
     >
       {showAlphabetFilter && handleAlphaNumFilter && (
-        <Box
-          sx={{
-            position: 'fixed',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            right: 0,
-            bottom: 'max(10em, env(safe-area-inset-top))',
-            width: 35,
-            zIndex: 1000,
-            fontSize: '85%',
-          }}
-        >
-          <Box sx={{ position: 'sticky' }} ref={alphaFilterRef}>
-            {map(AlphanumericCharCodes, (code) => {
-              const str = String.fromCharCode(code);
-              return (
-                <Button
-                  disableRipple
-                  sx={{
-                    py: 0,
-                    px: 1,
-                    minWidth: '100%',
-                    transition: 'font-size 0.1s',
-                    fontSize: alphanumericFilter === str ? '150%' : 'inherit',
-                    '&:hover': {
-                      transition: 'font-size 0.1s ease-in-out',
-                      fontSize: '150%',
-                    },
-                  }}
-                  key={code}
-                  onClick={() => handleAlphaFilterChange(str)}
-                  color={alphanumericFilter === str ? undefined : 'info'}
-                >
-                  {str}
-                </Button>
-              );
-            })}
-          </Box>
-        </Box>
+        <AlphanumericFilters onAlphaFilterChange={handleAlphaFilterChange} />
       )}
-      {isFetchingNextPage && <LinearProgress />}
+
+      <LinearProgress
+        sx={{
+          position: 'sticky',
+          top: '125px',
+          zIndex: 1000,
+          visibility: isLoading || isFetchingNextPage ? 'visible' : 'hidden',
+        }}
+      />
       <Box ref={gridContainerRef} sx={{ width: '100%' }}>
-        {viewType === 'grid' ? (
-          <Grid
-            container
-            component="div"
-            spacing={2}
-            sx={{
-              display: viewType === 'grid' ? 'grid' : 'flex',
-              gridTemplateColumns:
-                viewType === 'grid'
-                  ? 'repeat(auto-fill, minmax(160px, 1fr))'
-                  : 'none',
-              justifyContent: viewType === 'grid' ? 'space-around' : 'normal',
-              mt: 2,
-            }}
-            ref={ref}
-          >
-            {renderGridItems()}
-          </Grid>
-        ) : containerHeight ? (
-          <FixedSizeList
-            height={containerHeight}
-            width={'100%'}
-            itemSize={61}
-            itemCount={loadedItems.length}
-            onItemsRendered={onListItemsRendered}
-            overscanCount={10}
-          >
-            {renderListRow}
-          </FixedSizeList>
-        ) : null}
+        <Grid
+          container
+          component="div"
+          spacing={2}
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            justifyContent: 'space-around',
+            mt: depth === 0 ? 2 : undefined,
+          }}
+          ref={ref}
+        >
+          {renderGridItems()}
+        </Grid>
       </Box>
 
-      {viewType === 'grid' && !isLoading && hasNextPage && (
+      {!isLoading && hasNextPage && (
         <div
           style={{
-            height:
-              gridItemRef?.current?.getBoundingClientRect()?.height ?? 200,
+            height: gridItemRef?.getBoundingClientRect()?.height ?? 200,
           }}
           ref={ref}
         ></div>
       )}
-      {viewType === 'grid' && isFetchingNextPage && (
+      {isFetchingNextPage && (
         <CircularProgress
           color="primary"
           sx={{ display: 'block', margin: '2em auto' }}
@@ -527,7 +429,7 @@ export function MediaItemGrid<PageDataType, ItemType>({
           No results
         </Typography>
       )}
-      {data && scrollParams.max !== 0 && viewType != 'list' && !hasNextPage && (
+      {depth === 0 && data && scrollParams.max !== 0 && !hasNextPage && (
         <Typography
           variant="h6"
           fontStyle={'italic'}

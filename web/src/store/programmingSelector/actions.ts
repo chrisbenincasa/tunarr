@@ -51,6 +51,21 @@ export const setProgrammingListLibrary = (library: MediaSourceView) =>
     state.currentMediaSourceView = library;
   });
 
+export const setPlexProgrammingListLibrarySubview = (
+  subview?: 'collections' | 'playlists',
+) =>
+  useStore.setState((state) => {
+    if (
+      state.currentMediaSourceView?.type === 'plex' &&
+      state.currentMediaSourceView.view.type === 'library'
+    ) {
+      state.currentMediaSourceView.view.subview = subview;
+    }
+  });
+
+export const clearPlexProgrammingListLibrarySubview = () =>
+  setPlexProgrammingListLibrarySubview();
+
 export const clearProgrammingListLibrary = () =>
   useStore.setState((state) => {
     state.currentMediaSourceView = undefined;

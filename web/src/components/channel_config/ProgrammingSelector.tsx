@@ -44,11 +44,12 @@ import {
   setProgrammingListLibrary,
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
+import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
-import { EmbyProgrammingSelector } from './EmbyProgrammingSelector.tsx';
-import { JellyfinProgrammingSelector } from './JellyfinProgrammingSelector.tsx';
-import PlexProgrammingSelector from './PlexProgrammingSelector.tsx';
+import { EmbyProgrammingSelector } from './emby/EmbyProgrammingSelector.tsx';
+import { JellyfinProgrammingSelector } from './jellyfin/JellyfinProgrammingSelector.tsx';
+import PlexProgrammingSelector from './plex/PlexProgrammingSelector.tsx';
 
 type Props = {
   initialMediaSourceId?: string;
@@ -56,10 +57,11 @@ type Props = {
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
 };
 
-export default function ProgrammingSelector({
+export const ProgrammingSelector = ({
   initialMediaSourceId,
+  initialLibraryId,
   toggleOrSetSelectedProgramsDrawer,
-}: Props) {
+}: Props) => {
   const { entityType } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
@@ -103,11 +105,12 @@ export default function ProgrammingSelector({
   useEffect(() => {
     const server =
       !isUndefined(mediaSources) && !isEmpty(mediaSources)
-        ? mediaSources[0]
+        ? (find(mediaSources, ({ id }) => id === initialMediaSourceId) ??
+          mediaSources[0])
         : undefined;
 
     setProgrammingListingServer(server);
-  }, [mediaSources]);
+  }, [initialMediaSourceId, mediaSources]);
 
   useEffect(() => {
     if (selectedServer?.type === Plex && plexLibraryChildren) {
@@ -115,11 +118,15 @@ export default function ProgrammingSelector({
         plexLibraryChildren.size > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Plex)
       ) {
+        const initialLibrary = find(
+          plexLibraryChildren?.Directory,
+          ({ uuid }) => uuid === initialLibraryId,
+        );
         setProgrammingListLibrary({
           type: Plex,
           view: {
             type: 'library',
-            library: plexLibraryChildren.Directory[0],
+            library: initialLibrary ?? plexLibraryChildren.Directory[0],
           },
         });
         navigate({
@@ -137,7 +144,11 @@ export default function ProgrammingSelector({
         jellyfinLibraries.Items.length > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Jellyfin)
       ) {
-        const view = sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0];
+        const view =
+          find(
+            jellyfinLibraries.Items,
+            ({ Id: id }) => id === initialLibraryId,
+          ) ?? sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0];
         setProgrammingListLibrary({
           type: Jellyfin,
           view,
@@ -171,6 +182,7 @@ export default function ProgrammingSelector({
     selectedLibrary,
     embyLibraries,
     navigate,
+    initialLibraryId,
   ]);
 
   /**
@@ -193,10 +205,16 @@ export default function ProgrammingSelector({
         if (server) {
           setProgrammingListingServer(server);
           setMediaSource(server.name);
+          navigate({
+            search: {
+              mediaSourceId: server.id,
+              libraryId: undefined,
+            },
+          }).catch(console.error);
         }
       }
     },
-    [mediaSources],
+    [mediaSources, navigate],
   );
 
   const onLibraryChange = useCallback(
@@ -217,6 +235,12 @@ export default function ProgrammingSelector({
             type: Plex,
             view: { type: 'library', library },
           });
+          navigate({
+            search: {
+              mediaSourceId: selectedServer.id,
+              libraryId: library.uuid,
+            },
+          }).catch(console.error);
         }
       } else if (selectedServer?.type === Jellyfin) {
         const view = knownMedia.getMediaOfType(
@@ -226,6 +250,12 @@ export default function ProgrammingSelector({
         );
         if (view) {
           setProgrammingListLibrary({ type: Jellyfin, view });
+          navigate({
+            search: {
+              mediaSourceId: selectedServer.id,
+              libraryId: view.Id,
+            },
+          }).catch(console.error);
         }
       } else if (selectedServer?.type === Emby) {
         const view = knownMedia.getMediaOfType(
@@ -235,10 +265,22 @@ export default function ProgrammingSelector({
         );
         if (view) {
           setProgrammingListLibrary({ type: Emby, view });
+          navigate({
+            search: {
+              mediaSourceId: selectedServer.id,
+              libraryId: view.Id,
+            },
+          }).catch(console.error);
         }
       }
     },
-    [knownMedia, plexPlaylists, selectedServer?.id, selectedServer?.type],
+    [
+      knownMedia,
+      navigate,
+      plexPlaylists,
+      selectedServer?.id,
+      selectedServer?.type,
+    ],
   );
 
   const renderMediaSourcePrograms = () => {
@@ -409,7 +451,7 @@ export default function ProgrammingSelector({
 
   return (
     <Box>
-      <Box sx={{ p: 1 }}>
+      <Box sx={{ pb: 1 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           sx={{
@@ -418,6 +460,7 @@ export default function ProgrammingSelector({
             justifyContent: 'flex-start',
             flexGrow: 1,
             rowGap: 2,
+            alignItems: 'center',
           }}
         >
           {hasAnySources && (
@@ -428,7 +471,7 @@ export default function ProgrammingSelector({
                 value={
                   viewingCustomShows
                     ? 'custom-shows'
-                    : (initialMediaSourceId ?? selectedServer?.id ?? '')
+                    : (selectedServer?.id ?? '')
                 }
                 onChange={(e) => onMediaSourceChange(e.target.value)}
               >
@@ -445,9 +488,10 @@ export default function ProgrammingSelector({
           )}
 
           {renderLibraryChoices()}
+          <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
-        {renderMediaSourcePrograms()}
       </Box>
+      {renderMediaSourcePrograms()}
     </Box>
   );
-}
+};

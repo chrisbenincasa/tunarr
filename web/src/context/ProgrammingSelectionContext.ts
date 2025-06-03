@@ -8,6 +8,8 @@ export type ProgrammingSelectionContextType = {
   onAddSelectedMedia: (programs: AddedMedia[]) => void;
   onAddMediaSuccess: () => void;
   entityType: EntityType;
+  initialMediaSourceId?: string;
+  initialLibraryId?: string;
 };
 
 export const ProgrammingSelectionContext =

@@ -1,11 +1,13 @@
 import {
+  type JellyfinCollectionType,
   type JellyfinItem,
   type JellyfinItemKind,
 } from '@tunarr/types/jellyfin';
+import type { NonEmptyArray } from 'ts-essentials';
 
 export function jellyfinChildType(
   item: JellyfinItem,
-): JellyfinItemKind[] | null {
+): NonEmptyArray<JellyfinItemKind> | null {
   switch (item.Type) {
     case 'Audio':
     case 'Episode':
@@ -22,9 +24,9 @@ export function jellyfinChildType(
     case 'Series':
       return ['Season'];
     case 'Playlist':
-      return [...JellyfinTerminalTypes];
+      return [...JellyfinTerminalTypes] as NonEmptyArray<JellyfinItemKind>;
     case 'Folder':
-      return ['Folder', 'Video'];
+      return ['Folder', 'Video', 'MusicVideo'];
     default:
       return null;
   }
@@ -37,7 +39,7 @@ export const JellyfinTerminalTypes = new Set<JellyfinItemKind>([
   'Video',
   'Trailer',
   'MusicVideo',
-]);
+]) as ReadonlySet<JellyfinItemKind>;
 
 export const sortJellyfinLibraries = (item: JellyfinItem) => {
   if (item.CollectionType) {
@@ -63,3 +65,44 @@ export const sortJellyfinLibraries = (item: JellyfinItem) => {
 
   return Number.MAX_SAFE_INTEGER;
 };
+
+export function isJellyfinParentItem(item: JellyfinItem) {
+  switch (item.Type) {
+    // These are the currently supported item types
+    case 'AggregateFolder':
+    case 'Season':
+    case 'Series':
+    case 'CollectionFolder':
+    case 'MusicAlbum':
+    case 'MusicArtist':
+    case 'MusicGenre':
+    case 'Genre':
+    case 'Playlist':
+    case 'PlaylistsFolder':
+    case 'Folder':
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function extractJellyfinItemId(item: JellyfinItem) {
+  return item.Id;
+}
+
+export function jellyfinCollectionTypeToItemTypes(
+  collectionType?: JellyfinCollectionType,
+): JellyfinItemKind[] {
+  switch (collectionType) {
+    case 'movies':
+      return ['Movie'];
+    case 'tvshows':
+      return ['Series'];
+    case 'music':
+      return ['MusicArtist'];
+    case 'musicvideos':
+      return ['MusicVideo'];
+    default:
+      return [];
+  }
+}

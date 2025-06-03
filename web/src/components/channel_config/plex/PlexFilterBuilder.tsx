@@ -44,9 +44,9 @@ import {
   useFormContext,
   type SubmitHandler,
 } from 'react-hook-form';
-import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters.ts';
-import { usePlexTags } from '../../hooks/plex/usePlexTags.ts';
-import { setPlexFilter } from '../../store/programmingSelector/actions.ts';
+import { useSelectedLibraryPlexFilters } from '../../../hooks/plex/usePlexFilters.ts';
+import { usePlexTags } from '../../../hooks/plex/usePlexTags.ts';
+import { setPlexFilter } from '../../../store/programmingSelector/actions.ts';
 
 type FilterMetadataContextType = {
   plexFilterMetadata: PlexFilterResponseMeta | undefined;

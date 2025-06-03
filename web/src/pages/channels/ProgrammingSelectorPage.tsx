@@ -1,8 +1,8 @@
 import SelectedProgrammingList from '@/components/channel_config/SelectedProgrammingList.tsx';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import ProgrammingSelector from '../../components/channel_config/ProgrammingSelector.tsx';
+import { ProgrammingSelector } from '../../components/channel_config/ProgrammingSelector.tsx';
 
 // These change depending on which entity we are editing,
 type Props = {
@@ -16,9 +16,9 @@ export default function ProgrammingSelectorPage({
 }: Props) {
   const [open, setOpen] = useState(false);
 
-  const toggleDrawer = (open: boolean) => {
+  const toggleDrawer = useCallback((open: boolean) => {
     setOpen(open);
-  };
+  }, []);
 
   return (
     <>

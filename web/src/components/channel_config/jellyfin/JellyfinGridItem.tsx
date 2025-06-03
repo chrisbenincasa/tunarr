@@ -5,6 +5,7 @@ import {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -12,7 +13,7 @@ import {
   isNonEmptyString,
   prettyItemDuration,
   toggle,
-} from '../../helpers/util.ts';
+} from '../../../helpers/util.ts';
 
 import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
@@ -21,8 +22,9 @@ import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { match, P } from 'ts-pattern';
-import { type GridItemMetadata, MediaGridItem } from './MediaGridItem.tsx';
-import { type GridItemProps } from './MediaItemGrid.tsx';
+import { isJellyfinParentItem } from '../../../helpers/jellyfinUtil.ts';
+import { type GridItemMetadata, MediaGridItem } from '../MediaGridItem.tsx';
+import { type GridItemProps } from '../MediaItemGrid.tsx';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface JellyfinGridItemProps extends GridItemProps<JellyfinItem> {}
@@ -59,21 +61,58 @@ function childItemType(item: JellyfinItem) {
     .otherwise(() => null);
 }
 
-function childJellyfinType(item: JellyfinItem) {
+function childJellyfinTypes(item: JellyfinItem) {
   return match(item)
-    .returnType<JellyfinItemKind | null>()
-    .with({ Type: 'Season' }, () => 'Episode')
-    .with({ Type: 'Series' }, () => 'Season')
-    .with({ Type: 'MusicAlbum' }, () => 'Audio')
-    .with({ Type: 'MusicArtist' }, () => 'MusicAlbum')
+    .returnType<JellyfinItemKind[] | null>()
+    .with({ Type: 'Season' }, () => ['Episode'])
+    .with({ Type: 'Series' }, () => ['Season'])
+    .with({ Type: 'MusicAlbum' }, () => ['Audio'])
+    .with({ Type: 'MusicArtist' }, () => ['MusicAlbum'])
     .otherwise(() => null);
+}
+
+function landscapeAspectRatioJellyfinItem(item: JellyfinItem) {
+  switch (item.Type) {
+    case 'Video':
+    case 'AggregateFolder':
+    case 'CollectionFolder':
+    case 'Episode':
+    case 'Folder':
+    case 'Genre':
+    case 'ManualPlaylistsFolder':
+    case 'MusicVideo':
+    case 'PlaylistsFolder':
+    case 'Trailer':
+    case 'UserRootFolder':
+    case 'UserView':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isJellyfinFolder(item: JellyfinItem) {
+  switch (item.Type) {
+    case 'AggregateFolder':
+    case 'CollectionFolder':
+    case 'Folder':
+    case 'ManualPlaylistsFolder':
+    case 'PlaylistsFolder':
+    case 'UserRootFolder':
+      return true;
+    default:
+      return false;
+  }
 }
 
 function subtitle(item: JellyfinItem) {
   return match(item)
-    .with({ Type: 'Movie' }, () => (
-      <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
-    ))
+    .with(
+      { Type: P.union('Movie', 'Video', 'MusicVideo', 'Episode', 'Audio') },
+      () => (
+        <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
+      ),
+    )
     .otherwise(() => {
       const childCount = extractChildCount(item);
       if (isNil(childCount)) {
@@ -102,18 +141,17 @@ export const JellyfinGridItem = memo(
         [],
       );
 
-      const isEpisode = useCallback(
-        (item: JellyfinItem) => item.Type === 'Episode',
-        [],
-      );
+      useEffect(() => {
+        // console.log('mounted jellyfin grid item');
+      });
 
-      const hasChildren = ['Series', 'Season'].includes(item.Type);
-      const childKind = childJellyfinType(item);
+      const hasChildren = isJellyfinParentItem(item);
+      const childKind = childJellyfinTypes(item);
 
       useJellyfinLibraryItems(
         currentServer!.id,
         item.Id,
-        childKind ? [childKind] : [],
+        childKind ?? [],
         null,
         hasChildren && modalOpen,
       );
@@ -161,35 +199,39 @@ export const JellyfinGridItem = memo(
             title: item.Name ?? '',
             aspectRatio: isMusicItem(item)
               ? 'square'
-              : isEpisode(item)
+              : landscapeAspectRatioJellyfinItem(item)
                 ? 'landscape'
                 : 'portrait',
             subtitle: subtitle(item),
             thumbnailUrl: thumbnailUrlFunc(item),
             selectedMedia: selectedMediaFunc(item),
+            isFolder: isJellyfinFolder(item),
           }) satisfies GridItemMetadata,
-        [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
+        [isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
+      );
+
+      const onSelect = useCallback(
+        (item: JellyfinItem) => addJellyfinSelectedMedia(currentServer!, item),
+        [currentServer],
       );
 
       return (
-        currentServer && (
-          <MediaGridItem
-            {...props}
-            key={props.item.Id}
-            itemSource="jellyfin"
-            ref={ref}
-            metadata={metadata}
-            onClick={handleItemClick}
-            onSelect={(item) => addJellyfinSelectedMedia(currentServer, item)}
-          />
-        )
+        <MediaGridItem
+          {...props}
+          key={props.item.Id}
+          itemSource="jellyfin"
+          ref={ref}
+          metadata={metadata}
+          onClick={handleItemClick}
+          onSelect={onSelect}
+        />
       );
     },
   ),
   (prev, next) => {
-    // if (!isEqual(prev, next)) {
-    //   console.log(prev, next);
-    // }
+    if (!isEqual(prev, next)) {
+      // console.log(prev, next);
+    }
     return isEqual(prev, next);
   },
 );

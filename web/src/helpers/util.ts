@@ -29,9 +29,11 @@ import {
   trim,
   zipWith,
 } from 'lodash-es';
+import pluralize from 'pluralize';
 import { type Path, type PathValue } from 'react-hook-form';
 import { type SelectedMedia } from '../store/programmingSelector/store';
 import { type UIChannelProgram, type UIIndex } from '../types';
+import type { Nilable } from '../types/util.ts';
 
 dayjs.extend(duration);
 
@@ -344,4 +346,12 @@ export function countWhere<T>(
   }
 
   return filter(coll, f)?.length;
+}
+
+export function pluralizeWithCount(
+  word: string,
+  count: Nilable<number>,
+  inclusive?: boolean,
+) {
+  return `${count ?? 0} ${pluralize(word, count ?? undefined, inclusive)}`;
 }

@@ -1,8 +1,11 @@
 import { type EmbyItem, type EmbyItemKind } from '@tunarr/types/emby';
+import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
+import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import type { ApiClient } from '../external/api.ts';
+import { JellyfinTerminalTypes } from './jellyfinUtil.ts';
 import { sequentialPromises } from './util.ts';
 
 export function embyChildType(item: EmbyItem): EmbyItemKind[] | null {
@@ -22,9 +25,9 @@ export function embyChildType(item: EmbyItem): EmbyItemKind[] | null {
     case 'Series':
       return ['Season'];
     case 'Playlist':
-      return [...EmbyTerminalTypes];
+      return [...JellyfinTerminalTypes] as NonEmptyArray<JellyfinItemKind>;
     case 'Folder':
-      return ['Folder', 'Video'];
+      return ['Folder', 'Video', 'MusicVideo'];
     default:
       return null;
   }
@@ -37,6 +40,10 @@ export const EmbyTerminalTypes = new Set<EmbyItemKind>([
   'Video',
   'Trailer',
 ]);
+
+export function extractEmbyId(item: EmbyItem) {
+  return item.Id;
+}
 
 export function isParentEmbyItem(item: EmbyItem) {
   switch (item.Type) {
@@ -163,3 +170,22 @@ export const enumerateEmbyItem = (
     return await loopInner(initialItem);
   };
 };
+
+export function embyCollectionTypeToItemTypes(
+  collectionType?: string,
+): EmbyItemKind[] {
+  if (!collectionType) {
+    return ['Movie', 'Series', 'MusicArtist'];
+  }
+
+  switch (collectionType) {
+    case 'movies':
+      return ['Movie'];
+    case 'tvshows':
+      return ['Series'];
+    case 'music':
+      return ['MusicArtist'];
+    default:
+      return ['Movie', 'Series', 'MusicArtist'];
+  }
+}

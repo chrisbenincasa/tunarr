@@ -1,4 +1,8 @@
-import { prettyItemDuration, typedProperty } from '@/helpers/util.ts';
+import {
+  pluralizeWithCount,
+  prettyItemDuration,
+  typedProperty,
+} from '@/helpers/util.ts';
 import {
   addEmbySelectedMedia,
   removePlexSelectedMedia,
@@ -12,7 +16,7 @@ import { type EmbyItem, isTerminalEmbyItem } from '@tunarr/types/emby';
 import { first, isNil, map } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, { Fragment, type MouseEvent, useCallback } from 'react';
-import { Emby } from '../../helpers/constants.ts';
+import { Emby } from '../../../helpers/constants.ts';
 
 export interface EmbyListItemProps {
   item: EmbyItem;
@@ -80,11 +84,13 @@ export function EmbyListItem(props: EmbyListItemProps) {
           item.ChildCount ?? 0,
         )}`;
       case 'Series':
-        if (item.RecursiveItemCount) {
+        if (!isNil(item.RecursiveItemCount)) {
           return `${item.RecursiveItemCount} total ${pluralize(
             'episode',
             item.RecursiveItemCount,
           )}`;
+        } else if (!isNil(item.ChildCount)) {
+          return pluralizeWithCount('season', item.ChildCount);
         }
         return '';
       default:

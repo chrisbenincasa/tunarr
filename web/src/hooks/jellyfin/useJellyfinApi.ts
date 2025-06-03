@@ -52,6 +52,7 @@ export const useJellyfinLibraryItems = (
           offset: pageParams?.offset,
           limit: pageParams?.limit,
           itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+          sortBy: ['IsFolder', 'SortName'],
         },
       }),
     enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),

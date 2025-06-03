@@ -227,13 +227,11 @@ export class MediaSourceDB {
 
     await this.db
       .updateTable('mediaSource')
-      .$if(isNonEmptyString(info.userId), (eb) =>
-        eb.set('mediaSource.userId', info.userId),
-      )
+      .$if(isNonEmptyString(info.userId), (eb) => eb.set('userId', info.userId))
       .$if(isNonEmptyString(info.username), (eb) =>
-        eb.set('mediaSource.username', info.username),
+        eb.set('username', info.username),
       )
-      .where('mediaSource.uuid', '=', mediaSourceId)
+      .where('uuid', '=', mediaSourceId)
       .executeTakeFirstOrThrow();
   }
 

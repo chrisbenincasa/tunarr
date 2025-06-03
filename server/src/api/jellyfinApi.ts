@@ -149,6 +149,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .or(z.array(JellyfinItemSortBy).optional())
             .default(['SortName', 'ProductionYear']),
           recursive: TruthyQueryParam.optional().default(false),
+          parentId: z.string().optional(),
         }),
         response: {
           200: JellyfinLibraryItemsResponse,
@@ -168,7 +169,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : null;
         const response = await api.getItems(
           null,
-          req.params.libraryId,
+          req.query.parentId ?? req.params.libraryId,
           req.query.itemTypes ?? [],
           uniq([
             'ChildCount',
@@ -177,7 +178,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           ]),
           pageParams,
           {
-            // filters: 'IsFolder=false',
             nameStartsWithOrGreater: req.query.nameStartsWithOrGreater,
             nameStartsWith: req.query.nameStartsWith,
             nameLessThan: req.query.nameLessThan,

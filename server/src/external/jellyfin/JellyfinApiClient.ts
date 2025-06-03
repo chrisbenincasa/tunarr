@@ -295,7 +295,7 @@ export class JellyfinApiClient extends BaseApiClient {
 
   async getItems(
     userId: Nilable<string>, // Not required if we are using an access token
-    libraryId: Nilable<string>,
+    parentId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: JellyfinItemFields[] = [],
     pageParams: Nilable<{ offset: number; limit: number }> = null,
@@ -309,7 +309,7 @@ export class JellyfinApiClient extends BaseApiClient {
       params: omitBy(
         {
           userId: userId ?? this.options.userId,
-          parentId: libraryId,
+          parentId: parentId,
           fields: union(extraFields, RequiredLibraryFields).join(','),
           startIndex: pageParams?.offset,
           limit: pageParams?.limit,

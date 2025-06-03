@@ -26,14 +26,14 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import type { MediaSourceId } from '@tunarr/types/schemas';
-import { first, groupBy, mapValues } from 'lodash-es';
+import { first, groupBy, isNil, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { P, match } from 'ts-pattern';
 import { useWindowSize } from 'usehooks-ts';
 import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { unwrapNil } from '../../helpers/util.ts';
+import { pluralizeWithCount, unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { type KnownMedia } from '../../store/programmingSelector/KnownMedia.ts';
@@ -152,28 +152,41 @@ const JellyfinSelectedProgramListItem = ({
     Jellyfin,
   )!;
 
-  let title: string = media.Name ?? '';
-  let secondary: ReactNode = null;
-  if (media.Type === 'CollectionFolder') {
-    // TODO: Show the size
-    title = `Media - ${media.Name}`;
-  } else if (media.Type === 'Series') {
-    secondary = `${media.ChildCount ?? 0} ${pluralize(
-      'season',
-      media.ChildCount ?? 0,
-    )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
-      'episode',
-      media.RecursiveItemCount ?? 0,
-    )}`;
-  } else if (media.Type === 'Season') {
-    secondary = `${media.SeriesName} - ${media.Name} (${
-      media.ChildCount ?? 0
-    } ${pluralize('episode', media.ChildCount ?? 0)})`;
-  } else if (media.Type === 'Movie') {
-    secondary = `Movie${
-      media.ProductionYear ? ', ' + media.ProductionYear : ''
-    }`;
-  }
+  const { title = media.Name ?? '', secondary = null } = match(media)
+    .returnType<{ title?: string; secondary?: ReactNode }>()
+    .with(
+      { Type: P.union('CollectionFolder', 'AggregateFolder', 'Folder') },
+      () => ({
+        title: `Folder - ${media.Name}`,
+        secondary: `${pluralizeWithCount('item', media.ChildCount)}`,
+      }),
+    )
+    .with({ Type: 'Series' }, () => ({
+      secondary: `${pluralizeWithCount('season', media.ChildCount)}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+        'episode',
+        media.RecursiveItemCount ?? 0,
+      )}`,
+    }))
+    .with({ Type: 'Season' }, () => ({
+      secondary: `${media.SeriesName} - ${media.Name} (${pluralizeWithCount('episode', media.ChildCount)})`,
+    }))
+    .with({ Type: 'Movie' }, () => ({
+      secondary: `Movie${
+        media.ProductionYear ? ', ' + media.ProductionYear : ''
+      }`,
+    }))
+    .with({ Type: 'Episode' }, () => {
+      const hasIndexes =
+        !isNil(media.IndexNumber) && !isNil(media.ParentIndexNumber);
+      const seasonEp = hasIndexes
+        ? `S${media.ParentIndexNumber?.toFixed().padStart(2, '0')}E${media.IndexNumber?.toFixed().padStart(2, '0')} - `
+        : '';
+      return {
+        title: `${seasonEp}${media.Name}`,
+        secondary: `${media.SeriesName}`,
+      };
+    })
+    .otherwise(() => ({}));
 
   return (
     <ListItem {...listChildProps} divider sx={{ px: 1 }} dense key={media.Id}>
@@ -205,28 +218,41 @@ const EmbySelectedProgramListItem = ({
     Emby,
   )!;
 
-  let title: string = media.Name ?? '';
-  let secondary: ReactNode = null;
-  if (media.Type === 'CollectionFolder') {
-    // TODO: Show the size
-    title = `Media - ${media.Name}`;
-  } else if (media.Type === 'Series') {
-    secondary = `${media.ChildCount ?? 0} ${pluralize(
-      'season',
-      media.ChildCount ?? 0,
-    )}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
-      'episode',
-      media.RecursiveItemCount ?? 0,
-    )}`;
-  } else if (media.Type === 'Season') {
-    secondary = `${media.SeriesName} - ${media.Name} (${
-      media.ChildCount ?? 0
-    } ${pluralize('episode', media.ChildCount ?? 0)})`;
-  } else if (media.Type === 'Movie') {
-    secondary = `Movie${
-      media.ProductionYear ? ', ' + media.ProductionYear : ''
-    }`;
-  }
+  const { title = media.Name ?? '', secondary = null } = match(media)
+    .returnType<{ title?: string; secondary?: ReactNode }>()
+    .with(
+      { Type: P.union('CollectionFolder', 'AggregateFolder', 'Folder') },
+      () => ({
+        title: `Folder - ${media.Name}`,
+        secondary: `${pluralizeWithCount('item', media.ChildCount)}`,
+      }),
+    )
+    .with({ Type: 'Series' }, () => ({
+      secondary: `${pluralizeWithCount('season', media.ChildCount)}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
+        'episode',
+        media.RecursiveItemCount ?? 0,
+      )}`,
+    }))
+    .with({ Type: 'Season' }, () => ({
+      secondary: `${media.SeriesName} - ${media.Name} (${pluralizeWithCount('episode', media.ChildCount)})`,
+    }))
+    .with({ Type: 'Movie' }, () => ({
+      secondary: `Movie${
+        media.ProductionYear ? ', ' + media.ProductionYear : ''
+      }`,
+    }))
+    .with({ Type: 'Episode' }, () => {
+      const hasIndexes =
+        !isNil(media.IndexNumber) && !isNil(media.ParentIndexNumber);
+      const seasonEp = hasIndexes
+        ? `S${media.ParentIndexNumber?.toFixed().padStart(2, '0')}E${media.IndexNumber?.toFixed().padStart(2, '0')} - `
+        : '';
+      return {
+        title: `${seasonEp}${media.Name}`,
+        secondary: `${media.SeriesName}`,
+      };
+    })
+    .otherwise(() => ({}));
 
   return (
     <ListItem {...listChildProps} divider sx={{ px: 1 }} dense key={media.Id}>

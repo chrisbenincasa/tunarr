@@ -54,9 +54,12 @@ export const PlexMediaSourceLibraryViewType = {
   Playlists: 'playlists' as const,
 } as const;
 
+export type PlexMediaSourceLibrarySubview = 'collections' | 'playlists';
+
 export type PlexMediaSourceLibraryView = {
   type: 'library';
   library: PlexLibrarySection;
+  subview?: PlexMediaSourceLibrarySubview;
 };
 
 export type PlexMediaSourcePlaylistsView = {

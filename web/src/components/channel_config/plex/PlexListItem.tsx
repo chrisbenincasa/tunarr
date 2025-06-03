@@ -14,13 +14,13 @@ import { filter, first, map } from 'lodash-es';
 import pluralize from 'pluralize';
 import type { MouseEvent } from 'react';
 import React, { Fragment, useCallback } from 'react';
-import { prettyItemDuration, typedProperty } from '../../helpers/util.ts';
-import useStore from '../../store/index.ts';
+import { prettyItemDuration, typedProperty } from '../../../helpers/util.ts';
+import useStore from '../../../store/index.ts';
 import {
   addPlexSelectedMedia,
   removePlexSelectedMedia,
-} from '../../store/programmingSelector/actions.ts';
-import type { PlexSelectedMedia } from '../../store/programmingSelector/store.ts';
+} from '../../../store/programmingSelector/actions.ts';
+import type { PlexSelectedMedia } from '../../../store/programmingSelector/store.ts';
 
 export interface PlexListItemProps<T extends PlexMedia> {
   item: T;
