@@ -1,7 +1,6 @@
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import path from 'path';
-import { dirname } from 'path/posix';
 import { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { QueryResult } from '../external/BaseApiClient.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
@@ -63,7 +62,7 @@ export class ExternalSubtitleDownloader {
 
     const fullPath = path.join(cacheFolder, outPath);
 
-    await fs.mkdir(dirname(fullPath), { recursive: true });
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
 
     if (!(await fileExists(fullPath))) {
       const subtitlesRes = await getSubtitlesCb({ extension: ext });
