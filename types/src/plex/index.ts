@@ -473,6 +473,7 @@ export const PlexMusicTrackSchema = BasePlexMediaSchema.extend({
   musicAnalysisVersion: z.string().optional(), // "1"
   Media: z.array(PlexMediaDescriptionSchema).optional(),
   leafCount: z.number().optional(),
+  year: z.number().optional(),
 }).merge(neverDirectory);
 
 export type PlexMusicTrack = Alias<z.infer<typeof PlexMusicTrackSchema>>;

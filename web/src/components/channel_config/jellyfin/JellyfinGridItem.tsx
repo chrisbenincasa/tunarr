@@ -1,5 +1,4 @@
 import { isEqual, isNil } from 'lodash-es';
-import pluralize from 'pluralize';
 import {
   type ForwardedRef,
   forwardRef,
@@ -11,6 +10,7 @@ import {
 } from 'react';
 import {
   isNonEmptyString,
+  pluralizeWithCount,
   prettyItemDuration,
   toggle,
 } from '../../../helpers/util.ts';
@@ -109,9 +109,20 @@ function subtitle(item: JellyfinItem) {
   return match(item)
     .with(
       { Type: P.union('Movie', 'Video', 'MusicVideo', 'Episode', 'Audio') },
-      () => (
-        <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
-      ),
+      () => {
+        const year =
+          !isNil(item.ProductionYear) &&
+          item.Type !== 'Episode' &&
+          item.Type !== 'Audio'
+            ? ` (${item.ProductionYear})`
+            : '';
+        return (
+          <span>
+            {prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}
+            {year}
+          </span>
+        );
+      },
     )
     .otherwise(() => {
       const childCount = extractChildCount(item);
@@ -119,11 +130,20 @@ function subtitle(item: JellyfinItem) {
         return null;
       }
 
+      const pluralString = pluralizeWithCount(
+        childItemType(item) ?? 'item',
+        childCount,
+      );
+
+      const year = !isNil(item.ProductionYear)
+        ? ` (${item.ProductionYear})`
+        : '';
+
       return (
-        <span>{`${childCount} ${pluralize(
-          childItemType(item) ?? 'item',
-          childCount,
-        )}`}</span>
+        <span>
+          {pluralString}
+          {year}
+        </span>
       );
     });
 }

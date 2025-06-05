@@ -46,7 +46,6 @@ export type GridItemMetadata = {
 type Props<T> = {
   item: T;
   itemSource: MediaSourceSettings['type'];
-  // extractors: GridItemMetadataExtractors<T>;
   metadata: GridItemMetadata;
   style?: React.CSSProperties;
   index: number;

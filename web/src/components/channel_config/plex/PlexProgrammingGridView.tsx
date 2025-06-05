@@ -66,7 +66,9 @@ export const PlexProgrammingGridView = ({
     selectedServer,
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     searchKey,
-    columns * RowsToLoad + bufferSize,
+    // Should we do this?
+    // depth === 0 ? columns * RowsToLoad + bufferSize : 100_000,
+    columns * RowsToLoad + bufferSize * (depth === 0 ? 1 : 2),
     currentParentContext
       ? {
           parentId: currentParentContext.ratingKey,
@@ -95,7 +97,7 @@ export const PlexProgrammingGridView = ({
     selectedLibrary?.view.type === 'library' ? selectedLibrary.view : null,
     columns * RowsToLoad + bufferSize,
     // selectedLibrary?.view.type === 'library',
-    // subview === 'playlists',
+    subview === 'playlists',
   );
 
   const { isFetchingNextPage: isFetchingNextPlaylistPage } = plexPlaylistsQuery;

@@ -1,5 +1,4 @@
 import { isEmpty, isEqual, isNil } from 'lodash-es';
-import pluralize from 'pluralize';
 import {
   type ForwardedRef,
   forwardRef,
@@ -10,6 +9,7 @@ import {
 } from 'react';
 import {
   isNonEmptyString,
+  pluralizeWithCount,
   prettyItemDuration,
   toggle,
 } from '../../../helpers/util.ts';
@@ -31,22 +31,42 @@ import { type GridItemProps } from '../MediaItemGrid.tsx';
 const subtitle = (item: EmbyItem) => {
   return match(item)
     .with(
-      { Type: P.union('Movie', 'Video', 'Episode', 'MusicVideo', 'Audio') },
-      (item) => (
-        <span>{prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}</span>
-      ),
+      { Type: P.union('Movie', 'Video', 'MusicVideo', 'Episode', 'Audio') },
+      () => {
+        const year =
+          !isNil(item.ProductionYear) &&
+          item.Type !== 'Episode' &&
+          item.Type !== 'Audio'
+            ? ` (${item.ProductionYear})`
+            : '';
+        return (
+          <span>
+            {prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000)}
+            {year}
+          </span>
+        );
+      },
     )
-    .otherwise((item) => {
-      const childCount = item.ChildCount ?? 0;
+    .otherwise(() => {
+      const childCount = item.ChildCount;
       if (isNil(childCount)) {
         return null;
       }
 
+      const pluralString = pluralizeWithCount(
+        childEmbyItemType(item) ?? 'item',
+        childCount,
+      );
+
+      const year = !isNil(item.ProductionYear)
+        ? ` (${item.ProductionYear})`
+        : '';
+
       return (
-        <span>{`${childCount} ${pluralize(
-          childEmbyItemType(item) ?? 'item',
-          childCount,
-        )}`}</span>
+        <span>
+          {pluralString}
+          {year}
+        </span>
       );
     });
 };

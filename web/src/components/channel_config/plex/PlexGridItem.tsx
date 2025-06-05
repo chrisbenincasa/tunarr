@@ -8,7 +8,6 @@ import {
   type PlexMedia,
 } from '@tunarr/types/plex';
 import { isEmpty, isEqual, isNil, isUndefined } from 'lodash-es';
-import pluralize from 'pluralize';
 import {
   forwardRef,
   memo,
@@ -20,6 +19,7 @@ import {
 } from 'react';
 import {
   isNonEmptyString,
+  pluralizeWithCount,
   prettyItemDuration,
   toggle,
 } from '../../../helpers/util.ts';
@@ -61,20 +61,37 @@ function extractChildCount(media: PlexMedia) {
 
 function subtitle(media: PlexMedia) {
   return match(media)
-    .with({ type: P.union('movie', 'episode') }, (m) => (
-      <span>{prettyItemDuration(m.duration ?? 0)}</span>
-    ))
+    .with({ type: P.union('movie', 'episode') }, (m) => {
+      const year = media.type === 'movie' ? ` (${media.year})` : '';
+      return (
+        <span>
+          {prettyItemDuration(m.duration ?? 0)}
+          {year}
+        </span>
+      );
+    })
     .otherwise((item) => {
       const childCount = extractChildCount(item);
-      if (isNil(childCount)) {
+      const year = match(item)
+        .with({ type: 'album' }, (album) => album.year)
+        .with({ type: 'show' }, (show) => show.year)
+        .otherwise(() => null);
+
+      if (isNil(childCount) && isNil(year)) {
         return null;
       }
 
+      const countStr = pluralizeWithCount(
+        getPlexMediaChildType(item) ?? 'item',
+        childCount,
+      );
+      const yearStr = isNil(year) ? null : ` (${year})`;
+
       return (
-        <span>{`${childCount} ${pluralize(
-          getPlexMediaChildType(item) ?? 'item',
-          childCount,
-        )}`}</span>
+        <span>
+          {countStr}
+          {yearStr}
+        </span>
       );
     });
 }

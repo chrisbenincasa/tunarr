@@ -22,8 +22,8 @@ export function PlexSortField() {
   const selectedLibrary = useCurrentMediaSourceView('plex');
 
   const [sort, setSort] = useState<PlexSort>({
-    key: '',
-    title: '',
+    key: 'titleSort',
+    title: 'Title',
     ascending: true,
   });
 
