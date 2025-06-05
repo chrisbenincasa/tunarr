@@ -14,16 +14,13 @@ import {
   useTheme,
 } from '@mui/material';
 import { nullToUndefined } from '@tunarr/shared/util';
-import type { EmbyItemKind } from '@tunarr/types/emby';
-import {
-  type JellyfinCollectionType,
-  type JellyfinItemKind,
-} from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
-import { Emby, Jellyfin } from '../../helpers/constants.ts';
+import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { embyCollectionTypeToItemTypes } from '../../helpers/embyUtil.ts';
+import { jellyfinCollectionTypeToItemTypes } from '../../helpers/jellyfinUtil.ts';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import {
@@ -41,49 +38,9 @@ type Props = {
   selectAllEnabled?: boolean;
 };
 
-function jellyfinCollectionTypeToItemTypes(
-  collectionType?: JellyfinCollectionType,
-): JellyfinItemKind[] {
-  if (!collectionType) {
-    return ['Movie', 'Series', 'MusicArtist'];
-  }
-
-  switch (collectionType) {
-    case 'movies':
-      return ['Movie'];
-    case 'tvshows':
-      return ['Series'];
-    case 'music':
-      return ['MusicArtist'];
-    case 'musicvideos':
-      return ['MusicVideo'];
-    default:
-      return ['Movie', 'Series', 'MusicArtist'];
-  }
-}
-
-function embyCollectionTypeToItemTypes(
-  collectionType?: string,
-): EmbyItemKind[] {
-  if (!collectionType) {
-    return ['Movie', 'Series', 'MusicArtist'];
-  }
-
-  switch (collectionType) {
-    case 'movies':
-      return ['Movie'];
-    case 'tvshows':
-      return ['Series'];
-    case 'music':
-      return ['MusicArtist'];
-    default:
-      return ['Movie', 'Series', 'MusicArtist'];
-  }
-}
-
 export default function SelectedProgrammingActions({
   selectAllEnabled = true,
-  toggleOrSetSelectedProgramsDrawer, // onSelectionModalClose,
+  toggleOrSetSelectedProgramsDrawer,
 }: Props) {
   const apiClient = useTunarrApi();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
@@ -117,7 +74,7 @@ export default function SelectedProgrammingActions({
       setSelectAllLoading(true);
       let prom: Promise<void>;
       switch (selectedServer.type) {
-        case 'plex':
+        case Plex:
           prom = directPlexSearchFn().then((response) => {
             addPlexSelectedMedia(selectedServer, response.Metadata);
             addKnownMediaForServer(selectedServer.id, {
@@ -126,7 +83,7 @@ export default function SelectedProgrammingActions({
             });
           });
           break;
-        case 'jellyfin': {
+        case Jellyfin: {
           const library = selectedLibrary as JellyfinMediaSourceView;
 
           prom = apiClient
@@ -136,15 +93,10 @@ export default function SelectedProgrammingActions({
                 libraryId: library.view.Id,
               },
               queries: {
-                // offset: pageParams?.offset,
-                // limit: pageParams?.limit,
                 itemTypes: jellyfinCollectionTypeToItemTypes(
                   nullToUndefined(library.view.CollectionType),
                 ),
-                recursive:
-                  library.view.Type === 'UserView' ||
-                  library.view.Type === 'UserRootFolder' ||
-                  library.view.Type === 'Folder',
+                recursive: true,
               },
             })
             .then((response) => {
@@ -156,7 +108,7 @@ export default function SelectedProgrammingActions({
             });
           break;
         }
-        case 'emby': {
+        case Emby: {
           const library = selectedLibrary as EmbyMediaSourceView;
 
           prom = apiClient
@@ -166,8 +118,6 @@ export default function SelectedProgrammingActions({
                 libraryId: library.view.Id,
               },
               queries: {
-                // offset: pageParams?.offset,
-                // limit: pageParams?.limit,
                 itemTypes: embyCollectionTypeToItemTypes(
                   library.view.CollectionType,
                 ),

@@ -136,6 +136,7 @@ export const EmbyItemSortBy = z.enum([
   'Random',
   'Revenue',
   'Runtime',
+  'IsFolder',
 ]);
 
 const EmbyPersonType = z.enum([

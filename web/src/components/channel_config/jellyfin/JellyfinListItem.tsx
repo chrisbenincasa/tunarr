@@ -7,11 +7,20 @@ import {
   useCurrentMediaSource,
   useSelectedMedia,
 } from '@/store/programmingSelector/selectors.ts';
-import { Button, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import { JellyfinItem, isTerminalJellyfinItem } from '@tunarr/types/jellyfin';
+import { Folder } from '@mui/icons-material';
+import {
+  Button,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
+import type { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
+import { isTerminalJellyfinItem } from '@tunarr/types/jellyfin';
 import { first, isNil, map } from 'lodash-es';
 import pluralize from 'pluralize';
-import React, { Fragment, MouseEvent, useCallback } from 'react';
+import type { MouseEvent } from 'react';
+import React, { Fragment, useCallback } from 'react';
 
 export interface JellyfinListItemProps {
   item: JellyfinItem;
@@ -20,6 +29,10 @@ export interface JellyfinListItemProps {
   length?: number;
   parent?: string;
   onPushParent: (item: JellyfinItem) => void;
+}
+
+function jellyfinTypeToPrettyString(type: JellyfinItemKind): string {
+  return type[0] + type.slice(1).replaceAll(/([A-Z])/g, ' $1');
 }
 
 export function JellyfinListItem(props: JellyfinListItemProps) {
@@ -57,6 +70,7 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
       case 'Movie':
       case 'Video':
       case 'Trailer':
+      case 'MusicVideo':
         return prettyItemDuration((item.RunTimeTicks ?? 0) / 10_000);
       case 'MusicAlbum':
         return item.ProductionYear?.toString() ?? '';
@@ -103,6 +117,13 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
             cursor: isTerminalJellyfinItem(item) ? 'default' : undefined,
           }}
         >
+          {(item.Type === 'Folder' ||
+            item.Type === 'AggregateFolder' ||
+            item.Type === 'UserView') && (
+            <ListItemIcon>
+              <Folder />
+            </ListItemIcon>
+          )}
           <ListItemText primary={item.Name} secondary={getSecondaryText()} />
           <Button
             disabled={!isTerminalJellyfinItem(item) && childCount === 0}
@@ -112,8 +133,8 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
             {hasChildren
               ? `Add ${item.Type}`
               : selectedMediaIds.includes(item.Id)
-              ? 'Remove'
-              : `Add ${item.Type}`}
+                ? 'Remove'
+                : `Add ${jellyfinTypeToPrettyString(item.Type)}`}
           </Button>
         </ListItemButton>
       </ListItem>

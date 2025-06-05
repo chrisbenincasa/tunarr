@@ -1,5 +1,6 @@
 import { type Channel } from '@tunarr/types';
 import type { RandomSlotSchedule } from '@tunarr/types/api';
+import { range } from 'lodash-es';
 import { type MarkOptional } from 'ts-essentials';
 
 export const OneDayMillis = 1000 * 60 * 60 * 24;
@@ -72,3 +73,7 @@ export const defaultRandomSlotSchedule: RandomSlotSchedule = {
   // UI mechanism
   lockWeights: false,
 };
+export const AlphanumericCharCodes = [
+  '#'.charCodeAt(0),
+  ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),
+];

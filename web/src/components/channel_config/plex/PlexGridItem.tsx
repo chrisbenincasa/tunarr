@@ -1,5 +1,8 @@
 import {
+  isPlexEpisode,
+  isPlexMusicTrack,
   isPlexPlaylist,
+  isPlexSeason,
   isTerminalItem,
   type PlexChildListing,
   type PlexMedia,
@@ -19,7 +22,7 @@ import {
   isNonEmptyString,
   prettyItemDuration,
   toggle,
-} from '../../helpers/util.ts';
+} from '../../../helpers/util.ts';
 
 import { getPlexMediaChildType } from '@/helpers/plexUtil.ts';
 import { usePlexTyped } from '@/hooks/plex/usePlex.ts';
@@ -32,8 +35,8 @@ import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
 import { match, P } from 'ts-pattern';
-import { MediaGridItem, type GridItemMetadata } from './MediaGridItem.tsx';
-import type { GridItemProps } from './MediaItemGrid.tsx';
+import { MediaGridItem, type GridItemMetadata } from '../MediaGridItem.tsx';
+import type { GridItemProps } from '../MediaItemGrid.tsx';
 
 function genPlexChildPath(media: PlexMedia) {
   return match(media)
@@ -58,7 +61,7 @@ function extractChildCount(media: PlexMedia) {
 
 function subtitle(media: PlexMedia) {
   return match(media)
-    .with({ type: 'movie' }, (m) => (
+    .with({ type: P.union('movie', 'episode') }, (m) => (
       <span>{prettyItemDuration(m.duration ?? 0)}</span>
     ))
     .otherwise((item) => {
@@ -76,6 +79,10 @@ function subtitle(media: PlexMedia) {
     });
 }
 
+function isPlexMusicItem(item: PlexMedia) {
+  return ['artist', 'album', 'track'].includes(item.type);
+}
+
 export const PlexGridItem = memo(
   forwardRef(
     <T extends PlexMedia>(
@@ -86,17 +93,6 @@ export const PlexGridItem = memo(
       const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
       const settings = useSettings();
       const [modalOpen, setModalOpen] = useState(false);
-      const currentServer = useCurrentMediaSource('plex');
-
-      const isMusicItem = useCallback(
-        (item: PlexMedia) => ['artist', 'album', 'track'].includes(item.type),
-        [],
-      );
-
-      const isEpisode = useCallback(
-        (item: PlexMedia) => item.type === 'episode',
-        [],
-      );
 
       const onSelect = useCallback(
         (item: PlexMedia) => {
@@ -115,15 +111,11 @@ export const PlexGridItem = memo(
         if (
           !isUndefined(childItems) &&
           !isEmpty(childItems.Metadata) &&
-          isNonEmptyString(currentServer?.id)
+          isNonEmptyString(server?.id)
         ) {
-          addKnownMediaForPlexServer(
-            currentServer.id,
-            childItems.Metadata,
-            item.guid,
-          );
+          addKnownMediaForPlexServer(server.id, childItems.Metadata, item.guid);
         }
-      }, [childItems, currentServer?.id, item.guid]);
+      }, [childItems, server?.id, item.guid]);
 
       const moveModalToItem = useCallback(() => {
         moveModal(index, item);
@@ -135,11 +127,11 @@ export const PlexGridItem = memo(
       }, [moveModalToItem]);
 
       const getRatingKey = (item: PlexMedia) => {
-        if (item.type === 'track') {
+        if (isPlexMusicTrack(item)) {
           return (
             item.parentRatingKey ?? item.grandparentRatingKey ?? item.ratingKey
           );
-        } else if (item.type === 'season') {
+        } else if (isPlexSeason(item)) {
           return item.thumb === item.parentThumb && item.parentRatingKey
             ? item.parentRatingKey
             : item.ratingKey;
@@ -174,13 +166,13 @@ export const PlexGridItem = memo(
         (item: PlexMedia): SelectedMedia => {
           return {
             type: 'plex',
-            serverId: currentServer!.id,
-            serverName: currentServer!.name,
+            serverId: server.id,
+            serverName: server.name,
             childCount: extractChildCount(item) ?? 0,
             id: item.guid,
           };
         },
-        [currentServer],
+        [server],
       );
 
       const metadata = useMemo(
@@ -200,18 +192,18 @@ export const PlexGridItem = memo(
             thumbnailUrl: thumbnailUrlFunc(item),
             selectedMedia: selectedMediaFunc(item),
             aspectRatio:
-              isMusicItem(item) || isPlexPlaylist(item)
+              isPlexMusicItem(item) || isPlexPlaylist(item)
                 ? 'square'
-                : isEpisode(item)
+                : isPlexEpisode(item)
                   ? 'landscape'
                   : 'portrait',
             isPlaylist: isPlexPlaylist(item),
           }) satisfies GridItemMetadata,
-        [isEpisode, isMusicItem, item, selectedMediaFunc, thumbnailUrlFunc],
+        [item, selectedMediaFunc, thumbnailUrlFunc],
       );
 
       return (
-        currentServer && (
+        server && (
           <MediaGridItem
             {...props}
             key={props.item.guid}

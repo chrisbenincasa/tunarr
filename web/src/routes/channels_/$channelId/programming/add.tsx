@@ -6,6 +6,7 @@ import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentChannel } from '@/store/channelEditor/actions';
 import { setPlexFilter } from '@/store/programmingSelector/actions';
 import { createFileRoute } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import { z } from 'zod';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
@@ -23,29 +24,24 @@ export const Route = createFileRoute('/channels/$channelId/programming/add')({
   component: ChannelProgrammingSelectorPage,
 });
 
-type Props = {
-  initialMediaSourceId?: string;
-  initialLibraryId?: string;
-};
-
-function ChannelProgrammingSelectorPage({
-  initialMediaSourceId,
-  initialLibraryId,
-}: Props) {
+function ChannelProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
+  const { mediaSourceId, libraryId } = Route.useSearch();
   return (
     <ProgrammingSelectionContext.Provider
       value={{
         onAddSelectedMedia: addMediaToCurrentChannel,
-        onAddMediaSuccess: () => {
+        onAddMediaSuccess: useCallback(() => {
           navigate({ to: '..' }).catch(console.error);
-        },
+        }, [navigate]),
         entityType: 'channel',
+        // initialMediaSourceId:
+        // initialLibraryId
       }}
     >
       <ProgrammingSelectorPage
-        initialMediaSourceId={initialMediaSourceId}
-        initialLibraryId={initialLibraryId}
+        initialMediaSourceId={mediaSourceId}
+        initialLibraryId={libraryId}
       />
     </ProgrammingSelectionContext.Provider>
   );

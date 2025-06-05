@@ -1,6 +1,7 @@
 import { forPlexMedia } from '@tunarr/shared/util';
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { ApiClient } from '../external/api.ts';
+import type { PlexMedia } from '@tunarr/types/plex';
+import type { MediaSourceId } from '@tunarr/types/schemas';
+import type { ApiClient } from '../external/api.ts';
 
 export const fetchPlexPath = <T>(
   apiClient: ApiClient,
@@ -27,3 +28,17 @@ export const getPlexMediaChildType = forPlexMedia({
   artist: 'album',
   album: 'track',
 });
+
+export function extractPlexRatingKey(item: PlexMedia) {
+  return item.ratingKey;
+}
+
+export function getPlexPageDataSize(data: {
+  totalSize?: number;
+  size: number;
+}) {
+  return {
+    total: data.totalSize,
+    size: data.size,
+  };
+}

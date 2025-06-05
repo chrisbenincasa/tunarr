@@ -2,7 +2,8 @@ import {
   addSelectedMedia,
   removeSelectedMedia,
 } from '@/store/programmingSelector/actions.ts';
-import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
+import { CheckCircle, Folder, RadioButtonUnchecked } from '@mui/icons-material';
+import type { Theme } from '@mui/material';
 import {
   Box,
   Fade,
@@ -12,13 +13,15 @@ import {
   ImageListItemBar,
   Skeleton,
   alpha,
+  lighten,
   useTheme,
 } from '@mui/material';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
 import type { ForwardedRef, MouseEvent } from 'react';
-import React, { forwardRef, useCallback, useState } from 'react';
+import React, { forwardRef, useCallback, useMemo, useState } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
+import { useShallow } from 'zustand/react/shallow';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import type {
@@ -37,6 +40,7 @@ export type GridItemMetadata = {
   subtitle: JSX.Element | string | null;
   thumbnailUrl: string;
   selectedMedia: SelectedMedia;
+  isFolder?: boolean;
 };
 
 type Props<T> = {
@@ -49,6 +53,7 @@ type Props<T> = {
   isModalOpen: boolean;
   onClick: (item: T) => void;
   onSelect: (item: T) => void;
+  depth: number;
 };
 
 const MediaGridItemInner = <T,>(
@@ -62,6 +67,7 @@ const MediaGridItemInner = <T,>(
   );
 
   const darkMode = useIsDarkMode();
+
   const {
     item,
     metadata: {
@@ -73,31 +79,39 @@ const MediaGridItemInner = <T,>(
       title,
       subtitle,
       childCount,
+      isFolder = false,
     },
     style,
     isModalOpen,
     onClick,
+    depth,
   } = props;
+
   const [imageLoaded, setImageLoaded] = useState<
     'loading' | 'success' | 'error'
   >('loading');
 
-  const selectedMedia = useStore((s) =>
-    filter(
-      s.selectedMedia,
-      (p): p is PlexSelectedMedia | JellyfinSelectedMedia =>
-        p.type !== 'custom-show',
+  const selectedMedia = useStore(
+    useShallow((s) =>
+      filter(
+        s.selectedMedia,
+        (p): p is PlexSelectedMedia | JellyfinSelectedMedia =>
+          p.type !== 'custom-show',
+      ),
     ),
   );
 
   const handleClick = useCallback(() => {
-    // moveModal(index, item);
     onClick(item);
   }, [item, onClick]);
 
-  const isSelected = some(
-    selectedMedia,
-    (sm) => sm.type === props.itemSource && sm.id === itemId,
+  const isSelected = useMemo(
+    () =>
+      some(
+        selectedMedia,
+        (sm) => sm.type === props.itemSource && sm.id === itemId,
+      ),
+    [itemId, props.itemSource, selectedMedia],
   );
 
   const handleItem = useCallback(
@@ -119,13 +133,40 @@ const MediaGridItemInner = <T,>(
       freezeOnceVisible: true,
     });
 
+  const minHeight = useMemo(() => {
+    switch (aspectRatio) {
+      case 'portrait':
+        return 225;
+      case 'landscape':
+        return 84; // 84 accomodates episode img height
+      case 'square':
+        return 100;
+    }
+  }, [aspectRatio]);
+
+  const backgroundColor = useCallback(
+    (theme: Theme) => {
+      if (!isModalOpen) {
+        return 'transparent';
+      }
+
+      if (darkMode) {
+        return lighten(theme.palette.grey[800], (depth + 1) / 10);
+      }
+
+      return theme.palette.grey[400];
+    },
+    [darkMode, depth, isModalOpen],
+  );
+
   return (
     <Fade
       in={
         isInViewport &&
         !isUndefined(item) &&
-        ((hasThumbnail &&
-          (imageLoaded === 'success' || imageLoaded === 'error')) ||
+        (isFolder ||
+          (hasThumbnail &&
+            (imageLoaded === 'success' || imageLoaded === 'error')) ||
           !hasThumbnail)
       }
       timeout={400}
@@ -144,12 +185,7 @@ const MediaGridItemInner = <T,>(
             paddingRight: '8px',
             paddingTop: '8px',
             height: 'auto',
-            backgroundColor: (theme) =>
-              isModalOpen
-                ? darkMode
-                  ? theme.palette.grey[800]
-                  : theme.palette.grey[400]
-                : 'transparent',
+            backgroundColor: backgroundColor,
             ...style,
           }}
           onClick={(e) =>
@@ -158,16 +194,28 @@ const MediaGridItemInner = <T,>(
           ref={ref}
         >
           {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
-            (hasThumbnail ? (
+            (isFolder ? (
               <Box
                 sx={{
                   position: 'relative',
-                  minHeight:
-                    aspectRatio === 'square'
-                      ? 100
-                      : aspectRatio === 'landscape'
-                        ? 84
-                        : 225, // 84 accomodates episode img height
+                  minHeight,
+                  maxHeight: '100%',
+                  textAlign: 'center',
+                }}
+              >
+                <Folder
+                  sx={{
+                    display: 'inline-block',
+                    margin: '0 auto',
+                    fontSize: '8em',
+                  }}
+                />
+              </Box>
+            ) : hasThumbnail ? (
+              <Box
+                sx={{
+                  position: 'relative',
+                  minHeight,
                   maxHeight: '100%',
                 }}
               >
@@ -206,12 +254,7 @@ const MediaGridItemInner = <T,>(
                     opacity: imageLoaded === 'success' ? 0 : 1,
                     visibility:
                       imageLoaded === 'success' ? 'hidden' : 'visible',
-                    minHeight:
-                      aspectRatio === 'square'
-                        ? 100
-                        : aspectRatio === 'landscape'
-                          ? 84
-                          : 225,
+                    minHeight,
                   }}
                 ></Box>
               </Box>
@@ -220,13 +263,7 @@ const MediaGridItemInner = <T,>(
                 animation={false}
                 variant="rounded"
                 sx={{ borderRadius: '5%' }}
-                height={
-                  aspectRatio === 'square'
-                    ? 144
-                    : aspectRatio === 'landscape'
-                      ? 84
-                      : 250
-                }
+                height={minHeight}
               />
             ))}
           <ImageListItemBar

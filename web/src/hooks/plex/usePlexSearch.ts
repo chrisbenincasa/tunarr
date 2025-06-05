@@ -1,22 +1,22 @@
-import { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
-import { Maybe, Nilable } from '@/types/util.ts';
+import type { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
+import type { Maybe, Nilable } from '@/types/util.ts';
+import type { DataTag } from '@tanstack/react-query';
 import {
-  DataTag,
   infiniteQueryOptions,
   queryOptions,
   useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
-import {
+import type { MediaSourceSettings, PlexServerSettings } from '@tunarr/types';
+import type {
   PlexChildListing,
   PlexLibraryMovies,
   PlexLibraryMusic,
   PlexLibraryShows,
   PlexMedia,
 } from '@tunarr/types/plex';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { forEach, isEmpty, isNil, isUndefined, sumBy } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
@@ -56,7 +56,10 @@ const usePlexSearchQueryFn = () => {
         (p) => `/library/collections/${p.parentId}/children`,
       )
       .with({ type: 'playlist' }, (p) => `/playlists/${p.parentId}/items`)
-      .with(P.nonNullable, (p) => `/library/metadata/${p.parentId}/children`)
+      .with(P.nonNullable, (p) => {
+        plexQuery.append('excludeAllLeaves', '1');
+        return `/library/metadata/${p.parentId}/children`;
+      })
       .otherwise(() => `/library/sections/${plexLibrary.library.key}/all`);
 
     return fetchPlexPath<PlexChildListing>(

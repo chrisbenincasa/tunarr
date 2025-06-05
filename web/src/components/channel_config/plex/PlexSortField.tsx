@@ -9,8 +9,8 @@ import find from 'lodash-es/find';
 import isUndefined from 'lodash-es/isUndefined';
 import map from 'lodash-es/map';
 import { useCallback, useEffect, useState } from 'react';
-import { useSelectedLibraryPlexFilters } from '../../hooks/plex/usePlexFilters';
-import { setPlexSort } from '../../store/programmingSelector/actions';
+import { useSelectedLibraryPlexFilters } from '../../../hooks/plex/usePlexFilters';
+import { setPlexSort } from '../../../store/programmingSelector/actions';
 
 type PlexSort = {
   key: string;
