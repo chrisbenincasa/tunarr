@@ -153,7 +153,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
           .replaceAll(' ', '-');
         const outPath = path.join(
           this.logDirectory,
-          `ffmpeg-error-log-${normalizedName}-${dayjs().format()}.log`,
+          `ffmpeg-error-log-${normalizedName}-${+dayjs()}.log`,
         );
 
         this.#logger.info(
