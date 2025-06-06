@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.20.1](https://github.com/chrisbenincasa/tunarr/compare/v0.20.0...v0.20.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* **cuda:** ensure unscaled output properly sets pixel format when burning subtitles ([dbc29f0](https://github.com/chrisbenincasa/tunarr/commit/dbc29f0d7184c6980409cec7013bc8bb16023d36))
+* do not outright fail stream if external subtitles cannot be downloaded ([11dae74](https://github.com/chrisbenincasa/tunarr/commit/11dae74b6707748230256df38748320b7e3f0807))
+* properly handle all item types in Jellyfin/Emby program selectors ([#1214](https://github.com/chrisbenincasa/tunarr/issues/1214)) ([a311d8f](https://github.com/chrisbenincasa/tunarr/commit/a311d8f9645d881eb11db1d4023c854bc8d55b08))
+* **streaming:** format error log timestamps as unix timestamps to avoid colon issues on Windows ([9fb52d9](https://github.com/chrisbenincasa/tunarr/commit/9fb52d97a78623f5da04c282e73f755aaec29017))
+* **streaming:** generate correct font file paths for error streams on Windows ([2d052f7](https://github.com/chrisbenincasa/tunarr/commit/2d052f751ef9597d076b836b24f2b473037a4839))
+* **subtitles:** use double quotes for output paths to fix error on Windows ([749fc14](https://github.com/chrisbenincasa/tunarr/commit/749fc14aca1e36c6baa2549ad9d296356a02d96e))
+* **subtitles:** use proper path.dirname when downloading external subtitles ([ccc2898](https://github.com/chrisbenincasa/tunarr/commit/ccc28988777072981d87a950bf8223a045e4f39d))
+
+
+### UI Changes
+
+* include release year in grid view, when possible ([f009c32](https://github.com/chrisbenincasa/tunarr/commit/f009c32bd59b3b58f5e8754200ba660c70a253c3))
+
 ## [0.20.0](https://github.com/chrisbenincasa/tunarr/compare/v0.19.3...v0.20.0) (2025-06-03)
 
 
