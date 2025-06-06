@@ -18,7 +18,7 @@ import dayjs from '@/util/dayjs.js';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (

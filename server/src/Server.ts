@@ -10,12 +10,7 @@ import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
-import {
-  ZodTypeProvider,
-  jsonSchemaTransform,
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod';
+
 import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
@@ -30,7 +25,7 @@ import {
 import schedule from 'node-schedule';
 import path, { dirname } from 'node:path';
 import 'reflect-metadata';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
@@ -49,6 +44,12 @@ import { TUNARR_ENV_VARS } from './util/env.ts';
 import { fileExists } from './util/fsUtil.js';
 import { filename, isNonEmptyString, run } from './util/index.js';
 import { type Logger, RootLogger } from './util/logging/LoggerFactory.js';
+import {
+  serializerCompiler,
+  swaggerTransform,
+  validatorCompiler,
+  ZodTypeProvider,
+} from './util/zod.ts';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -225,7 +226,7 @@ export class Server {
             },
           ],
         },
-        transform: jsonSchemaTransform,
+        transform: swaggerTransform, //jsonSchemaTransform,
       })
       // .register(fastifySwaggerUi, {
       //   routePrefix: '/docs',
@@ -261,6 +262,31 @@ export class Server {
           done();
         }),
       );
+
+    this.app.get(
+      '/openapi.json',
+      {
+        schema: {
+          hide: true,
+        },
+      },
+      async (_, res) => {
+        const doc = this.app.swagger();
+        return res.send(doc);
+      },
+    );
+
+    this.app.get(
+      '/openapi.yaml',
+      {
+        schema: {
+          hide: true,
+        },
+      },
+      async (_, res) => {
+        return res.send(this.app.swagger({ yaml: true }));
+      },
+    );
 
     this.app.addHook('onResponse', (req, rep, done) => {
       if (req.routeOptions.config.disableRequestLogging) {

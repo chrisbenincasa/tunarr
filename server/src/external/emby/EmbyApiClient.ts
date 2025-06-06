@@ -31,7 +31,7 @@ import {
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   BaseApiClient,
   isQueryError,

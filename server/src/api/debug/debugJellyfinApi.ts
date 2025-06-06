@@ -4,7 +4,7 @@ import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import type { Nilable } from '@/types/util.js';
 import { isNil } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
   fastify,

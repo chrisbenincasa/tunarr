@@ -1,4 +1,4 @@
-import type z from 'zod';
+import type z from 'zod/v4';
 import type { ExternalId } from './Program.js';
 import type {
   HealthCheckSchema,

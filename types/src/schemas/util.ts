@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // We don't use the built-in Zod brand() because we want to use
 // our custom branding type.
@@ -10,12 +10,12 @@ export function tagSchema<TagType, T extends z.ZodTypeAny>(
   return schema as any;
 }
 
-export function isValidZodLiteralUnion<T extends z.ZodLiteral<unknown>>(
+export function isValidZodLiteralUnion<T extends z.ZodLiteral>(
   literals: T[],
 ): literals is [T, T, ...T[]] {
   return literals.length >= 2;
 }
-export function constructZodLiteralUnionType<T extends z.ZodLiteral<unknown>>(
+export function constructZodLiteralUnionType<T extends z.ZodLiteral>(
   literals: T[],
 ) {
   if (!isValidZodLiteralUnion(literals)) {

@@ -8,7 +8,7 @@ import { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, first, maxBy } from 'lodash-es';
 import { v4 } from 'uuid';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 function defaultNewChannel(num: number, transcodeConfigId: string): Channel {
   return {

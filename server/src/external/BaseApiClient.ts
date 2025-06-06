@@ -12,7 +12,7 @@ import type {
 } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import { isError, isString } from 'lodash-es';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 
 export type ApiClientOptions = {
   name: string;
@@ -84,7 +84,7 @@ export abstract class BaseApiClient<
     configureAxiosLogging(this.axiosInstance, this.logger);
   }
 
-  async doTypeCheckedGet<T extends z.ZodTypeAny, Out = z.infer<T>>(
+  async doTypeCheckedGet<T extends z.ZodType, Out = z.infer<T>>(
     path: string,
     schema: T,
     extraConfig: Partial<AxiosRequestConfig> = {},

@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import {
   DynamicContentConfigSchema,
   LineupScheduleSchema,
@@ -231,7 +231,7 @@ export const CondensedChannelProgrammingSchema = z.object({
   name: z.string().optional(),
   number: z.number().optional(),
   totalPrograms: z.number(),
-  programs: z.record(ContentProgramSchema),
+  programs: z.record(z.string(), ContentProgramSchema),
   lineup: z.array(CondensedChannelProgramSchema),
   startTimeOffsets,
   schedule: LineupScheduleSchema.optional(),

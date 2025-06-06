@@ -1,7 +1,7 @@
 import { channelQuery } from '@/hooks/useChannels';
 import ChannelWatchPage from '@/pages/watch/ChannelWatchPage';
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const watchPageSearchSchema = z.object({
   noAutoPlay: z.coerce

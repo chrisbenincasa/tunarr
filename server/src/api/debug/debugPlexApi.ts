@@ -2,7 +2,7 @@ import { container } from '@/container.js';
 import { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
   fastify,

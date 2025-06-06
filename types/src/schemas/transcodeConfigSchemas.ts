@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {

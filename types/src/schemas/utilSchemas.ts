@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { type TupleToUnion } from '../util.js';
 import { constructZodLiteralUnionType } from './util.js';
 

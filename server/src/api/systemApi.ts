@@ -25,7 +25,7 @@ import { join } from 'path/posix';
 import split2 from 'split2';
 import { PassThrough } from 'stream';
 import type { DeepReadonly, Writable } from 'ts-essentials';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import { SystemDevicesService } from '../services/SystemDevicesService.ts';
@@ -50,7 +50,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       schema: {
         tags: ['System'],
         response: {
-          200: z.record(HealthCheckSchema),
+          200: z.record(z.string(), HealthCheckSchema),
         },
       },
     },

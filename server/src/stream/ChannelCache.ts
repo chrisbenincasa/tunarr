@@ -7,7 +7,7 @@ import { injectable } from 'inversify';
 import { isNil, isUndefined } from 'lodash-es';
 import { Low } from 'lowdb';
 import { join } from 'node:path';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   StreamLineupItem,
   StreamLineupItemSchema,
@@ -23,9 +23,9 @@ const streamPlayCacheItemSchema = z.object({
 type StreamPlayCacheItem = z.infer<typeof streamPlayCacheItemSchema>;
 
 const channelCacheSchema = z.object({
-  streamPlayCache: z.record(streamPlayCacheItemSchema).default({}),
-  fillerPlayTimeCache: z.record(z.number()).default({}),
-  programPlayTimeCache: z.record(z.number()).default({}),
+  streamPlayCache: z.record(z.string(), streamPlayCacheItemSchema).default({}),
+  fillerPlayTimeCache: z.record(z.string(), z.number()).default({}),
+  programPlayTimeCache: z.record(z.string(), z.number()).default({}),
 });
 
 type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;

@@ -5,7 +5,7 @@ import { defaultPlexStreamSettings } from '@tunarr/types';
 import { PlexStreamSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
 import type { DeepWritable } from 'ts-essentials';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const plexSettingsRouter: RouterPluginCallback = (
   fastify,

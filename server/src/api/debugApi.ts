@@ -16,7 +16,7 @@ import dayjs from 'dayjs';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import { isUndefined, map, reject, some } from 'lodash-es';
 import os from 'node:os';
-import z from 'zod';
+import z from 'zod/v4';
 import { container } from '../container.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';

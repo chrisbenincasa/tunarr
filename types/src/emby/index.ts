@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 
 export const EmbyCollectionType = z.enum([
   'unknown',
@@ -155,7 +155,7 @@ export type EmbyItemSortBy = z.infer<typeof EmbyItemSortBy>;
 const EmbyMediaUrl = z
   .object({ Url: z.string(), Name: z.string() })
   .partial()
-  .passthrough();
+  .loose();
 
 export type EmbyNameIdPair = z.infer<typeof EmbyNameIdPairSchema>;
 export const EmbyNameIdPairSchema = z.object({
@@ -166,7 +166,7 @@ export const EmbyNameIdPairSchema = z.object({
 export const EmbyNameLongIdPair = z
   .object({ Name: z.string(), Id: z.number().int() })
   .partial()
-  .passthrough();
+  .loose();
 
 const EmbyMarkerType = z.enum([
   'Chapter',
@@ -186,7 +186,7 @@ export const EmbyChapterInfoSchema = z
     ChapterIndex: z.number().int(),
   })
   .partial()
-  .passthrough();
+  .loose();
 
 const ExtendedVideoTypes = z.enum([
   'None',
@@ -278,7 +278,7 @@ export const EmbyMediaStreamSchema = z
     SubtitleLocationType: SubtitleLocationType,
   })
   .partial()
-  .passthrough();
+  .loose();
 
 const EmbyMediaSourceType = z.enum(['Default', 'Grouping', 'Placeholder']);
 
@@ -331,7 +331,7 @@ export const EmbyMediaSourceInfoSchema = z
     Formats: z.array(z.string()),
     Bitrate: z.number().int().nullable(),
     Timestamp: TransportStreamTimestamp,
-    RequiredHttpHeaders: z.record(z.string()),
+    RequiredHttpHeaders: z.record(z.string(), z.string()),
     DirectStreamUrl: z.string(),
     AddApiKeyToDirectStreamUrl: z.boolean(),
     TranscodingUrl: z.string(),
@@ -345,7 +345,7 @@ export const EmbyMediaSourceInfoSchema = z
     ServerId: z.string(),
   })
   .partial()
-  .passthrough();
+  .loose();
 
 export type EmbyItem = z.infer<typeof EmbyItemSchema>;
 
@@ -360,7 +360,7 @@ export const EmbyItemSchema = z
     Prefix: z.string(),
     TunerName: z.string(),
     PlaylistItemId: z.string(),
-    DateCreated: z.string().datetime({ offset: true }).nullable(),
+    DateCreated: z.iso.datetime({ offset: true }).nullable(),
     ExtraType: z.string(),
     SortIndexNumber: z.number().int().nullable(),
     SortParentIndexNumber: z.number().int().nullable(),
@@ -389,7 +389,7 @@ export const EmbyItemSchema = z
     Video3DFormat: EmbyVideo3DFormat,
     PremiereDate: z.string().datetime({ offset: true }).nullable(),
     ExternalUrls: z.array(
-      z.object({ Name: z.string(), Url: z.string() }).partial().passthrough(),
+      z.object({ Name: z.string(), Url: z.string() }).partial().loose(),
     ),
     MediaSources: z.array(EmbyMediaSourceInfoSchema),
     CriticRating: z.number().nullable(),
@@ -417,7 +417,7 @@ export const EmbyItemSchema = z
     IndexNumberEnd: z.number().int().nullable(),
     ParentIndexNumber: z.number().int().nullable(),
     RemoteTrailers: z.array(EmbyMediaUrl),
-    ProviderIds: z.record(z.string()),
+    ProviderIds: z.record(z.string(), z.string()),
     IsFolder: z.boolean().nullable(),
     ParentId: z.string(),
     Type: EmbyItemKind,
@@ -431,7 +431,7 @@ export const EmbyItemSchema = z
           PrimaryImageTag: z.string(),
         })
         .partial()
-        .passthrough(),
+        .loose(),
     ),
     Studios: z.array(EmbyNameLongIdPair),
     GenreItems: z.array(EmbyNameLongIdPair),
@@ -455,7 +455,7 @@ export const EmbyItemSchema = z
         ServerId: z.string(),
       })
       .partial()
-      .passthrough(),
+      .loose(),
     RecursiveItemCount: z.number().int().nullable(),
     ChildCount: z.number().int().nullable(),
     SeasonCount: z.number().int().nullable(),
@@ -492,7 +492,7 @@ export const EmbyItemSchema = z
     SeasonName: z.string(),
     MediaStreams: z.array(EmbyMediaStreamSchema),
     PartCount: z.number().int().nullable(),
-    ImageTags: z.record(z.string()),
+    ImageTags: z.record(z.string(), z.string()),
     BackdropImageTags: z.array(z.string()),
     ParentLogoImageTag: z.string(),
     SeriesStudio: z.string(),
@@ -666,7 +666,7 @@ export const EmbyUserSchema = z
     ]),
   })
   .partial()
-  .passthrough();
+  .loose();
 
 const EmbySessionInfoSchema = z
   .object({

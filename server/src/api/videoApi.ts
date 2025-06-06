@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { isNil, isNumber } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { Readable } from 'node:stream';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const FfmpegPlaylistQuerySchema = z.object({
   channel: z.string().uuid(),

@@ -25,7 +25,7 @@ import {
   values,
 } from 'lodash-es';
 import type stream from 'node:stream';
-import z from 'zod';
+import z from 'zod/v4';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
@@ -425,7 +425,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
-          200: z.record(ContentProgramSchema),
+          200: z.record(z.string(), ContentProgramSchema),
         },
       },
     },
@@ -442,7 +442,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         tags: ['Programs'],
         params: z.object({
-          id: z.string().uuid(),
+          id: z.uuid(),
         }),
         querystring: z.object({
           includeEpisodes: TruthyQueryParam.default(false),

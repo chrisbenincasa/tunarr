@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   CacheSettingsSchema,
   LogLevelsSchema,
@@ -148,18 +148,14 @@ export const RandomSlotProgramLineupSchema = z.object({
   schedule: RandomSlotScheduleSchema,
 });
 
-export const UpdateChannelProgrammingRequestSchema: z.ZodDiscriminatedUnion<
+export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
   'type',
   [
-    typeof ManualProgramLineupSchema,
-    typeof TimeBasedProgramLineupSchema,
-    typeof RandomSlotProgramLineupSchema,
-  ]
-> = z.discriminatedUnion('type', [
-  ManualProgramLineupSchema,
-  TimeBasedProgramLineupSchema,
-  RandomSlotProgramLineupSchema,
-]);
+    ManualProgramLineupSchema,
+    TimeBasedProgramLineupSchema,
+    RandomSlotProgramLineupSchema,
+  ],
+);
 
 export type UpdateChannelProgrammingRequest = z.infer<
   typeof UpdateChannelProgrammingRequestSchema
@@ -268,7 +264,7 @@ export const EmbyLoginRequest = z.object({
 });
 
 export const StreamConnectionDetailsSchema = z.object({
-  ip: z.string().ip(),
+  ip: z.ipv4().or(z.ipv6()),
   userAgent: z.string().optional(),
   lastHeartbeat: z.number().nonnegative().optional(),
 });
@@ -305,7 +301,7 @@ const CondensedChannelProgramWithNoOriginalSchema = z.discriminatedUnion(
 export const GetChannelProgrammingResponseSchema =
   CondensedChannelProgrammingSchema.extend({
     lineup: z.array(CondensedChannelProgramWithNoOriginalSchema),
-    programs: z.record(ContentProgramSchema),
+    programs: z.record(z.string(), ContentProgramSchema),
   });
 
 export const JellyfinGetLibraryItemsQuerySchema = z.object({

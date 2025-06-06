@@ -3,8 +3,8 @@ import {
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
-import { makeEndpoint, parametersBuilder } from '@zodios/core';
-import { z } from 'zod';
+import { makeEndpoint, parametersBuilder } from '@tunarr/zodios-core';
+import { z } from 'zod/v4';
 
 export const jellyfinEndpoints = [
   makeEndpoint({

@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {
@@ -106,7 +106,7 @@ export type ChannelConcatStreamMode = TupleToUnion<
 export const ChannelConcatStreamModeSchema = z.enum(ChannelConcatStreamModes);
 
 export const StreamConnectionDetailsSchema = z.object({
-  ip: z.string().ip(),
+  ip: z.ipv4().or(z.ipv6()),
   userAgent: z.string().optional(),
   lastHeartbeat: z.number().nonnegative().optional(),
 });

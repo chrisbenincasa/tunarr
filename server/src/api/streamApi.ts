@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { format } from 'node:util';
 import { v4 } from 'uuid';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({

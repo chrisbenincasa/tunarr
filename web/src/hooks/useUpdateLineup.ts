@@ -3,7 +3,7 @@ import type { UseMutationOptions } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CondensedChannelProgramming } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { ZodiosError } from '@zodios/core';
+import { ZodiosError } from '@tunarr/zodios-core';
 import { useTunarrApi } from './useTunarrApi';
 
 type MutateArgs = {

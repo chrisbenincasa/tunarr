@@ -5,10 +5,10 @@ import { merge } from 'lodash-es';
 import type { SyncAdapter } from 'lowdb';
 import { TextFileSync } from 'lowdb/node';
 import type { PathLike } from 'node:fs';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 
-export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
-  implements SyncAdapter<Out>
+export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny>
+  implements SyncAdapter<z.output<T>>
 {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -19,20 +19,20 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   constructor(
     private schema: T,
     filename: PathLike,
-    private defaultValue: Nullable<Out> = null,
+    private defaultValue: Nullable<z.output<T>> = null,
     private adapter: SyncAdapter<string> = new TextFileSync(filename),
   ) {
     this.schema = schema;
     this.path = filename;
   }
 
-  read(): Nullable<Out> {
+  read(): Nullable<z.output<T>> {
     const data = this.adapter.read();
     if (data === null) {
       return null;
     }
     const parsed: unknown = JSON.parse(data);
-    let parseResult: z.SafeParseReturnType<unknown, Out> =
+    let parseResult: z.ZodSafeParseResult<z.output<T>> =
       this.schema.safeParse(parsed);
     if (!parseResult.success) {
       if (this.defaultValue !== null) {
@@ -44,7 +44,7 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
 
         if (parseResult.success) {
           this.write(mergedData);
-          return parseResult.data as Out | null;
+          return parseResult.data as z.output<T> | null;
         }
       }
 
@@ -56,10 +56,10 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
         return null;
       }
     }
-    return parseResult.data as Out | null;
+    return parseResult.data as z.output<T> | null;
   }
 
-  write(data: Out): void {
+  write(data: z.output<T>): void {
     const parseResult = this.schema.safeParse(data);
     if (!parseResult.success) {
       this.logger.warn(

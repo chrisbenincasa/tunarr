@@ -3,7 +3,7 @@ import EditChannelPage from '@/pages/channels/EditChannelPage';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isUndefined } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // TODO: Share this schema between new and edit routes
 const editChannelParamsSchema = z.object({

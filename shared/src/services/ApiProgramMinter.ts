@@ -275,7 +275,7 @@ export class ApiProgramMinter {
         .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
         .with('Video', () => ContentProgramTypeSchema.enum.other_video)
         .with('Episode', () => ContentProgramTypeSchema.enum.episode)
-        .with('Audio', () => ContentProgramTypeSchema.Enum.track)
+        .with('Audio', () => ContentProgramTypeSchema.enum.track)
         .exhaustive(),
       year: nullToUndefined(item.ProductionYear),
       parent: {
@@ -344,7 +344,7 @@ export class ApiProgramMinter {
         .with('MusicVideo', () => ContentProgramTypeSchema.enum.music_video)
         .with('Video', () => ContentProgramTypeSchema.enum.other_video)
         .with('Episode', () => ContentProgramTypeSchema.enum.episode)
-        .with('Audio', () => ContentProgramTypeSchema.Enum.track)
+        .with('Audio', () => ContentProgramTypeSchema.enum.track)
         .exhaustive(),
       year: nullToUndefined(item.ProductionYear),
       parent: {

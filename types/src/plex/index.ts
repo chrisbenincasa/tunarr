@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import type { FindChild } from '../util.js';
 export * from './dvr.js';
 
@@ -138,7 +138,7 @@ const basePlexGrandchildCollectionSchema = basePlexChildCollectionSchema.extend(
   },
 );
 
-const makePlexLibraryCollectionsSchema = <T extends z.AnyZodObject>(
+const makePlexLibraryCollectionsSchema = <T extends z.ZodObject>(
   metadata: T,
 ) => {
   return basePlexLibrarySchema.extend({
@@ -956,5 +956,5 @@ export const PlexMediaContainerResponseSchema = z.object({
 });
 
 export const PlexGenericMediaContainerResponseSchema = z.object({
-  MediaContainer: z.record(z.any()),
+  MediaContainer: z.record(z.string(), z.any()),
 });

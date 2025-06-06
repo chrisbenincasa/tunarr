@@ -25,7 +25,7 @@ import {
 } from '@tunarr/types/schemas';
 import { isError, isNil } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,

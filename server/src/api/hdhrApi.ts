@@ -1,6 +1,6 @@
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { FastifyPluginAsync } from 'fastify';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const HdhrLineupSchema = z.object({
   GuideNumber: z.string(),

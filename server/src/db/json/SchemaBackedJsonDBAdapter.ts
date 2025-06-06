@@ -5,10 +5,10 @@ import { merge } from 'lodash-es';
 import type { Adapter } from 'lowdb';
 import { TextFile } from 'lowdb/node';
 import type { PathLike } from 'node:fs';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 
-export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
-  implements Adapter<Out>
+export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
+  implements Adapter<z.output<T>>
 {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -19,7 +19,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
   constructor(
     private schema: T,
     filename: PathLike,
-    private defaultValue: Nullable<Out> = null,
+    private defaultValue: Nullable<z.output<T>> = null,
     private adapter: Adapter<string> = new TextFile(filename),
   ) {
     this.schema = schema;
@@ -27,7 +27,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     this.adapter = new TextFile(filename);
   }
 
-  async read(): Promise<Out | null> {
+  async read(): Promise<z.output<T> | null> {
     const data = await this.adapter.read().catch((e) => {
       this.logger.error(e);
       return null;
@@ -39,8 +39,7 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     }
 
     const parsed: unknown = data ? JSON.parse(data) : {};
-    let parseResult: z.SafeParseReturnType<unknown, Out> =
-      await this.schema.safeParseAsync(parsed);
+    let parseResult = await this.schema.safeParseAsync(parsed);
     let needsWriteFlush = false;
     let attempts = 0;
     while (!parseResult.success && attempts < 5) {
@@ -71,13 +70,13 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny, Out = z.infer<T>>
     }
 
     if (needsWriteFlush) {
-      await this.write(parseResult.data);
+      await this.write(parseResult.data as z.output<T>);
     }
 
-    return parseResult.data as Out | null;
+    return parseResult.data as z.output<T> | null;
   }
 
-  async write(data: Out): Promise<void> {
+  async write(data: z.output<T>): Promise<void> {
     const parseResult = await this.schema.safeParseAsync(data);
     if (!parseResult.success) {
       this.logger.warn(

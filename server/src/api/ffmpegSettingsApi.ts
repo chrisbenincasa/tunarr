@@ -11,7 +11,7 @@ import {
 } from '@tunarr/types/schemas';
 import { isError, map, merge, omit } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';

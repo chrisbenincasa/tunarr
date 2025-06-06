@@ -1,8 +1,8 @@
 import type { UseMutationOptions } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Channel, SaveableChannel } from '@tunarr/types';
-import { ZodiosError } from '@zodios/core';
-import { z } from 'zod';
+import { ZodiosError } from '@tunarr/zodios-core';
+import { z } from 'zod/v4';
 import { useTunarrApi } from './useTunarrApi';
 
 export const useUpdateChannel = (

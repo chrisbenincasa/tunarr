@@ -9,7 +9,7 @@ import {
   FillerListSchema,
 } from '@tunarr/types/schemas';
 import { isNil, map } from 'lodash-es';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // We can't use the built-in zod brand because we have our own custom
 // tagged type.
