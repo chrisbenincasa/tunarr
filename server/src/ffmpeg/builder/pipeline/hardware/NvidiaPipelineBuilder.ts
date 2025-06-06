@@ -179,7 +179,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         !isNil(currentState.pixelFormat) &&
         !desiredPixelFormat.equals(currentState.pixelFormat)
       ) {
-        this.logger.trace('adding pixel filter format for watermark!!!');
+        this.logger.trace('adding pixel filter format for overlay!!!');
         if (currentState.frameDataLocation === FrameDataLocation.Software) {
           const pixelFormatFilter = new PixelFormatFilter(desiredPixelFormat);
           currentState = pixelFormatFilter.nextState(currentState);
