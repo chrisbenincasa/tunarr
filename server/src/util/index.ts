@@ -246,6 +246,19 @@ export const wait = (ms?: number | Duration) => {
   return new Promise((resolve) => setTimeout(resolve, ms ?? 0));
 };
 
+export function timeoutPromise<T>(
+  promise: Promise<T>,
+  ms: number | Duration,
+): Promise<T> {
+  ms = dayjs.isDuration(ms) ? +ms : ms;
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 type NativeFuncOrApply<In, Out> = ((input: In) => Out) | Func<In, Out>;
 
 export async function asyncFlow<T>(

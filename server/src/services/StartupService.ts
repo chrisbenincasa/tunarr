@@ -2,6 +2,7 @@ import { inject, injectable } from 'inversify';
 import { KEYS } from '../types/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SystemDevicesService } from './SystemDevicesService.ts';
+import { TunarrWorkerPool } from './TunarrWorkerPool.ts';
 
 @injectable()
 export class StartupService {
@@ -11,6 +12,8 @@ export class StartupService {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(SystemDevicesService)
     private systemDevicesService: SystemDevicesService,
+    @inject(TunarrWorkerPool)
+    private tunarrWorkerPool: TunarrWorkerPool,
   ) {}
 
   async runStartupServices() {
@@ -23,6 +26,12 @@ export class StartupService {
           'Error when running startup services! The system might not function normally.',
         );
       }
+
+      this.tunarrWorkerPool.start();
     }
+  }
+
+  waitForCompletion() {
+    return Promise.all([this.tunarrWorkerPool.allReady()]);
   }
 }

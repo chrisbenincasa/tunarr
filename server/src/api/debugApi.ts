@@ -18,6 +18,7 @@ import { isUndefined, map, reject, some } from 'lodash-es';
 import os from 'node:os';
 import z from 'zod/v4';
 import { container } from '../container.ts';
+import { TunarrWorkerPool } from '../services/TunarrWorkerPool.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
@@ -370,6 +371,73 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         );
       });
       return res.send(danglingPrograms);
+    },
+  );
+
+  fastify.get('/debug/subprocess', async (_, res) => {
+    const pool = container.get(TunarrWorkerPool);
+
+    const response = await pool.queueTask(
+      {
+        channelId: 1,
+        schedule: {
+          maxDays: 1,
+          flexPreference: 'distribute',
+          latenessMs: 0,
+          padMs: 1,
+          period: 'day',
+          slots: [
+            {
+              direction: 'asc',
+              order: 'shuffle',
+              startTime: 0,
+              programming: {
+                type: 'movie',
+              },
+            },
+          ],
+          timeZoneOffset: new Date().getTimezoneOffset(),
+          type: 'time',
+        },
+        type: 'time-slots',
+      },
+      5_000,
+    );
+    return res.send(response);
+  });
+
+  fastify.get(
+    '/debug/subprocess/status',
+    {
+      schema: {
+        querystring: z.object({}),
+      },
+    },
+    async (_, res) => {
+      const pool = container.get(TunarrWorkerPool);
+
+      const response = await pool.queueTask({ type: 'status' });
+      console.log(response);
+      return res.send(response);
+    },
+  );
+
+  fastify.get(
+    '/debug/subprocess/restart',
+    {
+      schema: {
+        querystring: z.object({}),
+      },
+    },
+    async (_, res) => {
+      const pool = container.get(TunarrWorkerPool);
+
+      const response = await Promise.race([
+        pool.queueTask({ type: 'restart', code: 1 }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('')), 5_000)),
+      ]);
+      console.log(response);
+      return res.send(response);
     },
   );
 };

@@ -13,7 +13,7 @@
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "inputs": ["./scripts/bundle-old.ts"],
+      "inputs": ["./scripts/bundle-old.ts", "./src/**"],
       "dependsOn": ["^build", "^bundle"],
       "outputs": ["dist/**"]
     },
@@ -22,7 +22,7 @@
     },
     "make-bin": {
       "dependsOn": ["bundle"],
-      "outputs": ["dist/bin/**"]
+      "outputs": ["bin/**"]
     },
     "lint-staged": {},
     "lint": {

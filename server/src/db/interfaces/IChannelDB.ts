@@ -14,6 +14,7 @@ import type {
 import type { ChannelAndLineup } from '@/types/internal.js';
 import type { MarkNullable, Maybe, Nullable } from '@/types/util.js';
 import type {
+  ChannelProgramming,
   CondensedChannelProgramming,
   SaveableChannel,
 } from '@tunarr/types';
@@ -124,6 +125,12 @@ export interface IChannelDB {
   getChannelSubtitlePreferences(
     id: string,
   ): Promise<ChannelSubtitlePreferences[]>;
+
+  loadAndMaterializeLineup(
+    channelId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<ChannelProgramming | null>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
   MarkNullable<
