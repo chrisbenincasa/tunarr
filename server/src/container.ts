@@ -24,12 +24,15 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import type { interfaces } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
+import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
+import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
+import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { Timer } from './util/Timer.ts';
 
@@ -62,6 +65,7 @@ const RootModule = new ContainerModule((bind) => {
       ctx.currentRequest.parentRequest?.bindings?.[0]?.implementationType;
     return LoggerFactory.child({
       className: impl ? (Reflect.get(impl, 'name') as string) : 'Unknown',
+      worker: isMainThread ? undefined : true,
     });
   });
 
@@ -88,11 +92,13 @@ const RootModule = new ContainerModule((bind) => {
         ctx.container.get<MediaSourceApiFactory>(MediaSourceApiFactory),
     );
 
+  bind(StartupService).toSelf().inSingletonScope();
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();
   bind(HdhrService).toSelf().inSingletonScope();
   bind(SystemDevicesService).toSelf().inSingletonScope();
   bind(FileSystemService).toSelf().inSingletonScope();
+  bind(TunarrWorkerPool).toSelf().inSingletonScope();
 });
 
 container.load(RootModule);

@@ -10,7 +10,7 @@ import { getTunarrVersion } from '../util/version.ts';
 import { type ServerArgsType } from './RunServerCommand.ts';
 import { type GlobalArgsType } from './types.ts';
 
-type GenerateOpenApiCommandArgs = ServerArgsType & {
+export type GenerateOpenApiCommandArgs = ServerArgsType & {
   apiVersion: string;
 };
 

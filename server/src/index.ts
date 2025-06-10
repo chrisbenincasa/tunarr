@@ -74,8 +74,12 @@ yargs(hideBin(process.argv))
     desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
     default: false,
   })
+  .option('hide_banner', {
+    type: 'boolean',
+    default: false,
+  })
   .middleware([
-    () => printBanner(),
+    ({ hide_banner }) => (hide_banner ? void 0 : printBanner()),
     (opts) => setGlobalOptions(opts),
     () => bootstrapTunarr(),
   ])
