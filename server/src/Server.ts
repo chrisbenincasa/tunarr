@@ -36,9 +36,9 @@ import {
   initializeSingletons,
   serverOptions,
 } from './globals.js';
+import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
-import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { initPersistentStreamCache } from './stream/ChannelCache.js';
 import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
@@ -512,7 +512,7 @@ export class Server {
 
         this.logger.debug('Shutting down all workers');
         try {
-          await container.get(TunarrWorkerPool).shutdown();
+          await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
         } catch (e) {
           this.logger.error(e, 'Error shutting down workers');
         }
