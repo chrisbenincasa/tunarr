@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { ChannelProgram, FlexProgram, isFlexProgram } from '@tunarr/types';
-import { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
+import type { ChannelProgram, FlexProgram } from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
+import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import duration, { Duration } from 'dayjs/plugin/duration.js';
+import type { Duration } from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import tz from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -14,7 +15,6 @@ import {
   map,
   nth,
   reject,
-  slice,
   sortBy,
 } from 'lodash-es';
 import {
@@ -42,14 +42,15 @@ type PaddedProgram = {
 
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it
-// Returns a new array and amount to increment the cursor
+// Returns amount to increment the cursor
+// Mutates the lineup array
 function pushOrExtendFlex(
   lineup: ChannelProgram[],
   flexDuration: Duration,
-): [number, ChannelProgram[]] {
+): number {
   const durationMs = flexDuration.asMilliseconds();
   if (durationMs <= 0) {
-    return [0, lineup];
+    return 0;
   }
 
   const lastLineupItem = last(lineup);
@@ -60,7 +61,8 @@ function pushOrExtendFlex(
       duration: newDuration,
       persisted: false,
     };
-    return [durationMs, [...slice(lineup, 0, lineup.length - 1), newItem]];
+    lineup[lineup.length - 1] = newItem;
+    return durationMs;
   }
 
   const newItem: FlexProgram = {
@@ -69,7 +71,8 @@ function pushOrExtendFlex(
     duration: durationMs,
   };
 
-  return [durationMs, [...lineup, newItem]];
+  lineup.push(newItem);
+  return durationMs;
 }
 
 function createPaddedProgram(program: ChannelProgram, padMs: number) {
@@ -156,12 +159,11 @@ export async function scheduleTimeSlots(
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  let channelPrograms: ChannelProgram[] = [];
+  const channelPrograms: ChannelProgram[] = [];
 
   const pushFlex = (flexDuration: Duration) => {
-    const [inc, newPrograms] = pushOrExtendFlex(channelPrograms, flexDuration);
+    const inc = pushOrExtendFlex(channelPrograms, flexDuration);
     timeCursor = timeCursor.add(inc);
-    channelPrograms = newPrograms;
   };
 
   while (timeCursor.isBefore(upperLimit)) {

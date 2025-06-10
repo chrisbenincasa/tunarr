@@ -30,11 +30,13 @@ import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
+import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { Timer } from './util/Timer.ts';
+import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
 
 const container = new Container({ autoBindInjectable: true });
 
@@ -99,6 +101,12 @@ const RootModule = new ContainerModule((bind) => {
   bind(SystemDevicesService).toSelf().inSingletonScope();
   bind(FileSystemService).toSelf().inSingletonScope();
   bind(TunarrWorkerPool).toSelf().inSingletonScope();
+
+  if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
+    bind(KEYS.WorkerPool).toService(TunarrWorkerPool);
+  } else {
+    bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();
+  }
 });
 
 container.load(RootModule);
