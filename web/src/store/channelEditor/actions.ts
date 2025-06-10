@@ -29,8 +29,9 @@ import {
   type UIChannelProgram,
   type UIIndex,
 } from '../../types/index.ts';
+import type { State } from '../index.ts';
 import useStore from '../index.ts';
-import { type ChannelEditorState, initialChannelEditorState } from './store.ts';
+import { initialChannelEditorState } from './store.ts';
 
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
@@ -60,15 +61,19 @@ function addIndexesAndCalculateOffsets<T extends { duration: number }>(
 }
 
 function updateProgramList(
-  channelEditor: Draft<ChannelEditorState>,
+  state: Draft<State>,
   programming: CondensedChannelProgramming,
 ) {
   const programs = addIndexesAndCalculateOffsets(programming.lineup);
-  channelEditor.programsLoaded = true;
-  channelEditor.originalProgramList = [...programs];
-  channelEditor.programList = [...programs];
-  channelEditor.programLookup = { ...programming.programs };
-  channelEditor.schedule = programming.schedule;
+  state.channelEditor.programsLoaded = true;
+  state.channelEditor.originalProgramList = [...programs];
+  state.channelEditor.programList = [...programs];
+  state.channelEditor.programLookup = { ...programming.programs };
+  state.channelEditor.schedule = programming.schedule;
+  state.programLookup = {
+    ...state.programLookup,
+    ...programming.programs,
+  };
 }
 
 /**
@@ -79,11 +84,11 @@ export const setCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
   programming?: CondensedChannelProgramming,
 ) =>
-  useStore.setState(({ channelEditor }) => {
-    channelEditor.currentEntity = channel;
-    channelEditor.originalEntity = channel;
+  useStore.setState((state) => {
+    state.channelEditor.currentEntity = channel;
+    state.channelEditor.originalEntity = channel;
     if (programming) {
-      updateProgramList(channelEditor, programming);
+      updateProgramList(state, programming);
     }
   });
 
@@ -95,8 +100,8 @@ export const safeSetCurrentChannel = (
   channel: Omit<Channel, 'programs'>,
   programming?: CondensedChannelProgramming,
 ) =>
-  useStore.setState(({ channelEditor }) => {
-    console.log(channelEditor.currentEntity?.id, channel.id);
+  useStore.setState((state) => {
+    const channelEditor = state.channelEditor;
     if (channelEditor.currentEntity?.id !== channel.id) {
       channelEditor.currentEntity = channel;
       channelEditor.originalEntity = channel;
@@ -107,10 +112,10 @@ export const safeSetCurrentChannel = (
       channelEditor.schedule = undefined;
       channelEditor.programLookup = {};
       if (programming) {
-        updateProgramList(channelEditor, programming);
+        updateProgramList(state, programming);
       }
     } else if (!channelEditor.programsLoaded && programming) {
-      updateProgramList(channelEditor, programming);
+      updateProgramList(state, programming);
     }
   });
 
@@ -118,10 +123,10 @@ export const setCurrentChannelProgramming = (
   programming: CondensedChannelProgramming,
   setDirty?: boolean,
 ) =>
-  useStore.setState(({ channelEditor }) => {
-    updateProgramList(channelEditor, programming);
+  useStore.setState((state) => {
+    updateProgramList(state, programming);
     if (!isUndefined(setDirty)) {
-      channelEditor.dirty.programs = setDirty;
+      state.channelEditor.dirty.programs = setDirty;
     }
   });
 
@@ -197,20 +202,20 @@ export const updateCurrentChannel = (channel: Partial<Channel>) =>
   });
 
 export const addProgramsToCurrentChannel = (programs: ChannelProgram[]) =>
-  useStore.setState(({ channelEditor }) => {
-    const lastItem = last(channelEditor.programList);
+  useStore.setState((state) => {
+    const lastItem = last(state.channelEditor.programList);
     const firstOffset = lastItem
       ? lastItem.startTimeOffset + lastItem.duration
       : 0;
-    channelEditor.programList.push(
+    state.channelEditor.programList.push(
       ...addIndexesAndCalculateOffsets(
         programs,
         firstOffset,
-        channelEditor.programList.length,
+        state.channelEditor.programList.length,
       ),
     );
-    channelEditor.dirty.programs =
-      channelEditor.dirty.programs || programs.length > 0;
+    state.channelEditor.dirty.programs =
+      state.channelEditor.dirty.programs || programs.length > 0;
   });
 
 export const setProgramAtIndex = (program: UIChannelProgram, index: number) =>

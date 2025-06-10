@@ -1,10 +1,9 @@
-import { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import useStore from '@/store';
-import { isUICondensedCustomProgram } from '@/types';
 import { seq } from '@tunarr/shared/util';
-import { CustomShow } from '@tunarr/types';
-import { chain, isEmpty, isUndefined, reject, some } from 'lodash-es';
+import type { CustomShow } from '@tunarr/types';
+import { chain, isEmpty, reject, some } from 'lodash-es';
 import { useMemo } from 'react';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
@@ -15,9 +14,8 @@ type ProgramOptions = {
 };
 
 export const useSlotProgramOptions = (channelId?: string) => {
-  const { originalProgramList: newLineup, programLookup } = useStore(
-    (s) => s.channelEditor,
-  );
+  const { originalProgramList: newLineup } = useStore((s) => s.channelEditor);
+  const { programLookup } = useStore();
   const { data: customShows } = useCustomShows();
   const { data: channels } = useChannelsSuspense({
     select: (channels) =>
@@ -75,17 +73,19 @@ export const useSlotProgramOptions = (channelId?: string) => {
       opts.push(...showOptions);
     }
 
+    console.log(customShowsById);
+
     opts.push(
-      ...chain(newLineup)
-        .filter(isUICondensedCustomProgram)
-        .reject((p) => isUndefined(customShowsById[p.customShowId]))
-        .uniqBy((p) => p.customShowId)
+      ...chain(customShowsById)
+        // .filter(isUICondensedCustomProgram)
+        // .reject((p) => isUndefined(customShowsById[p.customShowId]))
+        // .uniqBy((p) => p.customShowId)
         .map(
-          (p) =>
+          (show) =>
             ({
-              description: customShowsById[p.customShowId].name,
-              value: `custom-show.${p.customShowId}`,
-              customShowId: p.customShowId,
+              description: show.name,
+              value: `custom-show.${show.id}`,
+              customShowId: show.id,
               type: 'custom-show',
             }) satisfies ProgramOption,
         )

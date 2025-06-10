@@ -1,6 +1,6 @@
-import { CondensedChannelProgram } from '@tunarr/types';
-import _ from 'lodash-es';
-import { ReplicationType } from '../../components/programming_controls/AddReplicateModal.tsx';
+import type { CondensedChannelProgram } from '@tunarr/types';
+import { flatMap, shuffle, times } from 'lodash-es';
+import type { ReplicationType } from '../../components/programming_controls/AddReplicateModal.tsx';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -21,12 +21,12 @@ export const replicatePrograms = (
   numberOfReplications: number,
   type: ReplicationType,
 ) => {
-  const replicatedArray = _.flatMap(
-    _.times(numberOfReplications, () => [...programs]),
+  const replicatedArray = flatMap(
+    times(numberOfReplications, () => [...programs]),
   );
 
   if (type === 'random') {
-    return _.shuffle(replicatedArray);
+    return shuffle(replicatedArray);
   } else {
     return replicatedArray;
   }

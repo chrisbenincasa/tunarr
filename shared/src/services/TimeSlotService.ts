@@ -5,7 +5,11 @@ import type {
   ContentProgram,
   FlexProgram,
 } from '@tunarr/types';
-import { isContentProgram, isFlexProgram } from '@tunarr/types';
+import {
+  isContentProgram,
+  isCustomProgram,
+  isFlexProgram,
+} from '@tunarr/types';
 import type {
   TimeSlot,
   TimeSlotSchedule,
@@ -169,6 +173,9 @@ export async function scheduleTimeSlots(
     if (isContentProgram(program)) {
       contentProgramsById[program.uniqueId] = program;
       condensedProgramsById[program.uniqueId] = condense(program);
+    } else if (isCustomProgram(program) && program.program?.id) {
+      contentProgramsById[program.program.id] = program.program;
+      condensedProgramsById[program.program.id] = condense(program.program);
     }
   }
   // Load programs
