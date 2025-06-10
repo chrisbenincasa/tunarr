@@ -3,6 +3,7 @@ import retry from 'async-retry';
 import { inject, injectable } from 'inversify';
 import { reject } from 'lodash-es';
 import { cpus } from 'node:os';
+import { performance } from 'node:perf_hooks';
 import { Worker } from 'node:worker_threads';
 import { StrictOmit } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
@@ -187,6 +188,12 @@ export class TunarrWorkerPool implements IWorkerPool {
         const { ready, worker } = this.#pool[idx];
         this.#last = (this.#last + 1) % this.#pool.length;
         if (ready) {
+          this.logger.debug(
+            'Schedule task type "%s" to worker index %d [request id = %s]',
+            request.type,
+            idx,
+            requestId,
+          );
           this.#listeners.set(reqWithId.requestId, fut);
           this.#outstandingByIndex.set(
             idx,
@@ -194,6 +201,7 @@ export class TunarrWorkerPool implements IWorkerPool {
               requestId,
             ],
           );
+          performance.mark(requestId);
           worker.postMessage(reqWithId);
           return;
         } else {
@@ -241,6 +249,12 @@ export class TunarrWorkerPool implements IWorkerPool {
           this.#pool[idx].ready = true;
         })
         .with({ type: P.union('success', 'error') }, (reply) => {
+          performance.mark(reply.requestId);
+          this.logger.debug(
+            'Request id %s took %d ms',
+            reply.requestId,
+            performance.measure(reply.requestId).duration,
+          );
           const fut = this.#listeners.get(reply.requestId);
           if (fut) {
             this.#listeners.delete(reply.requestId);
