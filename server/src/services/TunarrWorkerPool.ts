@@ -252,7 +252,7 @@ export class TunarrWorkerPool implements IWorkerPool {
               ),
             );
             if (reply.type === 'success') {
-              fut.resolve(reply);
+              fut.resolve(reply.data);
             } else {
               fut.reject(new Error(reply.message));
             }
