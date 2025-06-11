@@ -16,6 +16,7 @@ import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
 import { DB } from './db/schema/db.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
+import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { EventService } from './services/EventService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
@@ -69,6 +70,9 @@ export class ServerContext {
 
   @inject(KEYS.DatabaseFactory)
   public readonly databaseFactory!: interfaces.AutoFactory<Kysely<DB>>;
+
+  @inject(KEYS.WorkerPool)
+  public readonly workerPool: IWorkerPool;
 }
 
 export class ServerRequestContext {

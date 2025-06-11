@@ -126,6 +126,8 @@ export class ProgramOrdereredIterator<ProgramType extends ChannelProgram>
 function programOrdererNext(program: ContentProgram) {
   switch (program.subtype) {
     case 'movie':
+    case 'music_video':
+    case 'other_video':
       return +dayjs(program.date);
     case 'episode':
       // Hacky thing from original code...
@@ -139,6 +141,8 @@ function programOrdererNext(program: ContentProgram) {
 function programOrdererAlpha(program: ContentProgram) {
   switch (program.subtype) {
     case 'movie':
+    case 'music_video':
+    case 'other_video':
       return program.title;
     case 'episode':
       return `${program.parent?.title ?? ''}_${program.title}`;

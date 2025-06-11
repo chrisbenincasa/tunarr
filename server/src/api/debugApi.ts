@@ -374,38 +374,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get('/debug/subprocess', async (_, res) => {
-    const pool = container.get(TunarrWorkerPool);
-
-    const response = await pool.queueTask(
-      {
-        channelId: 1,
-        schedule: {
-          maxDays: 1,
-          flexPreference: 'distribute',
-          latenessMs: 0,
-          padMs: 1,
-          period: 'day',
-          slots: [
-            {
-              direction: 'asc',
-              order: 'shuffle',
-              startTime: 0,
-              programming: {
-                type: 'movie',
-              },
-            },
-          ],
-          timeZoneOffset: new Date().getTimezoneOffset(),
-          type: 'time',
-        },
-        type: 'time-slots',
-      },
-      5_000,
-    );
-    return res.send(response);
-  });
-
   fastify.get(
     '/debug/subprocess/status',
     {

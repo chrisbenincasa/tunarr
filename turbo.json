@@ -18,7 +18,8 @@
     "dev": {
       "dependsOn": ["@tunarr/types#build", "@tunarr/shared#bundle"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "test": {
       "cache": false,

@@ -8,7 +8,7 @@ import type { UIChannelProgramWithOffset } from '../types/index.ts';
 import { type UIIndex } from '../types/index.ts';
 import useStore, { type State } from './index.ts';
 
-const materializeProgramList = (
+export const materializeProgramList = (
   lineup: (CondensedChannelProgram & UIIndex)[],
   programLookup: Record<string, ContentProgram>,
 ): UIChannelProgramWithOffset[] => {

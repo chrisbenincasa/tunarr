@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import z from 'zod/v4';
+import { z } from 'zod/v4';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { KEYS } from '../types/inject.ts';
 import {
@@ -11,6 +11,8 @@ import {
 import { USE_WORKER_POOL_ENV_VAR } from '../util/env.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { TimeSlotSchedulerService } from './TimeSlotSchedulerService.ts';
+
+type OutTypes = typeof WorkerRequestToResponse;
 
 /**
  * Does nothing, just runs the tasks!
@@ -38,27 +40,33 @@ export class NoopWorkerPool implements IWorkerPool {
     return Promise.resolve(void 0);
   }
 
-  queueTask<
+  async queueTask<
     Req extends StrictOmit<WorkerRequest, 'requestId'>,
     Out = z.infer<(typeof WorkerRequestToResponse)[Req['type']]>,
   >(request: Req, _timeout?: number): Promise<Out> {
-    return match(request as WorkerRequest)
-      .returnType<Promise<Out>>()
-      .with({ type: 'status' }, () =>
-        Promise.resolve<Out>({
-          status: 'healthy',
-          type: 'status',
-        } as Out),
-      )
-      .with({ type: 'restart' }, () => {
-        return Promise.resolve<Out>(void 0 as Out);
-      })
-      .with({ type: 'time-slots' }, (req) => {
-        return this.timeSlotSchedulerService.schedule(
-          req.channelId,
-          req.schedule,
-        ) as Promise<Out>;
-      })
-      .exhaustive();
+    return (
+      match(request as WorkerRequest)
+        // .returnType<Promise<Out>>()
+        .with({ type: 'status' }, () =>
+          Promise.resolve<Out>({
+            status: 'healthy',
+            type: 'status',
+          } as Out),
+        )
+        .with({ type: 'restart' }, () => {
+          return Promise.resolve<Out>(void 0 as Out);
+        })
+        .with({ type: 'time-slots' }, async ({ request, type }) => {
+          const result = await this.timeSlotSchedulerService.schedule({
+            ...request,
+            materializeResult: false,
+          });
+          return {
+            result,
+            type,
+          } satisfies z.infer<OutTypes[typeof type]>;
+        })
+        .exhaustive() as Promise<Out>
+    );
   }
 }

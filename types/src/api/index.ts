@@ -1,8 +1,8 @@
 import { z } from 'zod/v4';
 import {
   CacheSettingsSchema,
-  LogLevelsSchema,
   LoggingSettingsSchema,
+  LogLevelsSchema,
   ServerSettingsSchema,
   SystemSettingsSchema,
 } from '../SystemSettings.js';
@@ -14,6 +14,7 @@ import {
 import {
   ChannelProgramSchema,
   CondensedChannelProgrammingSchema,
+  CondensedChannelProgramSchema,
   CondensedContentProgramSchema,
   CondensedCustomProgramSchema,
   ContentProgramSchema,
@@ -345,3 +346,11 @@ export const MediaSourceStatusSchema = MediaSourceHealthyStatusSchema.or(
 );
 
 export type MediaSourceStatus = z.infer<typeof MediaSourceStatusSchema>;
+
+export const TimeSlotScheduleResult = z.object({
+  startTime: z.number().positive(),
+  lineup: CondensedChannelProgramSchema.array(),
+  programs: z.record(z.string(), ContentProgramSchema),
+});
+
+export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;

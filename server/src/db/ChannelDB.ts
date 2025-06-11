@@ -15,7 +15,7 @@ import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { RandomSlotScheduler, scheduleTimeSlots } from '@tunarr/shared';
+import { RandomSlotScheduler } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -62,6 +62,8 @@ import { join } from 'node:path';
 import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { TimeSlotSchedulerService } from '../services/TimeSlotSchedulerService.ts';
 import { ChannelAndLineup } from '../types/internal.ts';
 import {
   groupByFunc,
@@ -75,13 +77,13 @@ import { ProgramConverter } from './converters/ProgramConverter.ts';
 import {
   ContentItem,
   CurrentLineupSchemaVersion,
+  isContentItem,
+  isOfflineItem,
+  isRedirectItem,
   Lineup,
   LineupItem,
   LineupSchema,
   PendingProgram,
-  isContentItem,
-  isOfflineItem,
-  isRedirectItem,
 } from './derived_types/Lineup.ts';
 import {
   PageParams,
@@ -211,6 +213,7 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(CacheImageService) private cacheImageService: CacheImageService,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.WorkerPool) private worker: IWorkerPool,
   ) {}
 
   async channelExists(channelId: string) {
@@ -923,10 +926,17 @@ export class ChannelDB implements IChannelDB {
       let programs: ChannelProgram[];
       let startTime: number;
       if (req.type === 'time') {
-        ({ programs, startTime } = await scheduleTimeSlots(
-          req.schedule,
-          req.programs,
-        ));
+        const { result } = await this.worker.queueTask({
+          type: 'time-slots',
+          request: {
+            type: 'programs',
+            programs: req.programs,
+            schedule: req.schedule,
+          },
+        });
+
+        ({ programs, startTime } =
+          TimeSlotSchedulerService.materializeProgramsFromResult(result));
       } else {
         const start = dayjs.tz();
         startTime = +start;
@@ -1118,7 +1128,7 @@ export class ChannelDB implements IChannelDB {
   async loadAndMaterializeLineup(
     channelId: string,
     offset: number = 0,
-    limit: number = 100,
+    limit: number = -1,
   ): Promise<ChannelProgramming | null> {
     const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
