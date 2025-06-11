@@ -16,7 +16,7 @@ import {
   WorkerRequest,
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
-import { getNumericEnvVar } from '../util/env.ts';
+import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { TunarrSubprocessService } from './TunarrSubprocessService.ts';
@@ -25,7 +25,7 @@ const MAX_WORKERS = 8;
 
 const cpuCount = cpus().length;
 
-const envVarSetting = getNumericEnvVar('TUNARR_NUM_WORKERS');
+const envVarSetting = getNumericEnvVar(WORKER_POOL_SIZE_ENV_VAR);
 
 const numWorkers = envVarSetting ?? Math.min(cpuCount, MAX_WORKERS);
 
