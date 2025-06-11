@@ -16,7 +16,6 @@ When using Docker, you can mount your a directory named `.dizquetv` when launchi
 
     You can force a legacy migration on subsequent launches of Tunarr using the `--force_migration` flag. But be careful! This can be destructive if you've done any additional configuration in Tunarr.
 
-
 ## Docker
 
 ```
@@ -67,6 +66,20 @@ If using Docker Desktop, before running the Tunarr container, you have to use th
 
 ![Docker Desktop Setup](../assets/docker-desktop.webp)
 
+## Configuration
+
+Tunarr has various command line / environment variables for configuration. These are listed below.
+
+| Environment Variable   | Command Line Flag | Default value | Description                                                                                                                                        |
+| ---------------------- | ----------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TUNARR_DATABASE_PATH` | `--database`      | `''`          | Sets the path where Tunarr will write its data to. **NOTE** Do not set this if using docker; use a bind mount pointed to `/config/tunarr` instead. |
+| `TUNARR_SERVER_PORT`   | `--port`/`p`      | 8000          | Sets the port that the Tunarr server will listen on. **NOTE** When using Docker prefer using a port mapping than setting this. |
+| `TUNARR_SERVER_ADMIN_MODE` | `--admin` | FALSE | Starts Tunarr in [admin mode](/configure/system/security/#admin-mode) | 
+| `TUNARR_SERVER_PRINT_ROUTES` | `--print_routes` | FALSE | Prints all of Tunarrs server routes at startup |
+| `TUNARR_SERVER_TRUST_PROXY` | `--trust_proxy` | FALSE | Enables [trust proxy](/configure/system/security/#trust-proxy) for using Tunarr behind a reverse proxy |
+| `TUNARR_BIND_ADDR` | N/A | `0.0.0.0` | Sets the interface that Tunarr will attempt to bind its server to. **NOTE** Change at your own risk! By default, Tunarr listens on all network interfaces | 
+| `TUNARR_USE_WORKER_POOL` | N/A | FALSE | Set to true to enable experimental support for Tunarr's worker threads | 
+| `TUNARR_WORKER_POOL_SIZE` | N/A | `cpus().length` | Control the number of worker threads Tunarr creates in its pool. It's recommended to use no more than the number of CPUs on the host system | 
 
 ## Hardware Encoding
 
@@ -147,7 +160,7 @@ services:
 
 ## Standalone binaries
 
-### *nix Setup
+### \*nix Setup
 
 After downloading the binary from Github, you must re-add executable permissions to the file. In Linux or macOS, this can be done by running
 
@@ -172,6 +185,7 @@ Setup:
 3. Execute a `sudo mv tunarr-linux-x64 /opt/tunarr/tunarr-linux-x64` (replace the first path with the path you downloaded Tunarr too, which will include the version)
 4. Execute `sudo nano /etc/systemd/tunarr.service`
 5. Copy and paste the service definition below:
+
 ```systemd
 [Unit]
 Description=Tunarr
@@ -199,12 +213,10 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-
 6. Execute a `ctrl+o`, on the keyboard. When prompted to save the buffer, press Enter to save and exit.
 7. Execute `sudo systemctl daemon-reload`
 8. In terminal, execute `sudo systemctl enable tunarr.service`
 9. Execute `sudo systemctl start tunarr`
-
 
 #### launchd (macOS)
 
