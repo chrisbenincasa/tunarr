@@ -1,6 +1,9 @@
-import { TimeSlotScheduleSchema } from '@tunarr/types/api';
-import { ChannelProgramSchema } from '@tunarr/types/schemas';
+import { TimeSlotScheduleResult } from '@tunarr/types/api';
 import { z } from 'zod/v4';
+import {
+  ChannelTimeSlotScheduleRequest,
+  ProgramsTimeSlotScheduleRequest,
+} from '../services/TimeSlotSchedulerService.ts';
 
 export const BaseWorkerRequest = z.object({
   requestId: z.uuid(),
@@ -17,8 +20,10 @@ export const WorkerStatusRequest = BaseWorkerRequest.extend({
 
 export const WorkerScheduleTimeSlotsRequest = BaseWorkerRequest.extend({
   type: z.literal('time-slots'),
-  channelId: z.uuid().or(z.number()),
-  schedule: TimeSlotScheduleSchema,
+  request: z.discriminatedUnion('type', [
+    ChannelTimeSlotScheduleRequest.omit({ materializeResult: true }),
+    ProgramsTimeSlotScheduleRequest.omit({ materializeResult: true }),
+  ]),
 });
 
 export type WorkerScheduleTimeSlotsRequest = z.infer<
@@ -58,8 +63,7 @@ export const WorkerStatusReply = z.object({
 
 export const WorkerTimeSlotScheduleReply = z.object({
   type: z.literal('time-slots'),
-  programs: ChannelProgramSchema.array(),
-  startTime: z.number(),
+  result: TimeSlotScheduleResult,
 });
 
 export type WorkerTimeSlotScheduleReply = z.infer<

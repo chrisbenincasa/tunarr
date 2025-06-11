@@ -19,6 +19,9 @@ const KEYS = {
   ProgramDB: Symbol.for('ProgramDB'),
   SettingsDB: Symbol.for('SettingsDB'),
   MediaSourceApiFactory: Symbol.for('MediaSourceApiFactory'),
+  TimeSlotSchedulerServiceFactory: Symbol.for(
+    'TimeSlotSchedulerServiceFactory',
+  ),
 
   // Streaming
   HlsSession: Symbol.for('HlsSession'),

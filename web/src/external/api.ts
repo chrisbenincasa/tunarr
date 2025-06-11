@@ -4,6 +4,8 @@ import {
   ChannelSessionsResponseSchema,
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
+  TimeSlotScheduleResult,
+  TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
   UpdateCustomShowRequestSchema,
   UpdateFillerListRequestSchema,
@@ -432,6 +434,20 @@ export const api = makeApi([
         fileUrl: z.string(),
       }),
     }),
+  },
+  {
+    method: 'post',
+    path: '/api/channels/:channelId/schedule-time-slots',
+    alias: 'scheduleTimeSlots',
+    parameters: parametersBuilder()
+      .addPath('channelId', z.string())
+      .addBody(
+        z.object({
+          schedule: TimeSlotScheduleSchema,
+        }),
+      )
+      .build(),
+    response: TimeSlotScheduleResult,
   },
   ...settingsEndpoints,
   ...jellyfinEndpoints,

@@ -33,6 +33,7 @@ import { FileSystemService } from './services/FileSystemService.ts';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
+import { TimeSlotSchedulerService } from './services/TimeSlotSchedulerService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { Timer } from './util/Timer.ts';
@@ -101,6 +102,9 @@ const RootModule = new ContainerModule((bind) => {
   bind(SystemDevicesService).toSelf().inSingletonScope();
   bind(FileSystemService).toSelf().inSingletonScope();
   bind(TunarrWorkerPool).toSelf().inSingletonScope();
+  bind<interfaces.AutoFactory<TimeSlotSchedulerService>>(
+    KEYS.TimeSlotSchedulerServiceFactory,
+  ).toAutoFactory(TimeSlotSchedulerService);
 
   if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);

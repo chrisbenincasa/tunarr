@@ -56,8 +56,7 @@ export class TunarrWorker {
               });
               break;
             case 'time-slots':
-              await this.handleTimeSlots(parsed.data);
-              break;
+              return this.handleTimeSlots(parsed.data);
             case 'restart':
               process.exit(parsed.data.code ?? 1);
           }
@@ -68,7 +67,10 @@ export class TunarrWorker {
 
   private async handleTimeSlots(req: WorkerScheduleTimeSlotsRequest) {
     const result = await Result.attemptAsync(() =>
-      this.timeSlotSchedulerService.schedule(req.channelId, req.schedule),
+      this.timeSlotSchedulerService.schedule({
+        ...req.request,
+        materializeResult: false,
+      }),
     );
     if (result.isFailure()) {
       this.sendReply({
@@ -80,9 +82,7 @@ export class TunarrWorker {
     }
 
     this.sendSuccessReply(req.requestId, {
-      programs: result.get().programs,
-      startTime: result.get().startTime,
-      // requestId: req.requestId,
+      result: result.get(),
       type: 'time-slots',
     } satisfies WorkerTimeSlotScheduleReply);
   }

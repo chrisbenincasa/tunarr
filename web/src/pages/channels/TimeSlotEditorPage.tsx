@@ -10,7 +10,10 @@ import {
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
-import { useChannelEditorLazy } from '@/store/selectors.ts';
+import {
+  materializeProgramList,
+  useChannelEditorLazy,
+} from '@/store/selectors.ts';
 import { ArrowBack, Autorenew } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
 import {
@@ -31,8 +34,9 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
+import { useMutation } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { dayjsMod, scheduleTimeSlots } from '@tunarr/shared';
+import { dayjsMod } from '@tunarr/shared';
 import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
@@ -48,6 +52,8 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
+import { zipWithIndex } from '../../helpers/util.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import {
   resetLineup,
@@ -279,18 +285,31 @@ export default function TimeSlotEditorPage() {
     });
   };
 
+  const apiClient = useTunarrApi();
+  const scheduleTimeSlotsMut = useMutation({
+    mutationFn: () =>
+      apiClient.scheduleTimeSlots(
+        {
+          schedule: {
+            ...getValues(),
+            timeZoneOffset: new Date().getTimezoneOffset(),
+            type: 'time',
+          },
+        },
+        {
+          params: {
+            channelId: channel!.id,
+          },
+        },
+      ),
+  });
+
   const calculateSlots = () => {
     performance.mark('guide-start');
     toggleIsCalculatingSlots(true);
     setTimeout(() => {
-      scheduleTimeSlots(
-        {
-          ...getValues(),
-          timeZoneOffset: new Date().getTimezoneOffset(),
-          type: 'time',
-        },
-        materializeOriginalProgramList(),
-      )
+      scheduleTimeSlotsMut
+        .mutateAsync()
         .then((res) => {
           performance.mark('guide-end');
           const { duration: ms } = performance.measure(
@@ -298,10 +317,14 @@ export default function TimeSlotEditorPage() {
             'guide-start',
             'guide-end',
           );
-          showPerfSnackbar(Math.round(ms), res.programs.length);
+          const materialized = materializeProgramList(
+            zipWithIndex(res.lineup),
+            res.programs,
+          );
+          showPerfSnackbar(Math.round(ms), res.lineup.length);
           setStartTime(dayjs(res.startTime));
           updateCurrentChannel({ startTime: res.startTime });
-          setCurrentLineup(res.programs, true);
+          setCurrentLineup(materialized, true);
         })
         .catch((e) => {
           snackbar.enqueueSnackbar(

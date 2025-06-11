@@ -6,18 +6,17 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
-import { scheduleTimeSlots } from '@tunarr/shared';
 import type { ChannelSession, CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
   GetChannelProgrammingResponseSchema,
+  TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
 import {
   ChannelLineupSchema,
-  ChannelProgramSchema,
   ChannelSchema,
   CondensedChannelProgrammingSchema,
   ContentProgramSchema,
@@ -573,20 +572,32 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.post(
-    '/channels/schedule-time-slots',
+    '/channels/:channelId/schedule-time-slots',
     {
       schema: {
         tags: ['Channels'],
+        params: z.object({
+          channelId: z.string(),
+        }),
         body: z.object({
           schedule: TimeSlotScheduleSchema,
-          programs: z.array(ChannelProgramSchema),
+          // programs: z.array(ChannelProgramSchema),
         }),
+        response: {
+          200: TimeSlotScheduleResult,
+        },
       },
     },
     async (req, res) => {
-      return res.send(
-        await scheduleTimeSlots(req.body.schedule, req.body.programs),
-      );
+      const { result } = await req.serverCtx.workerPool.queueTask({
+        request: {
+          type: 'channel',
+          channelId: req.params.channelId,
+          schedule: req.body.schedule,
+        },
+        type: 'time-slots',
+      });
+      return res.serializer(JSON.stringify).send(result);
     },
   );
 };

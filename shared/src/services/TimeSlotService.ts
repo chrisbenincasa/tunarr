@@ -1,6 +1,17 @@
-import type { ChannelProgram, FlexProgram } from '@tunarr/types';
-import { isFlexProgram } from '@tunarr/types';
-import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
+import type {
+  ChannelProgram,
+  CondensedChannelProgram,
+  CondensedContentProgram,
+  ContentProgram,
+  FlexProgram,
+} from '@tunarr/types';
+import { isContentProgram, isFlexProgram } from '@tunarr/types';
+import type {
+  TimeSlot,
+  TimeSlotSchedule,
+  TimeSlotScheduleResult,
+} from '@tunarr/types/api';
+import type { CondensedCustomProgram } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -45,7 +56,7 @@ type PaddedProgram = {
 // Returns amount to increment the cursor
 // Mutates the lineup array
 function pushOrExtendFlex(
-  lineup: ChannelProgram[],
+  lineup: CondensedChannelProgram[],
   flexDuration: Duration,
 ): number {
   const durationMs = flexDuration.asMilliseconds();
@@ -86,6 +97,33 @@ function createPaddedProgram(program: ChannelProgram, padMs: number) {
   };
 }
 
+function condense(program: ChannelProgram): CondensedChannelProgram {
+  switch (program.type) {
+    case 'content':
+      return {
+        id: program.uniqueId, // TODO
+        duration: program.duration,
+        persisted: program.persisted,
+        type: 'content',
+      } satisfies CondensedContentProgram;
+    case 'custom':
+      return {
+        customShowId: program.customShowId,
+        duration: program.duration,
+        id: program.id,
+        index: program.index,
+        persisted: program.persisted,
+        type: 'custom',
+        program: program.program
+          ? (condense(program.program) as CondensedContentProgram)
+          : undefined,
+      } satisfies CondensedCustomProgram;
+    case 'redirect':
+    case 'flex':
+      return program;
+  }
+}
+
 // Exported for testing only
 export function distributeFlex(
   programs: PaddedProgram[],
@@ -124,7 +162,15 @@ export function distributeFlex(
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
   channelProgramming: ChannelProgram[],
-) {
+): Promise<TimeSlotScheduleResult> {
+  const contentProgramsById: Record<string, ContentProgram> = {};
+  const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
+  for (const program of channelProgramming) {
+    if (isContentProgram(program)) {
+      contentProgramsById[program.uniqueId] = program;
+      condensedProgramsById[program.uniqueId] = condense(program);
+    }
+  }
   // Load programs
   // TODO include redirects and custom programs!
   const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);
@@ -159,7 +205,7 @@ export async function scheduleTimeSlots(
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  const channelPrograms: ChannelProgram[] = [];
+  const channelPrograms: CondensedChannelProgram[] = [];
 
   const pushFlex = (flexDuration: Duration) => {
     const inc = pushOrExtendFlex(channelPrograms, flexDuration);
@@ -238,7 +284,11 @@ export async function scheduleTimeSlots(
 
     // Program longer than we have left? Add it and move on...
     if (program.duration > remaining) {
-      channelPrograms.push(program);
+      const condensed =
+        program.type === 'content'
+          ? (condensedProgramsById[program.uniqueId] ?? condense(program))
+          : program;
+      channelPrograms.push(condensed);
       advanceIterator(currSlot, contentProgramIteratorsById);
       timeCursor = timeCursor.add(program.duration);
       continue;
@@ -281,14 +331,19 @@ export async function scheduleTimeSlots(
     }
 
     forEach(paddedPrograms, ({ program, padMs }) => {
-      channelPrograms.push(program);
+      const condensed =
+        program.type === 'content'
+          ? (condensedProgramsById[program.uniqueId] ?? condense(program))
+          : program;
+      channelPrograms.push(condensed);
       timeCursor = timeCursor.add(program.duration);
       pushFlex(dayjs.duration(padMs));
     });
   }
 
   return {
-    programs: channelPrograms,
-    startTime: +t0, // +startOfCurrentPeriod, //t0.valueOf(),
+    lineup: channelPrograms,
+    programs: contentProgramsById,
+    startTime: +t0,
   };
 }

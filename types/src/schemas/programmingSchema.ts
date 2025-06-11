@@ -192,6 +192,10 @@ export const CondensedCustomProgramSchema = BaseProgramSchema.extend({
   program: CondensedContentProgramSchema.optional(),
 });
 
+export type CondensedCustomProgram = z.infer<
+  typeof CondensedCustomProgramSchema
+>;
+
 export const CustomProgramSchema = BaseProgramSchema.extend({
   type: z.literal('custom'),
   // The ID of the underlying program
