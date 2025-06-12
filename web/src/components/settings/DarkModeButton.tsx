@@ -4,10 +4,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  useMediaQuery,
+  useColorScheme,
 } from '@mui/material';
-import useStore from '../../store/index.ts';
-import { setThemePreference } from '../../store/themeEditor/actions';
+import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 
 type DarkModeProps = {
   iconOnly?: boolean;
@@ -17,14 +16,8 @@ type ThemeMode = 'light' | 'system' | 'dark';
 
 export default function DarkModeButton(props: DarkModeProps) {
   const { iconOnly } = props;
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const schemePreference = useStore(
-    (state) => state.theme.themePreference ?? 'system',
-  );
-
-  const isDarkMode =
-    (schemePreference === 'system' && prefersDarkMode) ||
-    schemePreference === 'dark';
+  const { mode, setMode } = useColorScheme();
+  const isDarkMode = useIsDarkMode();
 
   return (
     <>
@@ -32,11 +25,7 @@ export default function DarkModeButton(props: DarkModeProps) {
         <Tooltip title={`Enable ${isDarkMode ? 'light' : 'dark'} Mode`}>
           <IconButton
             color="inherit"
-            onClick={() =>
-              setThemePreference(
-                schemePreference === 'light' ? 'dark' : 'light',
-              )
-            }
+            onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
             sx={{ mx: 1 }}
           >
             {isDarkMode ? <LightMode /> : <DarkMode />}
@@ -44,9 +33,9 @@ export default function DarkModeButton(props: DarkModeProps) {
         </Tooltip>
       ) : (
         <ToggleButtonGroup
-          value={schemePreference}
+          value={mode}
           exclusive
-          onChange={(_, value) => setThemePreference(value as ThemeMode)}
+          onChange={(_, value) => setMode(value as ThemeMode)}
           aria-label="text alignment"
         >
           <ToggleButton value="light" aria-label="left aligned">

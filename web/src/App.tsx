@@ -16,6 +16,7 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -31,7 +32,6 @@ import { StyledMenu } from './components/base/StyledMenu.tsx';
 import DarkModeButton from './components/settings/DarkModeButton.tsx';
 import { type NavItem } from './hooks/useNavItems.ts';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
-import { useTunarrTheme } from './hooks/useTunarrTheme.ts';
 import { useVersion } from './hooks/useVersion.tsx';
 import { useSettings } from './store/settings/selectors.ts';
 import { strings } from './strings.ts';
@@ -54,7 +54,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
 
   const { data: version } = useVersion();
 
-  const theme = useTunarrTheme();
+  const theme = useTheme();
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
