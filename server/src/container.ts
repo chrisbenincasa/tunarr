@@ -29,6 +29,7 @@ import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
+import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
 import { StartupService } from './services/StartupService.ts';
@@ -111,6 +112,10 @@ const RootModule = new ContainerModule((bind) => {
   } else {
     bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();
   }
+
+  bind<interfaces.AutoFactory<IWorkerPool>>(
+    KEYS.WorkerPoolFactory,
+  ).toAutoFactory(KEYS.WorkerPool);
 });
 
 container.load(RootModule);

@@ -44,6 +44,7 @@ const KEYS = {
   HealthCheck: Symbol.for('HealthCheck'),
   Fixer: Symbol.for('Fixer'),
   WorkerPool: Symbol.for('WorkerPool'),
+  WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 };

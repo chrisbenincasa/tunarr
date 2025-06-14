@@ -27,7 +27,7 @@ import {
   Watermark,
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
@@ -213,7 +213,8 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(CacheImageService) private cacheImageService: CacheImageService,
     @inject(KEYS.Database) private db: Kysely<DB>,
-    @inject(KEYS.WorkerPool) private worker: IWorkerPool,
+    @inject(KEYS.WorkerPoolFactory)
+    private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
   ) {}
 
   async channelExists(channelId: string) {
@@ -926,7 +927,7 @@ export class ChannelDB implements IChannelDB {
       let programs: ChannelProgram[];
       let startTime: number;
       if (req.type === 'time') {
-        const { result } = await this.worker.queueTask({
+        const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
           request: {
             type: 'programs',
