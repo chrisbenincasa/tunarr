@@ -73,6 +73,7 @@ export class TunarrWorker {
       }),
     );
     if (result.isFailure()) {
+      this.logger.error(result.error);
       this.sendReply({
         type: 'error',
         requestId: req.requestId,

@@ -1,5 +1,6 @@
 import type z from 'zod/v4';
 import type {
+  FillerProgramSchema,
   MusicAlbumContentProgramSchema,
   MusicArtistContentProgramSchema,
   TvSeasonContentProgramSchema,
@@ -53,11 +54,13 @@ export type FlexProgram = z.infer<typeof FlexProgramSchema>;
 
 export type CustomProgram = z.infer<typeof CustomProgramSchema>;
 
+export type FillerProgram = z.infer<typeof FillerProgramSchema>;
+
 export type RedirectProgram = z.infer<typeof RedirectProgramSchema>;
 
 export type ChannelProgram = z.infer<typeof ChannelProgramSchema>;
 
-function isProgramType<T extends BaseProgram>(type: string) {
+function isProgramType<T extends BaseProgram>(type: T['type']) {
   return (p: BaseProgram): p is T => {
     return p.type === type;
   };
@@ -71,6 +74,8 @@ export const isRedirectProgram = isProgramType<RedirectProgram>('redirect');
 
 export const isCustomProgram = isProgramType<CustomProgram>('custom');
 
+export const isFillerProgram = isProgramType<FillerProgram>('filler');
+
 export function programUniqueId(program: BaseProgram): string | null {
   if (isContentProgram(program)) {
     return program.uniqueId;
@@ -79,7 +84,9 @@ export function programUniqueId(program: BaseProgram): string | null {
   } else if (isRedirectProgram(program)) {
     return `redirect.${program.channel}`;
   } else if (isCustomProgram(program)) {
-    return `custom.${program.id}`;
+    return `custom.${program.customShowId}.${program.id}`;
+  } else if (isFillerProgram(program)) {
+    return `filler.${program.fillerListId}.${program.id}`;
   }
 
   return null;

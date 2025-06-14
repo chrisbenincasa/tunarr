@@ -8,6 +8,7 @@ import type {
 import {
   isContentProgram,
   isCustomProgram,
+  isFillerProgram,
   isFlexProgram,
 } from '@tunarr/types';
 import type {
@@ -15,7 +16,10 @@ import type {
   TimeSlotSchedule,
   TimeSlotScheduleResult,
 } from '@tunarr/types/api';
-import type { CondensedCustomProgram } from '@tunarr/types/schemas';
+import type {
+  CondensedCustomProgram,
+  CondensedFillerProgram,
+} from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -32,6 +36,7 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
+import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import {
   advanceIterator,
   getNextProgramForSlot,
@@ -122,6 +127,17 @@ function condense(program: ChannelProgram): CondensedChannelProgram {
           ? (condense(program.program) as CondensedContentProgram)
           : undefined,
       } satisfies CondensedCustomProgram;
+    case 'filler':
+      return {
+        fillerListId: program.fillerListId,
+        duration: program.duration,
+        id: program.id,
+        persisted: program.persisted,
+        type: 'filler',
+        program: program.program
+          ? (condense(program.program) as CondensedContentProgram)
+          : undefined,
+      } satisfies CondensedFillerProgram;
     case 'redirect':
     case 'flex':
       return program;
@@ -167,13 +183,18 @@ export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
   channelProgramming: ChannelProgram[],
 ): Promise<TimeSlotScheduleResult> {
+  const seed = createEntropy();
+  const random = new Random(MersenneTwister19937.seedWithArray(seed));
   const contentProgramsById: Record<string, ContentProgram> = {};
   const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
   for (const program of channelProgramming) {
     if (isContentProgram(program)) {
       contentProgramsById[program.uniqueId] = program;
       condensedProgramsById[program.uniqueId] = condense(program);
-    } else if (isCustomProgram(program) && program.program?.id) {
+    } else if (
+      (isCustomProgram(program) && program.program?.id) ||
+      (isFillerProgram(program) && program.program?.id)
+    ) {
       contentProgramsById[program.program.id] = program.program;
       condensedProgramsById[program.program.id] = condense(program.program);
     }
@@ -184,6 +205,7 @@ export async function scheduleTimeSlots(
   const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
     createProgramMap(allPrograms),
+    random,
   );
 
   const periodDuration = dayjs.duration(1, schedule.period);
@@ -266,11 +288,10 @@ export async function scheduleTimeSlots(
       throw new Error('Could not find a suitable slot');
     }
 
-    let program = getNextProgramForSlot(
-      currSlot,
-      contentProgramIteratorsById,
-      remaining,
-    );
+    let program = getNextProgramForSlot(currSlot, contentProgramIteratorsById, {
+      timeCursor: +timeCursor,
+      slotDuration: remaining,
+    });
 
     if (
       !isNull(lateMillis) &&
@@ -310,7 +331,7 @@ export async function scheduleTimeSlots(
       const nextProgram = getNextProgramForSlot(
         currSlot,
         contentProgramIteratorsById,
-        remaining,
+        { timeCursor: +timeCursor + totalDuration, slotDuration: remaining },
       );
       if (isNull(nextProgram)) break;
       if (totalDuration + nextProgram.duration > remaining) {
@@ -329,7 +350,10 @@ export async function scheduleTimeSlots(
     // to fill the time for this slot. This works mainly if we're doing a
     // "shuffle" ordering, it won't work for "in order" shows in slots.
     // TODO: Implement greedy filling.
-    if (schedule.flexPreference === 'distribute') {
+    if (
+      schedule.flexPreference === 'distribute' &&
+      currSlot.type !== 'filler'
+    ) {
       distributeFlex(paddedPrograms, schedule, remainingTimeInSlot);
     } else {
       const lastProgram = last(paddedPrograms)!;
@@ -352,5 +376,6 @@ export async function scheduleTimeSlots(
     lineup: channelPrograms,
     programs: contentProgramsById,
     startTime: +t0,
+    seed,
   };
 }

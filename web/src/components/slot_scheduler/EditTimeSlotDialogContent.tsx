@@ -1,4 +1,5 @@
-import { OneDayMillis, ProgramOption } from '@/helpers/slotSchedulerUtil';
+import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
 import {
   Box,
   Button,
@@ -11,8 +12,9 @@ import {
   Stack,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
-import { TimeSlot } from '@tunarr/types/api';
-import dayjs, { Dayjs } from 'dayjs';
+import type { TimeSlot } from '@tunarr/types/api';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { isNil, map } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -45,7 +47,7 @@ export const EditTimeSlotDialogContent = ({
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
 
-  const formMethods = useForm({
+  const formMethods = useForm<TimeSlot>({
     defaultValues: slot,
   });
   const { control, getValues } = formMethods;

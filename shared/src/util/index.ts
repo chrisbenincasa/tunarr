@@ -3,7 +3,7 @@ export * from './plexSearchUtil.js';
 export * as seq from './seq.js';
 import type { ChannelProgram } from '@tunarr/types';
 import type { PlexMedia } from '@tunarr/types/plex';
-import { isNull } from 'lodash-es';
+import { isNull, isString } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import type { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
@@ -157,4 +157,8 @@ export function romanNumeralToNumber(input: string): number {
     previousValue = current;
   }
   return total + previousValue;
+}
+
+export function isNonEmptyString(s: unknown): s is string {
+  return isString(s) && s.length > 0;
 }

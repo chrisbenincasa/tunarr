@@ -113,10 +113,8 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
             max={lockWeights ? 100 : UnlockedWeightScale}
             value={weights[idx]}
             step={0.1}
-            onChange={(_, value) => adjustWeights(idx, value as number, 1)}
-            onChangeCommitted={(_, value) =>
-              adjustWeights(idx, value as number, 1)
-            }
+            onChange={(_, value) => adjustWeights(idx, value, 1)}
+            onChangeCommitted={(_, value) => adjustWeights(idx, value, 1)}
             component="div"
             sx={{
               flexBasis: '50%',
@@ -141,11 +139,7 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
           )}
           <Box>
             <Typography>
-              {
-                programOptions.nameById[
-                  getRandomSlotId(slot.programming) as string
-                ]
-              }{' '}
+              {programOptions.nameById[getRandomSlotId(slot) as string]}{' '}
               {`(${round((weights[idx] / totalWeight) * 100, 2)}%)`}
             </Typography>
           </Box>

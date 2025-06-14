@@ -1,19 +1,14 @@
-import type { Lineup } from '@/db/derived_types/Lineup.js';
-import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import type { Migration } from '@/migration/Migration.js';
+import { injectable } from 'inversify';
+import type { JsonObject } from '../../types/schemas.ts';
 
+@injectable()
 export abstract class ChannelLineupMigration<
   From extends number,
   To extends number,
-> implements Migration<Lineup, From, To>
+> implements Migration<JsonObject, From, To>
 {
-  constructor(
-    protected channelDB: IChannelDB,
-    protected programDB: IProgramDB,
-  ) {}
-
   abstract from: From;
   abstract to: To;
-  abstract migrate(schema: Lineup): Promise<void>;
+  abstract migrate(schema: JsonObject): Promise<void>;
 }

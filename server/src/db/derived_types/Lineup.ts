@@ -18,7 +18,8 @@ export const ContentLineupItemSchema = z
     // this is a pointer to that show.
     // TODO: If a custom show is deleted, we have to remove
     // references to these content items in the lineup
-    customShowId: z.string().uuid().optional(),
+    customShowId: z.uuid().optional(),
+    fillerListId: z.uuid().optional(),
   })
   .merge(BaseLineupItemSchema);
 
@@ -79,7 +80,7 @@ export const OnDemandChannelConfigSchema = z.object({
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
 
-export const CurrentLineupSchemaVersion = 1;
+export const CurrentLineupSchemaVersion = 4;
 
 export const LineupSchema = z.object({
   version: z

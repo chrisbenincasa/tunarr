@@ -1,3 +1,4 @@
+import EmbyIcon from '@/assets/emby.svg?react';
 import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
 import { ProgramDebugDetailsMenu } from '@/dev/ProgramDebugDetailsMenu.tsx';
@@ -43,6 +44,8 @@ const formattedTitle = forProgramType({
   content: (p) => p.grandparent?.title ?? p.title,
   custom: (p) =>
     p.program?.grandparent?.title ?? p.program?.title ?? 'Custom Program',
+  filler: (p) =>
+    p.program?.grandparent?.title ?? p.program?.title ?? 'Filler Program',
   redirect: (p) => `Redirect to Channel ${p.channel}`,
   flex: 'Flex',
 });
@@ -156,6 +159,13 @@ export default function ProgramDetailsDialog({
         case 'plex':
           icon = <PlexIcon />;
           break;
+        case 'emby':
+          icon = <EmbyIcon />;
+          break;
+        case 'plex-guid':
+        case 'imdb':
+        case 'tmdb':
+        case 'tvdb':
         default:
           break;
       }
@@ -287,11 +297,20 @@ export default function ProgramDetailsDialog({
             case 'jellyfin':
               externalSourceName = 'Jellyfin';
               break;
+            case 'plex-guid':
+            case 'imdb':
+            case 'tmdb':
+            case 'tvdb':
+            case 'emby':
+              break;
           }
         }
         break;
       }
-      default:
+      case 'custom':
+      case 'redirect':
+      case 'flex':
+      case 'filler':
         break;
     }
   }

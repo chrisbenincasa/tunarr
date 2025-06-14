@@ -12,7 +12,7 @@
     "dev": "vite",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest --run",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
@@ -82,7 +82,7 @@
     "nodemon": "^3.0.3",
     "openapi-zod-client": "^1.14.0",
     "ts-essentials": "^9.4.1",
-    "typescript": "5.4.3",
+    "typescript": "5.7.3",
     "vite": "^5.4.1",
     "vite-plugin-svgr": "^4.2.0",
     "vitest": "^3.2.4"

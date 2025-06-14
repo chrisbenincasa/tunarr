@@ -1,14 +1,23 @@
-import { useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query';
-import { ApiClient } from '../external/api.ts';
+import {
+  queryOptions,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import type { ApiClient } from '../external/api.ts';
 import useStore from '../store/index.ts';
 import { makeQueryOptions } from './useQueryHelpers.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
 
 export const fillerListsQuery = (apiClient: ApiClient) =>
-  makeQueryOptions(['fillers'], () => apiClient.getFillerLists());
+  queryOptions({
+    queryKey: ['fillers'],
+    queryFn: () => apiClient.getFillerLists(),
+  });
 
-export const useFillerLists = () => {
-  return useSuspenseQuery(fillerListsQuery(useTunarrApi()));
+export const useFillerLists = (
+  opts?: Partial<ReturnType<typeof fillerListsQuery>>,
+) => {
+  return useSuspenseQuery({ ...fillerListsQuery(useTunarrApi()), ...opts });
 };
 
 export const fillerListQuery = (apiClient: ApiClient, id: string) =>

@@ -65,6 +65,7 @@ export const BaseProgramSchema = z.object({
     z.literal('redirect'),
     z.literal('content'),
     z.literal('custom'),
+    z.literal('filler'),
   ]),
   persisted: z.boolean(),
   duration: z.number(),
@@ -239,11 +240,31 @@ export const CustomProgramSchema = BaseProgramSchema.extend({
   program: ContentProgramSchema.optional(),
 });
 
+export const CondensedFillerProgramSchema = BaseProgramSchema.extend({
+  type: z.literal('filler'),
+  // The ID of the underlying program
+  id: z.uuid(),
+  fillerListId: z.uuid(),
+  program: CondensedContentProgramSchema.optional(),
+});
+
+export type CondensedFillerProgram = z.infer<
+  typeof CondensedFillerProgramSchema
+>;
+
+export const FillerProgramSchema = BaseProgramSchema.extend({
+  type: z.literal('filler'),
+  id: z.uuid(),
+  fillerListId: z.uuid(),
+  program: ContentProgramSchema.optional(),
+});
+
 export const ChannelProgramSchema = z.discriminatedUnion('type', [
   ContentProgramSchema,
   CustomProgramSchema,
   RedirectProgramSchema,
   FlexProgramSchema,
+  FillerProgramSchema,
 ]);
 
 const startTimeOffsets = z.array(z.number());
@@ -260,6 +281,7 @@ export const ChannelProgrammingSchema = z.object({
 export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
   CondensedContentProgramSchema,
   CondensedCustomProgramSchema,
+  CondensedFillerProgramSchema,
   RedirectProgramSchema,
   FlexProgramSchema,
 ]);

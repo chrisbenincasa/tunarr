@@ -13,7 +13,7 @@
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./build/",
     "dev": "tsup --dts --watch",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "exports": {
     ".": {

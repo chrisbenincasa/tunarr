@@ -43,14 +43,11 @@ export const EditRandomSlotDialogContent = ({
     'randomDistribution',
   ]);
 
-  const formMethods = useForm({
+  const formMethods = useForm<RandomSlot>({
     defaultValues: slot,
   });
   const { control, getValues, setValue, watch } = formMethods;
-  const [durationSpec, programType] = watch([
-    'durationSpec',
-    'programming.type',
-  ]);
+  const [durationSpec, programType] = watch(['durationSpec', 'type']);
 
   // const [programming, slotDuration] = watch([`programming`, 'durationMs']);
   const [weightValue, setWeightValue] = useState(getValues('weight'));
@@ -126,7 +123,8 @@ export const EditRandomSlotDialogContent = ({
             <Stack direction="row" gap={1}>
               {(programType === 'custom-show' ||
                 programType === 'movie' ||
-                programType === 'show') && (
+                programType === 'show' ||
+                programType === 'filler') && (
                 <Box>
                   <Controller
                     control={control}

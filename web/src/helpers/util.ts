@@ -1,10 +1,6 @@
 import type { PaletteMode } from '@mui/material';
 import { colors } from '@mui/material';
-import type {
-  GenGroupedSubtypeMapping,
-  PerTypeCallback,
-} from '@tunarr/shared/types';
-import { applyOrValueNoRest } from '@tunarr/shared/util';
+import type { GenGroupedSubtypeMapping } from '@tunarr/shared/types';
 import {
   type ChannelProgram,
   type FlexProgram,
@@ -32,7 +28,7 @@ import {
 import pluralize from 'pluralize';
 import { type Path, type PathValue } from 'react-hook-form';
 import { type SelectedMedia } from '../store/programmingSelector/store';
-import { type UIChannelProgram, type UIIndex } from '../types';
+import { type UIIndex } from '../types';
 import type { Nilable } from '../types/util.ts';
 
 dayjs.extend(duration);
@@ -129,6 +125,8 @@ export function channelProgramUniqueId(program: ChannelProgram): string {
       return `content.${program.uniqueId}`;
     case 'redirect':
       return `redirect.${program.channel}`;
+    case 'filler':
+      return `filler.${program.fillerListId}`;
     case 'flex':
       return 'flex';
   }
@@ -198,42 +196,6 @@ export function groupSelectedMedia(
     {} as Partial<GenGroupedSubtypeMapping<SelectedMedia>>,
   );
 }
-
-export const forUIProgramType = <T>(
-  choices: PerTypeCallback<UIChannelProgram, T>,
-) => {
-  return (m: UIChannelProgram) => {
-    switch (m.type) {
-      case 'content':
-        if (choices.content) {
-          return applyOrValueNoRest(choices.content, m);
-        }
-        break;
-      case 'custom':
-        if (choices.custom) {
-          return applyOrValueNoRest(choices.custom, m);
-        }
-        break;
-      case 'redirect':
-        if (choices.redirect) {
-          return applyOrValueNoRest(choices.redirect, m);
-        }
-        break;
-      case 'flex':
-        if (choices.flex) {
-          return applyOrValueNoRest(choices.flex, m);
-        }
-        break;
-    }
-
-    // If we made it this far try to do the default
-    if (choices.default) {
-      return applyOrValueNoRest(choices.default, m);
-    }
-
-    return null;
-  };
-};
 
 export const unwrapNil = <T>(x: T | null | undefined) => x!;
 

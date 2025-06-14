@@ -20,4 +20,16 @@ export class FileSystemService {
       SubtitlesCacheFolderName,
     );
   }
+
+  get backupPath(): string {
+    return path.join(this.globalOptions.databaseDirectory, 'backups');
+  }
+
+  getChannelLineupPath(channelId: string): string {
+    return path.join(
+      this.globalOptions.databaseDirectory,
+      'channel-lineups',
+      `${channelId}.json`,
+    );
+  }
 }

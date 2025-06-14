@@ -1,4 +1,5 @@
-import { z } from 'zod/v4';
+import { isArray } from 'lodash-es';
+import z from 'zod/v4';
 
 export const TruthyQueryParam = z
   .union([
@@ -13,3 +14,18 @@ export const PagingParams = z.object({
   limit: z.coerce.number().min(-1).default(-1),
   offset: z.coerce.number().nonnegative().default(0),
 });
+
+export const jsonSchema = z.json();
+export type Json = z.infer<typeof jsonSchema>;
+
+export type JsonObject = {
+  [key: string]: Json;
+};
+
+export function isJsonObject(t: Json): t is JsonObject {
+  return !(
+    (typeof t !== 'object' && typeof t !== 'function') ||
+    t === null ||
+    isArray(t)
+  );
+}

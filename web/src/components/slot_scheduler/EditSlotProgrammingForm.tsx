@@ -1,10 +1,9 @@
 import type {
   CustomShowProgramOption,
+  FillerProgramOption,
   ProgramOption,
   RedirectProgramOption,
-  ShowProgramOption,
 } from '@/helpers/slotSchedulerUtil';
-import { slotOrderOptions } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
 import {
   Autocomplete,
@@ -12,23 +11,17 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
-import type {
-  BaseSlot,
-  CustomShowProgrammingTimeSlot,
-  FlexProgrammingTimeSlot,
-  MovieProgrammingTimeSlot,
-  RedirectProgrammingTimeSlot,
-  ShowProgrammingTimeSlot,
-  TimeSlotProgramming,
-} from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import { filter, find, first, map, uniqBy } from 'lodash-es';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { match } from 'ts-pattern';
+import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.tsx';
+import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
+import { ShowSlotProgrammingForm } from './ShowSlotProgrammingForm.tsx';
+import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
 type EditSlotProgramProps = {
   programOptions: ProgramOption[];
@@ -37,8 +30,8 @@ type EditSlotProgramProps = {
 export const EditSlotProgrammingForm = ({
   programOptions,
 }: EditSlotProgramProps) => {
-  const { setValue, watch, control } = useFormContext<BaseSlot>();
-  const { type } = watch('programming');
+  const { watch, control, reset } = useFormContext<BaseSlot>();
+  const [type] = watch(['type']);
   const availableTypes = useMemo(() => {
     return map(
       uniqBy(programOptions, ({ type }) => type),
@@ -46,88 +39,63 @@ export const EditSlotProgrammingForm = ({
     );
   }, [programOptions]);
 
-  const handleTypeChange = (value: ProgramOption['type']) => {
-    if (value === type) {
-      return;
-    }
-
-    let newSlot: TimeSlotProgramming;
-    switch (value) {
-      case 'movie':
-        newSlot = {
-          type: 'movie',
-        } satisfies MovieProgrammingTimeSlot;
-        break;
-      case 'flex':
-        newSlot = {
-          type: 'flex',
-        } satisfies FlexProgrammingTimeSlot;
-        break;
-      case 'custom-show':
-        newSlot = {
+  const newSlotForType = useCallback(
+    (type: BaseSlot['type']) => {
+      return match(type)
+        .returnType<BaseSlot>()
+        .with('custom-show', () => ({
           type: 'custom-show',
+          order: 'next',
+          direction: 'asc',
           customShowId: find(
             programOptions,
             (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
           )!.customShowId,
-        } satisfies CustomShowProgrammingTimeSlot;
-        break;
-      case 'redirect':
-        newSlot = {
-          channelId: find(
-            programOptions,
-            (opt): opt is RedirectProgramOption => opt.type === 'redirect',
-          )!.channelId,
+        }))
+        .with('movie', () => ({
+          type: 'movie',
+          order: 'alphanumeric',
+          direction: 'asc',
+        }))
+        .with('filler', () => ({
+          type: 'filler',
+          order: 'shuffle_prefer_short',
+          decayFactor: 0.5,
+          durationWeighting: 'linear',
+          recoveryFactor: 0.05,
+          fillerListId: programOptions.find(
+            (opt): opt is FillerProgramOption => opt.type === 'filler',
+          )!.fillerListId,
+        }))
+        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
+        .with('redirect', () => ({
           type: 'redirect',
-        } satisfies RedirectProgrammingTimeSlot;
-        break;
-      case 'show':
-        newSlot = {
+          channelId: programOptions.find((opt) => opt.type === 'redirect')!
+            .channelId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .with('show', () => ({
           type: 'show',
-          showId: find(
-            programOptions,
-            (opt): opt is ShowProgramOption => opt.type === 'show',
-          )!.showId,
-        } satisfies ShowProgrammingTimeSlot;
+          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .exhaustive();
+    },
+    [programOptions],
+  );
+
+  const handleTypeChange = (value: BaseSlot['type']) => {
+    if (value === type) {
+      return;
     }
-    setValue(`programming`, newSlot, { shouldDirty: true, shouldTouch: true });
-    setValue('order', value === 'movie' ? 'alphanumeric' : 'next');
+
+    reset(newSlotForType(value), {
+      keepDefaultValues: true,
+      keepDirty: true,
+    });
   };
-
-  const showAutoCompleteOpts = useMemo(
-    () =>
-      type === 'show'
-        ? map(
-            filter(
-              programOptions,
-              (opt): opt is ShowProgramOption => opt.type === 'show',
-            ),
-            (opt) => ({
-              ...opt,
-              label: opt.description,
-            }),
-          )
-        : [],
-    [programOptions, type],
-  );
-
-  const customShowAutoCompleteOpts = useMemo(
-    () =>
-      type === 'custom-show'
-        ? map(
-            filter(
-              programOptions,
-              (opt): opt is CustomShowProgramOption =>
-                opt.type === 'custom-show',
-            ),
-            (opt) => ({
-              ...opt,
-              label: opt.description,
-            }),
-          )
-        : [],
-    [programOptions, type],
-  );
 
   const redirectShowAutoCompleteOpts = useMemo(
     () =>
@@ -146,22 +114,13 @@ export const EditSlotProgrammingForm = ({
     [programOptions, type],
   );
 
-  const handleDirectionChange = (
-    newDirection: string | null,
-    originalOnChange: (...args: unknown[]) => void,
-  ) => {
-    if (newDirection) {
-      originalOnChange(newDirection);
-    }
-  };
-
   return (
     <>
       <FormControl fullWidth>
         <InputLabel>Type</InputLabel>
         <Controller
           control={control}
-          name="programming.type"
+          name="type"
           render={({ field }) => (
             <Select
               label="Type"
@@ -185,54 +144,18 @@ export const EditSlotProgrammingForm = ({
         />
       </FormControl>
       {type === 'custom-show' && (
-        <Controller
-          control={control}
-          name="programming.customShowId"
-          render={({ field }) => (
-            <Autocomplete<CustomShowProgramOption & { label: string }>
-              options={customShowAutoCompleteOpts}
-              value={
-                find(customShowAutoCompleteOpts, {
-                  customShowId: field.value,
-                }) ?? first(customShowAutoCompleteOpts)
-              }
-              onChange={(_, value) =>
-                value ? field.onChange(value.customShowId) : void 0
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Custom Show" />
-              )}
-            />
-          )}
-        />
+        <CustomShowSlotProgrammingForm programOptions={programOptions} />
+      )}
+      {type === 'filler' && (
+        <FillerListSlotProgrammingForm programOptions={programOptions} />
       )}
       {type === 'show' && (
-        <Controller
-          control={control}
-          name="programming.showId"
-          render={({ field }) => (
-            <Autocomplete<ShowProgramOption & { label: string }>
-              value={
-                find(
-                  showAutoCompleteOpts,
-                  (opt) => opt.showId === field.value,
-                ) ?? first(showAutoCompleteOpts)
-              }
-              options={showAutoCompleteOpts}
-              onChange={(_, value) =>
-                value ? field.onChange(value.showId) : void 0
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Program" />
-              )}
-            />
-          )}
-        />
+        <ShowSlotProgrammingForm programOptions={programOptions} />
       )}
       {type === 'redirect' && (
         <Controller
           control={control}
-          name="programming.channelId"
+          name="channelId"
           render={({ field }) => (
             <Autocomplete<RedirectProgramOption & { label: string }>
               value={
@@ -252,42 +175,7 @@ export const EditSlotProgrammingForm = ({
           )}
         />
       )}
-      {(type === 'show' || type === 'custom-show' || type === 'movie') && (
-        <Stack direction="row" spacing={2}>
-          <FormControl fullWidth>
-            <InputLabel>Order</InputLabel>
-            <Controller
-              control={control}
-              name="order"
-              render={({ field }) => (
-                <Select label="Order" {...field}>
-                  {map(slotOrderOptions(type), ({ description, value }) => (
-                    <MenuItem key={value} value={value}>
-                      {description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
-          <Controller
-            control={control}
-            name="direction"
-            render={({ field }) => (
-              <ToggleButtonGroup
-                exclusive
-                value={field.value}
-                onChange={(_, value) =>
-                  handleDirectionChange(value as string | null, field.onChange)
-                }
-              >
-                <ToggleButton value="asc">Asc</ToggleButton>
-                <ToggleButton value="desc">Desc</ToggleButton>
-              </ToggleButtonGroup>
-            )}
-          />
-        </Stack>
-      )}
+      {type === 'movie' && <SlotOrderFormControl />}
     </>
   );
 };

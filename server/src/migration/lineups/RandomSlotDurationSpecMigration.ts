@@ -1,24 +1,42 @@
-import type { Lineup } from '@/db/derived_types/Lineup.js';
 import { ChannelLineupMigration } from '@/migration/lineups/ChannelLineupMigration.js';
-import { isUndefined } from 'lodash-es';
+import { inject, injectable } from 'inversify';
+import { isArray, isUndefined } from 'lodash-es';
+import { KEYS } from '../../types/inject.ts';
+import { isJsonObject, Json, JsonObject } from '../../types/schemas.ts';
+import { Logger } from '../../util/logging/LoggerFactory.ts';
 
+@injectable()
 export class RandomSlotDurationSpecMigration extends ChannelLineupMigration<
-  1,
-  2
+  2,
+  3
 > {
-  readonly from = 1;
-  readonly to = 2;
+  readonly from = 2;
+  readonly to = 3;
 
-  migrate(schema: Lineup): Promise<void> {
+  constructor(@inject(KEYS.Logger) private logger: Logger) {
+    super();
+  }
+
+  migrate(schema: JsonObject): Promise<void> {
     if (!schema.schedule) {
       return Promise.resolve();
     }
 
-    if (schema.schedule.type === 'time') {
+    if (schema.schedule['type'] === 'time') {
       return Promise.resolve();
     }
 
-    schema.schedule.slots.forEach((slot) => {
+    const slots = schema['schedule']['slots'] as Json;
+    if (!isArray(slots)) {
+      this.logger.warn('Malformed slot schedule: %O', slots);
+      return Promise.resolve();
+    }
+
+    slots.forEach((slot) => {
+      if (!isJsonObject(slot)) {
+        return;
+      }
+
       if (isUndefined(slot.durationMs)) {
         return;
       }

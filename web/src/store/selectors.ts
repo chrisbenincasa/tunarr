@@ -26,7 +26,7 @@ export const materializeProgramList = (
           startTimeOffset: offset,
         };
       }
-    } else if (p.type === 'custom') {
+    } else if (p.type === 'custom' || p.type === 'filler') {
       if (!isNil(programLookup[p.id])) {
         content = {
           ...p,

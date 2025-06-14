@@ -1,5 +1,8 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
-import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import {
+  ChannelAndRawLineup,
+  type IChannelDB,
+} from '@/db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
@@ -7,6 +10,7 @@ import { ChannelNotFoundError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Result } from '@/types/result.js';
+import { jsonSchema } from '@/types/schemas.js';
 import { Maybe, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
@@ -16,7 +20,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { RandomSlotScheduler } from '@tunarr/shared';
-import { forProgramType, seq } from '@tunarr/shared/util';
+import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ChannelProgramming,
@@ -65,9 +69,11 @@ import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import { FileSystemService } from '../services/FileSystemService.ts';
 import { TimeSlotSchedulerService } from '../services/TimeSlotSchedulerService.ts';
 import { ChannelAndLineup } from '../types/internal.ts';
 import {
+  asyncMapToRecord,
   groupByFunc,
   groupByUniqProp,
   isDefined,
@@ -225,6 +231,7 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.WorkerPoolFactory)
     private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
+    @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {}
 
   async channelExists(channelId: string) {
@@ -1220,19 +1227,32 @@ export class ChannelDB implements IChannelDB {
   }
 
   async loadAllLineupConfigs(forceRead: boolean = false) {
-    return mapReduceAsyncSeq(
+    return asyncMapToRecord(
       await this.getAllChannels(),
-      async (channel) => {
-        return {
-          channel,
-          lineup: await this.loadLineup(channel.uuid, forceRead),
-        };
-      },
-      (prev, { channel, lineup }) => ({
-        ...prev,
-        [channel.uuid]: { channel, lineup },
+      async (channel) => ({
+        channel,
+        lineup: await this.loadLineup(channel.uuid, forceRead),
       }),
-      {} as Record<string, { channel: RawChannel; lineup: Lineup }>,
+      ({ channel }) => channel.uuid,
+    );
+  }
+
+  async loadAllRawLineups(): Promise<Record<string, ChannelAndRawLineup>> {
+    return asyncMapToRecord(
+      await this.getAllChannels(),
+      async (channel) => ({
+        channel,
+        lineup: jsonSchema.parse(
+          JSON.parse(
+            (
+              await fs.readFile(
+                this.fileSystemService.getChannelLineupPath(channel.uuid),
+              )
+            ).toString('utf-8'),
+          ),
+        ),
+      }),
+      ({ channel }) => channel.uuid,
     );
   }
 
@@ -1544,10 +1564,7 @@ export class ChannelDB implements IChannelDB {
         const db = new Low<Lineup>(
           new SchemaBackedDbAdapter(
             LineupSchema,
-            join(
-              globalOptions().databaseDirectory,
-              `channel-lineups/${channelId}.json`,
-            ),
+            this.fileSystemService.getChannelLineupPath(channelId),
             defaultValue,
           ),
           defaultValue,
@@ -1780,28 +1797,58 @@ export class ChannelDB implements IChannelDB {
 function channelProgramToLineupItemFunc(
   dbIdByUniqueId: Record<string, string>,
 ): (p: ChannelProgram) => LineupItem {
-  return forProgramType<LineupItem>({
-    custom: (program) => ({
-      type: 'content', // Custom program
-      durationMs: program.duration,
-      id: program.id,
-      customShowId: program.customShowId,
-    }),
-    content: (program) => {
-      return {
+  return (p) =>
+    match(p)
+      .returnType<LineupItem>()
+      .with({ type: 'content' }, (program) => ({
         type: 'content',
         id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
         durationMs: program.duration,
-      };
-    },
-    redirect: (program) => ({
-      type: 'redirect',
-      channel: program.channel,
-      durationMs: program.duration,
-    }),
-    flex: (program) => ({
-      type: 'offline',
-      durationMs: program.duration,
-    }),
-  });
+      }))
+      .with({ type: 'custom' }, (program) => ({
+        type: 'content', // Custom program
+        durationMs: program.duration,
+        id: program.id,
+        customShowId: program.customShowId,
+      }))
+      .with({ type: 'filler' }, (program) => ({
+        type: 'content',
+        durationMs: program.duration,
+        id: program.id,
+        fillerListId: program.fillerListId,
+      }))
+      .with({ type: 'redirect' }, (program) => ({
+        type: 'redirect',
+        channel: program.channel,
+        durationMs: program.duration,
+      }))
+      .with({ type: 'flex' }, (program) => ({
+        type: 'offline',
+        durationMs: program.duration,
+      }))
+      .exhaustive();
+
+  //   custom: (program) => ({
+  //     type: 'content', // Custom program
+  //     durationMs: program.duration,
+  //     id: program.id,
+  //     customShowId: program.customShowId,
+  //   }),
+  //   content: (program) => {
+  //     return {
+  //       type: 'content',
+  //       id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
+  //       durationMs: program.duration,
+  //     };
+  //   },
+  //   redirect: (program) => ({
+  //     type: 'redirect',
+  //     channel: program.channel,
+  //     durationMs: program.duration,
+  //   }),
+  //   flex: (program) => ({
+  //     type: 'offline',
+  //     durationMs: program.duration,
+  //   }),
+  // });
 }

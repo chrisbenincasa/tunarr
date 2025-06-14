@@ -15,13 +15,9 @@ import {
   ChannelProgramSchema,
   CondensedChannelProgrammingSchema,
   CondensedChannelProgramSchema,
-  CondensedContentProgramSchema,
-  CondensedCustomProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
-  FlexProgramSchema,
   MusicAlbumContentProgramSchema,
-  RedirectProgramSchema,
   TvSeasonContentProgramSchema,
 } from '../schemas/programmingSchema.js';
 import {
@@ -295,24 +291,9 @@ export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
 
-const CondensedChannelProgramWithNoOriginalSchema = z.discriminatedUnion(
-  'type',
-  [
-    CondensedContentProgramSchema,
-    CondensedCustomProgramSchema.extend({
-      program: CondensedContentProgramSchema.optional(),
-    }),
-    RedirectProgramSchema,
-    FlexProgramSchema,
-  ],
-);
-
 // This is sorta hacky.
 export const GetChannelProgrammingResponseSchema =
-  CondensedChannelProgrammingSchema.extend({
-    lineup: z.array(CondensedChannelProgramWithNoOriginalSchema),
-    programs: z.record(z.string(), ContentProgramSchema),
-  });
+  CondensedChannelProgrammingSchema;
 
 export const JellyfinGetLibraryItemsQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
@@ -360,6 +341,7 @@ export const TimeSlotScheduleResult = z.object({
   startTime: z.number().positive(),
   lineup: CondensedChannelProgramSchema.array(),
   programs: z.record(z.string(), ContentProgramSchema),
+  seed: z.number().array(),
 });
 
 export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;

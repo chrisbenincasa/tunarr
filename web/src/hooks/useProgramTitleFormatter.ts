@@ -1,11 +1,15 @@
 import { betterHumanize } from '@/helpers/dayjs';
 import { isNonEmptyString } from '@/helpers/util';
-import { forProgramType } from '@tunarr/shared/util';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import type { FillerList } from '@tunarr/types';
 import { type ChannelProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { isNil, join, negate, reject } from 'lodash-es';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
+import { match } from 'ts-pattern';
 import { useCustomShows } from './useCustomShows';
+import { fillerListsQuery } from './useFillerLists.ts';
+import { useTunarrApi } from './useTunarrApi.ts';
 
 export const useProgramTitleFormatter = () => {
   const { data: customShows } = useCustomShows({
@@ -19,16 +23,37 @@ export const useProgramTitleFormatter = () => {
     staleTime: 30_000,
   });
 
-  const baseItemTitleFormatter = useMemo(
-    () =>
-      forProgramType({
-        custom: (p) =>
-          `${customShows[p.customShowId]?.name ?? 'Custom Show'} - ${p.index
-            .toString()
-            .padStart(3, '0')} - `,
-        redirect: (p) => `Redirect to "${p.channelName}"`,
-        flex: 'Flex',
-        content: (p) => {
+  const apiClient = useTunarrApi();
+
+  const { data: fillerLists } = useSuspenseQuery({
+    ...fillerListsQuery(apiClient),
+    select: (data) => {
+      const byId: Record<string, FillerList> = {};
+      for (const show of data) {
+        byId[show.id] = show;
+      }
+      return byId;
+    },
+    staleTime: 30_000,
+  });
+
+  const baseItemTitleFormatter = useCallback(
+    (program: ChannelProgram) =>
+      match(program)
+        .with(
+          { type: 'custom' },
+          (p) =>
+            `${customShows[p.customShowId]?.name ?? 'Custom Show'} - ${p.index
+              .toString()
+              .padStart(3, '0')} - `,
+        )
+        .with({ type: 'redirect' }, (p) => `Redirect to "${p.channelName}"`)
+        .with({ type: 'flex' }, () => 'Flex')
+        .with(
+          { type: 'filler' },
+          (p) => `${fillerLists[p.fillerListId]?.name ?? 'Filler List'} - `,
+        )
+        .with({ type: 'content' }, (p) => {
           switch (p.subtype) {
             case 'movie':
             case 'music_video':
@@ -57,16 +82,19 @@ export const useProgramTitleFormatter = () => {
               );
             }
           }
-        },
-      }),
-    [customShows],
+        })
+        .exhaustive(),
+    [customShows, fillerLists],
   );
 
   return useCallback(
     (program: ChannelProgram) => {
       let title = baseItemTitleFormatter(program);
 
-      if (program.type === 'custom' && program.program) {
+      if (
+        (program.type === 'custom' || program.type === 'filler') &&
+        program.program
+      ) {
         title += ` ${baseItemTitleFormatter(program.program)}`;
       }
       const dur = betterHumanize(

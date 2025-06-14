@@ -13,13 +13,14 @@ import {
   Tabs,
   Tooltip,
 } from '@mui/material';
-import type { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
+import type { TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
   capitalize,
   filter,
   find,
+  identity,
   isEmpty,
   isNil,
   map,
@@ -57,8 +58,7 @@ export const TimeSlotTable = () => {
   const { dropdownOpts: programOptions } = useSlotProgramOptions();
   const startOfPeriod = dayjs().startOf(currentPeriod);
   const slotIds = useMemo(
-    () =>
-      uniq(map(slotArray.fields, (slot) => getTimeSlotId(slot.programming))),
+    () => uniq(map(slotArray.fields, (slot) => getTimeSlotId(slot))),
     [slotArray.fields],
   );
   const [selectedDay, setSelectedDay] = useState(0);
@@ -107,7 +107,7 @@ export const TimeSlotTable = () => {
             : 0;
         const slotDuration = next.startTime + scale - slot.startTime;
         const warnings: SlotWarning[] = [];
-        const slotId = getTimeSlotId(slot.programming);
+        const slotId = getTimeSlotId(slot);
         const slotDetails = detailsBySlotId[slotId];
         let programCount = 0;
         if (slotDetails) {
@@ -194,10 +194,12 @@ export const TimeSlotTable = () => {
       },
       {
         header: 'Program',
-        accessorKey: 'programming',
+        // accessorKey: 'programming',
+        accessorFn: identity,
+        id: 'programming',
         enableEditing: true,
         Cell: ({ cell }) => {
-          const value = cell.getValue<TimeSlotProgramming>();
+          const value = cell.getValue<TimeSlot>();
           switch (value.type) {
             case 'movie':
               return 'Movie';
@@ -215,6 +217,12 @@ export const TimeSlotTable = () => {
               })?.description;
               return `Custom Show - ${showName}`;
             }
+            case 'filler': {
+              const showName = find(programOptions, {
+                fillerListId: value.fillerListId,
+              })?.description;
+              return `Filler - ${showName}`;
+            }
           }
         },
         grow: true,
@@ -225,11 +233,12 @@ export const TimeSlotTable = () => {
         id: 'programCount',
         enableEditing: false,
         Cell({ row }) {
-          const programming = row.original.programming;
+          const programming = row.original;
           switch (programming.type) {
             case 'movie':
             case 'show':
             case 'custom-show':
+            case 'filler':
               return row.original.programCount;
             case 'flex':
             case 'redirect':
@@ -240,14 +249,20 @@ export const TimeSlotTable = () => {
       {
         header: 'Order',
         accessorFn(originalRow) {
-          switch (originalRow.programming.type) {
+          switch (originalRow.type) {
             case 'flex':
             case 'redirect':
               return null;
             case 'movie':
             case 'show':
             case 'custom-show':
-              return capitalize(originalRow.order);
+            case 'filler':
+              return capitalize(
+                originalRow.order
+                  .split('_')
+                  .map((x) => capitalize(x))
+                  .join(' '),
+              );
           }
         },
         id: 'programOrder',

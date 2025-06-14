@@ -8,11 +8,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import { Shuffle } from '@mui/icons-material';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { Button, ListItemIcon, MenuItem } from '@mui/material';
-import type {
-  RandomSlot,
-  RandomSlotProgramming,
-  RandomSlotSchedule,
-} from '@tunarr/types/api';
+import type { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
 import { forEach, maxBy } from 'lodash-es';
 import React from 'react';
 import { match } from 'ts-pattern';
@@ -53,36 +49,44 @@ export const RandomSlotPresetButton = () => {
             continue;
           }
 
-          const programming = match(opt)
-            .returnType<RandomSlotProgramming | null>()
-            .with({ type: 'movie' }, () => ({
-              type: 'movie',
-            }))
-            .with({ type: 'show' }, (showOpt) => ({
-              type: 'show',
-              showId: showOpt.showId,
-            }))
-            .with({ type: 'custom-show' }, (csOpt) => ({
-              type: 'custom-show',
-              customShowId: csOpt.customShowId,
-            }))
-            .otherwise(() => null);
-
-          if (!programming) {
-            continue;
-          }
-
-          slots.push({
+          const baseSlot = {
             cooldownMs: 0,
-            programming,
             durationSpec: {
               type: 'dynamic',
               programCount: 1,
             },
             order: 'ordered_shuffle',
-            weight: frequencies[getRandomSlotId(programming) as string] ?? 0.0,
+            weight: 0, // Will get set later
             direction: 'asc',
-          });
+          } as const;
+
+          const newSlot = match(opt)
+            .returnType<RandomSlot | null>()
+            .with({ type: 'movie' }, () => ({
+              ...baseSlot,
+              type: 'movie',
+              weight: 0,
+            }))
+            .with({ type: 'show' }, (showOpt) => ({
+              ...baseSlot,
+              type: 'show',
+              showId: showOpt.showId,
+            }))
+            .with({ type: 'custom-show' }, (csOpt) => ({
+              ...baseSlot,
+              type: 'custom-show',
+              customShowId: csOpt.customShowId,
+            }))
+            .otherwise(() => null);
+
+          if (!newSlot) {
+            continue;
+          }
+
+          newSlot.weight =
+            frequencies[getRandomSlotId(newSlot) as string] ?? 0.0;
+
+          slots.push(newSlot);
         }
 
         const maxWeight = maxBy(slots, (slot) => slot.weight)?.weight ?? 100.0;

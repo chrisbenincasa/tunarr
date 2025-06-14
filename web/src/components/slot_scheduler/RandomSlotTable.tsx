@@ -30,13 +30,14 @@ import {
 } from '@mui/material';
 import type { VisibilityState } from '@tanstack/react-table';
 import { seq } from '@tunarr/shared/util';
-import type { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import type { RandomSlot } from '@tunarr/types/api';
 import { usePrevious, useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import {
   capitalize,
   filter,
   floor,
+  identity,
   isEmpty,
   isNil,
   map,
@@ -65,8 +66,7 @@ export const RandomSlotTable = () => {
     useSlotProgramOptions();
 
   const slotIds = useMemo(
-    () =>
-      uniq(map(slotArray.fields, (slot) => getRandomSlotId(slot.programming))),
+    () => uniq(map(slotArray.fields, (slot) => getRandomSlotId(slot))),
     [slotArray.fields],
   );
 
@@ -212,10 +212,11 @@ export const RandomSlotTable = () => {
       },
       {
         header: 'Program',
-        accessorKey: 'programming',
+        id: 'programming',
+        accessorFn: identity,
         enableEditing: true,
         Cell: ({ cell }) => {
-          const value = cell.getValue<RandomSlotProgramming>();
+          const value = cell.getValue<RandomSlot>();
           return programOptionNameById[getRandomSlotId(value)];
         },
         grow: true,
@@ -224,13 +225,14 @@ export const RandomSlotTable = () => {
       {
         header: 'Order',
         accessorFn(originalRow) {
-          switch (originalRow.programming.type) {
+          switch (originalRow.type) {
             case 'flex':
             case 'redirect':
               return null;
             case 'movie':
             case 'show':
             case 'custom-show':
+            case 'filler':
               return originalRow.order.split('_').map(capitalize).join(' ');
           }
         },
@@ -337,7 +339,7 @@ export const RandomSlotTable = () => {
     const totalWeight = sum(map(slotArray.fields, 'weight'));
     return map(slotArray.fields, (slot) => {
       const warnings: SlotWarning[] = [];
-      const slotId = getRandomSlotId(slot.programming);
+      const slotId = getRandomSlotId(slot);
       const slotDetails = detailsBySlotId[slotId];
       let programCount = 0;
       if (slotDetails) {

@@ -1,4 +1,4 @@
-import type { SlotId } from '@/helpers/slotSchedulerUtil';
+import type { FillerProgramOption, SlotId } from '@/helpers/slotSchedulerUtil';
 import { getSlotIdForProgram } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import { useChannelEditorLazy } from '@/store/selectors';
@@ -12,11 +12,13 @@ import { forEach, uniqBy } from 'lodash-es';
 import { useMemo } from 'react';
 import { P, match } from 'ts-pattern';
 import useStore from '../../store/index.ts';
+import { useSlotProgramOptions } from '../programming_controls/useSlotProgramOptions.ts';
 
 export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
   const {
     channelEditor: { originalProgramList, programList },
   } = useChannelEditorLazy();
+  const { dropdownOpts: programOptions } = useSlotProgramOptions();
   const globalProgramLookup = useStore((s) => s.programLookup);
 
   return useMemo(() => {
@@ -44,9 +46,23 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
     const details: Partial<Record<SlotId, SlotProgrammingDetails>> = {};
 
     for (const scheduledSlotId of slotIds) {
+      // Special case for now
+      const [, filleListId] = scheduledSlotId.split('.', 2);
+      if (scheduledSlotId.startsWith('filler')) {
+        details[scheduledSlotId] = {
+          programCount:
+            programOptions.find(
+              (opt): opt is FillerProgramOption =>
+                opt.type === 'filler' && opt.fillerListId === filleListId,
+            )?.programCount ?? 0,
+          programDurations: [],
+        };
+      }
+
       if (!programsBySlot.has(scheduledSlotId) || details[scheduledSlotId]) {
         continue;
       }
+
       const programs = programsBySlot.get(scheduledSlotId)!;
       const programCount = match(scheduledSlotId)
         .with(
@@ -63,6 +79,7 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
             ).length,
         )
         .otherwise(() => 0);
+
       const programDurations = match(scheduledSlotId)
         .with(
           P.string.startsWith('show'),
@@ -84,7 +101,13 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
       };
     }
     return details;
-  }, [globalProgramLookup, originalProgramList, programList, slotIds]);
+  }, [
+    globalProgramLookup,
+    originalProgramList,
+    programList,
+    programOptions,
+    slotIds,
+  ]);
 };
 
 export type SlotProgrammingDetails = {

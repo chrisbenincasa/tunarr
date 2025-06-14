@@ -2,11 +2,11 @@ import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import useStore from '@/store';
 import { seq } from '@tunarr/shared/util';
-import type { CustomShow } from '@tunarr/types';
 import { map, reject, some, sortBy, uniqBy } from 'lodash-es';
 import { useMemo } from 'react';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
+import { useFillerLists } from '../useFillerLists.ts';
 
 type ProgramOptions = {
   dropdownOpts: ProgramOption[];
@@ -17,18 +17,11 @@ export const useSlotProgramOptions = (channelId?: string) => {
   const { originalProgramList: newLineup } = useStore((s) => s.channelEditor);
   const { programLookup } = useStore();
   const { data: customShows } = useCustomShows();
+  const { data: fillerLists } = useFillerLists();
   const { data: channels } = useChannelsSuspense({
     select: (channels) =>
       reject(channels, (channel) => channel.id === channelId),
   });
-
-  const customShowsById = useMemo(() => {
-    const byId: Record<string, CustomShow> = {};
-    for (const show of customShows) {
-      byId[show.id] = show;
-    }
-    return byId;
-  }, [customShows]);
 
   return useMemo<ProgramOptions>(() => {
     const contentPrograms = seq.collect(newLineup, (program) => {
@@ -75,7 +68,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
     }
 
     const customShowOpts = map(
-      customShowsById,
+      customShows,
       (show) =>
         ({
           description: show.name,
@@ -90,6 +83,24 @@ export const useSlotProgramOptions = (channelId?: string) => {
     }
 
     opts.push(...customShowOpts);
+
+    const fillerOpts = map(
+      fillerLists,
+      (list) =>
+        ({
+          type: 'filler',
+          description: list.name,
+          fillerListId: list.id,
+          value: `filler.${list.id}`,
+          programCount: list.contentCount,
+        }) satisfies ProgramOption,
+    );
+
+    for (const opt of fillerOpts) {
+      nameById[opt.value] = opt.description;
+    }
+
+    opts.push(...fillerOpts);
 
     const redirectOpts = channels.map(
       (p) =>
@@ -110,5 +121,5 @@ export const useSlotProgramOptions = (channelId?: string) => {
       dropdownOpts: opts,
       nameById,
     };
-  }, [newLineup, channels, programLookup, customShowsById]);
+  }, [newLineup, customShows, fillerLists, channels, programLookup]);
 };
