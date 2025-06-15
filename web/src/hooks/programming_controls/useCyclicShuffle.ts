@@ -1,6 +1,6 @@
 import { random } from '@/helpers/random.ts';
 import { removeDuplicatePrograms } from '@/hooks/programming_controls/useRemoveDuplicates.ts';
-import { chain, keys, some, sortBy } from 'lodash-es';
+import { groupBy, keys, mapValues, some, sortBy } from 'lodash-es';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
@@ -22,13 +22,15 @@ export function useCyclicShuffle() {
     // sort each chunk by show, season, & episode number
     // chunk by show in new obkect
     // randomly grab from each chunk until nothing remains
-    const groupedContent = chain(programs)
-      .thru(removeDuplicatePrograms)
-      .filter(
-        (program) => program.type === 'content' || program.type === 'custom',
-      )
-      .groupBy(getProgramGroupingKey)
-      .mapValues((programs) => {
+
+    const groupedContent = mapValues(
+      groupBy(
+        removeDuplicatePrograms(programs).filter(
+          (program) => program.type === 'content' || program.type === 'custom',
+        ),
+        getProgramGroupingKey,
+      ),
+      (programs) => {
         const firstProgram = programs[0];
         if (firstProgram.type === 'content') {
           programs = sortBy(
@@ -44,8 +46,8 @@ export function useCyclicShuffle() {
         }
 
         return rotateArray(programs, random.integer(0, programs.length));
-      })
-      .value();
+      },
+    );
 
     const cycledShows: UIChannelProgram[] = [];
 

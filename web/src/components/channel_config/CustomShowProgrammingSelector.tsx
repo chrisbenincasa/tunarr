@@ -15,22 +15,15 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { seq } from '@tunarr/shared/util';
 import { isCustomProgram, type CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import {
-  chain,
-  flow,
-  isEmpty,
-  isNil,
-  isUndefined,
-  map,
-  negate,
-} from 'lodash-es';
+import { isEmpty, isUndefined, map } from 'lodash-es';
 import pluralize from 'pluralize';
 import { Fragment, useCallback, useState, type MouseEvent } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
-import { toggle, typedProperty } from '../../helpers/util';
+import { toggle } from '../../helpers/util';
 import {
   customShowProgramsQuery,
   useCustomShows,
@@ -68,11 +61,12 @@ function CustomShowListItem({
     if (programsLoading) {
       return <LinearProgress />;
     } else if (!isUndefined(programs) && !isEmpty(programs)) {
-      return chain(programs)
-        .filter(isCustomProgram)
-        .filter(typedProperty('persisted'))
-        .filter(flow(typedProperty('program'), negate(isNil)))
-        .map((program) => {
+      return seq.collect(
+        programs.filter(
+          (program) =>
+            isCustomProgram(program) && program.persisted && program.program,
+        ),
+        (program) => {
           return (
             <ListItem divider dense key={program.id} sx={{ pl: 4 }}>
               <ListItemText
@@ -81,9 +75,8 @@ function CustomShowListItem({
               />
             </ListItem>
           );
-        })
-        .compact()
-        .value();
+        },
+      );
     }
 
     return null;

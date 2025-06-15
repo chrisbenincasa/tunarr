@@ -38,7 +38,18 @@ import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { chain, filter, first, isUndefined, map, range } from 'lodash-es';
+import {
+  filter,
+  flatMap,
+  groupBy,
+  head,
+  isUndefined,
+  map,
+  mapValues,
+  range,
+  sortBy,
+  values,
+} from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -228,31 +239,31 @@ export default function TimeSlotEditorPage() {
         // This is (sort of) what the original behavior was... keep
         // as many unique time starts as possible. Seems weird. We
         // can change in the future if we want.
-        newSlots = chain(currentSlots)
-          .map((slot) => ({
-            ...slot,
-            startTime: dayjs(slot.startTime)
-              .mod(dayjs.duration(1, 'day'))
-              .asMilliseconds(),
-          }))
-          .groupBy((slot) => slot.startTime)
-          .mapValues((v) => first(v)!)
-          .values()
-          .sortBy('startTime')
-          .value();
+        const reducedSlots = values(
+          mapValues(
+            groupBy(
+              currentSlots.map((slot) => ({
+                ...slot,
+                startTime: dayjs(slot.startTime)
+                  .mod(dayjs.duration(1, 'day'))
+                  .asMilliseconds(),
+              })),
+              (slot) => slot.startTime,
+            ),
+            (v) => head(v)!,
+          ),
+        );
+        newSlots = sortBy(reducedSlots, 'startTime');
       } else if (value === 'week') {
         const offsets = map(range(0, 7), (i) => i * OneDayMillis);
 
         // For each day offset, spread out the current slots for each day
-        newSlots = chain(offsets)
-          .map((offset) => {
-            return map(currentSlots, (slot) => ({
-              ...slot,
-              startTime: slot.startTime + offset,
-            }));
-          })
-          .flatten()
-          .value();
+        newSlots = flatMap(offsets, (offset) => {
+          return map(currentSlots, (slot) => ({
+            ...slot,
+            startTime: slot.startTime + offset,
+          }));
+        });
       }
 
       // Add slots

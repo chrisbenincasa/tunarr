@@ -38,7 +38,6 @@ import type {
   SupportedHardwareAccels,
   SupportedTranscodeAudioOutputFormats,
 } from '@tunarr/types/schemas';
-import { chain } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import type { FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -194,13 +193,11 @@ export const TranscodeConfigSettingsForm = ({
             name="videoFormat"
             render={({ field }) => (
               <Select label="Video Format" {...field}>
-                {chain(VideoFormats)
-                  .map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))
-                  .value()}
+                {VideoFormats.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.description}
+                  </MenuItem>
+                ))}
               </Select>
             )}
           />
@@ -213,18 +210,15 @@ export const TranscodeConfigSettingsForm = ({
             name="hardwareAccelerationMode"
             render={({ field }) => (
               <Select label="Hardware Acceleration" {...field}>
-                {chain(VideoHardwareAccelerationOptions)
-                  .filter(
-                    ({ value }) =>
-                      value === 'none' ||
-                      ffmpegInfo.data.hardwareAccelerationTypes.includes(value),
-                  )
-                  .map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))
-                  .value()}
+                {VideoHardwareAccelerationOptions.filter(
+                  ({ value }) =>
+                    value === 'none' ||
+                    ffmpegInfo.data.hardwareAccelerationTypes.includes(value),
+                ).map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.description}
+                  </MenuItem>
+                ))}
               </Select>
             )}
           />
@@ -378,13 +372,11 @@ export const TranscodeConfigSettingsForm = ({
                 label="Audio Format"
                 {...field}
               >
-                {chain(AudioFormats)
-                  .map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.description}
-                    </MenuItem>
-                  ))
-                  .value()}
+                {AudioFormats.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.description}
+                  </MenuItem>
+                ))}
               </Select>
             )}
           />

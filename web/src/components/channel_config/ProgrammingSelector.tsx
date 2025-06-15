@@ -14,7 +14,6 @@ import { tag } from '@tunarr/types';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import {
   capitalize,
-  chain,
   find,
   first,
   isEmpty,
@@ -406,14 +405,13 @@ export const ProgrammingSelector = ({
                 value={selectedJellyfinLibrary.Id}
                 onChange={(e) => onLibraryChange(e.target.value)}
               >
-                {chain(jellyfinLibraries.Items)
-                  .sortBy(sortJellyfinLibraries)
-                  .map((lib) => (
+                {sortBy(jellyfinLibraries.Items, sortJellyfinLibraries).map(
+                  (lib) => (
                     <MenuItem key={lib.Id} value={lib.Id}>
                       {lib.Name}
                     </MenuItem>
-                  ))
-                  .value()}
+                  ),
+                )}
               </Select>
             </FormControl>
           )
@@ -431,14 +429,11 @@ export const ProgrammingSelector = ({
                 value={selectedEmbyLibrary.Id}
                 onChange={(e) => onLibraryChange(e.target.value)}
               >
-                {chain(embyLibraries.Items)
-                  .sortBy(sortEmbyLibraries)
-                  .map((lib) => (
-                    <MenuItem key={lib.Id} value={lib.Id}>
-                      {lib.Name}
-                    </MenuItem>
-                  ))
-                  .value()}
+                {sortBy(embyLibraries.Items, sortEmbyLibraries).map((lib) => (
+                  <MenuItem key={lib.Id} value={lib.Id}>
+                    {lib.Name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           )

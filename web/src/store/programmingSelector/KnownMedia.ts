@@ -1,6 +1,6 @@
-import { MediaSourceId } from '@tunarr/types/schemas';
-import { chain } from 'lodash-es';
-import { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
+import { seq } from '@tunarr/shared/util';
+import type { MediaSourceId } from '@tunarr/types/schemas';
+import type { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 
 /**
  * Thin wrapper around raw store state. This exposes friendly
@@ -55,10 +55,9 @@ export class KnownMedia {
   getChildren(sourceId: MediaSourceId, parentId: string) {
     const hierarchyForSource = this.contentHierarchy[sourceId];
     if (hierarchyForSource) {
-      return chain(hierarchyForSource[parentId] ?? [])
-        .map((id) => this.getMedia(sourceId, id))
-        .compact()
-        .value();
+      return seq.collect(hierarchyForSource[parentId] ?? [], (id) =>
+        this.getMedia(sourceId, id),
+      );
     }
     return [];
   }

@@ -1,8 +1,9 @@
 import { Box } from '@mui/material';
+import { seq } from '@tunarr/shared/util';
 import type { PlexFilter } from '@tunarr/types/api';
 import { type PlexMedia } from '@tunarr/types/plex';
 import { usePrevious } from '@uidotdev/usehooks';
-import { chain, isNull, isUndefined, last, map, range } from 'lodash-es';
+import { flatten, isNull, isUndefined, last, map, range } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
@@ -108,11 +109,14 @@ export const PlexProgrammingGridView = ({
       // We probably wouldn't have made it this far if we didnt have a server, but
       // putting this here to prevent crashes
       if (selectedServer) {
-        const allMedia = chain(searchData.pages)
-          .reject((page) => page.size === 0)
-          .map((page) => page.Metadata)
-          .flatten()
-          .value();
+        const allMedia = flatten(
+          seq.collect(searchData.pages, (page) => {
+            if (page.size === 0) {
+              return;
+            }
+            return page.Metadata;
+          }),
+        );
         addKnownMediaForPlexServer(selectedServer.id, allMedia);
       }
     }
@@ -121,12 +125,14 @@ export const PlexProgrammingGridView = ({
   // Update store
   useEffect(() => {
     if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
-      const allCollections = chain(collectionsData.pages)
-        .reject((page) => page.size === 0)
-        .map((page) => page.Metadata)
-        .compact()
-        .flatten()
-        .value();
+      const allCollections = flatten(
+        seq.collect(collectionsData.pages, (page) => {
+          if (page.size === 0) {
+            return;
+          }
+          return page.Metadata;
+        }),
+      );
       addKnownMediaForPlexServer(selectedServer.id, allCollections);
     }
   }, [selectedServer?.id, collectionsData]);

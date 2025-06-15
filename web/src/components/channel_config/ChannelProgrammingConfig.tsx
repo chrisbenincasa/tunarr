@@ -25,9 +25,18 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { seq } from '@tunarr/shared/util';
 import { ZodiosError } from '@tunarr/zodios-core';
 import dayjs, { type Dayjs } from 'dayjs';
-import { chain, findIndex, head, isUndefined, map, reject } from 'lodash-es';
+import {
+  findIndex,
+  first,
+  groupBy,
+  isUndefined,
+  map,
+  reject,
+  values,
+} from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import { ZodError } from 'zod/v4';
@@ -112,12 +121,10 @@ export function ChannelProgrammingConfig() {
 
     // Group programs by their unique ID. This will disregard their durations,
     // but we will keep the durations when creating the minimal lineup below
-    const uniquePrograms = chain(newLineup)
-      .groupBy(channelProgramUniqueId)
-      .values()
-      .map((l) => head(l))
-      .compact()
-      .value();
+    const uniquePrograms = seq.collect(
+      values(groupBy(newLineup, channelProgramUniqueId)),
+      (v) => first(v),
+    );
 
     // Create the in-order lineup which is a lookup array - we have the index
     // to the actual program (in the unique programs list) and then the
@@ -133,6 +140,9 @@ export function ChannelProgrammingConfig() {
               customShowId: lineupItem.customShowId,
               duration: lineupItem.duration,
             };
+          case 'content':
+          case 'redirect':
+          case 'flex':
           default: {
             const index = findIndex(
               uniquePrograms,

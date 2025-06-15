@@ -3,7 +3,7 @@ import { isNonEmptyString } from '@/helpers/util';
 import useStore from '@/store';
 import { seq } from '@tunarr/shared/util';
 import type { CustomShow } from '@tunarr/types';
-import { chain, isEmpty, reject, some } from 'lodash-es';
+import { map, reject, some, sortBy, uniqBy } from 'lodash-es';
 import { useMemo } from 'react';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
@@ -50,11 +50,13 @@ export const useSlotProgramOptions = (channelId?: string) => {
         opts.push({ description: 'Movies', value: 'movie', type: 'movie' });
       }
 
-      const showOptions = chain(contentPrograms)
-        .filter((p) => p.subtype === 'episode')
-        .reject((p) => isEmpty(p.showId))
-        .uniqBy((p) => p.showId)
-        .map(
+      const showOptions = sortBy(
+        uniqBy(
+          contentPrograms.filter(
+            (p) => p.subtype === 'episode' && isNonEmptyString(p.showId),
+          ),
+          (p) => p.showId,
+        ).map(
           (show) =>
             ({
               description: show.grandparent?.title ?? 'Missing Show Title',
@@ -62,60 +64,47 @@ export const useSlotProgramOptions = (channelId?: string) => {
               type: 'show',
               showId: show.showId!,
             }) satisfies ProgramOption,
-        )
-        .sortBy((opt) => opt.description)
-        .tap((opts) => {
-          for (const opt of opts) {
-            nameById[opt.value] = opt.description;
-          }
-        })
-        .value();
+        ),
+        (opt) => opt.description,
+      );
+      for (const opt of showOptions) {
+        nameById[opt.value] = opt.description;
+      }
+
       opts.push(...showOptions);
     }
 
-    console.log(customShowsById);
-
-    opts.push(
-      ...chain(customShowsById)
-        // .filter(isUICondensedCustomProgram)
-        // .reject((p) => isUndefined(customShowsById[p.customShowId]))
-        // .uniqBy((p) => p.customShowId)
-        .map(
-          (show) =>
-            ({
-              description: show.name,
-              value: `custom-show.${show.id}`,
-              customShowId: show.id,
-              type: 'custom-show',
-            }) satisfies ProgramOption,
-        )
-        .tap((opts) => {
-          for (const opt of opts) {
-            nameById[opt.value] = opt.description;
-          }
-        })
-        .value(),
+    const customShowOpts = map(
+      customShowsById,
+      (show) =>
+        ({
+          description: show.name,
+          value: `custom-show.${show.id}`,
+          customShowId: show.id,
+          type: 'custom-show',
+        }) satisfies ProgramOption,
     );
 
-    opts.push(
-      ...chain(channels)
-        .map(
-          (p) =>
-            ({
-              description: `Redirect to "${p.name}"`,
-              value: `redirect.${p.id}`,
-              type: 'redirect',
-              channelId: p.id,
-              channelName: p.name,
-            }) satisfies ProgramOption,
-        )
-        .tap((opts) => {
-          for (const opt of opts) {
-            nameById[opt.value] = opt.description;
-          }
-        })
-        .value(),
+    for (const opt of customShowOpts) {
+      nameById[opt.value] = opt.description;
+    }
+
+    opts.push(...customShowOpts);
+
+    const redirectOpts = channels.map(
+      (p) =>
+        ({
+          description: `Redirect to "${p.name}"`,
+          value: `redirect.${p.id}`,
+          type: 'redirect',
+          channelId: p.id,
+          channelName: p.name,
+        }) satisfies ProgramOption,
     );
+    for (const opt of redirectOpts) {
+      nameById[opt.value] = opt.description;
+    }
+    opts.push(...redirectOpts);
 
     return {
       dropdownOpts: opts,

@@ -21,13 +21,13 @@ import {
 import Box from '@mui/material/Box';
 import { Link as RouterLink } from '@tanstack/react-router';
 import {
-  chain,
   find,
   isNumber,
   isUndefined,
   map,
   pullAt,
   range,
+  reject,
   round,
   some,
   sumBy,
@@ -177,14 +177,13 @@ export function ChannelFlexConfig() {
       return null;
     }
 
-    const unclaimedLists = chain(fillerLists)
-      .reject((list) => some(channelFillerLists, { id: list.id }))
-      .map((list) => (
-        <MenuItem key={list.id} value={list.id}>
-          {list.name}
-        </MenuItem>
-      ))
-      .value();
+    const unclaimedLists = reject(fillerLists, (list) =>
+      some(channelFillerLists, { id: list.id }),
+    ).map((list) => (
+      <MenuItem key={list.id} value={list.id}>
+        {list.name}
+      </MenuItem>
+    ));
 
     return map(channelFillerLists, (cfl, index) => {
       const actualList = find(fillerLists, { id: cfl.id });
@@ -276,14 +275,13 @@ export function ChannelFlexConfig() {
       );
     }
 
-    const unclaimedLists = chain(fillerLists)
-      .reject((list) => some(channelFillerLists, { id: list.id }))
-      .map((list) => (
-        <MenuItem key={list.id} value={list.id}>
-          {list.name}
-        </MenuItem>
-      ))
-      .value();
+    const unclaimedLists = reject(fillerLists, (list) =>
+      some(channelFillerLists, { id: list.id }),
+    ).map((list) => (
+      <MenuItem key={list.id} value={list.id}>
+        {list.name}
+      </MenuItem>
+    ));
 
     const opts = [
       <MenuItem key="null" value="_unused">

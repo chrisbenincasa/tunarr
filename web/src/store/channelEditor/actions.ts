@@ -1,6 +1,6 @@
 import { unwrapNil } from '@/helpers/util.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
-import { forProgramType } from '@tunarr/shared/util';
+import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   type Channel,
   type ChannelProgram,
@@ -9,16 +9,18 @@ import {
 } from '@tunarr/types';
 import { type Draft } from 'immer';
 import {
-  chain,
   extend,
   findIndex,
   first,
+  groupBy,
   identity,
   inRange,
   isNil,
   isUndefined,
   last,
   map,
+  mapValues,
+  omitBy,
   sumBy,
   tail,
 } from 'lodash-es';
@@ -343,18 +345,22 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
 
       // Add new lookups for these programs for when we materialize them in the selector
       // Extract the underlying content program from any custom programs
-      const contentProgramsById = chain(allNewPrograms)
-        .map(
-          forProgramType({
-            content: identity,
-            custom: ({ program }) => program,
-          }),
-        )
-        .compact()
-        .groupBy((program) => program.id ?? program.uniqueId)
-        .omitBy(isNil)
-        .mapValues(unwrapNil(first))
-        .value();
+      const contentProgramsById = mapValues(
+        omitBy(
+          groupBy(
+            seq.collect(
+              allNewPrograms,
+              forProgramType({
+                content: identity,
+                custom: ({ program }) => program,
+              }),
+            ),
+            (p) => p.id ?? p.uniqueId,
+          ),
+          isNil,
+        ),
+        unwrapNil(first),
+      );
 
       extend(channelEditor.programLookup, contentProgramsById);
     }

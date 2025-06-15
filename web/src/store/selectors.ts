@@ -1,8 +1,9 @@
+import { seq } from '@tunarr/shared/util';
 import {
   type CondensedChannelProgram,
   type ContentProgram,
 } from '@tunarr/types';
-import { chain, isNil, isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { UIChannelProgramWithOffset } from '../types/index.ts';
@@ -15,42 +16,39 @@ export const materializeProgramList = (
 ): UIChannelProgramWithOffset[] => {
   // TODO: Use the offsets from the network call
   let offset = 0;
-  return chain(lineup)
-    .map((p) => {
-      let content: UIChannelProgramWithOffset | null = null;
-      if (p.type === 'content') {
-        if (!isUndefined(p.id) && !isNil(programLookup[p.id])) {
-          content = {
-            ...p,
-            ...programLookup[p.id],
-            startTimeOffset: offset,
-          };
-        }
-      } else if (p.type === 'custom') {
-        if (!isNil(programLookup[p.id])) {
-          content = {
-            ...p,
-            program: {
-              ...programLookup[p.id],
-            },
-            startTimeOffset: offset,
-          };
-        }
-      } else {
+  return seq.collect(lineup, (p) => {
+    let content: UIChannelProgramWithOffset | null = null;
+    if (p.type === 'content') {
+      if (!isUndefined(p.id) && !isNil(programLookup[p.id])) {
         content = {
           ...p,
+          ...programLookup[p.id],
           startTimeOffset: offset,
         };
       }
-
-      if (content) {
-        offset += content.duration;
+    } else if (p.type === 'custom') {
+      if (!isNil(programLookup[p.id])) {
+        content = {
+          ...p,
+          program: {
+            ...programLookup[p.id],
+          },
+          startTimeOffset: offset,
+        };
       }
+    } else {
+      content = {
+        ...p,
+        startTimeOffset: offset,
+      };
+    }
 
-      return content;
-    })
-    .compact()
-    .value();
+    if (content) {
+      offset += content.duration;
+    }
+
+    return content;
+  });
 };
 
 export const materializedProgramListSelector = ({

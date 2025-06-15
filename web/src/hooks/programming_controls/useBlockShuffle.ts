@@ -1,8 +1,8 @@
 import {
-  chain,
   chunk,
   flatMap,
   forEach,
+  groupBy,
   isEmpty,
   isUndefined,
   map,
@@ -126,47 +126,40 @@ function blockShuffle(
   const moviesAscending =
     (options?.sortOptions.movies.order ?? 'asc') === 'asc';
 
-  const groupByShow = chain(programs)
-    .thru(removeDuplicatePrograms)
-    .filter(
-      (p): p is UIContentProgram | UICustomProgram =>
-        isUIContentProgram(p) || isUICustomProgram(p),
-    )
-    .thru((arr) => {
-      return options?.shuffleType === 'Random' ? shuffle(arr) : arr;
-    })
-    .groupBy(getProgramGroupingKey)
-    .thru((groups) => {
-      if (options?.shuffleType === 'Random') {
-        return groups;
-      }
+  let validPrograms = removeDuplicatePrograms(programs).filter(
+    (p): p is UIContentProgram | UICustomProgram =>
+      isUIContentProgram(p) || isUICustomProgram(p),
+  );
+  if (options?.shuffleType === 'Random') {
+    validPrograms = shuffle(validPrograms);
+  }
 
-      forEach(groups, (programs, key) => {
-        if (key.startsWith('custom_')) {
-          groups[key] = orderBy(programs as UICustomProgram[], (p) => p.index, [
-            showsAscending ? 'asc' : 'desc',
-          ]);
-        } else if (key.startsWith('show_') || key.startsWith('track_')) {
-          groups[key] = orderBy(
-            programs as UIContentProgram[],
-            (p) => sortProgram(p, 'index'),
-            [showsAscending ? 'asc' : 'desc'],
-          );
-        } else if (key.startsWith('movie')) {
-          groups[key] = orderBy(
-            programs as UIContentProgram[],
-            (p) =>
-              sortProgram(
-                p,
-                options?.sortOptions.movies.sort ?? 'release_date',
-              ),
-            [moviesAscending ? 'asc' : 'desc'],
-          );
-        }
-      });
-      return groups;
-    })
-    .value();
+  const groupByShow = groupBy(validPrograms, getProgramGroupingKey);
+
+  if (options?.shuffleType === 'Fixed') {
+    forEach(groupByShow, (programs, key) => {
+      if (key.startsWith('custom_')) {
+        groupByShow[key] = orderBy(
+          programs as UICustomProgram[],
+          (p) => p.index,
+          [showsAscending ? 'asc' : 'desc'],
+        );
+      } else if (key.startsWith('show_') || key.startsWith('track_')) {
+        groupByShow[key] = orderBy(
+          programs as UIContentProgram[],
+          (p) => sortProgram(p, 'index'),
+          [showsAscending ? 'asc' : 'desc'],
+        );
+      } else if (key.startsWith('movie')) {
+        groupByShow[key] = orderBy(
+          programs as UIContentProgram[],
+          (p) =>
+            sortProgram(p, options?.sortOptions.movies.sort ?? 'release_date'),
+          [moviesAscending ? 'asc' : 'desc'],
+        );
+      }
+    });
+  }
 
   const blockSize = options?.blockSize ?? 3;
 
@@ -232,13 +225,13 @@ function getSimpleChunks(
 
 // Returns true if perfect sync wouldn't create a ridiculously long schedule
 function canUsePerfectSync(programs: UIChannelProgram[], blockSize: number) {
-  const groupByShow = chain(programs)
-    .filter(
+  const groupByShow = groupBy(
+    programs.filter(
       (p): p is UIContentProgram | UICustomProgram =>
         isUIContentProgram(p) || isUICustomProgram(p),
-    )
-    .groupBy(getProgramGroupingKey)
-    .value();
+    ),
+    getProgramGroupingKey,
+  );
 
   const programCountArr = map(values(groupByShow), (programs) => {
     if (programs.length % blockSize === 0) {

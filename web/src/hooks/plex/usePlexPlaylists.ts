@@ -1,11 +1,12 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForPlexServer } from '@/store/programmingSelector/actions.ts';
-import { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
-import { Maybe, Nilable } from '@/types/util.ts';
+import type { PlexMediaSourceLibraryView } from '@/store/programmingSelector/store.ts';
+import type { Maybe, Nilable } from '@/types/util.ts';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { PlexServerSettings } from '@tunarr/types';
-import { PlexPlaylists } from '@tunarr/types/plex';
-import { chain, isNil, isUndefined, sumBy } from 'lodash-es';
+import { seq } from '@tunarr/shared/util';
+import type { PlexServerSettings } from '@tunarr/types';
+import type { PlexPlaylists } from '@tunarr/types/plex';
+import { flatten, isNil, isUndefined, reject, sumBy } from 'lodash-es';
 import { useEffect } from 'react';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
@@ -63,12 +64,12 @@ export const usePlexPlaylistsInfinite = (
 
   useEffect(() => {
     if (isNonEmptyString(plexServer?.id) && !isUndefined(queryResult.data)) {
-      const playlists = chain(queryResult.data.pages)
-        .reject((page) => page.size === 0)
-        .map((page) => page.Metadata)
-        .compact()
-        .flatten()
-        .value();
+      const playlists = flatten(
+        seq.collect(
+          reject(queryResult.data.pages, (page) => page.size === 0),
+          (page) => page.Metadata,
+        ),
+      );
       addKnownMediaForPlexServer(plexServer.id, playlists);
     }
   }, [plexServer?.id, queryResult.data]);

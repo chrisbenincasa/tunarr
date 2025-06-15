@@ -1,14 +1,14 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { UIChannelProgram } from '@/types/index.ts';
+import type { UIChannelProgram } from '@/types/index.ts';
 import { createExternalId } from '@tunarr/shared';
+import { seq } from '@tunarr/shared/util';
 import {
-  MultiExternalId,
   isContentProgram,
   isCustomProgram,
   isFlexProgram,
   isRedirectProgram,
 } from '@tunarr/types';
-import { chain, forEach, reject, some } from 'lodash-es';
+import { forEach, reject, some } from 'lodash-es';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
@@ -64,10 +64,12 @@ export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
       return false;
     }
 
-    const externalIds = chain(p.externalIds)
-      .filter((id): id is MultiExternalId => id.type === 'multi')
-      .map((id) => createExternalId(id.source, id.sourceId, id.id))
-      .value();
+    const externalIds = seq.collect(p.externalIds, (id) => {
+      if (id.type === 'multi') {
+        return createExternalId(id.source, id.sourceId, id.id);
+      }
+      return;
+    });
 
     const seenAny = some(externalIds, (id) => seenIds.has(id));
     if (!seenAny) {
