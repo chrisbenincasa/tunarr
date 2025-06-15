@@ -133,6 +133,19 @@ export class TimeSlotSchedulerService {
 
     // Here's the big one - find shows that are included in the schedule but
     // not currently saved to the channel.
+    const slotFiller = slots.flatMap((slot) => {
+      switch (slot.type) {
+        case 'filler':
+        case 'flex':
+        case 'redirect':
+          return [];
+        case 'movie':
+        case 'show':
+        case 'custom-show':
+          return slot.filler?.map(({ fillerListId }) => fillerListId) ?? [];
+      }
+    });
+
     const slottedFillerLists = reduce(
       slots,
       (acc, curr) => {
@@ -143,6 +156,8 @@ export class TimeSlotSchedulerService {
       },
       new Set<string>(),
     );
+
+    slotFiller.forEach((id) => slottedFillerLists.add(id));
 
     const missing = difference([...slottedFillerLists], fillerListIds);
 

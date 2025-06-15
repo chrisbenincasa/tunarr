@@ -10,16 +10,21 @@ import {
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
 import type { TimeSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { isNil, map } from 'lodash-es';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
+import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
+import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
 
 const DaysOfWeekMenuItems = [
   { value: 0, name: 'Sunday' },
@@ -46,11 +51,18 @@ export const EditTimeSlotDialogContent = ({
 }: EditTimeSlotDialogContentProps) => {
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
+  const { data: fillerLists } = useFillerLists();
 
   const formMethods = useForm<TimeSlot>({
     defaultValues: slot,
+    reValidateMode: 'onChange',
   });
-  const { control, getValues } = formMethods;
+
+  const {
+    control,
+    getValues,
+    formState: { isValid, isDirty, isSubmitting },
+  } = formMethods;
 
   const updateSlotDay = useCallback(
     (newDayOfWeek: number, originalOnChange: (...args: unknown[]) => void) => {
@@ -76,6 +88,9 @@ export const EditTimeSlotDialogContent = ({
     [getValues],
   );
 
+  const slotType = formMethods.watch('type');
+  const [tab, setTab] = useState(0);
+
   const commit = () => {
     slotArray.update(index, getValues());
     onClose();
@@ -86,77 +101,99 @@ export const EditTimeSlotDialogContent = ({
       <DialogContent>
         <Box
           sx={{
-            pt: 2,
+            // pt: 2,
             display: 'flex',
             flexDirection: 'column',
             gap: '1rem',
           }}
         >
-          <Stack gap={2} useFlexGap>
-            <Stack direction="row" gap={1}>
-              {currentPeriod === 'week' && (
-                <FormControl fullWidth>
-                  <InputLabel>Day</InputLabel>
-                  <Controller
-                    control={control}
-                    name={`startTime`}
-                    render={({ field }) => (
-                      <Select
-                        {...field}
-                        fullWidth
-                        value={Math.floor(field.value / OneDayMillis)}
-                        label="Day"
-                        onChange={(e) =>
-                          updateSlotDay(
-                            e.target.value as number,
-                            field.onChange,
-                          )
-                        }
-                      >
-                        {map(DaysOfWeekMenuItems, ({ value, name }) => (
-                          <MenuItem key={value} value={value}>
-                            {name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )}
-                  />
-                </FormControl>
-              )}
-              <Controller
-                control={control}
-                name={`startTime`}
-                render={({ field, fieldState: { error } }) => {
-                  return (
-                    <TimePicker
-                      disabled
-                      reduceAnimations
-                      {...field}
-                      value={dayjs().startOf(currentPeriod).add(field.value)}
-                      onChange={(value) =>
-                        updateSlotTime(value, field.onChange)
-                      }
-                      label="Start Time"
-                      closeOnSelect={false}
-                      slotProps={{
-                        textField: {
-                          error: !isNil(error),
-                        },
-                      }}
+          <Tabs
+            value={tab}
+            onChange={(_, tab: number) => setTab(tab)}
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="Programming" />
+            <Tab
+              label="Filler"
+              disabled={slotType === 'flex' || fillerLists.length === 0}
+            />
+          </Tabs>
+          <TabPanel value={tab} index={0}>
+            <Stack gap={2} useFlexGap>
+              <Stack direction="row" gap={1}>
+                {currentPeriod === 'week' && (
+                  <FormControl fullWidth>
+                    <InputLabel>Day</InputLabel>
+                    <Controller
+                      control={control}
+                      name={`startTime`}
+                      render={({ field }) => (
+                        <Select
+                          {...field}
+                          fullWidth
+                          value={Math.floor(field.value / OneDayMillis)}
+                          label="Day"
+                          onChange={(e) =>
+                            updateSlotDay(
+                              e.target.value as number,
+                              field.onChange,
+                            )
+                          }
+                        >
+                          {map(DaysOfWeekMenuItems, ({ value, name }) => (
+                            <MenuItem key={value} value={value}>
+                              {name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      )}
                     />
-                  );
-                }}
-              />
+                  </FormControl>
+                )}
+                <Controller
+                  control={control}
+                  name={`startTime`}
+                  render={({ field, fieldState: { error } }) => {
+                    return (
+                      <TimePicker
+                        disabled
+                        reduceAnimations
+                        {...field}
+                        value={dayjs().startOf(currentPeriod).add(field.value)}
+                        onChange={(value) =>
+                          updateSlotTime(value, field.onChange)
+                        }
+                        label="Start Time"
+                        closeOnSelect={false}
+                        slotProps={{
+                          textField: {
+                            error: !isNil(error),
+                          },
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </Stack>
+              <FormProvider {...formMethods}>
+                <EditSlotProgrammingForm programOptions={programOptions} />
+              </FormProvider>
             </Stack>
+          </TabPanel>
+          <TabPanel value={tab} index={1}>
             <FormProvider {...formMethods}>
-              <EditSlotProgrammingForm programOptions={programOptions} />
+              <SlotFillerDialogPanel />
             </FormProvider>
-          </Stack>
+          </TabPanel>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
-        <Button onClick={() => commit()} variant="contained">
+        <Button
+          disabled={!isValid || isSubmitting || !isDirty}
+          onClick={() => commit()}
+          variant="contained"
+        >
           Save
         </Button>
       </DialogActions>

@@ -20,12 +20,34 @@ const BaseSlotOrdering = z.object({
   direction: z.enum(['asc', 'desc']).default('asc'),
 });
 
+export const SlotFillerTypes = z.enum([
+  'head',
+  'pre',
+  'post',
+  'tail',
+  'fallback',
+]);
+
+export type SlotFillerTypes = z.infer<typeof SlotFillerTypes>;
+
+export const SlotFiller = z.object({
+  types: z.array(SlotFillerTypes).nonempty(),
+  fillerListId: z.uuid(),
+});
+
+export type SlotFiller = z.infer<typeof SlotFiller>;
+
+const Slot = z.object({
+  filler: z.array(SlotFiller).optional(),
+});
+
 //
 // Base slots
 //
 const MovieProgrammingSlotSchema = z.object({
   type: z.literal('movie'),
   ...BaseSlotOrdering.shape,
+  ...Slot.shape,
 });
 
 export type BaseMovieProgrammingSlot = z.infer<
@@ -36,6 +58,7 @@ const ShowProgrammingSlotSchema = z.object({
   type: z.literal('show'),
   showId: z.string(),
   ...BaseSlotOrdering.shape,
+  ...Slot.shape,
 });
 
 export type BaseShowProgrammingSlot = z.infer<typeof ShowProgrammingSlotSchema>;
@@ -56,7 +79,12 @@ const CustomShowProgrammingSlotSchema = z.object({
   type: z.literal('custom-show'),
   customShowId: z.uuid(),
   ...BaseSlotOrdering.shape,
+  ...Slot.shape,
 });
+
+export type BaseCustomShowProgrammingSlot = z.infer<
+  typeof CustomShowProgrammingSlotSchema
+>;
 
 const FillerProgrammingSlotSchema = z.object({
   type: z.literal('filler'),
@@ -88,15 +116,21 @@ const BaseTimeSlot = z.object({
   startTime: z.number(), // Offset from midnight in millis
 });
 
-export const MovieProgrammingTimeSlotSchema = MovieProgrammingSlotSchema.extend(
-  BaseTimeSlot.shape,
-);
-export const ShowProgrammingTimeSlotSchema = ShowProgrammingSlotSchema.extend(
-  BaseTimeSlot.shape,
-);
-export const FlexProgrammingTimeSlotSchema = FlexProgrammingSlotSchema.extend(
-  BaseTimeSlot.shape,
-);
+export const MovieProgrammingTimeSlotSchema = z.object({
+  ...BaseTimeSlot.shape,
+  ...MovieProgrammingSlotSchema.shape,
+});
+
+export const ShowProgrammingTimeSlotSchema = z.object({
+  ...BaseTimeSlot.shape,
+  ...ShowProgrammingSlotSchema.shape,
+});
+
+export const FlexProgrammingTimeSlotSchema = z.object({
+  ...BaseTimeSlot.shape,
+  ...FlexProgrammingSlotSchema.shape,
+});
+
 export const RedirectProgrammingTimeSlotSchema =
   RedirectProgrammingSlotSchema.extend(BaseTimeSlot.shape);
 export const CustomShowProgrammingTimeSlotSchema =
@@ -183,6 +217,8 @@ export const RandomSlotDurationSpec = z.discriminatedUnion('type', [
   RandomSlotDynamicDurationspecSchema,
 ]);
 
+export type RandomSlotDurationSpec = z.infer<typeof RandomSlotDurationSpec>;
+
 const BaseRandomSlotSchema = z.object({
   order: SlotProgrammingOrderSchema,
   direction: z.enum(['asc', 'desc']).default('asc'),
@@ -200,11 +236,13 @@ const BaseRandomSlotSchema = z.object({
 });
 
 export const MovieProgrammingRandomSlotSchema = z.object({
+  ...Slot.shape,
   ...BaseRandomSlotSchema.shape,
   type: z.literal('movie'),
 });
 
 export const ShowProgrammingRandomSlotSchema = z.object({
+  ...Slot.shape,
   ...BaseRandomSlotSchema.shape,
   ...ShowProgrammingSlotSchema.shape,
 });
@@ -220,6 +258,7 @@ export const RedirectProgrammingRandomSlotSchema = z.object({
 });
 
 export const CustomShowProgrammingRandomSchema = z.object({
+  ...Slot.shape,
   ...BaseRandomSlotSchema.shape,
   ...CustomShowProgrammingSlotSchema.shape,
 });

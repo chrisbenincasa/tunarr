@@ -41,8 +41,6 @@ export const AddTimeSlotButton = ({
     });
   }, [currentPeriod, dayOffset, slots]);
 
-  console.log(dayOffset, relevantSlots);
-
   const optionsByType = useMemo(() => {
     return groupBy(programOptions, (opt) => opt.type) as Dictionary<
       ProgramOption[],

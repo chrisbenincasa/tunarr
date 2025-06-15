@@ -257,12 +257,10 @@ export const TimeSlotTable = () => {
             case 'show':
             case 'custom-show':
             case 'filler':
-              return capitalize(
-                originalRow.order
-                  .split('_')
-                  .map((x) => capitalize(x))
-                  .join(' '),
-              );
+              return originalRow.order
+                .split('_')
+                .map((x) => capitalize(x))
+                .join(' ');
           }
         },
         id: 'programOrder',
@@ -375,7 +373,7 @@ export const TimeSlotTable = () => {
       )}
       <MaterialReactTable table={table} />
       <Dialog
-        maxWidth="sm"
+        maxWidth="md"
         open={!!currentEditingSlot}
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}

@@ -449,7 +449,7 @@ export const RandomSlotTable = () => {
         <MaterialReactTable table={table} />
       </Box>
       <Dialog
-        maxWidth="sm"
+        maxWidth="md"
         open={!!currentEditingSlot}
         fullWidth
         onClose={() => setCurrentEditingSlot(null)}

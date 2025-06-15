@@ -8,7 +8,7 @@ import {
 } from '@tunarr/types/api';
 import { ChannelProgramSchema } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { difference, flatten, isNumber, reduce, reject } from 'lodash-es';
+import { difference, flatten, isNumber, reduce, reject, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
 import { FillerDB } from '../../db/FillerListDB.ts';
@@ -16,6 +16,7 @@ import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { uniqProperties } from '../../util/seq.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
+import { slotMayHaveFiller } from './slotSchedulerUtil.ts';
 
 type MaterializedSlotScheduleResult = {
   programs: ChannelProgram[];
@@ -132,25 +133,21 @@ export class SlotSchedulerService {
       (p) => p.fillerListId,
     );
 
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slottedFillerLists = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'filler') {
-          acc.add(curr.fillerListId);
-        }
-        return acc;
-      },
-      new Set<string>(),
+    fillerListIds.push(
+      ...flatten(
+        seq.collect(slots, (slot) => {
+          if (slotMayHaveFiller(slot) && slot.filler) {
+            return uniq(slot.filler.map((filler) => filler.fillerListId));
+          }
+          return;
+        }),
+      ),
     );
-
-    const missing = difference([...slottedFillerLists], fillerListIds);
 
     // Query
     return flatten(
       await Promise.all(
-        missing.map((list) =>
+        fillerListIds.map((list) =>
           this.fillerDB.getFillerPrograms(list).then((programs) => {
             // Actually make these filler programs -- this is a hack
             return programs.map(
