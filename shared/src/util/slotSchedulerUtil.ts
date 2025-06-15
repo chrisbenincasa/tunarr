@@ -1,20 +1,23 @@
-import { ChannelProgram, CustomProgram, MultiExternalId } from '@tunarr/types';
-import { BaseSlot } from '@tunarr/types/api';
+import type {
+  ChannelProgram,
+  CustomProgram,
+  MultiExternalId,
+} from '@tunarr/types';
+import type { BaseSlot } from '@tunarr/types/api';
 import {
   filter,
   first,
   forEach,
   isEmpty,
   isNull,
-  isUndefined,
   map,
   reduce,
   some,
 } from 'lodash-es';
 import { createExternalIdFromMulti } from '../index.js';
+import type { ProgramIterator } from './ProgramIterator.js';
 import {
   ProgramChunkedShuffle,
-  ProgramIterator,
   ProgramOrdereredIterator,
   ProgramShuffler,
   StaticProgramIterator,
@@ -168,14 +171,18 @@ export function createProgramIterators(
           const seenDBIds = new Set<string>();
           const seenIds = new Set<string>();
           const uniquePrograms = filter(programs, (p) => {
-            if (p.persisted && !isUndefined(p.id) && !seenDBIds.has(p.id)) {
-              seenDBIds.add(p.id);
-              forEach(p.externalIds, (eid) => {
-                if (eid.type === 'multi') {
-                  seenIds.add(createExternalIdFromMulti(eid));
-                }
-              });
-              return true;
+            if (p.persisted && p.id) {
+              if (!seenDBIds.has(p.id)) {
+                seenDBIds.add(p.id);
+                forEach(p.externalIds, (eid) => {
+                  if (eid.type === 'multi') {
+                    seenIds.add(createExternalIdFromMulti(eid));
+                  }
+                });
+                return true;
+              } else {
+                return false;
+              }
             }
 
             const externalIds = filter(
