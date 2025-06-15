@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.3](https://github.com/chrisbenincasa/tunarr/compare/v0.20.2...v0.20.3) (2025-06-15)
+
+
+### Bug Fixes
+
+* **web:** remove all usages of lodash chain from web ([3fb506e](https://github.com/chrisbenincasa/tunarr/commit/3fb506ed0d34ff77ce833d8520318d0ba7e5d510)), closes [#1235](https://github.com/chrisbenincasa/tunarr/issues/1235)
+
 ## [0.20.2](https://github.com/chrisbenincasa/tunarr/compare/v0.20.1...v0.20.2) (2025-06-15)
 
 
