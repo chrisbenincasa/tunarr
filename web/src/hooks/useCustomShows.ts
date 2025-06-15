@@ -1,11 +1,14 @@
+import type { UndefinedInitialDataOptions } from '@tanstack/react-query';
 import {
   type DataTag,
   type DefinedInitialDataOptions,
+  queryOptions,
   useQueries,
   useSuspenseQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { type CustomProgram, type CustomShow } from '@tunarr/types';
+import type { StrictOmit } from 'ts-essentials';
 import { type ApiClient } from '../external/api.ts';
 import { makeQueryOptions } from './useQueryHelpers.ts';
 import { useTunarrApi } from './useTunarrApi.ts';
@@ -32,15 +35,29 @@ export const useCustomShows = <TOut = CustomShow[]>(
   return useSuspenseQuery(customShowsQuery(apiClient, opts ?? {}));
 };
 
-export const customShowQuery = (apiClient: ApiClient, id: string) => ({
-  queryKey: ['custom-shows', id],
-  queryFn: () => apiClient.getCustomShow({ params: { id } }),
-});
+type CustomShowQueryOptions = StrictOmit<
+  Partial<
+    UndefinedInitialDataOptions<Awaited<ReturnType<ApiClient['getCustomShow']>>>
+  >,
+  'queryKey' | 'queryFn'
+>;
 
-export const customShowProgramsQuery = (apiClient: ApiClient, id: string) => ({
-  queryKey: ['custom-shows', id, 'programs'],
-  queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
-});
+export const customShowQuery = (
+  apiClient: ApiClient,
+  id: string,
+  opts?: CustomShowQueryOptions,
+) =>
+  queryOptions({
+    queryKey: ['custom-shows', id],
+    queryFn: () => apiClient.getCustomShow({ params: { id } }),
+    ...opts,
+  });
+
+export const customShowProgramsQuery = (apiClient: ApiClient, id: string) =>
+  queryOptions({
+    queryKey: ['custom-shows', id, 'programs'],
+    queryFn: () => apiClient.getCustomShowPrograms({ params: { id } }),
+  });
 
 // Tried to do a clever overload here but it's easier to just blow out the  method
 // and get the rid type inference...
@@ -66,11 +83,15 @@ export function useCustomShowWithInitialData(
   });
 }
 
-export function useCustomShowWithProgramming(apiClient: ApiClient, id: string) {
+export function useCustomShowWithProgramming(
+  id: string,
+  opts?: CustomShowQueryOptions,
+) {
+  const apiClient = useTunarrApi();
   return useSuspenseQueries({
     queries: [
       {
-        ...customShowQuery(apiClient, id),
+        ...customShowQuery(apiClient, id, opts),
       },
       {
         ...customShowProgramsQuery(apiClient, id),

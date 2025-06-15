@@ -209,9 +209,12 @@ export const TimeSlotTable = () => {
             case 'redirect':
               return find(programOptions, { channelId: value.channelId })
                 ?.description;
-            case 'custom-show':
-              return find(programOptions, { customShowId: value.customShowId })
-                ?.description;
+            case 'custom-show': {
+              const showName = find(programOptions, {
+                customShowId: value.customShowId,
+              })?.description;
+              return `Custom Show - ${showName}`;
+            }
           }
         },
         grow: true,

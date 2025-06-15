@@ -1,19 +1,19 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { Maybe } from '@/types/util.ts';
-import {
+import type { Maybe } from '@/types/util.ts';
+import type {
   ChannelProgram,
   CondensedChannelProgram,
   ContentProgram,
 } from '@tunarr/types';
-import {
+import type {
   BaseSlot,
   RandomSlotProgramming,
   TimeSlotProgramming,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
-import { StrictExclude } from 'ts-essentials';
-import { DropdownOption } from './DropdownOption';
+import type { StrictExclude } from 'ts-essentials';
+import type { DropdownOption } from './DropdownOption';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';

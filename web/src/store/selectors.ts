@@ -4,6 +4,7 @@ import {
 } from '@tunarr/types';
 import { chain, isNil, isUndefined } from 'lodash-es';
 import { useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { UIChannelProgramWithOffset } from '../types/index.ts';
 import { type UIIndex } from '../types/index.ts';
 import useStore, { type State } from './index.ts';
@@ -53,7 +54,8 @@ export const materializeProgramList = (
 };
 
 export const materializedProgramListSelector = ({
-  channelEditor: { programList, programLookup },
+  channelEditor: { programList },
+  programLookup,
 }: State): UIChannelProgramWithOffset[] => {
   return materializeProgramList(programList, programLookup);
 };
@@ -77,7 +79,7 @@ export const useChannelEditor = () => {
 };
 
 export const useChannelEditorLazy = () => {
-  const channelEditor = useStore((s) => s.channelEditor);
+  const channelEditor = useStore(useShallow((s) => s.channelEditor));
   const materializeLineup = useCallback(
     (
       lineup: (CondensedChannelProgram & UIIndex)[],

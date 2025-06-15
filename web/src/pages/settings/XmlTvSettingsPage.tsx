@@ -10,11 +10,13 @@ import {
   TextField,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { XmlTvSettings, defaultXmlTvSettings } from '@tunarr/types';
-import _, { isEmpty } from 'lodash-es';
+import type { XmlTvSettings } from '@tunarr/types';
+import { defaultXmlTvSettings } from '@tunarr/types';
+import { isEmpty, isEqual } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import {
   CheckboxFormController,
@@ -166,7 +168,7 @@ export default function XmlTvSettingsPage() {
           justifyContent="left"
           sx={{ mt: 2, flexGrow: 1 }}
         >
-          {!_.isEqual(defaultValues, {
+          {!isEqual(defaultValues, {
             ...defaultXmlTvSettings,
             outputPath: data.outputPath,
           }) && (

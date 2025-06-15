@@ -1,16 +1,41 @@
-import { compact, flatMap, isFunction, isNil, sortBy } from 'lodash-es';
+import {
+  compact,
+  flatMap,
+  isBoolean,
+  isFunction,
+  isNil,
+  sortBy,
+} from 'lodash-es';
 
 export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
   return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
 }
 
+type MapperFunc<In, Out> = (t: In, index: number, arr: In[]) => Out;
+type TypePredicateFunc<In, Out extends In> = (
+  t: In,
+  index: number,
+  arr: In[],
+) => t is Out;
+
 /**
  * Equivalent of compact(map()) but in a single pass on the array
  */
+export function collect<T, U extends T>(
+  arr: T[] | null | undefined,
+  f: TypePredicateFunc<T, U>,
+): U[];
 export function collect<T, U>(
   arr: T[] | null | undefined,
-  f: (t: T, index: number, arr: T[]) => U | null | undefined,
-): U[] {
+  f: MapperFunc<T, U | null | undefined>,
+): U[];
+export function collect<
+  T,
+  U,
+  Func extends
+    | MapperFunc<T, U | null | undefined>
+    | (U extends T ? TypePredicateFunc<T, U> : never),
+>(arr: T[] | null | undefined, f: Func): U[] {
   if (isNil(arr)) {
     return [];
   }
@@ -21,7 +46,10 @@ export function collect<T, U>(
   let i = 0;
   for (const el of arr) {
     const res = func(el, i++, arr);
-    if (!isNil(res)) {
+    if (isBoolean(res)) {
+      // type predicate case
+      if (res) results.push(el as unknown as U);
+    } else if (!isNil(res)) {
       results.push(res);
     }
   }

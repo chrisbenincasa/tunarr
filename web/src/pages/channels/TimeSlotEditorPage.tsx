@@ -10,10 +10,7 @@ import {
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
-import {
-  materializeProgramList,
-  useChannelEditorLazy,
-} from '@/store/selectors.ts';
+import { useChannelEditorLazy } from '@/store/selectors.ts';
 import { ArrowBack, Autorenew } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
 import {
@@ -34,7 +31,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { useMutation } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
 import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
@@ -43,8 +39,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { chain, filter, first, isUndefined, map, range } from 'lodash-es';
-import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -52,14 +46,9 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
-import { zipWithIndex } from '../../helpers/util.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import { useScheduleTimeSlots } from '../../hooks/slot_scheduler/useScheduleTimeSlots.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
-import {
-  resetLineup,
-  setCurrentLineup,
-  updateCurrentChannel,
-} from '../../store/channelEditor/actions.ts';
+import { resetLineup } from '../../store/channelEditor/actions.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -119,7 +108,6 @@ export default function TimeSlotEditorPage() {
     channel?.startTime ? dayjs(channel?.startTime) : dayjs(),
   );
 
-  const snackbar = useSnackbar();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const { dropdownOpts: programOptions } = useSlotProgramOptions();
@@ -273,72 +261,20 @@ export default function TimeSlotEditorPage() {
     [setValue, getValues, slotArray],
   );
 
-  const showPerfSnackbar = (duration: number, numShows: number) => {
-    const message = `Calculated ${dayjs
-      .duration(getValues('maxDays'), 'days')
-      .humanize()} (${numShows} ${pluralize(
-      'program',
-      numShows,
-    )}) of programming in ${duration}ms`;
-    snackbar.enqueueSnackbar(message, {
-      variant: 'info',
-    });
-  };
-
-  const apiClient = useTunarrApi();
-  const scheduleTimeSlotsMut = useMutation({
-    mutationFn: () =>
-      apiClient.scheduleTimeSlots(
-        {
-          schedule: {
-            ...getValues(),
-            timeZoneOffset: new Date().getTimezoneOffset(),
-            type: 'time',
-          },
-        },
-        {
-          params: {
-            channelId: channel!.id,
-          },
-        },
-      ),
-  });
+  const { scheduleTimeSlots } = useScheduleTimeSlots();
 
   const calculateSlots = () => {
-    performance.mark('guide-start');
     toggleIsCalculatingSlots(true);
-    setTimeout(() => {
-      scheduleTimeSlotsMut
-        .mutateAsync()
-        .then((res) => {
-          performance.mark('guide-end');
-          const { duration: ms } = performance.measure(
-            'guide',
-            'guide-start',
-            'guide-end',
-          );
-          const materialized = materializeProgramList(
-            zipWithIndex(res.lineup),
-            res.programs,
-          );
-          showPerfSnackbar(Math.round(ms), res.lineup.length);
-          setStartTime(dayjs(res.startTime));
-          updateCurrentChannel({ startTime: res.startTime });
-          setCurrentLineup(materialized, true);
-        })
-        .catch((e) => {
-          snackbar.enqueueSnackbar(
-            'There was an error generating time slots. Check the browser console log for more information',
-            {
-              variant: 'error',
-            },
-          );
-          console.error(e);
-        })
-        .finally(() => {
-          toggleIsCalculatingSlots(false);
-        });
-    });
+    scheduleTimeSlots(getValues())
+      .then(({ startTime }) => {
+        setStartTime(dayjs(startTime));
+      })
+      .catch((e) => {
+        console.error(e);
+      })
+      .finally(() => {
+        toggleIsCalculatingSlots(false);
+      });
   };
 
   return (

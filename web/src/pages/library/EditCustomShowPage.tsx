@@ -6,18 +6,12 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 type Props = { isNew: boolean };
 
 export default function EditCustomShowPage({ isNew }: Props) {
-  const apiClient = useTunarrApi();
-
   const { showId } = Route.useParams();
-  const [{ data: customShow }] = useCustomShowWithProgramming(
-    apiClient,
-    showId,
-  );
+  const [{ data: customShow }] = useCustomShowWithProgramming(showId);
   const customShowPrograms = useStore((s) => s.customShowEditor.programList);
   const header = isNew ? 'New Custom Show' : customShow.name;
 

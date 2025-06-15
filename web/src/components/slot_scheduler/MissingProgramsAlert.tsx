@@ -1,10 +1,8 @@
-import {
-  ProgramOption,
-  slotOptionIsScheduled,
-} from '@/helpers/slotSchedulerUtil';
+import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import { slotOptionIsScheduled } from '@/helpers/slotSchedulerUtil';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { Alert, Collapse, IconButton, ListItem } from '@mui/material';
-import { BaseSlot } from '@tunarr/types/api';
+import type { BaseSlot } from '@tunarr/types/api';
 import { isEmpty, map, reject } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
@@ -50,7 +48,8 @@ export const MissingProgramsAlert = ({
           </IconButton>
         }
       >
-        There are {unscheduledOptions.length} unscheduled{' '}
+        There {pluralize('is', unscheduledOptions.length)}{' '}
+        {unscheduledOptions.length} unscheduled{' '}
         {pluralize('program', unscheduledOptions.length)}. Unscheduled items
         will be removed from the channel when saving.
         <Collapse in={unscheduledOpen}>

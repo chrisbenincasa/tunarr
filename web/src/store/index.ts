@@ -10,6 +10,8 @@ import {
   type PlexMetadataState,
   createPlexMetadataState,
 } from './plexMetadata/store.ts';
+import type { ProgrammingState } from './programming/store.ts';
+import { createProgrammingState } from './programming/store.ts';
 import {
   type ProgrammingListingsState,
   createProgrammingListingsState,
@@ -29,7 +31,8 @@ export type State = ThemeEditorState &
   SettingsState &
   ProgrammingListingsState &
   EditorsState &
-  PlexMetadataState;
+  PlexMetadataState &
+  ProgrammingState;
 
 type PersistedState = PersistedSettingsState & ThemeEditorState;
 
@@ -43,6 +46,7 @@ const useStore = create<State>()(
           ...createChannelEditorState(...set),
           ...createThemeEditorState(...set),
           ...createPlexMetadataState(...set),
+          ...createProgrammingState(...set),
         }),
         {
           name: 'tunarr',

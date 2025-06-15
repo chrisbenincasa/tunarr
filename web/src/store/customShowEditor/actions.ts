@@ -43,17 +43,23 @@ export const setCurrentCustomShow = (
   show: CustomShow,
   programs: CustomProgram[],
 ) =>
-  useStore.setState(({ customShowEditor }) => {
-    customShowEditor.currentEntity = show;
-    customShowEditor.originalEntity = show;
-    customShowEditor.dirty.programs = false;
-    customShowEditor.programsLoaded = true;
+  useStore.setState((state) => {
+    state.customShowEditor.currentEntity = show;
+    state.customShowEditor.originalEntity = show;
+    state.customShowEditor.dirty.programs = false;
+    state.customShowEditor.programsLoaded = true;
     // These come in order; unwrap to get the content programs underneath
     // The frontend manages the order from here on out.
     const unwrappedPrograms = seq.collect(programs, ({ program }) => program);
     const zippedPrograms = zipWithIndex(unwrappedPrograms);
-    customShowEditor.originalProgramList = [...zippedPrograms];
-    customShowEditor.programList = [...zippedPrograms];
+    state.customShowEditor.originalProgramList = [...zippedPrograms];
+    state.customShowEditor.programList = [...zippedPrograms];
+    for (const { program } of programs) {
+      if (!program || !program.id) {
+        continue;
+      }
+      state.programLookup[program.id] = program;
+    }
   });
 
 export const setCurrentCustomShowProgramming = (

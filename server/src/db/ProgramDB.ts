@@ -139,6 +139,14 @@ type ProgramRelationCaseBuilder = CaseWhenBuilder<
   string | null
 >;
 
+type RelevantProgramWithHierarchy = {
+  program: RawProgram;
+  programWithHierarchy: ContentProgramWithHierarchy & {
+    grandparentKey: string;
+    parentKey: string;
+  };
+};
+
 // Keep this low to make bun sqlite happy.
 const DEFAULT_PROGRAM_GROUPING_UPDATE_CHUNK_SIZE = 100;
 
@@ -722,55 +730,63 @@ export class ProgramDB implements IProgramDB {
     const grandparentRatingKeyToProgramId: Record<string, Set<string>> = {};
     const parentRatingKeyToProgramId: Record<string, Set<string>> = {};
 
-    const relevantPrograms: [
-      RawProgram,
-      ContentProgramWithHierarchy & {
-        grandparentKey: string;
-        parentKey: string;
+    const relevantPrograms: RelevantProgramWithHierarchy[] = seq.collect(
+      upsertedPrograms,
+      (program) => {
+        if (
+          program.type === ProgramType.Movie ||
+          program.type === ProgramType.MusicVideo ||
+          program.type === ProgramType.OtherVideo
+        ) {
+          return;
+        }
+
+        const info = programInfos[programExternalIdString(program)];
+        if (!info) {
+          return;
+        }
+
+        if (
+          info.apiProgram.subtype === 'movie' ||
+          info.apiProgram.subtype === 'music_video' ||
+          info.apiProgram.subtype === 'other_video'
+        ) {
+          return;
+        }
+
+        const [grandparentKey, parentKey] = [
+          info.apiProgram.grandparent?.externalKey,
+          info.apiProgram.parent?.externalKey,
+        ];
+
+        if (!grandparentKey || !parentKey) {
+          this.logger.warn(
+            'Unexpected null/empty parent keys: %O',
+            info.apiProgram,
+          );
+          return;
+        }
+
+        return {
+          program,
+          programWithHierarchy: {
+            ...(info.apiProgram as ContentProgramWithHierarchy),
+            grandparentKey,
+            parentKey,
+          },
+        };
       },
-    ][] = seq.collect(upsertedPrograms, (program) => {
-      if (program.type === ProgramType.Movie) {
-        return;
-      }
-
-      const info = programInfos[programExternalIdString(program)];
-      if (!info) {
-        return;
-      }
-
-      if (info.apiProgram.subtype === 'movie') {
-        return;
-      }
-
-      const [grandparentKey, parentKey] = [
-        info.apiProgram.grandparent?.externalKey,
-        info.apiProgram.parent?.externalKey,
-      ];
-
-      if (!grandparentKey || !parentKey) {
-        this.logger.warn(
-          'Unexpected null/empty parent keys: %O',
-          info.apiProgram,
-        );
-        return;
-      }
-
-      return [
-        program,
-        {
-          ...(info.apiProgram as ContentProgramWithHierarchy),
-          grandparentKey,
-          parentKey,
-        },
-      ] as const;
-    });
+    );
 
     const upsertedProgramById = groupByUniqProp(
-      map(relevantPrograms, ([program]) => program),
+      map(relevantPrograms, ({ program }) => program),
       'uuid',
     );
 
-    for (const [program, { grandparentKey, parentKey }] of relevantPrograms) {
+    for (const {
+      program,
+      programWithHierarchy: { grandparentKey, parentKey },
+    } of relevantPrograms) {
       if (isNonEmptyString(grandparentKey)) {
         (grandparentRatingKeyToProgramId[grandparentKey] ??= new Set()).add(
           program.uuid,
@@ -844,10 +860,10 @@ export class ProgramDB implements IProgramDB {
     } as const;
 
     for (const group of existingGroupings) {
-      for (const [
-        upsertedProgram,
-        { grandparentKey, parentKey },
-      ] of relevantPrograms) {
+      for (const {
+        program: upsertedProgram,
+        programWithHierarchy: { grandparentKey, parentKey },
+      } of relevantPrograms) {
         if (group.externalKey === grandparentKey) {
           switch (upsertedProgram.type) {
             case ProgramType.Episode:
@@ -857,6 +873,16 @@ export class ProgramDB implements IProgramDB {
             case ProgramType.Track:
               upsertedProgram.artistUuid = group.groupUuid;
               updatesByType[ProgramGroupingType.Artist].add(
+                upsertedProgram.uuid,
+              );
+              break;
+            case 'movie':
+            case 'music_video':
+            case 'other_video':
+            default:
+              this.logger.warn(
+                'Unexpected program type %s when calculating hierarchy. id = %s',
+                upsertedProgram.type,
                 upsertedProgram.uuid,
               );
               break;
@@ -875,6 +901,16 @@ export class ProgramDB implements IProgramDB {
                 upsertedProgram.uuid,
               );
               break;
+            case 'movie':
+            case 'music_video':
+            case 'other_video':
+            default:
+              this.logger.warn(
+                'Unexpected program type %s when calculating hierarchy. id = %s',
+                upsertedProgram.type,
+                upsertedProgram.uuid,
+              );
+              break;
           }
         }
       }
@@ -886,7 +922,8 @@ export class ProgramDB implements IProgramDB {
     for (const missingGrandparent of missingGrandparents) {
       const matchingPrograms = filter(
         relevantPrograms,
-        ([, { grandparentKey }]) => grandparentKey === missingGrandparent,
+        ({ programWithHierarchy: { grandparentKey } }) =>
+          grandparentKey === missingGrandparent,
       );
 
       if (isEmpty(matchingPrograms)) {
@@ -894,7 +931,7 @@ export class ProgramDB implements IProgramDB {
       }
 
       const grandparentGrouping = ProgramGroupingMinter.mintGrandparentGrouping(
-        matchingPrograms[0][1],
+        matchingPrograms[0].programWithHierarchy,
       );
 
       if (isNull(grandparentGrouping)) {
@@ -902,7 +939,7 @@ export class ProgramDB implements IProgramDB {
         continue;
       }
 
-      matchingPrograms.forEach(([program]) => {
+      matchingPrograms.forEach(({ program }) => {
         if (grandparentGrouping.type === ProgramGroupingType.Artist) {
           program.artistUuid = grandparentGrouping.uuid;
           updatesByType[ProgramGroupingType.Artist].add(program.uuid);
@@ -927,7 +964,7 @@ export class ProgramDB implements IProgramDB {
           continue;
         }
 
-        const programs = filter(relevantPrograms, ([program]) =>
+        const programs = filter(relevantPrograms, ({ program }) =>
           programIds.has(program.uuid),
         );
 
@@ -937,17 +974,19 @@ export class ProgramDB implements IProgramDB {
           continue;
         }
 
-        devAssert(() => uniq(map(programs, ([p]) => p.type)).length === 1);
+        devAssert(
+          () => uniq(map(programs, ({ program: p }) => p.type)).length === 1,
+        );
 
         const parentGrouping = ProgramGroupingMinter.mintParentGrouping(
-          programs[0][1],
+          programs[0].programWithHierarchy,
         );
 
         if (!parentGrouping) {
           continue;
         }
 
-        programs.forEach(([program]) => {
+        programs.forEach(({ program }) => {
           if (program.type === ProgramType.Episode) {
             program.seasonUuid = parentGrouping.uuid;
             updatesByType[ProgramGroupingType.Season].add(program.uuid);
@@ -966,7 +1005,7 @@ export class ProgramDB implements IProgramDB {
         groupings.push(parentGrouping);
         externalIds.push(
           ...ProgramGroupingMinter.mintGroupingExternalIds(
-            programs[0][1],
+            programs[0].programWithHierarchy,
             parentGrouping.uuid,
             mediaSourceName,
             mediaSourceId,
@@ -978,7 +1017,7 @@ export class ProgramDB implements IProgramDB {
       groupings.push(grandparentGrouping);
       externalIds.push(
         ...ProgramGroupingMinter.mintGroupingExternalIds(
-          matchingPrograms[0][1],
+          matchingPrograms[0].programWithHierarchy,
           grandparentGrouping.uuid,
           mediaSourceName,
           mediaSourceId,

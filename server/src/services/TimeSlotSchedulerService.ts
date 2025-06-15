@@ -2,16 +2,17 @@ import { scheduleTimeSlots } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import { ChannelProgram, CustomProgram } from '@tunarr/types';
 import {
-  TimeSlotSchedule,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
 } from '@tunarr/types/api';
 import { ChannelProgramSchema } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { isNumber } from 'lodash-es';
+import { difference, flatten, isNumber, reduce } from 'lodash-es';
 import { z } from 'zod/v4';
+import { CustomShowDB } from '../db/CustomShowDB.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { KEYS } from '../types/inject.ts';
+import { uniqProperties } from '../util/seq.ts';
 
 type MaterializedTimeSlotScheduleResult = {
   programs: ChannelProgram[];
@@ -54,6 +55,7 @@ export class TimeSlotSchedulerService {
   constructor(
     @inject(new LazyServiceIdentifier(() => KEYS.ChannelDB))
     private channelDB: IChannelDB,
+    @inject(CustomShowDB) private customShowDB: CustomShowDB,
   ) {}
 
   async schedule<
@@ -72,6 +74,34 @@ export class TimeSlotSchedulerService {
       programs = request.programs;
     }
 
+    const customShowIds = uniqProperties(
+      programs.filter((program) => program.type === 'custom'),
+      (p) => p.customShowId,
+    );
+
+    // Here's the big one - find shows that are included in the schedule but
+    // not currently saved to the channel.
+    const slottedCustomShows = reduce(
+      request.schedule.slots,
+      (acc, curr) => {
+        if (curr.programming.type === 'custom-show') {
+          acc.add(curr.programming.customShowId);
+        }
+        return acc;
+      },
+      new Set<string>(),
+    );
+
+    const missingShows = difference([...slottedCustomShows], customShowIds);
+
+    // Query
+    const missingCustomShowPrograms = flatten(
+      await Promise.all(
+        missingShows.map((show) => this.customShowDB.getShowPrograms(show)),
+      ),
+    );
+    programs = programs.concat(missingCustomShowPrograms);
+
     return scheduleTimeSlots(request.schedule, programs);
   }
 
@@ -88,25 +118,9 @@ export class TimeSlotSchedulerService {
     return channelAndLineup.programs;
   }
 
-  async schedulePrograms(
-    programs: ChannelProgram[],
-    schedule: TimeSlotSchedule,
-    materializedPrograms: true,
-  ): Promise<MaterializedTimeSlotScheduleResult>;
-  async schedulePrograms(
-    programs: ChannelProgram[],
-    schedule: TimeSlotSchedule,
-    materializePrograms: boolean,
-  ): Promise<TimeSlotScheduleResult | MaterializedTimeSlotScheduleResult> {
-    const result = await scheduleTimeSlots(schedule, programs);
-    if (!materializePrograms) {
-      return result;
-    }
-
-    return TimeSlotSchedulerService.materializeProgramsFromResult(result);
-  }
-
-  static materializeProgramsFromResult(result: TimeSlotScheduleResult) {
+  static materializeProgramsFromResult(
+    result: TimeSlotScheduleResult,
+  ): MaterializedTimeSlotScheduleResult {
     const materializedPrograms: ChannelProgram[] = seq.collect(
       result.lineup,
       (program) => {
@@ -126,6 +140,6 @@ export class TimeSlotSchedulerService {
     return {
       startTime: result.startTime,
       programs: materializedPrograms,
-    } satisfies MaterializedTimeSlotScheduleResult;
+    };
   }
 }
