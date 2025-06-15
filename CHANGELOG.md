@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.20.2](https://github.com/chrisbenincasa/tunarr/compare/v0.20.1...v0.20.2) (2025-06-15)
+
+
+### Features
+
+* **backend:** add support for Tunarr worker thread pools ([#1225](https://github.com/chrisbenincasa/tunarr/issues/1225)) ([f45b873](https://github.com/chrisbenincasa/tunarr/commit/f45b873a26f456ff58c3ab678d266180cec21eae))
+* **time-slots:** allow scheduling any custom shows via time slots ([#1227](https://github.com/chrisbenincasa/tunarr/issues/1227)) ([c7de6a1](https://github.com/chrisbenincasa/tunarr/commit/c7de6a1ca4199ccf277fdd9870fa1df7b6b014a0))
+
+
+### Bug Fixes
+
+* **backend:** break injection dependency cycle with worker pool ([3f75295](https://github.com/chrisbenincasa/tunarr/commit/3f75295a2fa2d4da9d2e7d60e49d35f77d902b56))
+* **backend:** pass correct message back from worker pool ([947e2e6](https://github.com/chrisbenincasa/tunarr/commit/947e2e6ef8b55adbc623659288a051a5d924ff95))
+* **ui:** dark mode toggle could sometimes flash ([ce844ed](https://github.com/chrisbenincasa/tunarr/commit/ce844edc80df7935c2ea1d93c37d10eb61525493))
+
+
+### Performance Improvements
+
+* **backend:** add performance metrics to worker pool ([947e2e6](https://github.com/chrisbenincasa/tunarr/commit/947e2e6ef8b55adbc623659288a051a5d924ff95))
+* **scheduling:** do not create new arrays when pushing flex into time slot schedule ([947e2e6](https://github.com/chrisbenincasa/tunarr/commit/947e2e6ef8b55adbc623659288a051a5d924ff95))
+
 ## [0.20.1](https://github.com/chrisbenincasa/tunarr/compare/v0.20.0...v0.20.1) (2025-06-06)
 
 
