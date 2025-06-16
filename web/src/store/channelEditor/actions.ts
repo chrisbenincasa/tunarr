@@ -170,10 +170,7 @@ export const appendToCurrentLineup = (
 
 export const resetCurrentLineup = (programming: CondensedChannelProgramming) =>
   useStore.setState((state) => {
-    const zippedLineup = addIndexesAndCalculateOffsets(programming.lineup);
-    state.channelEditor.programList = [...zippedLineup];
-    state.channelEditor.originalProgramList = [...zippedLineup];
-    state.channelEditor.programLookup = { ...programming.programs };
+    updateProgramList(state, programming);
     state.channelEditor.dirty.programs = false;
     state.channelEditor.schedule = programming.schedule;
   });
