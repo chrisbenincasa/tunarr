@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.4](https://github.com/chrisbenincasa/tunarr/compare/v0.20.3...v0.20.4) (2025-06-16)
+
+
+### Bug Fixes
+
+* **ui:** ensure local state is always updated after querying media sources ([ce40a9f](https://github.com/chrisbenincasa/tunarr/commit/ce40a9f9376671e900ae087c4c58fe567692fd74))
+* **ui:** fix programs disappearing from channel after save ([e2722cc](https://github.com/chrisbenincasa/tunarr/commit/e2722cc9929e42ff5d6de61b34cd3b93d0da3dde))
+
 ## [0.20.3](https://github.com/chrisbenincasa/tunarr/compare/v0.20.2...v0.20.3) (2025-06-15)
 
 
