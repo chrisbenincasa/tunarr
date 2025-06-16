@@ -274,7 +274,7 @@ export const setChannelStartTime = (startTime: number) =>
   });
 
 export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
-  useStore.setState(({ channelEditor }) => {
+  useStore.setState(({ channelEditor, programLookup }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
       const addedDuration = sumBy(programs, (program) =>
@@ -363,5 +363,6 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
       );
 
       extend(channelEditor.programLookup, contentProgramsById);
+      extend(programLookup, contentProgramsById);
     }
   });

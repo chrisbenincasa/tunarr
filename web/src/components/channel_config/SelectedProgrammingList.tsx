@@ -118,7 +118,7 @@ const PlexSelectedProgramListItem = ({
 
   return (
     <ListItem
-      {...listChildProps}
+      style={listChildProps.style}
       divider
       sx={{ px: 1 }}
       dense
@@ -354,7 +354,7 @@ export default function SelectedProgrammingList({
               style={props.style}
             >
               <ListItemText
-                primary={`${customShow.name}`}
+                primary={`Custom Show - ${customShow.name}`}
                 secondary={`${customShow.contentCount} ${pluralize(
                   'item',
                   customShow.contentCount,

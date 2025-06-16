@@ -186,7 +186,7 @@ export default function SelectedProgrammingActions({
         {selectAllEnabled && (
           <Button
             key={'select-all-programs'}
-            variant="contained"
+            variant="outlined"
             startIcon={
               smallViewport ? null : selectAllLoading ? (
                 <RotatingLoopIcon />
@@ -210,7 +210,7 @@ export default function SelectedProgrammingActions({
           <>
             <Button
               key={'review-selections'}
-              variant="contained"
+              variant="outlined"
               startIcon={smallViewport ? null : <Grading />}
               onClick={() => toggleOrSetSelectedProgramsDrawer(true)}
               sx={{ m: 0.5, flexGrow: 1 }}

@@ -1,20 +1,18 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
 import { type QueryParamTypeForAlias } from '@/types/index.ts';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 import { type JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { type MediaSourceId } from '@tunarr/types/schemas';
-import {
-  every,
-  flatMap,
-  isEmpty,
-  isNil,
-  isUndefined,
-  omitBy,
-  sumBy,
-} from 'lodash-es';
-import { useEffect } from 'react';
+import { every, flatMap, isEmpty, isNil, omitBy, sumBy } from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import { useApiQuery } from '../useApiQuery.ts';
+import { useQueryObserver } from '../useQueryObserver.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const useJellyfinUserLibraries = (
@@ -36,39 +34,50 @@ export const useJellyfinLibraryItems = (
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
-  const key = [
-    'jellyfin',
-    mediaSourceId,
-    'library_items',
-    parentId,
-    pageParams,
-  ];
-  const result = useApiQuery({
-    queryKey: key,
-    queryFn: (apiClient) =>
-      apiClient.getJellyfinItems({
-        params: { mediaSourceId, libraryId: parentId },
-        queries: {
-          offset: pageParams?.offset,
-          limit: pageParams?.limit,
-          itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
-          sortBy: ['IsFolder', 'SortName'],
-        },
-      }),
-    enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
-  });
+  const apiClient = useTunarrApi();
 
-  useEffect(() => {
-    if (!isUndefined(result.data)) {
-      addKnownMediaForJellyfinServer(
+  const queryOpts = useMemo(() => {
+    return queryOptions({
+      queryKey: [
+        'jellyfin',
         mediaSourceId,
-        result.data.Items,
+        'library_items',
         parentId,
-      );
-    }
-  }, [mediaSourceId, parentId, result.data]);
+        pageParams,
+      ],
+      queryFn: () =>
+        apiClient.getJellyfinItems({
+          params: { mediaSourceId, libraryId: parentId },
+          queries: {
+            offset: pageParams?.offset,
+            limit: pageParams?.limit,
+            itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+            sortBy: ['IsFolder', 'SortName'],
+          },
+        }),
+      enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
+    });
+  }, [apiClient, enabled, itemTypes, mediaSourceId, pageParams, parentId]);
 
-  return { ...result, queryKey: key };
+  const result = useQuery(queryOpts);
+
+  useQueryObserver(
+    queryOpts,
+    useCallback(
+      (result) => {
+        if (result.status === 'success') {
+          addKnownMediaForJellyfinServer(
+            mediaSourceId,
+            result.data.Items,
+            parentId,
+          );
+        }
+      },
+      [mediaSourceId, parentId],
+    ),
+  );
+
+  return { ...result, queryKey: queryOpts.queryKey };
 };
 
 function getChunkSize(
@@ -100,57 +109,78 @@ export const useInfiniteJellyfinLibraryItems = (
   > = {},
 ) => {
   const apiClient = useTunarrApi();
-  const key = [
-    'jellyfin',
-    mediaSourceId,
-    'library_items',
-    parentId,
-    'infinite',
-    { itemTypes, additionalFilters },
-  ];
 
   const lastFetchSize = initialChunkSize + bufferSize;
 
-  const result = useInfiniteQuery({
-    queryKey: key,
-    queryFn: ({ pageParam: { offset, pageSize } }) =>
-      apiClient.getJellyfinItems({
-        params: { mediaSourceId, libraryId: parentId },
-        queries: {
-          offset,
-          limit: pageSize,
-          itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
-          ...omitBy(additionalFilters, isNil),
+  const queryOpts = useMemo(
+    () =>
+      infiniteQueryOptions({
+        queryKey: [
+          'jellyfin',
+          mediaSourceId,
+          'library_items',
+          parentId,
+          'infinite',
+          { itemTypes, additionalFilters },
+        ],
+        queryFn: ({ pageParam: { offset, pageSize } }) =>
+          apiClient.getJellyfinItems({
+            params: { mediaSourceId, libraryId: parentId },
+            queries: {
+              offset,
+              limit: pageSize,
+              itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+              ...omitBy(additionalFilters, isNil),
+            },
+          }),
+        enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
+        initialPageParam: { offset: 0, pageSize: lastFetchSize },
+        getNextPageParam: (res, all, { offset: lastOffset }) => {
+          const total = sumBy(all, (page) => page.Items.length);
+          if (total >= (res.TotalRecordCount ?? res.Items.length)) {
+            return null;
+          }
+
+          // Next offset is the last + how many items we got back.
+          return {
+            offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
+            pageSize: getChunkSize(
+              res.TotalRecordCount,
+              initialChunkSize,
+              bufferSize,
+            ),
+          };
         },
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 60 * 10,
       }),
-    enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
-    initialPageParam: { offset: 0, pageSize: lastFetchSize },
-    getNextPageParam: (res, all, { offset: lastOffset }) => {
-      const total = sumBy(all, (page) => page.Items.length);
-      if (total >= (res.TotalRecordCount ?? res.Items.length)) {
-        return null;
-      }
+    [
+      additionalFilters,
+      apiClient,
+      bufferSize,
+      enabled,
+      initialChunkSize,
+      itemTypes,
+      lastFetchSize,
+      mediaSourceId,
+      parentId,
+    ],
+  );
 
-      // Next offset is the last + how many items we got back.
-      return {
-        offset: (lastOffset + res.Items.length) % res.TotalRecordCount,
-        pageSize: getChunkSize(
-          res.TotalRecordCount,
-          initialChunkSize,
-          bufferSize,
-        ),
-      };
-    },
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 60 * 10,
-  });
+  const result = useInfiniteQuery(queryOpts);
 
-  useEffect(() => {
-    if (!isUndefined(result.data)) {
-      const allItems = flatMap(result.data.pages, (page) => page.Items);
-      addKnownMediaForJellyfinServer(mediaSourceId, allItems, parentId);
-    }
-  }, [parentId, mediaSourceId, result.data]);
+  useQueryObserver(
+    queryOpts,
+    useCallback(
+      (result) => {
+        if (result.status === 'success') {
+          const allItems = flatMap(result.data.pages, (page) => page.Items);
+          addKnownMediaForJellyfinServer(mediaSourceId, allItems, parentId);
+        }
+      },
+      [mediaSourceId, parentId],
+    ),
+  );
 
-  return { ...result, queryKey: key };
+  return { ...result, queryKey: queryOpts.queryKey };
 };
