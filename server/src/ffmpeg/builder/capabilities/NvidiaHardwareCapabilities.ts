@@ -55,6 +55,13 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
         canUseHardware = this.arch >= 86;
         break;
 
+      case VideoFormats.Vc1:
+        // In general this is true...
+        canUseHardware = true;
+        break;
+
+      // See https://developer.nvidia.com/cuda-legacy-gpus
+      // or https://developer.nvidia.com/cuda-gpus
       case VideoFormats.Vp9:
         canUseHardware =
           bitDepth === 10

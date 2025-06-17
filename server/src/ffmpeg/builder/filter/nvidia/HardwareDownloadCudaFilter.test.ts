@@ -1,4 +1,5 @@
 import {
+  PixelFormatCuda,
   PixelFormatNv12,
   PixelFormatYuv420P,
   PixelFormatYuv444P,
@@ -72,6 +73,62 @@ describe('HardwareDownloadCudaFilter', () => {
     );
 
     expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv444p');
+
+    const nextState = filter.nextState(currentState);
+    expect(nextState).toMatchObject({
+      frameDataLocation: FrameDataLocation.Software,
+      pixelFormat: targetFormat,
+    });
+
+    // Does not mutate
+    expect(nextState).not.toBe(currentState);
+  });
+
+  test('currentFormat=cuda+yuv420p targetFormat=yuv420p', () => {
+    const targetFormat = new PixelFormatYuv420P();
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.FHD,
+      scaledSize: FrameSize.FHD,
+      frameDataLocation: FrameDataLocation.Hardware,
+      pixelFormat: new PixelFormatCuda(targetFormat),
+    });
+
+    const filter = new HardwareDownloadCudaFilter(
+      currentState.pixelFormat,
+      targetFormat,
+    );
+
+    expect(filter.filter).to.eq('hwdownload,format=yuv420p');
+
+    const nextState = filter.nextState(currentState);
+    expect(nextState).toMatchObject({
+      frameDataLocation: FrameDataLocation.Software,
+      pixelFormat: targetFormat,
+    });
+
+    // Does not mutate
+    expect(nextState).not.toBe(currentState);
+  });
+
+  test('currentFormat=cuda+nv12 targetFormat=yuv420p', () => {
+    const targetFormat = new PixelFormatYuv420P();
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.FHD,
+      scaledSize: FrameSize.FHD,
+      frameDataLocation: FrameDataLocation.Hardware,
+      pixelFormat: new PixelFormatCuda(
+        new PixelFormatNv12(new PixelFormatYuv420P()),
+      ),
+    });
+
+    const filter = new HardwareDownloadCudaFilter(
+      currentState.pixelFormat,
+      targetFormat,
+    );
+
+    expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv420p');
 
     const nextState = filter.nextState(currentState);
     expect(nextState).toMatchObject({

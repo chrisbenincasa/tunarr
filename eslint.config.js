@@ -45,7 +45,12 @@ export default tseslint.config(
       ],
       'unused-imports/no-unused-imports': 'error',
       '@typescript-eslint/consistent-type-imports': ['error'],
-      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': [
+        'error',
+        {
+          considerDefaultExhaustiveForUnions: true,
+        },
+      ],
     },
   },
   {

@@ -1,8 +1,12 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { BaseDecoder } from '@/ffmpeg/builder/decoder/BaseDecoder.js';
-import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.js';
+import {
+  PixelFormatCuda,
+  PixelFormats,
+} from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { InputSource } from '@/ffmpeg/builder/input/InputSource.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import type { FrameState } from '../../state/FrameState.ts';
 
 export abstract class NvidiaDecoder extends BaseDecoder {
   constructor(private _hardwareAccelerationMode: HardwareAccelerationMode) {
@@ -37,5 +41,29 @@ export abstract class NvidiaDecoder extends BaseDecoder {
     }
 
     return result;
+  }
+}
+
+export class ImplicitNvidiaDecoder extends BaseDecoder {
+  readonly name: string = 'implicit_cuda';
+
+  protected _outputFrameDataLocation = FrameDataLocation.Hardware;
+
+  options(): string[] {
+    const baseOpts = ['-hwaccel_output_format', 'cuda'];
+    // if (this.videoStream.codec === VideoFormats.Av1) {
+    //   // this is apparently required: https://trac.ffmpeg.org/wiki/HWAccelIntro#NVDECCUVID
+    //   baseOpts.push('-c:v', 'av1');
+    // }
+    return baseOpts;
+  }
+
+  nextState(currentState: FrameState): FrameState {
+    // TODO: the software format should probably be derived from this code:
+    // https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/nvdec.c#L744-L773
+    const nextState = super.nextState(currentState);
+    return nextState.update({
+      pixelFormat: new PixelFormatCuda(currentState.pixelFormatOrUnknown()),
+    });
   }
 }

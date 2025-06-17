@@ -3,7 +3,6 @@ import type { BaseFfmpegHardwareCapabilities } from '@/ffmpeg/builder/capabiliti
 import type { FfmpegCapabilities } from '@/ffmpeg/builder/capabilities/FfmpegCapabilities.js';
 import { OutputFormatTypes, VideoFormats } from '@/ffmpeg/builder/constants.js';
 import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
-import { DecoderFactory } from '@/ffmpeg/builder/decoder/DecoderFactory.js';
 import type { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 import { BaseEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
@@ -30,8 +29,11 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import { isEmpty, isNil, isNull, reject, some } from 'lodash-es';
-import { NvidiaDecoder } from '../../decoder/nvidia/NvidiaDecoder.ts';
+import { head, isEmpty, isNil, isNull, reject, some } from 'lodash-es';
+import {
+  ImplicitNvidiaDecoder,
+  NvidiaDecoder,
+} from '../../decoder/nvidia/NvidiaDecoder.ts';
 import {
   NvidiaH264Encoder,
   NvidiaHevcEncoder,
@@ -54,6 +56,8 @@ import {
 import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { KnownFfmpegFilters } from '../../options/KnownFfmpegOptions.ts';
 import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
+import { DoNotIgnoreLoopInputOption } from '../../options/input/DoNotIgnoreLoopInputOption.ts';
+import { InfiniteLoopInputOption } from '../../options/input/InfiniteLoopInputOption.ts';
 
 export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -86,15 +90,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     let canDecode = this.hardwareCapabilities.canDecodeVideoStream(videoStream);
     let canEncode = this.hardwareCapabilities.canEncodeState(desiredState);
 
-    // TODO: check whether can decode and can encode based on capabilities
-    // minimal check for now, h264_cuvid doesn't support 10-bit
-    if (
-      videoStream.codec === VideoFormats.H264 &&
-      videoStream.pixelFormat?.bitDepth === 10
-    ) {
-      canDecode = false;
-    }
-
     // Hardcode this assumption for now
     if (desiredState.videoFormat === VideoFormats.Raw) {
       canEncode = false;
@@ -107,7 +102,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       canDecode = false;
     }
 
-    if (canDecode || canEncode) {
+    if (canDecode) {
       pipelineSteps.push(new CudaHardwareAccelerationOption());
     }
 
@@ -124,18 +119,13 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       return null;
     }
 
-    const { videoStream, ffmpegState } = this.context;
+    const { ffmpegState } = this.context;
     let decoder: Nullable<Decoder> = null;
     if (ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda) {
-      decoder = DecoderFactory.getNvidiaDecoder(
-        videoStream,
-        HardwareAccelerationMode.Cuda,
-      );
-      if (!isNull(decoder)) {
-        this.videoInputSource.addOption(decoder);
-      } else {
-        decoder = super.setupDecoder();
-      }
+      decoder = new ImplicitNvidiaDecoder();
+      this.videoInputSource.addOption(decoder);
+    } else {
+      decoder = super.setupDecoder();
     }
     this.decoder = decoder;
     return decoder;
@@ -153,13 +143,13 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
-      pixelFormat:
-        ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
-        videoStream.bitDepth() === 8
-          ? videoStream.pixelFormat
-            ? new PixelFormatNv12(videoStream.pixelFormat)
-            : null
-          : videoStream.pixelFormat,
+      pixelFormat: videoStream.pixelFormat,
+      // ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda
+      //   ? new PixelFormatCuda(
+      //       videoStream.pixelFormat ??
+      //         PixelFormatUnknown(videoStream.bitDepth()),
+      //     )
+      //   : videoStream.pixelFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
@@ -633,6 +623,17 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   protected setWatermark(currentState: FrameState): FrameState {
     if (!this.watermarkInputSource) {
       return currentState;
+    }
+
+    const watermarkInput = this.watermarkInputSource;
+
+    for (const watermark of watermarkInput.streams ?? []) {
+      if (watermark.inputKind !== 'stillimage') {
+        watermarkInput.addOption(new DoNotIgnoreLoopInputOption());
+      } else if (isDefined(head(watermarkInput.watermark.fadeConfig))) {
+        // TODO: Needs hwaccel option here
+        watermarkInput.addOption(new InfiniteLoopInputOption());
+      }
     }
 
     if (!this.watermarkInputSource.watermark.fixedSize) {
