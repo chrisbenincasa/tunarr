@@ -85,7 +85,9 @@ const GlowingCircle = styled(Box, {
 
 export default function ChannelsPage() {
   const apiClient = useTunarrApi();
-  const { data: channels } = useChannelsSuspense();
+  const { data: channels } = useChannelsSuspense({
+    refetchOnWindowFocus: true,
+  });
   const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
   const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
