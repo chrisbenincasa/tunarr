@@ -270,6 +270,13 @@ const nvidiaDebugEndpoint = makeEndpoint({
   response: z.string(),
 });
 
+const envDebugEndpoint = makeEndpoint({
+  method: 'get',
+  alias: 'getServerEnvInfo',
+  path: '/api/system/debug/env',
+  response: z.record(z.string(), z.string()),
+});
+
 export const endpoints = [
   getMediaSourcesEndpoint,
   createMediaSourceEndpoint,
@@ -299,4 +306,5 @@ export const endpoints = [
   duplicateTranscodeConfig,
   vainfoDebugEndpoint,
   nvidiaDebugEndpoint,
+  envDebugEndpoint,
 ] as const;

@@ -7,18 +7,44 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
 import { useCopyToClipboardSync } from '../../hooks/useCopyToClipboard.ts';
+import { useServerEvents } from '../../hooks/useServerEvents.ts';
+import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export const SystemDebugPage = () => {
   const [checkVaapiEnabled, setCheckVaapiEnabled] = useState(false);
   const [checkNvidiaEnabled, setCheckNvidiaEnabled] = useState(false);
   const queryClient = useQueryClient();
+  const apiClient = useTunarrApi();
   const copyToClipboard = useCopyToClipboardSync();
+
+  const envData = useSuspenseQuery({
+    queryKey: ['system', 'debug', 'env'],
+    queryFn: () => apiClient.getServerEnvInfo(),
+    staleTime: +dayjs.duration(1, 'hour'),
+  });
+
+  const ctx = useServerEvents();
+
+  useEffect(() => {
+    const key = ctx.addListener((ev) => {
+      if (ev.type === 'lifecycle') {
+        queryClient
+          .invalidateQueries({
+            exact: true,
+            queryKey: ['system', 'debug', 'env'],
+          })
+          .catch(console.error);
+      }
+    });
+    return () => ctx.removeListener(key);
+  }, [ctx, queryClient]);
 
   const {
     isLoading: isLoadingVaapiCapabilities,
@@ -124,6 +150,26 @@ export const SystemDebugPage = () => {
               <pre>{vappiCapabilitiesResult}</pre>
             </Box>
           </Collapse>
+        </Stack>
+      </PaddedPaper>
+      <PaddedPaper>
+        <Stack spacing={2}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
+              System Environment
+            </Typography>
+            <Button
+              onClick={() =>
+                copyToClipboard(JSON.stringify(envData.data, undefined, 4))
+              }
+              startIcon={<CopyAll />}
+            >
+              Copy
+            </Button>
+          </Box>
+          <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
+            <pre>{JSON.stringify(envData.data, undefined, 4)}</pre>
+          </Box>
         </Stack>
       </PaddedPaper>
     </Stack>

@@ -9,6 +9,7 @@ import {
   LoggerFactory,
 } from '@/util/logging/LoggerFactory.js';
 import TailFile from '@logdna/tail-file';
+import { seq } from '@tunarr/shared/util';
 import type { LoggingSettings, SystemSettings } from '@tunarr/types';
 import type { SystemSettingsResponse } from '@tunarr/types/api';
 import {
@@ -342,6 +343,32 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
           Connection: 'keep-alive',
         })
         .send(tail.pipe(split2()).pipe(out));
+    },
+  );
+
+  fastify.get(
+    '/system/debug/env',
+    {
+      schema: {
+        response: {
+          200: z.record(z.string(), z.string()),
+        },
+      },
+    },
+    async (_, res) => {
+      const matching = seq.collect(
+        Object.entries(process.env),
+        ([key, val]) => {
+          if (key.startsWith('TUNARR_') && val) {
+            return [key, val] as const;
+          } else if ((key === 'NODE_ENV' || key === 'LOG_LEVEL') && val) {
+            return [key, val] as const;
+          }
+          return;
+        },
+      );
+
+      return res.send(Object.fromEntries(matching));
     },
   );
 
