@@ -447,7 +447,7 @@ export const isTest = currentEnv() === 'test';
 export const isEdgeBuild = getBooleanEnvVar(
   TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,
 );
-export const tunarrBuild = process.env[TUNARR_ENV_VARS.BUILD_ENV_VAR];
+export const tunarrBuild = process.env.TUNARR_BUILD;
 
 export const zipWithIndex = <T>(
   seq: readonly T[],
@@ -503,6 +503,10 @@ export function parseIntOrNull(s: string): number | null {
 
 export function isLinux() {
   return process.platform === 'linux';
+}
+
+export function isMac() {
+  return process.platform === 'darwin';
 }
 
 export function isWindows() {

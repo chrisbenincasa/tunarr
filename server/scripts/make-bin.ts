@@ -159,7 +159,7 @@ for (const arch of args.target) {
         '-c',
         'pkg.config.json',
         '-t',
-        `node22.13.1-${arch}`,
+        `node22.15.1-${arch}`,
         `${dir.path}/dist/bundle.cjs`,
         // Look into whether we want this sometimes...
         '--no-bytecode',

@@ -43,25 +43,25 @@ jobs:
       max-parallel: 2
       matrix:
         builds:
-          - base_tag: '7.0'
+          - base_tag: '7.1.1'
             platform: linux/amd64
             suffix:
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: 7.0-nvidia
+          - base_tag: 7.1.1-nvidia
             platform: linux/amd64
             suffix: -nvidia
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: 7.0-vaapi
+          - base_tag: 7.1.1-vaapi
             platform: linux/amd64
             suffix: -vaapi
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: 7.0-arm64
+          - base_tag: 7.1.1-arm64
             platform: linux/arm64
             suffix: -arm64
             target: linux-arm64

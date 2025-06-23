@@ -13,7 +13,7 @@
       "outputs": ["temp/metadata.json"]
     },
     "bundle": {
-      "inputs": ["./scripts/bundle-old.ts", "./src/**"],
+      "inputs": ["./scripts/bundle.ts", "./src/**"],
       "dependsOn": ["^build", "^bundle"],
       "outputs": ["dist/**"]
     },

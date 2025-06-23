@@ -224,7 +224,7 @@ class Connection {
 
     results?.forEach((it) => {
       if (it.status === 'Success') {
-        this.logger.info(
+        this.logger.debug(
           `migration "${it.migrationName}" was executed successfully`,
         );
       } else if (it.status === 'Error') {

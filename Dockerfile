@@ -38,7 +38,8 @@ RUN corepack enable && corepack enable pnpm
 RUN pnpm --version
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
 RUN ln -s /usr/local/bin/ffprobe /usr/bin/ffprobe
-ENTRYPOINT [ "/tunarr/tunarr" ]
+RUN curl -sfS https://dotenvx.sh | sh
+ENTRYPOINT [ "dotenvx", "run", "--", "/tunarr/tunarr" ]
 CMD [ "server" ]
 
 # Add Tunarr sources
@@ -57,7 +58,18 @@ COPY CHANGELOG.md CHANGELOG.md
 FROM ffmpeg-base AS dev
 EXPOSE 5173
 WORKDIR /tunarr
-COPY . .
+
+COPY ./server server
+COPY ./web web
+COPY ./shared shared
+COPY ./types types
+COPY ./scripts scripts
+COPY README.md README.md
+COPY package.json package.json
+COPY pnpm-lock.yaml pnpm-lock.yaml
+COPY pnpm-workspace.yaml pnpm-workspace.yaml
+COPY turbo.json turbo.json
+
 RUN pnpm install --frozen-lockfile
 ENTRYPOINT [ "pnpm" ]
 CMD [ "turbo", "dev" ]
@@ -68,44 +80,32 @@ ARG NODE_ENVIRONMENT
 ENV NODE_ENV=${NODE_ENVIRONMENT:-production}
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
-### Begin server build ###
-FROM sources AS build-server
-# Install deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+FROM sources AS build-full-stack
+ARG exec_target=linux-x64
 ARG is_edge_build
 ARG tunarr_build
 ARG exec_target=linux-x64
 # Build common modules
 RUN <<EOF
-touch server/.env
-echo TUNARR_BUILD=${tunarr_build} >> server/.env
-echo TUNARR_EDGE_BUILD=${is_edge_build} >> server/.env
-cat server/.env
+touch .env
+echo TUNARR_BUILD="${tunarr_build}" >> .env
+echo TUNARR_EDGE_BUILD=${is_edge_build} >> .env
+echo TUNARR_BUILD_BASE_TAG=${base_image_tag} >> .env
+cat .env
+cp .env server/.env
 EOF
-# Build and bundle
-RUN echo "Building target: ${exec_target}"
-RUN pnpm turbo --filter=@tunarr/server make-bin -- --target ${exec_target} --no-include-version
-### End server build ###
-
-### Begin server web ###
-FROM sources AS build-web
-# Install deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-# Build common modules
-RUN pnpm turbo --filter=@tunarr/web bundle
-
-FROM sources AS build-full-stack
-ARG exec_target=linux-x64
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Bundle web in a separate task
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
 RUN echo "Building target: ${exec_target}"
-RUN pnpm turbo --filter=@tunarr/server make-bin -- --target ${exec_target} --no-include-version
+RUN pnpm turbo make-bin -- --target ${exec_target} --no-include-version
 
 ### Full stack ###
 FROM ffmpeg-base AS full-stack
+WORKDIR /tunarr
 ARG exec_target=linux-x64
+COPY --from=build-full-stack /tunarr/.env /tunarr/.env
 COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
