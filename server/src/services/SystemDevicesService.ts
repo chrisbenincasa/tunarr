@@ -8,7 +8,9 @@ import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
-import { isLinux, isNonEmptyString } from '../util/index.ts';
+import { isDocker } from '../util/containerUtil.ts';
+import { fileExists } from '../util/fsUtil.ts';
+import { isLinux, isMac, isNonEmptyString, isWindows } from '../util/index.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 
 @injectable()
@@ -49,6 +51,24 @@ export class SystemDevicesService {
         SystemDevicesService.DEVICES_KEY,
         async () => {
           const devices: string[] = [];
+          if (isWindows() || isMac()) {
+            return [];
+          }
+
+          if (!(await fileExists('/dev/dri'))) {
+            if (isDocker()) {
+              this.logger.warn(
+                'Could not find /dev/dri directory. Did you passed this in as a device when starting your container?',
+              );
+            } else {
+              this.logger.error(
+                'Unexpected state. Found no /dev/dri on Linux machine.',
+              );
+            }
+
+            return [];
+          }
+
           for (const device of await readdir('/dev/dri')) {
             if (device.startsWith('card') || device.startsWith('render')) {
               devices.push(path.join('/dev/dri', device));

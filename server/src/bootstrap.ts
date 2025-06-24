@@ -58,7 +58,9 @@ export async function bootstrapTunarr(
 ) {
   const hasTunarrDb = await fileExists(opts.databaseDirectory);
   if (!hasTunarrDb) {
-    RootLogger.info(`Existing database at ${opts.databaseDirectory} not found`);
+    RootLogger.info(
+      `Existing database at ${opts.databaseDirectory} not found, creating it.`,
+    );
     await fs.mkdir(opts.databaseDirectory, { recursive: true });
     await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
   }

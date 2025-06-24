@@ -1,3 +1,6 @@
+import dotenv from '@dotenvx/dotenvx';
+dotenv.config({ debug: true });
+
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';
 import {
