@@ -19,7 +19,7 @@ import {
   type SubmitErrorHandler,
   type SubmitHandler,
 } from 'react-hook-form';
-import type { NonEmptyArray } from 'ts-essentials';
+import type { DeepRequired, NonEmptyArray } from 'ts-essentials';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
 import { useUpdateChannel } from '../../hooks/useUpdateChannel.ts';
@@ -35,9 +35,10 @@ import {
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
 
-function getDefaultFormValues(channel: Channel): SaveableChannel {
+function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
   return {
     ...channel,
+    streamMode: channel.streamMode ?? 'hls',
     fillerCollections: channel.fillerCollections ?? [],
     fillerRepeatCooldown:
       (channel.fillerRepeatCooldown
@@ -47,9 +48,9 @@ function getDefaultFormValues(channel: Channel): SaveableChannel {
     guideMinimumDuration: channel.guideMinimumDuration / 1000,
     offline: {
       ...channel.offline,
-      picture: channel.offline.picture ?? DefaultChannel.offline.picture,
+      picture: channel.offline.picture ?? DefaultChannel.offline.picture ?? '',
       soundtrack:
-        channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack,
+        channel.offline.soundtrack ?? DefaultChannel.offline.soundtrack ?? '',
     },
     watermark: {
       ...(channel.watermark ?? {}),
@@ -63,10 +64,15 @@ function getDefaultFormValues(channel: Channel): SaveableChannel {
       duration: channel.watermark?.duration ?? 0,
       position: channel.watermark?.position ?? 'bottom-right',
       opacity: channel.watermark?.opacity ?? 100,
-      fadeConfig: channel.watermark?.fadeConfig ?? [
+      fadeConfig: channel.watermark?.fadeConfig?.map((conf) => ({
+        ...conf,
+        leadingEdge: conf.leadingEdge ?? false,
+        programType: conf.programType ?? 'episode',
+      })) ?? [
         {
           periodMins: 0,
           leadingEdge: true,
+          programType: 'episode', // Unused
         },
       ],
     },
@@ -74,7 +80,7 @@ function getDefaultFormValues(channel: Channel): SaveableChannel {
       enabled: channel.onDemand.enabled,
     },
     subtitlesEnabled: channel.subtitlesEnabled,
-    subtitlePreferences: channel.subtitlePreferences,
+    subtitlePreferences: channel.subtitlePreferences ?? [],
   };
 }
 

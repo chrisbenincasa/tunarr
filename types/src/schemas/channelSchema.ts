@@ -151,6 +151,7 @@ export const SaveableChannelSchema = ChannelSchema.omit({
   fallback: true, // Figure out how to update this
   programCount: true,
   transcoding: true,
+  sessions: true,
 }).partial({
   onDemand: true,
 });
