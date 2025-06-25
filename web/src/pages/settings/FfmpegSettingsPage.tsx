@@ -35,6 +35,7 @@ import { CheckboxFormController } from '../../components/util/TypedController.ts
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
 import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
+import type { DeepRequired } from 'ts-essentials';
 import { TranscodeConfigsTable } from '../../components/settings/ffmpeg/TranscodeConfigsTable.tsx';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
 import { useApiQuery } from '../../hooks/useApiQuery.ts';
@@ -42,6 +43,8 @@ import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const FfmpegLogOptions = ['disable', 'console', 'file'] as const;
 type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
+
+type FfmpegFormValues = DeepRequired<Omit<FfmpegSettings, 'configVersion'>>;
 
 export default function FfmpegSettingsPage() {
   const apiClient = useTunarrApi();
@@ -63,7 +66,7 @@ export default function FfmpegSettingsPage() {
     formState: { isDirty, isValid, isSubmitting },
     handleSubmit,
     watch,
-  } = useForm<Omit<FfmpegSettings, 'configVersion'>>({
+  } = useForm<FfmpegFormValues>({
     defaultValues: {
       ...defaultFfmpegSettings,
       ...ffmpegSettings,

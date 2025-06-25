@@ -2,6 +2,7 @@ import {
   ArrowBackIos,
   ArrowForwardIos,
   History,
+  Restore,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
@@ -38,20 +39,21 @@ type Props = {
   channelId: string; // all | ID
 };
 
+const DefaultDuration = dayjs.duration(2, 'hour').asMilliseconds();
+
 export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
   const guideDuration =
-    useStore((state) => state.theme.guideDuration) ||
-    dayjs.duration(2, 'hour').asMilliseconds();
+    useStore((state) => state.theme.guideDuration) || DefaultDuration;
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
   const [showStealth, _, setShowStealth] = useToggle(true);
+  const duration = +end - +start;
 
   const zoomIn = useCallback(() => {
     if (end.subtract(SubtractInterval).diff(start) >= MinDurationMillis) {
       setEnd((prevEnd) => {
         const newEnd = prevEnd.subtract(SubtractInterval);
         setGuideDurationState(Math.abs(start.diff(newEnd)));
-        // setProgress(calcProgress(start, newEnd));
         return newEnd;
       });
     }
@@ -59,12 +61,16 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
 
   const zoomOut = useCallback(() => {
     setEnd((prevEnd) => {
-      const newEnd = prevEnd.add(1, 'hour');
+      const newEnd = prevEnd.add(SubtractInterval);
       setGuideDurationState(Math.abs(start.diff(newEnd)));
-      // setProgress(calcProgress(start, newEnd));
       return newEnd;
     });
   }, [start]);
+
+  const reset = useCallback(() => {
+    setGuideDurationState(DefaultDuration);
+    setStart(roundCurrentTime(15));
+  }, []);
 
   const zoomInDisabled =
     end.subtract(SubtractInterval).diff(start) < MinDurationMillis;
@@ -130,6 +136,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
               label="Guide Start Time"
             />
           </FormControl>
+          <Typography>{dayjs.duration(end.diff(start)).humanize()}</Typography>
           {!dayjs().isBetween(start, end) && (
             <Tooltip title={'Reset to current date/time'} placement="top">
               <IconButton onClick={handleNavigationReset}>
@@ -154,6 +161,11 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
           direction={'row'}
           sx={{ my: 1 }}
         >
+          {duration !== DefaultDuration && (
+            <IconButton onClick={reset}>
+              <Restore />
+            </IconButton>
+          )}
           <IconButton disabled={zoomInDisabled} onClick={zoomIn}>
             <ZoomInIcon />
           </IconButton>
