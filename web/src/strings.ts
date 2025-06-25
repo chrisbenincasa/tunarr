@@ -10,5 +10,5 @@ export const strings = {
   RELEASE_SORT_TOOLTIP:
     'Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.',
   FFMPEG_MISSING:
-    'FFMPEG not found. For all features to work, we recommend installing FFMPEG 6.1+ or update your FFMPEG executable path in settings.',
+    'FFmpeg not found. For all features to work, we recommend installing FFmpeg 6.1+ or update your FFmpeg executable path in settings.',
 };

@@ -33,18 +33,19 @@ const DarkTheme: PaletteOptions = {
   secondary: {
     main: '#004b79',
   },
-  error: {
-    main: '#ab6253',
-  },
-  warning: {
-    main: '#FF9800',
-  },
-  info: {
-    main: '#9EA1B3',
-  },
-  success: {
-    main: '#0A772A',
-  },
+  // Trialing out default dark mode colors.
+  // error: {
+  //   main: '#ab6253',
+  // },
+  // warning: {
+  //   main: '#FF9800',
+  // },
+  // info: {
+  //   main: '#9EA1B3',
+  // },
+  // success: {
+  //   main: '#0A772A',
+  // },
 };
 
 export const Theme = createTheme({

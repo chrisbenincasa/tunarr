@@ -126,7 +126,7 @@ export default function FfmpegSettingsPage() {
       return queryClient.invalidateQueries({
         predicate(query) {
           return some(
-            [['settings', 'ffmpeg-settings'], ['ffmpeg-info']],
+            [['settings', 'ffmpeg-settings'], ['ffmpeg-info'], ['version']],
             (key) => isEqual(query.queryKey, key),
           );
         },

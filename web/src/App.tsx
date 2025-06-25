@@ -230,14 +230,12 @@ export function Root({ children }: { children?: React.ReactNode }) {
                 <Button
                   to={'/settings/ffmpeg'}
                   component={RouterLink}
-                  variant="outlined"
+                  size="small"
                   sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    color: theme.palette.common.white,
+                    color: 'inherit',
                   }}
                 >
-                  Update Path
+                  Fix
                 </Button>
               }
             >
