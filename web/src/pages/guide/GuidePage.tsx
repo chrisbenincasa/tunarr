@@ -7,7 +7,9 @@ import {
 } from '@mui/icons-material';
 import {
   Box,
+  Checkbox,
   FormControl,
+  FormControlLabel,
   IconButton,
   Stack,
   Tooltip,
@@ -18,7 +20,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs, { duration } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { useCallback, useState } from 'react';
-import { useInterval } from 'usehooks-ts';
+import { useInterval, useToggle } from 'usehooks-ts';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { TvGuide } from '../../components/guide/TvGuide.tsx';
 import { roundCurrentTime } from '../../helpers/util.ts';
@@ -42,6 +44,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
     dayjs.duration(2, 'hour').asMilliseconds();
   const [start, setStart] = useState(roundCurrentTime(15));
   const [end, setEnd] = useState(start.add(guideDuration, 'ms'));
+  const [showStealth, _, setShowStealth] = useToggle(true);
 
   const zoomIn = useCallback(() => {
     if (end.subtract(SubtractInterval).diff(start) >= MinDurationMillis) {
@@ -116,6 +119,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
           justifyContent={'flex-start'}
           direction={'row'}
           sx={{ my: 1 }}
+          spacing={2}
         >
           <FormControl sx={{ m: 1, minWidth: 120 }}>
             <DateTimePicker
@@ -133,6 +137,15 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
               </IconButton>
             </Tooltip>
           )}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showStealth}
+                onChange={(_, checked) => setShowStealth(checked)}
+              />
+            }
+            label="Show Stealth"
+          />
         </Stack>
         <Stack
           flexGrow={1}
@@ -155,7 +168,12 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
           </IconButton>
         </Stack>
       </Box>
-      <TvGuide channelId={channelId} start={start} end={end} />
+      <TvGuide
+        channelId={channelId}
+        start={start}
+        end={end}
+        showStealth={showStealth}
+      />
       <NoChannelsCreated />
     </>
   );

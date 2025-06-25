@@ -19,11 +19,12 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
+import { seq } from '@tunarr/shared/util';
 import type { Channel } from '@tunarr/types';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
 import Color from 'colorjs.io';
 import dayjs, { type Dayjs } from 'dayjs';
-import { compact, isEmpty, isNull, isUndefined, map, round } from 'lodash-es';
+import { compact, isEmpty, isNull, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useInterval } from 'usehooks-ts';
@@ -128,9 +129,10 @@ type Props = {
   channelId: string;
   start: Dayjs;
   end: Dayjs;
+  showStealth?: boolean;
 };
 
-export function TvGuide({ channelId, start, end }: Props) {
+export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
   const theme = useTheme();
   const { backendUri } = useSettings();
 
@@ -493,7 +495,16 @@ export function TvGuide({ channelId, start, end }: Props) {
     );
   };
 
-  const channels = map(channelLineup, (lineup, index) => {
+  const channels = seq.collect(channelLineup, (lineup, index) => {
+    const channel = channelsInfo.find((c) => c.id === lineup.id);
+    if (!channel) {
+      return;
+    }
+
+    if (!showStealth && channel.stealth) {
+      return;
+    }
+
     const alignedLineup = lineup.programs;
     const flexPlaceholderTitle =
       channelsInfo.find((c) => c.id === lineup.id)?.guideFlexTitle ??
@@ -560,42 +571,44 @@ export function TvGuide({ channelId, start, end }: Props) {
           sx={{ maxWidth: `${smallViewport ? '10%' : '15%'}` }}
         >
           <Box sx={{ height: '4rem' }}></Box>
-          {channelsInfo.map((channel) => (
-            <Box
-              sx={{ height: '4rem' }}
-              key={channel.number}
-              display={'flex'}
-              flexGrow={1}
-            >
-              <StyledButton
-                id="channel-nav-button"
-                aria-controls={open ? 'channel-nav-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                variant="text"
-                color="inherit"
-                disableRipple
-                disableElevation
-                startIcon={
-                  isEmpty(channel.icon?.path) ? (
-                    <TunarrLogo style={{ width: '40px' }} />
-                  ) : (
-                    <img style={{ width: '40px' }} src={channel.icon?.path} />
-                  )
-                }
-                onClick={(event) => handleClick(event, channel)}
-                endIcon={<KeyboardArrowDownIcon />}
-                fullWidth
-                sx={{
-                  textAlign: 'left',
-                  lineHeight: '1.25',
-                }}
+          {channelsInfo
+            .filter((c) => (showStealth ? true : !c.stealth))
+            .map((channel) => (
+              <Box
+                sx={{ height: '4rem' }}
+                key={channel.number}
+                display={'flex'}
+                flexGrow={1}
               >
-                <span>{smallViewport ? channel.number : channel.name}</span>
-              </StyledButton>
-              {renderChannelMenu()}
-            </Box>
-          ))}
+                <StyledButton
+                  id="channel-nav-button"
+                  aria-controls={open ? 'channel-nav-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={open ? 'true' : undefined}
+                  variant="text"
+                  color="inherit"
+                  disableRipple
+                  disableElevation
+                  startIcon={
+                    isEmpty(channel.icon?.path) ? (
+                      <TunarrLogo style={{ width: '40px' }} />
+                    ) : (
+                      <img style={{ width: '40px' }} src={channel.icon?.path} />
+                    )
+                  }
+                  onClick={(event) => handleClick(event, channel)}
+                  endIcon={<KeyboardArrowDownIcon />}
+                  fullWidth
+                  sx={{
+                    textAlign: 'left',
+                    lineHeight: '1.25',
+                  }}
+                >
+                  <span>{smallViewport ? channel.number : channel.name}</span>
+                </StyledButton>
+                {renderChannelMenu()}
+              </Box>
+            ))}
         </Box>
         <Box
           sx={{
