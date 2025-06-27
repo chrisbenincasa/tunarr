@@ -1,4 +1,7 @@
-import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
+import {
+  PixelFormatUnknown,
+  type PixelFormat,
+} from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { DataProps, FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
@@ -67,5 +70,9 @@ export class FrameState {
     }
 
     return this;
+  }
+
+  pixelFormatOrUnknown() {
+    return this.pixelFormat ?? PixelFormatUnknown(this.bitDepth);
   }
 }

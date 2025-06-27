@@ -12,10 +12,11 @@ export class NvidiaHevcEncoder extends VideoEncoder {
 
   options(): string[] {
     // TODO add options/support for HEVC b-frames
-    const opts = [...super.options(), '-b_ref_mode', '0'];
+    const opts = [...super.options(), '-b_ref_mode', '0', '-rc-lookhead', '20'];
     if (isNonEmptyString(this.videoPreset)) {
       opts.push('-preset:v', this.videoPreset);
     }
+
     return opts;
   }
 }
@@ -39,6 +40,8 @@ export class NvidiaH264Encoder extends VideoEncoder {
     if (isNonEmptyString(this.videoPreset)) {
       opts.push('-preset:v', this.videoPreset.toLowerCase());
     }
+
+    opts.push('-rc-lookahead', '20');
 
     return opts;
   }

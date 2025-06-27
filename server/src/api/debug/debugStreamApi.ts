@@ -20,6 +20,7 @@ import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
 import { z } from 'zod/v4';
 import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
+import { isNonEmptyString } from '../../util/index.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -90,6 +91,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       schema: {
         tags: ['Debug'],
         querystring: z.object({
+          channelId: z.uuid().or(z.coerce.number()).optional(),
           useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
@@ -99,6 +101,12 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         .databaseFactory()
         .selectFrom('channel')
         .selectAll()
+        .$if(isNonEmptyString(req.query.channelId), (eb) =>
+          eb.where('channel.uuid', '=', req.query.channelId as string),
+        )
+        .$if(isNumber(req.query.channelId), (eb) =>
+          eb.where('channel.number', '=', req.query.channelId as number),
+        )
         .select((eb) =>
           jsonObjectFrom(
             eb

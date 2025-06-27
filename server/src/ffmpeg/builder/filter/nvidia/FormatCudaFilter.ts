@@ -15,6 +15,7 @@ export class FormatCudaFilter extends FilterOption {
     PixelFormats.YUV444P,
     PixelFormats.P010,
     PixelFormats.YUV444P16LE,
+    PixelFormats.CUDA,
   ] as const;
 
   constructor(private pixelFormat: PixelFormat) {

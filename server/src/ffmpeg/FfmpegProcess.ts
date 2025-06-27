@@ -106,7 +106,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
     // Pipe to our own stderr if enabled
     if (this.ffmpegSettings.enableLogging) {
-      this.#processHandle.stderr.pipe(process.stderr);
+      this.#processHandle.stderr.pipe(process.stderr, { end: false });
     }
 
     const bufferedOut = new LastNBytesStream({ bufSizeBytes: 10 * 1024 });

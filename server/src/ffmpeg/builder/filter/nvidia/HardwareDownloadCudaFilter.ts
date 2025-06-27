@@ -1,6 +1,7 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import {
+  PixelFormatCuda,
   PixelFormatNv12,
   PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
@@ -22,16 +23,25 @@ export class HardwareDownloadCudaFilter extends FilterOption {
   get filter() {
     let f = 'hwdownload';
     if (this.currentPixelFormat) {
-      f += `,format=${this.currentPixelFormat.name}`;
-      if (this.currentPixelFormat instanceof PixelFormatNv12) {
+      let currentFmt = this.currentPixelFormat;
+      if (this.currentPixelFormat instanceof PixelFormatCuda) {
+        currentFmt = currentFmt.unwrap();
+      }
+      const formats = [currentFmt.name];
+
+      if (currentFmt instanceof PixelFormatNv12) {
         if (!this.targetPixelFormat) {
-          const target = this.currentPixelFormat.unwrap();
+          const target = currentFmt.unwrap();
           if (target) {
-            f += `,format=${target.name}`;
+            formats.push(target.name);
           }
         } else {
-          f += `,format=${this.targetPixelFormat.name}`;
+          formats.push(this.targetPixelFormat.name);
         }
+      }
+
+      for (const fmt of formats) {
+        f += `,format=${fmt}`;
       }
     }
 
