@@ -26,15 +26,13 @@ import {
 } from 'lodash-es';
 import type stream from 'node:stream';
 import z from 'zod/v4';
-import {
-  ProgramSourceType,
-  programSourceTypeFromString,
-} from '../db/custom_types/ProgramSourceType.ts';
+import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
   selectProgramsBuilder,
 } from '../db/programQueryHelpers.ts';
+import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -217,7 +215,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         switch (program.sourceType) {
-          case ProgramSourceType.PLEX: {
+          case 'plex': {
             return handleResult(
               mediaSource,
               PlexApiClient.getThumbUrl({
@@ -227,10 +225,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 height: req.query.height,
                 width: req.query.width,
                 upscale: req.query.upscale.toString(),
+                imageType: 'poster',
               }),
             );
           }
-          case ProgramSourceType.JELLYFIN:
+          case 'jellyfin':
             return handleResult(
               mediaSource,
               JellyfinApiClient.getThumbUrl({
@@ -242,8 +241,18 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 upscale: req.query.upscale.toString(),
               }),
             );
-          default:
-            return res.status(405).send();
+          case 'emby':
+            return handleResult(
+              mediaSource,
+              EmbyApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: keyToUse,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
         }
       } else {
         // We can assume that we have a grouping here...
@@ -272,7 +281,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         switch (source.sourceType) {
-          case ProgramExternalIdType.PLEX:
+          case 'plex':
             return handleResult(
               mediaSource,
               PlexApiClient.getThumbUrl({
@@ -284,10 +293,22 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 upscale: req.query.upscale.toString(),
               }),
             );
-          case ProgramExternalIdType.JELLYFIN:
+          case 'jellyfin':
             return handleResult(
               mediaSource,
               JellyfinApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: source.externalKey,
+                accessToken: mediaSource.accessToken,
+                height: req.query.height,
+                width: req.query.width,
+                upscale: req.query.upscale.toString(),
+              }),
+            );
+          case 'emby':
+            return handleResult(
+              mediaSource,
+              EmbyApiClient.getThumbUrl({
                 uri: mediaSource.uri,
                 itemKey: source.externalKey,
                 accessToken: mediaSource.accessToken,
@@ -352,7 +373,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       switch (externalId.sourceType) {
-        case ProgramExternalIdType.PLEX: {
+        case 'plex': {
           if (isNil(server.clientIdentifier)) {
             return res.status(404).send();
           }
@@ -369,7 +390,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
           return res.redirect(url, 302).send();
         }
-        case ProgramExternalIdType.JELLYFIN: {
+        case 'jellyfin': {
           const url = `${server.uri}/web/#/details?id=${externalId.externalKey}`;
           if (!req.query.forward) {
             return res.send({ url });
@@ -377,6 +398,16 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
 
           return res.redirect(url, 302).send();
         }
+        case 'emby': {
+          const url = `${server.uri}/web/index.html#!/item?id=${externalId.externalKey}`;
+          if (!req.query.forward) {
+            return res.send({ url });
+          }
+
+          return res.redirect(url, 302).send();
+        }
+        default:
+          return res.status(405).send();
       }
     },
   );

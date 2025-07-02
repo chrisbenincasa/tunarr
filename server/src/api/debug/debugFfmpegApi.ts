@@ -5,10 +5,15 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
 import { z } from 'zod/v4';
 import { container } from '../../container.ts';
+import type { StreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import type { FfmpegEncoder } from '../../ffmpeg/ffmpegInfo.ts';
 import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
+import { ExternalStreamDetailsFetcherFactory } from '../../stream/StreamDetailsFetcher.ts';
+import type { ProgramStreamResult } from '../../stream/types.ts';
 import { KEYS } from '../../types/inject.ts';
+import type { Nullable } from '../../types/util.ts';
+import { isNonEmptyString } from '../../util/index.ts';
 
 export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -58,7 +63,8 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
         tags: ['Debug'],
         querystring: z.object({
           channel: z.coerce.number().or(z.string()),
-          path: z.string(),
+          path: z.string().optional(),
+          programId: z.string().optional(),
         }),
       },
     },
@@ -74,11 +80,61 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       const transcodeConfig =
         await req.serverCtx.transcodeConfigDB.getChannelConfig(channel.uuid);
 
-      const streamDetails = await container
-        .get<LocalFileStreamDetails>(LocalFileStreamDetails)
-        .getStream({ path: req.query.path });
+      let streamDetails: Nullable<ProgramStreamResult> = null;
+      let lineupItem: Nullable<StreamLineupItem> = null;
 
-      if (!streamDetails) {
+      if (isNonEmptyString(req.query.path)) {
+        lineupItem = {
+          duration: +dayjs.duration({ seconds: 30 }),
+          externalKey: 'none',
+          externalSource: 'emby',
+          externalSourceId: 'none',
+          programBeginMs: 0,
+          programId: '',
+          programType: 'movie',
+          type: 'program',
+          title: req.query.path,
+        };
+        streamDetails = await container
+          .get<LocalFileStreamDetails>(LocalFileStreamDetails)
+          .getStream({ path: req.query.path });
+      } else if (isNonEmptyString(req.query.programId)) {
+        const program = await req.serverCtx.programDB.getProgramById(
+          req.query.programId,
+        );
+        if (!program) {
+          return res.status(404).send();
+        }
+
+        const mediaSource = await (program.mediaSourceId
+          ? req.serverCtx.mediaSourceDB.getById(program.mediaSourceId)
+          : req.serverCtx.mediaSourceDB.getByName(program.externalSourceId));
+        if (!mediaSource) {
+          return res.status(404).send();
+        }
+
+        lineupItem = {
+          duration: program.duration,
+          externalKey: program.externalKey,
+          externalSource: program.sourceType,
+          externalSourceId: program.mediaSourceId ?? program.externalSourceId,
+          programId: program.uuid,
+          type: 'program',
+          title: program.title,
+          programType: program.type,
+          programBeginMs: 0,
+        };
+        streamDetails = await container
+          .get<ExternalStreamDetailsFetcherFactory>(
+            ExternalStreamDetailsFetcherFactory,
+          )
+          .getStream({
+            lineupItem,
+            server: mediaSource,
+          });
+      }
+
+      if (!streamDetails || !lineupItem) {
         return res.status(500).send();
       }
 
@@ -92,17 +148,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
           details: streamDetails.streamDetails,
           source: streamDetails.streamSource,
         },
-        lineupItem: {
-          duration: +dayjs.duration({ seconds: 30 }),
-          externalKey: 'none',
-          externalSource: 'emby',
-          externalSourceId: 'none',
-          programBeginMs: 0,
-          programId: '',
-          programType: 'movie',
-          type: 'program',
-          title: req.query.path,
-        },
+        lineupItem,
         options: {
           duration: dayjs.duration({ seconds: 30 }),
           outputFormat: MpegTsOutputFormat,
