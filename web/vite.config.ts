@@ -1,3 +1,6 @@
+import dotenv from '@dotenvx/dotenvx';
+dotenv.config({ debug: true });
+
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';

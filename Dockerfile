@@ -93,6 +93,7 @@ echo TUNARR_EDGE_BUILD=${is_edge_build} >> .env
 echo TUNARR_BUILD_BASE_TAG=${base_image_tag} >> .env
 cat .env
 cp .env server/.env
+cp .env web/.env
 EOF
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile

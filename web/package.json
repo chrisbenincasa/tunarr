@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@cospired/i18n-iso-languages": "^4.2.0",
+    "@dotenvx/dotenvx": "^1.45.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hookform/error-message": "^2.0.1",
@@ -28,8 +29,8 @@
     "@tanstack/react-router": "^1.95.1",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
-    "@uidotdev/usehooks": "^2.4.1",
     "@tunarr/zodios-core": "^11.0.2",
+    "@uidotdev/usehooks": "^2.4.1",
     "@zodios/plugins": "^10.6.0",
     "axios": "^1.6.0",
     "bowser": "^2.11.0",
