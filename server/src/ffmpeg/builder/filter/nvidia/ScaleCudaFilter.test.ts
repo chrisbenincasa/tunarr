@@ -51,4 +51,26 @@ describe('ScaleCudaFilter', () => {
       new PixelFormatP010(),
     );
   });
+
+  test('format only, 10-bit, passthrough', () => {
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.withDimensions(1920, 1080),
+      scaledSize: FrameSize.withDimensions(1920, 1080),
+      frameDataLocation: FrameDataLocation.Hardware,
+      pixelFormat: new PixelFormatYuv420P10Le(),
+    });
+
+    // sizes are equal
+    const filter = ScaleCudaFilter.formatOnly(
+      currentState,
+      new PixelFormatP010(),
+      true,
+    );
+
+    expect(filter.filter).to.eq('scale_cuda=format=p010:passthrough=1');
+    expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
+      new PixelFormatP010(),
+    );
+  });
 });

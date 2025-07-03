@@ -25,16 +25,22 @@ export class ScaleCudaFilter extends FilterOption {
     private currentState: FrameState,
     private scaledSize: FrameSize,
     private paddedSize: FrameSize,
+    private passthrough: boolean = false,
   ) {
     super();
     this.filter = this.generateFilter();
   }
 
-  static formatOnly(currentState: FrameState, targetPixelFormat: PixelFormat) {
+  static formatOnly(
+    currentState: FrameState,
+    targetPixelFormat: PixelFormat,
+    passthrough: boolean = false,
+  ) {
     return new ScaleCudaFilter(
       currentState.update({ pixelFormat: targetPixelFormat }),
       currentState.scaledSize,
       currentState.paddedSize,
+      passthrough,
     );
   }
 
@@ -63,7 +69,8 @@ export class ScaleCudaFilter extends FilterOption {
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
       const targetPixelFormat = this.supportedPixelFormat;
       if (targetPixelFormat) {
-        scale = `${this.filterName}=format=${targetPixelFormat.name}`;
+        const passthrough = this.passthrough ? ':passthrough=1' : '';
+        scale = `${this.filterName}=format=${targetPixelFormat.name}${passthrough}`;
       }
     } else {
       let aspectRatio = '';
