@@ -49,6 +49,7 @@ import { WatermarkOpacityFilter } from '../../filter/watermark/WatermarkOpacityF
 import { WatermarkScaleFilter } from '../../filter/watermark/WatermarkScaleFilter.ts';
 import {
   PixelFormatNv12,
+  PixelFormatP010,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
   PixelFormatYuva420P,
@@ -154,6 +155,22 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
     this.videoInputSource.frameDataLocation = currentState.frameDataLocation;
+
+    // Workaround change to required pixel format from https://github.com/FFmpeg/FFmpeg/commit/30e6effff94c6f4310aa2db571917bb2952f4d9e
+    // Specifically, CUDA pixel formats use 16-bit (p016) internally starting on 7.2 it seems. Preemptively convert
+    // to p010 here to avoid potential hwdownload issues later in pipeline.
+    if (
+      this.decoder instanceof ImplicitNvidiaDecoder &&
+      videoStream.bitDepth() === 10
+    ) {
+      const filter = ScaleCudaFilter.formatOnly(
+        currentState,
+        new PixelFormatP010(),
+        true,
+      );
+      currentState = filter.nextState(currentState);
+      this.videoInputSource.addFilter(filter);
+    }
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
