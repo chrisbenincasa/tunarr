@@ -264,7 +264,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     const { desiredState } = this.context;
 
     if (!currentState.paddedSize.equals(desiredState.paddedSize)) {
-      const pad = new PadFilter(currentState, desiredState);
+      const pad = PadFilter.create(currentState, desiredState);
       currentState = pad.nextState(currentState);
       this.videoInputSource.filterSteps.push(pad);
     }

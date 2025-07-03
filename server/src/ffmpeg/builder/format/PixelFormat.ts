@@ -16,14 +16,14 @@ export const PixelFormats = {
   // Hardware types
   NV12: 'nv12',
   VAAPI: 'vaapi',
-  P010: 'p010',
+  P010: 'p010le',
   CUDA: 'cuda',
 } as const;
 
 export const ValidHardwarePixelFormats = {
   // TODO: Should we support others?
   NV12: 'nv12',
-  P010LE: 'p010',
+  P010LE: 'p010le',
   P016LE: 'p016',
 } as const;
 
@@ -68,7 +68,7 @@ export abstract class BasePixelFormat implements PixelFormat {
   }
 }
 
-abstract class HardwarePixelFormat extends BasePixelFormat {
+export abstract class HardwarePixelFormat extends BasePixelFormat {
   constructor(protected readonly underlying: PixelFormat) {
     super();
   }

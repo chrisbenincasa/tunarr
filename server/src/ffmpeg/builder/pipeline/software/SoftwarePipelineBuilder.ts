@@ -104,7 +104,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
 
   protected setPad(currentState: FrameState): FrameState {
     if (!currentState.paddedSize.equals(this.desiredState.paddedSize)) {
-      const padFilter = new PadFilter(currentState, this.desiredState);
+      const padFilter = PadFilter.create(currentState, this.desiredState);
       this.videoInputSource.filterSteps.push(padFilter);
       if (padFilter.affectsFrameState) {
         return padFilter.nextState(currentState);

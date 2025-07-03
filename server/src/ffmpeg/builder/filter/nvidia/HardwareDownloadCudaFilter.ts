@@ -1,8 +1,8 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import {
+  HardwarePixelFormat,
   PixelFormatCuda,
-  PixelFormatNv12,
   PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
@@ -27,17 +27,29 @@ export class HardwareDownloadCudaFilter extends FilterOption {
       if (this.currentPixelFormat instanceof PixelFormatCuda) {
         currentFmt = currentFmt.unwrap();
       }
-      const formats = [currentFmt.name];
 
-      if (currentFmt instanceof PixelFormatNv12) {
-        if (!this.targetPixelFormat) {
-          const target = currentFmt.unwrap();
-          if (target) {
-            formats.push(target.name);
-          }
-        } else {
-          formats.push(this.targetPixelFormat.name);
+      // pick the supported pixel format for hwdownload based on the
+      // input. ffmpeg and hwdownload are very specific about what is accepted
+      // here, even if the data was rearranged on hardware:
+      // see: https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/nvdec.c#L744-L773
+      // we're not going to support chromas other than 420 at this point...
+      const formats: string[] = [];
+      if (currentFmt.bitDepth === 10) {
+        formats.push(PixelFormats.P010);
+      } else {
+        formats.push(PixelFormats.NV12);
+      }
+
+      if (
+        currentFmt instanceof HardwarePixelFormat &&
+        !this.targetPixelFormat
+      ) {
+        const target = currentFmt.unwrap();
+        if (target) {
+          formats.push(target.name);
         }
+      } else if (this.targetPixelFormat) {
+        formats.push(this.targetPixelFormat.name);
       }
 
       for (const fmt of formats) {
