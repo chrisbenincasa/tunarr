@@ -170,7 +170,6 @@ export default function FfmpegSettingsPage() {
           <Controller
             control={control}
             name="ffmpegExecutablePath"
-            disabled={!systemSettings.data.adminMode}
             render={({ field }) => (
               <TextField
                 id="ffmpeg-executable-path"
@@ -179,6 +178,7 @@ export default function FfmpegSettingsPage() {
                   'FFmpeg version 6.0+ recommended. Check your current version in the sidebar'
                 }
                 {...field}
+                disabled={!systemSettings.data.adminMode}
               />
             )}
           />
@@ -187,7 +187,6 @@ export default function FfmpegSettingsPage() {
           <Controller
             control={control}
             name="ffprobeExecutablePath"
-            disabled={!systemSettings.data.adminMode}
             render={({ field }) => (
               <TextField
                 id="ffprobe-executable-path"
@@ -196,6 +195,7 @@ export default function FfmpegSettingsPage() {
                   'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
                 }
                 {...field}
+                disabled={!systemSettings.data.adminMode}
               />
             )}
           />
