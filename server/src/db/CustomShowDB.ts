@@ -8,7 +8,7 @@ import {
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { filter, isNil, map } from 'lodash-es';
+import { chunk, filter, isNil, map } from 'lodash-es';
 import { v4 } from 'uuid';
 import { ProgramDB } from './ProgramDB.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
@@ -110,10 +110,14 @@ export class CustomShowDB {
           .deleteFrom('customShowContent')
           .where('customShowContent.customShowUuid', '=', show.uuid)
           .execute();
-        await tx
-          .insertInto('customShowContent')
-          .values([...persistedCustomShowContent, ...newCustomShowContent])
-          .execute();
+        await Promise.all(
+          chunk(
+            [...persistedCustomShowContent, ...newCustomShowContent],
+            1_000,
+          ).map((csc) =>
+            tx.insertInto('customShowContent').values(csc).execute(),
+          ),
+        );
       });
     }
 
@@ -170,10 +174,14 @@ export class CustomShowDB {
         }) satisfies NewCustomShowContent,
     );
 
-    await this.db
-      .insertInto('customShowContent')
-      .values([...persistedCustomShowContent, ...newCustomShowContent])
-      .execute();
+    await Promise.all(
+      chunk(
+        [...persistedCustomShowContent, ...newCustomShowContent],
+        1_000,
+      ).map((csc) =>
+        this.db.insertInto('customShowContent').values(csc).execute(),
+      ),
+    );
 
     return show.uuid;
   }

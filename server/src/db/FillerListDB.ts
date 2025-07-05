@@ -11,6 +11,7 @@ import { inject, injectable } from 'inversify';
 import { CaseWhenBuilder, Kysely } from 'kysely';
 import { jsonArrayFrom, jsonBuildObject } from 'kysely/helpers/sqlite';
 import {
+  chunk,
   filter,
   find,
   forEach,
@@ -103,10 +104,14 @@ export class FillerDB {
           .deleteFrom('fillerShowContent')
           .where('fillerShowContent.fillerShowUuid', '=', filler.uuid)
           .execute();
-        await tx
-          .insertInto('fillerShowContent')
-          .values([...persistedFillerShowContent, ...newFillerShowContent])
-          .execute();
+        await Promise.all(
+          chunk(
+            [...persistedFillerShowContent, ...newFillerShowContent],
+            1_000,
+          ).map((fsc) =>
+            tx.insertInto('fillerShowContent').values(fsc).execute(),
+          ),
+        );
       });
     }
 
@@ -161,10 +166,14 @@ export class FillerDB {
         }) satisfies NewFillerShowContent,
     );
 
-    await this.db
-      .insertInto('fillerShowContent')
-      .values([...persistedFillerShowContent, ...newFillerShowContent])
-      .execute();
+    await Promise.all(
+      chunk(
+        [...persistedFillerShowContent, ...newFillerShowContent],
+        1_000,
+      ).map((fsc) =>
+        this.db.insertInto('fillerShowContent').values(fsc).execute(),
+      ),
+    );
 
     return filler.uuid;
   }
