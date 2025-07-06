@@ -16,7 +16,7 @@ import {
 export class FfmpegVersionHealthCheck implements HealthCheck {
   readonly id: string = 'FfmpegVersion';
 
-  private static minVersion = '6.1';
+  private static minVersion = '7.1';
 
   constructor(
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
