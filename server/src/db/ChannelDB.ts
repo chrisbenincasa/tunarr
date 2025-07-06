@@ -646,12 +646,17 @@ export class ChannelDB implements IChannelDB {
       await this.markLineupFileForDeletion(channelId);
       marked = true;
 
-      await this.db
-        .deleteFrom('channel')
-        .where('uuid', '=', channelId)
-        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-        // .limit(1)
-        .executeTakeFirstOrThrow();
+      await this.db.transaction().execute(async (tx) => {
+        await tx
+          .deleteFrom('channelSubtitlePreferences')
+          .where('channelId', '=', channelId)
+          .executeTakeFirstOrThrow();
+        await tx
+          .deleteFrom('channel')
+          .where('uuid', '=', channelId)
+          .limit(1)
+          .executeTakeFirstOrThrow();
+      });
 
       // Best effort remove references to this channel
       const removeRefs = () =>
