@@ -36,6 +36,4 @@ jobs:
         run: pnpm turbo build --filter=@tunarr/web
 
       - name: Run tests
-        run: pnpm turbo test
-        # Don't fail build on test failures yet
-        continue-on-error: true
+        run: pnpm turbo test -- run
