@@ -56,7 +56,7 @@ test('ApiProgramMinter mints Plex movies', () => {
         id: 'plex://movie/123',
       },
     ],
-    externalSourceId: 'media source',
+    externalSourceId: 'mediaSource.123',
     persisted: false,
     uniqueId: 'plex|media source|123',
     id: 'plex|media source|123',

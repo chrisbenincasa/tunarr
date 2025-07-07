@@ -48,7 +48,7 @@
     "ts-essentials": "^9.4.1",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
-    "vitest": "^3.0.3"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "ts-pattern": "^5.4.0"

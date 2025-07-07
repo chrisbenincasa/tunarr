@@ -22,8 +22,7 @@
       "interruptible": true
     },
     "test": {
-      "cache": false,
-      "persistent": true
+      "cache": false
     },
     "test:watch": {
       "cache": false,
