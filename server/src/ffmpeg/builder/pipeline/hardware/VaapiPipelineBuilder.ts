@@ -387,7 +387,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       isUndefined(this.desiredState.croppedSize) &&
       !currentState.paddedSize.equals(this.desiredState.paddedSize)
     ) {
-      const padFilter = new PadFilter(currentState, this.desiredState);
+      const padFilter = PadFilter.create(currentState, this.desiredState);
       nextState = padFilter.nextState(currentState);
       this.videoInputSource.filterSteps.push(padFilter);
     }

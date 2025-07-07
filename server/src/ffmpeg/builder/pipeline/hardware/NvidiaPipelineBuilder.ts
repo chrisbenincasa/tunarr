@@ -395,7 +395,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       //     ? new PixelFormatNv12(this.context.videoStream.pixelFormat.name)
       //     : this.context.videoStream.pixelFormat;
 
-      const padStep = new PadFilter(currentState, this.desiredState);
+      const padStep = PadFilter.forCuda(currentState, this.desiredState);
 
       nextState = padStep.nextState(nextState);
       this.videoInputSource.filterSteps.push(padStep);
