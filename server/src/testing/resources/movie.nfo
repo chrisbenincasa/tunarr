@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<movie>
+    <title>The King&apos;s Man</title>
+    <originaltitle>The King&apos;s Man</originaltitle>
+    <sorttitle>Kingsman 01</sorttitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>6.300000</value>
+            <votes>140619</votes>
+        </rating>
+        <rating name="themoviedb" max="10">
+            <value>6.869000</value>
+            <votes>3122</votes>
+        </rating>
+        <rating name="trakt" max="10">
+            <value>6.688550</value>
+            <votes>8059</votes>
+        </rating>
+    </ratings>
+    <userrating>8</userrating>
+    <top250>0</top250>
+    <outline></outline>
+    <plot>As a collection of history&apos;s worst tyrants and criminal masterminds gather to plot a
+        war to wipe out millions, one man must race against time to stop them.</plot>
+    <tagline>Witness the bloody origin.</tagline>
+    <runtime>130</runtime>
+    <thumb spoof="" cache="" aspect="poster" preview="">
+        https://image.tmdb.org/t/p/original/nEVjOpekbcdBqAexiWu7zXuFlYU.jpg</thumb>
+    <thumb spoof="" cache="" aspect="landscape" preview="">
+        https://image.tmdb.org/t/p/original/iBXBqas9DMzesltQEBNM6BH3akt.jpg</thumb>
+    <thumb spoof="" cache="" aspect="set.poster" preview="">
+        https://image.tmdb.org/t/p/original/xMsRZIkUGUuHsNHCQBDyZH7l53M.jpg</thumb>
+    <thumb spoof="" cache="" aspect="set.landscape" preview="">
+        https://image.tmdb.org/t/p/original/mkusMBRJyXJCcJ5RKlrKK2SC0Qv.jpg</thumb>
+    <thumb spoof="" cache="" aspect="set.fanart" preview="">
+        https://image.tmdb.org/t/p/original/3Odw3MJymLLbFuOnmQjmvndKhOr.jpg</thumb>
+    <thumb spoof="" cache="" aspect="clearlogo" preview="">
+        https://assets.fanart.tv/fanart/movies/476669/hdmovielogo/the-kings-man-601651c77c528.png</thumb>
+    <thumb spoof="" cache="" aspect="discart" preview="">
+        https://assets.fanart.tv/fanart/movies/476669/moviedisc/the-kings-man-617786bba9b7f.png</thumb>
+    <thumb spoof="" cache="" aspect="clearart" preview="">
+        https://assets.fanart.tv/fanart/movies/476669/hdmovieclearart/the-kings-man-61c1bf1b46f3b.png</thumb>
+    <thumb spoof="" cache="" aspect="keyart" preview="">
+        https://assets.fanart.tv/fanart/movies/476669/movieposter/the-kings-man-5f468bd247c3b.jpg</thumb>
+    <thumb spoof="" cache="" aspect="banner" preview="">
+        https://assets.fanart.tv/fanart/movies/476669/moviebanner/the-kings-man-5e86bd6f81322.jpg</thumb>
+    <thumb spoof="" cache="" aspect="set.clearlogo" preview="">
+        https://assets.fanart.tv/fanart/movies/391860/hdmovielogo/kingsman-collection-5a69d2e6eaa21.png</thumb>
+    <thumb spoof="" cache="" aspect="set.keyart" preview="">
+        https://assets.fanart.tv/fanart/movies/391860/movieposter/kingsman-collection-5add0aa47e577.jpg</thumb>
+    <thumb spoof="" cache="" aspect="set.banner" preview="">
+        https://assets.fanart.tv/fanart/movies/391860/moviebanner/kingsman-collection-5a691aee3c1e1.jpg</thumb>
+    <fanart>
+        <thumb colors="" preview="https://image.tmdb.org/t/p/w780/A49NScAT4ZcgeC6HeSvkUPVNJaF.jpg">
+            https://image.tmdb.org/t/p/original/A49NScAT4ZcgeC6HeSvkUPVNJaF.jpg</thumb>
+    </fanart>
+    <mpaa>Australia:MA</mpaa>
+    <playcount>2</playcount>
+    <lastplayed>2023-06-03</lastplayed>
+    <id>476669</id>
+    <uniqueid type="imdb">tt6856242</uniqueid>
+    <uniqueid type="tmdb" default="true">476669</uniqueid>
+    <genre>Action</genre>
+    <country>United Kingdom</country>
+    <country>USA</country>
+    <set>
+        <name>Kingsman Collection</name>
+        <overview>The story of a super-secret spy organization that recruits an unrefined but
+            promising street kid into the agency&apos;s ultra-competitive training program.</overview>
+    </set>
+    <tag>BluRay</tag>
+    <tag>duringcreditsstinger</tag>
+    <videoassettitle>Standard Edition</videoassettitle>
+    <videoassetid>40400</videoassetid>
+    <videoassettype>0</videoassettype>
+    <hasvideoversions>false</hasvideoversions>
+    <hasvideoextras>false</hasvideoextras>
+    <isdefaultvideoversion>true</isdefaultvideoversion>
+    <credits>Matthew Vaughn</credits>
+    <credits>Karl Gajdusek</credits>
+    <director>Matthew Vaughn</director>
+    <premiered>2021-12-22</premiered>
+    <year>2021</year>
+    <status></status>
+    <code></code>
+    <aired></aired>
+    <studio>Marv Films</studio>
+    <trailer>King&apos;s Man (2021)-trailer.mkv</trailer>
+    <fileinfo>
+        <streamdetails>
+            <video>
+                <codec>h264</codec>
+                <aspect>1.777778</aspect>
+                <width>1920</width>
+                <height>1080</height>
+                <durationinseconds>7838</durationinseconds>
+                <stereomode></stereomode>
+                <hdrtype></hdrtype>
+            </video>
+            <audio>
+                <codec>dtshd_ma</codec>
+                <language>eng</language>
+                <channels>8</channels>
+            </audio>
+            <subtitle>
+                <language>eng</language>
+            </subtitle>
+        </streamdetails>
+    </fileinfo>
+    <actor>
+        <name>Ralph Fiennes</name>
+        <role>Orlando Oxford</role>
+        <order>0</order>
+        <thumb>https://image.tmdb.org/t/p/original/tJr9GcmGNHhLVVEH3i7QYbj6hBi.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Harris Dickinson</name>
+        <role>Conrad Oxford</role>
+        <order>1</order>
+        <thumb>https://image.tmdb.org/t/p/original/grbjZDzxBHqHYc0V0ic0Y1M38s.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Gemma Arterton</name>
+        <role>Polly</role>
+        <order>2</order>
+        <thumb>https://image.tmdb.org/t/p/original/Alfm28oyHNiYweNCUaMmrVjVMAT.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Rhys Ifans</name>
+        <role>Grigori Rasputin</role>
+        <order>3</order>
+        <thumb>https://image.tmdb.org/t/p/original/AfXRP33ncRunR83JPehZ06Kgh8e.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Djimon Hounsou</name>
+        <role>Shola</role>
+        <order>4</order>
+        <thumb>https://image.tmdb.org/t/p/original/mVJmaJyo6oDGUI9rS7gUJN203Vw.jpg</thumb>
+    </actor>
+</movie>

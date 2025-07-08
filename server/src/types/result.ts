@@ -1,4 +1,5 @@
-import { isError } from 'lodash-es';
+import { identity, isError } from 'lodash-es';
+import type { Nullable } from './util.ts';
 
 export abstract class Result<T, E extends Error = Error> {
   protected _data: T | undefined;
@@ -90,6 +91,10 @@ export abstract class Result<T, E extends Error = Error> {
       return f();
     }
     return this;
+  }
+
+  orNull(): Nullable<T> {
+    return this.either<T | null>(identity, () => null);
   }
 
   filter<U extends T>(f: (t: T) => t is U): Result<U, Error>;
