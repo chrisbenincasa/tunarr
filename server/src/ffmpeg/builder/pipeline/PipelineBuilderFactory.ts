@@ -17,10 +17,10 @@ import { KEYS } from '../../../types/inject.ts';
 import { bindFactoryFunc } from '../../../util/inject.ts';
 import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import type { PipelineBuilder } from './PipelineBuilder.js';
-import { NvidiaPipelineBuilder } from './hardware/NvidiaPipelineBuilder.ts';
 import { QsvPipelineBuilder } from './hardware/QsvPipelineBuilder.ts';
 import { VaapiPipelineBuilder } from './hardware/VaapiPipelineBuilder.ts';
 import { VideoToolboxPipelineBuilder } from './hardware/VideoToolboxPipelineBuilder.ts';
+import { NvidiaPipelineBuilder } from './nvidia/NvidiaPipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 
 export type PipelineBuilderFactory = (

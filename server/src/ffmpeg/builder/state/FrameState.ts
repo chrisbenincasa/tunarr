@@ -5,7 +5,7 @@ import {
 import type { DataProps, FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
-import { merge } from 'lodash-es';
+import { isEqual, merge } from 'lodash-es';
 import type { MarkOptional } from 'ts-essentials';
 import type { VideoFormat } from '../constants.ts';
 
@@ -74,5 +74,9 @@ export class FrameState {
 
   pixelFormatOrUnknown() {
     return this.pixelFormat ?? PixelFormatUnknown(this.bitDepth);
+  }
+
+  equals(other: FrameState): boolean {
+    return this === other || isEqual(this, other);
   }
 }

@@ -64,6 +64,7 @@ export class FrameSize {
     return this;
   }
 
+  public static SevenTwenty = FrameSize.withDimensions(1280, 720);
   public static FHD = FrameSize.withDimensions(1920, 1080);
   public static FourK = FrameSize.withDimensions(3840, 2160);
 }

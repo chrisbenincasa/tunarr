@@ -72,6 +72,7 @@ export abstract class HardwarePixelFormat extends BasePixelFormat {
   constructor(protected readonly underlying: PixelFormat) {
     super();
   }
+
   toHardwareFormat(): Maybe<PixelFormat> {
     return this;
   }
@@ -142,6 +143,7 @@ export class PixelFormatYuv444P16Le extends SoftwarePixelFormat {
   readonly bitDepth: number = 10;
 }
 
+// Semi-planar YUV 4:2:0
 // HW decoders output this (in general) when decoding 8-bit inputs
 export class PixelFormatNv12 extends HardwarePixelFormat {
   readonly name = PixelFormats.NV12;
@@ -158,6 +160,8 @@ export class PixelFormatVaapi extends HardwarePixelFormat {
   }
 }
 
+// Special-case format for CUDA. Represnts "some" form of
+// pixel format that is optimized for GPU transcoding (e.g. nv12 or p010)
 export class PixelFormatCuda extends HardwarePixelFormat {
   constructor(readonly underlying: PixelFormat) {
     super(underlying);

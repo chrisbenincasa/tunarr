@@ -50,12 +50,7 @@ export class ImplicitNvidiaDecoder extends BaseDecoder {
   protected _outputFrameDataLocation = FrameDataLocation.Hardware;
 
   options(): string[] {
-    const baseOpts = ['-hwaccel_output_format', 'cuda'];
-    // if (this.videoStream.codec === VideoFormats.Av1) {
-    //   // this is apparently required: https://trac.ffmpeg.org/wiki/HWAccelIntro#NVDECCUVID
-    //   baseOpts.push('-c:v', 'av1');
-    // }
-    return baseOpts;
+    return ['-hwaccel_output_format', 'cuda'];
   }
 
   nextState(currentState: FrameState): FrameState {

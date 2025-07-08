@@ -59,6 +59,8 @@ import { KnownFfmpegFilters } from '../../options/KnownFfmpegOptions.ts';
 import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
 import { DoNotIgnoreLoopInputOption } from '../../options/input/DoNotIgnoreLoopInputOption.ts';
 import { InfiniteLoopInputOption } from '../../options/input/InfiniteLoopInputOption.ts';
+import { NvidiaDeinterlacer } from './NvidiaDeinterlacer.ts';
+import { NvidiaScaler } from './NvidiaScaler.ts';
 
 export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -145,12 +147,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
       pixelFormat: videoStream.pixelFormat,
-      // ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda
-      //   ? new PixelFormatCuda(
-      //       videoStream.pixelFormat ??
-      //         PixelFormatUnknown(videoStream.bitDepth()),
-      //     )
-      //   : videoStream.pixelFormat,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
@@ -172,8 +168,16 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.addFilter(filter);
     }
 
-    currentState = this.setDeinterlace(currentState);
-    currentState = this.setScale(currentState);
+    currentState = NvidiaDeinterlacer.setDeinterlace(
+      this.context,
+      this.videoInputSource,
+      currentState,
+    );
+    currentState = NvidiaScaler.setScale(
+      this.context,
+      this.videoInputSource,
+      currentState,
+    );
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
 
