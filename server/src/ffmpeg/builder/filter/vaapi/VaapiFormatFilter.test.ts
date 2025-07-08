@@ -14,7 +14,7 @@ describe('VaapiFormatFilter', () => {
 
   test('yuv420p10le', () => {
     const filter = new VaapiFormatFilter(new PixelFormatYuv420P10Le());
-    expect(filter.filter).to.eq(`scale_vaapi=format=p010:extra_hw_frames=64`);
+    expect(filter.filter).to.eq(`scale_vaapi=format=p010le:extra_hw_frames=64`);
   });
 
   test('nv12', () => {
@@ -26,6 +26,6 @@ describe('VaapiFormatFilter', () => {
 
   test('p010', () => {
     const filter = new VaapiFormatFilter(new PixelFormatP010());
-    expect(filter.filter).to.eq(`scale_vaapi=format=p010:extra_hw_frames=64`);
+    expect(filter.filter).to.eq(`scale_vaapi=format=p010le:extra_hw_frames=64`);
   });
 });

@@ -27,7 +27,7 @@ describe('FormatCudaFilter', () => {
   test('unsupported format with hardware', () => {
     const filter = new FormatCudaFilter(new PixelFormatYuv420P10Le());
 
-    expect(filter.filter).to.eq('scale_cuda=format=p010');
+    expect(filter.filter).to.eq('scale_cuda=format=p010le');
     expect(filter.nextState(BaseCurrentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatP010(),
     );

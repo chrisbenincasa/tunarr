@@ -3,6 +3,7 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { PixelFormats } from '../../format/PixelFormat.ts';
 
 export class ScaleVaapiFilter extends FilterOption {
   constructor(
@@ -60,7 +61,12 @@ export class ScaleVaapiFilter extends FilterOption {
     }
 
     if (isNonEmptyString(scale)) {
-      return `format=nv12|p010|vaapi,hwupload=extra_hw_frames=64,${scale}`;
+      const formtStr = [
+        PixelFormats.NV12,
+        PixelFormats.P010,
+        PixelFormats.VAAPI,
+      ].join('|');
+      return `format=${formtStr},hwupload=extra_hw_frames=64,${scale}`;
     }
 
     return '';

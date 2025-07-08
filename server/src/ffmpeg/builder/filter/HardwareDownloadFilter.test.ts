@@ -38,7 +38,7 @@ describe('HardwareDownloadFilter', () => {
 
     const filter = new HardwareDownloadFilter(currentState);
 
-    expect(filter.filter).to.eq('hwdownload,format=vaapi|p010');
+    expect(filter.filter).to.eq('hwdownload,format=vaapi|p010le');
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
     );
@@ -89,7 +89,7 @@ describe('HardwareDownloadFilter', () => {
 
     const filter = new HardwareDownloadFilter(currentState);
 
-    expect(filter.filter).to.eq('hwdownload,format=p010');
+    expect(filter.filter).to.eq('hwdownload,format=p010le');
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
     );
@@ -106,7 +106,7 @@ describe('HardwareDownloadFilter', () => {
 
     const filter = new HardwareDownloadFilter(currentState);
 
-    expect(filter.filter).to.eq('hwdownload,format=p010');
+    expect(filter.filter).to.eq('hwdownload,format=p010le');
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
     );

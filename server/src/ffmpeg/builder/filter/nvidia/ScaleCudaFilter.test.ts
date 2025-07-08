@@ -46,7 +46,7 @@ describe('ScaleCudaFilter', () => {
       currentState.paddedSize,
     );
 
-    expect(filter.filter).to.eq('scale_cuda=format=p010');
+    expect(filter.filter).to.eq('scale_cuda=format=p010le');
     expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatP010(),
     );
@@ -68,7 +68,7 @@ describe('ScaleCudaFilter', () => {
       true,
     );
 
-    expect(filter.filter).to.eq('scale_cuda=format=p010:passthrough=1');
+    expect(filter.filter).to.eq('scale_cuda=format=p010le:passthrough=1');
     expect(filter.nextState(currentState).pixelFormat).toMatchPixelFormat(
       new PixelFormatP010(),
     );
