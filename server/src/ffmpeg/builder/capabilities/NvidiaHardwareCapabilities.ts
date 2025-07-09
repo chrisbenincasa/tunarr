@@ -8,6 +8,9 @@ const MaxwellGm206Models = new Set([
   'GTX 950',
   'GTX 960',
   'GTX 965M',
+  'Quadro M2000',
+  'Quadro M2200M',
+  'Tesla M4',
 ]);
 
 // https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
@@ -74,7 +77,6 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
         break;
     }
 
-    // TODO: Check binary capabilities
     return canUseHardware;
   }
 
@@ -83,7 +85,6 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
     _videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {
-    // TODO: Clean this up with ffmpeg builder and consts
     const bitDepth = pixelFormat?.bitDepth ?? 8;
 
     if (videoFormat === VideoFormats.Hevc) {

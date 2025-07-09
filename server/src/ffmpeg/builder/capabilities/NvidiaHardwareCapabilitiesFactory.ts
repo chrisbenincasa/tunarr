@@ -16,7 +16,8 @@ import { KEYS } from '../../../types/inject.ts';
 import { Result } from '../../../types/result.ts';
 
 const NvidiaGpuArchPattern = /SM\s+(\d+\.\d+)/;
-const NvidiaGpuModelPattern = /(([G|R]TX|Quadro)\s+[0-9a-zA-Z]+[\sTtIi]+)/;
+const NvidiaGpuModelPattern =
+  /(([G|R]TX|Quadro|Tesla)\s+[0-9a-zA-Z]+[\sTtIi]+)/;
 
 type NvidiaGpuDetectionResponse = {
   model?: string;

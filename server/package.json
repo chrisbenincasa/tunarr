@@ -96,6 +96,7 @@
     "dotenv-cli": "^7.4.1",
     "drizzle-kit": "^0.30.4",
     "esbuild-plugin-pino": "^2.2.1",
+    "fast-check": "^4.2.0",
     "fast-glob": "^3.3.2",
     "globals": "^15.0.0",
     "kysely-ctl": "^0.9.0",
