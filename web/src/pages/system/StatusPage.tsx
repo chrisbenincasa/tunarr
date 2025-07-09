@@ -46,6 +46,7 @@ const FfmpegDebugLoggingCheck = 'FfmpegDebugLogging';
 const MissingProgramAssociationsHealthCheck =
   'MissingProgramAssociationsHealthCheck';
 const FfmpegTranscodeDirectory = 'FfmpegTranscodeDirectory';
+const BaseImageHealthCheck = 'BaseImageHealthCheck';
 
 const AllKnownChecks = [
   FfmpegVersionCheck,
@@ -54,6 +55,7 @@ const AllKnownChecks = [
   FfmpegDebugLoggingCheck,
   MissingSeasonNumbersCheck,
   MissingProgramAssociationsHealthCheck,
+  BaseImageHealthCheck,
 ] as const;
 
 const CopyToClipboardButton = (
@@ -135,6 +137,7 @@ export const StatusPage = () => {
             () => 'Missing Program Associations',
           )
           .with(FfmpegTranscodeDirectory, () => 'FFmpeg Transcode Directory')
+          .with(BaseImageHealthCheck, () => 'Base Docker Image Tag')
           .exhaustive();
 
         const fixer = match(check)

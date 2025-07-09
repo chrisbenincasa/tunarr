@@ -12,16 +12,33 @@ import {
   Tv,
   VideoLibrary,
 } from '@mui/icons-material';
+import type { BadgeProps } from '@mui/material';
 import { useRouterState } from '@tanstack/react-router';
-import { last, trimEnd } from 'lodash-es';
+import { countBy, last, trimEnd } from 'lodash-es';
 import { useCallback, useMemo, type ReactNode } from 'react';
 import useStore from '../store/index.ts';
+import { useSystemHealthChecks } from './useSystemHealthChecks.ts';
 
 export const useNavItems = () => {
   const showWelcome = useStore((state) => state.theme.showWelcome);
   const routerState = useRouterState({
     select: ({ matches }) => trimEnd(last(matches)?.fullPath ?? '', '/'),
   });
+  const { data: healthChecks } = useSystemHealthChecks();
+  const [highestSev, sevCount] = useMemo(() => {
+    if (!healthChecks) {
+      return [null, 0];
+    }
+    const countBySev = countBy(Object.values(healthChecks), ({ type }) => type);
+
+    if (countBySev['error'] && countBySev['error'] > 0) {
+      return ['error', countBySev['error']] as const;
+    } else if (countBySev['warning'] && countBySev['warning'] > 0) {
+      return ['warning', countBySev['warning']] as const;
+    }
+
+    return [null, 0];
+  }, [healthChecks]);
 
   const setSelected = useCallback(
     (navItems: NavItem[], currentRoute: string | undefined) => {
@@ -71,11 +88,23 @@ export const useNavItems = () => {
         name: 'System',
         path: '/system',
         icon: <Computer />,
+        badge: highestSev
+          ? {
+              count: sevCount,
+              color: highestSev === 'error' ? 'error' : 'warning',
+            }
+          : undefined,
         children: [
           {
             name: 'Status',
-            path: '/system/status',
+            path: '/system',
             icon: <InfoOutlined />,
+            badge: highestSev
+              ? {
+                  count: sevCount,
+                  color: highestSev === 'error' ? 'error' : 'warning',
+                }
+              : undefined,
           },
           {
             name: 'Debug',
@@ -110,4 +139,8 @@ export interface NavItem {
   icon?: ReactNode;
   copyToClipboard?: boolean;
   selected?: boolean;
+  badge?: {
+    count: number;
+    color: BadgeProps['color'];
+  };
 }

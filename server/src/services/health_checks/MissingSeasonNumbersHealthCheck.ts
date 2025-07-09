@@ -40,7 +40,7 @@ export class MissingSeasonNumbersHealthCheck implements HealthCheck {
     }
 
     return {
-      type: 'warning',
+      type: 'info',
       context: `There are ${totalMissing} program(s) missing a season number`,
     };
   }

@@ -1,5 +1,6 @@
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
+  Badge,
   Box,
   Collapse,
   Divider,
@@ -14,6 +15,7 @@ import { Link as RouterLink } from '@tanstack/react-router';
 import { useToggle } from '@uidotdev/usehooks';
 import { Transition } from 'notistack';
 import React, { useCallback, useRef, useState } from 'react';
+import type { NavItem } from '../hooks/useNavItems.tsx';
 import { useNavItems } from '../hooks/useNavItems.tsx';
 import VersionFooter from './VersionFooter.tsx';
 
@@ -27,28 +29,106 @@ type Props = {
   onClose?: () => void;
 };
 
+type ItemProps = {
+  item: NavItem;
+  drawerState: DrawerTransitionState;
+};
+
+const DrawerItem = ({ item, drawerState }: ItemProps) => {
+  const [sublistOpen, setSublistOpen] = useState(false);
+
+  const childIn =
+    (drawerState === 'open' || drawerState === 'opening') &&
+    (sublistOpen || item.selected);
+
+  const handleOpenClick = useCallback((ev: React.MouseEvent) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    setSublistOpen((prev) => !prev);
+  }, []);
+
+  return (
+    <React.Fragment key={item.name}>
+      <ListItemButton
+        to={item.path}
+        key={item.name}
+        component={RouterLink}
+        selected={item.selected}
+      >
+        {item.icon && item.badge && !childIn ? (
+          <Badge
+            badgeContent={item.badge.count}
+            color={item.badge.color}
+            sx={{
+              '& .MuiBadge-badge': {
+                right: '20px',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
+          </Badge>
+        ) : (
+          <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
+        )}
+        <ListItemText primary={item.name} />
+        {item.children && !item.selected ? (
+          <ListItemIcon
+            sx={{ justifyContent: 'right' }}
+            onClick={handleOpenClick}
+          >
+            {sublistOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemIcon>
+        ) : null}
+      </ListItemButton>
+      {item.children ? (
+        <Collapse in={childIn} timeout={100}>
+          <List component="div" disablePadding>
+            {item.children
+              .filter((item) => !item.hidden)
+              .map((child) => (
+                <ListItemButton
+                  key={child.name}
+                  to={child.path}
+                  sx={{ pl: 4 }}
+                  component={RouterLink}
+                  selected={child.selected}
+                >
+                  {child.icon && child.badge ? (
+                    <Badge
+                      badgeContent={child.badge.count}
+                      color={child.badge.color}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          right: '20px',
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 45 }}>
+                        {child.icon}
+                      </ListItemIcon>
+                    </Badge>
+                  ) : (
+                    <ListItemIcon sx={{ minWidth: 45 }}>
+                      {child.icon}
+                    </ListItemIcon>
+                  )}
+                  <ListItemText primary={child.name} />
+                </ListItemButton>
+              ))}
+          </List>
+        </Collapse>
+      ) : null}
+    </React.Fragment>
+  );
+};
+
 export const Drawer = ({ onOpen, onClose }: Props) => {
   const [drawerOpen, toggleDrawerOpen] = useToggle(false);
   const [drawerState, setDrawerState] =
     useState<DrawerTransitionState>('closed');
-  const [sublistStates, setSublistStates] = useState<Record<string, boolean>>(
-    {},
-  );
   const drawerRef = useRef(null);
 
   const navItems = useNavItems();
-
-  const handleOpenClick = useCallback(
-    (ev: React.MouseEvent, itemName: string) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      setSublistStates((prev) => ({
-        ...prev,
-        [itemName]: prev[itemName] ? !prev[itemName] : true,
-      }));
-    },
-    [],
-  );
 
   const handleStateChange = (state: DrawerTransitionState) => {
     setDrawerState(state);
@@ -60,7 +140,6 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
         onClose?.();
         break;
       case 'closing':
-        setSublistStates({});
         break;
       default:
         break;
@@ -126,64 +205,7 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
               {navItems
                 .filter((item) => !item.hidden)
                 .map((item) => (
-                  <React.Fragment key={item.name}>
-                    <ListItemButton
-                      to={item.path}
-                      key={item.name}
-                      component={RouterLink}
-                      selected={item.selected}
-                    >
-                      {item.icon && (
-                        <ListItemIcon sx={{ minWidth: 45 }}>
-                          {item.icon}
-                        </ListItemIcon>
-                      )}
-                      <ListItemText primary={item.name} />
-                      {item.children ? (
-                        <ListItemIcon
-                          sx={{ justifyContent: 'right' }}
-                          onClick={(ev) => handleOpenClick(ev, item.name)}
-                        >
-                          {sublistStates[item.name] ? (
-                            <ExpandLess />
-                          ) : (
-                            <ExpandMore />
-                          )}
-                        </ListItemIcon>
-                      ) : null}
-                    </ListItemButton>
-                    {item.children ? (
-                      <Collapse
-                        in={
-                          (drawerState === 'open' ||
-                            drawerState === 'opening') &&
-                          sublistStates[item.name]
-                        }
-                        timeout={100}
-                      >
-                        <List component="div" disablePadding>
-                          {item.children
-                            .filter((item) => !item.hidden)
-                            .map((child) => (
-                              <ListItemButton
-                                key={child.name}
-                                to={child.path}
-                                sx={{ pl: 4 }}
-                                component={RouterLink}
-                                selected={child.selected}
-                              >
-                                {child.icon && (
-                                  <ListItemIcon sx={{ minWidth: 45 }}>
-                                    {child.icon}
-                                  </ListItemIcon>
-                                )}
-                                <ListItemText primary={child.name} />
-                              </ListItemButton>
-                            ))}
-                        </List>
-                      </Collapse>
-                    ) : null}
-                  </React.Fragment>
+                  <DrawerItem item={item} drawerState={drawerState} />
                 ))}
               <Divider sx={{ my: 1 }} />
             </List>

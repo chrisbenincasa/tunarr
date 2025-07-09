@@ -6,10 +6,12 @@ import { MissingProgramAssociationsHealthCheck } from '@/services/health_checks/
 import { MissingSeasonNumbersHealthCheck } from '@/services/health_checks/MissingSeasonNumbersHealthCheck.js';
 import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
+import { BaseImageHealthCheck } from './BaseImageHealthCheck.ts';
 import { FfmpegTranscodeDirectoryHealthCheck } from './FfmpegTranscodeDirectoryHealthCheck.ts';
 
 const HealthCheckModule = new ContainerModule((bind) => {
   bind<HealthCheck>(KEYS.HealthCheck).to(FfmpegDebugLoggingHealthCheck);
+  bind<HealthCheck>(KEYS.HealthCheck).to(BaseImageHealthCheck);
   bind<HealthCheck>(KEYS.HealthCheck).to(MissingProgramAssociationsHealthCheck);
   bind<HealthCheck>(KEYS.HealthCheck).to(FfmpegVersionHealthCheck);
   bind<HealthCheck>(KEYS.HealthCheck).to(HardwareAccelerationHealthCheck);
