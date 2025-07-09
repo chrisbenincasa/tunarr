@@ -36,7 +36,7 @@ export const useNavItems = () => {
   );
 
   return useMemo<NavItem[]>(() => {
-    const items: NavItem[] = [
+    const items = [
       {
         name: 'Welcome',
         path: '/welcome',
