@@ -128,7 +128,7 @@ export const useNavItems = () => {
     setSelected(items, routerState);
 
     return items;
-  }, [routerState, setSelected, showWelcome]);
+  }, [highestSev, routerState, setSelected, sevCount, showWelcome]);
 };
 
 export interface NavItem {
@@ -142,5 +142,6 @@ export interface NavItem {
   badge?: {
     count: number;
     color: BadgeProps['color'];
+    forChild?: boolean;
   };
 }
