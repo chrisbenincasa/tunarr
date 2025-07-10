@@ -63,19 +63,19 @@ Tunarr has the following goals:
 
 At a high level, [pnpm](https://pnpm.io) is Tunarr's package manager and [turbo](https://turbo.build/) is used for task running in the repo.
 
-### Server
-
-Tunarr server runs on [Bun](https://bun.sh/).
-
 ### Web
 
 [vite](https://vitejs.dev/) is used for web dev and bundling.
 
 ### Start dev servers
 
-1. Install Bun
+1. Install deps:
 
-2. Run from the root of the project:
+```
+pnpm i
+```
+
+2. Start dev servers:
 
 ```
 pnpm turbo dev
