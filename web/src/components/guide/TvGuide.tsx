@@ -362,7 +362,8 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       return (
         <Fragment key={key}>
           <TvGuideItem
-            width={`${1000 * (+duration / +timelineDuration)}px`}
+            // width={`${1200 * (+duration / +timelineDuration)}px`}
+            width={`calc(100% * (${+duration / +timelineDuration}))`}
             index={index}
             onClick={() => handleModalOpen(program)}
             backgroundColor={bg}
@@ -579,11 +580,13 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
             >
               {intervalArray.map((slot) => (
                 <TvGuideGridChild
-                  width={`${1000 / (intervalArray.length > 4 ? intervalArray.length / 2 : intervalArray.length)}px`}
+                  // width={`${1000 / (intervalArray.length > 4 ? intervalArray.length / 2 : intervalArray.length)}px`}
+                  width={`calc(100% / ${intervalArray.length})`}
                   sx={{
                     height: '2rem',
                     borderLeft: '1px solid white',
-                    textAlign: 'center',
+                    // textAlign: 'center',
+                    pl: 1,
                     '&:last-child': {
                       borderRight: '1px solid white',
                     },
