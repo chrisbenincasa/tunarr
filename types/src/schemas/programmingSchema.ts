@@ -121,7 +121,7 @@ export const ContentProgramTypeSchema = z.enum([
 
 export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
 
-export const ContentProgramParentSchema = z.object({
+const BaseContentProgramParentSchema = z.object({
   // ID of the program_grouping in Tunarr
   id: z.string().optional(),
   // title - e.g. album, show, etc
@@ -134,7 +134,37 @@ export const ContentProgramParentSchema = z.object({
   year: z.number().nonnegative().optional().catch(undefined),
   externalKey: z.string().optional(),
   externalIds: z.array(ExternalIdSchema),
+  summary: z.string().optional(),
 });
+
+export const TvSeasonContentProgramSchema = z.object({
+  ...BaseContentProgramParentSchema.shape,
+  type: z.literal('season'),
+});
+
+export const TvShowContentProgramSchema = z.object({
+  ...BaseContentProgramParentSchema.shape,
+  type: z.literal('show'),
+  seasons: z.array(BaseContentProgramParentSchema).optional(),
+});
+
+export const MusicAlbumContentProgramSchema = z.object({
+  ...BaseContentProgramParentSchema.shape,
+  type: z.literal('album'),
+});
+
+export const MusicArtistContentProgramSchema = z.object({
+  ...BaseContentProgramParentSchema.shape,
+  type: z.literal('artist'),
+  albums: z.array(BaseContentProgramParentSchema).optional(),
+});
+
+export const ContentProgramParentSchema = z.discriminatedUnion('type', [
+  TvSeasonContentProgramSchema,
+  TvShowContentProgramSchema,
+  MusicAlbumContentProgramSchema,
+  MusicArtistContentProgramSchema,
+]);
 
 // Unfortunately we can't make this a discrim union, or even a regular union,
 // because it is used in other discriminatedUnions and zod cannot handle this
@@ -171,8 +201,12 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
   // Index of this item relative to its parent
   index: z.number().nonnegative().optional().catch(undefined),
   // ID of the program_grouping in Tunarr
-  parent: ContentProgramParentSchema.optional(),
-  grandparent: ContentProgramParentSchema.optional(),
+  parent: TvSeasonContentProgramSchema.or(
+    MusicAlbumContentProgramSchema,
+  ).optional(),
+  grandparent: TvShowContentProgramSchema.or(
+    MusicArtistContentProgramSchema,
+  ).optional(),
   // External source metadata
   externalSourceType: ExternalSourceTypeSchema,
   externalSourceName: z.string(),

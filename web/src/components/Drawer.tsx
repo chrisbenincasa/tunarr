@@ -205,7 +205,11 @@ export const Drawer = ({ onOpen, onClose }: Props) => {
               {navItems
                 .filter((item) => !item.hidden)
                 .map((item) => (
-                  <DrawerItem item={item} drawerState={drawerState} />
+                  <DrawerItem
+                    key={item.name}
+                    item={item}
+                    drawerState={drawerState}
+                  />
                 ))}
               <Divider sx={{ my: 1 }} />
             </List>

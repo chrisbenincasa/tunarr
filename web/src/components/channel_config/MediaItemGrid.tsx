@@ -24,7 +24,7 @@ import {
   map,
   sumBy,
 } from 'lodash-es';
-import type { ComponentType, ForwardedRef } from 'react';
+import type { ComponentType, ForwardedRef, ReactNode } from 'react';
 import {
   Fragment,
   useCallback,
@@ -66,7 +66,7 @@ export interface NestedGridProps<ItemType> {
 
 export type RenderNestedGrid<ItemType> = (
   props: NestedGridProps<ItemType>,
-) => JSX.Element;
+) => ReactNode;
 
 export interface GridInlineModalProps<ItemType> {
   open: boolean;
@@ -86,7 +86,7 @@ export type MediaItemGridProps<PageDataType, ItemType> = {
   // query, changing the items displayed.
   handleAlphaNumFilter?: (key: string | null) => void;
   renderNestedGrid: RenderNestedGrid<ItemType>;
-  renderGridItem: (props: GridItemProps<ItemType>) => JSX.Element;
+  renderGridItem: (props: GridItemProps<ItemType>) => ReactNode;
   depth?: number;
 };
 
@@ -412,6 +412,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
             height: gridItemRef?.getBoundingClientRect()?.height ?? 200,
           }}
           ref={ref}
+          className="loading-more-target"
         ></div>
       )}
       {isFetchingNextPage && (

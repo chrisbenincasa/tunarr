@@ -25,7 +25,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { type CustomShow } from '@tunarr/types';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
-import ChannelProgrammingList from '../channel_config/ChannelProgrammingList';
+import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 import { CustomShowSortToolsMenu } from './CustomShowSortToolsMenu.tsx';
 
 type CustomShowForm = {
@@ -169,7 +169,7 @@ export function EditCustomShowsForm({
             </Stack>
           </Box>
           <Paper>
-            <ChannelProgrammingList
+            <ChannelLineupList
               type="selector"
               programListSelector={(s) => s.customShowEditor.programList}
               moveProgram={moveProgramInCustomShow}

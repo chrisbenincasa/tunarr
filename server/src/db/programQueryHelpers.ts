@@ -3,18 +3,26 @@ import type {
   CaseWhenBuilder,
   ExpressionBuilder,
   Kysely,
+  Selection,
+  SelectQueryBuilder,
   UpdateQueryBuilder,
   UpdateResult,
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
+import { identity, isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
 import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
-import type { ProgramTable as RawProgram } from './schema/Program.ts';
+import type {
+  ProgramDao,
+  ProgramTable as RawProgram,
+} from './schema/Program.ts';
 import { ProgramType } from './schema/Program.ts';
 import type { ProgramExternalId } from './schema/ProgramExternalId.ts';
 import { ProgramExternalIdFieldsWithAlias } from './schema/ProgramExternalId.ts';
-import type { ProgramGroupingTable as RawProgramGrouping } from './schema/ProgramGrouping.ts';
+import {
+  ProgramGroupingType,
+  type ProgramGroupingTable as RawProgramGrouping,
+} from './schema/ProgramGrouping.ts';
 import type { ProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
 import { ProgramGroupingExternalIdFieldsWithAlias } from './schema/ProgramGroupingExternalId.ts';
 import type { DB } from './schema/db.ts';
@@ -95,6 +103,46 @@ export function withTvSeason(
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
   ).as('tvSeason');
+}
+
+export function withTvShowSeasons(
+  eb: ExpressionBuilder<DB, 'programGrouping'>,
+  fields: ProgramGroupingFields<'season'> = AllProgramGroupingFieldsAliased(
+    'season',
+  ),
+  includeExternalIds: boolean = false,
+) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('programGrouping as season')
+      .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
+      .whereRef('programGrouping.uuid', '=', 'season.showUuid')
+      .where('season.type', '=', ProgramGroupingType.Season)
+      .orderBy(['season.index asc', 'season.uuid asc']),
+  ).as('seasons');
+}
+
+export function withMusicArtistAlbums(
+  eb: ExpressionBuilder<DB, 'programGrouping'>,
+  fields: ProgramGroupingFields<'album'> = AllProgramGroupingFieldsAliased(
+    'album',
+  ),
+  includeExternalIds: boolean = false,
+) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('programGrouping as album')
+      .select(fields)
+      .$if(includeExternalIds, (qb) =>
+        qb.select((eb) => withProgramGroupingExternalIds(eb)),
+      )
+      .whereRef('programGrouping.uuid', '=', 'album.showUuid')
+      .where('album.type', '=', ProgramGroupingType.Album)
+      .orderBy(['album.index asc', 'album.uuid asc']),
+  ).as('albums');
 }
 
 export function withTrackArtist(
@@ -183,6 +231,7 @@ export function withProgramGroupingExternalIds(
     'externalKey',
     'sourceType',
     'externalSourceId',
+    'mediaSourceId',
   ],
 ) {
   return jsonArrayFrom(
@@ -302,28 +351,39 @@ export type WithProgramsOptions = {
   fields?: ProgramFields;
 };
 
-const defaultWithProgramOptions: DeepRequired<WithProgramsOptions> = {
+export const defaultWithProgramOptions: DeepRequired<WithProgramsOptions> = {
   joins: defaultProgramJoins,
   fields: AllProgramFields,
 };
 
+type BaseWithProgramsAvailableTables =
+  | 'channel'
+  | 'channelPrograms'
+  | 'channelFallback'
+  | 'fillerShowContent'
+  | 'fillerShow'
+  | 'customShow'
+  | 'customShowContent'
+  | 'programExternalId';
+
 function baseWithProgramsExpressionBuilder(
-  eb: ExpressionBuilder<
-    DB,
-    | 'channel'
-    | 'channelPrograms'
-    | 'channelFallback'
-    | 'fillerShowContent'
-    | 'fillerShow'
-    | 'customShow'
-    | 'customShowContent'
-    | 'programExternalId'
-  >,
+  eb: ExpressionBuilder<DB, BaseWithProgramsAvailableTables>,
   opts: DeepRequired<WithProgramsOptions>,
+  builderFunc: (
+    qb: SelectQueryBuilder<
+      DB,
+      BaseWithProgramsAvailableTables | 'program',
+      ProgramDao
+    >,
+  ) => SelectQueryBuilder<
+    DB,
+    BaseWithProgramsAvailableTables | 'program',
+    ProgramDao
+  > = identity,
 ) {
-  return eb
-    .selectFrom('program')
-    .select(opts.fields)
+  const builder = eb.selectFrom('program').select(opts.fields);
+
+  return builderFunc(builder)
     .$if(!!opts.joins.trackAlbum, (qb) =>
       qb.select((eb) =>
         withTrackAlbum(
@@ -344,15 +404,18 @@ function baseWithProgramsExpressionBuilder(
 export function selectProgramsBuilder(
   db: Kysely<DB>,
   optOverides: DeepPartial<WithProgramsOptions> = defaultWithProgramOptions,
+  builderFunc: (
+    qb: SelectQueryBuilder<DB, 'program', Selection<DB, 'program', ProgramDao>>,
+  ) => SelectQueryBuilder<DB, 'program', ProgramDao> = identity,
 ) {
   const opts: DeepRequired<WithProgramsOptions> = merge(
     {},
     defaultWithProgramOptions,
     optOverides,
   );
-  return db
-    .selectFrom('program')
-    .select(opts.fields)
+  const builder = db.selectFrom('program').select(opts.fields);
+
+  return builderFunc(builder)
     .$if(!!opts.joins.trackAlbum, (qb) =>
       qb.select((eb) =>
         withTrackAlbum(
@@ -372,10 +435,21 @@ export function selectProgramsBuilder(
 export function withPrograms(
   eb: ExpressionBuilder<DB, 'channel' | 'channelPrograms'>,
   options: WithProgramsOptions = defaultWithProgramOptions,
+  builderFunc: (
+    qb: SelectQueryBuilder<
+      DB,
+      BaseWithProgramsAvailableTables | 'program',
+      ProgramDao
+    >,
+  ) => SelectQueryBuilder<
+    DB,
+    BaseWithProgramsAvailableTables | 'program',
+    ProgramDao
+  > = identity,
 ) {
   const mergedOpts = merge({}, defaultWithProgramOptions, options);
   return jsonArrayFrom(
-    baseWithProgramsExpressionBuilder(eb, mergedOpts).innerJoin(
+    baseWithProgramsExpressionBuilder(eb, mergedOpts, builderFunc).innerJoin(
       'channelPrograms',
       (join) =>
         join

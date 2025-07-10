@@ -11,6 +11,7 @@ import {
   BasicIdParamSchema,
   BasicPagingSchema,
   GetChannelProgrammingResponseSchema,
+  PagedResult,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
@@ -20,14 +21,19 @@ import {
   ChannelSchema,
   CondensedChannelProgrammingSchema,
   ContentProgramSchema,
+  ContentProgramTypeSchema,
   CreateChannelRequestSchema,
+  MusicArtistContentProgramSchema,
   SaveableChannelSchema,
   TranscodeConfigSchema,
+  TvGuideProgramSchema,
+  TvShowContentProgramSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import {
-  groupBy,
+  head,
+  isEmpty,
   isNil,
   isNull,
   isUndefined,
@@ -41,6 +47,7 @@ import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigCo
 import type { SessionType } from '../stream/Session.ts';
 import type { ChannelAndLineup } from '../types/internal.ts';
 import { Result } from '../types/result.ts';
+import { PagingParams } from '../types/schemas.ts';
 
 dayjs.extend(duration);
 
@@ -332,6 +339,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         params: BasicIdParamSchema,
+        querystring: z.object({
+          ...PagingParams.shape,
+          type: ContentProgramTypeSchema.optional(),
+        }),
         tags: ['Channels'],
         response: {
           200: z.array(ContentProgramSchema).readonly(),
@@ -340,34 +351,103 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      try {
-        const channel = await req.serverCtx.channelDB.getChannelAndPrograms(
-          req.params.id,
-        );
+      const programs = await req.serverCtx.channelDB.getChannelPrograms(
+        req.params.id,
+        {
+          offset: req.query.offset,
+          limit: req.query.limit,
+        },
+        req.query.type,
+      );
 
-        if (!isNil(channel)) {
-          const externalIds =
-            await req.serverCtx.channelDB.getChannelProgramExternalIds(
-              channel.uuid,
-            );
-          const externalIdsByProgramId = groupBy(externalIds, 'programUuid');
-          return res.send(
-            map(channel.programs, (program) =>
-              req.serverCtx.programConverter.programDaoToContentProgram(
-                program,
-                externalIdsByProgramId[program.uuid] ?? [],
-              ),
-            ),
-          );
-        } else {
-          return res.status(404).send();
-        }
-      } catch (err) {
-        logger.error(err, req.routeOptions.url);
-        return res.status(500).send();
-      }
+      return res.send(
+        programs.map((program) =>
+          req.serverCtx.programConverter.programDaoToContentProgram(
+            program,
+            program.externalIds ?? [],
+          ),
+        ),
+      );
     },
   );
+
+  fastify.get(
+    '/channels/:id/shows',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        querystring: PagingParams,
+        response: {
+          200: PagedResult(z.array(TvShowContentProgramSchema)),
+        },
+      },
+    },
+    async (req, res) => {
+      const { total, results: shows } =
+        await req.serverCtx.channelDB.getChannelTvShows(
+          req.params.id,
+          req.query,
+        );
+
+      return res.send({
+        total,
+        result: shows.map((show) =>
+          req.serverCtx.programConverter.tvShowDaoToDto(show),
+        ),
+      });
+    },
+  );
+
+  fastify.get(
+    '/channels/:id/artists',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        querystring: PagingParams,
+        response: {
+          200: PagedResult(z.array(MusicArtistContentProgramSchema)),
+        },
+      },
+    },
+    async (req, res) => {
+      const { total, results: shows } =
+        await req.serverCtx.channelDB.getChannelMusicArtists(
+          req.params.id,
+          req.query,
+        );
+
+      return res.send({
+        total,
+        result: shows.map((show) =>
+          req.serverCtx.programConverter.musicArtistDaoToDto(show),
+        ),
+      });
+    },
+  );
+
+  // fastify.get(
+  //   '/channels/:id/shows',
+  //   {
+  //     schema: {
+  //       params: BasicIdParamSchema,
+  //       querystring: PagingParams,
+  //       response: {
+  //         200: z.array(ContentProgramParentSchema),
+  //       },
+  //     },
+  //   },
+  //   async (req, res) => {
+  //     const shows = await req.serverCtx.channelDB.getChannelTvShows(
+  //       req.params.id,
+  //     );
+
+  //     return res.send(
+  //       shows.map((show) =>
+  //         req.serverCtx.programConverter.programGroupingDaoToDto(show),
+  //       ),
+  //     );
+  //   },
+  // );
 
   fastify.get(
     '/channels/:id/programming',
@@ -552,6 +632,34 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
+    '/channels/:id/now_playing',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        tags: ['Channels'],
+        response: {
+          200: TvGuideProgramSchema,
+          400: z.object({ error: z.string() }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const now = dayjs();
+      const guide = await req.serverCtx.guideService.getChannelGuide(
+        req.params.id,
+        OpenDateTimeRange.create(now, now.add(1))!,
+      );
+
+      if (isUndefined(guide) || isEmpty(guide.programs)) {
+        return res.status(404).send({ error: 'Guide data not found' });
+      }
+
+      return res.send(head(guide.programs));
+    },
+  );
+
+  fastify.get(
     '/channels/:id/transcode_config',
     {
       schema: {
@@ -601,15 +709,3 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 };
-
-// function zipWithIndex<T>(
-//   arr: ReadonlyArray<T>,
-// ): ReadonlyArray<T & { index: number }> {
-//   return reduce(
-//     arr,
-//     (prev, curr, i) => {
-//       return [...prev, { ...curr, index: i }];
-//     },
-//     [],
-//   );
-// }

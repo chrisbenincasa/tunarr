@@ -4,6 +4,8 @@ import {
   ChannelSessionsResponseSchema,
   CreateCustomShowRequestSchema,
   CreateFillerListRequestSchema,
+  PagedResult,
+  ProgramChildrenResult,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
@@ -15,7 +17,9 @@ import {
   ChannelLineupSchema,
   ChannelSchema,
   CondensedChannelProgrammingSchema,
+  ContentProgramParentSchema,
   ContentProgramSchema,
+  ContentProgramTypeSchema,
   CreateChannelRequestSchema,
   CustomProgramSchema,
   CustomShowSchema,
@@ -25,6 +29,7 @@ import {
   SaveableChannelSchema,
   TaskSchema,
   TranscodeConfigSchema,
+  TvGuideProgramSchema,
 } from '@tunarr/types/schemas';
 import {
   Zodios,
@@ -129,8 +134,61 @@ export const api = makeApi([
     method: 'get',
     path: '/api/channels/:id/lineup',
     response: ChannelLineupSchema,
-    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        from: z.iso.date(),
+        to: z.iso.date(),
+      })
+      .build(),
     alias: 'getChannelLineup',
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/now_playing',
+    response: TvGuideProgramSchema,
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    alias: 'getChannelNowPlaying',
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/shows',
+    response: PagedResult(z.array(ContentProgramParentSchema)),
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        offset: z.number().nonnegative().default(0),
+        limit: z.number().min(-1).default(-1),
+      })
+      .build(),
+    alias: 'getChannelShows',
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/artists',
+    response: PagedResult(z.array(ContentProgramParentSchema)),
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        offset: z.number().nonnegative().default(0),
+        limit: z.number().min(-1).default(-1),
+      })
+      .build(),
+    alias: 'getChannelArtists',
+  },
+  {
+    method: 'get',
+    path: '/api/channels/:id/programs',
+    response: z.array(ContentProgramSchema),
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        offset: z.number().nonnegative().default(0),
+        limit: z.number().min(-1).default(-1),
+        type: ContentProgramTypeSchema.optional(),
+      })
+      .build(),
+    alias: 'getChannelPrograms',
   },
   {
     method: 'get',
@@ -448,6 +506,19 @@ export const api = makeApi([
       )
       .build(),
     response: TimeSlotScheduleResult,
+  },
+  {
+    method: 'get',
+    path: '/api/programs/:id/children',
+    alias: 'getProgramChildren',
+    parameters: parametersBuilder()
+      .addPath('id', z.string())
+      .addQueries({
+        offset: z.number().nonnegative().default(0),
+        limit: z.number().min(-1).default(-1),
+      })
+      .build(),
+    response: ProgramChildrenResult,
   },
   ...settingsEndpoints,
   ...jellyfinEndpoints,

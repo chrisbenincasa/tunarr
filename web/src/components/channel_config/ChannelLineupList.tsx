@@ -360,7 +360,7 @@ type GuideTime = {
   stop?: Dayjs;
 };
 
-export default function ChannelProgrammingList(props: Props) {
+export default function ChannelLineupList(props: Props) {
   const {
     deleteProgram = defaultProps.deleteProgram,
     moveProgram = defaultProps.moveProgram,

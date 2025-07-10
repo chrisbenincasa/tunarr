@@ -40,3 +40,8 @@ export type MarkNotNilable<Type, Keys extends keyof Type> = MarkNonNullable<
   MarkRequired<Type, Keys>,
   Keys
 >;
+
+export type PagedResult<T> = {
+  total: number;
+  results: Array<T>;
+};

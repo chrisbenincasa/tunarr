@@ -1,4 +1,10 @@
 import type z from 'zod/v4';
+import type {
+  MusicAlbumContentProgramSchema,
+  MusicArtistContentProgramSchema,
+  TvSeasonContentProgramSchema,
+  TvShowContentProgramSchema,
+} from './schemas/programmingSchema.js';
 import {
   type BaseProgramSchema,
   type ChannelProgramSchema,
@@ -28,6 +34,20 @@ export type BaseProgram = z.infer<typeof BaseProgramSchema>;
 export type ContentProgram = z.infer<typeof ContentProgramSchema>;
 
 export type ContentProgramParent = z.infer<typeof ContentProgramParentSchema>;
+
+export type TvShowContentProgram = z.infer<typeof TvShowContentProgramSchema>;
+
+export type TvSeasonContentProgram = z.infer<
+  typeof TvSeasonContentProgramSchema
+>;
+
+export type MusicArtistContentProgram = z.infer<
+  typeof MusicArtistContentProgramSchema
+>;
+
+export type MusicAlbumContentProgram = z.infer<
+  typeof MusicAlbumContentProgramSchema
+>;
 
 export type FlexProgram = z.infer<typeof FlexProgramSchema>;
 

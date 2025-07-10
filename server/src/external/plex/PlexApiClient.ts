@@ -29,6 +29,7 @@ import {
   map,
   reject,
 } from 'lodash-es';
+import { match } from 'ts-pattern';
 import type {
   PlexMediaContainer,
   PlexMediaContainerResponse,
@@ -292,14 +293,16 @@ export class PlexApiClient extends BaseApiClient {
     width?: number;
     height?: number;
     upscale?: string;
+    imageType: 'poster' | 'background';
   }) {
-    return PlexApiClient.getThumbUrl({
+    return PlexApiClient.getImageUrl({
       uri: this.opts.url,
       accessToken: this.opts.accessToken,
       itemKey: opts.itemKey,
       width: opts.width,
       height: opts.height,
       upscale: opts.upscale,
+      imageType: opts.imageType,
     });
   }
 
@@ -319,19 +322,32 @@ export class PlexApiClient extends BaseApiClient {
     return super.preRequestValidate(req);
   }
 
-  static getThumbUrl(opts: {
+  static getImageUrl(opts: {
     uri: string;
     accessToken: string;
     itemKey: string;
     width?: number;
     height?: number;
     upscale?: string;
+    imageType: 'poster' | 'background';
   }): string {
-    const { uri, accessToken, itemKey, width, height, upscale } = opts;
+    const {
+      uri,
+      accessToken,
+      itemKey,
+      width,
+      height,
+      upscale,
+      imageType = 'poster',
+    } = opts;
     const cleanKey = itemKey.replaceAll(/\/library\/metadata\//g, '');
+    const path = match(imageType)
+      .with('poster', () => 'thumb')
+      .with('background', () => 'art')
+      .exhaustive();
 
     let thumbUrl: URL;
-    const key = `/library/metadata/${cleanKey}/thumb?X-Plex-Token=${accessToken}`;
+    const key = `/library/metadata/${cleanKey}/${path}?X-Plex-Token=${accessToken}`;
     if (isUndefined(height) || isUndefined(width)) {
       thumbUrl = new URL(`${uri}${key}`);
     } else {

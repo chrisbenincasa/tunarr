@@ -15,7 +15,7 @@ import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import type { UIFillerListProgram } from '../../types/index.ts';
-import ChannelProgrammingList from '../channel_config/ChannelProgrammingList.tsx';
+import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 
 export type FillerListMutationArgs = {
   id?: string;
@@ -148,7 +148,7 @@ export function EditFillerListForm({
               </Button>
             </Tooltip>
           </Stack>
-          <ChannelProgrammingList
+          <ChannelLineupList
             type="selector"
             programListSelector={(s) => s.fillerListEditor.programList}
             enableDnd={false}

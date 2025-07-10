@@ -10,15 +10,24 @@ import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
+  MusicArtistWithExternalIds,
+  ProgramWithRelations,
+  TvShowWithExternalIds,
 } from '@/db/schema/derivedTypes.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
-import type { MarkNullable, Maybe, Nullable } from '@/types/util.js';
+import type {
+  MarkNullable,
+  Maybe,
+  Nullable,
+  PagedResult,
+} from '@/types/util.js';
 import type {
   ChannelProgramming,
   CondensedChannelProgramming,
   SaveableChannel,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
+import type { ContentProgramType } from '@tunarr/types/schemas';
 import type { MarkOptional, MarkRequired } from 'ts-essentials';
 import type { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 
@@ -43,7 +52,26 @@ export interface IChannelDB {
 
   getAllChannels(pageParams?: PageParams): Promise<Channel[]>;
 
-  getChannelAndPrograms(uuid: string): Promise<ChannelWithPrograms | undefined>;
+  getChannelAndPrograms(
+    uuid: string,
+    typeFilter?: ContentProgramType,
+  ): Promise<ChannelWithPrograms | undefined>;
+
+  getChannelTvShows(
+    id: string,
+    pageParams?: PageParams,
+  ): Promise<PagedResult<TvShowWithExternalIds>>;
+
+  getChannelMusicArtists(
+    id: string,
+    pageParams?: PageParams,
+  ): Promise<PagedResult<MusicArtistWithExternalIds>>;
+
+  getChannelPrograms(
+    id: string,
+    pageParams?: PageParams,
+    typeFilter?: ContentProgramType,
+  ): Promise<ProgramWithRelations[]>;
 
   getChannelProgramExternalIds(uuid: string): Promise<ProgramExternalId[]>;
 

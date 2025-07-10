@@ -37,7 +37,7 @@ import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
-import ChannelProgrammingList from '../../components/channel_config/ChannelProgrammingList';
+import ChannelLineupList from '../../components/channel_config/ChannelLineupList.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
 import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
@@ -216,7 +216,7 @@ export default function RandomSlotEditorPage() {
           </Stack>
           <Divider />
           <Box sx={{ minHeight: 400 }}>
-            <ChannelProgrammingList
+            <ChannelLineupList
               type="selector"
               enableDnd={false}
               enableRowDelete={false}

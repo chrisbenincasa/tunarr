@@ -125,6 +125,8 @@ export class ApiProgramMinter {
         index: plexEpisode.parentIndex,
         externalKey: plexEpisode.parentRatingKey,
         guids: plexEpisode.parentGuid ? [plexEpisode.parentGuid] : [],
+        type: 'season',
+        // summary:
         externalIds: compact([
           plexEpisode.parentRatingKey
             ? ({
@@ -147,6 +149,7 @@ export class ApiProgramMinter {
         title: plexEpisode.grandparentTitle,
         externalKey: plexEpisode.grandparentRatingKey,
         guids: plexEpisode.grandparentGuid ? [plexEpisode.grandparentGuid] : [],
+        type: 'show',
         externalIds: compact([
           plexEpisode.grandparentRatingKey
             ? ({
@@ -196,6 +199,7 @@ export class ApiProgramMinter {
         index: plexTrack.parentIndex,
         externalKey: plexTrack.parentRatingKey,
         guids: plexTrack.parentGuid ? [plexTrack.parentGuid] : [],
+        type: 'album',
         year: plexTrack.parentYear,
         externalIds: compact([
           plexTrack.parentRatingKey
@@ -219,6 +223,7 @@ export class ApiProgramMinter {
         title: plexTrack.grandparentTitle,
         externalKey: plexTrack.grandparentRatingKey,
         guids: plexTrack.grandparentGuid ? [plexTrack.grandparentGuid] : [],
+        type: 'artist',
         externalIds: compact([
           plexTrack.grandparentRatingKey
             ? ({
@@ -279,6 +284,7 @@ export class ApiProgramMinter {
         .exhaustive(),
       year: nullToUndefined(item.ProductionYear),
       parent: {
+        type: item.Type === 'Episode' ? 'season' : 'album',
         title: nullToUndefined(item.SeasonName ?? item.Album),
         index: nullToUndefined(item.ParentIndexNumber),
         externalKey: nullToUndefined(parentIdentifier),
@@ -294,6 +300,7 @@ export class ApiProgramMinter {
         ]),
       },
       grandparent: {
+        type: item.Type === 'Episode' ? 'show' : 'artist',
         title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
         externalKey:
           item.SeriesId ??
@@ -348,6 +355,7 @@ export class ApiProgramMinter {
         .exhaustive(),
       year: nullToUndefined(item.ProductionYear),
       parent: {
+        type: item.Type === 'Episode' ? 'season' : 'album',
         title: nullToUndefined(item.SeasonName ?? item.Album),
         index: nullToUndefined(item.ParentIndexNumber),
         externalKey: nullToUndefined(parentIdentifier),
@@ -363,6 +371,7 @@ export class ApiProgramMinter {
         ]),
       },
       grandparent: {
+        type: item.Type === 'Episode' ? 'show' : 'artist',
         title: nullToUndefined(item.SeriesName ?? item.AlbumArtist),
         externalKey:
           item.SeriesId ??
@@ -372,7 +381,7 @@ export class ApiProgramMinter {
             ? ({
                 type: 'multi',
                 id: grandparentIdentifier,
-                source: 'plex',
+                source: 'emby',
                 sourceId: server.name,
               } satisfies MultiExternalId)
             : null,

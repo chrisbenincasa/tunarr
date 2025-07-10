@@ -355,6 +355,10 @@ export class JellyfinApiClient extends BaseApiClient {
     return `${this.options.url}/Items/${id}/Images/Primary`;
   }
 
+  getExternalUrl(id: string) {
+    return `${this.options.url}/web/#/details?id=${id}`;
+  }
+
   async recordPlaybackStart(itemId: string, deviceId: string) {
     return this.doPost({
       url: '/Sessions/Playing',

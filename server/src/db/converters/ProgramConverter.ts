@@ -8,8 +8,14 @@ import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
   ContentProgram,
+  ContentProgramParent,
+  ExternalId,
   FlexProgram,
+  MusicAlbumContentProgram,
+  MusicArtistContentProgram,
   RedirectProgram,
+  TvSeasonContentProgram,
+  TvShowContentProgram,
 } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
@@ -32,7 +38,12 @@ import { DB } from '../schema/db.ts';
 import type {
   ChannelWithPrograms,
   ChannelWithRelations,
+  GeneralizedProgramGroupingWithExternalIds,
+  MusicAlbumWithExternalIds,
+  MusicArtistWithExternalIds,
   ProgramWithRelations,
+  TvSeasonWithExternalIds,
+  TvShowWithExternalIds,
 } from '../schema/derivedTypes.ts';
 
 /**
@@ -99,7 +110,7 @@ export class ProgramConverter {
 
   programDaoToContentProgram(
     program: ProgramWithRelations,
-    externalIds: MinimalProgramExternalId[],
+    externalIds: MinimalProgramExternalId[] = program.externalIds ?? [],
   ): MarkRequired<ContentProgram, 'id'> {
     let extraFields: Partial<ContentProgram> = {};
     if (program.type === ProgramType.Episode) {
@@ -115,6 +126,7 @@ export class ProgramConverter {
         episodeNumber: nullToUndefined(program.episode),
         title: program.title,
         parent: {
+          type: 'season',
           id: nullToUndefined(program.tvSeason?.uuid ?? program.seasonUuid),
           index: nullToUndefined(program.tvSeason?.index),
           title: nullToUndefined(program.tvSeason?.title ?? program.showTitle),
@@ -130,6 +142,7 @@ export class ProgramConverter {
           ),
         },
         grandparent: {
+          type: 'show',
           id: nullToUndefined(program.tvShow?.uuid ?? program.tvShowUuid),
           index: nullToUndefined(program.tvShow?.index),
           title: nullToUndefined(program.tvShow?.title),
@@ -149,6 +162,7 @@ export class ProgramConverter {
     } else if (program.type === ProgramType.Track.toString()) {
       extraFields = {
         parent: {
+          type: 'album',
           id: nullToUndefined(program.trackAlbum?.uuid ?? program.albumUuid),
           index: nullToUndefined(program.trackAlbum?.index),
           title: nullToUndefined(
@@ -166,6 +180,7 @@ export class ProgramConverter {
           ),
         },
         grandparent: {
+          type: 'artist',
           id: nullToUndefined(program.trackArtist?.uuid ?? program.artistUuid),
           index: nullToUndefined(program.trackArtist?.index),
           title: nullToUndefined(program.trackArtist?.title),
@@ -208,6 +223,91 @@ export class ProgramConverter {
       externalSourceType: program.sourceType,
       ...omitBy(extraFields, isNil),
     };
+  }
+
+  programGroupingDaoToDto(program: TvShowWithExternalIds): TvShowContentProgram;
+  programGroupingDaoToDto(
+    program: TvSeasonWithExternalIds,
+  ): TvSeasonContentProgram;
+  programGroupingDaoToDto(
+    program: MusicArtistWithExternalIds,
+  ): MusicArtistContentProgram;
+  programGroupingDaoToDto(
+    program: MusicAlbumWithExternalIds,
+  ): MusicAlbumContentProgram;
+  programGroupingDaoToDto(
+    program: GeneralizedProgramGroupingWithExternalIds,
+  ): ContentProgramParent {
+    const base = {
+      type: program.type,
+      id: program.uuid,
+      title: program.title,
+      year: nullToUndefined(program.year),
+      index: nullToUndefined(program.index),
+      summary: nullToUndefined(program.summary),
+      externalIds: seq.collect(program.externalIds, (eid) => {
+        if (
+          isValidMultiExternalIdType(eid.sourceType) &&
+          isNonEmptyString(eid.externalSourceId)
+        ) {
+          return {
+            type: 'multi',
+            source: eid.sourceType,
+            sourceId: eid.mediaSourceId ?? eid.externalSourceId,
+            id: eid.externalKey,
+          } satisfies ExternalId;
+        } else if (isValidSingleExternalIdType(eid.sourceType)) {
+          return {
+            type: 'single',
+            source: eid.sourceType,
+            id: eid.externalKey,
+          } satisfies ExternalId;
+        }
+
+        return;
+      }),
+    };
+
+    if (program.type === 'show') {
+      (base as TvShowContentProgram).seasons = program.seasons?.map((season) =>
+        this.programGroupingDaoToDto(season),
+      );
+      return base;
+    }
+
+    return base;
+  }
+
+  tvShowDaoToDto(program: TvShowWithExternalIds): TvShowContentProgram {
+    const base = this.programGroupingDaoToDto(program);
+    return {
+      ...base,
+      type: 'show',
+      seasons: program.seasons?.map(
+        (season) =>
+          ({
+            ...this.programGroupingDaoToDto(season),
+            type: 'season',
+          }) satisfies TvSeasonContentProgram,
+      ),
+    } satisfies TvShowContentProgram;
+  }
+
+  musicArtistDaoToDto(
+    program: MusicArtistWithExternalIds,
+  ): MusicArtistContentProgram {
+    const base = this.programGroupingDaoToDto(program);
+    return {
+      ...base,
+      type: 'artist',
+      albums: program.albums?.map(
+        (season) =>
+          ({
+            ...this.programGroupingDaoToDto(season),
+            type: 'album',
+          }) satisfies MusicAlbumContentProgram,
+      ),
+    } satisfies MusicArtistContentProgram;
   }
 
   offlineLineupItemToProgram(

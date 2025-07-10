@@ -20,7 +20,9 @@ import {
   ContentProgramSchema,
   CustomProgramSchema,
   FlexProgramSchema,
+  MusicAlbumContentProgramSchema,
   RedirectProgramSchema,
+  TvSeasonContentProgramSchema,
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
@@ -39,6 +41,13 @@ export * from './plexSearch.js';
 export const IdPathParamSchema = z.object({
   id: z.string(),
 });
+
+export function PagedResult<T extends z.ZodType>(schema: T) {
+  return z.object({
+    total: z.number(),
+    result: schema,
+  });
+}
 
 export const ChannelNumberParamSchema = z.object({
   number: z.coerce.number(),
@@ -354,3 +363,19 @@ export const TimeSlotScheduleResult = z.object({
 });
 
 export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;
+
+export const ProgramChildrenResult = PagedResult(
+  z
+    .object({
+      type: z.enum(['season', 'album']),
+      programs: z
+        .array(TvSeasonContentProgramSchema)
+        .or(z.array(MusicAlbumContentProgramSchema)),
+    })
+    .or(
+      z.object({
+        type: z.enum(['episode', 'track']),
+        programs: z.array(ContentProgramSchema),
+      }),
+    ),
+);

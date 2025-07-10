@@ -1,4 +1,5 @@
 import { Box, Collapse, lighten, type Theme } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useCallback, useRef } from 'react';
 import { useBoolean } from 'usehooks-ts';
 import { useIsDarkMode } from '../hooks/useTunarrTheme.ts';
@@ -10,7 +11,7 @@ interface InlineModalProps<ItemType> {
   modalItem: Nullable<ItemType>;
   depth: number;
   extractItemId: (item: ItemType) => string;
-  getChildGrid: (props: NestedGridProps<ItemType>) => JSX.Element; //ComponentType<MediaItemGridProps<PageDataType, ItemType>>
+  getChildGrid: (props: NestedGridProps<ItemType>) => ReactNode;
 }
 
 export function InlineModal<ItemType>(props: InlineModalProps<ItemType>) {

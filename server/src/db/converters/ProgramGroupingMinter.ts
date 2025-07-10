@@ -135,7 +135,7 @@ export class ProgramGroupingMinter {
       updatedAt: now,
       index: null,
       title: item.grandparent.title ?? '',
-      summary: null,
+      summary: item.grandparent.summary,
       icon: null,
       artistUuid: null,
       showUuid: null,
@@ -155,13 +155,13 @@ export class ProgramGroupingMinter {
       uuid: v4(),
       type:
         item.subtype === 'episode'
-          ? ProgramGroupingType.Show
-          : ProgramGroupingType.Artist,
+          ? ProgramGroupingType.Season
+          : ProgramGroupingType.Album,
       createdAt: now,
       updatedAt: now,
       index: item.parent.index,
       title: item.parent.title ?? '',
-      summary: null,
+      summary: item.parent.summary,
       icon: null,
       artistUuid: null,
       showUuid: null,
