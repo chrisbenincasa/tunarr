@@ -229,7 +229,7 @@ export const ChannelProgramGrid = ({
             queries: { offset: pageParam, limit: 50 },
           }),
     getNextPageParam: (currentPage, pages) => {
-      if (currentPage.result.length === 0) {
+      if ((currentPage.result?.length ?? 0) === 0) {
         return null;
       }
 
