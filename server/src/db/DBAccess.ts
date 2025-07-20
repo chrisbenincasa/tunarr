@@ -46,6 +46,19 @@ class Connection {
       timeout: 5000,
     });
 
+    // Write to a separate WAL file, reads continue from main database
+    // Multiple readers can work simultaneously with one writer.
+    this.sqlite.pragma('journal_mode = WAL');
+    // Syncs to disk at critical moments, but not after every write.
+    // ~2-3x faster writes than FULL synchronization.
+    this.sqlite.pragma('synchronous = NORMAL');
+    // Use RAM for temporary operations (temp tables, sorting)
+    this.sqlite.pragma('temp_store = MEMORY');
+    // Keeps 10k DB pages in RAM; adds about 40MB of memory overhead.
+    this.sqlite.pragma('cache_size = 10000');
+    this.sqlite.pragma('mmap_size = 268435456');
+    this.sqlite.pragma('foreign_keys = ON');
+
     this.kysely = new Kysely<DB>({
       dialect: new SqliteDialect({
         database: this.sqlite,
