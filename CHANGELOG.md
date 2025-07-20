@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.6](https://github.com/chrisbenincasa/tunarr/compare/v0.20.5...v0.20.6) (2025-07-20)
+
+
+### Bug Fixes
+
+* **server:** default is_edge_build env var flag to false if not present ([d9d7aa3](https://github.com/chrisbenincasa/tunarr/commit/d9d7aa39a4929eacdf29cbc222b179c53fe38b3c))
+* **ui:** make version mismatch snackbar dismissable ([8294735](https://github.com/chrisbenincasa/tunarr/commit/8294735b9b2ba17ebfe16416c08fa7892052627a))
+
 ## [0.20.5](https://github.com/chrisbenincasa/tunarr/compare/v0.20.4...v0.20.5) (2025-07-20)
 
 
