@@ -1,6 +1,9 @@
-import { PlexPinsResponse, PlexResourcesResponse } from '@tunarr/types/plex';
-import { compact, partition } from 'lodash-es';
-import { ApiClient } from '../external/api.ts';
+import type {
+  PlexPinsResponse,
+  PlexResourcesResponse,
+} from '@tunarr/types/plex';
+import { compact, isEmpty, isError, isString, partition } from 'lodash-es';
+import type { ApiClient } from '../external/api.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -53,12 +56,12 @@ export const plexLoginFlow = async () => {
       if (attempts > maxAttempts) {
         interval.stop();
         authWindow?.close();
-        reject();
+        reject(new Error('Reached maximum attempts without success'));
         return;
       }
 
       if (authWindow && authWindow.closed) {
-        reject();
+        reject(new Error('Auth window was closed before success'));
         interval.stop();
         return;
       }
@@ -80,7 +83,14 @@ export const plexLoginFlow = async () => {
         }
       } catch (e) {
         interval.stop();
-        reject(e);
+        console.error(e);
+        reject(
+          isError(e)
+            ? e
+            : isString(e)
+              ? new Error(e)
+              : new Error('Unknown error occurred'),
+        );
       }
     };
 
@@ -111,6 +121,12 @@ export const checkNewPlexServers =
       );
 
       for (const connection of [...localConnections, ...remoteConnections]) {
+        if (isEmpty(server.accessToken)) {
+          console.warn(
+            `Server at URL ${connection.uri} did not return an access token`,
+          );
+          continue;
+        }
         const { healthy } = await apiClient.getUnknownMediaSourceStatus({
           name: server.name,
           accessToken: server.accessToken,
