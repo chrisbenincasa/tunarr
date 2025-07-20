@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.20.5](https://github.com/chrisbenincasa/tunarr/compare/v0.20.4...v0.20.5) (2025-07-20)
+
+
+### Features
+
+* **ui:** add ability to hide stealth channels from Tunarr guide page ([9decb37](https://github.com/chrisbenincasa/tunarr/commit/9decb371b90939157ce4ced7f10f678cdd1058d6)), closes [#1220](https://github.com/chrisbenincasa/tunarr/issues/1220)
+* **ui:** add channel summary page ([#1190](https://github.com/chrisbenincasa/tunarr/issues/1190)) ([1f2e5eb](https://github.com/chrisbenincasa/tunarr/commit/1f2e5eb7c99698f732dcbeaa235f0965750fb1b3))
+* **ui:** add debug panel showing relevant server environment variables ([c358dfc](https://github.com/chrisbenincasa/tunarr/commit/c358dfc60d9ed017e5c716863a2bb9d7a830afef))
+
+
+### Bug Fixes
+
+* **backend:** allow deleting channels that have subtitle preferences ([1c12b6b](https://github.com/chrisbenincasa/tunarr/commit/1c12b6b776934a139dc7d9881d165f27e0a096f4))
+* ensure build versions match between web and server ([d31919c](https://github.com/chrisbenincasa/tunarr/commit/d31919c1b046bbe1226deed00361dbd11c01857b))
+* insert filler / custom show content in chunks of 1000 to stay under sqlite limits ([907594e](https://github.com/chrisbenincasa/tunarr/commit/907594e0d5ae2380f04665098b5606a14dfdea20)), closes [#1255](https://github.com/chrisbenincasa/tunarr/issues/1255)
+* **server:** fix incorrectly setting transcodeConfig.isDefault based on wrong field ([50b31a6](https://github.com/chrisbenincasa/tunarr/commit/50b31a68428e79f3be6a7a0564086be7490eb234))
+* **streaming:** fix nvidia hwdownload compat with ffmpeg 7.2 ([#1253](https://github.com/chrisbenincasa/tunarr/issues/1253)) ([d4a1ed4](https://github.com/chrisbenincasa/tunarr/commit/d4a1ed4c57606efdc9e6f4b7b85a5a7869a361ac))
+* **streaming:** include Quadro M2000, etc in special Maxwell cards that can decode HEVC ([be92d10](https://github.com/chrisbenincasa/tunarr/commit/be92d10bc67a92d985f91e85c93f0ed7302f8d9e))
+* **streaming:** typo in rc-lookahead option ([a96d782](https://github.com/chrisbenincasa/tunarr/commit/a96d7823b167fad4cccd5b43aa815c8cb91881bb))
+* **streaming:** various fixes to CUDA decoding and pipeline ([#1242](https://github.com/chrisbenincasa/tunarr/issues/1242)) ([0f25baa](https://github.com/chrisbenincasa/tunarr/commit/0f25baa18e6a0dc1711f1660cd85ae0646f99b0f))
+* **streaming:** various fixes to pixel formats in nvidia pipeline ([#1251](https://github.com/chrisbenincasa/tunarr/issues/1251)) ([4c3a080](https://github.com/chrisbenincasa/tunarr/commit/4c3a0800315000619132477f0edcea76b4bde70f))
+* **ui:** do not attempt to reach new plex servers with no access token ([2c37b83](https://github.com/chrisbenincasa/tunarr/commit/2c37b838464d0118916f1cfb843bf9c393cb817f))
+* **ui:** ensure 'unsaved changes' popup doesn't erroneously pop-up in channel settings ([be6db83](https://github.com/chrisbenincasa/tunarr/commit/be6db8346bba3ad3a4dc7c5b8b2f30e25818fca4))
+* **ui:** fix channel summary page for empty channels ([218e01c](https://github.com/chrisbenincasa/tunarr/commit/218e01ca9adbce46bbc83c8d8196a3f49c9e4b10))
+* **ui:** remove extraneous unsaved changes warning in ffmpeg settings ([0c95cf0](https://github.com/chrisbenincasa/tunarr/commit/0c95cf0ce91bdd62bb2a541a1e69184363c83e24)), closes [#1244](https://github.com/chrisbenincasa/tunarr/issues/1244)
+
+
+### UI Changes
+
+* add health check for deprecated base docker image tags ([3c5ea42](https://github.com/chrisbenincasa/tunarr/commit/3c5ea4244435a818021052dbc915cf5f5e418ee5))
+* calculate guide item width to better fill container ([d9f5e12](https://github.com/chrisbenincasa/tunarr/commit/d9f5e126ec95e63ba49f6a0a456aae842c8f4be9))
+* trialing out brighter secondary colors in dark mode ([6e21d5b](https://github.com/chrisbenincasa/tunarr/commit/6e21d5bdc927c5e60b9cdb9b25b8308cc1956836))
+* various fixes to how the guide page is displayed ([#1248](https://github.com/chrisbenincasa/tunarr/issues/1248)) ([6438a0d](https://github.com/chrisbenincasa/tunarr/commit/6438a0db0269a4644298afdbbef6925354f07b0c))
+
 ## [0.20.4](https://github.com/chrisbenincasa/tunarr/compare/v0.20.3...v0.20.4) (2025-06-16)
 
 
