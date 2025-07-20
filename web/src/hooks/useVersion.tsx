@@ -1,5 +1,5 @@
-import { Refresh } from '@mui/icons-material';
-import { Button } from '@mui/material';
+import { Close, Refresh } from '@mui/icons-material';
+import { Button, Stack } from '@mui/material';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import type { VersionApiResponse } from '@tunarr/types/api';
 import { useSnackbar } from 'notistack';
@@ -45,7 +45,7 @@ export const useVersion = (
       },
       action: () => {
         return (
-          <>
+          <Stack direction="row">
             <Button
               startIcon={<Refresh />}
               onClick={() => window.location.reload()}
@@ -53,7 +53,14 @@ export const useVersion = (
             >
               Refresh
             </Button>
-          </>
+            <Button
+              startIcon={<Close />}
+              onClick={() => snackbar.closeSnackbar('version_mismatch')}
+              color="inherit"
+            >
+              Dismiss
+            </Button>
+          </Stack>
         );
       },
     });
