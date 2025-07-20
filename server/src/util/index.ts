@@ -446,6 +446,7 @@ export const isDev = currentEnv() === 'development';
 export const isTest = currentEnv() === 'test';
 export const isEdgeBuild = getBooleanEnvVar(
   TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,
+  false,
 );
 export const tunarrBuild = process.env.TUNARR_BUILD;
 
