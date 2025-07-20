@@ -117,7 +117,7 @@ export class TranscodeConfigDB {
       disableChannelOverlay: booleanToNumber(
         updatedConfig.disableChannelOverlay,
       ),
-      isDefault: booleanToNumber(updatedConfig.disableChannelOverlay),
+      isDefault: booleanToNumber(updatedConfig.isDefault),
     };
 
     return this.db
