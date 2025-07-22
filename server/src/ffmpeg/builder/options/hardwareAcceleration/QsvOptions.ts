@@ -2,9 +2,13 @@ import { GlobalOption } from '@/ffmpeg/builder/options/GlobalOption.js';
 import type { Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@/util/index.js';
 import os from 'node:os';
+import { HardwareAccelerationMode } from '../../../../db/schema/TranscodeConfig.ts';
 
 export class QsvHardwareAccelerationOption extends GlobalOption {
-  constructor(private qsvDevice: Nullable<string>) {
+  constructor(
+    private qsvDevice: Nullable<string>,
+    private decodeMode: HardwareAccelerationMode,
+  ) {
     super();
   }
 
@@ -21,6 +25,10 @@ export class QsvHardwareAccelerationOption extends GlobalOption {
     ];
 
     const result = ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'];
+
+    if (this.decodeMode !== HardwareAccelerationMode.Qsv) {
+      result.length = 0;
+    }
 
     if (os.type().toLowerCase() == 'linux') {
       if (isNonEmptyString(this.qsvDevice)) {
