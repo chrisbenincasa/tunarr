@@ -38,6 +38,7 @@ export const OutputFormatTypes = {
   Mp4: 'mp4',
   Hls: 'hls',
   Nut: 'nut',
+  Dash: 'dash',
 } as const;
 
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;

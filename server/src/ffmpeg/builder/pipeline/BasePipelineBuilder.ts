@@ -350,7 +350,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
 
     this.context.pipelineSteps = [
-      ...this.getThreadCountOption(desiredState, ffmpegState),
+      ...this.getThreadCountOption(ffmpegState),
       new NoStdInOption(),
       new HideBannerOption(),
       new NoStatsOption(),
@@ -770,6 +770,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         }
         break;
       }
+      case OutputFormatTypes.Dash:
+        throw new Error('MPEG-DASH streaming is not yet implemented');
     }
 
     if (this.ffmpegState.outputFormat.type !== OutputFormatTypes.Hls) {
@@ -781,17 +783,12 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
   }
 
-  protected getThreadCountOption(
-    desiredState: FrameState,
-    ffmpegState: FfmpegState,
-  ) {
+  protected getThreadCountOption(ffmpegState: FfmpegState) {
     let threadCount: Nullable<number> = null;
-    if (
-      ffmpegState.decoderHwAccelMode !== 'none' ||
-      ffmpegState.encoderHwAccelMode !== 'none'
-    ) {
-      threadCount = 1;
-    } else if (!!ffmpegState.start && desiredState.realtime) {
+    if (ffmpegState.decoderHwAccelMode !== HardwareAccelerationMode.None) {
+      this.logger.debug(
+        `Forcing 1 ffmpeg decoding thread due to use of hardware accelerated decoding.`,
+      );
       threadCount = 1;
     } else if (
       !isNull(ffmpegState.threadCount) &&
