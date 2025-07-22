@@ -38,6 +38,7 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
+import dayjs from 'dayjs';
 import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
@@ -78,10 +79,6 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     let canDecode = this.hardwareCapabilities.canDecodeVideoStream(videoStream);
     let canEncode = this.hardwareCapabilities.canEncodeState(desiredState);
 
-    this.pipelineSteps.push(
-      new QsvHardwareAccelerationOption(this.ffmpegState.vaapiDevice),
-    );
-
     if (this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut) {
       canEncode = false;
     }
@@ -94,9 +91,22 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       canDecode = false;
     }
 
+    // Use software decode when seeking with QSV to prevent some sync issues.
+    if (canDecode && +(this.ffmpegState.start ?? dayjs.duration(0)) > 0) {
+      canDecode = false;
+    }
+
     this.ffmpegState.decoderHwAccelMode = canDecode
       ? HardwareAccelerationMode.Qsv
       : HardwareAccelerationMode.None;
+
+    this.pipelineSteps.push(
+      new QsvHardwareAccelerationOption(
+        this.ffmpegState.vaapiDevice,
+        this.ffmpegState.decoderHwAccelMode,
+      ),
+    );
+
     this.ffmpegState.encoderHwAccelMode = canEncode
       ? HardwareAccelerationMode.Qsv
       : HardwareAccelerationMode.None;
