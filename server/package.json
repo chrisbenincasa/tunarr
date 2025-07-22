@@ -21,7 +21,7 @@
     "preinstall": "npx only-allow pnpm",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
-    "test": "vitest",
+    "test": "vitest --run",
     "test:watch": "vitest --watch"
   },
   "dependencies": {
@@ -55,6 +55,7 @@
     "fastify-type-provider-zod": "^4.0.1",
     "file-type": "^19.6.0",
     "inversify": "^6.2.1",
+    "jsonpath-plus": "^10.3.0",
     "kysely": "^0.27.4",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.0",

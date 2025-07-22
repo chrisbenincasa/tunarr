@@ -1,15 +1,22 @@
 import type {
   CustomShowProgramOption,
+  FillerProgramOption,
   ProgramOption,
   ShowProgramOption,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useTimeSlotFormContext } from '@/hooks/useTimeSlotFormContext.ts';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
-import type { TimeSlot, TimeSlotProgramming } from '@tunarr/types/api';
+import type {
+  CustomShowProgrammingTimeSlot,
+  FillerProgrammingTimeSlot,
+  ShowProgrammingTimeSlot,
+  TimeSlot,
+} from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { groupBy, isEmpty, maxBy, sortBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
+import type { Dictionary } from 'ts-essentials';
 import { OneDayMillis } from '../../helpers/constants.ts';
 
 export const AddTimeSlotButton = ({
@@ -35,7 +42,10 @@ export const AddTimeSlotButton = ({
   }, [currentPeriod, dayOffset, slots]);
 
   const optionsByType = useMemo(() => {
-    return groupBy(programOptions, (opt) => opt.type);
+    return groupBy(programOptions, (opt) => opt.type) as Dictionary<
+      ProgramOption[],
+      ProgramOption['type']
+    >;
   }, [programOptions]);
 
   const addSlot = useCallback(() => {
@@ -44,39 +54,62 @@ export const AddTimeSlotButton = ({
       ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
       : dayjs.duration(0);
 
-    let programming: TimeSlotProgramming;
+    const baseSlot = {
+      startTime: +newStartTime,
+      direction: 'asc' as const,
+      order: 'next' as const,
+    } as const;
+
+    let newSlot: TimeSlot;
     if (optionsByType['show'] && !isEmpty(optionsByType['show'])) {
       const opts: ShowProgramOption[] = optionsByType[
         'show'
       ] as ShowProgramOption[];
-      programming = {
+      newSlot = {
+        ...baseSlot,
         type: 'show',
         showId: sortBy(opts, (opt) => opt.value)?.[0].showId,
-      };
-    } else if (optionsByType['custom'] && !isEmpty(optionsByType['custom'])) {
+      } satisfies ShowProgrammingTimeSlot;
+    } else if (
+      optionsByType['custom-show'] &&
+      !isEmpty(optionsByType['custom-show'])
+    ) {
       const opts: CustomShowProgramOption[] = optionsByType[
-        'custom'
+        'custom-show'
       ] as CustomShowProgramOption[];
-      programming = {
+
+      newSlot = {
+        ...baseSlot,
         type: 'custom-show',
         customShowId: sortBy(opts, (opt) => opt.value)?.[0].customShowId,
-      };
+      } satisfies CustomShowProgrammingTimeSlot;
+    } else if (optionsByType['filler'] && !isEmpty(optionsByType['filler'])) {
+      const opts: FillerProgramOption[] = optionsByType[
+        'filler'
+      ] as FillerProgramOption[];
+
+      const opt = sortBy(opts, (opt) => opt.value)[0];
+      newSlot = {
+        ...baseSlot,
+        ...opt,
+        decayFactor: 0.5,
+        durationWeighting: 'linear',
+        recoveryFactor: 0.05,
+        order: 'shuffle_prefer_short',
+      } satisfies FillerProgrammingTimeSlot;
     } else if (optionsByType['movie'] && !isEmpty(optionsByType['movie'])) {
-      programming = {
+      newSlot = {
+        ...baseSlot,
         type: 'movie',
+        order: 'alphanumeric',
       };
     } else {
-      programming = {
+      newSlot = {
+        ...baseSlot,
         type: 'flex',
       };
     }
 
-    const newSlot = {
-      programming,
-      startTime: newStartTime.asMilliseconds(),
-      order: programming.type === 'movie' ? 'chronological' : 'next',
-      direction: 'asc',
-    } satisfies TimeSlot;
     onAdd(newSlot);
     append(newSlot);
   }, [relevantSlots, optionsByType, onAdd, append]);

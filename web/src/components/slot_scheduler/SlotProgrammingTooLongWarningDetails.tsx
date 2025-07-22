@@ -23,7 +23,7 @@ import {
 import { seq } from '@tunarr/shared/util';
 import type { BaseSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { map, round, sum, values } from 'lodash-es';
+import { map, round, sum, uniqBy, values } from 'lodash-es';
 import pluralize from 'pluralize';
 import type { ListChildComponentProps } from 'react-window';
 import { FixedSizeList } from 'react-window';
@@ -42,9 +42,12 @@ export const SlotProgrammingTooLongWarningDetails = ({
   const formatter = useProgramTitleFormatter();
   const programLookup = useStoreProgramLookup();
 
-  const longPrograms = seq.collect(warning.programs, ({ id }) => {
-    return programLookup[id];
-  });
+  const longPrograms = seq.collect(
+    uniqBy(warning.programs, (p) => p.id),
+    ({ id }) => {
+      return programLookup[id];
+    },
+  );
 
   const renderLongProgramRow = (props: ListChildComponentProps) => {
     const program = longPrograms[props.index];
@@ -79,7 +82,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
 
   let averageLength = dayjs.duration(0);
 
-  switch (slot.programming.type) {
+  switch (slot.type) {
     case 'movie': {
       const durations = seq.collect(values(programLookup), (program) => {
         if (program.type === 'content' && program.subtype === 'movie') {
@@ -95,7 +98,7 @@ export const SlotProgrammingTooLongWarningDetails = ({
       break;
     }
     case 'show': {
-      const showId = slot.programming.showId;
+      const showId = slot.showId;
       const durations = seq.collect(values(programLookup), (program) => {
         if (
           program.type === 'content' &&
@@ -114,6 +117,9 @@ export const SlotProgrammingTooLongWarningDetails = ({
       break;
     }
     case 'custom-show':
+    case 'filler':
+    case 'flex':
+    case 'redirect':
     default:
       break;
   }

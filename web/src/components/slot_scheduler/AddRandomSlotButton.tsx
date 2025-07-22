@@ -2,15 +2,17 @@ import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Add } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import type { RandomSlot, RandomSlotProgramming } from '@tunarr/types/api';
+import type { RandomSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { first, map, round, sortBy } from 'lodash-es';
 import { useCallback } from 'react';
+import { match } from 'ts-pattern';
 
 const typeWeights: Record<ProgramOption['type'], number> = {
   show: 0,
   movie: 1,
   'custom-show': 2,
+  filler: 2,
   redirect: 3,
   flex: 4,
 } as const;
@@ -26,37 +28,6 @@ const findBestProgramOption = (
     }
   );
 };
-
-function programOptionToSlotProgram(
-  program: ProgramOption,
-): RandomSlotProgramming {
-  switch (program.type) {
-    case 'movie':
-      return {
-        type: 'movie',
-      };
-    case 'flex':
-      return {
-        type: 'flex',
-      };
-    case 'custom-show':
-      return {
-        type: 'custom-show',
-        customShowId: program.customShowId,
-      };
-    case 'redirect':
-      return {
-        type: 'redirect',
-        channelId: program.channelId,
-        channelName: program.channelName,
-      };
-    case 'show':
-      return {
-        type: 'show',
-        showId: program.showId,
-      };
-  }
-}
 
 export const AddRandomSlotButton = ({
   onAdd,
@@ -86,11 +57,10 @@ export const AddRandomSlotButton = ({
 
     const programOption = findBestProgramOption(programOptions);
 
-    const programming = programOptionToSlotProgram(programOption);
-    const newSlot = {
-      programming,
+    const baseSlot = {
+      type: programOption.type,
       cooldownMs: 0,
-      order: programming.type === 'movie' ? 'chronological' : 'next',
+      // order: programming.type === 'movie' ? 'chronological' : 'next',
       weight,
       durationSpec: {
         type: 'fixed',
@@ -98,7 +68,48 @@ export const AddRandomSlotButton = ({
       },
       direction: 'asc',
       index: slotArray.fields.length,
-    } satisfies RandomSlot;
+    } as const;
+
+    const newSlot = match(programOption)
+      .returnType<RandomSlot>()
+      .with({ type: 'movie' }, () => ({
+        ...baseSlot,
+        type: 'movie',
+        order: 'chronological',
+      }))
+      .with({ type: 'custom-show' }, (cs) => ({
+        ...baseSlot,
+        type: 'custom-show',
+        customShowId: cs.customShowId,
+        order: 'next',
+      }))
+      .with({ type: 'filler' }, (f) => ({
+        ...baseSlot,
+        ...f,
+        type: 'filler',
+        decayFactor: 0.5,
+        durationWeighting: 'linear',
+        recoveryFactor: 0.05,
+        order: 'shuffle_prefer_short',
+      }))
+      .with({ type: 'show' }, (s) => ({
+        ...baseSlot,
+        type: 'show',
+        showId: s.showId,
+        order: 'next',
+      }))
+      .with({ type: 'flex' }, () => ({
+        ...baseSlot,
+        type: 'flex',
+        order: 'next',
+      }))
+      .with({ type: 'redirect' }, (r) => ({
+        ...baseSlot,
+        type: 'redirect',
+        channelId: r.channelId,
+        order: 'next',
+      }))
+      .exhaustive();
 
     onAdd(newSlot);
     slotArray.replace([...slots, newSlot]);

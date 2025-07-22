@@ -29,9 +29,11 @@ import type {
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { ContentProgramType } from '@tunarr/types/schemas';
 import type { MarkOptional, MarkRequired } from 'ts-essentials';
+import type { Json } from '../../types/schemas.ts';
 import type { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 
 export type ChannnelAndLineup = { channel: Channel; lineup: Lineup };
+export type ChannelAndRawLineup = { channel: Channel; lineup: Json };
 
 export interface IChannelDB {
   channelExists(channelId: string): Promise<boolean>;
@@ -130,6 +132,8 @@ export interface IChannelDB {
   loadAllLineupConfigs(
     forceRead?: boolean,
   ): Promise<Record<string, ChannnelAndLineup>>;
+
+  loadAllRawLineups(): Promise<Record<string, ChannelAndRawLineup>>;
 
   loadChannelAndLineup(channelId: string): Promise<ChannnelAndLineup | null>;
 

@@ -1,70 +1,83 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { RandomSlotDurationSpecMigration } from '@/migration/lineups/RandomSlotDurationSpecMigration.js';
 import { KEYS } from '@/types/inject.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { inject, injectable } from 'inversify';
-import { findIndex, map } from 'lodash-es';
-import {
-  CurrentLineupSchemaVersion,
-  Lineup,
-} from '../../db/derived_types/Lineup.ts';
+import { Json } from '@/types/schemas.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
+import dayjs from 'dayjs';
+import { inject, injectable, interfaces } from 'inversify';
+import { JSONPath } from 'jsonpath-plus';
+import { findIndex, first, identity, isArray, sortBy } from 'lodash-es';
+import assert from 'node:assert';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { container } from '../../container.ts';
+import { CurrentLineupSchemaVersion } from '../../db/derived_types/Lineup.ts';
+import { FileSystemService } from '../../services/FileSystemService.ts';
+import { Nilable } from '../../types/util.ts';
+import { parseIntOrNull } from '../../util/index.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
+import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
 
-type MigrationFactory<From extends number, To extends number> = (
-  channelDB: IChannelDB,
-  programDB: IProgramDB,
-) => ChannelLineupMigration<From, To>;
-
-type MigrationStep<From extends number, To extends number> = [
-  From,
-  To,
-  MigrationFactory<From, To>,
+const MigrationSteps: interfaces.ServiceIdentifier<
+  ChannelLineupMigration<number, number>
+>[] = [
+  SlotShowIdMigration,
+  RandomSlotDurationSpecMigration,
+  SlotProgrammingMigration,
 ];
-
-const MigrationSteps: MigrationStep<number, number>[] = [
-  [0, 1, (cdb, pdb) => new SlotShowIdMigration(cdb, pdb)],
-  [1, 2, (cdb, pdb) => new RandomSlotDurationSpecMigration(cdb, pdb)],
-] as const;
-
-type MigrationPipeline = [
-  number,
-  number,
-  ChannelLineupMigration<number, number>,
-][];
 
 /**
  * One-way migrations for lineup JSON files.
  */
 @injectable()
 export class ChannelLineupMigrator {
-  #logger = LoggerFactory.child({ className: this.constructor.name });
-  #migrationPipeline: MigrationPipeline;
+  #migrationPipeline: ChannelLineupMigration<number, number>[];
 
   constructor(
+    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-    @inject(KEYS.ProgramDB) programDB: IProgramDB,
+    @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {
-    this.#migrationPipeline = map(MigrationSteps, ([from, to, factory]) => [
-      from,
-      to,
-      factory(channelDB, programDB),
-    ]);
+    const allSteps = sortBy(
+      MigrationSteps.map((step) => container.get(step)),
+      ({ from }) => from,
+    );
+    for (let i = 0; i < allSteps.length; i++) {
+      if (i === 0) {
+        assert(allSteps[i].from === 1);
+      } else {
+        const prevStep = allSteps[i - 1];
+        const thisStep = allSteps[i];
+        assert(prevStep.to === thisStep.from);
+      }
+    }
+
+    this.#migrationPipeline = allSteps;
   }
 
   async run() {
-    const lineups = await this.channelDB.loadAllLineupConfigs(true);
+    const lineups = await this.channelDB.loadAllRawLineups();
     for (const [channelId, { lineup }] of Object.entries(lineups)) {
       await this.runSingle(channelId, lineup);
     }
   }
 
-  private async runSingle(channelId: string, lineup: Lineup): Promise<void> {
-    const currVersion = lineup.version ?? 0;
+  private async runSingle(channelId: string, lineup: Json): Promise<void> {
+    if (
+      (typeof lineup !== 'object' && typeof lineup !== 'function') ||
+      lineup === null ||
+      isArray(lineup)
+    ) {
+      this.logger.warn('Got invalid lineup JSON: %O. Expected object.', lineup);
+      return;
+    }
+
+    const version = getFirstValue('$.version@number()', lineup, parseIntOrNull);
+    let currVersion = version ?? 0;
 
     if (currVersion === CurrentLineupSchemaVersion) {
-      this.#logger.debug(
+      this.logger.debug(
         'Channel %s schema already on latest version (%d)',
         channelId,
         CurrentLineupSchemaVersion,
@@ -74,11 +87,11 @@ export class ChannelLineupMigrator {
 
     let migrationIndex = findIndex(
       this.#migrationPipeline,
-      ([from]) => from === currVersion,
+      ({ from }) => from === currVersion,
     );
 
     if (migrationIndex === -1) {
-      this.#logger.error(
+      this.logger.error(
         'Error determining which migration to start from for channel (id=%s)',
         channelId,
       );
@@ -86,24 +99,56 @@ export class ChannelLineupMigrator {
     }
 
     try {
-      while (
-        lineup.version < CurrentLineupSchemaVersion &&
-        migrationIndex < this.#migrationPipeline.length
-      ) {
-        const [, toVersion, migration] =
-          this.#migrationPipeline[migrationIndex];
+      do {
+        const migration = this.#migrationPipeline?.[migrationIndex];
+        if (!migration) {
+          break;
+        }
+
+        const backupPath = path.join(
+          this.fileSystemService.backupPath,
+          `${channelId}_lineup_v${currVersion}_${+dayjs()}.json.bak`,
+        );
+        await fs.writeFile(backupPath, JSON.stringify(lineup));
+        this.logger.debug(
+          'Successfully wrote lineup file backup for channel %s to %s',
+          channelId,
+          backupPath,
+        );
+
         await migration.migrate(lineup);
-        lineup.version = toVersion;
+        currVersion = migration.to;
+        lineup['version'] = currVersion;
         migrationIndex++;
-      }
+      } while (currVersion <= CurrentLineupSchemaVersion);
 
       await this.channelDB.saveLineup(channelId, lineup);
+      this.logger.info(
+        'Successfully migrated channel %s from lineup version %d to %d',
+        channelId,
+        version,
+        currVersion,
+      );
     } catch (e) {
-      this.#logger.error(
+      this.logger.error(
         e,
         'Error while migrating channel lineup schema (id=%s)',
         channelId,
       );
     }
   }
+}
+
+function getFirstValue<Output = unknown>(
+  path: string,
+  json: Json,
+  map: (input: unknown) => Output = identity,
+): Nilable<Output> {
+  const res = JSONPath<unknown>({ path, json });
+  if (isArray(res)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const f = first(res);
+    return f ? map(f) : null;
+  }
+  return;
 }

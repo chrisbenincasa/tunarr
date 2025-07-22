@@ -189,6 +189,25 @@ export async function mapReduceAsyncSeq<T, U, Res = U>(
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function asyncMapToRecord<T, U, K extends keyof any>(
+  seq: Nilable<Array<T>>,
+  mapper: (item: T) => Promise<U>,
+  extractKey: (mapped: U) => K,
+  opts?: mapAsyncSeq2Opts,
+): Promise<Record<K, U>> {
+  return mapReduceAsyncSeq(
+    seq,
+    mapper,
+    (prev, u) => {
+      prev[extractKey(u)] = u;
+      return prev;
+    },
+    {} as Record<K, U>,
+    opts,
+  );
+}
+
 export async function mapAsyncSeq<T, U>(
   seq: T[] | null | undefined,
   fn: (item: T) => Promise<U>,

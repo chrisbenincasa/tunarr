@@ -20,7 +20,7 @@ import {
   sortBy,
   sum,
 } from 'lodash-es';
-import { MersenneTwister19937, Random } from 'random-js';
+import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { ProgramIterator } from '../util/ProgramIterator.js';
 import {
@@ -133,6 +133,8 @@ class ScheduleContext {
   #sortedSlots: RandomSlot[];
   #slotLastPlayed: Map<number, number> = new Map<number, number>();
   #currentSlotIndex = 0;
+  #seed = createEntropy();
+  #random = new Random(MersenneTwister19937.seedWithArray(this.#seed));
 
   constructor(
     schedule: RandomSlotSchedule,
@@ -142,6 +144,7 @@ class ScheduleContext {
     this.#programmingIteratorsById = createProgramIterators(
       schedule.slots,
       createProgramMap(reject(programming, (p) => isFlexProgram(p))),
+      this.#random,
     );
     this.#timeCursor = startTime;
     this.#sortedSlots = orderBy(
@@ -174,11 +177,11 @@ class ScheduleContext {
   }
 
   getNextProgramForSlot(slot: RandomSlot) {
-    return getNextProgramForSlot(
-      slot,
-      this.#programmingIteratorsById,
-      slot.durationSpec.type === 'fixed' ? slot.durationSpec.durationMs : -1,
-    );
+    return getNextProgramForSlot(slot, this.#programmingIteratorsById, {
+      slotDuration:
+        slot.durationSpec.type === 'fixed' ? slot.durationSpec.durationMs : -1,
+      timeCursor: +this.timeCursor,
+    });
   }
 
   pushOrExtendFlex(dur: number | Duration) {
@@ -381,15 +384,16 @@ export class RandomSlotScheduler {
       }
 
       if (slot.durationSpec.type === 'dynamic') {
-        switch (slot.programming.type) {
+        switch (slot.type) {
           case 'flex':
           case 'redirect':
             throw new Error(
-              `Cannot schedule slot of type ${slot.programming.type} with dynamic duration`,
+              `Cannot schedule slot of type ${slot.type} with dynamic duration`,
             );
           case 'movie':
           case 'show':
           case 'custom-show':
+          case 'filler':
             break;
         }
       }

@@ -7,8 +7,9 @@ import type {
 } from '@tunarr/types';
 import type {
   BaseSlot,
-  RandomSlotProgramming,
-  TimeSlotProgramming,
+  FillerProgrammingTimeSlot,
+  RandomSlot,
+  TimeSlot,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
@@ -31,18 +32,29 @@ export type ShowProgramOption = DropdownOption<string> & {
   showId: string;
 };
 
+export type FillerProgramOption = DropdownOption<string> & {
+  type: 'filler';
+  fillerListId: string;
+  programCount: number;
+};
+
 export type ProgramOption =
   | (DropdownOption<string> & {
       type: 'movie' | 'flex';
     })
   | CustomShowProgramOption
   | RedirectProgramOption
-  | ShowProgramOption;
+  | ShowProgramOption
+  | FillerProgramOption;
 
+export type ProgramOptionType = ProgramOption['type'];
+
+// TODO: This is duped with the shared package, put it somewhere better
 export type SlotId =
   | 'movie'
   | `show.${string}`
   | `custom-show.${string}`
+  | `filler.${string}`
   | `redirect.${string}`
   | `flex`;
 
@@ -65,11 +77,14 @@ export const lineupItemAppearsInSchedule = (
   item: ChannelProgram,
 ) => {
   return some(slots, (slot) => {
-    switch (slot.programming.type) {
+    switch (slot.type) {
       case 'custom-show':
         return (
-          item.type === 'custom' &&
-          item.customShowId === slot.programming.customShowId
+          item.type === 'custom' && item.customShowId === slot.customShowId
+        );
+      case 'filler':
+        return (
+          item.type === 'filler' && item.fillerListId === slot.fillerListId
         );
       case 'redirect':
         return item.type === 'redirect';
@@ -81,7 +96,7 @@ export const lineupItemAppearsInSchedule = (
           (item.type === 'custom' && item.program?.subtype === 'movie')
         );
       case 'show': {
-        const showTitle = slot.programming.showId;
+        const showTitle = slot.showId;
         return (
           item.type === 'content' &&
           item.subtype === 'episode' &&
@@ -98,24 +113,28 @@ export const slotOptionIsScheduled = (
 ) => {
   switch (option.type) {
     case 'movie':
-      return some(slots, (slot) => slot.programming.type === 'movie');
+      return some(slots, (slot) => slot.type === 'movie');
     case 'flex':
       return true;
     case 'custom-show':
       return some(
         slots,
         (slot) =>
-          slot.programming.type === 'custom-show' &&
-          slot.programming.customShowId === option.customShowId,
+          slot.type === 'custom-show' &&
+          slot.customShowId === option.customShowId,
       );
     case 'redirect':
       return true;
     case 'show':
       return some(
         slots,
+        (slot) => slot.type === 'show' && slot.showId === option.showId,
+      );
+    case 'filler':
+      return some(
+        slots,
         (slot) =>
-          slot.programming.type === 'show' &&
-          slot.programming.showId === option.showId,
+          slot.type === 'filler' && slot.fillerListId === option.fillerListId,
       );
   }
 };
@@ -123,18 +142,8 @@ export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
 export const OneWeekMillis = dayjs.duration(1, 'week').asMilliseconds();
 
 export function slotOrderOptions(
-  slotProgrammingType: StrictExclude<
-    BaseSlot['programming']['type'],
-    'redirect' | 'flex'
-  >,
+  slotProgrammingType: StrictExclude<BaseSlot['type'], 'redirect' | 'flex'>,
 ): DropdownOption<BaseSlot['order']>[] {
-  const common = [
-    {
-      value: 'shuffle',
-      description: 'Shuffle',
-    },
-  ] satisfies DropdownOption<BaseSlot['order']>[];
-
   switch (slotProgrammingType) {
     case 'movie':
       return [
@@ -146,8 +155,31 @@ export function slotOrderOptions(
           value: 'chronological',
           description: 'Chronological',
         },
-        ...common,
+        {
+          value: 'shuffle',
+          description: 'Shuffle',
+        },
       ];
+    case 'filler':
+      return [
+        {
+          value: 'shuffle_prefer_long',
+          description: 'Shuffle (prefer long)',
+          helperText:
+            'Shuffles filler items, prefering those with longer duration',
+        },
+        {
+          value: 'shuffle_prefer_short',
+          description: 'Shuffle (prefer short)',
+          helperText:
+            'Shuffles filler items, prefering those with shorter duration',
+        },
+        {
+          value: 'uniform',
+          description: 'Shuffle (uniform)',
+          helperText: 'Randomizes filler items with no weighting',
+        },
+      ] satisfies DropdownOption<FillerProgrammingTimeSlot['order']>[];
     case 'show':
     case 'custom-show':
       return [
@@ -159,7 +191,10 @@ export function slotOrderOptions(
           value: 'ordered_shuffle',
           description: 'Ordered Shuffle',
         },
-        ...common,
+        {
+          value: 'shuffle',
+          description: 'Shuffle',
+        },
       ];
   }
 }
@@ -185,9 +220,13 @@ export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
     value: 'show',
     description: 'Show',
   },
+  {
+    value: 'filler',
+    description: 'Filler List',
+  },
 ];
 
-export const getTimeSlotId = (programming: TimeSlotProgramming): SlotId => {
+export const getTimeSlotId = (programming: TimeSlot): SlotId => {
   switch (programming.type) {
     case 'show': {
       return `show.${programming.showId}`;
@@ -198,13 +237,16 @@ export const getTimeSlotId = (programming: TimeSlotProgramming): SlotId => {
     case 'custom-show': {
       return `${programming.type}.${programming.customShowId}`;
     }
-    default: {
+    case 'filler':
+      return `${programming.type}.${programming.fillerListId}`;
+    case 'flex':
+    case 'movie': {
       return programming.type;
     }
   }
 };
 
-export const getRandomSlotId = (programming: RandomSlotProgramming): SlotId => {
+export const getRandomSlotId = (programming: RandomSlot): SlotId => {
   switch (programming.type) {
     case 'show': {
       return `${programming.type}.${programming.showId}`;
@@ -215,7 +257,10 @@ export const getRandomSlotId = (programming: RandomSlotProgramming): SlotId => {
     case 'custom-show': {
       return `${programming.type}.${programming.customShowId}`;
     }
-    default: {
+    case 'filler':
+      return `${programming.type}.${programming.fillerListId}`;
+    case 'flex':
+    case 'movie': {
       return programming.type;
     }
   }
@@ -237,6 +282,8 @@ export const getSlotIdForProgram = (
               return isNonEmptyString(materialized.showId)
                 ? `show.${materialized.showId}`
                 : undefined;
+            case 'music_video':
+            case 'other_video':
             case 'track':
               return;
           }
@@ -246,6 +293,8 @@ export const getSlotIdForProgram = (
     }
     case 'custom':
       return `custom-show.${program.customShowId}`;
+    case 'filler':
+      return `filler.${program.fillerListId}`;
     case 'redirect':
       return `redirect.${program.channel}`;
     case 'flex':
