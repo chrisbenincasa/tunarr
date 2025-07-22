@@ -114,6 +114,17 @@ export class SubtitleStreamPicker {
           continue;
         }
 
+        // Temporarily skip pgs subs that break ffmpeg
+        // Workaround for #1272
+        const knownOverlayIssues = ['pgs', 'pgssub', 'hdmv_pgs_subtitle'];
+        if (knownOverlayIssues.includes(stream.codec)) {
+          this.logger.debug(
+            'Skipping subtitle index %d, potentially crashing subtitle',
+            stream.index,
+          );
+          continue;
+        }
+
         // TODO: check if embedded text based are extracted and continue searching
         // for a fallback if they are not.
         if (!isImageBasedSubtitle(stream.codec) && stream.type === 'embedded') {
