@@ -2,16 +2,20 @@ import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import {
   HardwarePixelFormat,
+  KnownPixelFormats,
   PixelFormatCuda,
+  PixelFormatNv12,
+  PixelFormatP010,
   PixelFormats,
+  PixelFormatYuv420P,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
-import { isNull } from 'lodash-es';
 import { FrameDataLocation } from '../../types.ts';
 
 export class HardwareDownloadCudaFilter extends FilterOption {
   public affectsFrameState: boolean = true;
+  private outPixelFormat: Nullable<PixelFormat> = null;
 
   constructor(
     private currentPixelFormat: Nullable<PixelFormat>,
@@ -36,8 +40,10 @@ export class HardwareDownloadCudaFilter extends FilterOption {
       const formats: string[] = [];
       if (currentFmt.bitDepth === 10) {
         formats.push(PixelFormats.P010);
+        this.outPixelFormat = new PixelFormatP010();
       } else {
         formats.push(PixelFormats.NV12);
+        this.outPixelFormat = new PixelFormatNv12(new PixelFormatYuv420P());
       }
 
       if (
@@ -47,9 +53,13 @@ export class HardwareDownloadCudaFilter extends FilterOption {
         const target = currentFmt.unwrap();
         if (target) {
           formats.push(target.name);
+          this.outPixelFormat =
+            KnownPixelFormats.forPixelFormat(target.name) ?? null;
         }
       } else if (this.targetPixelFormat) {
         formats.push(this.targetPixelFormat.name);
+        this.outPixelFormat =
+          KnownPixelFormats.forPixelFormat(this.targetPixelFormat.name) ?? null;
       }
 
       for (const fmt of formats) {
@@ -65,18 +75,10 @@ export class HardwareDownloadCudaFilter extends FilterOption {
       FrameDataLocation.Software,
     );
 
-    if (!isNull(this.targetPixelFormat)) {
-      return nextState.update({ pixelFormat: this.targetPixelFormat });
-    }
-
-    if (!isNull(this.currentPixelFormat)) {
-      if (this.currentPixelFormat.name === PixelFormats.NV12) {
-        nextState = nextState.update({
-          pixelFormat: this.currentPixelFormat.unwrap(),
-        });
-      } else {
-        nextState = nextState.update({ pixelFormat: this.currentPixelFormat });
-      }
+    if (this.outPixelFormat) {
+      nextState = nextState.update({
+        pixelFormat: this.outPixelFormat,
+      });
     }
 
     return nextState;

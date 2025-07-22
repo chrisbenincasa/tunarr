@@ -58,7 +58,10 @@ export class ImplicitNvidiaDecoder extends BaseDecoder {
     // https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/nvdec.c#L744-L773
     const nextState = super.nextState(currentState);
     return nextState.update({
-      pixelFormat: new PixelFormatCuda(currentState.pixelFormatOrUnknown()),
+      pixelFormat: new PixelFormatCuda(
+        currentState.pixelFormatOrUnknown().toHardwareFormat() ??
+          currentState.pixelFormatOrUnknown(),
+      ),
     });
   }
 }

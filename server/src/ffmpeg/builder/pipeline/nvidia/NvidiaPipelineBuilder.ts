@@ -185,6 +185,10 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       currentState.bitDepth === 8 &&
       (this.watermarkInputSource || this.context.isSubtitleOverlay())
     ) {
+      this.logger.trace(
+        'checking for pixel format for overlay: %O',
+        currentState,
+      );
       const desiredPixelFormat = new PixelFormatYuv420P();
       if (
         !isNil(currentState.pixelFormat) &&
