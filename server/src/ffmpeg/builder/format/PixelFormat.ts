@@ -181,7 +181,7 @@ export class PixelFormatP010 extends HardwarePixelFormat {
 }
 
 export class KnownPixelFormats {
-  static forPixelFormat(name: string) {
+  static forPixelFormat(name: KnownPixelFormats) {
     switch (name) {
       case PixelFormats.YUV420P:
         return new PixelFormatYuv420P();
