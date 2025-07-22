@@ -253,7 +253,7 @@ export const ChannelProgramGrid = ({
     queryFn: ({ pageParam }) =>
       apiClient.getProgramChildren({
         params: { id: parentId ?? '' },
-        queries: { offset: pageParam, limit: 50 },
+        queries: { offset: pageParam, limit: 50, channelId },
       }),
     getNextPageParam: (currentPage, allPages) => {
       if (currentPage.result.programs.length < 50) {

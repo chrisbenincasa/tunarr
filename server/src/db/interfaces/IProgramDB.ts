@@ -49,22 +49,22 @@ export interface IProgramDB {
   getChildren(
     parentId: string,
     parentType: 'season' | 'album',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<ProgramWithExternalIds>>;
   getChildren(
     parentId: string,
     parentType: 'artist',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
   getChildren(
     parentId: string,
     parentType: 'show',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<TvSeasonWithExternalIds>>;
   getChildren(
     parentId: string,
     parentType: ProgramGroupingType,
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<
     PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
   >;
@@ -119,3 +119,7 @@ export interface IProgramDB {
     chunkSize?: number,
   ): Promise<void>;
 }
+
+export type WithChannelIdFilter<T> = T & {
+  channelId?: string;
+};

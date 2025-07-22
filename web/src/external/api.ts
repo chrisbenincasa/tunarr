@@ -516,6 +516,7 @@ export const api = makeApi([
       .addQueries({
         offset: z.number().nonnegative().default(0),
         limit: z.number().min(-1).default(-1),
+        channelId: z.string().optional(),
       })
       .build(),
     response: ProgramChildrenResult,

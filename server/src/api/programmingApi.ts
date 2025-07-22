@@ -99,7 +99,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         tags: ['Programs'],
         params: BasicIdParamSchema,
-        querystring: PagingParams,
+        querystring: z.object({
+          ...PagingParams.shape,
+          channelId: z.string().optional(),
+        }),
         response: {
           200: ProgramChildrenResult,
           404: z.void(),

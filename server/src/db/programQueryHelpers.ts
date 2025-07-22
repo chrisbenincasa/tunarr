@@ -53,6 +53,28 @@ export const AllProgramGroupingFieldsAliased = <Alias extends string>(
 ): ProgramGroupingFields<Alias> =>
   ProgramGroupingKeys.map((key) => `${alias}.${key}` as const);
 
+type ProgramGroupingExternalIdFields<
+  Alias extends string = 'programGroupingExternalId',
+> = readonly `${Alias}.${keyof ProgramGroupingExternalId}`[];
+
+const ProgramGroupingExternalIdFields: (keyof ProgramGroupingExternalId)[] = [
+  'externalKey',
+  'externalSourceId',
+  'mediaSourceId',
+  'sourceType',
+];
+
+// TODO move this definition to the ProgramGrouping DAO file
+export const AllProgramGroupingExternalIdFields: ProgramGroupingExternalIdFields =
+  ProgramGroupingExternalIdFields.map(
+    (key) => `programGroupingExternalId.${key}` as const,
+  );
+
+export const AllProgramGroupingExternalIdFieldsAliased = <Alias extends string>(
+  alias: Alias,
+): ProgramGroupingExternalIdFields<Alias> =>
+  ProgramGroupingExternalIdFields.map((key) => `${alias}.${key}` as const);
+
 export const MinimalProgramGroupingFields: ProgramGroupingFields = [
   'programGrouping.uuid',
   'programGrouping.title',
