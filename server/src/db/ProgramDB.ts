@@ -1,4 +1,7 @@
-import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
+import type {
+  IProgramDB,
+  WithChannelIdFilter,
+} from '@/db/interfaces/IProgramDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
@@ -273,34 +276,53 @@ export class ProgramDB implements IProgramDB {
   getChildren(
     parentId: string,
     parentType: 'season' | 'album',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<ProgramWithExternalIds>>;
   getChildren(
     parentId: string,
     parentType: 'artist',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
   getChildren(
     parentId: string,
     parentType: 'show',
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<PagedResult<TvSeasonWithExternalIds>>;
   async getChildren(
     parentId: string,
     parentType: ProgramGroupingType,
-    pageParams?: PageParams,
+    params?: WithChannelIdFilter<PageParams>,
   ): Promise<
     PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
   > {
     if (parentType === 'album' || parentType === 'season') {
-      const baseQuery = this.db
-        .selectFrom('program')
-        .where('type', '=', parentType === 'album' ? 'track' : 'episode')
-        .where(
-          parentType === 'album' ? 'albumUuid' : 'seasonUuid',
-          '=',
-          parentId,
-        );
+      const baseQuery = params?.channelId
+        ? this.db
+            .selectFrom('channelPrograms')
+            .where('channelPrograms.channelUuid', '=', params.channelId)
+            .innerJoin('program', 'program.uuid', 'channelPrograms.programUuid')
+            .where(
+              'program.type',
+              '=',
+              parentType === 'album' ? 'track' : 'episode',
+            )
+            .where(
+              parentType === 'album' ? 'albumUuid' : 'seasonUuid',
+              '=',
+              parentId,
+            )
+        : this.db
+            .selectFrom('program')
+            .where(
+              'program.type',
+              '=',
+              parentType === 'album' ? 'track' : 'episode',
+            )
+            .where(
+              parentType === 'album' ? 'albumUuid' : 'seasonUuid',
+              '=',
+              parentId,
+            );
 
       const countPromise = baseQuery
         .select((eb) => eb.fn.count<number>('uuid').as('count'))
@@ -309,13 +331,9 @@ export class ProgramDB implements IProgramDB {
       const resultPromise = baseQuery
         .select(withProgramExternalIds)
         .selectAll()
-        .orderBy('episode asc')
-        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-          eb.offset(pageParams!.offset),
-        )
-        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-          eb.limit(pageParams!.limit),
-        )
+        .orderBy(['seasonNumber asc', 'episode asc'])
+        .$if(!!params && params.limit >= 0, (eb) => eb.offset(params!.offset))
+        .$if(!!params && params.limit >= 0, (eb) => eb.limit(params!.limit))
         .execute();
 
       const [{ count }, results] = await Promise.all([
@@ -329,36 +347,88 @@ export class ProgramDB implements IProgramDB {
       };
     } else {
       const childType = parentType === 'artist' ? 'album' : 'season';
-      const baseQuery = this.db
-        .selectFrom('programGrouping')
-        .where('type', '=', childType)
-        .where(
-          childType === 'season' ? 'showUuid' : 'artistUuid',
-          '=',
-          parentId,
-        );
-
-      const [{ count }, results] = await Promise.all([
-        baseQuery
-          .select((eb) => eb.fn.count<number>('uuid').as('count'))
-          .executeTakeFirstOrThrow(),
-        baseQuery
-          .selectAll()
-          .orderBy(childType === 'season' ? 'title asc' : 'year asc')
-          .select(withProgramGroupingExternalIds)
-          .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-            eb.offset(pageParams!.offset),
+      if (params?.channelId) {
+        const baseQuery = this.db
+          .selectFrom('channelPrograms')
+          .where('channelPrograms.channelUuid', '=', params?.channelId)
+          .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
+          .innerJoin(
+            'programGrouping',
+            childType === 'season' ? 'program.seasonUuid' : 'program.albumUuid',
+            'programGrouping.uuid',
           )
-          .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-            eb.limit(pageParams!.limit),
+          .where(
+            'program.type',
+            '=',
+            childType === 'album' ? 'track' : 'episode',
           )
-          .execute(),
-      ]);
+          .where(
+            parentType === 'artist'
+              ? 'program.artistUuid'
+              : 'program.tvShowUuid',
+            '=',
+            parentId,
+          )
+          .groupBy('programGrouping.uuid');
 
-      return {
-        total: count,
-        results,
-      };
+        const [{ count }, results] = await Promise.all([
+          baseQuery
+            .select((eb) =>
+              eb.fn
+                .count<number>('programGrouping.uuid')
+                .distinct()
+                .as('count'),
+            )
+            .executeTakeFirstOrThrow(),
+          baseQuery
+            .selectAll()
+            .orderBy(childType === 'season' ? 'title asc' : 'year asc')
+            .select(withProgramGroupingExternalIds)
+            .$if(!!params && params.limit >= 0, (eb) =>
+              eb.offset(params.offset),
+            )
+            .$if(!!params && params.limit >= 0, (eb) => eb.limit(params.limit))
+            .execute(),
+        ]);
+
+        return {
+          total: count,
+          results,
+        };
+      } else {
+        const baseQuery = this.db
+          .selectFrom('programGrouping')
+          .where('programGrouping.type', '=', childType)
+          .where(
+            childType === 'season'
+              ? 'programGrouping.showUuid'
+              : 'programGrouping.artistUuid',
+            '=',
+            parentId,
+          );
+
+        const [{ count }, results] = await Promise.all([
+          baseQuery
+            .select((eb) =>
+              eb.fn.count<number>('programGrouping.uuid').as('count'),
+            )
+            .executeTakeFirstOrThrow(),
+          baseQuery
+            .selectAll()
+            .orderBy(childType === 'season' ? 'title asc' : 'year asc')
+            .select(withProgramGroupingExternalIds)
+            .$if(!!params && params.limit >= 0, (eb) =>
+              eb.offset(params!.offset),
+            )
+            .$if(!!params && params.limit >= 0, (eb) => eb.limit(params!.limit))
+            .execute(),
+        ]);
+
+        return {
+          total: count,
+          results,
+        };
+      }
     }
   }
 
