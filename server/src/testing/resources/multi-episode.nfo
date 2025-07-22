@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<episodedetails>                                          <!--First Episode -->
+    <title>Grieve No More</title>
+    <showtitle>Carnival Row</showtitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>7.800000</value>
+            <votes>1746</votes>
+        </rating>
+        <rating name="tmdb" max="10">
+            <value>7.700000</value>
+            <votes>15</votes>
+        </rating>
+    </ratings>
+    <userrating>0</userrating>
+    <top250>0</top250>
+    <season>1</season>
+    <episode>5</episode>
+    <displayseason>-1</displayseason>
+    <displayepisode>-1</displayepisode>
+    <outline></outline>
+    <plot>Philo consults a Haruspex in an effort to find clues about the killer. Vignette grows closer with her newfound family. Upon Jonah’s return home, his parents cast a more watchful eye over him as a new player makes a splash in Parliament. Imogen brings Agreus into her circle.</plot>
+    <tagline></tagline>
+    <runtime>0</runtime>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/mcVI7yQjXmreUQcyxRJ3dFTFszI.jpg">https://image.tmdb.org/t/p/original/mcVI7yQjXmreUQcyxRJ3dFTFszI.jpg</thumb>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/6Mf23JoPQsj2deyvrKMCZEvgyB4.jpg">https://image.tmdb.org/t/p/original/6Mf23JoPQsj2deyvrKMCZEvgyB4.jpg</thumb>
+    <mpaa>Australia:TV-MA</mpaa>
+    <playcount>0</playcount>
+    <lastplayed></lastplayed>
+    <id>1906721</id>
+    <uniqueid type="imdb">tt6599052</uniqueid>
+    <uniqueid type="tmdb" default="true">1906721</uniqueid>
+    <uniqueid type="tvdb">7221242</uniqueid>
+    <genre>Sci-Fi &amp; Fantasy</genre>
+    <credits>Ian Deitchman</credits>
+    <credits>Kristin Rusk Robinson</credits>
+    <director>Andy Goddard</director>
+    <premiered>2019-08-29</premiered>
+    <year>2019</year>
+    <status></status>
+    <code></code>
+    <aired>2019-08-29</aired>
+    <studio>Amazon</studio>
+    <trailer></trailer>
+    <actor>
+        <name>Orlando Bloom</name>
+        <role>Rycroft &quot;Philo&quot; Philostrate</role>
+        <order>0</order>
+        <thumb>https://image.tmdb.org/t/p/original/pulwUR0lZ8IWwXUCRXCnyWfYvNL.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Cara Delevingne</name>
+        <role>Vignette Stonemoss</role>
+        <order>1</order>
+        <thumb>https://image.tmdb.org/t/p/original/izZ8IbsIjNpjZ5S0HIYreVwVRzn.jpg</thumb>
+    </actor>
+    <resume>
+        <position>0.000000</position>
+        <total>0.000000</total>
+    </resume>
+    <dateadded>2021-12-30 15:41:30</dateadded>
+</episodedetails>
+<episodedetails>                                          <!--Second Episode -->
+    <title>Unaccompanied Fae</title>
+    <showtitle>Carnival Row</showtitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>7.900000</value>
+            <votes>1627</votes>
+        </rating>
+        <rating name="tmdb" max="10">
+            <value>7.500000</value>
+            <votes>15</votes>
+        </rating>
+    </ratings>
+    <userrating>0</userrating>
+    <top250>0</top250>
+    <season>1</season>
+    <episode>6</episode>
+    <displayseason>-1</displayseason>
+    <displayepisode>-1</displayepisode>
+    <outline></outline>
+    <plot>The pieces of the puzzle start to come together for Philo. Vignette finds home in a place she never expected. Jonah sneaks off to see someone he shouldn’t. Imogen and Agreus step out together in public.</plot>
+    <tagline></tagline>
+    <runtime>0</runtime>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/y6A3ZXbSBoc3HwBj1J3KWWvrrzW.jpg">https://image.tmdb.org/t/p/original/y6A3ZXbSBoc3HwBj1J3KWWvrrzW.jpg</thumb>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/7gZBOfmfAxkUpd4jL9WS6p78EoH.jpg">https://image.tmdb.org/t/p/original/7gZBOfmfAxkUpd4jL9WS6p78EoH.jpg</thumb>
+    <mpaa>Australia:TV-MA</mpaa>
+    <playcount>0</playcount>
+    <lastplayed></lastplayed>
+    <id>1906722</id>
+    <uniqueid type="imdb">tt6599058</uniqueid>
+    <uniqueid type="tmdb" default="true">1906722</uniqueid>
+    <uniqueid type="tvdb">7221243</uniqueid>
+    <genre>Sci-Fi &amp; Fantasy</genre>
+    <credits>Stephanie K. Smith</credits>
+    <director>Andy Goddard</director>
+    <premiered>2019-08-29</premiered>
+    <year>2019</year>
+    <status></status>
+    <code></code>
+    <aired>2019-08-29</aired>
+    <studio>Amazon</studio>
+    <trailer></trailer>
+    <actor>
+        <name>Leanne Best</name>
+        <role>Madame Moira</role>
+        <order>4</order>
+        <thumb>https://image.tmdb.org/t/p/original/3GJSWDGuINZjQEgz06wlBELoJCK.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Issy Stewart</name>
+        <role>Louisa Pembroke</role>
+        <order>6</order>
+        <thumb>https://image.tmdb.org/t/p/original/2Ektp4uatPA6gZj32xjjPWKZBKm.jpg</thumb>
+    </actor>
+    <resume>
+        <position>0.000000</position>
+        <total>0.000000</total>
+    </resume>
+    <dateadded>2021-12-30 15:41:30</dateadded>
+</episodedetails>
+<episodedetails>                                          <!--Third Episode -->
+    <title>The World to Come</title>
+    <showtitle>Carnival Row</showtitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>8.000000</value>
+            <votes>1659</votes>
+        </rating>
+        <rating name="tmdb" max="10">
+            <value>7.700000</value>
+            <votes>15</votes>
+        </rating>
+    </ratings>
+    <userrating>0</userrating>
+    <top250>0</top250>
+    <season>1</season>
+    <episode>7</episode>
+    <displayseason>-1</displayseason>
+    <displayepisode>-1</displayepisode>
+    <outline></outline>
+    <plot>Because he withheld evidence from his fellow detectives, Philo is accused of being the man behind the string of murders and is thrown in jail. There, he finds some unexpected help from Vignette. Elsewhere, Ezra takes exception to Imogen’s relationship with Agreus. Sophie offers Jonah a deal.</plot>
+    <tagline></tagline>
+    <runtime>0</runtime>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/ov05qVU8JVZ66BQK457MLMg7Wfu.jpg">https://image.tmdb.org/t/p/original/ov05qVU8JVZ66BQK457MLMg7Wfu.jpg</thumb>
+    <mpaa>Australia:TV-MA</mpaa>
+    <playcount>0</playcount>
+    <lastplayed></lastplayed>
+    <id>1906725</id>
+    <uniqueid type="imdb">tt7435152</uniqueid>
+    <uniqueid type="tmdb" default="true">1906725</uniqueid>
+    <uniqueid type="tvdb">7221244</uniqueid>
+    <genre>Sci-Fi &amp; Fantasy</genre>
+    <credits>Peter Cameron</credits>
+    <credits>René Echevarria</credits>
+    <director>Jon Amiel</director>
+    <premiered>2019-08-29</premiered>
+    <year>2019</year>
+    <status></status>
+    <code></code>
+    <aired>2019-08-29</aired>
+    <studio>Amazon</studio>
+    <trailer></trailer>
+    <actor>
+        <name>Jonathan Daniel Brown</name>
+        <role>Ticket Clerk</role>
+        <order>48</order>
+        <thumb>https://image.tmdb.org/t/p/original/xDsPJNDnrn3N0jelVrxdOchzhoo.jpg</thumb>
+    </actor>
+    <actor>
+        <name>John Poston</name>
+        <role>Cell Block Guard</role>
+        <order>49</order>
+        <thumb></thumb>
+    </actor>
+    <resume>
+        <position>0.000000</position>
+        <total>0.000000</total>
+    </resume>
+    <dateadded>2021-12-30 15:41:30</dateadded>
+</episodedetails>

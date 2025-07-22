@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<episodedetails>
+    <title>Filmed Before a Live Studio Audience</title>
+    <showtitle>WandaVision</showtitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>7.500000</value>
+            <votes>18766</votes>
+        </rating>
+        <rating name="tmdb" max="10">
+            <value>7.500000</value>
+            <votes>42</votes>
+        </rating>
+        <rating name="trakt" max="10">
+            <value>6.952780</value>
+            <votes>3621</votes>
+        </rating>
+    </ratings>
+    <userrating>0</userrating>
+    <top250>0</top250>
+    <season>1</season>
+    <episode>1</episode>
+    <displayseason>-1</displayseason>
+    <displayepisode>-1</displayepisode>
+    <outline></outline>
+    <plot>Wanda and Vision struggle to conceal their powers during dinner with Vision’s boss and his wife.</plot>
+    <tagline></tagline>
+    <runtime>26</runtime>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/cbe8l0Hnbvu07ePgoOopyWYrcdL.jpg">https://image.tmdb.org/t/p/original/cbe8l0Hnbvu07ePgoOopyWYrcdL.jpg</thumb>
+    <thumb spoof="" cache="" aspect="thumb" preview="https://image.tmdb.org/t/p/w780/oNCzeCXFanVEWNpzRzyffhLLfZs.jpg">https://image.tmdb.org/t/p/original/oNCzeCXFanVEWNpzRzyffhLLfZs.jpg</thumb>
+    <mpaa>Australia:TV-14</mpaa>
+    <playcount>1</playcount>
+    <lastplayed>2021-03-27</lastplayed>
+    <id>1830976</id>
+    <uniqueid type="imdb">tt9601584</uniqueid>
+    <uniqueid type="tmdb" default="true">1830976</uniqueid>
+    <uniqueid type="tvdb">8042515</uniqueid>
+    <genre>Sci-Fi &amp; Fantasy</genre>
+    <genre>Mystery</genre>
+    <genre>Drama</genre>
+    <credits>Jac Schaeffer</credits>
+    <director>Matt Shakman</director>
+    <premiered>2021-01-15</premiered>
+    <year>2021</year>
+    <status></status>
+    <code></code>
+    <aired>2021-01-15</aired>
+    <studio>Disney+ (US)</studio>
+    <trailer></trailer>
+    <fileinfo>
+        <streamdetails>
+            <video>
+                <codec>h264</codec>
+                <aspect>1.777778</aspect>
+                <width>1280</width>
+                <height>720</height>
+                <durationinseconds>1593</durationinseconds>
+                <stereomode></stereomode>
+            </video>
+            <audio>
+                <codec>aac</codec>
+                <language>eng</language>
+                <channels>2</channels>
+            </audio>
+        </streamdetails>
+    </fileinfo>
+    <actor>
+        <name>Randall Park</name>
+        <role>Jimmy Woo</role>
+        <order>4</order>
+        <thumb>https://image.tmdb.org/t/p/original/1QJ4cBQZoOaLR8Hc3V2NgBLvB0f.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Kat Dennings</name>
+        <role>Darcy Lewis / The Escape Artist</role>
+        <order>5</order>
+        <thumb>https://image.tmdb.org/t/p/original/rrfyo9z1wW5nY9ZsFlj1Ozfj9g2.jpg</thumb>
+    </actor>
+    <resume>
+        <position>0.000000</position>
+        <total>0.000000</total>
+    </resume>
+    <dateadded>2021-02-02 11:57:44</dateadded>
+</episodedetails>

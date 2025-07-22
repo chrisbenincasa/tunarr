@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<tvshow>
+    <title>Star Trek: Discovery</title>
+    <originaltitle>Star Trek: Discovery</originaltitle>
+    <showtitle>Star Trek: Discovery</showtitle>
+    <ratings>
+        <rating name="imdb" max="10" default="true">
+            <value>7.100000</value>
+            <votes>111025</votes>
+        </rating>
+        <rating name="tmdb" max="10">
+            <value>7.200000</value>
+            <votes>1201</votes>
+        </rating>
+        <rating name="trakt" max="10">
+            <value>7.727961</value>
+            <votes>6830</votes>
+        </rating>
+    </ratings>
+    <userrating>6</userrating>
+    <top250>0</top250>
+    <season>4</season>
+    <episode>55</episode>
+    <displayseason>-1</displayseason>
+    <displayepisode>-1</displayepisode>
+    <outline></outline>
+    <plot>Follow the voyages of Starfleet on their missions to discover new worlds and new life forms, and one Starfleet officer who must learn that to truly understand all things alien, you must first understand yourself.</plot>
+    <tagline></tagline>
+    <runtime>0</runtime>
+    <thumb spoof="" cache="" aspect="landscape" preview="https://image.tmdb.org/t/p/w780/4TNklRSMAUTCf7g9XGMHxGSeRqR.jpg">https://image.tmdb.org/t/p/original/4TNklRSMAUTCf7g9XGMHxGSeRqR.jpg</thumb>
+    <thumb spoof="" cache="" aspect="logos" preview="https://image.tmdb.org/t/p/w780/nYlsrSp5c2d7NbEtMgsc3lJUrGx.png">https://image.tmdb.org/t/p/original/nYlsrSp5c2d7NbEtMgsc3lJUrGx.png</thumb>
+    <thumb spoof="" cache="" aspect="poster" preview="https://image.tmdb.org/t/p/w780/zh7GLsorxecv0D8d7QAVkQUe1ju.jpg">https://image.tmdb.org/t/p/original/zh7GLsorxecv0D8d7QAVkQUe1ju.jpg</thumb>
+    <thumb spoof="" cache="" aspect="banner" preview="https://assets.fanart.tv/... deleted">https://assets.fanart.tv/fanart/tv/328711/tvbanner/star-trek-discovery-5b0db4d349720.jpg</thumb>
+    <thumb spoof="" cache="" aspect="clearlogo" preview="https://assets.fanart.tv/... deleted">https://assets.fanart.tv/fanart/tv/328711/hdtvlogo/star-trek-discovery-59cb169256e4e.png</thumb>
+    <thumb spoof="" cache="" aspect="clearart" preview="https://assets.fanart.tv/... deleted">https://assets.fanart.tv/fanart/tv/328711/hdclearart/star-trek-discovery-5bcd2af85c610.png</thumb>
+    <thumb spoof="" cache="" aspect="landscape" preview="https://assets.fanart.tv/... deleted">https://assets.fanart.tv/fanart/tv/328711/tvthumb/star-trek-discovery-59541dab33126.jpg</thumb>
+    <thumb spoof="" cache="" aspect="characterart" preview="https://assets.fanart.tv/... deleted">https://assets.fanart.tv/fanart/tv/328711/characterart/star-trek-discovery-59cc59092af97.png</thumb>
+    <thumb spoof="" cache="" season="0" type="season" aspect="poster" preview="https://image.tmdb.org/t/p... deleted">https://image.tmdb.org/t/p/original/pZxMTBheuGwNBQxF5JzLp2hHdDs.jpg</thumb>
+    <thumb spoof="" cache="" season="1" type="season" aspect="poster" preview="https://image.tmdb.org/t/p... deleted">https://image.tmdb.org/t/p/original/eD0gvrU9pyicetxBJ1YLf557XeW.jpg</thumb>
+    <thumb spoof="" cache="" season="2" type="season" aspect="poster" preview="https://image.tmdb.org/t/p... deleted">https://image.tmdb.org/t/p/original/yLG5DFbf4nv6Cm8GRwwWREET2VA.jpg</thumb>
+    <thumb spoof="" cache="" season="3" type="season" aspect="poster" preview="https://image.tmdb.org/t/p... deleted">https://image.tmdb.org/t/p/original/izoaRR70PCvF1c1amaRpgkEfWXp.jpg</thumb>
+    <thumb spoof="" cache="" season="4" type="season" aspect="poster" preview="https://image.tmdb.org/t/p... deleted">https://image.tmdb.org/t/p/original/zh7GLsorxecv0D8d7QAVkQUe1ju.jpg</thumb>
+    <fanart>
+        <thumb colors="" preview="">https://image.tmdb.org/t/p/original/kHwMIXsYNAg8eoJvj97F0LSlyDP.jpg</thumb>
+        <thumb colors="" preview="">https://image.tmdb.org/t/p/original/p3McpsDNTNmpbkNBKdNxOFZJeKX.jpg</thumb>
+    </fanart>
+    <mpaa>Australia:M</mpaa>
+    <playcount>0</playcount>
+    <lastplayed>2021-08-27</lastplayed>
+    <id>67198</id>
+    <uniqueid type="imdb">tt5171438</uniqueid>
+    <uniqueid type="tmdb" default="true">67198</uniqueid>
+    <uniqueid type="tvdb">328711</uniqueid>
+    <genre>Science Fiction</genre>
+    <premiered>2017-09-24</premiered>
+    <year>2017</year>
+    <status>Continuing</status>
+    <code></code>
+    <aired></aired>
+    <studio>CBS All Access</studio>
+    <trailer>J:\TV Complete LZ\Star Trek Discovery (2017)\Star Trek Discovery (2017)-trailer.m2ts</trailer> <!--Requires full path-->
+    <actor>
+        <name>Sonequa Martin-Green</name>
+        <role>Michael Burnham</role>
+        <order>0</order>
+        <thumb>https://image.tmdb.org/t/p/original/anz0LIPc0KarbDwLOyGt21eolvK.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Doug Jones</name>
+        <role>Saru</role>
+        <order>1</order>
+        <thumb>https://image.tmdb.org/t/p/original/rpvvWATYWHGjedJea0G97XufOwU.jpg</thumb>
+    </actor>
+    <actor>
+        <name>Jason Isaacs</name>
+        <role>Gabriel Lorca</role>
+        <order>3</order>
+        <thumb>https://image.tmdb.org/t/p/original/nlim5RpNgpNcN0BWhhOCWmaMEHI.jpg</thumb>
+    </actor>
+    <namedseason number="1">Season 1</namedseason>
+    <namedseason number="2">Season 2</namedseason>
+    <namedseason number="3">Season 3</namedseason>
+    <namedseason number="4">Season 4</namedseason>
+    <resume>
+        <position>0.000000</position>
+        <total>0.000000</total>
+    </resume>
+    <dateadded>2022-03-18 14:14:36</dateadded>
+</tvshow>
