@@ -41,6 +41,8 @@ export const AddTimeSlotButton = ({
     });
   }, [currentPeriod, dayOffset, slots]);
 
+  console.log(dayOffset, relevantSlots);
+
   const optionsByType = useMemo(() => {
     return groupBy(programOptions, (opt) => opt.type) as Dictionary<
       ProgramOption[],
@@ -52,7 +54,9 @@ export const AddTimeSlotButton = ({
     const maxSlot = maxBy(relevantSlots, (p) => p.startTime);
     const newStartTime = maxSlot
       ? dayjs.duration(maxSlot.startTime).add(1, 'hour')
-      : dayjs.duration(0);
+      : currentPeriod === 'week'
+        ? dayjs.duration(OneDayMillis * dayOffset)
+        : dayjs.duration(0);
 
     const baseSlot = {
       startTime: +newStartTime,
@@ -112,7 +116,7 @@ export const AddTimeSlotButton = ({
 
     onAdd(newSlot);
     append(newSlot);
-  }, [relevantSlots, optionsByType, onAdd, append]);
+  }, [relevantSlots, currentPeriod, dayOffset, optionsByType, onAdd, append]);
 
   return (
     <Button

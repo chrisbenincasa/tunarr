@@ -177,8 +177,6 @@ export const ChannelProgramGrid = ({
   parentId,
 }: Props) => {
   const apiClient = useTunarrApi();
-  console.log(parentId, programType);
-
   const hasProgramHierarchy =
     programType === 'episode' || programType === 'track';
 
