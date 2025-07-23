@@ -1,4 +1,5 @@
 import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
+import type { UIContentProgram } from '@/types/index.ts';
 import { type UICondensedChannelProgram, type UIIndex } from '@/types/index.ts';
 import {
   type Channel,
@@ -50,19 +51,16 @@ export type ChannelEditorState = ProgrammingEditorState<
 
 export type FillerListEditor = ProgrammingEditorState<
   FillerList,
-  ContentProgram | CustomProgram // You cannot add Flex to custom shows
+  ContentProgram | CustomProgram
 >;
 
 export interface EditorsState {
   channelEditor: ChannelEditorState;
   customShowEditor: ProgrammingEditorState<
     CustomShow,
-    ContentProgram // Custom shows contain content only
+    UIContentProgram // Custom shows contain content only
   >;
-  fillerListEditor: ProgrammingEditorState<
-    FillerList,
-    ContentProgram | CustomProgram // You cannot add Flex to custom shows
-  >;
+  fillerListEditor: FillerListEditor;
 }
 
 export const initialChannelEditorState: EditorsState = {

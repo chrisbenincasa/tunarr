@@ -138,6 +138,7 @@ export const zipWithIndex = <T extends object>(
 ): (T & UIIndex)[] => {
   return zipWith(seq, range(0, seq.length), (s, i) => ({
     ...s,
+    uiIndex: start + i,
     originalIndex: start + i,
   }));
 };
