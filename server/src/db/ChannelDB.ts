@@ -19,7 +19,6 @@ import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { RandomSlotScheduler } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import {
   ChannelProgram,
@@ -70,7 +69,8 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
-import { TimeSlotSchedulerService } from '../services/TimeSlotSchedulerService.ts';
+import { SlotSchedulerService } from '../services/scheduling/RandomSlotSchedulerService.ts';
+import { TimeSlotSchedulerService } from '../services/scheduling/TimeSlotSchedulerService.ts';
 import { ChannelAndLineup } from '../types/internal.ts';
 import {
   asyncMapToRecord,
@@ -1089,12 +1089,17 @@ export class ChannelDB implements IChannelDB {
         ({ programs, startTime } =
           TimeSlotSchedulerService.materializeProgramsFromResult(result));
       } else {
-        const start = dayjs.tz();
-        startTime = +start;
-        programs = new RandomSlotScheduler(req.schedule).generateSchedule(
-          req.programs,
-          start,
-        );
+        const { result } = await this.workerPoolProvider().queueTask({
+          type: 'schedule-slots',
+          request: {
+            type: 'programs',
+            programs: req.programs,
+            schedule: req.schedule,
+          },
+        });
+
+        ({ programs, startTime } =
+          SlotSchedulerService.materializeProgramsFromResult(result));
       }
 
       const newLineup = await createNewLineup(programs);

@@ -1,11 +1,7 @@
 import type { DropdownOption } from '@/helpers/DropdownOption.js';
 import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
 import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
-import {
-  setChannelStartTime,
-  setCurrentLineup,
-} from '@/store/channelEditor/actions';
-import { useChannelEditorLazy } from '@/store/selectors';
+
 import { Autorenew } from '@mui/icons-material';
 import {
   Box,
@@ -21,16 +17,13 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { RandomSlotScheduler } from '@tunarr/shared';
 import type {
   RandomSlotDistributionType,
   RandomSlotSchedule,
 } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
-import dayjs from 'dayjs';
-import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon';
 import {
   CheckboxFormController,
@@ -60,54 +53,25 @@ export const RandomSlotSettingsForm = ({
   const { control, getValues, watch } = useFormContext<RandomSlotForm>();
   const [padTime, distributionType] = watch(['padMs', 'randomDistribution']);
 
-  const { materializeOriginalProgramList } = useChannelEditorLazy();
-  const snackbar = useSnackbar();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
-  const showPerfSnackbar = (duration: number, numShows: number) => {
-    const message = `Calculated ${dayjs
-      .duration(getValues('maxDays'), 'days')
-      .humanize()} (${numShows} ${pluralize(
-      'program',
-      numShows,
-    )}) of programming in ${duration}ms`;
-    snackbar.enqueueSnackbar(message, {
-      variant: 'info',
-    });
-  };
+  const { scheduleSlots } = useScheduleSlots();
 
-  const calculateSlots = async () => {
-    performance.mark('guide-start');
-    const now = dayjs.tz();
-    setChannelStartTime(+now);
-    setCurrentLineup([], true);
-    onCalculateStart?.();
+  const calculateSlots = () => {
     toggleIsCalculatingSlots(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    try {
-      const values = getValues();
-      const previewPrograms = new RandomSlotScheduler({
-        ...values,
-        slots: values.slots.map((slot, idx) => ({ ...slot, index: idx })),
-        timeZoneOffset: new Date().getTimezoneOffset(),
-        type: 'random',
-      }).generateSchedule(materializeOriginalProgramList(), now);
-      setCurrentLineup(previewPrograms);
-      performance.mark('guide-end');
-      const { duration: ms } = performance.measure(
-        'guide',
-        'guide-start',
-        'guide-end',
-      );
-      showPerfSnackbar(Math.round(ms), previewPrograms.length);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      toggleIsCalculatingSlots(false);
-      onCalculateEnd?.();
-    }
+    onCalculateStart?.();
+    const values = getValues();
+    scheduleSlots({
+      ...values,
+      slots: values.slots.map((slot, idx) => ({ ...slot, index: idx })),
+    })
+      .catch((e) => {
+        console.error(e);
+      })
+      .finally(() => {
+        toggleIsCalculatingSlots(false);
+        onCalculateEnd?.();
+      });
   };
 
   return (
@@ -272,7 +236,7 @@ export const RandomSlotSettingsForm = ({
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
         <Button
           variant="contained"
-          onClick={() => calculateSlots().catch(console.error)}
+          onClick={() => calculateSlots()}
           disabled={isCalculatingSlots}
           startIcon={isCalculatingSlots ? <RotatingLoopIcon /> : <Autorenew />}
         >

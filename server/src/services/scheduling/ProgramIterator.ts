@@ -1,3 +1,4 @@
+import { seq } from '@tunarr/shared/util';
 import type {
   ChannelProgram,
   ContentProgram,
@@ -21,8 +22,7 @@ import {
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { random } from '../services/RandomSlotsService.js';
-import { seq } from './index.js';
+import { random } from './RandomSlotsService.js';
 import type { SlotIteratorKey } from './slotSchedulerUtil.js';
 
 type IterationState = {

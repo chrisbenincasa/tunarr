@@ -1,9 +1,13 @@
-import { TimeSlotScheduleResult } from '@tunarr/types/api';
+import { SlotScheduleResult, TimeSlotScheduleResult } from '@tunarr/types/api';
 import { z } from 'zod/v4';
+import {
+  ChannelSlotScheduleRequest,
+  ProgramsSlotScheduleRequest,
+} from '../services/scheduling/RandomSlotSchedulerService.ts';
 import {
   ChannelTimeSlotScheduleRequest,
   ProgramsTimeSlotScheduleRequest,
-} from '../services/TimeSlotSchedulerService.ts';
+} from '../services/scheduling/TimeSlotSchedulerService.ts';
 
 export const BaseWorkerRequest = z.object({
   requestId: z.uuid(),
@@ -30,10 +34,24 @@ export type WorkerScheduleTimeSlotsRequest = z.infer<
   typeof WorkerScheduleTimeSlotsRequest
 >;
 
+export const WorkerScheduleSlotsRequest = z.object({
+  ...BaseWorkerRequest.shape,
+  type: z.literal('schedule-slots'),
+  request: z.discriminatedUnion('type', [
+    ChannelSlotScheduleRequest.omit({ materializeResult: true }),
+    ProgramsSlotScheduleRequest.omit({ materializeResult: true }),
+  ]),
+});
+
+export type WorkerScheduleSlotsRequest = z.infer<
+  typeof WorkerScheduleSlotsRequest
+>;
+
 export const WorkerRequest = z.discriminatedUnion('type', [
   WorkerRestartRequest,
   WorkerStatusRequest,
   WorkerScheduleTimeSlotsRequest,
+  WorkerScheduleSlotsRequest,
 ]);
 
 export type WorkerRequest = z.infer<typeof WorkerRequest>;
@@ -70,6 +88,13 @@ export type WorkerTimeSlotScheduleReply = z.infer<
   typeof WorkerTimeSlotScheduleReply
 >;
 
+export const WorkerSlotScheduleReply = z.object({
+  type: z.literal('schedule-slots'),
+  result: SlotScheduleResult,
+});
+
+export type WorkerSlotScheduleReply = z.infer<typeof WorkerSlotScheduleReply>;
+
 export type WorkerStatusReply = z.infer<typeof WorkerStatusReply>;
 
 export const WorkerSuccessReply = z.object({
@@ -78,6 +103,7 @@ export const WorkerSuccessReply = z.object({
   data: z.discriminatedUnion('type', [
     WorkerStatusReply,
     WorkerTimeSlotScheduleReply,
+    WorkerSlotScheduleReply,
   ]),
 });
 
@@ -99,4 +125,5 @@ export const WorkerRequestToResponse = {
   status: WorkerStatusReply,
   restart: z.void(),
   'time-slots': WorkerTimeSlotScheduleReply,
+  'schedule-slots': WorkerSlotScheduleReply,
 } as const;

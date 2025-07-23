@@ -6,6 +6,7 @@ import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useMemo } from 'react';
 import { zipWithIndex } from '../../helpers/util.ts';
+import type { RandomSlotForm } from '../../pages/channels/RandomSlotEditorPage.tsx';
 import type { TimeSlotForm } from '../../pages/channels/TimeSlotEditorPage.tsx';
 import {
   setCurrentLineup,
@@ -19,8 +20,13 @@ import {
 import { useTunarrApi } from '../useTunarrApi.ts';
 
 type TimeSlotMutArgs = { channelId: string; values: TimeSlotForm };
+type SlotMutArgs = { channelId: string; values: RandomSlotForm };
 
-export const useScheduleTimeSlots = () => {
+type TimeOrRandomForm =
+  | ({ type: 'time' } & TimeSlotForm)
+  | ({ type: 'random' } & RandomSlotForm);
+
+export const useScheduleSlots = () => {
   const snackbar = useSnackbar();
   const apiClient = useTunarrApi();
   const {
@@ -35,6 +41,24 @@ export const useScheduleTimeSlots = () => {
             ...values,
             timeZoneOffset: new Date().getTimezoneOffset(),
             type: 'time',
+          },
+        },
+        {
+          params: {
+            channelId,
+          },
+        },
+      ),
+  });
+
+  const scheduleSlotsMut = useMutation({
+    mutationFn: ({ channelId, values }: SlotMutArgs) =>
+      apiClient.scheduleSlots(
+        {
+          schedule: {
+            ...values,
+            timeZoneOffset: new Date().getTimezoneOffset(),
+            type: 'random',
           },
         },
         {
@@ -61,11 +85,20 @@ export const useScheduleTimeSlots = () => {
   );
 
   const scheduleFunc = useCallback(
-    (formValues: TimeSlotForm) => {
+    (formValues: TimeOrRandomForm) => {
       const generateScheduleInner = async () => {
         performance.mark('guide-start');
-        return scheduleTimeSlotsMut
-          .mutateAsync({ channelId: channel!.id, values: formValues })
+        const promise =
+          formValues.type === 'time'
+            ? scheduleTimeSlotsMut.mutateAsync({
+                channelId: channel!.id,
+                values: formValues,
+              })
+            : scheduleSlotsMut.mutateAsync({
+                channelId: channel!.id,
+                values: formValues,
+              });
+        return promise
           .then((res) => {
             performance.mark('guide-end');
             const { duration: ms } = performance.measure(
@@ -111,12 +144,21 @@ export const useScheduleTimeSlots = () => {
         },
       );
     },
-    [channel, scheduleTimeSlotsMut, showPerfSnackbar, snackbar],
+    [
+      channel,
+      scheduleSlotsMut,
+      scheduleTimeSlotsMut,
+      showPerfSnackbar,
+      snackbar,
+    ],
   );
 
   return useMemo(
     () => ({
-      scheduleTimeSlots: scheduleFunc,
+      scheduleTimeSlots: (timeForm: TimeSlotForm) =>
+        scheduleFunc({ type: 'time', ...timeForm }),
+      scheduleSlots: (randomForm: RandomSlotForm) =>
+        scheduleFunc({ type: 'random', ...randomForm }),
     }),
     [scheduleFunc],
   );

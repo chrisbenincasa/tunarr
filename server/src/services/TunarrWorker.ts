@@ -6,13 +6,15 @@ import { Result } from '../types/result.ts';
 import {
   WorkerReply,
   WorkerRequest,
+  WorkerScheduleSlotsRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerSuccessReply,
   WorkerTimeSlotScheduleReply,
   type WorkerEvent,
 } from '../types/worker_schemas.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
-import { TimeSlotSchedulerService } from './TimeSlotSchedulerService.ts';
+import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
+import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
 
 @injectable()
 export class TunarrWorker {
@@ -22,6 +24,8 @@ export class TunarrWorker {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(TimeSlotSchedulerService)
     private timeSlotSchedulerService: TimeSlotSchedulerService,
+    @inject(SlotSchedulerService)
+    private slotSchedulerService: SlotSchedulerService,
   ) {
     // TODO: Make this configurable
     this.#queue = new PQueue({
@@ -57,6 +61,8 @@ export class TunarrWorker {
               break;
             case 'time-slots':
               return this.handleTimeSlots(parsed.data);
+            case 'schedule-slots':
+              return this.handleSlots(parsed.data);
             case 'restart':
               process.exit(parsed.data.code ?? 1);
           }
@@ -72,6 +78,7 @@ export class TunarrWorker {
         materializeResult: false,
       }),
     );
+
     if (result.isFailure()) {
       this.logger.error(result.error);
       this.sendReply({
@@ -86,6 +93,30 @@ export class TunarrWorker {
       result: result.get(),
       type: 'time-slots',
     } satisfies WorkerTimeSlotScheduleReply);
+  }
+
+  private async handleSlots(req: WorkerScheduleSlotsRequest) {
+    const result = await Result.attemptAsync(() =>
+      this.slotSchedulerService.schedule({
+        ...req.request,
+        materializeResult: false,
+      }),
+    );
+
+    if (result.isFailure()) {
+      this.logger.error(result.error);
+      this.sendReply({
+        type: 'error',
+        requestId: req.requestId,
+        message: result.error.message,
+      });
+      return;
+    }
+
+    this.sendSuccessReply(req.requestId, {
+      result: result.get(),
+      type: 'schedule-slots',
+    });
   }
 
   private sendSuccessReply(

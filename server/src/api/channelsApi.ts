@@ -12,6 +12,7 @@ import {
   BasicPagingSchema,
   GetChannelProgrammingResponseSchema,
   PagedResult,
+  RandomSlotScheduleSchema,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
@@ -704,6 +705,35 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           schedule: req.body.schedule,
         },
         type: 'time-slots',
+      });
+      return res.serializer(JSON.stringify).send(result);
+    },
+  );
+
+  fastify.post(
+    '/channels/:channelId/schedule-slots',
+    {
+      schema: {
+        tags: ['Channels'],
+        params: z.object({
+          channelId: z.string(),
+        }),
+        body: z.object({
+          schedule: RandomSlotScheduleSchema,
+        }),
+        response: {
+          200: TimeSlotScheduleResult,
+        },
+      },
+    },
+    async (req, res) => {
+      const { result } = await req.serverCtx.workerPool.queueTask({
+        request: {
+          type: 'channel',
+          channelId: req.params.channelId,
+          schedule: req.body.schedule,
+        },
+        type: 'schedule-slots',
       });
       return res.serializer(JSON.stringify).send(result);
     },

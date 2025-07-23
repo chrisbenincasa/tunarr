@@ -10,7 +10,8 @@ import {
 } from '../types/worker_schemas.ts';
 import { USE_WORKER_POOL_ENV_VAR } from '../util/env.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
-import { TimeSlotSchedulerService } from './TimeSlotSchedulerService.ts';
+import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
+import { TimeSlotSchedulerService } from './scheduling/TimeSlotSchedulerService.ts';
 
 type OutTypes = typeof WorkerRequestToResponse;
 
@@ -23,6 +24,8 @@ export class NoopWorkerPool implements IWorkerPool {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(TimeSlotSchedulerService)
     private timeSlotSchedulerService: TimeSlotSchedulerService,
+    @inject(SlotSchedulerService)
+    private slotSchedulerService: SlotSchedulerService,
   ) {}
 
   start(): void {
@@ -65,6 +68,17 @@ export class NoopWorkerPool implements IWorkerPool {
             result,
             type,
           } satisfies z.infer<OutTypes[typeof type]>;
+        })
+        .with({ type: 'schedule-slots' }, async ({ request, type }) => {
+          const result = await this.slotSchedulerService.schedule({
+            ...request,
+            materializeResult: false,
+          });
+
+          return {
+            result,
+            type,
+          };
         })
         .exhaustive() as Promise<Out>
     );

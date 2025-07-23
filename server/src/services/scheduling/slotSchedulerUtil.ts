@@ -1,22 +1,34 @@
-import type {
-  ChannelProgram,
-  CondensedChannelProgram,
-  ContentProgram,
-  CustomProgram,
-  FillerProgram,
-  MultiExternalId,
+import { createExternalIdFromMulti } from '@tunarr/shared';
+import constants from '@tunarr/shared/constants';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import {
+  isFlexProgram,
+  type ChannelProgram,
+  type CondensedChannelProgram,
+  type CondensedContentProgram,
+  type ContentProgram,
+  type CustomProgram,
+  type FillerProgram,
+  type FlexProgram,
+  type MultiExternalId,
 } from '@tunarr/types';
 import type {
   BaseMovieProgrammingSlot,
   BaseShowProgrammingSlot,
   BaseSlot,
 } from '@tunarr/types/api';
+import type {
+  CondensedCustomProgram,
+  CondensedFillerProgram,
+} from '@tunarr/types/schemas';
+import type { Duration } from 'dayjs/plugin/duration.js';
 import {
   filter,
   first,
   forEach,
   isEmpty,
   isNull,
+  last,
   map,
   reduce,
   some,
@@ -24,7 +36,6 @@ import {
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import { createExternalIdFromMulti } from '../index.js';
 import type { ProgramIterator } from './ProgramIterator.js';
 import {
   FlexProgramIterator,
@@ -36,7 +47,6 @@ import {
   StaticProgramIterator,
   FillerProgramIterator as WeightedFillerProgramIterator,
 } from './ProgramIterator.js';
-import { isNonEmptyString } from './index.js';
 
 type ProgramMapping = {
   [K in 'content' | 'redirect' | 'custom' | 'filler']: Record<
@@ -361,3 +371,87 @@ export type SlotIteratorKey =
   | 'flex';
 
 export type SlotOrder = BaseSlot['order'];
+
+// Adds flex time to the end of a programs array.
+// If the final program is flex itself, just extends it
+// Returns amount to increment the cursor
+// Mutates the lineup array
+export function pushOrExtendFlex(
+  lineup: CondensedChannelProgram[],
+  flexDuration: Duration,
+): number {
+  const durationMs = flexDuration.asMilliseconds();
+  if (durationMs <= 0) {
+    return 0;
+  }
+
+  const lastLineupItem = last(lineup);
+  if (lastLineupItem && isFlexProgram(lastLineupItem)) {
+    const newDuration = lastLineupItem.duration + durationMs;
+    const newItem: FlexProgram = {
+      type: 'flex',
+      duration: newDuration,
+      persisted: false,
+    };
+    lineup[lineup.length - 1] = newItem;
+    return durationMs;
+  }
+
+  const newItem: FlexProgram = {
+    type: 'flex',
+    persisted: false,
+    duration: durationMs,
+  };
+
+  lineup.push(newItem);
+  return durationMs;
+}
+
+export function condense(program: ChannelProgram): CondensedChannelProgram {
+  switch (program.type) {
+    case 'content':
+      return {
+        id: program.uniqueId, // TODO
+        duration: program.duration,
+        persisted: program.persisted,
+        type: 'content',
+      } satisfies CondensedContentProgram;
+    case 'custom':
+      return {
+        customShowId: program.customShowId,
+        duration: program.duration,
+        id: program.id,
+        index: program.index,
+        persisted: program.persisted,
+        type: 'custom',
+        program: program.program
+          ? (condense(program.program) as CondensedContentProgram)
+          : undefined,
+      } satisfies CondensedCustomProgram;
+    case 'filler':
+      return {
+        fillerListId: program.fillerListId,
+        duration: program.duration,
+        id: program.id,
+        persisted: program.persisted,
+        type: 'filler',
+        program: program.program
+          ? (condense(program.program) as CondensedContentProgram)
+          : undefined,
+      } satisfies CondensedFillerProgram;
+    case 'redirect':
+    case 'flex':
+      return program;
+  }
+}
+
+export function createPaddedProgram(program: ChannelProgram, padMs: number) {
+  const rem = program.duration % padMs;
+  const padAmount = padMs - rem;
+  const shouldPad = rem > constants.SLACK && padAmount > constants.SLACK;
+  return {
+    program,
+    padMs: shouldPad ? padAmount : 0,
+    totalDuration: program.duration + (shouldPad ? padAmount : 0),
+  };
+}

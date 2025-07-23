@@ -131,11 +131,7 @@ export const slotOptionIsScheduled = (
         (slot) => slot.type === 'show' && slot.showId === option.showId,
       );
     case 'filler':
-      return some(
-        slots,
-        (slot) =>
-          slot.type === 'filler' && slot.fillerListId === option.fillerListId,
-      );
+      return true;
   }
 };
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();

@@ -34,9 +34,9 @@ import { FileSystemService } from './services/FileSystemService.ts';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
-import { TimeSlotSchedulerService } from './services/TimeSlotSchedulerService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
+import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedulerService.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
 
