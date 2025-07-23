@@ -123,7 +123,7 @@ export const RandomSlotPresetButton = () => {
         endIcon={<KeyboardArrowDown />}
         onClick={handleToggle}
         ref={anchorRef}
-        variant="contained"
+        variant="outlined"
       >
         Presets
       </Button>

@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
-import type { RandomSlot, RandomSlotSchedule } from '@tunarr/types/api';
+import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -34,7 +34,7 @@ import {
 } from 'lodash-es';
 import React, { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
-import type { MarkRequired, StrictOmit } from 'ts-essentials';
+import type { StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelLineupList from '../../components/channel_config/ChannelLineupList.tsx';
@@ -44,15 +44,8 @@ import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
-import type { Prettify } from '../../types/index.ts';
 
 dayjs.extend(duration);
-
-export type RandomSlotForm2 = Prettify<
-  StrictOmit<RandomSlotSchedule, 'timeZoneOffset' | 'type' | 'slots'> & {
-    slots: MarkRequired<RandomSlot, 'index'>[];
-  }
->;
 
 export type RandomSlotForm = StrictOmit<
   RandomSlotSchedule,

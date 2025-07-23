@@ -6,6 +6,8 @@ import {
   CreateFillerListRequestSchema,
   PagedResult,
   ProgramChildrenResult,
+  RandomSlotScheduleSchema,
+  SlotScheduleResult,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
   UpdateChannelProgrammingRequestSchema,
@@ -506,6 +508,20 @@ export const api = makeApi([
       )
       .build(),
     response: TimeSlotScheduleResult,
+  },
+  {
+    method: 'post',
+    path: '/api/channels/:channelId/schedule-slots',
+    alias: 'scheduleSlots',
+    parameters: parametersBuilder()
+      .addPath('channelId', z.string())
+      .addBody(
+        z.object({
+          schedule: RandomSlotScheduleSchema,
+        }),
+      )
+      .build(),
+    response: SlotScheduleResult,
   },
   {
     method: 'get',

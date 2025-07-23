@@ -9,8 +9,6 @@ import {
   type SingleExternalIdType,
 } from '@tunarr/types/schemas';
 export { ApiProgramMinter } from './services/ApiProgramMinter.js';
-export { RandomSlotScheduler } from './services/RandomSlotsService.js';
-export { scheduleTimeSlots } from './services/TimeSlotService.js';
 export { mod as dayjsMod } from './util/dayjsExtensions.js';
 
 // TODO replace first arg with shared type

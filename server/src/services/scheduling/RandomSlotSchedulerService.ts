@@ -1,59 +1,60 @@
-import { scheduleTimeSlots } from '@tunarr/shared';
 import { seq } from '@tunarr/shared/util';
 import { ChannelProgram, CustomProgram, FillerProgram } from '@tunarr/types';
 import {
-  TimeSlot,
+  RandomSlot,
+  RandomSlotScheduleSchema,
+  SlotScheduleResult,
   TimeSlotScheduleResult,
-  TimeSlotScheduleSchema,
 } from '@tunarr/types/api';
 import { ChannelProgramSchema } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { difference, flatten, isNumber, reduce, reject } from 'lodash-es';
 import { z } from 'zod/v4';
-import { CustomShowDB } from '../db/CustomShowDB.ts';
-import { FillerDB } from '../db/FillerListDB.ts';
-import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import { KEYS } from '../types/inject.ts';
-import { uniqProperties } from '../util/seq.ts';
+import { CustomShowDB } from '../../db/CustomShowDB.ts';
+import { FillerDB } from '../../db/FillerListDB.ts';
+import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { KEYS } from '../../types/inject.ts';
+import { uniqProperties } from '../../util/seq.ts';
+import { RandomSlotScheduler } from './RandomSlotsService.ts';
 
-type MaterializedTimeSlotScheduleResult = {
+type MaterializedSlotScheduleResult = {
   programs: ChannelProgram[];
   startTime: number;
 };
 
-export const ChannelTimeSlotScheduleRequest = z.object({
+export const ChannelSlotScheduleRequest = z.object({
   type: z.literal('channel'),
   channelId: z.number().or(z.string()),
-  schedule: TimeSlotScheduleSchema,
+  schedule: RandomSlotScheduleSchema,
   materializeResult: z.boolean(),
 });
 
-export type ChannelTimeSlotScheduleRequest = z.infer<
-  typeof ChannelTimeSlotScheduleRequest
+export type ChannelSlotScheduleRequest = z.infer<
+  typeof ChannelSlotScheduleRequest
 >;
 
-export const ProgramsTimeSlotScheduleRequest = z.object({
+export const ProgramsSlotScheduleRequest = z.object({
   type: z.literal('programs'),
   programs: z.array(ChannelProgramSchema),
-  schedule: TimeSlotScheduleSchema,
+  schedule: RandomSlotScheduleSchema,
   materializeResult: z.boolean(),
 });
 
-export type ProgramsTimeSlotScheduleRequest = z.infer<
-  typeof ProgramsTimeSlotScheduleRequest
+export type ProgramsSlotScheduleRequest = z.infer<
+  typeof ProgramsSlotScheduleRequest
 >;
 
-export const TimeSlotScheduleServiceRequest = z.discriminatedUnion('type', [
-  ChannelTimeSlotScheduleRequest,
-  ProgramsTimeSlotScheduleRequest,
+export const SlotScheduleServiceRequest = z.discriminatedUnion('type', [
+  ChannelSlotScheduleRequest,
+  ProgramsSlotScheduleRequest,
 ]);
 
-export type TimeSlotScheduleServiceRequest = z.infer<
-  typeof TimeSlotScheduleServiceRequest
+export type SlotScheduleServiceRequest = z.infer<
+  typeof SlotScheduleServiceRequest
 >;
 
 @injectable()
-export class TimeSlotSchedulerService {
+export class SlotSchedulerService {
   constructor(
     @inject(new LazyServiceIdentifier(() => KEYS.ChannelDB))
     private channelDB: IChannelDB,
@@ -62,14 +63,14 @@ export class TimeSlotSchedulerService {
   ) {}
 
   async schedule<
-    Req extends TimeSlotScheduleServiceRequest,
+    Req extends SlotScheduleServiceRequest,
     Out = Req extends { materializeResult: true }
-      ? MaterializedTimeSlotScheduleResult
-      : TimeSlotScheduleResult,
+      ? MaterializedSlotScheduleResult
+      : SlotScheduleResult,
   >(request: Req): Promise<Out>;
   async schedule(
-    request: TimeSlotScheduleServiceRequest,
-  ): Promise<MaterializedTimeSlotScheduleResult | TimeSlotScheduleResult> {
+    request: SlotScheduleServiceRequest,
+  ): Promise<MaterializedSlotScheduleResult | TimeSlotScheduleResult> {
     let programs: ChannelProgram[];
     if (request.type === 'channel') {
       programs = await this.getPrograms(request.channelId);
@@ -87,12 +88,12 @@ export class TimeSlotSchedulerService {
       .concat(missingCustomShowPrograms)
       .concat(missingFillerPrograms);
 
-    return scheduleTimeSlots(request.schedule, programs);
+    return new RandomSlotScheduler(request.schedule).generateSchedule(programs);
   }
 
   private async getMissingCustomShowPrograms(
     programs: ChannelProgram[],
-    slots: TimeSlot[],
+    slots: RandomSlot[],
   ) {
     const customShowIds = uniqProperties(
       programs.filter((program) => program.type === 'custom'),
@@ -124,7 +125,7 @@ export class TimeSlotSchedulerService {
 
   private async getMissingFillerListPrograms(
     programs: ChannelProgram[],
-    slots: TimeSlot[],
+    slots: RandomSlot[],
   ) {
     const fillerListIds = uniqProperties(
       programs.filter((program) => program.type === 'filler'),
@@ -183,8 +184,8 @@ export class TimeSlotSchedulerService {
   }
 
   static materializeProgramsFromResult(
-    result: TimeSlotScheduleResult,
-  ): MaterializedTimeSlotScheduleResult {
+    result: SlotScheduleResult,
+  ): MaterializedSlotScheduleResult {
     const materializedPrograms: ChannelProgram[] = seq.collect(
       result.lineup,
       (program) => {

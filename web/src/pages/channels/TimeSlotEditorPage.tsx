@@ -57,7 +57,7 @@ import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
-import { useScheduleTimeSlots } from '../../hooks/slot_scheduler/useScheduleTimeSlots.ts';
+import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 
@@ -272,7 +272,7 @@ export default function TimeSlotEditorPage() {
     [setValue, getValues, slotArray],
   );
 
-  const { scheduleTimeSlots } = useScheduleTimeSlots();
+  const { scheduleTimeSlots } = useScheduleSlots();
 
   const calculateSlots = () => {
     toggleIsCalculatingSlots(true);

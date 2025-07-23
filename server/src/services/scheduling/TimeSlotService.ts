@@ -1,7 +1,8 @@
+import dayjs from '@/util/dayjs.js';
+import constants from '@tunarr/shared/constants';
 import type {
   ChannelProgram,
   CondensedChannelProgram,
-  CondensedContentProgram,
   ContentProgram,
   FlexProgram,
 } from '@tunarr/types';
@@ -16,11 +17,6 @@ import type {
   TimeSlotSchedule,
   TimeSlotScheduleResult,
 } from '@tunarr/types/api';
-import type {
-  CondensedCustomProgram,
-  CondensedFillerProgram,
-} from '@tunarr/types/schemas';
-import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
@@ -37,20 +33,16 @@ import {
   sortBy,
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
+import { advanceIterator, getNextProgramForSlot } from './ProgramIterator.js';
 import {
-  advanceIterator,
-  getNextProgramForSlot,
-} from '../util/ProgramIterator.js';
-import constants from '../util/constants.js';
-import { mod } from '../util/dayjsExtensions.js';
-import {
+  condense,
   createProgramIterators,
   createProgramMap,
-} from '../util/slotSchedulerUtil.js';
+} from './slotSchedulerUtil.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-dayjs.extend(mod);
+// dayjs.extend(mod);
 dayjs.extend(utc);
 dayjs.extend(tz);
 
@@ -104,44 +96,6 @@ function createPaddedProgram(program: ChannelProgram, padMs: number) {
     padMs: shouldPad ? padAmount : 0,
     totalDuration: program.duration + (shouldPad ? padAmount : 0),
   };
-}
-
-function condense(program: ChannelProgram): CondensedChannelProgram {
-  switch (program.type) {
-    case 'content':
-      return {
-        id: program.uniqueId, // TODO
-        duration: program.duration,
-        persisted: program.persisted,
-        type: 'content',
-      } satisfies CondensedContentProgram;
-    case 'custom':
-      return {
-        customShowId: program.customShowId,
-        duration: program.duration,
-        id: program.id,
-        index: program.index,
-        persisted: program.persisted,
-        type: 'custom',
-        program: program.program
-          ? (condense(program.program) as CondensedContentProgram)
-          : undefined,
-      } satisfies CondensedCustomProgram;
-    case 'filler':
-      return {
-        fillerListId: program.fillerListId,
-        duration: program.duration,
-        id: program.id,
-        persisted: program.persisted,
-        type: 'filler',
-        program: program.program
-          ? (condense(program.program) as CondensedContentProgram)
-          : undefined,
-      } satisfies CondensedFillerProgram;
-    case 'redirect':
-    case 'flex':
-      return program;
-  }
 }
 
 // Exported for testing only
@@ -199,6 +153,7 @@ export async function scheduleTimeSlots(
       condensedProgramsById[program.program.id] = condense(program.program);
     }
   }
+
   // Load programs
   // TODO include redirects and custom programs!
   const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);

@@ -1,7 +1,8 @@
 import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { map, random, range } from 'lodash-es';
-import { RandomSlotScheduler } from './RandomSlotsService.js';
+import { SlotSchedulerService } from './RandomSlotSchedulerService.ts';
+import { RandomSlotScheduler } from './RandomSlotsService.ts';
 
 function formatProgram(program: ChannelProgram) {
   switch (program.type) {
@@ -115,7 +116,9 @@ describe('randomSlotsService', () => {
       } satisfies ChannelProgram,
     ]);
 
-    for (const program of result) {
+    const materialized =
+      SlotSchedulerService.materializeProgramsFromResult(result);
+    for (const program of materialized.programs) {
       console.log(
         formatProgram(program),
         dayjs.duration(program.duration).humanize(),

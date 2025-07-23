@@ -346,6 +346,15 @@ export const TimeSlotScheduleResult = z.object({
 
 export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;
 
+export const SlotScheduleResult = z.object({
+  startTime: z.number().positive(),
+  lineup: CondensedChannelProgramSchema.array(),
+  programs: z.record(z.string(), ContentProgramSchema),
+  seed: z.number().array(),
+});
+
+export type SlotScheduleResult = z.infer<typeof SlotScheduleResult>;
+
 export const ProgramChildrenResult = PagedResult(
   z
     .object({
