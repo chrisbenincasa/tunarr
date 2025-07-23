@@ -86,7 +86,7 @@ export const moveProgramInCustomShow = (
       const item = customShowEditor.programList.splice(programIdx, 1);
       customShowEditor.programList.splice(toIndex, 0, ...item);
       forEach(customShowEditor.programList, (program, i) => {
-        program.index = i;
+        program.uiIndex = i;
       });
       customShowEditor.dirty.programs = true;
     }

@@ -48,7 +48,7 @@ export type RequestMethodForAlias<T extends ApiAliases> =
 export type QueryParamTypeForAlias<T extends ApiAliases> =
   ZodiosQueryParamsByAlias<ApiType, T>;
 
-export type UIIndex = { originalIndex: number };
+export type UIIndex = { uiIndex: number; originalIndex: number };
 
 export type MaybeHasStartTimeOffset = { startTimeOffset?: number };
 

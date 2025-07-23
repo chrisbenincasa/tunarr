@@ -55,6 +55,7 @@ function addIndexesAndCalculateOffsets<T extends { duration: number }>(
     const newItem = {
       ...item,
       originalIndex: firstIndex + index,
+      uiIndex: firstIndex + index,
       startTimeOffset: runningOffset,
     };
     runningOffset += item.duration;
