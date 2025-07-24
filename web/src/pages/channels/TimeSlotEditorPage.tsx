@@ -11,7 +11,7 @@ import {
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
-import { ArrowBack, Autorenew } from '@mui/icons-material';
+import { ArrowBack, Autorenew, TableChart } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Alert,
@@ -26,11 +26,13 @@ import {
   MenuItem,
   Select,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { CalendarIcon, DateTimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
 import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
@@ -55,6 +57,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import { TimeSlotCalendarView } from '../../components/slot_scheduler/TimeSlotCalendarView.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
@@ -109,6 +112,8 @@ function sanitizeStartTimes(schedule: TimeSlotSchedule) {
   };
 }
 
+type View = 'table' | 'calendar';
+
 export default function TimeSlotEditorPage() {
   const {
     channelEditor: { currentEntity: channel, schedule: loadedSchedule },
@@ -122,6 +127,7 @@ export default function TimeSlotEditorPage() {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const { dropdownOpts: programOptions } = useSlotProgramOptions();
+  const [view, setView] = useState<View>('table');
 
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
@@ -130,7 +136,6 @@ export default function TimeSlotEditorPage() {
       !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
         ? sanitizeStartTimes(loadedSchedule)
         : defaultTimeSlotSchedule,
-    // mode: 'all',
   });
 
   const {
@@ -305,10 +310,23 @@ export default function TimeSlotEditorPage() {
             <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>
               Time Slots
             </Typography>
+            <ToggleButtonGroup
+              exclusive
+              value={view}
+              onChange={(_, v) => setView(v as View)}
+            >
+              <ToggleButton value="table">
+                <TableChart />
+              </ToggleButton>
+              <ToggleButton value="calendar">
+                <CalendarIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Stack>
           <Divider sx={{ my: 2 }} />
           <TimeSlotFormProvider {...formMethods} slotArray={slotArray}>
-            <TimeSlotTable />
+            {view === 'table' && <TimeSlotTable />}
+            {view === 'calendar' && <TimeSlotCalendarView />}
           </TimeSlotFormProvider>
           <Divider sx={{ my: 2 }} />
           <Typography sx={{ flexGrow: 1, fontWeight: '600' }}>

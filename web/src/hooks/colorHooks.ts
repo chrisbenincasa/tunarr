@@ -2,6 +2,7 @@
 import { useColorScheme } from '@mui/material';
 import { common } from '@mui/material/colors';
 import type { ChannelProgram } from '@tunarr/types';
+import type { TimeSlot } from '@tunarr/types/api';
 import type Color from 'colorjs.io';
 import { useCallback } from 'react';
 import {
@@ -10,6 +11,7 @@ import {
   RandomPastelsDarkMode,
 } from '../helpers/colors.ts';
 import { getProgramGroupingKey } from '../helpers/programUtil.ts';
+import { getTimeSlotId } from '../helpers/slotSchedulerUtil.ts';
 
 const useRandomColorPalette = () => {
   const isDarkMode = useColorScheme().mode === 'dark';
@@ -24,6 +26,16 @@ export const useRandomProgramBackgroundColor = () => {
         getProgramGroupingKey(program),
         paletteOverride ?? palette,
       );
+    },
+    [palette],
+  );
+};
+
+export const useRandomTimeSlotBackgroundColor = () => {
+  const palette = useRandomColorPalette();
+  return useCallback(
+    (slot: TimeSlot, paletteOverride?: Color[]) => {
+      return pickRandomColor(getTimeSlotId(slot), paletteOverride ?? palette);
     },
     [palette],
   );

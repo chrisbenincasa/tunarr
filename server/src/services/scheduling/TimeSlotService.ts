@@ -136,8 +136,8 @@ export function distributeFlex(
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
   channelProgramming: ChannelProgram[],
+  seed: number[] = createEntropy(),
 ): Promise<TimeSlotScheduleResult> {
-  const seed = createEntropy();
   const random = new Random(MersenneTwister19937.seedWithArray(seed));
   const contentProgramsById: Record<string, ContentProgram> = {};
   const condensedProgramsById: Record<string, CondensedChannelProgram> = {};

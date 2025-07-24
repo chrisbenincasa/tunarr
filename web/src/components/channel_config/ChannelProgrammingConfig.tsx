@@ -40,10 +40,10 @@ import {
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import { ZodError } from 'zod/v4';
-import type { CalendarState } from '../slot_scheduler/ProgramCalendarView.tsx';
-import { ProgramCalendarView } from '../slot_scheduler/ProgramCalendarView.tsx';
-import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView.tsx';
-import { ProgramWeekCalendarView } from '../slot_scheduler/ProgramWeekCalendarView.tsx';
+import type { CalendarState } from '../channels/ProgramCalendarView.tsx';
+import { ProgramCalendarView } from '../channels/ProgramCalendarView.tsx';
+import { ProgramDayCalendarView } from '../channels/ProgramDayCalendarView.tsx';
+import { ProgramWeekCalendarView } from '../channels/ProgramWeekCalendarView.tsx';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelLineupList from './ChannelLineupList.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
