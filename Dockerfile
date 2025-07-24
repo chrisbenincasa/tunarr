@@ -1,5 +1,5 @@
-ARG base_image=jasongdove/ersatztv-ffmpeg
-ARG base_image_tag=7.0
+ARG base_image=ghcr.io/jasongdove/ersatztv-ffmpeg
+ARG base_image_tag=7.1.1
 
 # Setup a node + ffmpeg + nvidia base
 FROM ${base_image}:${base_image_tag} AS ffmpeg-base
