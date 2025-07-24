@@ -1221,6 +1221,7 @@ function isProgramOffline(
   return (
     !isUndefined(program) &&
     (program.type === 'offline' ||
+      (program.type === 'content' && isNonEmptyString(program.fillerListId)) ||
       program.durationMs <=
         (channel.guideMinimumDuration ??
           constants.DEFAULT_GUIDE_STEALTH_DURATION))
