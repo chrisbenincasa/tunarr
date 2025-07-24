@@ -1,5 +1,4 @@
 import { zipWithIndex } from '@/helpers/util.ts';
-import { emptyEntityEditor } from '@/store/entityEditor/util.ts';
 import useStore from '@/store/index.ts';
 import type { AddedMedia } from '@/types/index.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
@@ -67,7 +66,15 @@ export const updateCurrentFillerList = (show: Partial<FillerList>) =>
     );
   });
 
+export const resetFillerList = () =>
+  useStore.setState((state) => {
+    state.fillerListEditor.programList =
+      state.fillerListEditor.originalProgramList;
+    state.fillerListEditor.dirty.programs = false;
+  });
+
 export const clearCurrentFillerList = () =>
   useStore.setState((state) => {
-    state.fillerListEditor = emptyEntityEditor();
+    state.fillerListEditor.dirty.programs = true;
+    state.fillerListEditor.programList = [];
   });

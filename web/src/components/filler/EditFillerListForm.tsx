@@ -1,19 +1,22 @@
 import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import {
   clearCurrentFillerList,
+  resetFillerList,
   updateCurrentFillerList,
 } from '@/store/fillerListEditor/action.ts';
-import { Delete, Tv } from '@mui/icons-material';
+import { Delete, Tv, Undo } from '@mui/icons-material';
 import { Button, Divider, Stack, TextField, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { FillerList } from '@tunarr/types';
+import { isEmpty } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import useStore from '../../store/index.ts';
 import type { UIFillerListProgram } from '../../types/index.ts';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 
@@ -39,6 +42,7 @@ export function EditFillerListForm({
   const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { programs: programsDirty } = useStore((s) => s.fillerListEditor.dirty);
 
   const {
     control,
@@ -130,12 +134,24 @@ export function EditFillerListForm({
             <Button
               disableRipple
               component="button"
-              // onClick={() => navToProgramming()}
+              onClick={() => clearCurrentFillerList()}
               startIcon={<Delete />}
               variant="outlined"
+              disabled={isEmpty(fillerListPrograms)}
             >
               Clear All
             </Button>
+            {programsDirty && (
+              <Button
+                disableRipple
+                component="button"
+                onClick={() => resetFillerList()}
+                startIcon={<Undo />}
+                variant="outlined"
+              >
+                Reset
+              </Button>
+            )}
             <Tooltip title="Add TV Shows or Movies to filler" placement="right">
               <Button
                 disableRipple
