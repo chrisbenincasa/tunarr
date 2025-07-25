@@ -27,7 +27,7 @@ export class StartupService {
         );
       }
 
-      this.workerPool.start();
+      await this.workerPool.start();
     }
   }
 

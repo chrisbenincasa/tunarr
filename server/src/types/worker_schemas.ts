@@ -22,7 +22,8 @@ export const WorkerStatusRequest = BaseWorkerRequest.extend({
   type: z.literal('status'),
 });
 
-export const WorkerScheduleTimeSlotsRequest = BaseWorkerRequest.extend({
+export const WorkerScheduleTimeSlotsRequest = z.object({
+  ...BaseWorkerRequest.shape,
   type: z.literal('time-slots'),
   request: z.discriminatedUnion('type', [
     ChannelTimeSlotScheduleRequest.omit({ materializeResult: true }),
@@ -47,11 +48,24 @@ export type WorkerScheduleSlotsRequest = z.infer<
   typeof WorkerScheduleSlotsRequest
 >;
 
+export const WorkerBuildGuideRequest = z.object({
+  ...BaseWorkerRequest.shape,
+  type: z.literal('build-guide'),
+  channelId: z.string().optional(),
+  guideDurationHours: z.number(),
+  writeXmlTv: z.boolean().default(true),
+  force: z.boolean().default(false),
+  startTime: z.number().optional(),
+});
+
+export type WorkerBuildGuideRequest = z.infer<typeof WorkerBuildGuideRequest>;
+
 export const WorkerRequest = z.discriminatedUnion('type', [
   WorkerRestartRequest,
   WorkerStatusRequest,
   WorkerScheduleTimeSlotsRequest,
   WorkerScheduleSlotsRequest,
+  WorkerBuildGuideRequest,
 ]);
 
 export type WorkerRequest = z.infer<typeof WorkerRequest>;
@@ -95,6 +109,11 @@ export const WorkerSlotScheduleReply = z.object({
 
 export type WorkerSlotScheduleReply = z.infer<typeof WorkerSlotScheduleReply>;
 
+export const WorkerBuildGuideReply = z.object({
+  type: z.literal('build-guide'),
+  result: z.void(),
+});
+
 export type WorkerStatusReply = z.infer<typeof WorkerStatusReply>;
 
 export const WorkerSuccessReply = z.object({
@@ -104,6 +123,7 @@ export const WorkerSuccessReply = z.object({
     WorkerStatusReply,
     WorkerTimeSlotScheduleReply,
     WorkerSlotScheduleReply,
+    WorkerBuildGuideReply,
   ]),
 });
 
@@ -126,4 +146,5 @@ export const WorkerRequestToResponse = {
   restart: z.void(),
   'time-slots': WorkerTimeSlotScheduleReply,
   'schedule-slots': WorkerSlotScheduleReply,
+  'build-guide': z.void(),
 } as const;

@@ -31,7 +31,7 @@ import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
-import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
+import { InProcessWorkerPool } from './services/InProcessWorkerPool.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
@@ -110,7 +110,7 @@ const RootModule = new ContainerModule((bind) => {
   if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);
   } else {
-    bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();
+    bind(KEYS.WorkerPool).to(InProcessWorkerPool).inSingletonScope();
   }
 
   bind<interfaces.AutoFactory<IWorkerPool>>(

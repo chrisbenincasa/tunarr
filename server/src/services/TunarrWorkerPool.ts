@@ -16,6 +16,7 @@ import {
   WorkerRequest,
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
+import { CountdownLatch } from '../util/CountdownLatch.ts';
 import { getNumericEnvVar, WORKER_POOL_SIZE_ENV_VAR } from '../util/env.ts';
 import { timeoutPromise } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
@@ -127,18 +128,26 @@ export class TunarrWorkerPool implements IWorkerPool {
   #listeners = new Map<string, Future<unknown>>();
   #outstandingByIndex = new Map<number, string[]>();
   #startPromises: Promise<boolean>[] = [];
+  #startupLatch = new CountdownLatch(1);
 
   constructor(@inject(KEYS.Logger) private logger: Logger) {}
 
-  start() {
+  async start(): Promise<void> {
     if (this.#state !== 'pending') {
       return;
     }
+
     this.#state = 'pending';
     this.logger.info('Starting worker pool...');
     for (let i = 0; i < numWorkers; i++) {
-      this.#startPromises.push(this.setupWorker(i));
+      this.#startPromises.push(
+        this.setupWorker(i).then((res) => {
+          this.#startupLatch.countDown();
+          return res;
+        }),
+      );
     }
+
     Promise.all(this.#startPromises)
       .then(() => {
         this.logger.debug(
@@ -148,6 +157,8 @@ export class TunarrWorkerPool implements IWorkerPool {
         this.#state = 'started';
       })
       .catch(console.error);
+
+    await this.#startupLatch.wait();
   }
 
   async shutdown(timeout: number = 5_000) {
@@ -182,30 +193,54 @@ export class TunarrWorkerPool implements IWorkerPool {
     const requestId = v4();
     const reqWithId: WorkerRequest = { ...request, requestId };
     const fut = new Future<Out>();
+
+    const schedule = (worker: Worker, idx: number) => {
+      this.logger.debug(
+        'Schedule task type "%s" to worker index %d [request id = %s]',
+        request.type,
+        idx,
+        requestId,
+      );
+      this.#listeners.set(reqWithId.requestId, fut);
+      this.#outstandingByIndex.set(
+        idx,
+        this.#outstandingByIndex.get(idx)?.concat([requestId]) ?? [requestId],
+      );
+      performance.mark(requestId);
+      worker.postMessage(reqWithId);
+      return;
+    };
+
     await retry(async () => {
       return this.#mu.runExclusive(() => {
         const idx = this.#last;
         const { ready, worker } = this.#pool[idx];
         this.#last = (this.#last + 1) % this.#pool.length;
         if (ready) {
-          this.logger.debug(
-            'Schedule task type "%s" to worker index %d [request id = %s]',
-            request.type,
-            idx,
-            requestId,
-          );
-          this.#listeners.set(reqWithId.requestId, fut);
-          this.#outstandingByIndex.set(
-            idx,
-            this.#outstandingByIndex.get(idx)?.concat([requestId]) ?? [
-              requestId,
-            ],
-          );
-          performance.mark(requestId);
-          worker.postMessage(reqWithId);
+          schedule(worker, idx);
           return;
         } else {
-          throw new Error(`Worker at ${idx} is not ready yet`);
+          return new Promise((resolve, reject) => {
+            console.log('not ready, schedulingn listener');
+            worker.once('message', (message) => {
+              const parsed = WorkerMessage.safeParse(message);
+              if (parsed.error) {
+                this.logger.warn(
+                  'Worker responded with broken reply: %s',
+                  parsed.error.message,
+                );
+                reject(new Error('Could not parse ready message'));
+              } else if (
+                parsed.data.type !== 'event' ||
+                parsed.data.eventType !== 'started'
+              ) {
+                reject(new Error('Unexpected startup message from worker'));
+              }
+
+              schedule(worker, idx);
+              resolve(void 0);
+            });
+          });
         }
       });
     });

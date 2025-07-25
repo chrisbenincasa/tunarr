@@ -1,4 +1,5 @@
 import { Worker, type WorkerOptions } from 'node:worker_threads';
+import { serverOptions } from '../globals.ts';
 import { isDev } from '../util/index.ts';
 
 export class TunarrSubprocessService {
@@ -13,7 +14,9 @@ export class TunarrSubprocessService {
 class TsWorker extends Worker {
   constructor(filename: string, options: WorkerOptions = {}) {
     if (isDev) {
-      options.workerData ??= {};
+      options.workerData ??= {
+        serverOptions: serverOptions(),
+      };
       // options.workerData.__ts_worker_filename = filename.toString();
       // super(new URL('./worker.mjs', import.meta.url), options);
       super(

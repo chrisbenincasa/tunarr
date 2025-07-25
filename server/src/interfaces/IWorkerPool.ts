@@ -6,7 +6,7 @@ import type {
 } from '../types/worker_schemas.ts';
 
 export interface IWorkerPool {
-  start(): void;
+  start(): Promise<void>;
   shutdown(timeout: number): Promise<void>;
   allReady(): Promise<void>;
   queueTask<
