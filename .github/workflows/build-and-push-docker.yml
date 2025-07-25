@@ -45,23 +45,11 @@ jobs:
         builds:
           - base_tag: '7.1.1'
             platform: linux/amd64
-            suffix:
+            suffix: ''
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: 7.1.1-nvidia
-            platform: linux/amd64
-            suffix: -nvidia
-            target: linux-x64
-            os: ubuntu-latest
-
-          - base_tag: 7.1.1-vaapi
-            platform: linux/amd64
-            suffix: -vaapi
-            target: linux-x64
-            os: ubuntu-latest
-
-          - base_tag: 7.1.1-arm64
+          - base_tag: '7.1.1'
             platform: linux/arm64
             suffix: -arm64
             target: linux-arm64
