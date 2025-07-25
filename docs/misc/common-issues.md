@@ -8,11 +8,10 @@ The hardware acceleration options listed in the FFMPEG Settings page are derived
 ffmpeg -hide_banner -hwaccels
 ```
 
-There are a few reasons why your desired hardware acceleration option is not appearing in this list. Here a few of the common ones we've seen:
+There are a few reasons why your desired hardware acceleration option is not appearing in this list. This is generally only an issue if you are running Tunarr outside of Docker, as Docker images include pre-built FFmpeg binaries with all necessary libraries. Here a few of the common ones we've seen:
 
-1. If using Docker, you are not using the appropriate image tag. For instance, if you want to use Nvidia hardware accel, you must be sure to use the `*-nvidia` labeled Tunarr builds. For iGPUs, like Intel GPUs, the `*-vaapi` Docker images are required.
-2. The `ffmpeg` executable used by Tunarr is not correct. Double-check the executable path configured by Tunarr with the one in your CLI environment (`which ffmpeg`). One example of this running on Ubuntu and having installed a version of ffmpeg with `snap` (executable in `/snap/bin/ffmpeg`) and one with `apt` (in `/usr/bin/ffmpeg`).
-3. The `ffmpeg` executable you are using does not have the necessary libraries compiled in. This can be verified with the hardware accel. command above.
+1. The `ffmpeg` executable used by Tunarr is not correct. Double-check the executable path configured by Tunarr with the one in your CLI environment (`which ffmpeg`). One example of this running on Ubuntu and having installed a version of ffmpeg with `snap` (executable in `/snap/bin/ffmpeg`) and one with `apt` (in `/usr/bin/ffmpeg`).
+2. The `ffmpeg` executable you are using does not have the necessary libraries compiled in. This can be verified with the hardware accel. command above.
 
 If you've double-checked these things and still are experiencing issues, please open up a [new Q&A discussion topic](https://github.com/chrisbenincasa/tunarr/discussions/new?category=q-a&title=Missing%20Hardware%20Acceleration%20Option) so we can debug.
 

@@ -33,9 +33,7 @@ Or if using `docker compose`...
 version: '3.8'
 services:
   tunarr:
-    image: chrisbenincasa/tunarr
-    # Uncomment along with runtime below to enable HW accel
-    # image: chrisbenincasa/tunarr:latest-nvidia
+    image: chrisbenincasa/tunarr:latest
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
@@ -104,7 +102,7 @@ docker run \
 version: '3.8'
 services:
   tunarr:
-    image: chrisbenincasa/tunarr:latest-nvidia
+    image: chrisbenincasa/tunarr:latest
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000
@@ -133,7 +131,7 @@ docker run \
   --device /dev/dri:/dev/dri \
   -e "TZ=America/New_York" \
   -p 8000:8000 \
-  chrisbenincasa/tunarr:latest-vaapi
+  chrisbenincasa/tunarr:latest
 ```
 
 #### Docker Compose Example
@@ -142,7 +140,7 @@ docker run \
 version: '3.8'
 services:
   tunarr:
-    image: chrisbenincasa/tunarr:latest-vaapi
+    image: chrisbenincasa/tunarr:latest
     container_name: tunarr
     ports:
       - ${TUNARR_SERVER_PORT:-8000}:8000

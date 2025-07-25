@@ -6,9 +6,7 @@ Tunarr is available in two flavors: Docker image and standalone binaries.
 
 <a href="https://hub.docker.com/r/chrisbenincasa/tunarr"><img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/chrisbenincasa/tunarr" /></a>
 
-Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr) as well as [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr). Docker images come pre-packaged with `ffmpeg` 7.0 (thanks [@jasongdove](https://github.com/jasongdove) from ErsatzTV!).
-
-The general format of tags is: `{release}{-encoder}?`.
+Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr) as well as [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr). Docker images come pre-packaged with `ffmpeg` 7.1.1 (thanks [@jasongdove](https://github.com/jasongdove) from ErsatzTV!).
 
 Since Tunarr is currently pre-release. There are a few tags to choose from which have different releae cadences:
 
@@ -16,21 +14,17 @@ Since Tunarr is currently pre-release. There are a few tags to choose from which
 - `latest`: The latest tag points at the most recent release version.
 - `edge`: Pushed every 2 hours off of the "dev" branch. This build can be unstable. **NOTE**: If switching from a versioned/latest build to an edge build, it's recommended to take a backup of your entire Tunarr data directory. Downgrading from "edge" to a previous version is not supported; edge builds can contain non-backwards compatible changes, like database schema changes.
 
-Each tag can also use specialized image builds which include support for hardware-accelerated encoding with Nvidia, QSV, and VAAPI.
-
-Image tags are in the form `TAG(-HWACCEL)?`. For example, with the `latest` tag:
-
-[Docker](https://hub.docker.com/r/chrisbenincasa/tunarr/):
+[Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr/):
 
 - `chrisbenincasa/tunarr:latest`
-- `chrisbenincasa/tunarr:latest-nvidia`
-- `chrisbenincasa/tunarr:latest-vaapi`
+- `chrisbenincasa/tunarr:edge`
 
 [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr):
 
 - `ghcr.io/chrisbenincasa/tunarr:latest`
-- `ghcr.io/chrisbenincasa/tunarr:latest-nvidia`
-- `ghcr.io/chrisbenincasa/tunarr:latest-vaapi`
+- `ghcr.io/chrisbenincasa/tunarr:edge`
+
+Currently ARM builds are published under separate tags. Take any of the tags above and append `-arm64` to get a Docker image for ARM-based hosts.
 
 ### Unraid
 
@@ -40,7 +34,7 @@ Follow the on-screen instructions to set up the container, including mapping the
 
 ## Binaries
 
-Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend checking out [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) for pre-built FFmpeg. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
+Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 7.1.1 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
 
 Like Docker images, binaries are released with versions as well as a singular 'edge' build which is released bihourly.
 
