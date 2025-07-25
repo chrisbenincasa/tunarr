@@ -1,8 +1,6 @@
-import z from 'zod/v4';
-import {
-  LanguagePreferenceSchema,
-  LanguagePreferencesSchema,
-} from './schemas/settingsSchemas.js';
+import type z from 'zod/v4';
+import type { LanguagePreferenceSchema } from './schemas/settingsSchemas.js';
+import { LanguagePreferencesSchema } from './schemas/settingsSchemas.js';
 
 export type LanguagePreference = z.infer<typeof LanguagePreferenceSchema>;
 export type LanguagePreferences = z.infer<typeof LanguagePreferencesSchema>;

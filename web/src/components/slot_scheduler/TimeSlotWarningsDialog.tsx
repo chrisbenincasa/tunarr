@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { map } from 'lodash-es';
-import { TimeSlotTableRowType } from './SlotTypes.ts';
+import type { TimeSlotTableRowType } from './SlotTypes.ts';
 
 type Props = {
   slot: TimeSlotTableRowType | undefined;

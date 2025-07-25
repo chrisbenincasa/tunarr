@@ -1,5 +1,7 @@
-import { Dispatch, SetStateAction, useState } from 'react';
-import { DebouncedState, useDebounceValue } from 'usehooks-ts';
+import type { Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
+import type { DebouncedState } from 'usehooks-ts';
+import { useDebounceValue } from 'usehooks-ts';
 
 export default function useDebouncedState<S>(
   initialState: S | (() => S),

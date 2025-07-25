@@ -1,6 +1,6 @@
 import { createExternalId } from '@tunarr/shared';
 import { tag } from '@tunarr/types';
-import {
+import type {
   PlexEpisodeView,
   PlexLibraryListing,
   PlexLibrarySection,
@@ -8,12 +8,11 @@ import {
   PlexMedia,
   PlexSeasonView,
   PlexTerminalMedia,
-  isPlexDirectory,
-  isTerminalItem,
 } from '@tunarr/types/plex';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import { isPlexDirectory, isTerminalItem } from '@tunarr/types/plex';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep, map } from 'lodash-es';
-import { ApiClient } from '../../external/api.ts';
+import type { ApiClient } from '../../external/api.ts';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 

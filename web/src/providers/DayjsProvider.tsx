@@ -1,19 +1,8 @@
 import useStore from '@/store';
 import originalDayjs from 'dayjs';
 import React, { useMemo } from 'react';
-
-type ContextType = {
-  dayjs: (date?: originalDayjs.ConfigType) => originalDayjs.Dayjs;
-};
-
-const defaultContextType: ContextType = {
-  dayjs(date?: originalDayjs.ConfigType) {
-    return originalDayjs(date);
-  },
-};
-
-export const DayjsContext =
-  React.createContext<ContextType>(defaultContextType);
+import type { ContextType } from './DayjsContext.tsx';
+import { DayjsContext } from './DayjsContext.tsx';
 
 type Props = {
   children: React.ReactNode | React.ReactNode[];

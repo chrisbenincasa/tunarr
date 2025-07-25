@@ -93,6 +93,8 @@ export const removeProgramming = (
       case 'content':
         shouldRemove = shouldRemoveContentProgram(program);
         break;
+      default:
+        break;
     }
 
     if (!shouldRemove) {

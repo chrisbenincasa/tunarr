@@ -21,6 +21,7 @@ let apiClient = createApiClient(useStore.getState().settings.backendUri);
 // eslint-disable-next-line react-refresh/only-export-components
 export const getApiClient = () => apiClient;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const TunarrApiContext = createContext(apiClient);
 
 export function TunarrApiProvider({

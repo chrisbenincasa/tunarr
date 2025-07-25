@@ -1,7 +1,7 @@
 import { Root } from '@/App';
 import { TanStackRouterDevtools } from '@/dev/TanStackRouterDevtools';
 import { ErrorPage } from '@/pages/ErrorPage';
-import { RouterContext } from '@/types/RouterContext';
+import type { RouterContext } from '@/types/RouterContext';
 import { Link } from '@mui/material';
 import {
   Link as RouterLink,

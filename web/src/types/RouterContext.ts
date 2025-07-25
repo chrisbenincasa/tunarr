@@ -1,5 +1,5 @@
-import { ApiClient } from '@/external/api';
-import { QueryClient } from '@tanstack/react-query';
+import type { ApiClient } from '@/external/api';
+import type { QueryClient } from '@tanstack/react-query';
 
 export interface RouterContext {
   queryClient: QueryClient;

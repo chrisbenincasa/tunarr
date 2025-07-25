@@ -1,4 +1,5 @@
-import { Tag, TunarrEvent, tag } from '@tunarr/types';
+import type { Tag, TunarrEvent } from '@tunarr/types';
+import { tag } from '@tunarr/types';
 import { createContext } from 'react';
 
 export type ServerEventListenerKey = Tag<string, 'server_event_key'>;

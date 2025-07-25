@@ -1,4 +1,5 @@
-import { Tooltip, TooltipProps, styled, tooltipClasses } from '@mui/material';
+import type { TooltipProps } from '@mui/material';
+import { Tooltip, styled, tooltipClasses } from '@mui/material';
 
 type ElevatedTooltipProps = TooltipProps & {
   elevation: number;

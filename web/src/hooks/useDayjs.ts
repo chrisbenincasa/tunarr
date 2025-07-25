@@ -1,4 +1,4 @@
-import { DayjsContext } from '@/providers/DayjsProvider';
+import { DayjsContext } from '@/providers/DayjsContext';
 import { useContext } from 'react';
 
 export const useDayjs = () => {

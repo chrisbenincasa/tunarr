@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Task } from '@tunarr/types';
+import type { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { map } from 'lodash-es';
 import { useSnackbar } from 'notistack';

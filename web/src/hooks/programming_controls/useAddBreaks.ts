@@ -1,7 +1,8 @@
-import { AddBreaksConfig } from '@/components/programming_controls/AddBreaksModal';
+import type { AddBreaksConfig } from '@/components/programming_controls/AddBreaksModal';
 import { setCurrentLineup } from '@/store/channelEditor/actions';
 import { materializedProgramListSelector } from '@/store/selectors';
-import { ChannelProgram, isFlexProgram } from '@tunarr/types';
+import type { ChannelProgram } from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
 import useStore from '@/store';
 
 export function useAddBreaks() {

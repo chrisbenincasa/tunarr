@@ -1,5 +1,6 @@
-import { Dayjs, PluginFunc } from 'dayjs';
-import duration, { DurationUnitsObjectType } from 'dayjs/plugin/duration.js';
+import type { Dayjs, PluginFunc } from 'dayjs';
+import type { DurationUnitsObjectType } from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import { isNumber } from 'lodash-es';
 
 declare module 'dayjs' {

@@ -1,4 +1,4 @@
-import { PlexFilter, PlexSort } from '@tunarr/types/api';
+import type { PlexFilter, PlexSort } from '@tunarr/types/api';
 import { isUndefined } from 'lodash-es';
 
 // Commenting this out for now because it breaks the build but we will need it

@@ -1,5 +1,5 @@
-import { PaginationState } from '@tanstack/react-table';
-import { StateCreator } from 'zustand';
+import type { PaginationState } from '@tanstack/react-table';
+import type { StateCreator } from 'zustand';
 
 // Only these 2 are supported currently
 export type SupportedLocales = 'en' | 'en-gb';

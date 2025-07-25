@@ -142,6 +142,7 @@ export const useTvGuides = (
   extraOpts: Partial<
     Omit<
       UseQueryOptions<
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         any,
         DefaultError,
         ChannelLineup[],

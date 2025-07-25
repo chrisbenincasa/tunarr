@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { DefaultPlexHeaders } from '@tunarr/shared/constants';
-import { MediaSourceSettings } from '@tunarr/types';
+import type { MediaSourceSettings } from '@tunarr/types';
 import axios from 'axios';
 
 export const useMediaSourceStatus = ({

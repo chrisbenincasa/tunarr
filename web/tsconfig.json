@@ -32,6 +32,9 @@
   "files": [
     "vite.config.ts",
     "vitest.config.ts",
+    "src/components/slot_scheduler/RandomSlotFormContext.tsx",
+    "./src/components/slot_scheduler/TimeSlotFormContext.tsx",
+    "./src/providers/DayjsContext.tsx",
   ],
   "include": [
     "./src/**/*.ts",

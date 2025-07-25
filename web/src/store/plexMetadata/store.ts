@@ -1,5 +1,5 @@
-import { PlexFiltersResponse } from '@tunarr/types/plex';
-import { StateCreator } from 'zustand';
+import type { PlexFiltersResponse } from '@tunarr/types/plex';
+import type { StateCreator } from 'zustand';
 
 type PlexServerName = string;
 type PlexServerKey = string; // ratingKey

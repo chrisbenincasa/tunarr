@@ -88,6 +88,8 @@ export const LanguageAutocomplete = ({
         case 'clear':
           onClear?.();
           break;
+        default:
+          break;
       }
     },
     [onClear, onRemove, onSelect],

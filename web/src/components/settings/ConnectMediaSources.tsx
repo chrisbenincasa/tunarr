@@ -2,11 +2,11 @@ import jellyfinSvg from '@/assets/jellyfin.svg';
 import plexSvg from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { Edit } from '@mui/icons-material';
+import type { CardProps } from '@mui/material';
 import {
   Box,
   Card,
   CardContent,
-  CardProps,
   IconButton,
   Table,
   TableBody,

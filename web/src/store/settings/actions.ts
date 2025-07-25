@@ -1,5 +1,5 @@
-import { SupportedLocales } from '@/store/settings/store.ts';
-import { PaginationState } from '@tanstack/react-table';
+import type { SupportedLocales } from '@/store/settings/store.ts';
+import type { PaginationState } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import useStore from '..';
 

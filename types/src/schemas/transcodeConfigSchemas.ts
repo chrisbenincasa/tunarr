@@ -1,5 +1,5 @@
 import z from 'zod/v4';
-import { TupleToUnion } from '../util.js';
+import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
 import {
   SupportedErrorAudioTypes,

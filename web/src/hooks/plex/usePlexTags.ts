@@ -1,7 +1,7 @@
 import { useCurrentPlexMediaSourceAndLibraryView } from '@/store/programmingSelector/selectors.ts';
 import { useQuery } from '@tanstack/react-query';
 import { tag } from '@tunarr/types';
-import { PlexTagResult } from '@tunarr/types/plex';
+import type { PlexTagResult } from '@tunarr/types/plex';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
 

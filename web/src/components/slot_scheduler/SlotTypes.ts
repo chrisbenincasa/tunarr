@@ -1,6 +1,6 @@
-import { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
-import { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
-import { FieldArrayWithId } from 'react-hook-form';
+import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
+import type { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
+import type { FieldArrayWithId } from 'react-hook-form';
 
 export type ProgramTooLongWarning = {
   type: 'program_too_long';

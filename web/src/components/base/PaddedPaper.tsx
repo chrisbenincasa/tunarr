@@ -1,4 +1,5 @@
-import Paper, { PaperProps } from '@mui/material/Paper';
+import type { PaperProps } from '@mui/material/Paper';
+import Paper from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
 
 const PaddedPaper = styled(Paper, {

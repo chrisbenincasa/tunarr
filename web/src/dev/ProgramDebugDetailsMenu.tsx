@@ -1,7 +1,7 @@
 import { useSettings } from '@/store/settings/selectors.ts';
 import { BugReport, OpenInNew } from '@mui/icons-material';
 import { IconButton, Link, ListItemIcon, Menu, MenuItem } from '@mui/material';
-import { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram } from '@tunarr/types';
 import { constant, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { match } from 'ts-pattern';
@@ -13,6 +13,7 @@ type Props = {
 
 const defaultUndefined = constant(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 const ProgramDebugDetailsMenuImpl = ({ program }: Props) => {
   const { backendUri } = useSettings();
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);

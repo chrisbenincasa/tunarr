@@ -30,7 +30,6 @@ import { ChannelPropertiesEditor } from './ChannelPropertiesEditor.tsx';
 import ChannelTranscodingConfig from './ChannelTranscodingConfig.tsx';
 import {
   EditChannelTabPanel,
-  EditChannelTabsProps,
   type EditChannelTabProps,
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
@@ -83,6 +82,34 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     subtitlePreferences: channel.subtitlePreferences ?? [],
   };
 }
+
+const EditChannelTabsProps: EditChannelTabProps[] = [
+  {
+    value: 'properties',
+    description: 'Properties',
+    fields: ['number', 'name', 'groupTitle', 'icon'],
+  },
+  {
+    value: 'flex',
+    description: 'Flex',
+    fields: ['offline', 'fillerCollections', 'fillerRepeatCooldown'],
+  },
+  {
+    value: 'epg',
+    description: 'EPG',
+    fields: ['stealth', 'guideFlexTitle', 'guideMinimumDuration'],
+  },
+  {
+    value: 'ffmpeg',
+    description: 'Streaming',
+    fields: [
+      'watermark',
+      'streamMode',
+      'subtitlesEnabled',
+      'subtitlePreferences',
+    ],
+  },
+];
 
 export function EditChannelForm({
   channel,

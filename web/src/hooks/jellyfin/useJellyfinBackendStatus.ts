@@ -1,6 +1,6 @@
 import { isNonEmptyString, isValidUrl } from '@/helpers/util';
-import { JellyfinServerSettings } from '@tunarr/types';
-import { MarkOptional } from 'ts-essentials';
+import type { JellyfinServerSettings } from '@tunarr/types';
+import type { MarkOptional } from 'ts-essentials';
 import { useApiQuery } from '../useApiQuery';
 
 export const useJellyfinBackendStatus = (

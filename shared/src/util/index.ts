@@ -56,6 +56,11 @@ export function forProgramType<T>(
           return applyOrValue(choices.flex, m, []);
         }
         break;
+      case 'filler':
+        if (choices.filler) {
+          return applyOrValue(choices.filler, m, []);
+        }
+        break;
     }
 
     // If we made it this far try to do the default
@@ -102,6 +107,9 @@ export function forPlexMedia<T>(choices: PerTypeCallback<PlexMedia, T>) {
       case 'collection':
         if (choices.collection)
           return applyOrValueNoRest(choices.collection, m);
+        break;
+      case 'playlist':
+        if (choices.playlist) return applyOrValueNoRest(choices.playlist, m);
         break;
     }
 

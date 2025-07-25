@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { map } from 'lodash-es';
-import { RandomSlotTableRowType } from './SlotTypes.ts';
+import type { RandomSlotTableRowType } from './SlotTypes.ts';
 
 type Props = {
   slot: RandomSlotTableRowType | undefined;

@@ -1,36 +1,15 @@
 import { isNonEmptyString } from '@/helpers/util';
-import languages from '@cospired/i18n-iso-languages';
-import en from '@cospired/i18n-iso-languages/langs/en.json';
 import { Autocomplete, TextField } from '@mui/material';
-import { seq } from '@tunarr/shared/util';
 import type { LanguagePreference } from '@tunarr/types';
-import { entries, map, reject, sortBy } from 'lodash-es';
+import { map, reject } from 'lodash-es';
 import type { FieldError } from 'react-hook-form';
-
-// Initialize the languages database with English names
-languages.registerLocale(en);
+import { useLanguageOptions } from '../hooks/useLanguagePreferences.ts';
 
 interface LanguagePreferencesListProps {
   preferences: LanguagePreference[];
   onChange: (preferences: LanguagePreference[]) => void;
   error?: FieldError;
 }
-
-// Get all available languages as a map of ISO 639-1 codes to display names
-export const languageOptions = sortBy(
-  seq.collect(entries(languages.getNames('en')), ([code, name]) => {
-    const iso6392 = languages.alpha2ToAlpha3B(code);
-    if (!iso6392) {
-      return;
-    }
-    return {
-      iso6391: code,
-      iso6392,
-      displayName: name,
-    } satisfies LanguagePreference;
-  }),
-  (opt) => opt.displayName,
-);
 
 export function LanguagePreferencesList({
   preferences,
@@ -41,6 +20,7 @@ export function LanguagePreferencesList({
     onChange(value);
   };
 
+  const languageOptions = useLanguageOptions();
   const preferenceCodes = map(preferences, (pref) => pref.iso6392);
 
   return (

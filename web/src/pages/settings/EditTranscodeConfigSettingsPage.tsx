@@ -5,7 +5,7 @@ import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { Route } from '@/routes/settings/ffmpeg_/$configId';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TranscodeConfig } from '@tunarr/types';
+import type { TranscodeConfig } from '@tunarr/types';
 
 export const EditTranscodeConfigSettingsPage = () => {
   const { configId } = Route.useParams();

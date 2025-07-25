@@ -5,7 +5,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
-import { Channel } from '@tunarr/types';
+import type { Channel } from '@tunarr/types';
 import { isInteger, omit } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
 

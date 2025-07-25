@@ -1,11 +1,14 @@
 import CloudUpload from '@mui/icons-material/CloudUpload';
-import FormControl, { FormControlProps } from '@mui/material/FormControl';
+import type { FormControlProps } from '@mui/material/FormControl';
+import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-import OutlinedInput, { OutlinedInputProps } from '@mui/material/OutlinedInput';
+import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
-import React, { ChangeEvent, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useTunarrApi } from '../../hooks/useTunarrApi';
 
 const VisuallyHiddenInput = styled('input')({
@@ -25,9 +28,9 @@ type Props = {
   InputProps?: OutlinedInputProps;
   label: string;
   value: string;
-  onFormValueChange(value: string): void;
-  onUploadError(error: unknown): void;
-  fileRenamer(name: File): string;
+  onFormValueChange: (value: string) => void;
+  onUploadError: (error: unknown) => void;
+  fileRenamer: (name: File) => string;
   children?: React.ReactNode;
 };
 

@@ -1,10 +1,10 @@
+import type { DialogProps } from '@mui/material';
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogProps,
   DialogTitle,
 } from '@mui/material';
 

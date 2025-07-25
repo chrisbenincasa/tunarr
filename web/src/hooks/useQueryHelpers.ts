@@ -1,10 +1,10 @@
-import {
+import type {
   DataTag,
   DefinedInitialDataOptions,
   QueryFunction,
   UseQueryOptions,
 } from '@tanstack/react-query';
-import { NonUndefinedGuard } from '../types';
+import type { NonUndefinedGuard } from '../types';
 
 export function makeQueryOptions<
   K extends readonly unknown[],

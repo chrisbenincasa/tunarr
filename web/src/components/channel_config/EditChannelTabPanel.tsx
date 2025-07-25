@@ -29,31 +29,3 @@ export type EditChannelTabProps = {
   description: string;
   fields: FieldPath<SaveableChannel>[];
 };
-
-export const EditChannelTabsProps: EditChannelTabProps[] = [
-  {
-    value: 'properties',
-    description: 'Properties',
-    fields: ['number', 'name', 'groupTitle', 'icon'],
-  },
-  {
-    value: 'flex',
-    description: 'Flex',
-    fields: ['offline', 'fillerCollections', 'fillerRepeatCooldown'],
-  },
-  {
-    value: 'epg',
-    description: 'EPG',
-    fields: ['stealth', 'guideFlexTitle', 'guideMinimumDuration'],
-  },
-  {
-    value: 'ffmpeg',
-    description: 'Streaming',
-    fields: [
-      'watermark',
-      'streamMode',
-      'subtitlesEnabled',
-      'subtitlePreferences',
-    ],
-  },
-];

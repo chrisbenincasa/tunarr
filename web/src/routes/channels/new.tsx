@@ -4,7 +4,7 @@ import { channelsQuery } from '@/hooks/useChannels';
 import { NewChannelPage } from '@/pages/channels/NewChannelPage';
 import { safeSetCurrentChannel } from '@/store/channelEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
-import { Channel } from '@tunarr/types';
+import type { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, first, maxBy } from 'lodash-es';
 import { v4 } from 'uuid';

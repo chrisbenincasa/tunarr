@@ -3,7 +3,7 @@ import { TranscodeConfigSettingsForm } from '@/components/settings/ffmpeg/Transc
 import { useTunarrApi } from '@/hooks/useTunarrApi';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TranscodeConfig } from '@tunarr/types';
+import type { TranscodeConfig } from '@tunarr/types';
 
 const defaultNewTranscodeConfig: TranscodeConfig = {
   id: '',

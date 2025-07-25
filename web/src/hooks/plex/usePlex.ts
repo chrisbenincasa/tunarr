@@ -1,9 +1,9 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { PlexLibrarySections, PlexPlaylists } from '@tunarr/types/plex';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import type { PlexLibrarySections, PlexPlaylists } from '@tunarr/types/plex';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { identity, reject } from 'lodash-es';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
-import { ExtractTypeKeys, FindChild } from '../../types/util.ts';
+import type { ExtractTypeKeys, FindChild } from '../../types/util.ts';
 import { useApiQuery } from '../useApiQuery.ts';
 import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';

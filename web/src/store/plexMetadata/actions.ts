@@ -1,4 +1,4 @@
-import { PlexFiltersResponse } from '@tunarr/types/plex';
+import type { PlexFiltersResponse } from '@tunarr/types/plex';
 import useStore from '..';
 
 export const setPlexMetadataFilters = (

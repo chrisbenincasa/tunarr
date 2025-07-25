@@ -1,11 +1,12 @@
-import { router } from '@/main.tsx';
+import type { router } from '@/main.tsx';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { AnyRoute, ParseRoute, useBlocker } from '@tanstack/react-router';
+import type { AnyRoute, ParseRoute } from '@tanstack/react-router';
+import { useBlocker } from '@tanstack/react-router';
 import { isEmpty } from 'lodash-es';
 
 type AvailablePaths<

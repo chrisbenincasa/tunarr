@@ -1,4 +1,4 @@
-import { EditChannelTabs } from '@/components/channel_config/EditChannelTabPanel.tsx';
+import type { EditChannelTabs } from '@/components/channel_config/EditChannelTabPanel.tsx';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { EditChannelForm } from '../../components/channel_config/EditChannelForm.tsx';

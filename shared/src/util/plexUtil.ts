@@ -1,4 +1,4 @@
-import { ExternalId } from '@tunarr/types';
+import type { ExternalId } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import { trimEnd } from 'lodash-es';
 

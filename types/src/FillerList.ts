@@ -1,5 +1,5 @@
-import { z } from 'zod/v4';
-import {
+import type { z } from 'zod/v4';
+import type {
   FillerListProgrammingSchema,
   FillerListSchema,
 } from './schemas/fillerSchema.js';

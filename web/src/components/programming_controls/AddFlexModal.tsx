@@ -12,7 +12,7 @@ import {
   setProgramAtIndex,
 } from '../../store/channelEditor/actions.ts';
 import { isUndefined, omit } from 'lodash-es';
-import { UIFlexProgram } from '../../types/index.ts';
+import type { UIFlexProgram } from '../../types/index.ts';
 
 dayjs.extend(duration);
 
@@ -100,8 +100,8 @@ const AddFlexModal = ({
             isNotNumeric
               ? 'Duration must be numeric'
               : !isGreaterThanZero
-              ? 'Duration must be greater than 0.'
-              : dayjs.duration(parsedDuration, 'seconds').humanize()
+                ? 'Duration must be greater than 0.'
+                : dayjs.duration(parsedDuration, 'seconds').humanize()
           }
         />
       </DialogContent>

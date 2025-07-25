@@ -169,7 +169,7 @@ export function ChannelFlexConfig() {
 
       updateFormWeights();
     },
-    [channelFillerLists, updateFormWeights],
+    [channelFillerLists, updateFormWeights, weights],
   );
 
   const renderFillerLists = () => {

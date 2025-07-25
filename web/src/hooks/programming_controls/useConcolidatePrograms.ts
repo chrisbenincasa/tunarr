@@ -1,7 +1,7 @@
 import useStore from '@/store';
 import { setCurrentLineup } from '@/store/channelEditor/actions';
 import { materializedProgramListSelector } from '@/store/selectors';
-import { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram } from '@tunarr/types';
 
 export const useConsolidatePrograms = () => {
   const programs = useStore(materializedProgramListSelector);

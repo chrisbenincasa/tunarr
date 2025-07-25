@@ -1,5 +1,6 @@
 import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
-import { AddCircle, SvgIconComponent } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import { AddCircle } from '@mui/icons-material';
 import { Button } from '@mui/material';
 
 type AddPlexServer = {

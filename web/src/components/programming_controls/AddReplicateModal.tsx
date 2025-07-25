@@ -13,7 +13,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { isNil } from 'lodash-es';
 import { useEffect } from 'react';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useReplicatePrograms } from '../../hooks/programming_controls/useReplicatePrograms';
 import { NumericFormControllerText } from '../util/TypedController';
 
@@ -47,7 +48,7 @@ const AddReplicateModal = ({ open, onClose }: AddReplicateModalProps) => {
 
   useEffect(() => {
     reset();
-  }, [isSubmitSuccessful]);
+  }, [isSubmitSuccessful, reset]);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
     replicateProgram(data.numberOfReplications, data.type);

@@ -7,10 +7,10 @@ import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import useStore from '@/store/index.ts';
 import { setPlexMetadataFilters } from '@/store/plexMetadata/actions.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
-import { Maybe } from '@/types/util.ts';
+import type { Maybe } from '@/types/util.ts';
 import { useQuery } from '@tanstack/react-query';
-import { PlexFiltersResponse } from '@tunarr/types/plex';
-import { MediaSourceId } from '@tunarr/types/schemas';
+import type { PlexFiltersResponse } from '@tunarr/types/plex';
+import type { MediaSourceId } from '@tunarr/types/schemas';
 import { useEffect } from 'react';
 
 export const usePlexFilters = (

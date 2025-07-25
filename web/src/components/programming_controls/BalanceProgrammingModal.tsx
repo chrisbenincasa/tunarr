@@ -1,7 +1,5 @@
-import {
-  BalanceProgramsOptions,
-  useBalancePrograms,
-} from '@/hooks/programming_controls/useBalancePrograms';
+import type { BalanceProgramsOptions } from '@/hooks/programming_controls/useBalancePrograms';
+import { useBalancePrograms } from '@/hooks/programming_controls/useBalancePrograms';
 import {
   Box,
   Button,

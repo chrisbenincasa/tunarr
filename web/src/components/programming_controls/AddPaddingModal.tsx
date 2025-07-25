@@ -15,8 +15,8 @@ import {
 import { find } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { handleNumericFormValue } from '../../helpers/util.ts';
+import type { StartTimePadding } from '../../hooks/programming_controls/usePadStartTimes.ts';
 import {
-  StartTimePadding,
   StartTimePaddingOptions,
   usePadStartTimes,
 } from '../../hooks/programming_controls/usePadStartTimes.ts';
