@@ -29,7 +29,7 @@ import {
 } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { format } from 'node:util';
+import { format, inspect } from 'node:util';
 import { isPromise } from 'node:util/types';
 import type { DeepReadonly, DeepWritable, NonEmptyArray } from 'ts-essentials';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from './env.ts';
@@ -575,4 +575,14 @@ export function isNonEmptyArray<T>(
   t: Nilable<ReadonlyArray<T> | Array<T>>,
 ): t is NonEmptyArray<T> {
   return t ? t.length > 0 : false;
+}
+
+export function caughtErrorToError(e: unknown): Error {
+  if (isError(e)) {
+    return e;
+  } else if (isString(e)) {
+    return new Error(e);
+  } else {
+    return new Error(inspect(e));
+  }
 }

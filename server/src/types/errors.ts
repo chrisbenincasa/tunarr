@@ -8,7 +8,6 @@ export abstract class TypedError extends Error {
       return e;
     }
 
-    console.log(e);
     const err = new GenericError(e.message, { cause: e.cause });
     if (e.stack) {
       err.stack = e.stack;

@@ -188,6 +188,19 @@ export class MediaSourceApiFactory {
     );
   }
 
+  async getEmbyApiClientByName(name: string, userId?: string) {
+    return this.getTypedByName(
+      MediaSourceType.Emby,
+      name,
+      (opts) =>
+        new EmbyApiClient({
+          ...opts,
+          url: opts.uri,
+          userId: opts.userId ?? userId ?? null,
+        }),
+    );
+  }
+
   deleteCachedClient(mediaSource: MediaSource) {
     const key = this.getCacheKeyForMediaSource(mediaSource);
     return MediaSourceApiFactory.cache.del(key) === 1;

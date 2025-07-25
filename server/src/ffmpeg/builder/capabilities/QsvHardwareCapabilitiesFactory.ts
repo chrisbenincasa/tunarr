@@ -1,11 +1,11 @@
 import { seq } from '@tunarr/shared/util';
 import { drop, isEmpty, map, reject, split, trim } from 'lodash-es';
-import { ReadableFfmpegSettings } from '../../../db/interfaces/ISettingsDB.ts';
-import { TranscodeConfig } from '../../../db/schema/TranscodeConfig.ts';
+import type { ReadableFfmpegSettings } from '../../../db/interfaces/ISettingsDB.ts';
+import type { TranscodeConfig } from '../../../db/schema/TranscodeConfig.ts';
 import { ChildProcessHelper } from '../../../util/ChildProcessHelper.ts';
 import { LoggerFactory } from '../../../util/logging/LoggerFactory.ts';
 import { FFmpegOptionsExtractionPattern } from '../../ffmpegInfo.ts';
-import {
+import type {
   BaseFfmpegHardwareCapabilities,
   FfmpegHardwareCapabilitiesFactory,
 } from './BaseFfmpegHardwareCapabilities.ts';

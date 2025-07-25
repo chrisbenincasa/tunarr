@@ -138,6 +138,8 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             return res.status(404).send('Channel not found.');
           case 'generic_error':
             return res.status(500).send('Unable to start session');
+          case 'transcode_config_not_found':
+            return res.status(404).send('Transcode config not found');
         }
       }
 

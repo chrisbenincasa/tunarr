@@ -132,15 +132,15 @@ export class BackfillProgramExternalIds extends Fixer {
           ),
         { concurrency: 3, waitAfterEachMs: 50 },
       )) {
-        if (result.type === 'error') {
+        if (result.isFailure()) {
           this.logger.error(
             result.error,
             'Error while attempting to get external IDs for program %s',
-            result.input.uuid,
+            result.error.input.uuid,
           );
         } else {
           const upsertResult = await attempt(() =>
-            this.programDB.upsertProgramExternalIds(result.result),
+            this.programDB.upsertProgramExternalIds(result.get().result),
           );
           if (isError(upsertResult)) {
             this.logger.warn(

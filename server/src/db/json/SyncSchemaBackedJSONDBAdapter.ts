@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import type { Nullable } from '@/types/util.js';
 import { isProduction } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -44,7 +45,7 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny>
 
         if (parseResult.success) {
           this.write(mergedData);
-          return parseResult.data as z.output<T> | null;
+          return parseResult.data;
         }
       }
 
@@ -56,7 +57,7 @@ export class SyncSchemaBackedDbAdapter<T extends z.ZodTypeAny>
         return null;
       }
     }
-    return parseResult.data as z.output<T> | null;
+    return parseResult.data;
   }
 
   write(data: z.output<T>): void {

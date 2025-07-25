@@ -2,6 +2,7 @@ import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { once, round } from 'lodash-es';
 import type { Readable } from 'node:stream';
+import { caughtErrorToError } from '../util/index.ts';
 import type { SessionOptions } from './Session.js';
 import { Session } from './Session.js';
 
@@ -29,7 +30,7 @@ export abstract class DirectStreamSession<
           .catch((e) => {
             this.logger.error(e, 'Error while cleaning up stream session');
             this.state = 'error';
-            reject(e);
+            reject(caughtErrorToError(e));
           })
           .finally(() => {
             const oldState = this.state;

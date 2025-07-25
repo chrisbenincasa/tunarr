@@ -5,6 +5,7 @@ export default {
   async up(db: Kysely<DB>): Promise<void> {
     await db
       .updateTable('program')
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       .set(({ ref }) => ({
         externalKey: ref('plexRatingKey').$notNull(),
       }))

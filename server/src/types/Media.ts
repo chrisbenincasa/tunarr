@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Resolution } from '@tunarr/types';
 import type { ExternalIdType } from '@tunarr/types/schemas';
 import type dayjs from 'dayjs';

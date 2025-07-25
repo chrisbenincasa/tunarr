@@ -81,6 +81,14 @@ export class MediaSourceDB {
       .executeTakeFirst();
   }
 
+  async getByIdOrName(id: string) {
+    return this.db
+      .selectFrom('mediaSource')
+      .selectAll()
+      .where((eb) => eb.or([eb('uuid', '=', id), eb('name', '=', id)]))
+      .executeTakeFirst();
+  }
+
   async findByType(
     type: typeof MediaSourceType.Plex,
     nameOrId: string,

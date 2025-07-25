@@ -1,3 +1,5 @@
+import { isError, isString } from 'lodash-es';
+import { Result } from '../types/result.ts';
 import { wait } from './index.js';
 
 type AsyncPoolOpts = {
@@ -16,19 +18,20 @@ export async function* asyncPool<T, R>(
   iterable: Iterable<T>,
   iteratorFn: (item: T, iterable: Iterable<T>) => PromiseLike<R> | R,
   opts: AsyncPoolOpts,
-): AsyncGenerator<Result<T, R>> {
+): AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>> {
   const executing = new Set<Promise<readonly [T, Awaited<R>]>>();
 
-  async function consume() {
+  async function consume(): Promise<
+    Result<WithInput<R, T>, ErrorWithInput<T>>
+  > {
     try {
       const [input, result] = await Promise.race(executing);
-      return {
-        type: 'success' as const,
+      return Result.success({
         result,
         input,
-      };
+      });
     } catch (e) {
-      return e as Failure<T>;
+      return Result.failure(e as ErrorWithInput<T>);
     }
   }
 
@@ -44,11 +47,16 @@ export async function* asyncPool<T, R>(
         }
         return [item, r] as const;
       } catch (e) {
-        throw {
-          type: 'failure',
-          error: e as unknown,
-          input: item,
-        };
+        let error: Error;
+        if (isError(e)) {
+          error = e;
+        } else if (isString(e)) {
+          error = new Error(e);
+        } else {
+          error = new Error(JSON.stringify(e));
+        }
+
+        throw new ErrorWithInput(error, item);
       }
     })().finally(() => executing.delete(promise));
 
@@ -67,19 +75,20 @@ export async function* asyncPoolGen<T, R>(
   iterable: AsyncIterable<T>,
   iteratorFn: (item: T) => PromiseLike<R> | R,
   opts: AsyncPoolOpts,
-): AsyncGenerator<Result<T, R>> {
+): AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>> {
   const executing = new Set<Promise<readonly [T, Awaited<R>]>>();
 
-  async function consume() {
+  async function consume(): Promise<
+    Result<WithInput<R, T>, ErrorWithInput<T>>
+  > {
     try {
       const [input, result] = await Promise.race(executing);
-      return {
-        type: 'success' as const,
+      return Result.success({
         result,
         input,
-      };
+      });
     } catch (e) {
-      return e as Failure<T>;
+      return Result.failure(e as ErrorWithInput<T>);
     }
   }
 
@@ -96,11 +105,16 @@ export async function* asyncPoolGen<T, R>(
         }
         return [item, r] as const;
       } catch (e) {
-        throw {
-          type: 'failure',
-          error: e as unknown,
-          input: item,
-        };
+        let error: Error;
+        if (isError(e)) {
+          error = e;
+        } else if (isString(e)) {
+          error = new Error(e);
+        } else {
+          error = new Error(JSON.stringify(e));
+        }
+
+        throw new ErrorWithInput(error, item);
       }
     })().finally(() => executing.delete(promise));
 
@@ -115,31 +129,39 @@ export async function* asyncPoolGen<T, R>(
   }
 }
 
-export async function unfurlPool<T, R>(poolGen: AsyncGenerator<Result<T, R>>) {
+export async function unfurlPool<T, R>(
+  poolGen: AsyncGenerator<Result<WithInput<R, T>, ErrorWithInput<T>>>,
+) {
   const results: R[] = [];
   for await (const result of poolGen) {
-    if (result.type === 'success') {
-      results.push(result.result);
-    } else {
+    if (result.isFailure()) {
       LoggerFactory.root.error(
         result.error,
         'Error processing async pool task',
       );
+    } else {
+      results.push(result.get().result);
     }
   }
   return results;
 }
 
-type Failure<In> = {
-  type: 'error';
-  error: unknown;
-  input: In;
-};
+class ErrorWithInput<In> extends Error {
+  constructor(
+    private root: Error,
+    public input: In,
+  ) {
+    super(root?.message);
+  }
 
-type Success<R, In> = {
-  type: 'success';
+  get cause(): unknown {
+    return this.root;
+  }
+}
+
+type WithInput<R, In> = {
   result: R;
   input: In;
 };
 
-type Result<In, R> = Success<R, In> | Failure<In>;
+// type Result<In, R> = Success<R, In> | Failure<In>;

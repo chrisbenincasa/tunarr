@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import 'vitest';
 

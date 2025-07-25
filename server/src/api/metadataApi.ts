@@ -3,6 +3,7 @@ import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { isNonEmptyString } from '@/util/index.js';
 import axios, { AxiosHeaders } from 'axios';
 import dayjs from 'dayjs';
+import type { FastifyReply } from 'fastify';
 import type { HttpHeader } from 'fastify/types/utils.d.ts';
 import {
   head,
@@ -92,11 +93,15 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       let result: string | null = null;
       switch (req.query.id.externalSourceType) {
         case ProgramSourceType.PLEX: {
-          result = await handlePlexItem(req.query);
+          result = await handlePlexItem(req.query, res);
           break;
         }
         case ProgramSourceType.JELLYFIN: {
-          result = await handleJellyfishItem(req.query);
+          result = await handleJellyfinItem(req.query);
+          break;
+        }
+        case ProgramSourceType.EMBY: {
+          result = await handleEmbyItem(req.query);
           break;
         }
       }
@@ -182,7 +187,10 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  async function handlePlexItem(query: ExternalMetadataQuery) {
+  async function handlePlexItem(
+    query: ExternalMetadataQuery,
+    res: FastifyReply,
+  ) {
     const plexApi =
       await getServerContext().mediaSourceApiFactory.getPlexApiClientByName(
         query.id.externalSourceId,
@@ -201,12 +209,24 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         imageType: query.imageType,
       });
     } else if (query.asset === 'external-link') {
+      const server = await getServerContext().mediaSourceDB.getByIdOrName(
+        query.id.externalSourceId,
+      );
+      if (!server || isNil(server.clientIdentifier)) {
+        return res.status(404).send();
+      }
+
+      return `${server.uri}/web/index.html#!/server/${
+        server.clientIdentifier
+      }/details?key=${encodeURIComponent(
+        `/library/metadata/${query.id.externalItemId}`,
+      )}&X-Plex-Token=${server.accessToken}`;
     }
 
     return null;
   }
 
-  async function handleJellyfishItem(query: ExternalMetadataQuery) {
+  async function handleJellyfinItem(query: ExternalMetadataQuery) {
     const jellyfinClient =
       await getServerContext().mediaSourceApiFactory.getJellyfinApiClientByName(
         query.id.externalSourceId,
@@ -220,6 +240,25 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       return jellyfinClient.getThumbUrl(query.id.externalItemId);
     } else if (query.asset === 'external-link') {
       return jellyfinClient.getExternalUrl(query.id.externalItemId);
+    }
+
+    return null;
+  }
+
+  async function handleEmbyItem(query: ExternalMetadataQuery) {
+    const embyClient =
+      await getServerContext().mediaSourceApiFactory.getEmbyApiClientByName(
+        query.id.externalSourceId,
+      );
+
+    if (isNil(embyClient)) {
+      return null;
+    }
+
+    if (query.asset === 'thumb' || query.asset === 'image') {
+      return embyClient.getThumbUrl(query.id.externalItemId);
+    } else if (query.asset === 'external-link') {
+      return embyClient.getExternalUrl(query.id.externalItemId);
     }
 
     return null;

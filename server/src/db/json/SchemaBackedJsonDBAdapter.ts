@@ -73,7 +73,9 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
       await this.write(parseResult.data as z.output<T>);
     }
 
-    return parseResult.data as z.output<T> | null;
+    // eslint can't seem to handle this but TS compiler gets it right.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return parseResult.data;
   }
 
   async write(data: z.output<T>): Promise<void> {

@@ -93,11 +93,11 @@ export class LineupCreator {
     );
 
     for await (const result of pool) {
-      if (result.type === 'error') {
+      if (result.isFailure()) {
         this.logger.error(
           result.error,
           'Error while promoting lineup for channel: %s',
-          result.input,
+          result.error.input,
         );
       }
     }

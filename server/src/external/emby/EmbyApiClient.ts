@@ -335,6 +335,11 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
     return `${this.options.url}/Items/${id}/Images/Primary`;
   }
 
+  getExternalUrl(id: string) {
+    //TODO: This might need a server ID
+    return `${this.options.url}/web/#/item?id=${id}`;
+  }
+
   async getSubtitles(
     itemId: string,
     mediaItemId: string,

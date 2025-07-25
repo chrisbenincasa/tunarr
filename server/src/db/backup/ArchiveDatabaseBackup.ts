@@ -170,15 +170,15 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
         async ([file]) => fs.rm(path.join(this.#normalizedOutputPath, file)),
         { concurrency: 3 },
       )) {
-        if (result.type === 'error') {
+        if (result.isFailure()) {
           this.logger.warn(
             'Unable to delete old backup file: %s',
-            result.input,
+            result.error.input,
           );
         } else {
           this.logger.debug(
             'Successfully deleted old backup file %s',
-            result.input[0],
+            result.get().input[0],
           );
         }
       }

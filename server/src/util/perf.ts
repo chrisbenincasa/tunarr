@@ -13,7 +13,7 @@ export function timeSync<T>(
   f: () => T,
   cb: {
     onSuccess: (ms: number, d: T) => void;
-    onFailure: (ms: number, e: unknown) => void;
+    onFailure: (ms: number, e: Error) => void;
   },
 ) {
   const start = performance.now();
@@ -28,7 +28,7 @@ export function timeSync<T>(
   }
 
   if (error) {
-    throw error;
+    throw result;
   }
 
   return result;

@@ -1788,11 +1788,11 @@ export class ChannelDB implements IChannelDB {
     );
 
     for await (const updateResult of ops) {
-      if (updateResult.type === 'error') {
+      if (updateResult.isFailure()) {
         this.logger.error(
           'Error removing redirect references for channel %s from channel %s',
           toChannel,
-          updateResult.input.uuid,
+          updateResult.error.input.uuid,
         );
       }
     }

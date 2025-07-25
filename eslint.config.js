@@ -17,6 +17,7 @@ export default tseslint.config(
       '**/*.config.ts',
       '**/*.ignore.ts',
       '**/*.test.ts', // Ignore test files for now, until we fix up tsconfig files
+      'server/src/web/*',
     ],
   },
   {

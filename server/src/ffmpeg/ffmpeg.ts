@@ -1041,6 +1041,10 @@ export class FFMPEG implements IFFMPEG {
       case 'nut':
         videoOutputOptions.push('-c:v', 'rawvideo');
         break;
+      default:
+        throw new Error(
+          `output format ${outputFormat.type} not supported on legacy pipeline`,
+        );
     }
 
     const audioOutputOptions: string[] = [];
