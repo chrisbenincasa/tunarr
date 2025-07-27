@@ -96,8 +96,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
         const sanitizedResponse: EmbyLibraryItemsResponseType = {
           ...response.data,
           Items: filter(response.data.Items, (library) => {
+            // Mixed collections don't have this set
             if (!library.CollectionType) {
-              return false;
+              return true;
             }
 
             return ValidEmbyCollectionTypes.includes(
