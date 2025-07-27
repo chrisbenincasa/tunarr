@@ -28,9 +28,11 @@ Select "ADD ITEMS" to save your changes.
 
 ![Add item](/assets/programming-additem.png)
 
-By default, your episode ordering will be alphabetical (by show name) and in the proper season order. In this example, we have two shows and the first show will play in its entirety progressing from specials through all seasons, and only then will the next show start playing. 
+By default, your shows are ordered alphabetically (by show name) and episodes within are in proper season order. In this example, we have two shows and the first show will play in its entirety progressing from specials through all seasons, and only then will the next show start playing. 
 
 ![Media added](/assets/programming-mediaadded.png)
+
+To make the viewing experience more interesting and authentic, you will want to use Tunarr's [scheduling tools](../scheduling-tools/) to reorder and group content.
 
 If we instead wanted this similar to what we'd see on traditional television, select "SORT" and choose either Block Shuffle or Cyclic Shuffle. 
 

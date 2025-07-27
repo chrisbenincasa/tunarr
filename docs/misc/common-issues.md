@@ -30,3 +30,6 @@ Head over to Tunarr > Settings > SOURCES > Select the pencil icon next to your s
 ![Auto-update channels disabled](/assets/serversettings-autoupdatechannels.png)
 
 If this is already unchecked, see [Issue #818](https://github.com/chrisbenincasa/tunarr/issues/818) to track this issue. 
+
+## Channel icons missing
+

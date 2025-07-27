@@ -79,7 +79,7 @@ Tunarr has various command line / environment variables for configuration. These
 | `TUNARR_USE_WORKER_POOL` | N/A | FALSE | Set to true to enable experimental support for Tunarr's worker threads | 
 | `TUNARR_WORKER_POOL_SIZE` | N/A | `cpus().length` | Control the number of worker threads Tunarr creates in its pool. It's recommended to use no more than the number of CPUs on the host system | 
 
-## Hardware Encoding
+## Hardware Transcoding
 
 ### Nvidia
 
@@ -250,3 +250,27 @@ Save the following launchd configuration to `~/Library/LaunchAgents/tunarr.xml`.
 #### NSSM (Windows)
 
 [NSSM](https://nssm.cc/) is the recommended way to run Tunarr as a background task in Windows. It is recommended to configure NSSM to run Tunarr as the currently logged in user.
+
+1. [Download NSSM](https://nssm.cc/ci/nssm-2.24-101-g897c7ad.zip) from its website. The latest version is recommended because it is more compatible with the latest versions of Windows.
+2. Once unzipped, you will obtain the `nssm.exe` file (inside `win64` folder). Create a folder called `nssm` and place the `nssm.exe` file inside it. Then move this folder to the `Program Files` folder. The final path for NSSM will be: `C:\Program Files\nssm\nssm.exe`
+3. Insert the NSSM file into the Windows environment variables. If you already know how to do this, skip directly to step 6.
+4. Open the start menu and type “Path.” At this point, “edit system environment variables” will appear in the search. Click on it and a new window will open with the words “environment variables...” at the bottom. Click on it.
+5. Another window will open and in the upper section we will need to select “Path” and then click on “Edit.” In this last window that opens, we will click on “New” and enter this path: `C:\Program Files\nssm`. Now we can click on OK and close all the other windows that were previously open by clicking on OK again.
+6. Open "Command Prompt" as administrator, type `nssm install`, and press enter. The nssm configuration window will open. What we are interested in for now is filling in some fields in the ‘Application’ and “Details” tabs.
+7. The first field to fill in is the service name at the bottom, in our example the name entered will simply be “Tunarr”.
+8. Assuming you've placed our `tunarr.exe` in the following path: `C:\Program files\tunarr\tunar.exe`, in the “Application” tab, simply copy and paste the entire path, including .exe, into the “Path” field. If you have Tunarr in a different location, use that path instead.
+9. In the “startup folder” field, enter only the path to the folder, so in our example it will be `C:\Program files\tunarr` (without quotation marks). The “arguments” field can be left blank, but if you need a different port at this stage that you have not yet changed within Tunarr, you can add `--port 8001` to change the port to 8001, or one of your choice (useful when using a program, such as dizqueTV, that has already occupied port 8000).
+10. Now go to the “Details” tab. Everything here is less important. Just enter “Tunarr” in the “Display name” field and something of your choice in the ‘Description’ field. Leave the startup type set to “Automatic.”
+11. Click on “Install service” and Tunarr will finally be installed as a service
+
+##### Updating Tunarr within NSSM
+
+From now on, to update tunarr, we will first have to stop the service. 
+1. Click on the start menu and search for “services”. Click on the result.
+2. On the next screen with the list of all services, right-click on Tunarr and click on “stop.” 
+3. Replace the .exe file with the updated executable, return to the services screen, right-click on Tunarr, and select “start”
+
+##### Converting Tunarr to an NSSM service
+
+If you are converting from a previously used Tunarr, please note that the main Tunarr folder will now be moved to another location, so the new Tunarr that starts will actually behave as if it were a new installation. To restore the entire configuration, you will need to copy the contents of the Tunarr folder in the path usually used by the program `%appdata%\ tunarr` and paste it into the following location: `C:\Windows\System32\config\systemprofile\AppData\Roaming\tunarr`
+This will be the new location for the database, channels, and everything else (obviously, this must be done after stopping the tunarr service and then restarting it as explained above).

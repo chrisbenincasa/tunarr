@@ -52,8 +52,8 @@ nav:
     - Programming: configure/programming.md
     - Scheduling Tools: 
       - configure/scheduling-tools/index.md
+      - Slot Editor: configure/scheduling-tools/random-slots.md
       - Time Slots: configure/scheduling-tools/time-slots.md
-      - Random Slots: configure/scheduling-tools/random-slots.md
       - Balance: configure/scheduling-tools/balance.md
       - Replicate: configure/scheduling-tools/replicate.md
       - Consolidate: configure/scheduling-tools/consolidate.md
@@ -77,6 +77,7 @@ nav:
 
 markdown_extensions:
   - admonition
+  - md_in_html
   - toc:
       permalink: true
   - pymdownx.details
@@ -94,3 +95,6 @@ extra_css:
 extra:
   version:
     provider: mike
+
+plugins:
+ - glightbox

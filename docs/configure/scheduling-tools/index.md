@@ -1,13 +1,17 @@
 # Scheduling Tools
 
-Tunarr offers a range of tools for scheduling your content.
+Tunarr offers a range of tools for modifying channel schedules.
 
-[Time Slots](/configure/scheduling-tools/time-slots) are the best option to most closely mimic traditional television but can be a bit laborious to configure. 
+* [Slot Editor](random-slots.md) allows assigning programming to "slots" of fixed or dynamic duration. Slots can then be played back sequentially or at random when generating a schedule.
 
-[Random Slots](/configure/scheduling-tools/random-slots) accomplishes the same as Time Slots, but requires much less work to setup due to randomizing when each show is aired. 
+* [Time Slots](time-slots.md) mimic traditional TV scheduling, where programs are assigned to a particular start time and duration.
 
-[Balance](/configure/scheduling-tools/balance) let's you pick the weight for your shows to air some shows more frequently than others. 
+* [Block Shuffle](block-shuffle.md) is a simpler version of slot editor. Randomly chooses "blocks" of programming of a chosen size.
 
-[Replicate](/configure/scheduling-tools/replicate) will create copies of the same schedule and play them in sequence. This typically is not needed as Tunarr already handles replaying a schedule once complete. 
+* [Cyclic Shuffle](cyclic-shuffle.md)
 
-[Consolidate](/configure/scheduling-tools/consolidate) merges contiguous match flex and redirect blocks into singular spans. 
+* [Balance](balance.md) lets you pick the weight for your shows to air some shows more frequently than others. 
+
+* [Replicate](replicate.md) will create copies of the same schedule and play them in sequence. This typically is not needed as Tunarr already handles replaying a schedule once complete. Some use this as an intermediate tool before applying other tools, like balance.
+
+* [Consolidate](consolidate.md) merges contiguous match flex and redirect blocks into singular spans. 
