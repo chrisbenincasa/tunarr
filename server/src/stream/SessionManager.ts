@@ -459,7 +459,7 @@ export class SessionManager {
         );
       } else {
         this.#logger.debug(
-          'Detected %n remaining sessions. Not pausing session.',
+          'Detected %d remaining sessions. Not pausing session.',
           nonTunarrConnections,
         );
       }
