@@ -1,6 +1,6 @@
 import { Result } from '@/types/result.js';
 import { Maybe } from '@/types/util.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { Logger } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import {
   compact,
@@ -51,11 +51,11 @@ export type SessionKey = `${string}_${SessionType}`;
 
 @injectable()
 export class SessionManager {
-  #logger = LoggerFactory.child({ className: this.constructor.name });
   #sessionLocker = new MutexMap();
   #sessions: Record<SessionKey, Session> = {};
 
   constructor(
+    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(OnDemandChannelService)
     private onDemandChannelService: OnDemandChannelService,
@@ -163,8 +163,8 @@ export class SessionManager {
         continue;
       }
       if (session.isStale() && session.scheduleCleanup()) {
-        this.#logger.debug(
-          { sessionType: session.sessionType, id: session.id },
+        this.logger.debug(
+          this.getLoggerContext(session.id),
           'Scheduled cleanup on session',
         );
       }
@@ -183,7 +183,7 @@ export class SessionManager {
         options.sessionType,
       );
       if (isUndefined(this.getSession(channelId, underlyingSessionType))) {
-        this.#logger.debug(
+        this.logger.debug(
           'No underlying session of type %s found for existing concat session (channel id = %s). Removing dangling session and recreating',
           underlyingSessionType,
           channelId,
@@ -275,13 +275,13 @@ export class SessionManager {
           this.addSession(channel.uuid, session.sessionType, session);
 
           session.on('error', (e) => {
-            this.#logger.error(
-              { error: e, sessionType, channelId },
+            this.logger.error(
+              this.getLoggerContext(session?.id, e),
               'Received error from session. Shutting down',
             );
             session?.stop().catch((e) => {
-              this.#logger.error(
-                e,
+              this.logger.error(
+                this.getLoggerContext(session?.id, e),
                 'Error while shutting down session. Things are bad!',
               );
             });
@@ -320,7 +320,8 @@ export class SessionManager {
           });
 
           session.on('removeConnection', (_, connection) => {
-            this.#logger.debug(
+            this.logger.debug(
+              this.getLoggerContext(session?.id),
               'Connection removed for session %s: %O',
               session?.id,
               connection,
@@ -393,20 +394,23 @@ export class SessionManager {
     const key = sessionCacheKey(id, sessionType);
     ifDefined(this.#sessions[key], (session) => {
       session.stop().catch((e) => {
-        this.#logger.error(e, 'Error shutting down session');
+        this.logger.error(
+          this.getLoggerContext(id, e),
+          'Error shutting down session',
+        );
       });
     });
     delete this.#sessions[key];
   }
 
   private resumeChannelIfNecessary(channelId: string) {
-    this.#logger.debug(
-      'Resuming channel %s at %s',
-      channelId,
-      dayjs().format(),
-    );
+    this.logger.debug('Resuming channel %s at %s', channelId, dayjs().format());
     this.onDemandChannelService.resumeChannel(channelId).catch((e) => {
-      this.#logger.error(e, 'Error resuming on-demand channel %s', channelId);
+      this.logger.error(
+        this.getLoggerContext(channelId, e),
+        'Error resuming on-demand channel %s',
+        channelId,
+      );
     });
   }
 
@@ -448,7 +452,8 @@ export class SessionManager {
       // Pause the channel as soon as there are no connections
       // other than internal connections
       if (nonTunarrConnections === 0) {
-        this.#logger.debug(
+        this.logger.debug(
+          this.getLoggerContext(session.id),
           'Pausing channel %s after disconnect. Pause time = %s',
           session.keyObj.id,
           dayjs(pauseTime).format(),
@@ -458,14 +463,15 @@ export class SessionManager {
           pauseTime,
         );
       } else {
-        this.#logger.debug(
+        this.logger.debug(
+          this.getLoggerContext(sessionToCheck.id),
           'Detected %d remaining sessions. Not pausing session.',
           nonTunarrConnections,
         );
       }
     } catch (e) {
-      this.#logger.error(
-        e,
+      this.logger.error(
+        this.getLoggerContext(session.id, e),
         'Error while trying to pause channel %s',
         session.id,
       );
@@ -476,8 +482,12 @@ export class SessionManager {
     this.getSession(id, concatSessionTypeForSessionType(sessionType))
       ?.stop()
       .catch((e) => {
-        this.#logger.error(e, 'Error shutting down associated concat session');
+        this.logger.error(e, 'Error shutting down associated concat session');
       });
+  }
+
+  private getLoggerContext(sessionId?: string, error?: unknown) {
+    return { error, sessionId };
   }
 }
 
