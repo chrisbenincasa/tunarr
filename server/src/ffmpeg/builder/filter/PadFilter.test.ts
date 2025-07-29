@@ -1,6 +1,7 @@
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import {
   PixelFormatCuda,
+  PixelFormatP010,
   PixelFormatVaapi,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
@@ -126,7 +127,7 @@ describe('PadFilter', () => {
     const filter = PadFilter.forCuda(currentState, currentState);
 
     expect(filter.filter).to.eq(
-      'hwdownload,format=nv12,pad=3840:2160:-1:-1:color=black',
+      'hwdownload,format=yuv420p,pad=3840:2160:-1:-1:color=black',
     );
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
@@ -139,13 +140,13 @@ describe('PadFilter', () => {
       scaledSize: FrameSize.FHD,
       paddedSize: FrameSize.FourK,
       frameDataLocation: FrameDataLocation.Hardware,
-      pixelFormat: new PixelFormatCuda(new PixelFormatYuv420P10Le()),
+      pixelFormat: new PixelFormatCuda(new PixelFormatP010()),
     });
 
     const filter = PadFilter.forCuda(currentState, currentState);
 
     expect(filter.filter).to.eq(
-      'hwdownload,format=p010le,pad=3840:2160:-1:-1:color=black',
+      'hwdownload,format=p010le,format=yuv420p10le,pad=3840:2160:-1:-1:color=black',
     );
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
