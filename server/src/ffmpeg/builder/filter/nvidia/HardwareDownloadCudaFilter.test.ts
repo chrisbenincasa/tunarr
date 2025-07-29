@@ -99,7 +99,7 @@ describe('HardwareDownloadCudaFilter', () => {
       targetFormat,
     );
 
-    expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv420p');
+    expect(filter.filter).to.eq('hwdownload,format=yuv420p');
 
     const nextState = filter.nextState(currentState);
     expect(nextState).toMatchObject({

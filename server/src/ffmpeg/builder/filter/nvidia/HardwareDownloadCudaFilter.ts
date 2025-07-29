@@ -4,10 +4,6 @@ import {
   HardwarePixelFormat,
   KnownPixelFormats,
   PixelFormatCuda,
-  PixelFormatNv12,
-  PixelFormatP010,
-  PixelFormats,
-  PixelFormatYuv420P,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
@@ -38,28 +34,22 @@ export class HardwareDownloadCudaFilter extends FilterOption {
       // see: https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/nvdec.c#L744-L773
       // we're not going to support chromas other than 420 at this point...
       const formats: string[] = [];
-      if (
-        currentFmt instanceof HardwarePixelFormat &&
-        !this.targetPixelFormat
-      ) {
-        if (currentFmt.bitDepth === 10) {
-          formats.push(PixelFormats.P010);
-          this.outPixelFormat = new PixelFormatP010();
-        } else {
-          formats.push(PixelFormats.NV12);
-          this.outPixelFormat = new PixelFormatNv12(new PixelFormatYuv420P());
-        }
 
-        const target = currentFmt.unwrap();
-        if (target) {
-          formats.push(target.name);
-          this.outPixelFormat =
-            KnownPixelFormats.forPixelFormat(target.name) ?? null;
+      formats.push(currentFmt.name);
+      this.outPixelFormat = currentFmt;
+
+      if (currentFmt instanceof HardwarePixelFormat) {
+        if (!this.targetPixelFormat) {
+          const target = currentFmt.unwrap();
+          if (target) {
+            formats.push(target.name);
+            this.outPixelFormat =
+              KnownPixelFormats.forPixelFormat(target.name) ?? null;
+          }
+        } else {
+          formats.push(this.targetPixelFormat.name);
+          this.outPixelFormat = this.targetPixelFormat;
         }
-      } else if (this.targetPixelFormat) {
-        formats.push(this.targetPixelFormat.name);
-        this.outPixelFormat =
-          KnownPixelFormats.forPixelFormat(this.targetPixelFormat.name) ?? null;
       }
 
       for (const fmt of formats) {
