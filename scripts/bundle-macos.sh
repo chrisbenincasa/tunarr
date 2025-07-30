@@ -12,7 +12,7 @@ fi
 
 pushd "$REPO_ROOT/macos/Tunarr" || exit
 
-xcodebuild build
+xcodebuild build -scheme Tunarr -configuration Release ARCHS="$2"
 cp -R "$REPO_ROOT/macos/Tunarr/build/Release/Tunarr.app" "$APP_NAME"
 
 popd || exit
