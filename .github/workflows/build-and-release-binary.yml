@@ -142,14 +142,6 @@ jobs:
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_P12_PASSWORD }}
-          keychain: signing_temp
-      
-      - name: Import Code-Building Certificates
-        uses: Apple-Actions/import-codesign-certs@v2
-        with:
-          p12-file-base64: ${{ secrets.APPLE_DEV_CERT }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_P12_PASSWORD }}
-          keychain: building_temp
 
       - name: 'Create env file'
         run: |
