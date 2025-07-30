@@ -182,7 +182,12 @@ jobs:
           brew install coreutils
           plutil -replace CFBundleShortVersionString -string "$TUNARR_VERSION" macos/Tunarr/Tunarr/Info.plist
           plutil -replace CFBundleVersion -string "$TUNARR_VERSION" macos/Tunarr/Tunarr/Info.plist
-          scripts/bundle-macos.sh "tunarr-${{ env.TUNARR_VERSION }}-${{ matrix.os.target }}" "${{ matrix.os.arch }}"
+          
+          if [[ "$TUNARR_EDGE_BUILD" == "true" || "$TUNARR_EDGE_BUILD" == "1" ]]; then
+            scripts/bundle-macos.sh "tunarr-${{ matrix.os.target }}" "${{ matrix.os.arch }}"
+          else
+            scripts/bundle-macos.sh "tunarr-${{ env.TUNARR_VERSION }}-${{ matrix.os.target }}" "${{ matrix.os.arch }}"
+          fi
 
       - name: Sign
         shell: bash
