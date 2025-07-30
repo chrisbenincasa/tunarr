@@ -117,7 +117,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4 # Checkout code from repository
 
-      - uses: ilammy/setup-nasm@v1
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 16.4
 
       - name: Use Latest Corepack
         run: |
