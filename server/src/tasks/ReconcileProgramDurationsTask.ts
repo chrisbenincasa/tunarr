@@ -1,8 +1,9 @@
 import { isContentItem } from '@/db/derived_types/Lineup.js';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
-import { flatMapAsyncSeq, isNonEmptyString } from '@/util/index.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
+import { flushEventLoop } from '@tunarr/shared/util';
 import { Tag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
@@ -56,6 +57,7 @@ export class ReconcileProgramDurationsTask extends Task {
       if (isNonEmptyString(this.channelId) && channel.uuid === this.channelId) {
         continue;
       }
+      await flushEventLoop();
 
       const lineup = await this.channelDB.loadLineup(channel.uuid);
       const uniqueProgramIds = uniqBy(
@@ -68,19 +70,19 @@ export class ReconcileProgramDurationsTask extends Task {
         (item, id) => item.id === id,
       );
 
-      const missingPrograms = await flatMapAsyncSeq(
-        chunk(missingKeys, 200),
-        (items) =>
-          this.db
-            .selectFrom('program')
-            .select(['uuid', 'duration'])
-            .where('uuid', 'in', map(items, 'id'))
-            .execute(),
-      );
-
-      forEach(missingPrograms, (program) => {
-        cachedPrograms[program.uuid] = program.duration;
-      });
+      const missingPrograms: { uuid: string; duration: number }[] = [];
+      for (const keyChunk of chunk(missingKeys, 200)) {
+        await flushEventLoop();
+        const result = await this.db
+          .selectFrom('program')
+          .select(['uuid', 'duration'])
+          .where('uuid', 'in', map(keyChunk, 'id'))
+          .execute();
+        missingPrograms.push(...result);
+        forEach(result, (program) => {
+          cachedPrograms[program.uuid] = program.duration;
+        });
+      }
 
       let changed = false;
       const newLineupItems = map(lineup.items, (item) => {
