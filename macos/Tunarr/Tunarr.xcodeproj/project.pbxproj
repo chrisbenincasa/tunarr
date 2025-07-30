@@ -1,0 +1,556 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		14E9EAAB2E35689400486B60 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14E9EA942E35689100486B60 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14E9EA9B2E35689100486B60;
+			remoteInfo = Tunarr;
+		};
+		14E9EAB52E35689400486B60 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14E9EA942E35689100486B60 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14E9EA9B2E35689100486B60;
+			remoteInfo = Tunarr;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		14E9EA9C2E35689100486B60 /* Tunarr.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tunarr.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14E9EAAA2E35689400486B60 /* TunarrTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TunarrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		14E9EAB42E35689400486B60 /* TunarrUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TunarrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		14E9EA9E2E35689100486B60 /* Tunarr */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tunarr;
+			sourceTree = "<group>";
+		};
+		14E9EAAD2E35689400486B60 /* TunarrTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TunarrTests;
+			sourceTree = "<group>";
+		};
+		14E9EAB72E35689400486B60 /* TunarrUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TunarrUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		14E9EA992E35689100486B60 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAA72E35689400486B60 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAB12E35689400486B60 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14E9EA932E35689100486B60 = {
+			isa = PBXGroup;
+			children = (
+				14E9EA9E2E35689100486B60 /* Tunarr */,
+				14E9EAAD2E35689400486B60 /* TunarrTests */,
+				14E9EAB72E35689400486B60 /* TunarrUITests */,
+				14E9EA9D2E35689100486B60 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		14E9EA9D2E35689100486B60 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				14E9EA9C2E35689100486B60 /* Tunarr.app */,
+				14E9EAAA2E35689400486B60 /* TunarrTests.xctest */,
+				14E9EAB42E35689400486B60 /* TunarrUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		14E9EA9B2E35689100486B60 /* Tunarr */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14E9EABE2E35689400486B60 /* Build configuration list for PBXNativeTarget "Tunarr" */;
+			buildPhases = (
+				14E9EA982E35689100486B60 /* Sources */,
+				14E9EA992E35689100486B60 /* Frameworks */,
+				14E9EA9A2E35689100486B60 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				14E9EA9E2E35689100486B60 /* Tunarr */,
+			);
+			name = Tunarr;
+			packageProductDependencies = (
+			);
+			productName = Tunarr;
+			productReference = 14E9EA9C2E35689100486B60 /* Tunarr.app */;
+			productType = "com.apple.product-type.application";
+		};
+		14E9EAA92E35689400486B60 /* TunarrTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14E9EAC12E35689400486B60 /* Build configuration list for PBXNativeTarget "TunarrTests" */;
+			buildPhases = (
+				14E9EAA62E35689400486B60 /* Sources */,
+				14E9EAA72E35689400486B60 /* Frameworks */,
+				14E9EAA82E35689400486B60 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14E9EAAC2E35689400486B60 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				14E9EAAD2E35689400486B60 /* TunarrTests */,
+			);
+			name = TunarrTests;
+			packageProductDependencies = (
+			);
+			productName = TunarrTests;
+			productReference = 14E9EAAA2E35689400486B60 /* TunarrTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		14E9EAB32E35689400486B60 /* TunarrUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14E9EAC42E35689400486B60 /* Build configuration list for PBXNativeTarget "TunarrUITests" */;
+			buildPhases = (
+				14E9EAB02E35689400486B60 /* Sources */,
+				14E9EAB12E35689400486B60 /* Frameworks */,
+				14E9EAB22E35689400486B60 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14E9EAB62E35689400486B60 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				14E9EAB72E35689400486B60 /* TunarrUITests */,
+			);
+			name = TunarrUITests;
+			packageProductDependencies = (
+			);
+			productName = TunarrUITests;
+			productReference = 14E9EAB42E35689400486B60 /* TunarrUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		14E9EA942E35689100486B60 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					14E9EA9B2E35689100486B60 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					14E9EAA92E35689400486B60 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 14E9EA9B2E35689100486B60;
+					};
+					14E9EAB32E35689400486B60 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 14E9EA9B2E35689100486B60;
+					};
+				};
+			};
+			buildConfigurationList = 14E9EA972E35689100486B60 /* Build configuration list for PBXProject "Tunarr" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 14E9EA932E35689100486B60;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 14E9EA9D2E35689100486B60 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				14E9EA9B2E35689100486B60 /* Tunarr */,
+				14E9EAA92E35689400486B60 /* TunarrTests */,
+				14E9EAB32E35689400486B60 /* TunarrUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		14E9EA9A2E35689100486B60 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAA82E35689400486B60 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAB22E35689400486B60 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		14E9EA982E35689100486B60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAA62E35689400486B60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14E9EAB02E35689400486B60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		14E9EAAC2E35689400486B60 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14E9EA9B2E35689100486B60 /* Tunarr */;
+			targetProxy = 14E9EAAB2E35689400486B60 /* PBXContainerItemProxy */;
+		};
+		14E9EAB62E35689400486B60 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14E9EA9B2E35689100486B60 /* Tunarr */;
+			targetProxy = 14E9EAB52E35689400486B60 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		14E9EABC2E35689400486B60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		14E9EABD2E35689400486B60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		14E9EABF2E35689400486B60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Tunarr/Tunarr.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.Tunarr;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		14E9EAC02E35689400486B60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Tunarr/Tunarr.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.Tunarr;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		14E9EAC22E35689400486B60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.TunarrTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tunarr.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tunarr";
+			};
+			name = Debug;
+		};
+		14E9EAC32E35689400486B60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.TunarrTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tunarr.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tunarr";
+			};
+			name = Release;
+		};
+		14E9EAC52E35689400486B60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.TunarrUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Tunarr;
+			};
+			name = Debug;
+		};
+		14E9EAC62E35689400486B60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XX35C4MZN8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cbenincasa.TunarrUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Tunarr;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		14E9EA972E35689100486B60 /* Build configuration list for PBXProject "Tunarr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14E9EABC2E35689400486B60 /* Debug */,
+				14E9EABD2E35689400486B60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14E9EABE2E35689400486B60 /* Build configuration list for PBXNativeTarget "Tunarr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14E9EABF2E35689400486B60 /* Debug */,
+				14E9EAC02E35689400486B60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14E9EAC12E35689400486B60 /* Build configuration list for PBXNativeTarget "TunarrTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14E9EAC22E35689400486B60 /* Debug */,
+				14E9EAC32E35689400486B60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14E9EAC42E35689400486B60 /* Build configuration list for PBXNativeTarget "TunarrUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14E9EAC52E35689400486B60 /* Debug */,
+				14E9EAC62E35689400486B60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 14E9EA942E35689100486B60 /* Project object */;
+}
