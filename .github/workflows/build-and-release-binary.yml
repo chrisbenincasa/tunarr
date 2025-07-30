@@ -109,11 +109,11 @@ jobs:
           - name: macos-x64
             target: macos-x64
             arch: x86_64
-            runner: macos-latest
+            runner: macos-15
           - name: macos-arm
             target: macos-arm64
             arch: arm64
-            runner: macos-latest
+            runner: macos-15
     runs-on: ${{matrix.os.runner}}
     steps:
       - name: Checkout
