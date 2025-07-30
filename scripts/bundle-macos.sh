@@ -12,6 +12,7 @@ fi
 
 pushd "$REPO_ROOT/macos/Tunarr" || exit
 
+security find-identity -p codesigning -v
 xcodebuild build -configuration Release ARCHS="$2"
 cp -R "$REPO_ROOT/macos/Tunarr/build/Release/Tunarr.app" "$APP_NAME"
 
