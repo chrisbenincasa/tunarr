@@ -44,7 +44,11 @@ import {
   sortBy,
   trimEnd,
 } from 'lodash-es';
+import { container } from '../../container.ts';
 import { PlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { GlobalScheduler } from '../../services/Scheduler.ts';
+import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
+import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
 import {
   ExternalStreamDetailsFetcher,
@@ -134,17 +138,42 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
               const metadata = first(
                 byGuidResult.data.MediaContainer.Metadata,
               )!;
+
               const newRatingKey = metadata.ratingKey;
               this.logger.debug(
                 'Updating program %s with new Plex rating key %s',
                 item.programId,
                 newRatingKey,
               );
+
               await this.programDB.updateProgramPlexRatingKey(
                 item.programId,
                 server.name,
                 { externalKey: newRatingKey },
               );
+
+              if (
+                isTerminalItem(metadata) &&
+                isDefined(metadata.duration) &&
+                metadata.duration > 0 &&
+                metadata.duration !== item.duration
+              ) {
+                await this.programDB.updateProgramDuration(
+                  item.programId,
+                  metadata.duration,
+                );
+
+                const task =
+                  container.get<ReconcileProgramDurationsTaskFactory>(
+                    ReconcileProgramDurationsTask.KEY,
+                  )({
+                    type: 'program',
+                    programId: item.programId,
+                  });
+
+                GlobalScheduler.runTask(task);
+              }
+
               return this.getStreamInternal(
                 server,
                 {

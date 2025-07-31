@@ -17,8 +17,19 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
+import { Channel } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
 import { Task, TaskMetadata } from './Task.ts';
+
+export type ReconcileProgramDurationsTaskRequest =
+  | {
+      type: 'channel';
+      channelId?: string;
+    }
+  | {
+      type: 'program';
+      programId?: string;
+    };
 
 // This task is fired off whenever programs are updated. It goes through
 // all channel lineups that contain the program and ensure that their
@@ -42,7 +53,7 @@ export class ReconcileProgramDurationsTask extends Task {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
-    private channelId?: string,
+    private request?: ReconcileProgramDurationsTaskRequest,
   ) {
     super(logger);
     this.logger.setBindings({ task: this.ID });
@@ -53,10 +64,18 @@ export class ReconcileProgramDurationsTask extends Task {
     // is the source-of-truth duration.
     const cachedPrograms: Record<string, number> = {};
 
-    for (const channel of await this.channelDB.getAllChannels()) {
-      if (isNonEmptyString(this.channelId) && channel.uuid === this.channelId) {
+    let channels: Channel[];
+    if (this.programId) {
+      channels = await this.channelDB.findChannelsForProgramId(this.programId);
+    } else {
+      channels = await this.channelDB.getAllChannels();
+    }
+
+    for (const channel of channels) {
+      if (this.channelId && channel.uuid !== this.channelId) {
         continue;
       }
+
       await flushEventLoop();
 
       const lineup = await this.channelDB.loadLineup(channel.uuid);
@@ -119,5 +138,25 @@ export class ReconcileProgramDurationsTask extends Task {
     }
 
     return;
+  }
+
+  private get channelId() {
+    if (
+      this.request?.type === 'channel' &&
+      isNonEmptyString(this.request.channelId)
+    ) {
+      return this.request.channelId;
+    }
+    return null;
+  }
+
+  private get programId() {
+    if (
+      this.request?.type === 'program' &&
+      isNonEmptyString(this.request.programId)
+    ) {
+      return this.request.programId;
+    }
+    return null;
   }
 }

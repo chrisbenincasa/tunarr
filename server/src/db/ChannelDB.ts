@@ -1544,6 +1544,15 @@ export class ChannelDB implements IChannelDB {
       .execute();
   }
 
+  findChannelsForProgramId(programId: string) {
+    return this.db
+      .selectFrom('channelPrograms')
+      .where('channelPrograms.programUuid', '=', programId)
+      .innerJoin('channel', 'channel.uuid', 'channelPrograms.channelUuid')
+      .selectAll('channel')
+      .execute();
+  }
+
   private async createLineup(channelId: string) {
     const db = await this.getFileDb(channelId);
     await db.write();

@@ -163,6 +163,8 @@ export interface IChannelDB {
     offset?: number,
     limit?: number,
   ): Promise<ChannelProgramming | null>;
+
+  findChannelsForProgramId(programId: string): Promise<Channel[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
   MarkNullable<

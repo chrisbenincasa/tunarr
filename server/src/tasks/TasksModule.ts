@@ -5,6 +5,7 @@ import {
 } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
+import type { ReconcileProgramDurationsTaskRequest } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -20,6 +21,7 @@ import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import type { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import type { Maybe } from '../types/util.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
@@ -37,6 +39,10 @@ import type {
   SubtitleExtractorTaskRequest,
 } from './SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+
+export type ReconcileProgramDurationsTaskFactory = (
+  request?: ReconcileProgramDurationsTaskRequest,
+) => ReconcileProgramDurationsTask;
 
 const TasksModule = new ContainerModule((bind) => {
   bind(UpdateXmlTvTask).toSelf();
@@ -59,15 +65,18 @@ const TasksModule = new ContainerModule((bind) => {
     CleanupSessionsTask.KEY,
   ).toAutoFactory(CleanupSessionsTask);
 
-  bind<interfaces.Factory<ReconcileProgramDurationsTask>>(
-    ReconcileProgramDurationsTask.KEY,
-  ).toFactory(
-    (ctx) => (channelId?: string) =>
+  bind<
+    interfaces.Factory<
+      ReconcileProgramDurationsTask,
+      [Maybe<ReconcileProgramDurationsTaskRequest>]
+    >
+  >(ReconcileProgramDurationsTask.KEY).toFactory(
+    (ctx) => (request?: ReconcileProgramDurationsTaskRequest) =>
       new ReconcileProgramDurationsTask(
         ctx.container.get(KEYS.ChannelDB),
         ctx.container.get(KEYS.Logger),
         ctx.container.get(KEYS.Database),
-        channelId,
+        request,
       ),
   );
 

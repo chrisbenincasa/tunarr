@@ -11,16 +11,17 @@ import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, run } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { JellyfinItem, JellyfinItemKind } from '@tunarr/types/jellyfin';
-import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
+import { container } from '../../container.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
@@ -92,11 +93,14 @@ export class JellyfinItemFinder {
         program.uuid,
         updatedProgram.duration,
       );
-      GlobalScheduler.scheduleOneOffTask(
+      const task = container.get<ReconcileProgramDurationsTaskFactory>(
         ReconcileProgramDurationsTask.KEY,
-        dayjs().add(500, 'ms'),
-        [],
-      );
+      )({
+        type: 'program',
+        programId: program.uuid,
+      });
+
+      GlobalScheduler.runTask(task);
     }
 
     return newExternalId;

@@ -5,7 +5,6 @@ import { BackupTask } from '@/tasks/BackupTask.js';
 import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
 import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
-import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import type { Task, TaskId, TaskOutputType } from '@/tasks/Task.js';
@@ -27,6 +26,7 @@ import {
   reject,
   values,
 } from 'lodash-es';
+import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
 import type { SubtitleExtractorTaskFactory } from '../tasks/SubtitleExtractorTask.ts';
@@ -35,6 +35,7 @@ import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 const { isDayjs } = dayjs;
 
 class Scheduler {
+  private static immediateExecuteQueue = new PQueue({ concurrency: 3 });
   private logger = LoggerFactory.child({ className: Scheduler.name });
   #scheduledJobsById: Record<string, ScheduledTask[]> = {};
 
@@ -91,6 +92,14 @@ class Scheduler {
     this.insertTask(id, task);
     this.logger.debug('Scheduled task %s', task.name);
     return true;
+  }
+
+  runTask<TaskT extends Task>(task: TaskT) {
+    Scheduler.immediateExecuteQueue
+      .add(() => task.run())
+      .catch((e) => {
+        this.logger.error(e, 'Error running task', task);
+      });
   }
 
   scheduleOneOffTask<
@@ -209,18 +218,19 @@ export const scheduleJobs = once((serverContext: ServerContext) => {
     ),
   );
 
-  GlobalScheduler.scheduleTask(
-    ReconcileProgramDurationsTask.ID,
-    new ScheduledTask(
-      ReconcileProgramDurationsTask.name,
-      // temporary
-      hoursCrontab(1),
-      container.get<interfaces.AutoFactory<ReconcileProgramDurationsTask>>(
-        ReconcileProgramDurationsTask.KEY,
-      ),
-      [],
-    ),
-  );
+  // TODO: It's unclear whether we need to run this on a schedule
+  // GlobalScheduler.scheduleTask(
+  //   ReconcileProgramDurationsTask.ID,
+  //   new ScheduledTask(
+  //     ReconcileProgramDurationsTask.name,
+  //     // temporary
+  //     hoursCrontab(1),
+  //     container.get<interfaces.AutoFactory<ReconcileProgramDurationsTask>>(
+  //       ReconcileProgramDurationsTask.KEY,
+  //     ),
+  //     [],
+  //   ),
+  // );
 
   GlobalScheduler.scheduleTask(
     SubtitleExtractorTask.ID,
