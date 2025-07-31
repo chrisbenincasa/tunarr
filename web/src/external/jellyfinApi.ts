@@ -2,6 +2,7 @@ import {
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
+  JellyfinGenresResponse
 } from '@tunarr/types/jellyfin';
 import { makeEndpoint, parametersBuilder } from '@tunarr/zodios-core';
 import { z } from 'zod/v4';
@@ -47,5 +48,15 @@ export const jellyfinEndpoints = [
       .build(),
     response: JellyfinLibraryItemsResponse,
     alias: 'getJellyfinItems',
+  }),
+  makeEndpoint({
+    method: 'get',
+    path: '/api/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
+    parameters: parametersBuilder()
+      .addPath('mediaSourceId', z.string())
+      .addPath('libraryId', z.string())
+      .build(),
+    response: JellyfinGenresResponse,
+    alias: 'getJellyfinGenres',
   }),
 ] as const;

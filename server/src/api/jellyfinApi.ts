@@ -111,6 +111,38 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
       }),
   );
 
+fastify.get(
+  '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
+  {
+    schema: {
+      params: mediaSourceParams.extend({
+        libraryId: z.string(),
+      }),
+      querystring: z.object({
+        includeItemTypes: z.string().optional(),
+      }),
+    },
+  },
+  (req, res) =>
+    withJellyfinMediaSource(req, res, async (mediaSource) => {
+      const api =
+        await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+          mediaSource,
+        );
+
+      const response = await api.getGenres(
+        req.params.libraryId,
+        req.query.includeItemTypes,
+      );
+
+      if (isQueryError(response)) {
+        throw new Error(response.message);
+      }
+
+      return res.send(response.data);
+    }),
+);
+
   fastify.get(
     '/jellyfin/:mediaSourceId/libraries/:libraryId/items',
     {
@@ -167,6 +199,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           isDefined(req.query.offset) && isDefined(req.query.limit)
             ? { offset: req.query.offset, limit: req.query.limit }
             : null;
+
         const response = await api.getItems(
           null,
           req.query.parentId ?? req.params.libraryId,

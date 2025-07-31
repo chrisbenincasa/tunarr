@@ -36,6 +36,7 @@ type Props = {
   selectedLibrary: JellyfinMediaSourceView;
   parentContext: JellyfinItem[];
   depth?: number;
+  genres?: string[];
 };
 
 export const JellyfinProgramGrid = ({
@@ -43,6 +44,7 @@ export const JellyfinProgramGrid = ({
   selectedLibrary,
   parentContext,
   depth = 0,
+  genres = [],
 }: Props) => {
   const itemContainer = useRef<HTMLDivElement | null>(null);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
@@ -84,6 +86,19 @@ export const JellyfinProgramGrid = ({
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
   }, [selectedLibrary?.view.CollectionType]);
 
+  const additionalFilters = {
+    nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
+    nameStartsWith:
+      isNonEmptyString(alphanumericFilter) && alphanumericFilter !== '#'
+        ? alphanumericFilter.toUpperCase()
+        : undefined,
+    sortBy,
+    recursive: match(selectedLibrary?.view.CollectionType)
+      .with(P.union('tvshows', 'movies', 'folders'), () => true)
+      .otherwise(() => false),
+    ...(genres.length > 0 ? { genres: genres.join('|') } : {}),
+  };
+
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     currentParentContext?.Id ?? selectedLibrary?.view.Id ?? '',
@@ -93,17 +108,7 @@ export const JellyfinProgramGrid = ({
       (depth > 0 && parentContext.length > 0),
     columns * 4, // grab 4 rows
     bufferSize,
-    {
-      nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
-      nameStartsWith:
-        isNonEmptyString(alphanumericFilter) && alphanumericFilter !== '#'
-          ? alphanumericFilter.toUpperCase()
-          : undefined,
-      sortBy,
-      recursive: match(selectedLibrary?.view.CollectionType)
-        .with(P.union('tvshows', 'movies', 'folders'), () => true)
-        .otherwise(() => false),
-    },
+    additionalFilters,
   );
 
   useEffect(() => {

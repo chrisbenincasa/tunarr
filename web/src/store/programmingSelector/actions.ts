@@ -51,6 +51,11 @@ export const setProgrammingListLibrary = (library: MediaSourceView) =>
     state.currentMediaSourceView = library;
   });
 
+export const setProgrammingGenre = (genre?: string) =>
+  useStore.setState((state) => {
+    state.currentMediaGenre = genre;
+  });
+
 export const setPlexProgrammingListLibrarySubview = (
   subview?: 'collections' | 'playlists',
 ) =>

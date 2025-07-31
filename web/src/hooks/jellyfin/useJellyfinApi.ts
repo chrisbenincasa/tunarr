@@ -27,6 +27,22 @@ export const useJellyfinUserLibraries = (
   });
 };
 
+export const useJellyfinGenres = (
+  mediaSourceId: MediaSourceId,
+  libraryId: string,
+  enabled: boolean = true,
+) => {
+  const apiClient = useTunarrApi();
+
+  return useQuery({
+    queryKey: ['jellyfin', mediaSourceId, 'libraries', libraryId, 'genres'],
+    queryFn: () =>
+      apiClient.getJellyfinGenres({ params: { mediaSourceId, libraryId } }),
+    enabled:
+      isNonEmptyString(mediaSourceId) && isNonEmptyString(libraryId) && enabled
+  });
+};
+
 export const useJellyfinLibraryItems = (
   mediaSourceId: MediaSourceId,
   parentId: string,

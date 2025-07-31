@@ -859,6 +859,16 @@ export type JellyfinLibraryItemsResponse = z.infer<
   typeof JellyfinLibraryItemsResponse
 >;
 
+export const JellyfinGenresResponse = z.object({
+  Items: z.array(JellyfinItem),
+  TotalRecordCount: z.number(),
+  StartIndex: z.number().nullable().optional(),
+});
+
+export type JellyfinGenresResponse = z.infer<
+  typeof JellyfinGenresResponse
+>;
+
 const JellyfinSessionInfo = z
   .object({
     // PlayState: PlayerStateInfo.nullable().optional(),
