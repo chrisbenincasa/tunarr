@@ -225,10 +225,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
       currentState.bitDepth === 8 &&
-      // We're not going to attempt to use the hwaccel overlay
-      // filter unless we're on >=5.0.0 because overlay_cuda does
-      // not support the W/w/H/h params on earlier versions
-      this.ffmpegState.isAtLeastVersion({ major: 5 }) &&
       !this.context.isSubtitleTextContext() &&
       (this.context.isSubtitleOverlay() ||
         (this.context.hasWatermark && !needsSoftwareWatermarkOverlay))
@@ -686,7 +682,6 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       new PixelFormatFilter(new PixelFormatYuva420P()),
     );
 
-    // This is not compatible with ffmpeg < 5.0
     if (currentState.frameDataLocation === FrameDataLocation.Software) {
       const desiredPixelFormat = this.desiredState.pixelFormat?.unwrap();
       if (desiredPixelFormat) {
