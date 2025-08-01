@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import path from 'path';
-import { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import { MinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { QueryResult } from '../external/BaseApiClient.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
 import { KEYS } from '../types/inject.ts';
@@ -33,7 +33,7 @@ export class ExternalSubtitleDownloader {
    * @returns The full path to the downloaded subtitles
    */
   async downloadSubtitlesIfNecessary(
-    item: ContentBackedStreamLineupItem,
+    item: MinimalContentStreamLineupItem,
     details: SubtitleStreamDetails,
     getSubtitlesCb: (
       args: GetSubtitleCallbackArgs,

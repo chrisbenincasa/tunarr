@@ -7,7 +7,7 @@ import { isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { dirname, extname } from 'node:path';
 import { tmpName } from 'tmp-promise';
-import { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import { MinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
@@ -298,13 +298,12 @@ export class SubtitleExtractorTask extends Task {
 // TODO: we're gonna sort these types out soon
 function contentGuideProgramToLineupItem(
   program: ContentGuideProgram,
-): ContentBackedStreamLineupItem {
+): MinimalContentStreamLineupItem {
   return {
     ...program,
-    programBeginMs: 0,
     programId: program.id,
     programType: program.subtype,
     externalSource: program.externalSourceType,
-    type: 'program',
+    externalFilePath: program.serverFilePath,
   };
 }

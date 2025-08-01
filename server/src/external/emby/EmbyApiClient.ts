@@ -425,10 +425,7 @@ export class EmbyApiClient extends BaseApiClient<ApiClientOptions> {
     req: AxiosRequestConfig,
   ): Maybe<QueryErrorResult> {
     if (isEmpty(this.options.accessToken)) {
-      return this.makeErrorResult(
-        'no_access_token',
-        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
-      );
+      return this.makeErrorResult('no_access_token', 'No Emby token provided.');
     }
     return super.preRequestValidate(req);
   }

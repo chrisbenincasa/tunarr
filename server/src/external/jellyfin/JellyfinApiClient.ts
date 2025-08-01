@@ -1,6 +1,6 @@
 import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.js';
 import type { Maybe, Nilable } from '@/types/util.js';
-import { isNonEmptyString } from '@/util/index.js';
+import { caughtErrorToError, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import type { MediaSourceStatus } from '@tunarr/types/api';
@@ -23,7 +23,6 @@ import {
   find,
   isBoolean,
   isEmpty,
-  isError,
   isNil,
   isNumber,
   mapValues,
@@ -336,18 +335,19 @@ export class JellyfinApiClient extends BaseApiClient {
     subtitleExt: string,
     tickOffset: number = 0,
   ): Promise<QueryResult<string>> {
-    const subtitlesResult = await this.doGet<string>({
-      url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
-      params: {
-        userId: this.options.userId,
-      },
-    });
+    try {
+      const subtitlesResult = await this.doGet<string>({
+        url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
+        params: {
+          userId: this.options.userId,
+        },
+      });
 
-    if (isError(subtitlesResult)) {
-      return this.makeErrorResult('generic_request_error');
+      return this.makeSuccessResult(subtitlesResult);
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
     }
-
-    return this.makeSuccessResult(subtitlesResult);
   }
 
   getThumbUrl(id: string) {
@@ -435,7 +435,7 @@ export class JellyfinApiClient extends BaseApiClient {
     if (isEmpty(this.options.accessToken)) {
       return this.makeErrorResult(
         'no_access_token',
-        'No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.',
+        'No Jellyfin token provided.',
       );
     }
     return super.preRequestValidate(req);

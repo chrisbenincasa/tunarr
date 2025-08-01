@@ -537,6 +537,13 @@ export const api = makeApi([
       .build(),
     response: ProgramChildrenResult,
   },
+  {
+    method: 'get',
+    path: '/api/programs/:id/stream_details',
+    alias: 'getProgramStreamDetails',
+    parameters: parametersBuilder().addPath('id', z.string()).build(),
+    response: z.unknown(), // TODO: fill this in
+  },
   ...settingsEndpoints,
   ...jellyfinEndpoints,
   ...embyEndpoints,

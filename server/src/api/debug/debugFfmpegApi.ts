@@ -1,12 +1,12 @@
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
-import { LocalFileStreamDetails } from '@/stream/local/LocalFileStreamDetails.js';
+import { FfprobeStreamDetails } from '@/stream/FfprobeStreamDetails.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from 'dayjs';
 import { z } from 'zod/v4';
 import { container } from '../../container.ts';
 import type { ContentBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
-import { isContentBackedLineupIteam } from '../../db/derived_types/StreamLineup.ts';
+import { isContentBackedLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import type { FfmpegEncoder } from '../../ffmpeg/ffmpegInfo.ts';
 import { FfmpegInfo } from '../../ffmpeg/ffmpegInfo.ts';
@@ -31,7 +31,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const details = await container
-        .get<LocalFileStreamDetails>(LocalFileStreamDetails)
+        .get<FfprobeStreamDetails>(FfprobeStreamDetails)
         .getStream({ path: req.query.path });
       return res.send(details);
     },
@@ -83,7 +83,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
       let lineupItem: ContentBackedStreamLineupItem;
       if (req.query.path) {
         streamDetails = await container
-          .get<LocalFileStreamDetails>(LocalFileStreamDetails)
+          .get<FfprobeStreamDetails>(FfprobeStreamDetails)
           .getStream({ path: req.query.path });
         lineupItem = {
           duration: +dayjs.duration({ seconds: 30 }),
@@ -108,7 +108,7 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
         }
 
         const item = lineupItemResult.get().lineupItem;
-        if (!isContentBackedLineupIteam(item)) {
+        if (!isContentBackedLineupItem(item)) {
           return res.status(500).send();
         }
 
@@ -128,7 +128,10 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
             ExternalStreamDetailsFetcherFactory,
           )
           .getStream({
-            lineupItem: item,
+            lineupItem: {
+              ...item,
+              externalFilePath: item.plexFilePath ?? undefined,
+            },
             server,
           });
       }

@@ -45,11 +45,9 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
           programId: program.id!,
           externalKey: req.query.key,
           programType: program.subtype,
-          streamDuration: 0,
           externalSource: 'plex',
-          programBeginMs: 0,
           duration: program.duration,
-          type: 'program',
+          externalFilePath: program.serverFilePath,
         },
       });
 

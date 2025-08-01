@@ -45,10 +45,11 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { container } from '../../container.ts';
-import { PlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { MinimalPlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
 import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
+import { PlexT } from '../../types/internal.ts';
 import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
 import {
   ExternalStreamDetailsFetcher,
@@ -71,7 +72,7 @@ import {
  * leaving normalization up to the Tunarr FFMPEG pipeline.
  */
 @injectable()
-export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
+export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
@@ -84,13 +85,13 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
     super();
   }
 
-  async getStream({ server, lineupItem }: StreamFetchRequest<'plex'>) {
+  async getStream({ server, lineupItem }: StreamFetchRequest<PlexT>) {
     return this.getStreamInternal(server, lineupItem);
   }
 
   private async getStreamInternal(
     server: PlexMediaSource,
-    item: PlexBackedStreamLineupItem,
+    item: MinimalPlexBackedStreamLineupItem,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -224,7 +225,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
 
     if (
       isNonEmptyString(details.serverPath) &&
-      details.serverPath !== item.plexFilePath
+      details.serverPath !== item.externalFilePath
     ) {
       this.programDB
         .updateProgramPlexRatingKey(item.programId, server.name, {
@@ -276,7 +277,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
           path: filePath,
         };
       } else {
-        let path = details.serverPath ?? item.plexFilePath;
+        let path = details.serverPath ?? item.externalFilePath;
         this.logger.debug(
           'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
           path,
@@ -306,7 +307,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<'plex'> {
   }
 
   private async getItemStreamDetails(
-    item: PlexBackedStreamLineupItem,
+    item: MinimalPlexBackedStreamLineupItem,
     media: PlexMovie | PlexEpisode | PlexMusicTrack,
     plexApiClient: PlexApiClient,
   ): Promise<Nullable<StreamDetails>> {

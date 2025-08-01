@@ -1,5 +1,4 @@
-import type { PlexBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import { isContentBackedLineupIteam as isContentBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
+import { isPlexBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
@@ -58,10 +57,7 @@ export class PlexProgramStream extends ProgramStream {
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
-    if (
-      !isContentBackedLineupItem(lineupItem) ||
-      lineupItem.externalSource !== 'plex'
-    ) {
+    if (!isPlexBackedLineupItem(lineupItem)) {
       return Result.failure(
         new Error(
           'Lineup item is not backed by Plex: ' + JSON.stringify(lineupItem),
@@ -98,7 +94,10 @@ export class PlexProgramStream extends ProgramStream {
 
     const stream = await plexStreamDetails.getStream({
       server,
-      lineupItem: lineupItem as PlexBackedStreamLineupItem,
+      lineupItem: {
+        ...lineupItem,
+        externalFilePath: lineupItem.plexFilePath,
+      },
     });
     if (isNull(stream)) {
       return Result.failure(

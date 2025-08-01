@@ -53,14 +53,42 @@ export const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   bits_per_sample: z.number().optional(),
   initial_padding: z.number().optional(),
   time_base: z.string().optional(),
-  bit_rate: z.string().transform((s) => parsePossibleFractionToFloat(s)),
+  bit_rate: z
+    .string()
+    .transform((s) => parsePossibleFractionToFloat(s))
+    .optional(),
 });
 
 export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 
 export const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
+  disposition: z
+    .object({
+      default: z.number().optional(),
+      dub: z.number().optional(),
+      original: z.number().optional(),
+      comment: z.number().optional(),
+      lyrics: z.number().optional(),
+      karaoke: z.number().optional(),
+      forced: z.number().optional(),
+      hearing_impaired: z.number().optional(),
+      visual_impaired: z.number().optional(),
+      clean_effects: z.number().optional(),
+      attached_pic: z.number().optional(),
+      timed_thumbnails: z.number().optional(),
+      non_diegetic: z.number().optional(),
+      captions: z.number().optional(),
+      descriptions: z.number().optional(),
+      metadata: z.number().optional(),
+      dependent: z.number().optional(),
+      still_image: z.number().optional(),
+      multilayer: z.number().optional(),
+    })
+    .optional(),
 });
+
+export type FfprobeSubtitleStream = z.infer<typeof FfprobeSubtitleStreamSchema>;
 
 function parsePossibleFractionToFloat(s: string) {
   if (s.includes('/')) {
@@ -93,7 +121,18 @@ export const FfprobeMediaFormatSchema = z.object({
   probe_score: z.number().optional(),
 });
 
+export const FfprobeChapter = z.object({
+  id: z.number(),
+  time_base: z.string(),
+  start: z.number(),
+  start_time: z.string(),
+  end: z.number(),
+  end_time: z.string(),
+  tags: z.record(z.string(), z.string()),
+});
+
 export const FfprobeMediaInfoSchema = z.object({
   streams: z.array(FfprobeMediaStreamSchema),
   format: FfprobeMediaFormatSchema,
+  chapters: z.array(FfprobeChapter).optional(),
 });

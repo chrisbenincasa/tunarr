@@ -6,6 +6,8 @@ import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
 import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod/v4';
+import type { EmbyT, JellyfinT } from '../../types/internal.ts';
+import type { ProgramType } from '../schema/Program.ts';
 
 const baseStreamLineupItemSchema = z.object({
   originalTimestamp: z.number().nonnegative().optional(),
@@ -46,15 +48,52 @@ export function isProgramLineupItem(
   return item.type === 'program';
 }
 
-export function isContentBackedLineupIteam(
+export function isContentBackedLineupItem(
   item: StreamLineupItem,
 ): item is ContentBackedStreamLineupItem {
   return isCommercialLineupItem(item) || isProgramLineupItem(item);
 }
 
+export function isPlexBackedLineupItem(
+  item: StreamLineupItem,
+): item is PlexBackedStreamLineupItem {
+  return (
+    isContentBackedLineupItem(item) &&
+    item.externalSource === MediaSourceType.Plex
+  );
+}
+
+export function isJellyfinBackedLineupItem(
+  item: StreamLineupItem,
+): item is SpecificSourceContentBackedStreamLineupItem<JellyfinT> {
+  return (
+    isContentBackedLineupItem(item) &&
+    item.externalSource === MediaSourceType.Jellyfin
+  );
+}
+
+export function isEmnyBackedLineupItem(
+  item: StreamLineupItem,
+): item is SpecificSourceContentBackedStreamLineupItem<EmbyT> {
+  return (
+    isContentBackedLineupItem(item) &&
+    item.externalSource === MediaSourceType.Emby
+  );
+}
+
 export type ContentBackedStreamLineupItem =
   | CommercialStreamLineupItem
   | ProgramStreamLineupItem;
+
+export type MinimalContentStreamLineupItem = {
+  programId: string;
+  programType: ProgramType;
+  externalKey: string;
+  externalSourceId: string;
+  externalSource: MediaSourceType;
+  duration: number;
+  externalFilePath: string | undefined;
+};
 
 export type SpecificSourceContentBackedStreamLineupItem<
   Typ extends MediaSourceType,
@@ -64,6 +103,15 @@ export type SpecificSourceContentBackedStreamLineupItem<
 
 export type PlexBackedStreamLineupItem =
   SpecificSourceContentBackedStreamLineupItem<typeof MediaSourceType.Plex>;
+
+export type SpecificMinimalContentStreamLineupItem<
+  Typ extends MediaSourceType,
+> = StrictOmit<MinimalContentStreamLineupItem, 'externalSource'> & {
+  externalSource: Typ;
+};
+
+export type MinimalPlexBackedStreamLineupItem =
+  SpecificMinimalContentStreamLineupItem<typeof MediaSourceType.Plex>;
 
 export const OfflineStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
   type: z.literal('offline'),

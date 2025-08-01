@@ -26,6 +26,7 @@ import {
 } from 'lodash-es';
 import type stream from 'node:stream';
 import z from 'zod/v4';
+import { container } from '../container.ts';
 import {
   ProgramSourceType,
   programSourceTypeFromString,
@@ -35,6 +36,8 @@ import {
   AllProgramGroupingFields,
   selectProgramsBuilder,
 } from '../db/programQueryHelpers.ts';
+import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
+import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -90,6 +93,82 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           [],
         ),
       );
+    },
+  );
+
+  fastify.get(
+    '/programs/:id/stream_details',
+    {
+      schema: {
+        tags: ['Programs'],
+        params: BasicIdParamSchema,
+      },
+    },
+    async (req, res) => {
+      const program = await req.serverCtx.programDB.getProgramById(
+        req.params.id,
+      );
+
+      if (!program) {
+        return res.status(404).send('Program not found');
+      }
+
+      const server = await req.serverCtx.mediaSourceDB.findByType(
+        program.sourceType,
+        program.mediaSourceId ?? program.externalSourceId,
+      );
+
+      if (!server) {
+        return res
+          .status(404)
+          .send(
+            `Media source (ID = ${program.mediaSourceId ?? program.externalSourceId}) not found`,
+          );
+      }
+
+      const ffprobe = container.get<FfprobeStreamDetails>(FfprobeStreamDetails);
+
+      const result = await container
+        .get<ExternalStreamDetailsFetcherFactory>(
+          ExternalStreamDetailsFetcherFactory,
+        )
+        .getStream({
+          lineupItem: {
+            externalKey: program.externalKey,
+            externalSource: program.sourceType,
+            externalSourceId: program.mediaSourceId ?? program.externalSourceId,
+            duration: program.duration,
+            externalFilePath: program.plexFilePath ?? undefined,
+            programId: program.uuid,
+            programType: program.type,
+          },
+          server,
+        });
+
+      if (!result) {
+        return res.status(500).send();
+      }
+
+      const ffprobeDetails = await ffprobe.getStream({
+        path: result.streamSource.path,
+      });
+
+      if (result.streamDetails.placeholderImage?.type === 'http') {
+        result.streamDetails.placeholderImage.redact();
+      }
+
+      if (result.streamSource.type === 'http') {
+        result.streamSource.redact();
+      }
+
+      if (ffprobeDetails?.streamSource.type === 'http') {
+        ffprobeDetails.streamSource.redact();
+      }
+
+      return res.send({
+        details: result,
+        ffprobeDetails,
+      });
     },
   );
 
