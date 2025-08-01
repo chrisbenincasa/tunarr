@@ -296,9 +296,12 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           break;
         }
         default:
-          encoder = super.setupEncoder(currentState);
           break;
       }
+    }
+
+    if (!encoder) {
+      encoder = super.setupEncoder(currentState);
     }
 
     if (!isNull(encoder)) {

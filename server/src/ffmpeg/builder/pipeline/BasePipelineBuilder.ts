@@ -71,6 +71,7 @@ import { LibKvazaarEncoder } from '../encoder/LibKvazaarEncoder.ts';
 import { LibOpenH264Encoder } from '../encoder/LibOpenH264Encoder.ts';
 import { Libx264Encoder } from '../encoder/Libx264Encoder.ts';
 import { Libx265Encoder } from '../encoder/Libx265Encoder.ts';
+import { Mpeg2VideoEncoder } from '../encoder/Mpeg2VideoEncoder.ts';
 import { RawVideoEncoder } from '../encoder/RawVideoEncoder.ts';
 import type { FilterOption } from '../filter/FilterOption.ts';
 import { StreamSeekFilter } from '../filter/StreamSeekFilter.ts';
@@ -663,6 +664,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         () => this.ffmpegCapabilities.hasVideoEncoder('libopenh264'),
         () => new LibOpenH264Encoder(this.desiredState.videoProfile),
       )
+      .with(VideoFormats.Mpeg2Video, () => new Mpeg2VideoEncoder())
       .with(VideoFormats.Copy, () => new CopyVideoEncoder())
       .with(P._, () => new ImplicitVideoEncoder())
       .exhaustive();

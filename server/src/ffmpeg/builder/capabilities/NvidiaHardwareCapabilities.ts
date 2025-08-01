@@ -97,6 +97,8 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
       return false;
     } else if (videoFormat === VideoFormats.Av1 && this.arch < 80) {
       return false;
+    } else if (videoFormat === VideoFormats.Mpeg2Video) {
+      return false;
     }
 
     return true;
