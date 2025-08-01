@@ -1,5 +1,5 @@
 import type { AxiosRequestRedacter } from '@/external/Redacter.js';
-import type { Maybe, Try } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import { configureAxiosLogging } from '@/util/axios.js';
 import { isDefined, isNodeError } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -165,7 +165,7 @@ export abstract class BaseApiClient<
     return url.toString();
   }
 
-  protected async doRequest<T>(req: AxiosRequestConfig): Promise<Try<T>> {
+  protected async doRequest<T>(req: AxiosRequestConfig): Promise<T> {
     try {
       const response = await this.axiosInstance.request<T>(req);
       return response.data;
@@ -200,21 +200,21 @@ export abstract class BaseApiClient<
         } else {
           this.logger.error(error, 'Request error: %s', error.message);
         }
-        return error;
+        throw error;
       } else if (isError(error)) {
         this.logger.error(error);
-        return error;
+        throw error;
       } else if (isString(error)) {
         // Wrap it
         const err = new Error(error);
         this.logger.error(err);
-        return err;
+        throw err;
       } else {
         // At this point we have no idea what the object is... attempt to log
         // and just return a generic error. Something is probably fatally wrong
         // at this point.
         this.logger.error('Unknown error type thrown: %O', error);
-        return new Error('Unknown error');
+        throw new Error('Unknown error', { cause: error });
       }
     }
   }

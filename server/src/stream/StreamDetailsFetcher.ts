@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
-import type { SpecificSourceContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import type { SpecificMinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import {
   MediaSourceType,
   SpecificMediaSourceType,
@@ -15,7 +15,7 @@ import type { ProgramStreamResult } from './types.ts';
 export type StreamFetchRequest<Typ extends MediaSourceType = MediaSourceType> =
   {
     server: SpecificMediaSourceType<Typ>;
-    lineupItem: SpecificSourceContentBackedStreamLineupItem<Typ>;
+    lineupItem: SpecificMinimalContentStreamLineupItem<Typ>;
   };
 
 export interface StreamDetailsFetcher<RequestType> {

@@ -1,41 +1,37 @@
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
-import type { FfprobeAudioStream, FfprobeVideoStream } from '@/types/ffmpeg.js';
+import type {
+  FfprobeAudioStream,
+  FfprobeSubtitleStream,
+  FfprobeVideoStream,
+} from '@/types/ffmpeg.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
-import { fileExists } from '@/util/fsUtil.js';
-import { isNonEmptyString } from '@/util/index.js';
-import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { isNonEmptyArray, isNonEmptyString } from '@/util/index.js';
 import { inject, injectable } from 'inversify';
 import { filter, find, isEmpty, map } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
-import { StreamDetailsFetcher } from '../StreamDetailsFetcher.ts';
+import { StreamDetailsFetcher } from './StreamDetailsFetcher.ts';
 import type {
   AudioStreamDetails,
   ProgramStreamResult,
+  SubtitleStreamDetails,
   VideoStreamDetails,
-} from '../types.ts';
-import { FileStreamSource, HttpStreamSource } from '../types.ts';
+} from './types.ts';
+import { FileStreamSource, HttpStreamSource } from './types.ts';
 
-type LocalFileStreamDetailsRequest = {
+type FfprobeStreamDetailsRequest = {
   path: string;
 };
 
 @injectable()
-export class LocalFileStreamDetails
-  implements StreamDetailsFetcher<LocalFileStreamDetailsRequest>
+export class FfprobeStreamDetails
+  implements StreamDetailsFetcher<FfprobeStreamDetailsRequest>
 {
-  private logger = LoggerFactory.child({ className: this.constructor.name });
-
   constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
 
   async getStream({
     path,
-  }: LocalFileStreamDetailsRequest): Promise<Nullable<ProgramStreamResult>> {
-    if (!(await fileExists(path))) {
-      this.logger.warn('Cannot find file at path: %s', path);
-      return null;
-    }
-
+  }: FfprobeStreamDetailsRequest): Promise<Nullable<ProgramStreamResult>> {
     const probeResult = await this.ffmpegInfo.probeFile(path);
 
     if (!probeResult) {
@@ -95,12 +91,33 @@ export class LocalFileStreamDetails
       },
     );
 
+    const subtitleStreamDetails = map(
+      filter(
+        probeResult.streams,
+        (stream): stream is FfprobeSubtitleStream =>
+          stream.codec_type === 'subtitle',
+      ),
+      (stream) => {
+        return {
+          type: 'embedded',
+          codec: stream.codec_name,
+          index: stream.index,
+          default: stream.disposition?.default === 1,
+          forced: stream.disposition?.forced === 1,
+          sdh: stream.disposition?.hearing_impaired === 1,
+        } satisfies SubtitleStreamDetails;
+      },
+    );
+
     return {
       streamDetails: {
         videoDetails: videoDetails ? [videoDetails] : undefined,
         audioDetails: isEmpty(audioStreamDetails)
           ? undefined
           : (audioStreamDetails as NonEmptyArray<AudioStreamDetails>),
+        subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
+          ? subtitleStreamDetails
+          : undefined,
         duration: dayjs.duration({ seconds: probeResult.format.duration }),
       },
       streamSource: path.startsWith('http')

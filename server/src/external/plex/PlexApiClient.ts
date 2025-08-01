@@ -1,7 +1,7 @@
 import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.js';
 import type { Maybe } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
-import { isSuccess } from '@/util/index.js';
+import { caughtErrorToError } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import type { MediaSourceStatus } from '@tunarr/types/api';
@@ -102,21 +102,23 @@ export class PlexApiClient extends BaseApiClient {
         );
       }
 
-      const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
-      if (isSuccess(res)) {
+      try {
+        const res = await this.doRequest<PlexMediaContainerResponse<T>>(req);
         if (isUndefined(res?.MediaContainer)) {
           this.logger.error(res, 'Expected MediaContainer, got %O', res);
           return this.makeErrorResult('parse_error');
         }
 
         return this.makeSuccessResult(res?.MediaContainer);
-      }
+      } catch (err) {
+        if (isAxiosError(err) && err.response?.status === 404) {
+          return this.makeErrorResult('not_found');
+        }
 
-      if (isAxiosError(res) && res.response?.status === 404) {
-        return this.makeErrorResult('not_found');
-      }
+        const error = caughtErrorToError(err);
 
-      return this.makeErrorResult('generic_request_error', res.message);
+        return this.makeErrorResult('generic_request_error', error.message);
+      }
     };
 
     return this.opts.enableRequestCache && !skipCache
@@ -164,15 +166,16 @@ export class PlexApiClient extends BaseApiClient {
   }
 
   async getSubtitles(key: string): Promise<QueryResult<string>> {
-    const subtitlesResult = await this.doGet<string>({
-      url: key,
-    });
+    try {
+      const subtitlesResult = await this.doGet<string>({
+        url: key,
+      });
 
-    if (isError(subtitlesResult)) {
-      return this.makeErrorResult('generic_request_error');
+      return this.makeSuccessResult(subtitlesResult);
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
     }
-
-    return this.makeSuccessResult(subtitlesResult);
   }
 
   async checkServerStatus(): Promise<MediaSourceStatus> {

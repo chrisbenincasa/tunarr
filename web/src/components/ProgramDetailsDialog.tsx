@@ -12,9 +12,12 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  LinearProgress,
   Skeleton,
   Stack,
   SvgIcon,
+  Tab,
+  Tabs,
   Typography,
   useMediaQuery,
   useTheme,
@@ -27,10 +30,20 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { capitalize, compact, find, isUndefined } from 'lodash-es';
 import type { ReactEventHandler } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { P, match } from 'ts-pattern';
 import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
 import { useSettings } from '../store/settings/selectors';
+import { ProgramStreamDetails } from './ProgramStreamDetails.tsx';
+import { TabPanel } from './TabPanel.tsx';
 
 type Props = {
   open: boolean;
@@ -65,6 +78,12 @@ export default function ProgramDetailsDialog({
   const imageRef = useRef<HTMLImageElement>(null);
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const [tab, setTab] = useState(0);
+
+  const handleClose = useCallback(() => {
+    setTab(0);
+    onClose();
+  }, [onClose]);
 
   const rating = useMemo(
     () =>
@@ -319,7 +338,7 @@ export default function ProgramDetailsDialog({
     program && (
       <Dialog
         open={open && !isUndefined(program)}
-        onClose={onClose}
+        onClose={handleClose}
         fullScreen={smallViewport}
       >
         <DialogTitle
@@ -331,7 +350,7 @@ export default function ProgramDetailsDialog({
           <IconButton
             edge="start"
             color="inherit"
-            onClick={() => onClose()}
+            onClick={() => handleClose()}
             aria-label="close"
             // sx={{ position: 'absolute', top: 10, right: 10 }}
             size="large"
@@ -340,78 +359,102 @@ export default function ProgramDetailsDialog({
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={2}>
-            <Box>{chips(program)}</Box>
-            <Stack
-              direction="row"
-              spacing={smallViewport ? 0 : 2}
-              flexDirection={smallViewport ? 'column' : 'row'}
-            >
-              <Box sx={{ textAlign: 'center' }}>
-                <Box
-                  component="img"
-                  width={imageWidth}
-                  src={thumbUrl ?? ''}
-                  alt={formattedTitle(program)}
-                  onLoad={onLoad}
-                  ref={imageRef}
-                  sx={{
-                    display: thumbLoadState !== 'success' ? 'none' : undefined,
-                    borderRadius: '10px',
-                  }}
-                  onError={onError}
-                />
-                {thumbLoadState !== 'success' && (
-                  <Skeleton
-                    variant="rectangular"
-                    width={smallViewport ? '100%' : imageWidth}
-                    height={
-                      program.type === 'content' && program.subtype === 'movie'
-                        ? 360
-                        : smallViewport
-                          ? undefined
-                          : 140
-                    }
-                    animation={thumbLoadState === 'loading' ? 'pulse' : false}
-                  ></Skeleton>
-                )}
-              </Box>
-              <Box>
-                {programEpisodeTitle ? (
-                  <Typography variant="h5" sx={{ mb: 1 }}>
-                    {programEpisodeTitle}
-                  </Typography>
-                ) : null}
-                {programSummary ? (
-                  <Typography id="modal-modal-description" sx={{ mb: 1 }}>
-                    {programSummary}
-                  </Typography>
-                ) : (
-                  <Skeleton
-                    animation={false}
-                    variant="rectangular"
-                    sx={{
-                      backgroundColor: (theme) =>
-                        theme.palette.background.default,
-                    }}
+          <Tabs value={tab} onChange={(_, v) => setTab(v as number)}>
+            <Tab label="Overview" />
+            <Tab
+              label="Stream Info"
+              disabled={program.type === 'redirect' || program.type === 'flex'}
+            />
+          </Tabs>
+          <TabPanel index={0} value={tab}>
+            <Stack spacing={2}>
+              <Box>{chips(program)}</Box>
+              <Stack
+                direction="row"
+                spacing={smallViewport ? 0 : 2}
+                flexDirection={smallViewport ? 'column' : 'row'}
+              >
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    component="img"
                     width={imageWidth}
+                    src={thumbUrl ?? ''}
+                    alt={formattedTitle(program)}
+                    onLoad={onLoad}
+                    ref={imageRef}
+                    sx={{
+                      display:
+                        thumbLoadState !== 'success' ? 'none' : undefined,
+                      borderRadius: '10px',
+                    }}
+                    onError={onError}
                   />
-                )}
-                {externalUrl && isNonEmptyString(externalSourceName) && (
-                  <Button
-                    component="a"
-                    target="_blank"
-                    href={externalUrl}
-                    size="small"
-                    endIcon={<OpenInNew />}
-                    variant="contained"
-                  >
-                    View in {externalSourceName}
-                  </Button>
-                )}
-              </Box>
+                  {thumbLoadState !== 'success' && (
+                    <Skeleton
+                      variant="rectangular"
+                      width={smallViewport ? '100%' : imageWidth}
+                      height={
+                        program.type === 'content' &&
+                        program.subtype === 'movie'
+                          ? 360
+                          : smallViewport
+                            ? undefined
+                            : 140
+                      }
+                      animation={thumbLoadState === 'loading' ? 'pulse' : false}
+                    ></Skeleton>
+                  )}
+                </Box>
+                <Box>
+                  {programEpisodeTitle ? (
+                    <Typography variant="h5" sx={{ mb: 1 }}>
+                      {programEpisodeTitle}
+                    </Typography>
+                  ) : null}
+                  {programSummary ? (
+                    <Typography id="modal-modal-description" sx={{ mb: 1 }}>
+                      {programSummary}
+                    </Typography>
+                  ) : (
+                    <Skeleton
+                      animation={false}
+                      variant="rectangular"
+                      sx={{
+                        backgroundColor: (theme) =>
+                          theme.palette.background.default,
+                      }}
+                      width={imageWidth}
+                    />
+                  )}
+                  {externalUrl && isNonEmptyString(externalSourceName) && (
+                    <Button
+                      component="a"
+                      target="_blank"
+                      href={externalUrl}
+                      size="small"
+                      endIcon={<OpenInNew />}
+                      variant="contained"
+                    >
+                      View in {externalSourceName}
+                    </Button>
+                  )}
+                </Box>
+              </Stack>
             </Stack>
-          </Stack>
+          </TabPanel>
+          <TabPanel index={1} value={tab}>
+            {program.type === 'content' && isNonEmptyString(program.id) ? (
+              <ErrorBoundary
+                fallback={
+                  <>Failed to load stream details! Check logs for details</>
+                }
+              >
+                <Suspense fallback={<LinearProgress />}>
+                  <ProgramStreamDetails programId={program.id} />
+                </Suspense>
+              </ErrorBoundary>
+            ) : null}
+          </TabPanel>
         </DialogContent>
       </Dialog>
     )

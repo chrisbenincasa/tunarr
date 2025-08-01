@@ -1,4 +1,4 @@
-import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
@@ -29,6 +29,7 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
+import { JellyfinT } from '../../types/internal.ts';
 import {
   ifDefined,
   isDefined,
@@ -52,7 +53,7 @@ import {
 } from '../types.js';
 
 @injectable()
-export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
+export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<JellyfinT> {
   private jellyfin: JellyfinApiClient;
 
   constructor(
@@ -67,13 +68,16 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
     super();
   }
 
-  async getStream({ server, lineupItem: query }: StreamFetchRequest) {
+  async getStream({
+    server,
+    lineupItem: query,
+  }: StreamFetchRequest<JellyfinT>) {
     return this.getStreamInternal(server, query);
   }
 
   private async getStreamInternal(
     mediaSource: MediaSource,
-    item: ContentBackedStreamLineupItem,
+    item: SpecificMinimalContentStreamLineupItem<JellyfinT>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -140,7 +144,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
         path: filePath,
       };
     } else {
-      const path = details.serverPath ?? item.plexFilePath;
+      const path = details.serverPath ?? item.externalFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
           `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
@@ -164,7 +168,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher {
   }
 
   private async getItemStreamDetails(
-    item: ContentBackedStreamLineupItem,
+    item: SpecificMinimalContentStreamLineupItem<JellyfinT>,
     media: JellyfinItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);

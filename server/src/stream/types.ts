@@ -77,6 +77,15 @@ export class HttpStreamSource implements IStreamSource {
     public path: string,
     public extraHeaders: Dictionary<string> = {},
   ) {}
+
+  redact() {
+    this.path = this.path
+      .replaceAll(/(X-Plex-Token=)([A-z0-9_\\-]+)/g, '$1REDACTED')
+      .replaceAll(/(X-Emby-Token:\s)([A-z0-9_\\-]+)/g, '$1REDACTED');
+    if (this.extraHeaders['X-Emby-Token']) {
+      this.extraHeaders['X-Emby-Token'] = 'REDACTED';
+    }
+  }
 }
 
 export class FileStreamSource implements IStreamSource {

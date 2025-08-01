@@ -1,4 +1,4 @@
-import { isContentBackedLineupIteam } from '@/db/derived_types/StreamLineup.js';
+import { isEmnyBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { type MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
@@ -53,7 +53,7 @@ export class EmbyProgramStream extends ProgramStream {
     opts?: StreamOptions,
   ): Promise<Result<FfmpegTranscodeSession>> {
     const lineupItem = this.context.lineupItem;
-    if (!isContentBackedLineupIteam(lineupItem)) {
+    if (!isEmnyBackedLineupItem(lineupItem)) {
       return Result.failure(
         new Error(
           'Lineup item is not backed by a media source: ' +
@@ -84,7 +84,13 @@ export class EmbyProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await streamDetails.getStream({ server, lineupItem });
+    const stream = await streamDetails.getStream({
+      server,
+      lineupItem: {
+        ...lineupItem,
+        externalFilePath: lineupItem.plexFilePath ?? undefined,
+      },
+    });
     if (isNull(stream)) {
       return Result.failure(
         new Error('Unable to retrieve stream details from Emby'),

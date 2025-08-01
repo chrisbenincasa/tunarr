@@ -1,4 +1,4 @@
-import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSource } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
@@ -30,6 +30,7 @@ import {
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
 import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
+import { EmbyT } from '../../types/internal.ts';
 import {
   ifDefined,
   isDefined,
@@ -38,7 +39,10 @@ import {
   nullToUndefined,
 } from '../../util/index.ts';
 import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
-import { StreamFetchRequest } from '../StreamDetailsFetcher.ts';
+import {
+  ExternalStreamDetailsFetcher,
+  StreamFetchRequest,
+} from '../StreamDetailsFetcher.ts';
 import {
   type AudioStreamDetails,
   HttpStreamSource,
@@ -51,7 +55,7 @@ import {
 
 // TODO: this is basically an exact copy of the Jellyfin one, can we consolidate?
 @injectable()
-export class EmbyStreamDetails {
+export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
   private emby: EmbyApiClient;
 
   constructor(
@@ -61,15 +65,17 @@ export class EmbyStreamDetails {
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(ExternalSubtitleDownloader)
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
-  ) {}
+  ) {
+    super();
+  }
 
-  async getStream({ server, lineupItem }: StreamFetchRequest) {
+  async getStream({ server, lineupItem }: StreamFetchRequest<EmbyT>) {
     return this.getStreamInternal(server, lineupItem);
   }
 
   private async getStreamInternal(
     mediaSource: MediaSource,
-    item: ContentBackedStreamLineupItem,
+    item: SpecificMinimalContentStreamLineupItem<EmbyT>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -136,7 +142,7 @@ export class EmbyStreamDetails {
         path: filePath,
       };
     } else {
-      const path = details.serverPath ?? item.plexFilePath;
+      const path = details.serverPath ?? item.externalFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
           `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
@@ -157,7 +163,7 @@ export class EmbyStreamDetails {
   }
 
   private async getItemStreamDetails(
-    item: ContentBackedStreamLineupItem,
+    item: SpecificMinimalContentStreamLineupItem<EmbyT>,
     media: EmbyItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
