@@ -1,4 +1,5 @@
 import { useJellyfinGenres, useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import type { JellyfinGenresResponse, JellyfinItem } from '@tunarr/types/jellyfin';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import {
   Alert,
@@ -107,7 +108,7 @@ export const ProgrammingSelector = ({
     selectedServer?.id ?? tag(''),
     selectedJellyfinLibrary?.Id ?? '',
     selectedServer?.type === Jellyfin && !!selectedJellyfinLibrary,
-  );
+  ) as { data?: JellyfinGenresResponse };
 
   useEffect(() => {
     const server =
@@ -451,26 +452,10 @@ export const ProgrammingSelector = ({
     }
   };
 
-  /**
-   * Helper function to extract genre name from different API response formats
-   * Jellyfin API can return genres as objects with 'Name' property or as strings
-   */
-  const extractGenreName = (genre: unknown): string => {
-    // Handle object format: { Name: "Action" }
-    if (genre && typeof genre === 'object' && genre !== null && 'Name' in genre) {
-      return String((genre as { Name: unknown }).Name);
-    }
-    // Handle string format: "Action"
-    if (genre != null) {
-      return String(genre);
-    }
-    return '';
-  };
+  const extractGenreName = (genre: JellyfinItem): string => genre.Name ?? '';
 
   const renderGenreChoices = () => {
-    // Handle both API response formats: { Items: [...] } or direct array
-    const genreList = jellyfinGenres?.Items ?? jellyfinGenres ?? [];
-
+    const genreList = jellyfinGenres?.Items ?? [];
     return (
       <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
         <InputLabel>Genre</InputLabel>
@@ -479,17 +464,16 @@ export const ProgrammingSelector = ({
           value={selectedGenre ?? ''}
           onChange={(e) => {
             const value = e.target.value;
-            // Clear genre filter if "All Genres" is selected
             setProgrammingGenre(value === '' ? undefined : value);
           }}
         >
           <MenuItem value="">
             <em>All Genres</em>
           </MenuItem>
-          {map(genreList, (genre, idx) => {
+          {genreList.map((genre) => {
             const genreValue = extractGenreName(genre);
             return (
-              <MenuItem key={genreValue || idx} value={genreValue}>
+              <MenuItem key={genre.Id} value={genreValue}>
                 {capitalize(genreValue)}
               </MenuItem>
             );

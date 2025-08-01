@@ -366,13 +366,14 @@ export class JellyfinApiClient extends BaseApiClient {
     const genresResult = await this.doGet<string>({
       url: `/Genres`,
       params: {
-        ...(parentId ? { parentId } : {}),
+        parentId,
+        userId: this.options.userId,
         includeItemTypes,
         recursive: 'true',
       },
     });
 
-    if (isError(genresResult)) {
+    if (genresResult instanceof Error) {
       return this.makeErrorResult('generic_request_error');
     }
 

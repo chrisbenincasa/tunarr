@@ -39,7 +39,8 @@ export const useJellyfinGenres = (
     queryFn: () =>
       apiClient.getJellyfinGenres({ params: { mediaSourceId, libraryId } }),
     enabled:
-      isNonEmptyString(mediaSourceId) && isNonEmptyString(libraryId) && enabled
+      isNonEmptyString(mediaSourceId) && isNonEmptyString(libraryId) && enabled,
+    staleTime: 900_000, // 15 minutes
   });
 };
 
