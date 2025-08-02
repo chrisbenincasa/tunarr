@@ -19,7 +19,7 @@ Access your channels by adding the spoofed Tunarr HDHomerun tuner to Plex, Jelly
 
 ## What is this?
 
-Tunarr is a rewrite / rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of [other projects](https://github.com/DEFENDORe/pseudotv)!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
+Tunarr is a rewrite + rebrand of [**dizqueTV**](https://github.com/vexorian/dizquetv) (which in itself was a fork of [other projects](https://github.com/DEFENDORe/pseudotv)!). This project was born out of both a love for TV and an appreciation for the work put into dizqueTV and its predecessors.
 
 Tunarr has the following goals:
 
@@ -31,10 +31,11 @@ Tunarr has the following goals:
 
 ## Features
 
+- **NEW** Advanced filtering of Plex libraries, helping to easily find the content you want to schedule
 - **NEW** Jellyfin / Emby library support!
 - **NEW** Stream your channels directly in the [browser](https://github.com/chrisbenincasa/tunarr/pull/116)
 - **NEW** Complete rewrite of streaming pipeline, offering better stability and improved performance
-- **NEW** New and more powerful scheduling options!
+- **NEW** New and more powerful [scheduling options](https://tunarr.com/configure/scheduling-tools/)!
 - **NEW** [Dark mode!](https://github.com/chrisbenincasa/tunarr/pull/34)
 - **NEW** Quickly find content you want for your channels with [advanced filtering and sorting](https://github.com/chrisbenincasa/tunarr/pull/210) (Jellyfin filtering [coming soon](https://github.com/chrisbenincasa/tunarr/issues/752))
 - **NEW** Scheduled, configurable backups - never lose your channels and configuration!
