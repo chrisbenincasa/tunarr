@@ -9,18 +9,19 @@ import {
   isRedirectProgram,
 } from '@tunarr/types';
 import { forEach, reject, some } from 'lodash-es';
+import { useCallback } from 'react';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
 import { materializedProgramListSelector } from '../../store/selectors.ts';
 
 export const useRemoveDuplicates = () => {
   const programs = useStore(materializedProgramListSelector);
-  return () => {
+  return useCallback(() => {
     if (programs.length > 0) {
       const newPrograms = removeDuplicatePrograms(programs);
       setCurrentLineup(newPrograms, true);
     }
-  };
+  }, [programs]);
 };
 
 export const removeDuplicatePrograms = (programs: UIChannelProgram[]) => {
