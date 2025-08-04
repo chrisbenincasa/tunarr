@@ -186,7 +186,7 @@ const usePlexItemsInfiniteQueryOptions = (
       getNextPageParam: (res, all, last) => {
         const total = sumBy(all, (page) => page.size);
         if (total >= (res.totalSize ?? res.size)) {
-          return null;
+          return;
         }
 
         // Next offset is the last + how many items we got back.

@@ -290,6 +290,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
   }, [data?.pages, getPageDataSize, scrollParams.max, depth]);
 
   const maybeTriggerFetchNext = useCallback(() => {
+    console.log('maybe trigger');
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage().catch(console.error);
     }
@@ -360,7 +361,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
               modalItem={modalItem}
               depth={depth + 1}
               extractItemId={getItemKey}
-              getChildGrid={(props) => renderNestedGrid(props)}
+              renderNestedGrid={(props) => renderNestedGrid(props)}
             />
           )}
         </Fragment>

@@ -35,8 +35,6 @@ function ChannelProgrammingSelectorPage() {
           navigate({ to: '..' }).catch(console.error);
         }, [navigate]),
         entityType: 'channel',
-        // initialMediaSourceId:
-        // initialLibraryId
       }}
     >
       <ProgrammingSelectorPage

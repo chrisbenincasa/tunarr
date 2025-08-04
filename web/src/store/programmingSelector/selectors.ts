@@ -1,5 +1,7 @@
 import { type FindChild, type MediaSourceSettings } from '@tunarr/types';
 import { filter } from 'lodash-es';
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import useStore from '..';
 import { Plex } from '../../helpers/constants.ts';
 import { KnownMedia } from './KnownMedia';
@@ -88,11 +90,12 @@ export function useCurrentPlexMediaSourceAndLibraryView() {
 }
 
 export function useKnownMedia() {
-  const [rawKnownMedia, rawHierarchy] = useStore((s) => [
-    s.knownMediaByServer,
-    s.contentHierarchyByServer,
-  ]);
-  return new KnownMedia(rawKnownMedia, rawHierarchy);
+  const rawKnownMedia = useStore(useShallow((s) => s.knownMediaByServer));
+  const rawHierarchy = useStore(useShallow((s) => s.contentHierarchyByServer));
+  return useMemo(
+    () => new KnownMedia(rawKnownMedia, rawHierarchy),
+    [rawHierarchy, rawKnownMedia],
+  );
 }
 
 export function useSelectedMedia<

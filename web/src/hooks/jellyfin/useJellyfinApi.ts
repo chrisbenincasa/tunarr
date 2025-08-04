@@ -155,7 +155,7 @@ export const useInfiniteJellyfinLibraryItems = (
         getNextPageParam: (res, all, { offset: lastOffset }) => {
           const total = sumBy(all, (page) => page.Items.length);
           if (total >= (res.TotalRecordCount ?? res.Items.length)) {
-            return null;
+            return;
           }
 
           // Next offset is the last + how many items we got back.

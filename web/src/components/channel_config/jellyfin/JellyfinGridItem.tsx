@@ -4,25 +4,19 @@ import {
   forwardRef,
   memo,
   useCallback,
-  useEffect,
   useMemo,
-  useState,
 } from 'react';
 import {
   isNonEmptyString,
   pluralizeWithCount,
   prettyItemDuration,
-  toggle,
 } from '../../../helpers/util.ts';
 
-import { useJellyfinLibraryItems } from '@/hooks/jellyfin/useJellyfinApi.ts';
 import { addJellyfinSelectedMedia } from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
-import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { match, P } from 'ts-pattern';
-import { isJellyfinParentItem } from '../../../helpers/jellyfinUtil.ts';
 import { type GridItemMetadata, MediaGridItem } from '../MediaGridItem.tsx';
 import { type GridItemProps } from '../MediaItemGrid.tsx';
 
@@ -58,16 +52,6 @@ function childItemType(item: JellyfinItem) {
     )
     .with({ Type: 'MusicArtist' }, () => 'album')
     .with({ Type: 'MusicAlbum' }, () => 'track')
-    .otherwise(() => null);
-}
-
-function childJellyfinTypes(item: JellyfinItem) {
-  return match(item)
-    .returnType<JellyfinItemKind[] | null>()
-    .with({ Type: 'Season' }, () => ['Episode'])
-    .with({ Type: 'Series' }, () => ['Season'])
-    .with({ Type: 'MusicAlbum' }, () => ['Audio'])
-    .with({ Type: 'MusicArtist' }, () => ['MusicAlbum'])
     .otherwise(() => null);
 }
 
@@ -152,7 +136,6 @@ export const JellyfinGridItem = memo(
   forwardRef(
     (props: JellyfinGridItemProps, ref: ForwardedRef<HTMLDivElement>) => {
       const { item, index, moveModal } = props;
-      const [modalOpen, setModalOpen] = useState(false);
       const currentServer = useCurrentMediaSource('jellyfin');
 
       const isMusicItem = useCallback(
@@ -161,27 +144,11 @@ export const JellyfinGridItem = memo(
         [],
       );
 
-      useEffect(() => {
-        // console.log('mounted jellyfin grid item');
-      });
-
-      const hasChildren = isJellyfinParentItem(item);
-      const childKind = childJellyfinTypes(item);
-
-      useJellyfinLibraryItems(
-        currentServer!.id,
-        item.Id,
-        childKind ?? [],
-        null,
-        hasChildren && modalOpen,
-      );
-
       const moveModalToItem = useCallback(() => {
         moveModal(index, item);
       }, [index, item, moveModal]);
 
       const handleItemClick = useCallback(() => {
-        setModalOpen(toggle);
         moveModalToItem();
       }, [moveModalToItem]);
 

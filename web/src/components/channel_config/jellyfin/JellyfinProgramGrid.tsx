@@ -24,6 +24,7 @@ import { useProgramHierarchy } from '../../../hooks/channel_config/useProgramHie
 import { useInfiniteJellyfinLibraryItems } from '../../../hooks/jellyfin/useJellyfinApi.ts';
 import useStore from '../../../store/index.ts';
 import type { JellyfinMediaSourceView } from '../../../store/programmingSelector/store.ts';
+import type { Nullable } from '../../../types/util.ts';
 import type { GridItemProps, NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid } from '../MediaItemGrid.tsx';
 import { MediaItemList } from '../MediaItemList.tsx';
@@ -34,9 +35,8 @@ import { JellyfinListViewBreadcrumbs } from './JellyfinListViewBreadcrumbs.tsx';
 type Props = {
   selectedServer: MediaSourceSettings;
   selectedLibrary: JellyfinMediaSourceView;
-  parentContext: JellyfinItem[];
+  parentContext?: Nullable<JellyfinItem>;
   depth?: number;
-  genres?: string[];
 };
 
 export const JellyfinProgramGrid = ({
@@ -44,7 +44,6 @@ export const JellyfinProgramGrid = ({
   selectedLibrary,
   parentContext,
   depth = 0,
-  genres = [],
 }: Props) => {
   const itemContainer = useRef<HTMLDivElement | null>(null);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
@@ -56,7 +55,7 @@ export const JellyfinProgramGrid = ({
   );
 
   const currentParentContext = useMemo(
-    () => last(parentContext) ?? last(programHierarchy.parentContext),
+    () => parentContext ?? last(programHierarchy.parentContext),
     [parentContext, programHierarchy.parentContext],
   );
 
@@ -81,34 +80,37 @@ export const JellyfinProgramGrid = ({
 
   const sortBy: NonEmptyArray<JellyfinItemSortBy> | null = useMemo(() => {
     return match(selectedLibrary?.view.CollectionType)
-      .returnType<[JellyfinItemSortBy, ...JellyfinItemSortBy[]] | null>()
+      .returnType<Nullable<NonEmptyArray<JellyfinItemSortBy>>>()
       .with('homevideos', () => ['IsFolder', 'SortName'])
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
   }, [selectedLibrary?.view.CollectionType]);
 
-  const additionalFilters = {
-    nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
-    nameStartsWith:
-      isNonEmptyString(alphanumericFilter) && alphanumericFilter !== '#'
-        ? alphanumericFilter.toUpperCase()
-        : undefined,
-    sortBy,
-    recursive: match(selectedLibrary?.view.CollectionType)
-      .with(P.union('tvshows', 'movies', 'folders'), () => true)
-      .otherwise(() => false),
-    ...(genres.length > 0 ? { genres: genres.join('|') } : {}),
-  };
+  const genre = useStore((s) => s.currentMediaGenre);
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
     currentParentContext?.Id ?? selectedLibrary?.view.Id ?? '',
     itemTypes,
-    isUndefined(depth) ||
+    /**enabled= */ isUndefined(depth) ||
       depth === 0 ||
-      (depth > 0 && parentContext.length > 0),
+      (depth > 0 && !!parentContext),
     columns * 4, // grab 4 rows
     bufferSize,
-    additionalFilters,
+    useMemo(
+      () => ({
+        nameLessThan: alphanumericFilter === '#' ? 'A' : undefined,
+        nameStartsWith:
+          isNonEmptyString(alphanumericFilter) && alphanumericFilter !== '#'
+            ? alphanumericFilter.toUpperCase()
+            : undefined,
+        sortBy,
+        recursive: match(selectedLibrary?.view.CollectionType)
+          .with(P.union('tvshows', 'movies', 'folders'), () => true)
+          .otherwise(() => false),
+        genres: genre,
+      }),
+      [alphanumericFilter, genre, selectedLibrary?.view.CollectionType, sortBy],
+    ),
   );
 
   useEffect(() => {
@@ -165,7 +167,7 @@ export const JellyfinProgramGrid = ({
           {...props}
           selectedLibrary={selectedLibrary}
           selectedServer={selectedServer}
-          parentContext={props.parent ? [props.parent] : []}
+          parentContext={props.parent}
         />
       );
     },

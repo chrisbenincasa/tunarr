@@ -15,12 +15,10 @@ enum TabValues {
 
 type Props = {
   toggleOrSetSelectedProgramsDrawer: (open: boolean) => void;
-  selectedGenre?: string;
 };
 
 export function JellyfinProgrammingSelector({
   toggleOrSetSelectedProgramsDrawer,
-  selectedGenre,
 }: Props) {
   const selectedServer = useCurrentMediaSource(Jellyfin)!;
   const selectedLibrary = useCurrentMediaSourceView(Jellyfin)!;
@@ -47,10 +45,8 @@ export function JellyfinProgrammingSelector({
           <Tab value={TabValues.Library} label="Library" />
         </Tabs>
         <JellyfinProgramGrid
-          parentContext={[]}
           selectedLibrary={selectedLibrary}
           selectedServer={selectedServer}
-          genres={selectedGenre ? [selectedGenre] : []}
         />
       </Box>
     </>
