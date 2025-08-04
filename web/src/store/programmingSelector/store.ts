@@ -90,6 +90,8 @@ export type MediaSourceView =
 
 type TypedItem<T, Type> = TypedKey<T, Type, 'item'>;
 
+export type MediaGenre = TypedItem<string, Jellyfin | Plex | Emby>;
+
 export type MediaItems =
   | TypedItem<PlexLibrarySection | PlexMedia, Plex>
   | TypedItem<JellyfinItem, Jellyfin>
@@ -105,6 +107,7 @@ export type ContentHierarchyMap = Record<
 export interface ProgrammingListingsState {
   currentMediaSource?: MediaSourceSettings;
   currentMediaSourceView?: MediaSourceView;
+  currentMediaGenre?: string;
   // Tracks the parent-child mappings of library items
   contentHierarchyByServer: ContentHierarchyMap;
   // Holds the actual metadata for items, including directories (i.e. Plex libraries)

@@ -1,4 +1,5 @@
-import { useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import { useJellyfinGenres, useJellyfinUserLibraries } from '@/hooks/jellyfin/useJellyfinApi.ts';
+import type { JellyfinGenresResponse, JellyfinItem } from '@tunarr/types/jellyfin';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import {
   Alert,
@@ -42,6 +43,7 @@ import {
   addKnownMediaForPlexServer,
   setProgrammingListLibrary,
   setProgrammingListingServer,
+  setProgrammingGenre,
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
@@ -66,6 +68,7 @@ export const ProgrammingSelector = ({
     useMediaSources();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
+  const selectedGenre = useStore((s) => s.currentMediaGenre);
   const knownMedia = useKnownMedia();
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
   const navigate = Route.useNavigate();
@@ -100,6 +103,12 @@ export const ProgrammingSelector = ({
     selectedServer?.id ?? '',
     selectedServer?.type === Emby,
   );
+
+  const { data: jellyfinGenres } = useJellyfinGenres(
+    selectedServer?.id ?? tag(''),
+    selectedJellyfinLibrary?.Id ?? '',
+    selectedServer?.type === Jellyfin && !!selectedJellyfinLibrary,
+  ) as { data?: JellyfinGenresResponse };
 
   useEffect(() => {
     const server =
@@ -299,6 +308,7 @@ export const ProgrammingSelector = ({
               toggleOrSetSelectedProgramsDrawer={
                 toggleOrSetSelectedProgramsDrawer
               }
+              selectedGenre={selectedGenre}
             />
           );
         case Emby:
@@ -442,6 +452,37 @@ export const ProgrammingSelector = ({
     }
   };
 
+  const extractGenreName = (genre: JellyfinItem): string => genre.Name ?? '';
+
+  const renderGenreChoices = () => {
+    const genreList = jellyfinGenres?.Items ?? [];
+    return (
+      <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+        <InputLabel>Genre</InputLabel>
+        <Select
+          label="Genre"
+          value={selectedGenre ?? ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            setProgrammingGenre(value === '' ? undefined : value);
+          }}
+        >
+          <MenuItem value="">
+            <em>All Genres</em>
+          </MenuItem>
+          {genreList.map((genre) => {
+            const genreValue = extractGenreName(genre);
+            return (
+              <MenuItem key={genre.Id} value={genreValue}>
+                {capitalize(genreValue)}
+              </MenuItem>
+            );
+          })}
+        </Select>
+      </FormControl>
+    );
+  };
+
   const hasAnySources = !isEmpty(mediaSources) || !isEmpty(customShows);
 
   return (
@@ -483,6 +524,7 @@ export const ProgrammingSelector = ({
           )}
 
           {renderLibraryChoices()}
+          {renderGenreChoices()}
           <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
       </Box>

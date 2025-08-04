@@ -859,6 +859,9 @@ export type JellyfinLibraryItemsResponse = z.infer<
   typeof JellyfinLibraryItemsResponse
 >;
 
+export const JellyfinGenresResponse = JellyfinLibraryItemsResponse;
+export type JellyfinGenresResponse = JellyfinLibraryItemsResponse;
+
 const JellyfinSessionInfo = z
   .object({
     // PlayState: PlayerStateInfo.nullable().optional(),
