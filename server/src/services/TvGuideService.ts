@@ -40,7 +40,6 @@ import {
   map,
   mapValues,
   nth,
-  reduce,
   uniq,
   values,
 } from 'lodash-es';
@@ -48,6 +47,7 @@ import { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
 import { Channel } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
 import type {
@@ -366,7 +366,7 @@ export class TVGuideService {
           return startTimeOffsets;
         }
 
-        return this.makeAccumulated(channel);
+        return calculateStartTimeOffsets(channel.lineup.items);
       });
 
       return await builder();
@@ -397,15 +397,6 @@ export class TVGuideService {
           await this.buildChannelGuideWithRetries(channelId, writeXmlTv);
         }
       }),
-    );
-  }
-
-  // Returns duration offsets for programs on a channel in an array
-  private makeAccumulated(channelAndLineup: ChannelWithLineup): number[] {
-    return reduce(
-      channelAndLineup.lineup.items,
-      (acc, item, index) => [...acc, acc[index] + item.durationMs],
-      [0],
     );
   }
 

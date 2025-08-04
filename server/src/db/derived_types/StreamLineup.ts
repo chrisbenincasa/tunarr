@@ -10,13 +10,12 @@ import type { EmbyT, JellyfinT } from '../../types/internal.ts';
 import type { ProgramType } from '../schema/Program.ts';
 
 const baseStreamLineupItemSchema = z.object({
-  originalTimestamp: z.number().nonnegative().optional(),
   streamDuration: z
     .number()
     .nonnegative()
     .optional()
     .describe('The amount of time left in the stream'),
-  beginningOffset: z.number().nonnegative().optional(),
+  // beginningOffset: z.number().nonnegative().optional(),
   title: z.string().optional(),
   startOffset: z
     .number()
@@ -27,7 +26,7 @@ const baseStreamLineupItemSchema = z.object({
     .number()
     .nonnegative()
     .describe('The time the stream item started'),
-  duration: z.number().nonnegative(),
+  duration: z.number().nonnegative().describe('The whole duration of the item'),
 });
 
 export function isOfflineLineupItem(
@@ -148,7 +147,7 @@ const CommercialStreamLineupItemSchema =
   BaseContentBackedStreamLineupItemSchema.extend({
     type: z.literal('commercial'),
     fillerId: z.string(),
-  }).required({ streamDuration: true, beginningOffset: true });
+  }).required({ streamDuration: true });
 
 export type CommercialStreamLineupItem = z.infer<
   typeof CommercialStreamLineupItemSchema

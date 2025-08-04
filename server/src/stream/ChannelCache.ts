@@ -117,10 +117,8 @@ export class ChannelCache {
     ) {
       //closed the stream and opened it again let's not lose seconds for
       //no reason
-      const originalT0 =
-        recorded.lineupItem.originalTimestamp ?? recorded.timestamp;
+      const originalT0 = recorded.timestamp;
       if (timeNow - originalT0 <= SLACK) {
-        lineupItem.originalTimestamp = originalT0;
         return lineupItem;
       }
     }
