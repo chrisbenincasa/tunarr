@@ -361,23 +361,24 @@ export class JellyfinApiClient extends BaseApiClient {
 
   async getGenres(
     parentId?: string,
-    includeItemTypes?: string
+    includeItemTypes?: string,
   ): Promise<QueryResult<string>> {
-    const genresResult = await this.doGet<string>({
-      url: `/Genres`,
-      params: {
-        parentId,
-        userId: this.options.userId,
-        includeItemTypes,
-        recursive: 'true',
-      },
-    });
+    try {
+      const genresResult = await this.doGet<string>({
+        url: `/Genres`,
+        params: {
+          parentId,
+          userId: this.options.userId,
+          includeItemTypes,
+          recursive: 'true',
+        },
+      });
 
-    if (genresResult instanceof Error) {
-      return this.makeErrorResult('generic_request_error');
+      return this.makeSuccessResult(genresResult);
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
     }
-
-    return this.makeSuccessResult(genresResult);
   }
 
   async recordPlaybackStart(itemId: string, deviceId: string) {
