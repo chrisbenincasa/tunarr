@@ -11,11 +11,11 @@ interface InlineModalProps<ItemType> {
   modalItem: Nullable<ItemType>;
   depth: number;
   extractItemId: (item: ItemType) => string;
-  getChildGrid: (props: NestedGridProps<ItemType>) => ReactNode;
+  renderNestedGrid: (props: NestedGridProps<ItemType>) => ReactNode;
 }
 
 export function InlineModal<ItemType>(props: InlineModalProps<ItemType>) {
-  const { modalItem, open, extractItemId, depth, getChildGrid } = props;
+  const { modalItem, open, extractItemId, depth, renderNestedGrid } = props;
   const itemGuid = modalItem ? extractItemId(modalItem) : null;
   const {
     value: isOpen,
@@ -69,7 +69,7 @@ export function InlineModal<ItemType>(props: InlineModalProps<ItemType>) {
         onEnter={setOpen}
         onExited={setClosed}
       >
-        {modalItem && getChildGrid({ parent: modalItem, depth })}
+        {modalItem && renderNestedGrid({ parent: modalItem, depth })}
       </Collapse>
     </Box>
   );

@@ -5,13 +5,11 @@ import {
   memo,
   useCallback,
   useMemo,
-  useState,
 } from 'react';
 import {
   isNonEmptyString,
   pluralizeWithCount,
   prettyItemDuration,
-  toggle,
 } from '../../../helpers/util.ts';
 
 import { addEmbySelectedMedia } from '@/store/programmingSelector/actions.ts';
@@ -20,11 +18,7 @@ import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { type EmbyItem } from '@tunarr/types/emby';
 import { match, P } from 'ts-pattern';
 import { Emby } from '../../../helpers/constants.ts';
-import {
-  childEmbyItemKind,
-  childEmbyItemType,
-} from '../../../helpers/embyUtil.ts';
-import { useEmbyLibraryItems } from '../../../hooks/emby/useEmbyApi.ts';
+import { childEmbyItemType } from '../../../helpers/embyUtil.ts';
 import { type GridItemMetadata, MediaGridItem } from '../MediaGridItem.tsx';
 import { type GridItemProps } from '../MediaItemGrid.tsx';
 
@@ -75,7 +69,6 @@ export const EmbyGridItem = memo(
   forwardRef(
     (props: GridItemProps<EmbyItem>, ref: ForwardedRef<HTMLDivElement>) => {
       const { item, index, moveModal } = props;
-      const [modalOpen, setModalOpen] = useState(false);
       const currentServer = useCurrentMediaSource(Emby);
 
       const isMusicItem = useCallback(
@@ -90,23 +83,11 @@ export const EmbyGridItem = memo(
         [],
       );
 
-      const hasChildren = item.Type && ['Series', 'Season'].includes(item.Type);
-      const childKind = childEmbyItemKind(item);
-
-      useEmbyLibraryItems(
-        currentServer!.id,
-        item.Id,
-        childKind ? [childKind] : [],
-        null,
-        hasChildren && modalOpen,
-      );
-
       const moveModalToItem = useCallback(() => {
         moveModal(index, item);
       }, [index, item, moveModal]);
 
       const handleItemClick = useCallback(() => {
-        setModalOpen(toggle);
         moveModalToItem();
       }, [moveModalToItem]);
 

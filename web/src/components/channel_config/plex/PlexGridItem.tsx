@@ -3,33 +3,24 @@ import {
   isPlexMusicTrack,
   isPlexPlaylist,
   isPlexSeason,
-  isTerminalItem,
-  type PlexChildListing,
   type PlexMedia,
 } from '@tunarr/types/plex';
-import { isEmpty, isEqual, isNil, isUndefined } from 'lodash-es';
+import { isEqual, isNil } from 'lodash-es';
 import {
   forwardRef,
   memo,
   useCallback,
-  useEffect,
   useMemo,
-  useState,
   type ForwardedRef,
 } from 'react';
 import {
   isNonEmptyString,
   pluralizeWithCount,
   prettyItemDuration,
-  toggle,
 } from '../../../helpers/util.ts';
 
 import { getPlexMediaChildType } from '@/helpers/plexUtil.ts';
-import { usePlexTyped } from '@/hooks/plex/usePlex.ts';
-import {
-  addKnownMediaForPlexServer,
-  addPlexSelectedMedia,
-} from '@/store/programmingSelector/actions.ts';
+import { addPlexSelectedMedia } from '@/store/programmingSelector/actions.ts';
 import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts';
 import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
@@ -37,19 +28,6 @@ import { createExternalId } from '@tunarr/shared';
 import { match, P } from 'ts-pattern';
 import { MediaGridItem, type GridItemMetadata } from '../MediaGridItem.tsx';
 import type { GridItemProps } from '../MediaItemGrid.tsx';
-
-function genPlexChildPath(media: PlexMedia) {
-  return match(media)
-    .with(
-      { type: 'collection' },
-      (collection) => `/library/collections/${collection.ratingKey}/children`,
-    )
-    .with(
-      { type: 'playlist' },
-      (playlist) => `/playlists/${playlist.ratingKey}/items`,
-    )
-    .otherwise((item) => `/library/metadata/${item.ratingKey}/children`);
-}
 
 function extractChildCount(media: PlexMedia) {
   return match(media)
@@ -109,7 +87,6 @@ export const PlexGridItem = memo(
       const { item, index, moveModal } = props;
       const server = useCurrentMediaSource('plex')!; // We have to have a server at this point
       const settings = useSettings();
-      const [modalOpen, setModalOpen] = useState(false);
 
       const onSelect = useCallback(
         (item: PlexMedia) => {
@@ -118,28 +95,11 @@ export const PlexGridItem = memo(
         [server],
       );
 
-      const { data: childItems } = usePlexTyped<PlexChildListing>(
-        server.id,
-        genPlexChildPath(props.item),
-        !isTerminalItem(item) && modalOpen,
-      );
-
-      useEffect(() => {
-        if (
-          !isUndefined(childItems) &&
-          !isEmpty(childItems.Metadata) &&
-          isNonEmptyString(server?.id)
-        ) {
-          addKnownMediaForPlexServer(server.id, childItems.Metadata, item.guid);
-        }
-      }, [childItems, server?.id, item.guid]);
-
       const moveModalToItem = useCallback(() => {
         moveModal(index, item);
       }, [index, item, moveModal]);
 
       const handleItemClick = useCallback(() => {
-        setModalOpen(toggle);
         moveModalToItem();
       }, [moveModalToItem]);
 

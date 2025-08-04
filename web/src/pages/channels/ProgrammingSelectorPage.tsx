@@ -14,6 +14,7 @@ export default function ProgrammingSelectorPage({
   initialMediaSourceId,
   initialLibraryId,
 }: Props) {
+  console.log('render top');
   const [open, setOpen] = useState(false);
 
   const toggleDrawer = useCallback((open: boolean) => {
