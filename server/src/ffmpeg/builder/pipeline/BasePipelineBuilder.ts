@@ -19,7 +19,7 @@ import type { VideoEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 import { AudioEncoder } from '@/ffmpeg/builder/encoder/BaseEncoder.js';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { AudioPadFilter } from '@/ffmpeg/builder/filter/AudioPadFilter.js';
-import { AudioFirstPtsFilter } from '@/ffmpeg/builder/filter/AudioResampleFilter.js';
+import { AudioResampleFilter } from '@/ffmpeg/builder/filter/AudioResampleFilter.js';
 import { ComplexFilter } from '@/ffmpeg/builder/filter/ComplexFilter.js';
 import { FilterChain } from '@/ffmpeg/builder/filter/FilterChain.js';
 import { LoopFilter } from '@/ffmpeg/builder/filter/LoopFilter.js';
@@ -609,7 +609,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           ? 1000
           : 1;
       this.audioInputSource?.filterSteps.push(
-        new AudioFirstPtsFilter(asyncSamples, 0),
+        new AudioResampleFilter(asyncSamples),
       );
     }
 
