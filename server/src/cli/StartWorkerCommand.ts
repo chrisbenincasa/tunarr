@@ -1,9 +1,15 @@
-import { isMainThread, parentPort } from 'node:worker_threads';
+import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import type { CommandModule } from 'yargs';
 import { container } from '../container.ts';
+import type { ServerOptions } from '../globals.ts';
+import { setServerOptions } from '../globals.ts';
 import { TunarrWorker } from '../services/TunarrWorker.ts';
 import type { GenerateOpenApiCommandArgs } from './GenerateOpenApiCommand.ts';
 import type { GlobalArgsType } from './types.ts';
+
+type WorkerData = {
+  serverOptions: ServerOptions;
+};
 
 export const StartWorkerCommand: CommandModule<
   GlobalArgsType,
@@ -22,6 +28,11 @@ export const StartWorkerCommand: CommandModule<
       console.error('No parent port.');
       process.exit(1);
     }
+
+    // TODO: parse
+    const { serverOptions } = workerData as WorkerData;
+
+    setServerOptions(serverOptions);
 
     container.get<TunarrWorker>(TunarrWorker).start();
   },

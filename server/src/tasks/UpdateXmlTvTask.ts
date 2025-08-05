@@ -4,17 +4,17 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { globalOptions } from '@/globals.js';
-import { TVGuideService } from '@/services/TvGuideService.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
-import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
+import { mapAsyncSeq } from '@/util/index.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import { type Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
+import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 import { Task, TaskMetadata } from './Task.js';
@@ -31,11 +31,12 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
-    @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(LineupCreator) private lineupCreator: LineupCreator,
+    @inject(KEYS.WorkerPoolFactory)
+    private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
   ) {
     super();
     this.logger.setBindings({ task: UpdateXmlTvTask.ID });
@@ -68,18 +69,13 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
 
       await this.lineupCreator.promoteAllPendingLineups();
 
-      if (isNonEmptyString(channelId)) {
-        await this.guideService.refreshGuide(
-          dayjs.duration({ hours: xmltvSettings.programmingHours }),
-          channelId,
-          true,
-        );
-      } else {
-        await this.guideService.buildAllChannels(
-          dayjs.duration({ hours: xmltvSettings.programmingHours }),
-          false,
-        );
-      }
+      await this.workerPoolProvider().queueTask({
+        type: 'build-guide',
+        guideDurationHours: xmltvSettings.programmingHours,
+        force: false,
+        channelId,
+        writeXmlTv: true,
+      });
 
       GlobalScheduler.getScheduledJob(SubtitleExtractorTask.ID)
         .runNow(true)
