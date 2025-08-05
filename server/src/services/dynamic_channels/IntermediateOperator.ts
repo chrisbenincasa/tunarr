@@ -1,16 +1,12 @@
 import type { NamedFunc } from '@/types/func.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
-import { last, reduce } from 'lodash-es';
+import { last } from 'lodash-es';
+import { calculateStartTimeOffsets } from '../../db/lineupUtil.ts';
 
 function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
   const { channel, lineup } = channelAndLineup;
   // Recalculate startTimeOffsets
-  // TODO: Centralize this implementation - it exists in channelDB too
-  lineup.startTimeOffsets = reduce(
-    lineup.items,
-    (acc, item, index) => [...acc, acc[index] + item.durationMs],
-    [0],
-  );
+  lineup.startTimeOffsets = calculateStartTimeOffsets(lineup.items);
   channel.duration = last(lineup.startTimeOffsets) ?? 0;
 
   return Promise.resolve({ channel, lineup });

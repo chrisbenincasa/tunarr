@@ -44,6 +44,7 @@ import { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
 import { type IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import { calculateStartTimeOffsets } from '../../db/lineupUtil.ts';
 import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
@@ -141,6 +142,7 @@ export class LegacyChannelMigrator {
       lastUpdated: dayjs().valueOf(),
       items: lineupItems,
       version: CurrentLineupSchemaVersion,
+      startTimeOffsets: calculateStartTimeOffsets(lineupItems),
     };
   }
 

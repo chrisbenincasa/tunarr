@@ -47,14 +47,23 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         tags: ['Debug'],
-        querystring: ChannelQuerySchema.extend({
+        querystring: z.object({
+          channelId: z.coerce.number().or(z.string()),
           ts: z.coerce.number().optional(),
         }),
       },
     },
     async (req, res) => {
+      const dbChannel = await req.serverCtx.channelDB.getChannel(
+        req.query.channelId,
+      );
+      console.log(req.query, dbChannel);
+      if (!dbChannel) {
+        return res.status(404).send('Channel not found');
+      }
+
       const channelAndLineup =
-        await req.serverCtx.channelDB.loadChannelAndLineup(req.query.channelId);
+        await req.serverCtx.channelDB.loadChannelAndLineup(dbChannel.uuid);
 
       if (!channelAndLineup) {
         return res

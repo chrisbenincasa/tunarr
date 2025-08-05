@@ -14,22 +14,16 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { first, isEmpty, isNil, isNull, isUndefined, nth } from 'lodash-es';
-import { StrictExclude } from 'ts-essentials';
+import { first, isEmpty, isNil, isNull } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
   EnrichedLineupItem,
-  RedirectStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
-import {
-  isNonEmptyString,
-  nullToUndefined,
-  zipWithIndex,
-} from '../util/index.js';
+import { isNonEmptyString, nullToUndefined } from '../util/index.js';
 import { ChannelCache } from './ChannelCache.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
@@ -118,6 +112,12 @@ export class StreamProgramCalculator {
       channel,
       lineup,
     );
+    // We cannot exceed this amount of time, since that is what was scheduled
+    // on the channel.
+    const maxDuration =
+      currentProgram.program.duration - currentProgram.timeElapsed;
+    const endTimeMs = req.startTime + maxDuration;
+    let streamDuration = maxDuration;
 
     while (currentProgram.program.type === 'redirect') {
       redirectChannels.push(channelContext.uuid);
@@ -164,6 +164,11 @@ export class StreamProgramCalculator {
       );
 
       if (lineupItem) {
+        const newItemEndTime = lineupItem.programBeginMs + lineupItem.duration;
+        if (newItemEndTime < endTimeMs) {
+          streamDuration = newItemEndTime - req.startTime;
+        }
+
         break;
       } else {
         currentProgram = await this.getCurrentProgramAndTimeElapsed(
@@ -171,10 +176,17 @@ export class StreamProgramCalculator {
           channelContext,
           newChannelAndLineup.lineup,
         );
+
+        const timeLeft =
+          currentProgram.program.duration - currentProgram.timeElapsed;
+        const newEndTime = req.startTime + timeLeft;
+        if (newEndTime < endTimeMs) {
+          streamDuration = newEndTime - req.startTime;
+        }
       }
     }
 
-    if (isUndefined(lineupItem)) {
+    if (!lineupItem) {
       if (isNil(currentProgram)) {
         return Result.failure(
           new StreamProgramCalculatorError(
@@ -231,40 +243,40 @@ export class StreamProgramCalculator {
       }
 
       lineupItem = await this.createLineupItem(
-        currentProgram.program,
-        currentProgram.timeElapsed,
+        currentProgram,
+        streamDuration,
         channelContext,
       );
     }
 
-    if (lineupItem) {
-      let upperBound = Number.MAX_SAFE_INTEGER;
-      const beginningOffset = lineupItem?.beginningOffset ?? 0;
+    // if (lineupItem) {
+    //   let upperBound = Number.MAX_SAFE_INTEGER;
+    //   const beginningOffset = lineupItem?.beginningOffset ?? 0;
 
-      //adjust upper bounds and record playbacks
-      for (let i = redirectChannels.length - 1; i >= 0; i--) {
-        const thisUpperBound = nth(upperBounds, i);
-        if (!isNil(thisUpperBound)) {
-          const nextBound = thisUpperBound + beginningOffset;
-          const prevBound = isNil(lineupItem.streamDuration)
-            ? upperBound
-            : Math.min(upperBound, lineupItem.streamDuration);
-          const newDuration = Math.min(nextBound, prevBound);
+    //   //adjust upper bounds and record playbacks
+    //   for (let i = redirectChannels.length - 1; i >= 0; i--) {
+    //     const thisUpperBound = nth(upperBounds, i);
+    //     if (!isNil(thisUpperBound)) {
+    //       const nextBound = thisUpperBound + beginningOffset;
+    //       const prevBound = isNil(lineupItem.streamDuration)
+    //         ? upperBound
+    //         : Math.min(upperBound, lineupItem.streamDuration);
+    //       const newDuration = Math.min(nextBound, prevBound);
 
-          lineupItem = {
-            ...lineupItem,
-            streamDuration: newDuration,
-          };
-          upperBound = newDuration;
-        }
+    //       lineupItem = {
+    //         ...lineupItem,
+    //         streamDuration: newDuration,
+    //       };
+    //       upperBound = newDuration;
+    //     }
 
-        await this.channelCache.recordPlayback(
-          redirectChannels[i],
-          req.startTime,
-          lineupItem,
-        );
-      }
-    }
+    //     await this.channelCache.recordPlayback(
+    //       redirectChannels[i],
+    //       req.startTime,
+    //       lineupItem,
+    //     );
+    //   }
+    // }
 
     await this.channelCache.recordPlayback(
       channel.uuid,
@@ -318,58 +330,35 @@ export class StreamProgramCalculator {
     // This is an optimization. We should have precalculated offsets on the channel
     // We can find the current playing index using binary search on these, just like
     // when creating the TV guide.
-    // TODO: We should make this required before v1.0
-    if (channelLineup.startTimeOffsets) {
-      const timeSinceStart = timestamp - channel.startTime;
-      // How far into the current program cycle are we.
-      const elapsed =
-        timeSinceStart < channel.duration
-          ? timeSinceStart
-          : timeSinceStart % channel.duration;
+    const timeSinceStart = timestamp - channel.startTime;
+    // How far into the current program cycle are we.
+    const elapsed =
+      timeSinceStart < channel.duration
+        ? timeSinceStart
+        : timeSinceStart % channel.duration;
 
-      const programIndex =
-        channelLineup.startTimeOffsets.length === 1
-          ? 0
-          : binarySearchRange(channelLineup.startTimeOffsets, elapsed);
+    const programIndex =
+      channelLineup.startTimeOffsets.length === 1
+        ? 0
+        : binarySearchRange(channelLineup.startTimeOffsets, elapsed);
 
-      if (!isNull(programIndex)) {
-        currentProgramIndex = programIndex;
-        const foundOffset = channelLineup.startTimeOffsets[programIndex];
-        // Mark how far 'into' the channel we are.
-        timeElapsed = elapsed - foundOffset;
-        const program = channelLineup.items[programIndex];
-        if (timeElapsed > program.durationMs - SLACK) {
-          // Go to the next program if we're very close to the end
-          // of the current one. No sense in starting a brand new
-          // stream for a couple of seconds.
-          timeElapsed = 0;
-          currentProgramIndex = (programIndex + 1) % channelLineup.items.length;
-        }
-      } else {
-        // Throw below.
+    if (!isNull(programIndex)) {
+      currentProgramIndex = programIndex;
+      const foundOffset = channelLineup.startTimeOffsets[programIndex];
+      // Mark how far 'into' the channel we are.
+      timeElapsed = elapsed - foundOffset;
+      const program = channelLineup.items[programIndex];
+      if (timeElapsed > program.durationMs - SLACK) {
+        // Go to the next program if we're very close to the end
+        // of the current one. No sense in starting a brand new
+        // stream for a couple of seconds.
         timeElapsed = 0;
-        currentProgramIndex = -1;
+        currentProgramIndex = (programIndex + 1) % channelLineup.items.length;
       }
     } else {
-      // Original logic - this is a fallback now.
-      timeElapsed = (timestamp - channel.startTime) % channel.duration;
-      for (const [program, index] of zipWithIndex(channelLineup.items)) {
-        if (timeElapsed - program.durationMs < 0) {
-          // We found the program we are looking for
-          currentProgramIndex = index;
-
-          if (
-            program.durationMs > 2 * SLACK &&
-            timeElapsed > program.durationMs - SLACK
-          ) {
-            timeElapsed = 0;
-            currentProgramIndex = (index + 1) % channelLineup.items.length;
-          }
-          break;
-        } else {
-          timeElapsed -= program.durationMs;
-        }
-      }
+      // Throw below.
+      timeElapsed = 0;
+      currentProgramIndex = -1;
     }
 
     if (currentProgramIndex === -1) {
@@ -465,30 +454,32 @@ export class StreamProgramCalculator {
   // 2b. If no fillter content is found, then pad with more offline time
   // 3. Return the currently playing "real" program
   async createLineupItem(
-    activeProgram: StrictExclude<EnrichedLineupItem, RedirectStreamLineupItem>,
-    timeElapsed: number,
+    // activeProgram: StrictExclude<EnrichedLineupItem, RedirectStreamLineupItem>,
+    // timeElapsed: number,
+    { program, timeElapsed }: ProgramAndTimeElapsed,
+    streamDuration: number,
     channel: Channel,
   ): Promise<StreamLineupItem> {
-    // Start time of a file is never consistent unless 0. Run time of an episode can vary.
-    // When within 30 seconds of start time, just make the time 0 to smooth things out
-    // Helps prevents losing first few seconds of an episode upon lineup change
-    const beginningOffset = 0;
-    let streamDuration = activeProgram.duration - timeElapsed;
+    if (program.type === 'redirect') {
+      throw new Error(
+        'Should be impossible. Redirects must be resolved before calling this method',
+      );
+    }
 
-    if (activeProgram.type === 'error') {
+    if (program.type === 'error') {
       return {
         type: 'error',
         title: 'Error',
-        error: activeProgram.error,
+        error: program.error,
         streamDuration,
         duration: streamDuration,
         startOffset: 0,
-        beginningOffset,
-        programBeginMs: activeProgram.programBeginMs,
+        // beginningOffset,
+        programBeginMs: program.programBeginMs,
       };
     }
 
-    if (activeProgram.type === 'offline') {
+    if (program.type === 'offline') {
       //offline case
       //look for a random filler to play
       const fillerPrograms = await this.fillerDB.getFillersFromChannel(
@@ -562,11 +553,11 @@ export class StreamProgramCalculator {
             ),
             duration: filler.duration,
             programId: filler.uuid,
-            beginningOffset,
+            // beginningOffset,
             externalSourceId: externalInfo.externalSourceId!,
             plexFilePath: nullToUndefined(externalInfo.externalFilePath),
             programType: filler.type,
-            programBeginMs: activeProgram.programBeginMs,
+            programBeginMs: program.programBeginMs,
             fillerId: filler.uuid,
           } satisfies CommercialStreamLineupItem;
         }
@@ -581,19 +572,19 @@ export class StreamProgramCalculator {
         type: 'offline',
         title: 'Channel Offline',
         streamDuration,
-        beginningOffset,
+        // beginningOffset,
         duration: streamDuration,
         startOffset: 0,
-        programBeginMs: activeProgram.programBeginMs,
+        programBeginMs: program.programBeginMs,
       };
     }
 
     return {
-      ...activeProgram,
+      ...program,
       type: 'program',
       startOffset: timeElapsed,
       streamDuration,
-      beginningOffset: timeElapsed,
+      // beginningOffset: timeElapsed,
     };
   }
 }

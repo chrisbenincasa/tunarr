@@ -119,7 +119,7 @@ export const LineupSchema = z.object({
   // determine a start timestamp for a given program by
   // pulling the offset at a given index and adding it to
   // a "start" time timestamp.
-  startTimeOffsets: z.array(z.number()).optional(),
+  startTimeOffsets: z.array(z.number()),
 
   //
   dynamicContentConfig: DynamicContentConfigSchema.optional(),

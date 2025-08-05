@@ -53,7 +53,6 @@ import {
   nth,
   omitBy,
   partition,
-  reduce,
   reject,
   sum,
   sumBy,
@@ -98,6 +97,7 @@ import {
   UpdateChannelLineupRequest,
 } from './interfaces/IChannelDB.ts';
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
+import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
   AllProgramGroupingFields,
   MinimalProgramGroupingFields,
@@ -1441,14 +1441,7 @@ export class ChannelDB implements IChannelDB {
         data.items = newLineup.items;
         data.startTimeOffsets =
           newLineup.startTimeOffsets ??
-          reduce(
-            newLineup.items,
-            (acc, item, index) => {
-              acc.push(acc[index] + item.durationMs);
-              return acc;
-            },
-            [0],
-          );
+          calculateStartTimeOffsets(newLineup.items);
       }
 
       if (isDefined(newLineup.schedule)) {
