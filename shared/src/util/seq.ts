@@ -6,6 +6,7 @@ import {
   isNil,
   sortBy,
 } from 'lodash-es';
+import type { NonEmptyArray } from 'ts-essentials';
 
 export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
   return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
@@ -104,6 +105,10 @@ export function collectMapValues<ValueType, ReturnType>(
   return results;
 }
 
+export function groupBy<T, Key extends string | number | symbol>(
+  arr: NonEmptyArray<T>,
+  f: (t: T) => Key,
+): Record<Key, NonEmptyArray<T>>;
 export function groupBy<T, Key extends string | number | symbol>(
   arr: T[] | null | undefined,
   f: (t: T) => Key,

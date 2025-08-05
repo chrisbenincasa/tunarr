@@ -12,6 +12,7 @@ export const fillerListsQuery = (apiClient: ApiClient) =>
   queryOptions({
     queryKey: ['fillers'],
     queryFn: () => apiClient.getFillerLists(),
+    staleTime: 1000 * 60 * 5,
   });
 
 export const useFillerLists = (

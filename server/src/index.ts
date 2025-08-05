@@ -1,5 +1,5 @@
 import dotenv from '@dotenvx/dotenvx';
-dotenv.config({ debug: true });
+dotenv.config({ debug: true, ignore: ['MISSING_ENV_FILE'] });
 
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';

@@ -162,14 +162,6 @@ export function groupByAndMapAsync<
   );
 }
 
-// export async function forEachAsync<T>(arr: Nilable<ArrayLike<T> | object | string>) {
-//   if (isNil(arr)) {
-//     return;
-//   }
-
-//   for (const c of)
-// }
-
 type mapAsyncSeq2Opts = {
   ms?: number;
   parallelism?: number;
@@ -392,6 +384,16 @@ export async function attempt<T>(f: () => T | PromiseLike<T>): Promise<Try<T>> {
 
     throw e; // Unhandled
   }
+}
+
+export function retrySimple<T>(f: () => Nilable<T>, times: number): Nilable<T> {
+  for (let i = 0; i < times; i++) {
+    const res = f();
+    if (res) {
+      return res;
+    }
+  }
+  return;
 }
 
 function enumKeys<O extends object, K extends keyof O = keyof O>(obj: O): K[] {

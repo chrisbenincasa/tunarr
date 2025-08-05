@@ -13,9 +13,11 @@ import {
   type MultiExternalId,
 } from '@tunarr/types';
 import type {
+  BaseCustomShowProgrammingSlot,
   BaseMovieProgrammingSlot,
   BaseShowProgrammingSlot,
   BaseSlot,
+  FillerProgrammingSlot,
 } from '@tunarr/types/api';
 import type {
   CondensedCustomProgram,
@@ -31,22 +33,32 @@ import {
   last,
   map,
   reduce,
+  reject,
   some,
+  sortBy,
+  uniqBy,
 } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import { retrySimple } from '../../util/index.ts';
+import {
+  FillerProgramIterator,
+  FillerProgramIterator as WeightedFillerProgramIterator,
+} from './FillerProgramIterator.ts';
+import { FlexProgramIterator } from './FlexProgramIterator.ts';
+import { ProgramChunkedShuffle } from './ProgramChunkedShuffle.ts';
 import type { ProgramIterator } from './ProgramIterator.js';
 import {
-  FlexProgramIterator,
+  fillerSlotIteratorKey,
   getProgramOrderer,
-  ProgramChunkedShuffle,
-  ProgramOrdereredIterator,
-  ProgramShuffler,
   slotIteratorKey,
-  StaticProgramIterator,
-  FillerProgramIterator as WeightedFillerProgramIterator,
 } from './ProgramIterator.js';
+import { ProgramOrdereredIterator } from './ProgramOrdereredIterator.ts';
+import { ProgramShuffler } from './ProgramShuffler.ts';
+import type { PaddedProgram } from './RandomSlotsService.ts';
+import type { SlotImpl } from './SlotImpl.ts';
+import { StaticProgramIterator } from './StaticProgramIterator.ts';
 
 type ProgramMapping = {
   [K in 'content' | 'redirect' | 'custom' | 'filler']: Record<
@@ -183,7 +195,7 @@ export function createProgramIterators(
   programBySlotType: ProgramMapping,
   random: Random,
 ): Record<SlotIteratorKey, ProgramIterator> {
-  return reduce(
+  const iteratorsFromSlots = reduce(
     slots,
     (acc, slot) => {
       const id = slotIteratorKey(slot);
@@ -299,6 +311,74 @@ export function createProgramIterators(
     },
     {} as Record<SlotIteratorKey, ProgramIterator>,
   );
+
+  const slotFiller = uniqBy(
+    slots.filter(slotMayHaveFiller).flatMap((slot) => slot.filler ?? []),
+    ({ fillerListId }) => fillerListId,
+  );
+
+  for (const fillerDef of slotFiller) {
+    const fakeSlot = {
+      type: 'filler',
+      fillerListId: fillerDef.fillerListId,
+      order: 'shuffle_prefer_short',
+      decayFactor: 0.5,
+      durationWeighting: 'linear',
+      recoveryFactor: 0.05,
+    } satisfies FillerProgrammingSlot;
+
+    const iteratorKey = slotIteratorKey(fakeSlot);
+    const slotId = `filler.${fillerDef.fillerListId}`;
+
+    // Already made this.
+    if (iteratorsFromSlots[iteratorKey]) {
+      continue;
+    }
+    const programs = programBySlotType.filler[slotId] ?? [];
+    if (isEmpty(programs)) {
+      throw new Error('Cannot schedule an empty filler list slot.');
+    }
+    iteratorsFromSlots[iteratorKey] = new WeightedFillerProgramIterator(
+      programs as NonEmptyArray<FillerProgram>,
+      fakeSlot,
+      random,
+    );
+  }
+  return iteratorsFromSlots;
+}
+
+export function slotMayHaveFiller(
+  slot: BaseSlot,
+): slot is
+  | BaseMovieProgrammingSlot
+  | BaseShowProgrammingSlot
+  | BaseCustomShowProgrammingSlot {
+  return (
+    slot.type === 'show' || slot.type === 'movie' || slot.type === 'custom-show'
+  );
+}
+
+export function slotFillerIterators(
+  slot: BaseSlot,
+  map: Record<SlotIteratorKey, ProgramIterator>,
+): Record<string, FillerProgramIterator> {
+  if (!slotMayHaveFiller(slot)) {
+    return {};
+  }
+  if (!slot.filler) {
+    return {};
+  }
+
+  const out: Record<string, FillerProgramIterator> = {};
+  for (const filler of slot.filler) {
+    const it =
+      map[fillerSlotIteratorKey(filler.fillerListId, 'shuffle_prefer_short')];
+    if (it && it instanceof FillerProgramIterator) {
+      out[filler.fillerListId] = it;
+    }
+  }
+
+  return out;
 }
 
 function getContentProgramIterator(
@@ -454,4 +534,152 @@ export function createPaddedProgram(program: ChannelProgram, padMs: number) {
     padMs: shouldPad ? padAmount : 0,
     totalDuration: program.duration + (shouldPad ? padAmount : 0),
   };
+}
+
+// Exported for testing only
+export function distributeFlex(
+  programs: PaddedProgram[],
+  padMs: number,
+  remainingTime: number,
+) {
+  const relevantPrograms = reject(
+    programs,
+    ({ program }) => program.type === 'filler',
+  );
+
+  if (relevantPrograms.length === 0) {
+    return;
+  }
+
+  const div = Math.floor(remainingTime / padMs);
+  const mod = remainingTime % padMs;
+  // Add leftover flex to end
+  last(relevantPrograms)!.padMs += mod;
+  last(relevantPrograms)!.totalDuration += mod;
+
+  // Padded programs sorted by least amount of existing padding
+  // along with their original index in the programs array
+  const sortedPads = sortBy(
+    map(relevantPrograms, ({ padMs }, index) => ({ padMs, index })),
+    ({ padMs }) => padMs,
+  );
+
+  forEach(relevantPrograms, (_, i) => {
+    let q = Math.floor(div / relevantPrograms.length);
+    if (i < div % relevantPrograms.length) {
+      q++;
+    }
+    const extraPadding = q * padMs;
+    relevantPrograms[sortedPads[i].index].padMs += extraPadding;
+    relevantPrograms[sortedPads[i].index].totalDuration += extraPadding;
+  });
+}
+
+export function addFillerToFixedSlot(
+  remainingTime: number,
+  slot: SlotImpl<BaseSlot>,
+  contentPrograms: NonEmptyArray<PaddedProgram>,
+) {
+  if (remainingTime <= 0) {
+    return { programs: contentPrograms, remainingTime };
+  }
+
+  const newPaddedPrograms: NonEmptyArray<PaddedProgram> = [...contentPrograms];
+  remainingTime = maybeAddFillerOfType(
+    'pre',
+    remainingTime,
+    slot,
+    contentPrograms,
+    newPaddedPrograms,
+  );
+  remainingTime = maybeAddFillerOfType(
+    'post',
+    remainingTime,
+    slot,
+    contentPrograms,
+    newPaddedPrograms,
+  );
+
+  if (remainingTime > 0 && slot.hasFillerOfType('head')) {
+    const filler = retrySimple(
+      () =>
+        slot.getFillerOfType('head', {
+          slotDuration: remainingTime,
+          timeCursor: -1,
+        }),
+      3,
+    );
+
+    if (filler) {
+      remainingTime -= filler.duration;
+      newPaddedPrograms.unshift({
+        padMs: 0,
+        program: filler,
+        totalDuration: filler.duration,
+      });
+    }
+  }
+
+  if (remainingTime > 0 && slot.hasFillerOfType('tail')) {
+    const filler = retrySimple(
+      () =>
+        slot.getFillerOfType('tail', {
+          slotDuration: remainingTime,
+          timeCursor: -1,
+        }),
+      3,
+    );
+
+    if (filler) {
+      remainingTime -= filler.duration;
+      newPaddedPrograms.push({
+        padMs: 0,
+        program: filler,
+        totalDuration: filler.duration,
+      });
+    }
+  }
+
+  return { programs: newPaddedPrograms, remainingTime };
+}
+
+export function maybeAddFillerOfType(
+  fillerType: 'pre' | 'post',
+  remainingTime: number,
+  slot: SlotImpl<BaseSlot>,
+  contentPrograms: NonEmptyArray<PaddedProgram>,
+  workingPrograms: NonEmptyArray<PaddedProgram>,
+): number {
+  if (!slot.hasFillerOfType(fillerType)) {
+    return remainingTime;
+  }
+
+  for (let i = 0; i < contentPrograms.length; i++) {
+    if (remainingTime <= 0) {
+      break;
+    }
+
+    if (slot.hasFillerOfType(fillerType)) {
+      const filler = retrySimple(
+        () =>
+          slot.getFillerOfType(fillerType, {
+            slotDuration: remainingTime,
+            timeCursor: -1,
+          }),
+        3,
+      );
+
+      if (filler) {
+        remainingTime -= filler.duration;
+
+        workingPrograms.splice(fillerType === 'pre' ? i : i + 1, 0, {
+          padMs: 0,
+          program: filler,
+          totalDuration: filler.duration,
+        });
+      }
+    }
+  }
+
+  return remainingTime;
 }
