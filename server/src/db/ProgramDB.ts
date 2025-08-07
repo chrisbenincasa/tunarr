@@ -32,7 +32,13 @@ import {
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable, interfaces } from 'inversify';
-import { CaseWhenBuilder, Kysely, NotNull, UpdateResult } from 'kysely';
+import {
+  CaseWhenBuilder,
+  InsertResult,
+  Kysely,
+  NotNull,
+  UpdateResult,
+} from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
@@ -1208,9 +1214,12 @@ export class ProgramDB implements IProgramDB {
     if (existing) {
       let wasUpdated = false;
       const missingAssociation =
-        existing.type === 'season' &&
-        dao.showUuid &&
-        dao.showUuid !== existing.showUuid;
+        (existing.type === 'season' &&
+          dao.showUuid &&
+          dao.showUuid !== existing.showUuid) ||
+        (existing.type === 'album' &&
+          dao.artistUuid &&
+          dao.artistUuid !== existing.artistUuid);
       const differentVersion = existing.canonicalId !== dao.canonicalId;
       const shouldUpdate =
         forceUpdate || differentVersion || missingAssociation;
@@ -1299,7 +1308,9 @@ export class ProgramDB implements IProgramDB {
     newIds: NewSingleOrMultiProgramGroupingExternalId[],
     tx: Kysely<DB> = this.db,
   ) {
-    devAssert(uniq(existingIds.map((id) => id.mediaSourceId)).length === 1);
+    devAssert(
+      uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length === 1,
+    );
     devAssert(uniq(existingIds.map((id) => id.libraryId)).length === 1);
     devAssert(uniq(newIds.map((id) => id.libraryId)).length === 1);
 
@@ -2000,7 +2011,7 @@ export class ProgramDB implements IProgramDB {
       | NewProgramGroupingExternalId
     )[],
     tx: Kysely<DB> = this.db,
-  ) {
+  ): Promise<void> {
     if (ids.length === 0) {
       return;
     }
@@ -2009,38 +2020,49 @@ export class ProgramDB implements IProgramDB {
       isValidSingleExternalIdType(id.sourceType),
     );
 
-    return await Promise.all([
-      tx
-        .insertInto('programGroupingExternalId')
-        .values(singles.map(toInsertableProgramGroupingExternalId))
-        .onConflict((oc) =>
-          oc
-            .columns(['groupUuid', 'sourceType'])
-            .where('mediaSourceId', 'is', null)
-            .doUpdateSet((eb) => ({
-              updatedAt: eb.ref('excluded.updatedAt'),
-              externalFilePath: eb.ref('excluded.externalFilePath'),
-              groupUuid: eb.ref('excluded.groupUuid'),
-              externalKey: eb.ref('excluded.externalKey'),
-            })),
-        )
-        .executeTakeFirstOrThrow(),
-      tx
-        .insertInto('programGroupingExternalId')
-        .values(multiples.map(toInsertableProgramGroupingExternalId))
-        .onConflict((oc) =>
-          oc
-            .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
-            .where('mediaSourceId', 'is not', null)
-            .doUpdateSet((eb) => ({
-              updatedAt: eb.ref('excluded.updatedAt'),
-              externalFilePath: eb.ref('excluded.externalFilePath'),
-              groupUuid: eb.ref('excluded.groupUuid'),
-              externalKey: eb.ref('excluded.externalKey'),
-            })),
-        )
-        .executeTakeFirstOrThrow(),
-    ]);
+    const promises: Promise<InsertResult>[] = [];
+
+    if (singles.length > 0) {
+      promises.push(
+        tx
+          .insertInto('programGroupingExternalId')
+          .values(singles.map(toInsertableProgramGroupingExternalId))
+          .onConflict((oc) =>
+            oc
+              .columns(['groupUuid', 'sourceType'])
+              .where('mediaSourceId', 'is', null)
+              .doUpdateSet((eb) => ({
+                updatedAt: eb.ref('excluded.updatedAt'),
+                externalFilePath: eb.ref('excluded.externalFilePath'),
+                groupUuid: eb.ref('excluded.groupUuid'),
+                externalKey: eb.ref('excluded.externalKey'),
+              })),
+          )
+          .executeTakeFirstOrThrow(),
+      );
+    }
+
+    if (multiples.length > 0) {
+      promises.push(
+        tx
+          .insertInto('programGroupingExternalId')
+          .values(multiples.map(toInsertableProgramGroupingExternalId))
+          .onConflict((oc) =>
+            oc
+              .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
+              .where('mediaSourceId', 'is not', null)
+              .doUpdateSet((eb) => ({
+                updatedAt: eb.ref('excluded.updatedAt'),
+                externalFilePath: eb.ref('excluded.externalFilePath'),
+                groupUuid: eb.ref('excluded.groupUuid'),
+                externalKey: eb.ref('excluded.externalKey'),
+              })),
+          )
+          .executeTakeFirstOrThrow(),
+      );
+    }
+
+    await Promise.all(promises);
   }
 
   private schedulePlexExternalIdsTask(upsertedPrograms: ProgramDao[]) {

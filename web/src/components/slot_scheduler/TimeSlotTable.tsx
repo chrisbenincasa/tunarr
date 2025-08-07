@@ -13,11 +13,11 @@ import {
   Tabs,
   Tooltip,
 } from '@mui/material';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
-  capitalize,
   filter,
   find,
   identity,
@@ -257,10 +257,7 @@ export const TimeSlotTable = () => {
             case 'show':
             case 'custom-show':
             case 'filler':
-              return originalRow.order
-                .split('_')
-                .map((x) => capitalize(x))
-                .join(' ');
+              return prettifySnakeCaseString(originalRow.order);
           }
         },
         id: 'programOrder',

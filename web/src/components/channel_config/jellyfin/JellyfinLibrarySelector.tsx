@@ -5,10 +5,12 @@ import { capitalize, find, isEmpty, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Jellyfin } from '../../../helpers/constants.ts';
 import { sortJellyfinLibraries } from '../../../helpers/jellyfinUtil.ts';
+import { isNonEmptyString } from '../../../helpers/util.ts';
 import {
   useJellyfinGenres,
   useJellyfinUserLibraries,
 } from '../../../hooks/jellyfin/useJellyfinApi.ts';
+import { useMediaSourceLibraries } from '../../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { Route } from '../../../routes/channels_/$channelId/programming/add.tsx';
 import useStore from '../../../store/index.ts';
 import {
@@ -28,6 +30,12 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
   const navigate = Route.useNavigate();
   const knownMedia = useKnownMedia();
   const selectedGenre = useStore((s) => s.currentMediaGenre);
+
+  const { data: libraries } = useMediaSourceLibraries(
+    selectedServer?.id ?? tag(''),
+    isNonEmptyString(selectedServer?.id),
+  );
+  console.log(libraries);
 
   const { data: jellyfinLibraries } = useJellyfinUserLibraries(
     selectedServer?.id ?? '',

@@ -11,6 +11,7 @@ import { JellyfinMediaSourceTvShowScanner } from './scanner/JellyfinMediaSourceT
 import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourceMovieLibraryScanner.ts';
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
 import { MediaSourceProgressService } from './scanner/MediaSourceProgressService.ts';
+import { MediaSourceScanCoordinator } from './scanner/MediaSourceScanCoordinator.ts';
 import type {
   GenericMediaSourceScanner,
   GenericMediaSourceScannerFactory,
@@ -75,4 +76,5 @@ export const ServicesModule = new ContainerModule((bind) => {
   });
 
   bind(MediaSourceProgressService).toSelf().inSingletonScope();
+  bind(MediaSourceScanCoordinator).toSelf().inSingletonScope();
 });

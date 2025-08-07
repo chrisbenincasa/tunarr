@@ -8,6 +8,7 @@ import {
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { MediaSourceId } from '@tunarr/types/schemas';
 import { useCallback } from 'react';
+import type { StrictOmit } from 'ts-essentials';
 import type { ApiClient } from '../../external/api.ts';
 import { queryClient } from '../../queryClient.ts';
 import type { Maybe } from '../../types/util.ts';
@@ -34,7 +35,9 @@ const useUpdateQueryCachedLibraries = () => {
     async (
       mediaSourceId: MediaSourceId,
       libraryId: string,
-      mutateLibrary: (lib: MediaSourceLibrary) => MediaSourceLibrary,
+      mutateLibrary: (
+        lib: StrictOmit<MediaSourceLibrary, 'mediaSource'>,
+      ) => StrictOmit<MediaSourceLibrary, 'mediaSource'>,
     ) => {
       const librariesQueryKey = MediaSourceLibrariesQueryKey(mediaSourceId);
       await queryClient.cancelQueries({ queryKey: librariesQueryKey });
@@ -44,7 +47,11 @@ const useUpdateQueryCachedLibraries = () => {
       queryClient.setQueryData(librariesQueryKey, (prev) => {
         return prev?.map((library) => {
           if (library.id === libraryId) {
-            return mutateLibrary(library);
+            const out = mutateLibrary(library);
+            return {
+              ...out,
+              mediaSource: library.mediaSource,
+            };
           }
           return library;
         });

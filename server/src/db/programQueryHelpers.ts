@@ -231,6 +231,7 @@ export function withProgramGroupingExternalIds(
     'sourceType',
     'externalSourceId',
     'mediaSourceId',
+    'libraryId',
   ],
 ) {
   return jsonArrayFrom(

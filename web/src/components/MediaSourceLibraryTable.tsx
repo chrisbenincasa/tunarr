@@ -2,6 +2,7 @@ import { Radar, Refresh, VideoLibrary } from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
 import { capitalize, isEqual } from 'lodash-es';
@@ -174,7 +175,8 @@ export const MediaSourceLibraryTable = () => {
       },
       {
         header: 'Media Type',
-        accessorKey: 'mediaType',
+        id: 'mediaType',
+        accessorFn: ({ mediaType }) => prettifySnakeCaseString(mediaType),
         size: 150,
         grow: false,
       },

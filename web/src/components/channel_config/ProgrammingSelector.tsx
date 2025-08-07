@@ -2,10 +2,12 @@ import {
   Alert,
   Box,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import { capitalize, find, isEmpty, isUndefined, map } from 'lodash-es';
@@ -26,6 +28,7 @@ import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceBut
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
 import { EmbyProgrammingSelector } from './emby/EmbyProgrammingSelector.tsx';
+import { ImportedLibrarySelector } from './ImportedLibrarySeletor.tsx';
 import { JellyfinLibrarySelector } from './jellyfin/JellyfinLibrarySelector.tsx';
 import { JellyfinProgrammingSelector } from './jellyfin/JellyfinProgrammingSelector.tsx';
 import { PlexLibrarySelector } from './plex/PlexLibrarySelector.tsx';
@@ -156,8 +159,8 @@ export const ProgrammingSelector = ({
             Connect Media Source
           </Typography>
           <Typography sx={{ mb: 3 }} align="left">
-            To use Tunarr, you need to first connect a Plex or Jellyfin library.
-            This will allow you to build custom channels with your content.
+            To use Tunarr, you need to first connect a media source. This will
+            allow you to build custom channels with your content.
           </Typography>
 
           <Alert
@@ -179,35 +182,35 @@ export const ProgrammingSelector = ({
       return;
     }
 
-    // if (useSyncedSources) {
-    //   const libraries = selectedServer.libraries.filter((lib) => lib.enabled);
-    //   if (libraries.length === 0) {
-    //     return;
-    //   }
+    if (useSyncedSources) {
+      // const libraries = selectedServer.libraries.filter((lib) => lib.enabled);
+      // if (libraries.length === 0) {
+      //   return;
+      // }
 
-    //   const items = libraries.map((lib) => {
-    //     return (
-    //       <MenuItem key={lib.id} value={lib.id}>
-    //         {lib.name}
-    //       </MenuItem>
-    //     );
-    //   });
+      // const items = libraries.map((lib) => {
+      //   return (
+      //     <MenuItem key={lib.id} value={lib.id}>
+      //       {lib.name}
+      //     </MenuItem>
+      //   );
+      // });
 
-    //   return (
-    //     <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
-    //       <InputLabel>Library</InputLabel>
-    //       <Select
-    //         label="Library"
-    //         value={selectedImportedLibrary?.id ?? libraries[0].id}
-    //         onChange={(e) => onLibraryChange(e.target.value)}
-    //       >
-    //         {items}
-    //       </Select>
-    //     </FormControl>
-    //   );
-    // }
+      // return (
+      //   <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
+      //     <InputLabel>Library</InputLabel>
+      //     <Select
+      //       label="Library"
+      //       value={selectedImportedLibrary?.id ?? libraries[0].id}
+      //       onChange={(e) => onLibraryChange(e.target.value)}
+      //     >
+      //       {items}
+      //     </Select>
+      //   </FormControl>
+      // );
+      return <ImportedLibrarySelector initialLibraryId={initialLibraryId} />;
+    }
 
-    const libraryPicker: React.ReactNode = null;
     switch (selectedServer.type) {
       case Plex: {
         return <PlexLibrarySelector initialLibraryId={initialLibraryId} />;
@@ -219,8 +222,6 @@ export const ProgrammingSelector = ({
         return <EmbyLibrarySelector initialLibraryId={initialLibraryId} />;
       }
     }
-
-    return <>{libraryPicker}</>;
   };
 
   const hasAnySources = !isEmpty(mediaSources) || !isEmpty(customShows);
@@ -264,6 +265,15 @@ export const ProgrammingSelector = ({
           )}
 
           {renderLibraryChoices()}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useSyncedSources}
+                onChange={(_, v) => setUseSyncedSources(v)}
+              />
+            }
+            label="Show only synced"
+          />
           <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
       </Box>

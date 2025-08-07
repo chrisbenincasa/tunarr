@@ -1,3 +1,4 @@
+import type { UseSuspenseQueryOptions } from '@tanstack/react-query';
 import {
   type DefaultError,
   type QueryClient,
@@ -57,7 +58,7 @@ export function useApiSuspenseQuery<
   TQueryKey extends QueryKey = QueryKey,
 >(
   options: Omit<
-    UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+    UseSuspenseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
     'queryFn'
   > & {
     queryFn: (

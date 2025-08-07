@@ -26,6 +26,7 @@ import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { MeilisearchService } from './services/SearchService.ts';
 import { TVGuideService } from './services/TvGuideService.ts';
 import { CacheImageService } from './services/cacheImageService.js';
+import { MediaSourceScanCoordinator } from './services/scanner/MediaSourceScanCoordinator.ts';
 import { ChannelCache } from './stream/ChannelCache.js';
 import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
@@ -77,6 +78,9 @@ export class ServerContext {
 
   @inject(MeilisearchService)
   public readonly searchService!: MeilisearchService;
+
+  @inject(MediaSourceScanCoordinator)
+  public readonly mediaSourceScanCoordinator: MediaSourceScanCoordinator;
 }
 
 export class ServerRequestContext {

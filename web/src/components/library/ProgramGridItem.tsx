@@ -25,11 +25,11 @@ import type { GridItemProps } from '../channel_config/MediaItemGrid.tsx';
 
 function isTerminalItemType(program: ProgramLike) {
   return (
-    program.type !== 'movie' &&
-    program.type !== 'music_video' &&
-    program.type !== 'episode' &&
-    program.type !== 'track' &&
-    program.type !== 'other_video'
+    program.type === 'movie' ||
+    program.type === 'music_video' ||
+    program.type === 'episode' ||
+    program.type === 'track' ||
+    program.type === 'other_video'
   );
 }
 
@@ -80,18 +80,6 @@ export const ProgramGridItem = memo(
         [],
       );
 
-      // const onSelect = useCallback(
-      //   (item: PlexMedia) => {
-      //     addPlexSelectedMedia(server, [item]);
-      //   },
-      //   [server],
-      // );
-
-      // const { data: childItems } = usePlexTyped<PlexChildListing>(
-      //   server.id,
-      //   genPlexChildPath(props.item),
-      //   !isTerminalItem(item) && modalOpen,
-      // );
       const childrenFilter = useMemo(() => getChildSearchFilter(item), [item]);
 
       const search = useApiQuery({
@@ -152,7 +140,6 @@ export const ProgramGridItem = memo(
               id.type === 'jellyfin',
           );
 
-          console.log(item.identifiers);
           if (!idToUse) {
             return null;
           }
@@ -196,9 +183,8 @@ export const ProgramGridItem = memo(
           ({
             itemId: item.uuid,
             hasThumbnail: true,
-            childCount: !isTerminalItemType(item)
-              ? (item.childCount ?? 0)
-              : null,
+            childCount: null,
+            mayHaveChildren: !isTerminalItemType(item),
             title: item.title,
             subtitle: extractSubtitle(item),
             thumbnailUrl: thumbnailUrlFunc(item) ?? '',

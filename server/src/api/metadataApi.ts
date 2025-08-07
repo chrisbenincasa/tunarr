@@ -240,7 +240,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     if (query.asset === 'thumb' || query.asset === 'image') {
       return jellyfinClient.getThumbUrl(
         query.id.externalItemId,
-        query.imageType === 'poster' ? 'Thumb' : 'Primary',
+        query.imageType === 'poster' ? 'Primary' : 'Thumb',
       );
     } else if (query.asset === 'external-link') {
       return jellyfinClient.getExternalUrl(query.id.externalItemId);

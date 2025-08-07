@@ -5,7 +5,7 @@ export * as seq from './seq.js';
 import type { ChannelProgram, ProgramLike } from '@tunarr/types';
 import type { SearchFilterValueNode, StringOperators } from '@tunarr/types/api';
 import type { PlexMedia } from '@tunarr/types/plex';
-import { isNull, isString } from 'lodash-es';
+import { capitalize, isNull, isString } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import type { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
@@ -203,4 +203,11 @@ export function createParentFilterSearchField(
       value: [parentId],
     },
   };
+}
+
+export function prettifySnakeCaseString(str: string) {
+  return str
+    .split('_')
+    .map((x) => capitalize(x))
+    .join(' ');
 }

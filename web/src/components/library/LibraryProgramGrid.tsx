@@ -137,7 +137,13 @@ export const LibraryProgramGrid = ({
   }, [library.mediaSource.id, search.data?.pages]);
 
   const renderGridItem = (gridItemProps: GridItemProps<ProgramLike>) => {
-    return <ProgramGridItem key={gridItemProps.item.uuid} {...gridItemProps} />;
+    return (
+      <ProgramGridItem
+        key={gridItemProps.item.uuid}
+        disableSelection={disableProgramSelection}
+        {...gridItemProps}
+      />
+    );
   };
 
   return (

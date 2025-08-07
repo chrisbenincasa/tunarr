@@ -1,7 +1,13 @@
-import { Movie, MusicNote, Refresh, Tv, VideoChat } from '@mui/icons-material';
+import {
+  Movie,
+  MusicNote,
+  MusicVideo,
+  Refresh,
+  Tv,
+  VideoChat,
+} from '@mui/icons-material';
 import {
   Button,
-  capitalize,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,8 +21,10 @@ import {
   Switch,
   Tooltip,
 } from '@mui/material';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
 import { tag, type MediaSourceSettings } from '@tunarr/types';
+import { isNil } from 'lodash-es';
 import {
   useRefreshLibraryMutation,
   useUpdateLibraryMutation,
@@ -39,7 +47,7 @@ export const EditMediaSourceLibrariesDialog = ({
   const dayjs = useDayjs();
   const { data: libraries } = useMediaSourceLibraries(
     mediaSource?.id ?? tag(''),
-    !!mediaSource,
+    !isNil(mediaSource),
   );
 
   const updateLibraryMutation = useUpdateLibraryMutation();
@@ -72,7 +80,7 @@ export const EditMediaSourceLibrariesDialog = ({
       case 'other_videos':
         return <VideoChat />;
       case 'music_videos':
-        return null;
+        return <MusicVideo />;
     }
   }
 
@@ -93,7 +101,9 @@ export const EditMediaSourceLibrariesDialog = ({
               <ListItemIcon>
                 {getIconForLibraryType(library.mediaType)}
               </ListItemIcon>
-              <ListItemText secondary={capitalize(library.mediaType)}>
+              <ListItemText
+                secondary={prettifySnakeCaseString(library.mediaType)}
+              >
                 {library.name}
               </ListItemText>
               {library.enabled && (
@@ -108,6 +118,7 @@ export const EditMediaSourceLibrariesDialog = ({
                         refreshLibraryMutation.mutate({
                           libraryId: library.id,
                           mediaSourceId: mediaSource.id,
+                          forceScan: false,
                         })
                       }
                     >

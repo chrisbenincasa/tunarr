@@ -36,9 +36,6 @@ import { container } from '../container.ts';
 import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { EntityMutex } from '../services/EntityMutex.ts';
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
-import type { GenericMediaSourceScannerFactory } from '../services/scanner/MediaSourceScanner.ts';
-import { KEYS } from '../types/inject.ts';
-import { Result } from '../types/result.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
@@ -166,6 +163,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         );
 
       if (req.body.enabled) {
+        const result = await req.serverCtx.mediaSourceScanCoordinator.add({
+          libraryId: updatedLibrary.uuid,
+          forceScan: false,
+        });
+        if (!result) {
+          logger.error(
+            'Unable to schedule library ID %s for scanning',
+            updatedLibrary.uuid,
+          );
+        }
       }
 
       return res.send({
@@ -336,21 +343,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       }
 
       for (const library of libraries) {
-        const scanner = Result.attempt(() =>
-          container.get<GenericMediaSourceScannerFactory>(
-            KEYS.MediaSourceLibraryScanner,
-          )(mediaSource.type, library.mediaType),
-        ).orNull();
-
-        if (!scanner) {
-          return res.status(504).send();
-        }
-
-        scanner
-          .scan({ library, force: !!req.query.forceScan })
-          .catch((e) =>
-            logger.error(e, 'Error scanning library %s', library.uuid),
+        const result = await req.serverCtx.mediaSourceScanCoordinator.add({
+          libraryId: library.uuid,
+          forceScan: !!req.query.forceScan,
+        });
+        if (!result) {
+          logger.error(
+            'Unable to schedule library ID %s for scanning',
+            library.uuid,
           );
+        }
       }
 
       return res.status(202).send();
