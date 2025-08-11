@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.21.0](https://github.com/chrisbenincasa/tunarr/compare/v0.20.6...v0.21.0) (2025-08-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **scheduling:** ability to schedule filler directly in slot schedulers ([#1234](https://github.com/chrisbenincasa/tunarr/issues/1234))
+
+### Features
+
+* add genres endpoint and integrate genre selection in the ui for… ([#1295](https://github.com/chrisbenincasa/tunarr/issues/1295)) ([50ceb54](https://github.com/chrisbenincasa/tunarr/commit/50ceb548f9d7e183de68b4055e100b891a847830))
+* add movie nfo parser ([#1262](https://github.com/chrisbenincasa/tunarr/issues/1262)) ([3ba2aad](https://github.com/chrisbenincasa/tunarr/commit/3ba2aad889fa30d48795ac9eb28b2a4af7656aac))
+* add program stream details info to program dialog ([#1296](https://github.com/chrisbenincasa/tunarr/issues/1296)) ([d87f269](https://github.com/chrisbenincasa/tunarr/commit/d87f2699bfa150e180815ec7d2d11c1ae018f7a7))
+* add tv show and episode nfo parsers ([#1266](https://github.com/chrisbenincasa/tunarr/issues/1266)) ([555d838](https://github.com/chrisbenincasa/tunarr/commit/555d8384a75758a2ee80d3f3a48dc3a7b579f6f4))
+* **macos:** add proper macOS wrapper app ([#1290](https://github.com/chrisbenincasa/tunarr/issues/1290)) ([e293f4c](https://github.com/chrisbenincasa/tunarr/commit/e293f4cf57410a92d6d065ed54518ed00d345462))
+* **scheduling:** ability to schedule filler directly in slot schedulers ([#1234](https://github.com/chrisbenincasa/tunarr/issues/1234)) ([fed7717](https://github.com/chrisbenincasa/tunarr/commit/fed7717a82e5f464986d0f2ae3f50d4538c2fc54))
+* **scheduling:** support for flex kinds in time slots ([#1238](https://github.com/chrisbenincasa/tunarr/issues/1238)) ([7a16eab](https://github.com/chrisbenincasa/tunarr/commit/7a16eabdcbce2e619d3f5a7e6b20ab016b4150e3))
+
+
+### Bug Fixes
+
+* allow scheduling content from mixed-type Emby libraries ([a894ef4](https://github.com/chrisbenincasa/tunarr/commit/a894ef4b56c0e56a265c9894dee8483dc0698a7d))
+* ensure release action uses proper xcode version ([7c6214b](https://github.com/chrisbenincasa/tunarr/commit/7c6214b368074e5a5d2a36930f18769a1fd663cd))
+* ensure remove duplicates uses most up-to-date program list ([c6d9b79](https://github.com/chrisbenincasa/tunarr/commit/c6d9b7928543663b2f4a45ba15ed974f1b07d7f7)), closes [#1297](https://github.com/chrisbenincasa/tunarr/issues/1297)
+* fixes and simplification of stream program calculator ([#1301](https://github.com/chrisbenincasa/tunarr/issues/1301)) ([3fa2808](https://github.com/chrisbenincasa/tunarr/commit/3fa2808a6a5454004e113ee41a06bda76254e834))
+* hide scheduled filler content from EPG by default ([#1286](https://github.com/chrisbenincasa/tunarr/issues/1286)) ([d36bfd0](https://github.com/chrisbenincasa/tunarr/commit/d36bfd0299989d09b404a6f317fac5c65c79fc61))
+* only run ReconcileProgramDurationsTask when necessary ([ed09b4c](https://github.com/chrisbenincasa/tunarr/commit/ed09b4c4995e26a5e2730444a64d61c370cbde0e))
+* remove admin mode ([8fa0bac](https://github.com/chrisbenincasa/tunarr/commit/8fa0bacdb5a9f0cd6a81f33edb0a1ec5307236d3))
+* **streaming:** explicitly set software mpeg2video encoder ([6976e35](https://github.com/chrisbenincasa/tunarr/commit/6976e35dbf3cd18b29df35a719bd54dd2e64d943))
+* **streaming:** fallback to software decode when seeking with QSV ([#1276](https://github.com/chrisbenincasa/tunarr/issues/1276)) ([e8e4bac](https://github.com/chrisbenincasa/tunarr/commit/e8e4bac0f79e76759049b460b7015fbd6025e9df))
+* **streaming:** multiple fixes for image-based sub overlays on CUDA ([#1275](https://github.com/chrisbenincasa/tunarr/issues/1275)) ([bb63c46](https://github.com/chrisbenincasa/tunarr/commit/bb63c4640e69ca5c1e57b72b0786f662480b6bbb)), closes [#1272](https://github.com/chrisbenincasa/tunarr/issues/1272)
+* **streaming:** only set output pixel format on CUDA hwdownload when necessary ([3f9d3ce](https://github.com/chrisbenincasa/tunarr/commit/3f9d3ce3fd3b74d3945a89911b044127b5707cd7))
+* **streaming:** remove first_pts setting to fix audio drop/desync issues ([dde8a83](https://github.com/chrisbenincasa/tunarr/commit/dde8a839b5936c82d814128a139b3a58c97ff2ad))
+* **streaming:** remove some limits on thread counts ([#1277](https://github.com/chrisbenincasa/tunarr/issues/1277)) ([4116225](https://github.com/chrisbenincasa/tunarr/commit/4116225975d78195ef7d05bb6b92f066b9723eea))
+* **streaming:** rework hwdownload cuda filter ([04e30dc](https://github.com/chrisbenincasa/tunarr/commit/04e30dce8fa99faf797ecd625a562f37499a74c1))
+* **ui:** allow getting nvidia debug details after getting vainfo debug ([8fa0bac](https://github.com/chrisbenincasa/tunarr/commit/8fa0bacdb5a9f0cd6a81f33edb0a1ec5307236d3))
+* **ui:** fix default form state in weekly time slot editor when day is empty ([231e3bf](https://github.com/chrisbenincasa/tunarr/commit/231e3bf5932cf559c272d71f005b9c83b2a81331))
+* **ui:** fix filler list clear all button ([cd2060b](https://github.com/chrisbenincasa/tunarr/commit/cd2060b5bfa6632c292fbc65b590a557dc922a63))
+* **ui:** fix infinite API calls in Jellyfin grid ([#1300](https://github.com/chrisbenincasa/tunarr/issues/1300)) ([4a9b3a3](https://github.com/chrisbenincasa/tunarr/commit/4a9b3a3671c044820455edbc0d930ddcba130811))
+* **ui:** fix stealth mode checkbox state ([136f9fa](https://github.com/chrisbenincasa/tunarr/commit/136f9fa9a3632ff42aa2a4e730512ecd9e4836ce)), closes [#1305](https://github.com/chrisbenincasa/tunarr/issues/1305)
+* **ui:** properly filter various program types based on channel ([#1271](https://github.com/chrisbenincasa/tunarr/issues/1271)) ([8c32d8b](https://github.com/chrisbenincasa/tunarr/commit/8c32d8b233fe387a158cc2136ea6c075c2de1f6d))
+* **ui:** reording custom show programs no longer affects episode number ([#1280](https://github.com/chrisbenincasa/tunarr/issues/1280)) ([231e3bf](https://github.com/chrisbenincasa/tunarr/commit/231e3bf5932cf559c272d71f005b9c83b2a81331)), closes [#1273](https://github.com/chrisbenincasa/tunarr/issues/1273)
+* use execFile over exec when executing one-off child processes ([8fa0bac](https://github.com/chrisbenincasa/tunarr/commit/8fa0bacdb5a9f0cd6a81f33edb0a1ec5307236d3))
+* use execFile over exec when executing one-off child processes ([#1309](https://github.com/chrisbenincasa/tunarr/issues/1309)) ([8fa0bac](https://github.com/chrisbenincasa/tunarr/commit/8fa0bacdb5a9f0cd6a81f33edb0a1ec5307236d3))
+
+
+### Performance Improvements
+
+* periodically flush event loop in ReconcileProgramDurationsTask ([622b8b3](https://github.com/chrisbenincasa/tunarr/commit/622b8b33da00792ac43208d6678e784330538833))
+
 ## [0.20.6](https://github.com/chrisbenincasa/tunarr/compare/v0.20.5...v0.20.6) (2025-07-20)
 
 
