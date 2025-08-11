@@ -24,6 +24,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Use Latest Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable && corepack enable pnpm
+          pnpm --version
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,6 +38,7 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
 
       # - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
       #   run: npm audit signatures
