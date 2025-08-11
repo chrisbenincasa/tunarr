@@ -1,7 +1,6 @@
-import { useSystemSettingsSuspense } from '@/hooks/useSystemSettings.ts';
+import { useSystemState } from '@/hooks/useSystemSettings.ts';
 import type { SelectChangeEvent } from '@mui/material';
 import {
-  Alert,
   Box,
   Button,
   Divider,
@@ -54,7 +53,7 @@ export default function FfmpegSettingsPage() {
     queryFn: (apiClient) => apiClient.getFfmpegInfo(),
   });
   const queryClient = useQueryClient();
-  const systemSettings = useSystemSettingsSuspense();
+  const systemState = useSystemState();
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
@@ -161,48 +160,42 @@ export default function FfmpegSettingsPage() {
         Global Options
       </Typography>
       <Stack spacing={3} useFlexGap sx={{ mb: 2 }}>
-        {!systemSettings.data.adminMode && (
-          <Alert severity="info">
-            Tunarr must be run in admin mode in order to update the FFmpeg and
-            FFprobe executable paths. The paths can also be updated from the
-            command line.
-          </Alert>
+        {!systemState.data.isInContainer && (
+          <>
+            <FormControl fullWidth>
+              <Controller
+                control={control}
+                name="ffmpegExecutablePath"
+                render={({ field }) => (
+                  <TextField
+                    id="ffmpeg-executable-path"
+                    label="FFmpeg Executable Path"
+                    helperText={
+                      'FFmpeg version 7.1+ recommended. Check your current version in the sidebar'
+                    }
+                    {...field}
+                  />
+                )}
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <Controller
+                control={control}
+                name="ffprobeExecutablePath"
+                render={({ field }) => (
+                  <TextField
+                    id="ffprobe-executable-path"
+                    label="FFprobe Executable Path"
+                    helperText={
+                      'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
+                    }
+                    {...field}
+                  />
+                )}
+              />
+            </FormControl>
+          </>
         )}
-
-        <FormControl fullWidth>
-          <Controller
-            control={control}
-            name="ffmpegExecutablePath"
-            render={({ field }) => (
-              <TextField
-                id="ffmpeg-executable-path"
-                label="FFmpeg Executable Path"
-                helperText={
-                  'FFmpeg version 6.0+ recommended. Check your current version in the sidebar'
-                }
-                {...field}
-                disabled={!systemSettings.data.adminMode}
-              />
-            )}
-          />
-        </FormControl>
-        <FormControl fullWidth>
-          <Controller
-            control={control}
-            name="ffprobeExecutablePath"
-            render={({ field }) => (
-              <TextField
-                id="ffprobe-executable-path"
-                label="FFprobe Executable Path"
-                helperText={
-                  'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
-                }
-                {...field}
-                disabled={!systemSettings.data.adminMode}
-              />
-            )}
-          />
-        </FormControl>
         <Stack spacing={2} useFlexGap>
           <Stack spacing={2} direction={{ sm: 'column', md: 'row' }}>
             <FormControl sx={{ flexBasis: '50%' }}>

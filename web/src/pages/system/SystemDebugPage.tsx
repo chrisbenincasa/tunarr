@@ -65,7 +65,7 @@ export const SystemDebugPage = () => {
   });
 
   const handleCheckNvidia = useCallback(() => {
-    if (!checkVaapiEnabled) {
+    if (!checkNvidiaEnabled) {
       setCheckNvidiaEnabled(true);
     } else {
       queryClient
@@ -75,7 +75,7 @@ export const SystemDebugPage = () => {
         })
         .catch(console.error);
     }
-  }, [checkVaapiEnabled, queryClient]);
+  }, [checkNvidiaEnabled, queryClient]);
 
   const handleCheckVaapi = useCallback(() => {
     if (!checkVaapiEnabled) {

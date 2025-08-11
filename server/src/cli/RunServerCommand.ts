@@ -1,5 +1,4 @@
 import { container } from '@/container.js';
-import { isProduction } from '@/util/index.js';
 import assert from 'node:assert';
 import { type MarkOptional } from 'ts-essentials';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
@@ -19,7 +18,6 @@ import type { GlobalArgsType } from './types.ts';
 export type ServerArgsType = GlobalArgsType & {
   port: number;
   printRoutes: boolean;
-  admin: boolean;
   trustProxy: boolean;
 };
 
@@ -36,11 +34,6 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
       type: 'boolean',
       default: () =>
         getBooleanEnvVar(TUNARR_ENV_VARS.PRINT_ROUTES_ENV_VAR, false),
-    },
-    admin: {
-      type: 'boolean',
-      default: () =>
-        getBooleanEnvVar(TUNARR_ENV_VARS.ADMIN_MODE_ENV_VAR, !isProduction),
     },
     trustProxy: {
       type: 'boolean',

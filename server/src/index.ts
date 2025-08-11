@@ -46,7 +46,6 @@ ${chalk.blue('  |_| ')}${chalk.green(' \\___/')}${chalk.yellow(
     )}
 \n\t  ${getTunarrVersion()}
 `,
-    // serverOpts.admin ? chalk.yellow('\n  ****** ADMIN MODE *******\n') : '\n',
   );
 }
 

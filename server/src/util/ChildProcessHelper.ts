@@ -3,7 +3,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import { sanitizeForExec } from '@/util/strings.js';
 import { isEmpty } from 'lodash-es';
 import type { ExecOptions } from 'node:child_process';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import PQueue from 'p-queue';
 import { LoggerFactory } from './logging/LoggerFactory.ts';
 
@@ -35,16 +35,13 @@ export class ChildProcessHelper {
         );
 
         return await new Promise((resolve, reject) => {
-          exec(
-            `"${sanitizedPath}" ${args.join(' ')}`,
-            opts,
-            function (error, stdout, stderr) {
-              if (error !== null && !swallowError) {
-                reject(error);
-              }
-              resolve(isNonEmptyString(stdout) ? stdout : stderr);
-            },
-          );
+          execFile(sanitizedPath, args, opts, function (error, stdout, stderr) {
+            if (error !== null && !swallowError) {
+              // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+              reject(error);
+            }
+            resolve(isNonEmptyString(stdout) ? stdout : stderr);
+          });
         });
       },
       { throwOnTimeout: true },
