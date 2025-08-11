@@ -22,13 +22,13 @@ export default function ChannelEpgConfig() {
             render={({ field }) => (
               <FormControl>
                 <FormControlLabel
-                  control={<Checkbox {...field} />}
+                  control={<Checkbox {...field} checked={field.value} />}
                   label="Stealth Mode"
                 />
                 <FormHelperText>
-                  This will hide the channel from TV guides, spoofed HDHR, m3u
-                  playlist, etc. The channel can still be streamed directly or
-                  be used as a redirect target.
+                  "Stealth" channels are hidden from TV guides, spoofed HDHR,
+                  m3u playlist, etc. The channel can still be streamed directly
+                  or be used as a redirect target.
                 </FormHelperText>
               </FormControl>
             )}
