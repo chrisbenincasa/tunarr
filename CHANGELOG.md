@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.1](https://github.com/chrisbenincasa/tunarr/compare/v0.21.0...v0.21.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* **jellyfin:** user /Library/VirtualFolders endpoint for gathering user libraries ([aa6c0af](https://github.com/chrisbenincasa/tunarr/commit/aa6c0af28a170afdf109e43cef79dcf5ffca2dcf))
+* **ui:** propery re-render slot program form when type changes ([3d99ce6](https://github.com/chrisbenincasa/tunarr/commit/3d99ce6695fc174e3021951162e45a4d5ce5dda5))
+
 ## [0.21.0](https://github.com/chrisbenincasa/tunarr/compare/v0.20.6...v0.21.0) (2025-08-11)
 
 
