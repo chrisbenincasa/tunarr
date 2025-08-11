@@ -5,7 +5,6 @@ import { container } from '../container.ts';
 import { setServerOptions } from '../globals.ts';
 import { Server } from '../Server.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
-import { isProduction } from '../util/index.ts';
 import { getTunarrVersion } from '../util/version.ts';
 import { type ServerArgsType } from './RunServerCommand.ts';
 import { type GlobalArgsType } from './types.ts';
@@ -31,15 +30,6 @@ export const GenerateOpenApiCommand: CommandModule<
       type: 'boolean',
       default: () =>
         getBooleanEnvVar(TUNARR_ENV_VARS.PRINT_ROUTES_ENV_VAR, false),
-    },
-    admin: {
-      type: 'boolean',
-      default: () => {
-        return getBooleanEnvVar(
-          TUNARR_ENV_VARS.ADMIN_MODE_ENV_VAR,
-          !isProduction,
-        );
-      },
     },
     apiVersion: {
       type: 'string',

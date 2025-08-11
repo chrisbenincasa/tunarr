@@ -1,10 +1,6 @@
-import {
-  useSystemSettingsSuspense,
-  useSystemState,
-} from '@/hooks/useSystemSettings.ts';
+import { useSystemState } from '@/hooks/useSystemSettings.ts';
 import type { SelectChangeEvent } from '@mui/material';
 import {
-  Alert,
   Box,
   Button,
   Divider,
@@ -58,7 +54,6 @@ export default function FfmpegSettingsPage() {
   });
   const queryClient = useQueryClient();
   const systemState = useSystemState();
-  const systemSettings = useSystemSettingsSuspense();
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
@@ -167,14 +162,6 @@ export default function FfmpegSettingsPage() {
       <Stack spacing={3} useFlexGap sx={{ mb: 2 }}>
         {!systemState.data.isInContainer && (
           <>
-            {!systemSettings.data.adminMode && (
-              <Alert severity="info">
-                Tunarr must be run in admin mode in order to update the FFmpeg
-                and FFprobe executable paths. The paths can also be updated from
-                the command line.
-              </Alert>
-            )}
-
             <FormControl fullWidth>
               <Controller
                 control={control}
@@ -187,7 +174,6 @@ export default function FfmpegSettingsPage() {
                       'FFmpeg version 7.1+ recommended. Check your current version in the sidebar'
                     }
                     {...field}
-                    disabled={!systemSettings.data.adminMode}
                   />
                 )}
               />
@@ -204,7 +190,6 @@ export default function FfmpegSettingsPage() {
                       'FFprobe version 6.0+ recommended. Check your current version in the sidebar'
                     }
                     {...field}
-                    disabled={!systemSettings.data.adminMode}
                   />
                 )}
               />

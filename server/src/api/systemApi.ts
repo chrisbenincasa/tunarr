@@ -383,7 +383,6 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
         ...(settings.logging as Writable<LoggingSettings>),
         environmentLogLevel: envLogLevel,
       },
-      adminMode: serverOptions().admin,
     };
   }
 };

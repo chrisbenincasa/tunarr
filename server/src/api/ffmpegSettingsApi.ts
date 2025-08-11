@@ -1,4 +1,3 @@
-import { serverOptions } from '@/globals.js';
 import type { RouterPluginCallback } from '@/types/serverType.js';
 import { makeWritable } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -9,7 +8,7 @@ import {
   FfmpegSettingsSchema,
   TranscodeConfigSchema,
 } from '@tunarr/types/schemas';
-import { isError, map, merge, omit } from 'lodash-es';
+import { isError, map } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod/v4';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
@@ -65,26 +64,13 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     async (req, res) => {
       try {
         const currentSettings = req.serverCtx.settings.ffmpegSettings();
-        // Disallow updating ffmpeg/ffprobe executable paths if we are not running
-        // in admin mode.
-        let newSettings = req.body;
-        if (!serverOptions().admin) {
-          newSettings = merge(
-            {},
-            currentSettings,
-            omit(newSettings, [
-              'ffmpegExecutablePath',
-              'ffprobeExecutablePath',
-            ]),
-          );
-        } else {
-          req.body.ffmpegExecutablePath = sanitizeForExec(
-            req.body.ffmpegExecutablePath,
-          );
-          req.body.ffprobeExecutablePath = sanitizeForExec(
-            req.body.ffprobeExecutablePath,
-          );
-        }
+        const newSettings = req.body;
+        newSettings.ffmpegExecutablePath = sanitizeForExec(
+          newSettings.ffmpegExecutablePath,
+        );
+        newSettings.ffprobeExecutablePath = sanitizeForExec(
+          newSettings.ffprobeExecutablePath,
+        );
 
         await req.serverCtx.settings.updateSettings('ffmpeg', newSettings);
         const ffmpeg = req.serverCtx.settings.ffmpegSettings();
