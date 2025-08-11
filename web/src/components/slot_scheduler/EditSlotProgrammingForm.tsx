@@ -31,7 +31,7 @@ export const EditSlotProgrammingForm = ({
   programOptions,
 }: EditSlotProgramProps) => {
   const { watch, control, reset } = useFormContext<BaseSlot>();
-  const [type] = watch(['type']);
+  const type = watch('type');
   const availableTypes = useMemo(() => {
     return map(
       uniqBy(programOptions, ({ type }) => type),
@@ -91,10 +91,7 @@ export const EditSlotProgrammingForm = ({
       return;
     }
 
-    reset(newSlotForType(value), {
-      keepDefaultValues: true,
-      keepDirty: true,
-    });
+    reset(newSlotForType(value));
   };
 
   const redirectShowAutoCompleteOpts = useMemo(
