@@ -74,17 +74,6 @@ export class MediaSourceApiFactory {
 
         if (usersMeResult.isSuccess()) {
           userId = usersMeResult.get();
-        } else {
-          const adminResult = await Result.attemptAsync(() =>
-            JellyfinApiClient.findAdminUser(opts, opts.accessToken),
-          );
-
-          adminResult
-            .map((res) => res?.Id)
-            .filter(isNonEmptyString)
-            .forEach((adminUserId) => {
-              userId = adminUserId;
-            });
         }
       }
       return new JellyfinApiClient({ ...opts, userId });

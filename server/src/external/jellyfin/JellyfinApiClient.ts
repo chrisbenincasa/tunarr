@@ -30,7 +30,6 @@ import {
   union,
 } from 'lodash-es';
 import { v4 } from 'uuid';
-import { z } from 'zod/v4';
 import {
   type ApiClientOptions,
   BaseApiClient,
@@ -131,39 +130,6 @@ export class JellyfinApiClient extends BaseApiClient {
     }
   }
 
-  static async findAdminUser(
-    server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
-    apiKey: string,
-  ) {
-    try {
-      const response = await axios.get(`${server.url}/Users`, {
-        headers: {
-          Authorization: getJellyfinAuthorization(apiKey, undefined),
-        },
-      });
-
-      const users = await z.array(JellyfinUser).parseAsync(response.data);
-
-      return find(
-        users,
-        (user) =>
-          !!user.Policy?.IsAdministrator &&
-          !user.Policy?.IsDisabled &&
-          !!user.Policy?.EnableAllFolders,
-      );
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.config) {
-          new JellyfinRequestRedacter().redact(error.config);
-        }
-      }
-      LoggerFactory.root.error(error, 'Error retrieving Jellyfin users', {
-        className: JellyfinApiClient.name,
-      });
-      return;
-    }
-  }
-
   static async login(
     serverUrl: string,
     username: string,
@@ -249,23 +215,27 @@ export class JellyfinApiClient extends BaseApiClient {
   }
 
   async getUserViews(userId?: string) {
-    return this.doTypeCheckedGet('/UserViews', JellyfinLibraryItemsResponse, {
-      params: {
-        userId: userId ?? this.options.userId,
-        includeExternalContent: false,
-        presetViews: [
-          'movies',
-          'tvshows',
-          'music',
-          'playlists',
-          'folders',
-          'homevideos',
-          'boxsets',
-          'trailers',
-          'musicvideos',
-        ],
+    return this.doTypeCheckedGet(
+      '/Library/VirtualFolders',
+      JellyfinLibraryItemsResponse,
+      {
+        params: {
+          userId: userId ?? this.options.userId,
+          includeExternalContent: false,
+          presetViews: [
+            'movies',
+            'tvshows',
+            'music',
+            'playlists',
+            'folders',
+            'homevideos',
+            'boxsets',
+            'trailers',
+            'musicvideos',
+          ],
+        },
       },
-    });
+    );
   }
 
   async getItem(
