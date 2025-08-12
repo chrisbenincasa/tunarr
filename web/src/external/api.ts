@@ -59,6 +59,7 @@ export const api = makeApi([
   {
     method: 'get',
     path: '/api/channels',
+    alias: 'getChannels',
     response: z.array(ChannelSchema),
   },
   {
@@ -89,6 +90,7 @@ export const api = makeApi([
   {
     method: 'get',
     path: '/api/channels/:id',
+    alias: 'getChannel',
     parameters: parametersBuilder().addPath('id', z.string()).build(),
     response: ChannelSchema,
     errors: makeErrors([
@@ -105,6 +107,7 @@ export const api = makeApi([
   {
     method: 'get',
     path: '/api/channels/:id/programming',
+    alias: 'getChannelProgramming',
     parameters: parametersBuilder()
       .addPath('id', z.string())
       .addQueries({

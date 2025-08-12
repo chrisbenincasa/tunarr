@@ -42,9 +42,11 @@ const KEYS = {
 
   // Services
   HealthCheck: Symbol.for('HealthCheck'),
+  StartupTask: Symbol.for('StartupTask'),
   Fixer: Symbol.for('Fixer'),
   WorkerPool: Symbol.for('WorkerPool'),
   WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
+  PersistentChannelCacheProvider: Symbol.for('PersistentChannelCacheProvider'),
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 };

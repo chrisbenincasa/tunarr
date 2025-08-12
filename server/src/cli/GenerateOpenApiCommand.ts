@@ -40,15 +40,14 @@ export const GenerateOpenApiCommand: CommandModule<
     console.log('Generating OpenAPI doc for version ' + args.apiVersion);
     setServerOptions(args);
     const server = container.get<Server>(Server);
-    await server.initAndRun();
+    await server.runServer();
     await server.close();
     const version = getTunarrVersion();
     const outputDir = path.resolve(process.cwd(), '..', 'docs', 'generated');
     const fileName = `tunarr-v${version}-openapi.json`;
-    await fs.writeFile(
-      path.join(outputDir, fileName),
-      JSON.stringify(server.getOpenApiDocument()),
-    );
+    const outName = path.join(outputDir, fileName);
+    await fs.writeFile(outName, JSON.stringify(server.getOpenApiDocument()));
+    console.log(`Wrote OpenAPI document to ${outName}`);
     process.exit(0);
   },
 };

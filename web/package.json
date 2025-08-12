@@ -29,10 +29,10 @@
     "@tanstack/react-router": "^1.95.1",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
-    "@tunarr/zodios-core": "^11.0.2",
+    "@tunarr/zodios-core": "^11.1.0",
     "@uidotdev/usehooks": "^2.4.1",
     "@zodios/plugins": "^10.6.0",
-    "axios": "^1.6.0",
+    "axios": "^1.11.0",
     "bowser": "^2.11.0",
     "color": "^5.0.0",
     "colorjs.io": "^0.5.2",
@@ -58,7 +58,7 @@
     "ts-pattern": "^5.4.0",
     "usehooks-ts": "^2.14.0",
     "uuid": "^9.0.1",
-    "zod": "^3.25.20",
+    "zod": "^4.0.17",
     "zustand": "^4.4.6"
   },
   "devDependencies": {

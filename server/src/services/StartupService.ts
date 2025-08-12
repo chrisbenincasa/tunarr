@@ -1,37 +1,72 @@
-import { inject, injectable } from 'inversify';
+import { seq } from '@tunarr/shared/util';
+import { DirectedGraph } from 'graphology';
+import * as dag from 'graphology-dag';
+import { inject, injectable, multiInject } from 'inversify';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { KEYS } from '../types/inject.ts';
+import { groupByUniq } from '../util/index.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
-import { SystemDevicesService } from './SystemDevicesService.ts';
+import { IStartupTask } from './startup/IStartupTask.ts';
 
 @injectable()
 export class StartupService {
   #hasRun = false;
+  #taskPromisesById: Record<string, Promise<void>> = {};
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(SystemDevicesService)
-    private systemDevicesService: SystemDevicesService,
     @inject(KEYS.WorkerPool)
     private workerPool: IWorkerPool,
+    @multiInject(KEYS.StartupTask) private startupTasks: IStartupTask[],
   ) {}
 
   async runStartupServices() {
     if (!this.#hasRun) {
-      try {
-        await Promise.all([this.systemDevicesService.seed()]);
-      } catch (e) {
-        this.logger.fatal(
-          e,
-          'Error when running startup services! The system might not function normally.',
-        );
+      this.#hasRun = true;
+
+      const tasksById = groupByUniq(this.startupTasks, (task) => task.id);
+      const graph = new DirectedGraph();
+      for (const task of this.startupTasks) {
+        graph.addNode(task.id);
+        for (const dep of task.dependencies) {
+          graph.addDirectedEdge(dep, task.id);
+        }
       }
+
+      // this.startupTasks.
+      const sortedOrder = dag.topologicalSort(graph);
+
+      for (const taskId of sortedOrder) {
+        const task = tasksById[taskId];
+        if (task.dependencies.length > 0) {
+          const depPromises = seq.collect(
+            task.dependencies,
+            (dep) => this.#taskPromisesById[dep],
+          );
+
+          this.#taskPromisesById[task.id] = Promise.all(depPromises).then(
+            () => {
+              this.logger.debug('Running startup task %s', task.id);
+              task.start();
+              return task.wait();
+            },
+          );
+        } else {
+          this.#taskPromisesById[task.id] = new Promise((resolve, reject) => {
+            this.logger.debug('Running startup task %s', task.id);
+            task.start();
+            task.wait().then(resolve).catch(reject);
+          });
+        }
+      }
+
+      await Promise.all(this.taskPromsies);
 
       this.workerPool.start();
     }
   }
 
-  waitForCompletion() {
-    return Promise.all([this.workerPool.allReady()]);
+  private get taskPromsies() {
+    return Object.values(this.#taskPromisesById);
   }
 }

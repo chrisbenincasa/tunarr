@@ -3,6 +3,7 @@ import { ChannelCache } from '@/stream/ChannelCache.js';
 import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
+import { inject, injectable } from 'inversify';
 import { isEmpty, isNil } from 'lodash-es';
 import type {
   ChannelFillerShowWithContent,
@@ -15,10 +16,11 @@ const DefaultFillerCooldownMillis = 30 * 60 * 1000;
 const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
 const FiveMinutesMillis = 5 * 60 * 60 * 1000;
 
+@injectable()
 export class FillerPicker implements IFillerPicker {
   #channelCache: ChannelCache;
 
-  constructor(channelCache: ChannelCache = new ChannelCache()) {
+  constructor(@inject(ChannelCache) channelCache: ChannelCache) {
     this.#channelCache = channelCache;
   }
 

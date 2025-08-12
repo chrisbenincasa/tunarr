@@ -75,6 +75,7 @@ export class StreamProgramCalculator {
     @inject(KEYS.ChannelDB) private channelDB: ChannelDB,
     @inject(ChannelCache) private channelCache: ChannelCache,
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
+    @inject(FillerPicker) private fillerPicker: FillerPicker,
   ) {}
 
   async getCurrentLineupItem(
@@ -498,7 +499,7 @@ export class StreamProgramCalculator {
       }
 
       // Pick a random filler, too
-      const randomResult = new FillerPicker().pickFiller(
+      const randomResult = this.fillerPicker.pickFiller(
         channel,
         fillerPrograms,
         streamDuration,

@@ -1,12 +1,13 @@
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import type { ITimer } from '../interfaces/ITimer.ts';
+import { KEYS } from '../types/inject.ts';
 import type { LogLevels, Logger } from './logging/LoggerFactory.ts';
 import { timeNamedAsync, timeNamedSync } from './perf.ts';
 
 @injectable()
 export class Timer implements ITimer {
   constructor(
-    private logger: Logger,
+    @inject(KEYS.Logger) private logger: Logger,
     private defaultLevel: LogLevels = 'debug',
   ) {}
 

@@ -216,7 +216,7 @@ export class SubtitleExtractorTask extends Task {
               tmpPath: await tmpName({ postfix: extname(filePath) }),
             };
           }
-          this.logger.debug(
+          this.logger.trace(
             'Skipping existing subtitle extraction (stream index = %d) path for program %s (%s). File already exists: %s',
             subtitle.index,
             program.id,

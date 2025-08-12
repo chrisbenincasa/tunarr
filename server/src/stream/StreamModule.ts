@@ -28,7 +28,9 @@ import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
+import type { Maybe } from '../types/util.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
+import { PersistentChannelCache } from './ChannelCache.ts';
 import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
 import { ExternalStreamDetailsFetcherFactory } from './StreamDetailsFetcher.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
@@ -222,6 +224,22 @@ const StreamModule = new ContainerModule((bind) => {
   });
 
   bind(ExternalStreamDetailsFetcherFactory).toSelf().inSingletonScope();
+
+  bind(PersistentChannelCache).toSelf().inSingletonScope();
+  bind(KEYS.PersistentChannelCacheProvider).toProvider(
+    (ctx: interfaces.Context) => {
+      let instance: Maybe<PersistentChannelCache>;
+      return async (): Promise<PersistentChannelCache> => {
+        if (instance) {
+          return instance;
+        }
+
+        instance = ctx.container.get(PersistentChannelCache);
+        await instance.init();
+        return instance;
+      };
+    },
+  );
 });
 
 export { StreamModule };
