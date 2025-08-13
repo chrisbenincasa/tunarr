@@ -1,7 +1,8 @@
-import type { ChannelProgram } from '@tunarr/types';
+import type { ChannelProgram, FillerProgram } from '@tunarr/types';
 import type { BaseSlot, SlotFillerTypes } from '@tunarr/types/api';
 import { isEmpty, some } from 'lodash-es';
 import type { Random } from 'random-js';
+import type { Nullable } from '../../types/util.ts';
 import type { FillerProgramIterator } from './FillerProgramIterator.ts';
 import type { IterationState, ProgramIterator } from './ProgramIterator.js';
 import { slotMayHaveFiller } from './slotSchedulerUtil.js';
@@ -54,7 +55,7 @@ export abstract class SlotImpl<SlotType extends BaseSlot> {
   getFillerOfType(
     type: SlotFillerTypes,
     state: IterationState,
-  ): ChannelProgram | null {
+  ): Nullable<FillerProgram> {
     const its = this.fillerIteratorsByType?.[type];
     if (!its || isEmpty(its)) {
       return null;

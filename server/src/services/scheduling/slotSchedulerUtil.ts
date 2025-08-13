@@ -18,10 +18,12 @@ import type {
   BaseShowProgrammingSlot,
   BaseSlot,
   FillerProgrammingSlot,
+  SlotFillerTypes,
 } from '@tunarr/types/api';
-import type {
-  CondensedCustomProgram,
-  CondensedFillerProgram,
+import {
+  FillerTypes,
+  type CondensedCustomProgram,
+  type CondensedFillerProgram,
 } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import {
@@ -36,7 +38,9 @@ import {
   reject,
   some,
   sortBy,
+  sumBy,
   uniqBy,
+  values,
 } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -56,7 +60,6 @@ import {
 } from './ProgramIterator.js';
 import { ProgramOrdereredIterator } from './ProgramOrdereredIterator.ts';
 import { ProgramShuffler } from './ProgramShuffler.ts';
-import type { PaddedProgram } from './RandomSlotsService.ts';
 import type { SlotImpl } from './SlotImpl.ts';
 import { StaticProgramIterator } from './StaticProgramIterator.ts';
 
@@ -525,15 +528,14 @@ export function condense(program: ChannelProgram): CondensedChannelProgram {
   }
 }
 
-export function createPaddedProgram(program: ChannelProgram, padMs: number) {
+export function createPaddedProgram(
+  program: ChannelProgram,
+  padMs: number,
+): PaddedProgram {
   const rem = program.duration % padMs;
   const padAmount = padMs - rem;
   const shouldPad = rem > constants.SLACK && padAmount > constants.SLACK;
-  return {
-    program,
-    padMs: shouldPad ? padAmount : 0,
-    totalDuration: program.duration + (shouldPad ? padAmount : 0),
-  };
+  return new PaddedProgram(program, shouldPad ? padAmount : 0, {});
 }
 
 // Exported for testing only
@@ -554,8 +556,9 @@ export function distributeFlex(
   const div = Math.floor(remainingTime / padMs);
   const mod = remainingTime % padMs;
   // Add leftover flex to end
-  last(relevantPrograms)!.padMs += mod;
-  last(relevantPrograms)!.totalDuration += mod;
+  const lastProgram = relevantPrograms[relevantPrograms.length - 1];
+  lastProgram.padMs += mod;
+  // lastProgram.totalDuration += mod;
 
   // Padded programs sorted by least amount of existing padding
   // along with their original index in the programs array
@@ -570,40 +573,25 @@ export function distributeFlex(
       q++;
     }
     const extraPadding = q * padMs;
-    relevantPrograms[sortedPads[i].index].padMs += extraPadding;
-    relevantPrograms[sortedPads[i].index].totalDuration += extraPadding;
+    const program = relevantPrograms[sortedPads[i].index];
+    program.padMs += extraPadding;
+    // program.totalDuration += extraPadding;
   });
 }
 
-export function addFillerToFixedSlot(
+export function addHeadAndTailFillerToSlot(
   remainingTime: number,
   slot: SlotImpl<BaseSlot>,
   contentPrograms: NonEmptyArray<PaddedProgram>,
-) {
+): number {
   if (remainingTime <= 0) {
-    return { programs: contentPrograms, remainingTime };
+    return remainingTime;
   }
 
-  const newPaddedPrograms: NonEmptyArray<PaddedProgram> = [...contentPrograms];
-  remainingTime = maybeAddFillerOfType(
-    'pre',
-    remainingTime,
-    slot,
-    contentPrograms,
-    newPaddedPrograms,
-  );
-  remainingTime = maybeAddFillerOfType(
-    'post',
-    remainingTime,
-    slot,
-    contentPrograms,
-    newPaddedPrograms,
-  );
-
-  if (remainingTime > 0 && slot.hasFillerOfType('head')) {
+  if (remainingTime > 0 && slot.hasFillerOfType(FillerTypes.head)) {
     const filler = retrySimple(
       () =>
-        slot.getFillerOfType('head', {
+        slot.getFillerOfType(FillerTypes.head, {
           slotDuration: remainingTime,
           timeCursor: -1,
         }),
@@ -612,50 +600,55 @@ export function addFillerToFixedSlot(
 
     if (filler) {
       remainingTime -= filler.duration;
-      newPaddedPrograms.unshift({
-        padMs: 0,
-        program: filler,
-        totalDuration: filler.duration,
-      });
+      contentPrograms[0].filler.head = filler;
     }
   }
 
-  if (remainingTime > 0 && slot.hasFillerOfType('tail')) {
+  // Save the last item's pad.
+  const lastItemPad = contentPrograms[contentPrograms.length - 1].padMs;
+  // Temporarily add it to the remaining time
+  // remainingTime += lastItemPad;
+  if (
+    remainingTime + lastItemPad > 0 &&
+    slot.hasFillerOfType(FillerTypes.tail)
+  ) {
     const filler = retrySimple(
       () =>
-        slot.getFillerOfType('tail', {
-          slotDuration: remainingTime,
+        slot.getFillerOfType(FillerTypes.tail, {
+          slotDuration: remainingTime + lastItemPad,
           timeCursor: -1,
         }),
       3,
     );
 
     if (filler) {
-      remainingTime -= filler.duration;
-      newPaddedPrograms.push({
-        padMs: 0,
-        program: filler,
-        totalDuration: filler.duration,
-      });
+      // Play the tail filler right after
+      contentPrograms[contentPrograms.length - 1].padMs = 0;
+      remainingTime = remainingTime + lastItemPad - filler.duration;
+      contentPrograms[contentPrograms.length - 1].filler.tail = filler;
     }
+  } else {
+    // Remove the extra pad if necessary
+    remainingTime -= lastItemPad;
   }
 
-  return { programs: newPaddedPrograms, remainingTime };
+  return remainingTime;
 }
 
-export function maybeAddFillerOfType(
+export function maybeAddFillerOfTypeOld(
   fillerType: 'pre' | 'post',
   remainingTime: number,
   slot: SlotImpl<BaseSlot>,
   contentPrograms: NonEmptyArray<PaddedProgram>,
-  workingPrograms: NonEmptyArray<PaddedProgram>,
-): number {
+): { nextPrograms: NonEmptyArray<PaddedProgram>; nextRemainingTime: number } {
   if (!slot.hasFillerOfType(fillerType)) {
-    return remainingTime;
+    return { nextPrograms: contentPrograms, nextRemainingTime: remainingTime };
   }
 
   for (let i = 0; i < contentPrograms.length; i++) {
-    if (remainingTime <= 0) {
+    const program = contentPrograms[i];
+    const totalTime = remainingTime + Math.max(program.padMs, 0);
+    if (totalTime <= 0) {
       break;
     }
 
@@ -663,23 +656,97 @@ export function maybeAddFillerOfType(
       const filler = retrySimple(
         () =>
           slot.getFillerOfType(fillerType, {
-            slotDuration: remainingTime,
+            slotDuration: totalTime,
             timeCursor: -1,
           }),
         3,
       );
 
       if (filler) {
-        remainingTime -= filler.duration;
-
-        workingPrograms.splice(fillerType === 'pre' ? i : i + 1, 0, {
-          padMs: 0,
-          program: filler,
-          totalDuration: filler.duration,
-        });
+        // 1. how much did we eat into this program's padding?
+        const leftoverPad = program.padMs - filler.duration;
+        const newPad = Math.max(0, leftoverPad);
+        // 2. how much did we eat into the total remaining time
+        //    of the slot?
+        if (leftoverPad < 0) {
+          remainingTime += leftoverPad;
+        }
+        program.padMs = newPad; //fillerType === 'pre' ? leftover : 0;
+        program.filler[fillerType] = filler;
       }
     }
   }
 
+  return { nextPrograms: contentPrograms, nextRemainingTime: remainingTime };
+}
+
+export function maybeAddPrePostFiller(
+  slot: SlotImpl<BaseSlot>,
+  program: PaddedProgram,
+  remainingTime: number,
+): number {
+  remainingTime = maybeAddFillerOfType(
+    FillerTypes.pre,
+    remainingTime,
+    slot,
+    program,
+  );
+  return maybeAddFillerOfType(FillerTypes.post, remainingTime, slot, program);
+}
+
+function maybeAddFillerOfType(
+  fillerType: 'pre' | 'post',
+  remainingTime: number,
+  slot: SlotImpl<BaseSlot>,
+  program: PaddedProgram,
+): number {
+  if (!slot.hasFillerOfType(fillerType)) {
+    // return { nextPrograms: contentPrograms, nextRemainingTime: remainingTime };
+    return remainingTime;
+  }
+
+  const totalTime = remainingTime + Math.max(program.padMs, 0);
+  if (totalTime <= 0) {
+    return remainingTime;
+  }
+
+  if (slot.hasFillerOfType(fillerType)) {
+    const filler = retrySimple(
+      () =>
+        slot.getFillerOfType(fillerType, {
+          slotDuration: totalTime,
+          timeCursor: -1,
+        }),
+      3,
+    );
+
+    if (filler) {
+      // 1. how much did we eat into this program's padding?
+      const leftoverPad = program.padMs - filler.duration;
+      const newPad = Math.max(0, leftoverPad);
+      // 2. how much did we eat into the total remaining time
+      //    of the slot?
+      if (leftoverPad < 0) {
+        // This is negative so we add it.
+        remainingTime += leftoverPad;
+      }
+      program.padMs = newPad; //fillerType === 'pre' ? leftover : 0;
+      program.filler[fillerType] = filler;
+    }
+  }
+
   return remainingTime;
+}
+export class PaddedProgram {
+  constructor(
+    public program: ChannelProgram,
+    public padMs: number,
+    public filler: Partial<Record<SlotFillerTypes, ChannelProgram>>,
+  ) {}
+
+  get totalDuration() {
+    const programDur = this.program.duration;
+    const fillerDur = sumBy(values(this.filler), (f) => f.duration);
+    return programDur + fillerDur + this.padMs;
+  }
 }

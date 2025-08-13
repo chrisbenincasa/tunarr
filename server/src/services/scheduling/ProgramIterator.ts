@@ -5,6 +5,7 @@ import type {
 } from '@tunarr/types';
 import type { BaseSlot, FillerProgrammingSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import type { Nullable } from '../../types/util.ts';
 import type { SlotIteratorKey } from './slotSchedulerUtil.js';
 
 export type IterationState = {
@@ -12,8 +13,10 @@ export type IterationState = {
   timeCursor: number; // ms since epoch
 };
 
-export interface ProgramIterator {
-  current(state: IterationState): ChannelProgram | null;
+export interface ProgramIterator<
+  ProgramT extends ChannelProgram = ChannelProgram,
+> {
+  current(state: IterationState): Nullable<ProgramT>;
   next(): void;
   reset(): void;
 }

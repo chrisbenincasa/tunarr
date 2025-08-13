@@ -22,11 +22,13 @@ const styleStrings = {
     day: 'day',
     hour: 'hour',
     minutes: 'min',
+    seconds: 'second',
   },
   short: {
     day: 'd',
     hour: 'h',
     minutes: 'm',
+    seconds: 's',
   },
 };
 
@@ -37,13 +39,16 @@ export function betterHumanize(
   const mergedOpts = merge({}, defaultOptions, options);
   const days = Math.floor(dur.asDays());
   const hrs = Math.floor(dur.asHours() % 24);
-  const mins = Math.round(dur.asMinutes() % 60);
+  const mins = Math.floor(dur.asMinutes() % 60);
   const seconds = Math.floor(dur.asSeconds() % 60);
   const builder = [];
 
-  const daysStr = styleStrings[mergedOpts.style]['day'];
-  const hoursStr = styleStrings[mergedOpts.style]['hour'];
-  const minStr = styleStrings[mergedOpts.style]['minutes'];
+  const {
+    day: daysStr,
+    hour: hoursStr,
+    minutes: minStr,
+    seconds: secStr,
+  } = styleStrings[mergedOpts.style];
 
   if (+dur === 0) {
     return `0 mins`;
@@ -74,6 +79,13 @@ export function betterHumanize(
   }
 
   if (builder.length === 0) {
+    if (seconds > 0) {
+      const secN = Math.round(seconds);
+      const d =
+        mergedOpts.style === 'full' ? ' ' + pluralize(secStr, secN) : secStr;
+      return `${padStart(secN.toString(), 2, '0')}${d}`;
+    }
+
     return mergedOpts.style === 'short' ? '0s' : dur.humanize();
   } else {
     return builder.join(' ');
