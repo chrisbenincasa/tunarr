@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.2](https://github.com/chrisbenincasa/tunarr/compare/v0.21.1...v0.21.2) (2025-08-13)
+
+
+### Bug Fixes
+
+* **scheduling:** many fixes to filler types in slot editors ([#1318](https://github.com/chrisbenincasa/tunarr/issues/1318)) ([3e69e0b](https://github.com/chrisbenincasa/tunarr/commit/3e69e0bf92bb1b374df301d45ce9c29f564e6179))
+* **ui:** enable submit button after changing existing slot type ([a1e59aa](https://github.com/chrisbenincasa/tunarr/commit/a1e59aade6e956c2d22f643b11c706714d4bdee8))
+
 ## [0.21.1](https://github.com/chrisbenincasa/tunarr/compare/v0.21.0...v0.21.1) (2025-08-11)
 
 
