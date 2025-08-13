@@ -179,7 +179,20 @@ const ProgramListItem = ({
     onInfoClicked(program);
   };
 
-  let title = `${titleFormatter(program)}`;
+  const titleParts = [
+    <Box
+      component="span"
+      sx={{
+        maxWidth: '75%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        marginRight: 'auto',
+      }}
+    >
+      {titleFormatter(program)}
+    </Box>,
+  ];
   const startTimeDate = !isUndefined(program.startTimeOffset)
     ? dayjs(channel.startTime + program.startTimeOffset)
     : undefined;
@@ -187,7 +200,7 @@ const ProgramListItem = ({
   const startTime = startTimeDate?.format(smallViewport ? 'L LT' : 'lll');
   if (!smallViewport && showProgramStartTime && startTime) {
     if (startTime) {
-      title += ` - ${startTime}`;
+      titleParts.push(<Box component="span">{startTime}</Box>);
     }
   }
 
@@ -342,12 +355,20 @@ const ProgramListItem = ({
             : null}
 
           <ListItemText
-            primary={title}
+            primary={<>{titleParts}</>}
             secondary={smallViewport ? startTime : null}
             sx={{
               fontStyle: program.persisted ? 'normal' : 'italic',
             }}
-            primaryTypographyProps={{ sx: { fontSize: '0.875em' } }} // Hack to get dense styles applied for virtualized lists
+            slotProps={{
+              primary: {
+                sx: {
+                  width: '100%',
+                  fontSize: '0.875em', // Hack to get dense styles applied for virtualized lists
+                  display: 'inline-flex',
+                },
+              },
+            }}
           />
         </>
       )}

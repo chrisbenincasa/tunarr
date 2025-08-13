@@ -1,16 +1,17 @@
-import type { ChannelProgram, FillerProgram } from '@tunarr/types';
+import type { FillerProgram } from '@tunarr/types';
 import type { FillerProgrammingSlot } from '@tunarr/types/api';
 import { findIndex, isNil, last, maxBy, sortBy, sum } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import type { Nullable } from '../../types/util.ts';
 import type {
   IterationState,
   ProgramIterator,
   WeightedProgram,
 } from './ProgramIterator.ts';
 
-export class FillerProgramIterator implements ProgramIterator {
+export class FillerProgramIterator implements ProgramIterator<FillerProgram> {
   private weightedPrograms: NonEmptyArray<WeightedProgram>;
   private lastSeenTimestampById = new Map<string, number>();
   private weightsById = new Map<string, number>();
@@ -61,7 +62,7 @@ export class FillerProgramIterator implements ProgramIterator {
     ) as NonEmptyArray<WeightedProgram>;
   }
 
-  current(state: IterationState): ChannelProgram | null {
+  current(state: IterationState): Nullable<FillerProgram> {
     const idx = findIndex(
       this.weightedPrograms,
       ({ program }) => program.duration > state.slotDuration,

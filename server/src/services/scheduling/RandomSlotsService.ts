@@ -32,6 +32,7 @@ import {
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
+import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray } from '../../util/index.ts';
 import {
   slotIteratorKey,
@@ -39,13 +40,15 @@ import {
   type ProgramIterator,
 } from './ProgramIterator.ts';
 import { RandomSlotImpl } from './RandomSlotImpl.ts';
+import type { PaddedProgram } from './slotSchedulerUtil.js';
 import {
-  addFillerToFixedSlot,
+  addHeadAndTailFillerToSlot,
   condense,
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
   distributeFlex,
+  maybeAddPrePostFiller,
   pushOrExtendFlex,
   slotFillerIterators,
 } from './slotSchedulerUtil.js';
@@ -55,12 +58,6 @@ export const random = new Random(MersenneTwister19937.autoSeed());
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
-
-export type PaddedProgram = {
-  program: ChannelProgram;
-  padMs: number;
-  totalDuration: number;
-};
 
 class ScheduleContext {
   #startTime: dayjs.Dayjs;
@@ -160,7 +157,11 @@ class ScheduleContext {
     this.advanceTime(dur);
   }
 
-  pushProgram(program: ChannelProgram) {
+  pushProgram(program: Nilable<ChannelProgram>) {
+    if (!program) {
+      return;
+    }
+
     const condensed =
       program.type === 'content'
         ? (this.#condensedProgramsById[program.uniqueId] ?? condense(program))
@@ -317,21 +318,27 @@ export class RandomSlotScheduler {
       } else {
         const lastProgram = last(paddedPrograms)!;
         lastProgram.padMs += remainingTimeInSlot;
-        lastProgram.totalDuration += remainingTimeInSlot;
       }
 
       let done = false;
-      for (const { program, padMs } of paddedPrograms) {
+      for (const { program, padMs, totalDuration, filler } of paddedPrograms) {
         if (+context.timeCursor + program.duration > +upperLimit) {
           done = true;
           break;
         }
+
+        context.pushProgram(filler.head);
+        context.pushProgram(filler.pre);
         context.pushProgram(program);
-        context.advanceTime(program.duration);
+        context.pushProgram(filler.post);
+        context.pushProgram(filler.tail);
+        context.advanceTime(totalDuration - padMs);
+
         if (+context.timeCursor + padMs > +upperLimit) {
           done = true;
           break;
         }
+
         if (padMs > constants.SLACK) {
           const fallback = currSlot.getFillerOfType('fallback', {
             slotDuration: -1,
@@ -422,6 +429,12 @@ export class RandomSlotScheduler {
       padStyle === 'slot' ? 1 : padMs,
     );
 
+    maybeAddPrePostFiller(
+      currSlot,
+      paddedProgram,
+      slotDuration - paddedProgram.totalDuration,
+    );
+
     let totalDuration = paddedProgram.totalDuration;
     context.advanceIterator(currSlot);
     const paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
@@ -435,6 +448,11 @@ export class RandomSlotScheduler {
       const nextPadded = this.createPaddedProgram(nextProgram);
       paddedPrograms.push(nextPadded);
       context.advanceIterator(currSlot);
+      maybeAddPrePostFiller(
+        currSlot,
+        nextPadded,
+        slotDuration - nextPadded.totalDuration,
+      );
       totalDuration += nextPadded.totalDuration;
     }
 
@@ -450,8 +468,8 @@ export class RandomSlotScheduler {
     // Fallback filler gets added outside of this method after we've packed the
     // slot as much as possible.
     const remainingTime = currSlot.durationMs! - totalDuration;
-    return addFillerToFixedSlot(remainingTime, currSlot, paddedPrograms)
-      .programs;
+    addHeadAndTailFillerToSlot(remainingTime, currSlot, paddedPrograms);
+    return paddedPrograms;
   }
 
   private handleDynamicDurationSlot(
@@ -466,38 +484,22 @@ export class RandomSlotScheduler {
 
     const paddedPrograms: PaddedProgram[] = [];
 
-    const headFiller = currSlot.getFillerOfType('head', {
-      slotDuration: -1,
-      timeCursor: +context.timeCursor,
-    });
-
-    if (headFiller) {
-      paddedPrograms.push({
-        padMs: 0,
-        program: headFiller,
-        totalDuration: headFiller.duration,
-      });
-    }
-
     let idx = 0;
     do {
       const program = context.getNextProgramForSlot(currSlot);
 
       if (program) {
+        const paddedProgram = this.createPaddedProgram(program);
+        paddedPrograms.push(paddedProgram);
+
         const preFiller = currSlot.getFillerOfType('pre', {
           slotDuration: -1,
           timeCursor: +context.timeCursor,
         });
 
         if (preFiller) {
-          paddedPrograms.push({
-            padMs: 0,
-            program: preFiller,
-            totalDuration: preFiller.duration,
-          });
+          paddedProgram.filler.pre = preFiller;
         }
-
-        paddedPrograms.push(this.createPaddedProgram(program));
 
         const postFilter = currSlot.getFillerOfType('post', {
           slotDuration: -1,
@@ -505,11 +507,7 @@ export class RandomSlotScheduler {
         });
 
         if (postFilter) {
-          paddedPrograms.push({
-            padMs: 0,
-            program: postFilter,
-            totalDuration: postFilter.duration,
-          });
+          paddedProgram.filler.post = postFilter;
         }
 
         currSlot.advanceIterator();
@@ -518,20 +516,29 @@ export class RandomSlotScheduler {
       idx++;
     } while (idx < currSlot.durationSpec.programCount);
 
-    const tailFilter = currSlot.getFillerOfType('tail', {
-      slotDuration: -1,
-      timeCursor: +context.timeCursor,
-    });
-
-    if (tailFilter) {
-      paddedPrograms.push({
-        padMs: 0,
-        program: tailFilter,
-        totalDuration: tailFilter.duration,
+    if (isNonEmptyArray(paddedPrograms)) {
+      const headFiller = currSlot.getFillerOfType('head', {
+        slotDuration: -1,
+        timeCursor: +context.timeCursor,
       });
+
+      if (headFiller) {
+        paddedPrograms[0].filler.head = headFiller;
+      }
+
+      const tailFilter = currSlot.getFillerOfType('tail', {
+        slotDuration: -1,
+        timeCursor: +context.timeCursor,
+      });
+
+      if (tailFilter) {
+        paddedPrograms[paddedPrograms.length - 1].filler.tail = tailFilter;
+      }
+
+      return paddedPrograms;
     }
 
-    return isNonEmptyArray(paddedPrograms) ? paddedPrograms : undefined;
+    return;
   }
 
   private createPaddedProgram(program: ChannelProgram) {

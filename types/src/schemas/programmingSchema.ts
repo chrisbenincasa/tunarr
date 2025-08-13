@@ -240,22 +240,25 @@ export const CustomProgramSchema = BaseProgramSchema.extend({
   program: ContentProgramSchema.optional(),
 });
 
+export const FillerType = z.enum(['pre', 'post', 'head', 'tail', 'fallback']);
+export const FillerTypes = FillerType.enum;
+
 export const CondensedFillerProgramSchema = BaseProgramSchema.extend({
   type: z.literal('filler'),
   // The ID of the underlying program
   id: z.uuid(),
   fillerListId: z.uuid(),
   program: CondensedContentProgramSchema.optional(),
+  fillerType: FillerType.optional(),
 });
 
 export type CondensedFillerProgram = z.infer<
   typeof CondensedFillerProgramSchema
 >;
 
-export const FillerProgramSchema = BaseProgramSchema.extend({
-  type: z.literal('filler'),
-  id: z.uuid(),
-  fillerListId: z.uuid(),
+export const FillerProgramSchema = z.object({
+  ...BaseProgramSchema.shape,
+  ...CondensedFillerProgramSchema.shape,
   program: ContentProgramSchema.optional(),
 });
 

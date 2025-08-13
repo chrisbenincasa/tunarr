@@ -4,6 +4,7 @@ import type {
   ChannelProgram,
   CondensedChannelProgram,
   ContentProgram,
+  FillerProgram,
   FlexProgram,
 } from '@tunarr/types';
 import {
@@ -13,6 +14,7 @@ import {
   isFlexProgram,
 } from '@tunarr/types';
 import type {
+  SlotFillerTypes,
   TimeSlotSchedule,
   TimeSlotScheduleResult,
 } from '@tunarr/types/api';
@@ -29,16 +31,20 @@ import {
   nth,
   reject,
   sortBy,
+  sumBy,
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
+import type { Nilable } from '../../types/util.ts';
 import { slotIteratorKey } from './ProgramIterator.ts';
 import {
-  addFillerToFixedSlot,
+  addHeadAndTailFillerToSlot,
   condense,
+  createPaddedProgram,
   createProgramIterators,
   createProgramMap,
   distributeFlex,
+  maybeAddPrePostFiller,
   slotFillerIterators,
 } from './slotSchedulerUtil.js';
 import { TimeSlotImpl } from './TimeSlotImpl.js';
@@ -53,6 +59,7 @@ type PaddedProgram = {
   program: ChannelProgram;
   padMs: number;
   totalDuration: number;
+  filler: Partial<Record<SlotFillerTypes, ChannelProgram>>;
 };
 
 // Adds flex time to the end of a programs array.
@@ -87,17 +94,6 @@ function pushOrExtendFlex(
 
   lineup.push(newItem);
   return flexDurationMs;
-}
-
-function createPaddedProgram(program: ChannelProgram, padMs: number) {
-  const rem = program.duration % padMs;
-  const padAmount = padMs - rem;
-  const shouldPad = rem > constants.SLACK && padAmount > constants.SLACK;
-  return {
-    program,
-    padMs: shouldPad ? padAmount : 0,
-    totalDuration: program.duration + (shouldPad ? padAmount : 0),
-  };
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -165,9 +161,24 @@ export async function scheduleTimeSlots(
   let timeCursor = t0;
   const channelPrograms: CondensedChannelProgram[] = [];
 
+  const maybeCondenseProgram = (program: ChannelProgram) => {
+    return program.type === 'content'
+      ? (condensedProgramsById[program.uniqueId] ?? condense(program))
+      : program;
+  };
+
   const pushFlex = (flexDurationMs: number) => {
     const inc = pushOrExtendFlex(channelPrograms, flexDurationMs);
     timeCursor = timeCursor.add(inc);
+  };
+
+  const pushProgram = (program: Nilable<ChannelProgram>) => {
+    if (!program) {
+      return;
+    }
+
+    channelPrograms.push(maybeCondenseProgram(program));
+    timeCursor = timeCursor.add(program.duration);
   };
 
   while (timeCursor.isBefore(upperLimit)) {
@@ -252,9 +263,14 @@ export async function scheduleTimeSlots(
     }
 
     const paddedProgram = createPaddedProgram(program, schedule.padMs);
-    let totalAddedDuration = paddedProgram.totalDuration;
     currSlot.advanceIterator();
-    let paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
+    const paddedPrograms: NonEmptyArray<PaddedProgram> = [paddedProgram];
+    maybeAddPrePostFiller(
+      currSlot,
+      paddedProgram,
+      slotDuration - paddedProgram.totalDuration,
+    );
+    let totalAddedDuration = paddedProgram.totalDuration;
 
     for (;;) {
       const nextProgram = currSlot.getNextProgram({
@@ -268,18 +284,21 @@ export async function scheduleTimeSlots(
       const nextPadded = createPaddedProgram(nextProgram, schedule.padMs);
       paddedPrograms.push(nextPadded);
       currSlot.advanceIterator();
+      maybeAddPrePostFiller(
+        currSlot,
+        nextPadded,
+        slotDuration - nextPadded.totalDuration,
+      );
       totalAddedDuration += nextPadded.totalDuration;
     }
 
     let remainingTimeInSlot = Math.max(0, slotDuration - totalAddedDuration);
     if (currSlot.hasAnyFillerSettings()) {
-      const { programs, remainingTime } = addFillerToFixedSlot(
+      remainingTimeInSlot = addHeadAndTailFillerToSlot(
         remainingTimeInSlot,
         currSlot,
         paddedPrograms,
       );
-      paddedPrograms = programs;
-      remainingTimeInSlot = remainingTime;
     }
 
     // We have two options here if there is remaining time in the slot
@@ -291,21 +310,47 @@ export async function scheduleTimeSlots(
       schedule.flexPreference === 'distribute' &&
       currSlot.type !== 'filler'
     ) {
-      distributeFlex(paddedPrograms, schedule.padMs, remainingTimeInSlot);
+      distributeFlex(
+        paddedPrograms,
+        schedule.padMs,
+        Math.max(
+          0,
+          slotDuration - sumBy(paddedPrograms, (p) => p.totalDuration),
+        ),
+      );
     } else {
       const lastProgram = last(paddedPrograms)!;
       lastProgram.padMs += remainingTimeInSlot;
-      lastProgram.totalDuration += remainingTimeInSlot;
     }
 
-    forEach(paddedPrograms, ({ program, padMs }) => {
-      const condensed =
-        program.type === 'content'
-          ? (condensedProgramsById[program.uniqueId] ?? condense(program))
-          : program;
-      channelPrograms.push(condensed);
-      timeCursor = timeCursor.add(program.duration);
-      pushFlex(padMs);
+    forEach(paddedPrograms, ({ program, padMs, filler }) => {
+      pushProgram(filler.head);
+      pushProgram(filler.pre);
+      pushProgram(program);
+      pushProgram(filler.post);
+      pushProgram(filler.tail);
+
+      // Special handling for fallback.
+      if (padMs > 0) {
+        let filler = currSlot.getFillerOfType('fallback', {
+          slotDuration: -Infinity, // Pick anything
+          timeCursor: -1,
+        });
+
+        if (filler) {
+          // Expand / reduce fallback filler to the necessary duration
+          filler = {
+            ...filler,
+            duration: padMs,
+            fillerType: 'fallback',
+          } satisfies FillerProgram;
+          pushProgram(filler);
+        } else {
+          pushFlex(padMs);
+        }
+      } else {
+        pushFlex(padMs);
+      }
     });
   }
 
