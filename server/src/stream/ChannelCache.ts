@@ -1,9 +1,9 @@
 import { InMemoryCachedDbAdapter } from '@/db/json/InMemoryCachedDbAdapter.js';
 import { SchemaBackedDbAdapter } from '@/db/json/SchemaBackedJsonDBAdapter.js';
-import { globalOptions } from '@/globals.js';
+import { GlobalOptions } from '@/globals.js';
 import { isDefined } from '@/util/index.js';
 import constants from '@tunarr/shared/constants';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isNil, isUndefined } from 'lodash-es';
 import { Low } from 'lowdb';
 import { join } from 'node:path';
@@ -13,6 +13,7 @@ import {
   StreamLineupItemSchema,
   isCommercialLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
+import { KEYS } from '../types/inject.ts';
 
 const SLACK = constants.SLACK;
 
@@ -30,9 +31,17 @@ const channelCacheSchema = z.object({
 
 type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;
 
-class PersistentChannelCache {
+export type PersistentChannelCacheProvider =
+  () => Promise<PersistentChannelCache>;
+
+@injectable()
+export class PersistentChannelCache {
   #initialized: boolean = false;
   #db: Low<ChannelCacheSchema>;
+
+  constructor(
+    @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
+  ) {}
 
   async init() {
     if (!this.#initialized) {
@@ -40,7 +49,7 @@ class PersistentChannelCache {
         new InMemoryCachedDbAdapter(
           new SchemaBackedDbAdapter(
             channelCacheSchema,
-            join(globalOptions().databaseDirectory, 'stream-cache.json'),
+            join(this.globalOptions.databaseDirectory, 'stream-cache.json'),
           ),
         ),
         {
@@ -90,17 +99,18 @@ class PersistentChannelCache {
   }
 }
 
-const persistentChannelCache = new PersistentChannelCache();
-
-export const initPersistentStreamCache = () => persistentChannelCache.init();
-
 @injectable()
 export class ChannelCache {
+  constructor(
+    @inject(PersistentChannelCache)
+    private persistentChannelCache: PersistentChannelCache,
+  ) {}
+
   getCurrentLineupItem(
     channelId: string,
     timeNow: number,
   ): StreamLineupItem | undefined {
-    const recorded = persistentChannelCache.getStreamPlayItem(channelId);
+    const recorded = this.persistentChannelCache.getStreamPlayItem(channelId);
     if (isUndefined(recorded)) {
       return;
     }
@@ -157,11 +167,11 @@ export class ChannelCache {
 
     if (lineupItem.type === 'program') {
       const key = this.getKey(channelId, lineupItem.programId);
-      await persistentChannelCache.setProgramPlayTime(key, t0 + remaining);
+      await this.persistentChannelCache.setProgramPlayTime(key, t0 + remaining);
     }
 
     if (isCommercialLineupItem(lineupItem)) {
-      await persistentChannelCache.setFillerPlayTime(
+      await this.persistentChannelCache.setFillerPlayTime(
         this.getKey(channelId, lineupItem.fillerId),
         t0 + remaining,
       );
@@ -170,7 +180,7 @@ export class ChannelCache {
 
   getProgramLastPlayTime(channelId: string, programId: string) {
     return (
-      persistentChannelCache.getProgramPlayTime(
+      this.persistentChannelCache.getProgramPlayTime(
         this.getKey(channelId, programId),
       ) ?? 0
     );
@@ -178,7 +188,7 @@ export class ChannelCache {
 
   getFillerLastPlayTime(channelId: string, fillerId: string) {
     return (
-      persistentChannelCache.getFillerPlayTime(
+      this.persistentChannelCache.getFillerPlayTime(
         this.getKey(channelId, fillerId),
       ) ?? 0
     );
@@ -190,14 +200,14 @@ export class ChannelCache {
     lineupItem: StreamLineupItem,
   ) {
     await this.recordProgramPlayTime(channelId, lineupItem, t0);
-    await persistentChannelCache.setStreamPlayItem(channelId, {
+    await this.persistentChannelCache.setStreamPlayItem(channelId, {
       timestamp: t0,
       lineupItem: lineupItem,
     });
   }
 
   async clearPlayback(channelId: string) {
-    return await persistentChannelCache.clearStreamPlayItem(channelId);
+    return await this.persistentChannelCache.clearStreamPlayItem(channelId);
   }
 
   // Is this necessary??

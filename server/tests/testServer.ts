@@ -15,11 +15,10 @@ export async function initTestApp(port: number) {
     log_level: 'debug',
     verbose: 0,
     port,
-    admin: false,
     printRoutes: false,
     trustProxy: false,
   });
   await bootstrapTunarr();
 
-  return await container.get(Server).initAndRun();
+  return await container.get(Server).runServer();
 }

@@ -3,14 +3,25 @@ import { Maybe } from '@/types/util.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable, multiInject } from 'inversify';
 import { find, round } from 'lodash-es';
+import { SimpleStartupTask } from '../../services/startup/IStartupTask.ts';
+import { ScheduleJobsStartupTask } from '../../services/startup/ScheduleJobsStartupTask.ts';
 import Fixer from './fixer.js';
 
 @injectable()
-export class FixerRunner {
+export class FixerRunner extends SimpleStartupTask {
+  id = FixerRunner.name;
+  dependencies = [ScheduleJobsStartupTask.name];
+
   constructor(
     @multiInject(KEYS.Fixer) private fixers: Fixer[],
     @inject(KEYS.Logger) private logger: Logger,
-  ) {}
+  ) {
+    super();
+  }
+
+  getPromise(): Promise<void> {
+    return this.runFixers();
+  }
 
   async runFixers() {
     // Run all fixers one-off, swallowing all errors.

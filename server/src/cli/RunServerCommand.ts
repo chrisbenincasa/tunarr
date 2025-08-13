@@ -2,11 +2,10 @@ import { container } from '@/container.js';
 import assert from 'node:assert';
 import { type MarkOptional } from 'ts-essentials';
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
+import { App } from '../App.ts';
 import { DBAccess } from '../db/DBAccess.ts';
 import { type ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { setServerOptions } from '../globals.ts';
-import { Server } from '../Server.ts';
-import { StartupService } from '../services/StartupService.ts';
 import { KEYS } from '../types/inject.ts';
 import {
   getBooleanEnvVar,
@@ -56,7 +55,8 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
 
     // Hard fail without database connection.
     assert(!!container.get<DBAccess>(DBAccess).db);
-    await container.get(StartupService).runStartupServices();
-    await container.get(Server).initAndRun();
+    // await container.get(StartupService).runStartupServices();
+    // await container.get(Server).initAndRun();
+    await container.get(App).start();
   },
 };

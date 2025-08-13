@@ -151,8 +151,8 @@ importers:
         specifier: ^1.3.3
         version: 1.3.3
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.11.0
+        version: 1.11.0
       better-sqlite3:
         specifier: 11.8.1
         version: 11.8.1
@@ -184,11 +184,17 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0
       fastify-type-provider-zod:
-        specifier: ^4.0.1
-        version: 4.0.2(fastify@5.0.0)(zod@3.25.20)
+        specifier: ^5.0.1
+        version: 5.0.3(@fastify/swagger@9.1.0)(fastify@5.0.0)(openapi-types@12.1.3)(zod@4.0.17)
       file-type:
         specifier: ^19.6.0
         version: 19.6.0
+      graphology:
+        specifier: ^0.26.0
+        version: 0.26.0(graphology-types@0.24.8)
+      graphology-dag:
+        specifier: ^0.4.1
+        version: 0.4.1(graphology-types@0.24.8)
       inversify:
         specifier: ^6.2.1
         version: 6.2.1(reflect-metadata@0.2.2)
@@ -250,8 +256,8 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       '@rollup/plugin-swc':
         specifier: ^0.4.0
@@ -389,8 +395,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       '@types/lodash-es':
         specifier: 4.17.9
@@ -417,8 +423,8 @@ importers:
   types:
     dependencies:
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       '@microsoft/api-extractor':
         specifier: ^7.43.0
@@ -487,17 +493,17 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@tunarr/zodios-core':
-        specifier: ^11.0.2
-        version: 11.0.2(axios@1.6.0)(zod@3.25.20)
+        specifier: ^11.1.0
+        version: 11.1.0(axios@1.11.0)(zod@4.0.17)
       '@uidotdev/usehooks':
         specifier: ^2.4.1
         version: 2.4.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@zodios/plugins':
         specifier: ^10.6.0
-        version: 10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20))(axios@1.6.0)
+        version: 10.6.0(@zodios/core@10.9.6(axios@1.11.0)(zod@4.0.17))(axios@1.11.0)
       axios:
-        specifier: ^1.6.0
-        version: 1.6.0
+        specifier: ^1.11.0
+        version: 1.11.0
       bowser:
         specifier: ^2.11.0
         version: 2.11.0
@@ -574,8 +580,8 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^3.25.20
-        version: 3.25.20
+        specifier: ^4.0.17
+        version: 4.0.17
       zustand:
         specifier: ^4.4.6
         version: 4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0)
@@ -1730,6 +1736,9 @@ packages:
   '@fastify/error@4.1.0':
     resolution: {integrity: sha512-KeFcciOr1eo/YvIXHP65S94jfEEqn1RxTRBT1aJaHxY5FK0/GDXYozsQMMWlZoHgi8i0s+YtrLsgj/JkUUjSkQ==}
 
+  '@fastify/error@4.2.0':
+    resolution: {integrity: sha512-RSo3sVDXfHskiBZKBPRgnQTtIqpi/7zhJOEmAxCiBcM7d0uwdGdxLlsCaLzGs8v8NnxIRlfG0N51p5yFaOentQ==}
+
   '@fastify/fast-json-stringify-compiler@5.0.1':
     resolution: {integrity: sha512-f2d3JExJgFE3UbdFcpPwqNUEoHWmt8pAKf8f+9YuLESdefA0WgqxeT6DrGL4Yrf/9ihXNSKOqpjEmurV405meA==}
 
@@ -2713,11 +2722,11 @@ packages:
   '@tunarr/playlist@1.1.0':
     resolution: {integrity: sha512-MxwRLHEqEsg+7nmPPnBAVenpi9LjgzUkaS3QxHiHEHW0H0cLagms7EH3fwuW8PQXglRXSHjshVcZBipcwbxTJw==}
 
-  '@tunarr/zodios-core@11.0.2':
-    resolution: {integrity: sha512-4v0BTrfbdgLe+AE5m72+vXiJupPINtV2Y6Ok1dDeNiYWC+/7kRo+d2O1OFkNOkIsHe60RLrH32PspwdaaSfcWA==}
+  '@tunarr/zodios-core@11.1.0':
+    resolution: {integrity: sha512-i/oGpWvAXvWoGcrR813Bs7OsTMn/y0SjRG9shafkxS7m5iokoq2MyBlly+9lU/44IcbFxIC1U13XR6O4RCE5Ug==}
     peerDependencies:
-      axios: ^0.x || ^1.0.0
-      zod: ^3.25.20
+      axios: ^1.11.0
+      zod: ^4.0.0
 
   '@types/archiver@6.0.2':
     resolution: {integrity: sha512-KmROQqbQzKGuaAbmK+ZcytkJ51+YqDa7NmbXjmtC5YBLSyQYo21YaUnQ3HbaPFKL1ooo6RQ6OPYPIDyxfpDDXw==}
@@ -3347,8 +3356,8 @@ packages:
   avvio@9.0.0:
     resolution: {integrity: sha512-UbYrOXgE/I+knFG+3kJr9AgC7uNo8DG+FGGODpH9Bj1O1kL/QDjBXnTem9leD3VdQKtaHjV3O85DQ7hHh4IIHw==}
 
-  axios@1.6.0:
-    resolution: {integrity: sha512-EZ1DYihju9pwVB+jg67ogm+Tmqc6JmhamRN6I4Zt8DfZu5lbcQGw3ozH9lFejSJgs/ibaef3A9PMXPLeefFGJg==}
+  axios@1.11.0:
+    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
 
   b4a@1.6.6:
     resolution: {integrity: sha512-5Tk1HLk6b6ctmjIkAcU/Ujv/1WqiDl0F0JdRCR80VsOcUlHcu7pWeWRlOqQLHfDEsVx9YH/aif5AG4ehoCtTmg==}
@@ -4191,6 +4200,10 @@ packages:
     resolution: {integrity: sha512-3T8uNMC3OQTHkFUsFq8r/BwAXLHvU/9O9mE0fBc/MY5iq/8H7ncvO947LmYA6ldWw9Uh8Yhf25zu6n7nML5QWQ==}
     engines: {node: '>= 0.4'}
 
+  es-set-tostringtag@2.1.0:
+    resolution: {integrity: sha512-j6vWzfrGVfyXxge+O0x5sh6cvxAog0a/4Rdd2K36zCMV5eJ+/+tOAngRO8cODMNWbVRdVlmGZQL2YS3yR8bIUA==}
+    engines: {node: '>= 0.4'}
+
   es-shim-unscopables@1.0.2:
     resolution: {integrity: sha512-J3yBRXCzDu4ULnQwxyToo/OjdMx6akgVC7K6few0a7F/0wLtmKKN7I73AH5T2836UuXRqN7Qg+IIUw/+YJksRw==}
 
@@ -4510,11 +4523,13 @@ packages:
     resolution: {integrity: sha512-vbNliaT+SlZlH9sPYR1FYe3AJptbadf20/SjmramOxoeS6fdrAkMQu0H0/ZENaU4ruBlxCrUs0hUfV2J0dGyZw==}
     engines: {node: '>= 18.18.0'}
 
-  fastify-type-provider-zod@4.0.2:
-    resolution: {integrity: sha512-FDRzSL3ZuoZ+4YDevR1YOinmDKkxOdy3QB9dDR845sK+bQvDroPKhHAXLEAOObDxL7SMA0OZN/A4osrNBTdDTQ==}
+  fastify-type-provider-zod@5.0.3:
+    resolution: {integrity: sha512-h+/SL9qWD+J5OS4UZ86YnbQA/gaeTqKXqUDbYFm3NZYAhjVVqALCp/UBHFXnH/lv+TpBFyv8uKQ/U1692j0N1g==}
     peerDependencies:
+      '@fastify/swagger': '>=9.5.1'
       fastify: ^5.0.0
-      zod: ^3.14.2
+      openapi-types: ^12.1.3
+      zod: '>=3.25.67'
 
   fastify@5.0.0:
     resolution: {integrity: sha512-Qe4dU+zGOzg7vXjw4EvcuyIbNnMwTmcuOhlOrOJsgwzvjEZmsM/IeHulgJk+r46STjdJS/ZJbxO8N70ODXDMEQ==}
@@ -4602,8 +4617,8 @@ packages:
   flatted@3.3.1:
     resolution: {integrity: sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==}
 
-  follow-redirects@1.15.3:
-    resolution: {integrity: sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==}
+  follow-redirects@1.15.11:
+    resolution: {integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -4618,8 +4633,8 @@ packages:
     resolution: {integrity: sha512-TMKDUnIte6bfb5nWv7V/caI169OHgvwjb7V4WkeUvbQQdjr5rWKqHFiKWb/fcOwB+CzBT+qbWjvj+DVwRskpIg==}
     engines: {node: '>=14'}
 
-  form-data@4.0.0:
-    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
+  form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
 
   forwarded@0.2.0:
@@ -4825,6 +4840,24 @@ packages:
 
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
+
+  graphology-dag@0.4.1:
+    resolution: {integrity: sha512-3ch9oOAnHZDoT043vyg7ukmSkKJ505nFzaHaYOn0IF2PgGo5VtIavyVK4UpbIa4tli3hhGm1ZTdBsubTmaxu/w==}
+    peerDependencies:
+      graphology-types: '>=0.19.0'
+
+  graphology-types@0.24.8:
+    resolution: {integrity: sha512-hDRKYXa8TsoZHjgEaysSRyPdT6uB78Ci8WnjgbStlQysz7xR52PInxNsmnB7IBOM1BhikxkNyCVEFgmPKnpx3Q==}
+
+  graphology-utils@2.5.2:
+    resolution: {integrity: sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==}
+    peerDependencies:
+      graphology-types: '>=0.23.0'
+
+  graphology@0.26.0:
+    resolution: {integrity: sha512-8SSImzgUUYC89Z042s+0r/vMibY7GX/Emz4LDO5e7jYXhuoWfHISPFJYjpRLUSJGq6UQ6xlenvX1p/hJdfXuXg==}
+    peerDependencies:
+      graphology-types: '>=0.24.0'
 
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
@@ -7953,13 +7986,11 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod-to-json-schema@3.23.3:
-    resolution: {integrity: sha512-TYWChTxKQbRJp5ST22o/Irt9KC5nj7CdBKYB/AosCRdj/wxEMvv4NNaj9XVUHDOIp53ZxArGhnw5HMZziPFjog==}
-    peerDependencies:
-      zod: ^3.23.3
-
   zod@3.25.20:
     resolution: {integrity: sha512-z03fqpTMDF1G02VLKUMt6vyACE7rNWkh3gpXVHgPTw28NPtDFRGvcpTtPwn2kMKtQ0idtYJUTxchytmnqYswcw==}
+
+  zod@4.0.17:
+    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
 
   zustand@4.4.6:
     resolution: {integrity: sha512-Rb16eW55gqL4W2XZpJh0fnrATxYEG3Apl2gfHTyDSE965x/zxslTikpNch0JgNjJA9zK6gEFW8Fl6d1rTZaqgg==}
@@ -9033,6 +9064,8 @@ snapshots:
 
   '@fastify/error@4.1.0': {}
 
+  '@fastify/error@4.2.0': {}
+
   '@fastify/fast-json-stringify-compiler@5.0.1':
     dependencies:
       fast-json-stringify: 6.0.0
@@ -10002,10 +10035,10 @@ snapshots:
 
   '@tunarr/playlist@1.1.0': {}
 
-  '@tunarr/zodios-core@11.0.2(axios@1.6.0)(zod@3.25.20)':
+  '@tunarr/zodios-core@11.1.0(axios@1.11.0)(zod@4.0.17)':
     dependencies:
-      axios: 1.6.0
-      zod: 3.25.20
+      axios: 1.11.0
+      zod: 4.0.17
 
   '@types/archiver@6.0.2':
     dependencies:
@@ -10539,15 +10572,20 @@ snapshots:
       - encoding
       - supports-color
 
-  '@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20)':
+  '@zodios/core@10.9.6(axios@1.11.0)(zod@3.25.20)':
     dependencies:
-      axios: 1.6.0
+      axios: 1.11.0
       zod: 3.25.20
 
-  '@zodios/plugins@10.6.0(@zodios/core@10.9.6(axios@1.6.0)(zod@3.25.20))(axios@1.6.0)':
+  '@zodios/core@10.9.6(axios@1.11.0)(zod@4.0.17)':
     dependencies:
-      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.25.20)
-      axios: 1.6.0
+      axios: 1.11.0
+      zod: 4.0.17
+
+  '@zodios/plugins@10.6.0(@zodios/core@10.9.6(axios@1.11.0)(zod@4.0.17))(axios@1.11.0)':
+    dependencies:
+      '@zodios/core': 10.9.6(axios@1.11.0)(zod@4.0.17)
+      axios: 1.11.0
       qs: 6.12.0
 
   JSONStream@1.3.5:
@@ -10813,10 +10851,10 @@ snapshots:
       '@fastify/error': 4.1.0
       fastq: 1.17.1
 
-  axios@1.6.0:
+  axios@1.11.0:
     dependencies:
-      follow-redirects: 1.15.3
-      form-data: 4.0.0
+      follow-redirects: 1.15.11
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -11692,6 +11730,13 @@ snapshots:
       has-tostringtag: 1.0.2
       hasown: 2.0.2
 
+  es-set-tostringtag@2.1.0:
+    dependencies:
+      es-errors: 1.3.0
+      get-intrinsic: 1.2.6
+      has-tostringtag: 1.0.2
+      hasown: 2.0.2
+
   es-shim-unscopables@1.0.2:
     dependencies:
       hasown: 2.0.2
@@ -12161,12 +12206,13 @@ snapshots:
       fastify-plugin: 4.5.1
       table: 6.8.2
 
-  fastify-type-provider-zod@4.0.2(fastify@5.0.0)(zod@3.25.20):
+  fastify-type-provider-zod@5.0.3(@fastify/swagger@9.1.0)(fastify@5.0.0)(openapi-types@12.1.3)(zod@4.0.17):
     dependencies:
-      '@fastify/error': 4.1.0
+      '@fastify/error': 4.2.0
+      '@fastify/swagger': 9.1.0
       fastify: 5.0.0
-      zod: 3.25.20
-      zod-to-json-schema: 3.23.3(zod@3.25.20)
+      openapi-types: 12.1.3
+      zod: 4.0.17
 
   fastify@5.0.0:
     dependencies:
@@ -12272,7 +12318,7 @@ snapshots:
 
   flatted@3.3.1: {}
 
-  follow-redirects@1.15.3: {}
+  follow-redirects@1.15.11: {}
 
   for-each@0.3.3:
     dependencies:
@@ -12283,10 +12329,12 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  form-data@4.0.0:
+  form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
+      es-set-tostringtag: 2.1.0
+      hasown: 2.0.2
       mime-types: 2.1.35
 
   forwarded@0.2.0: {}
@@ -12543,6 +12591,23 @@ snapshots:
   grapheme-splitter@1.0.4: {}
 
   graphemer@1.4.0: {}
+
+  graphology-dag@0.4.1(graphology-types@0.24.8):
+    dependencies:
+      graphology-types: 0.24.8
+      graphology-utils: 2.5.2(graphology-types@0.24.8)
+      mnemonist: 0.39.8
+
+  graphology-types@0.24.8: {}
+
+  graphology-utils@2.5.2(graphology-types@0.24.8):
+    dependencies:
+      graphology-types: 0.24.8
+
+  graphology@0.26.0(graphology-types@0.24.8):
+    dependencies:
+      events: 3.3.0
+      graphology-types: 0.24.8
 
   handlebars@4.7.8:
     dependencies:
@@ -13925,8 +13990,8 @@ snapshots:
     dependencies:
       '@apidevtools/swagger-parser': 10.1.0(openapi-types@12.1.3)
       '@liuli-util/fs-extra': 0.1.0
-      '@zodios/core': 10.9.6(axios@1.6.0)(zod@3.25.20)
-      axios: 1.6.0
+      '@zodios/core': 10.9.6(axios@1.11.0)(zod@3.25.20)
+      axios: 1.11.0
       cac: 6.7.14
       handlebars: 4.7.8
       openapi-types: 12.1.3
@@ -15947,11 +16012,9 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.4.2
 
-  zod-to-json-schema@3.23.3(zod@3.25.20):
-    dependencies:
-      zod: 3.25.20
-
   zod@3.25.20: {}
+
+  zod@4.0.17: {}
 
   zustand@4.4.6(@types/react@18.2.15)(immer@10.0.3)(react@18.2.0):
     dependencies:

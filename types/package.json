@@ -29,7 +29,7 @@
     "typescript": "5.4.3"
   },
   "dependencies": {
-    "zod": "^3.25.20"
+    "zod": "^4.0.17"
   },
   "exports": {
     ".": {

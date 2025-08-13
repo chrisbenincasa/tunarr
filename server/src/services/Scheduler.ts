@@ -1,15 +1,9 @@
 import { container } from '@/container.js';
-import type { ServerContext } from '@/ServerContext.js';
 import type { BackupTaskFactory } from '@/tasks/BackupTask.js';
 import { BackupTask } from '@/tasks/BackupTask.js';
-import { CleanupSessionsTask } from '@/tasks/CleanupSessionsTask.js';
-import { OnDemandChannelStateTask } from '@/tasks/OnDemandChannelStateTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
-import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import type { Task, TaskId, TaskOutputType } from '@/tasks/Task.js';
-import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
-import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -17,20 +11,10 @@ import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { interfaces } from 'inversify';
-import {
-  filter,
-  flatten,
-  forEach,
-  isString,
-  once,
-  reject,
-  values,
-} from 'lodash-es';
+import { filter, forEach, isString, reject } from 'lodash-es';
 import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
-import type { SubtitleExtractorTaskFactory } from '../tasks/SubtitleExtractorTask.ts';
-import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 
 const { isDayjs } = dayjs;
 
@@ -161,115 +145,6 @@ class Scheduler {
 
 export const GlobalScheduler = new Scheduler();
 
-export const scheduleJobs = once((serverContext: ServerContext) => {
-  const xmlTvSettings = serverContext.settings.xmlTvSettings();
-
-  GlobalScheduler.scheduleTask(
-    UpdateXmlTvTask.ID,
-    new ScheduledTask(
-      UpdateXmlTvTask.name,
-      hoursCrontab(xmlTvSettings.refreshHours),
-      container.get<interfaces.AutoFactory<UpdateXmlTvTask>>(
-        KEYS.UpdateXmlTvTaskFactory,
-      ),
-      [],
-    ),
-  );
-
-  GlobalScheduler.scheduleTask(
-    CleanupSessionsTask.ID,
-    new ScheduledTask(
-      CleanupSessionsTask.name,
-      minutesCrontab(1),
-      container.get<interfaces.AutoFactory<CleanupSessionsTask>>(
-        CleanupSessionsTask.KEY,
-      ),
-      [],
-    ),
-  );
-
-  GlobalScheduler.scheduleTask(
-    OnDemandChannelStateTask.ID,
-    new ScheduledTask(
-      OnDemandChannelStateTask.name,
-      minutesCrontab(1),
-      container.get<interfaces.AutoFactory<OnDemandChannelStateTask>>(
-        OnDemandChannelStateTask.KEY,
-      ),
-      [],
-      { runAtStartup: true },
-    ),
-  );
-
-  GlobalScheduler.scheduleTask(
-    ScheduleDynamicChannelsTask.ID,
-    new ScheduledTask(
-      ScheduleDynamicChannelsTask.name,
-      // Temporary
-      hoursCrontab(1),
-      container.get<interfaces.AutoFactory<ScheduleDynamicChannelsTask>>(
-        ScheduleDynamicChannelsTask.KEY,
-      ),
-      [],
-      {
-        runAtStartup: true,
-        runOnSchedule: true,
-      },
-    ),
-  );
-
-  // TODO: It's unclear whether we need to run this on a schedule
-  // GlobalScheduler.scheduleTask(
-  //   ReconcileProgramDurationsTask.ID,
-  //   new ScheduledTask(
-  //     ReconcileProgramDurationsTask.name,
-  //     // temporary
-  //     hoursCrontab(1),
-  //     container.get<interfaces.AutoFactory<ReconcileProgramDurationsTask>>(
-  //       ReconcileProgramDurationsTask.KEY,
-  //     ),
-  //     [],
-  //   ),
-  // );
-
-  GlobalScheduler.scheduleTask(
-    SubtitleExtractorTask.ID,
-    new ScheduledTask(
-      SubtitleExtractorTask.name,
-      hoursCrontab(1),
-      () =>
-        container.get<SubtitleExtractorTaskFactory>(SubtitleExtractorTask.KEY)(
-          {},
-        ),
-      [],
-      {
-        runAtStartup: true,
-      },
-    ),
-  );
-
-  scheduleBackupJobs(serverContext.settings.backup);
-
-  forEach(
-    filter(
-      flatten(values(GlobalScheduler.scheduledJobsById)),
-      (job) => job.runAtStartup,
-    ),
-    (job) => {
-      LoggerFactory.root.debug('Running task %s', job.name);
-      job
-        .runNow(true)
-        .catch((e) =>
-          LoggerFactory.root.error(
-            'Error running job %s at startup',
-            job.name,
-            e,
-          ),
-        );
-    },
-  );
-});
-
 export function scheduleBackupJobs(
   backupConfig: BackupSettings | DeepReadonly<BackupSettings>,
 ) {
@@ -308,10 +183,10 @@ export function scheduleBackupJobs(
   );
 }
 
-function hoursCrontab(hours: number): string {
+export function hoursCrontab(hours: number): string {
   return `0 0 */${hours} * * *`;
 }
 
-function minutesCrontab(mins: number): string {
+export function minutesCrontab(mins: number): string {
   return `*/${mins} * * * *`;
 }

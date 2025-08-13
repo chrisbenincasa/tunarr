@@ -21,7 +21,7 @@ export const channelProgrammingQuery = (
       CondensedChannelProgramming
     >,
     queryFn: async () =>
-      apiClient.get('/api/channels/:id/programming', {
+      apiClient.getChannelProgramming({
         params: { id },
         queries: pageParams,
       }),

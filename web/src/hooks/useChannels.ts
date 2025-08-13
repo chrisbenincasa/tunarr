@@ -14,7 +14,7 @@ export const channelsQuery = (
 ) =>
   queryOptions({
     queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
-    queryFn: () => apiClient.get('/api/channels'),
+    queryFn: () => apiClient.getChannels(),
     initialData,
   });
 
@@ -38,7 +38,7 @@ export const channelQuery = (
   queryOptions({
     queryKey: ['channels', id] as DataTag<['channels', string], Channel>,
     queryFn: async () =>
-      apiClient.get('/api/channels/:id', {
+      apiClient.getChannel({
         params: { id },
       }),
     enabled: id.length > 0 && enabled,

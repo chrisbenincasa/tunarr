@@ -15,7 +15,6 @@ import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
-  isEmpty,
   isNumber,
   isString,
   isUndefined,
@@ -30,21 +29,12 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
-import { FfmpegInfo } from './ffmpeg/ffmpegInfo.js';
-import {
-  type ServerOptions,
-  initializeSingletons,
-  serverOptions,
-} from './globals.js';
+import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
-import { GlobalScheduler, scheduleJobs } from './services/Scheduler.ts';
-import { initPersistentStreamCache } from './stream/ChannelCache.js';
-import { UpdateXmlTvTask } from './tasks/UpdateXmlTvTask.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
-import { fileExists } from './util/fsUtil.js';
-import { filename, isNonEmptyString, run } from './util/index.js';
-import { type Logger, RootLogger } from './util/logging/LoggerFactory.js';
+import { filename, run } from './util/index.js';
+import { type Logger } from './util/logging/LoggerFactory.js';
 import {
   serializerCompiler,
   swaggerTransform,
@@ -53,20 +43,6 @@ import {
 } from './util/zod.ts';
 
 const currentDirectory = dirname(filename(import.meta.url));
-
-async function legacyDizquetvDirectoryPath() {
-  const legacyDbLocation = path.join(process.cwd(), '.dizquetv');
-  RootLogger.info(
-    `Searching for legacy dizquetv directory at ${legacyDbLocation}`,
-  );
-  const hasLegacyDb = await fileExists(legacyDbLocation);
-  if (hasLegacyDb) {
-    RootLogger.info(`A legacy .dizquetv database was located.`);
-    return legacyDbLocation;
-  }
-
-  return;
-}
 
 @injectable()
 export class Server {
@@ -78,69 +54,7 @@ export class Server {
     @inject(KEYS.Logger) private logger: Logger,
   ) {}
 
-  async init() {
-    this.logger.info(
-      'Using Tunarr database directory: %s',
-      this.serverOptions.databaseDirectory,
-    );
-
-    // TODO: Use injector
-    initializeSingletons(this.serverContext);
-    await this.serverContext.m3uService.clearCache();
-    await this.serverContext.channelLineupMigrator.run();
-
-    // TODO add legacy migration
-    const legacyDbPath = await legacyDizquetvDirectoryPath();
-    if (
-      (this.serverContext.settings.migrationState.isFreshSettings ||
-        this.serverOptions.force_migration) &&
-      isNonEmptyString(legacyDbPath)
-    ) {
-      this.logger.info('Migrating from legacy database folder...');
-      await this.serverContext.legacyDBMigrator
-        .migrateFromLegacyDb(legacyDbPath)
-        .catch((e) => {
-          this.logger.error('Failed to migrate from legacy DB: %O', e);
-        });
-    } else if (
-      !this.serverContext.settings.migrationState.isFreshSettings &&
-      isNonEmptyString(legacyDbPath)
-    ) {
-      this.logger.info(
-        'Found legacy dizquetv database folder at %s, but not migrating because an existing Tunarr database was also found',
-        legacyDbPath,
-      );
-    } else if (isEmpty(legacyDbPath)) {
-      this.logger.info(
-        'No legacy dizquetv database folder found when searching at: %s',
-        path.join(process.cwd(), '.dizquetv'),
-      );
-    }
-
-    if (
-      await fileExists(
-        this.serverContext.settings.ffmpegSettings().ffmpegExecutablePath,
-      )
-    ) {
-      container
-        .get<FfmpegInfo>(FfmpegInfo)
-        .seed()
-        .then(() => {
-          this.logger.debug('Successfully seeded ffmpeg info cache.');
-        })
-        .catch((e) => {
-          this.logger.error(e, 'Error while seeing ffmpeg info cache.');
-        });
-    }
-
-    scheduleJobs(this.serverContext);
-    await this.serverContext.fixerRunner.runFixers();
-    await initPersistentStreamCache();
-
-    const updateXMLPromise = GlobalScheduler.runScheduledJobNow(
-      UpdateXmlTvTask.ID,
-    );
-
+  async configureServer() {
     this.app = fastify({
       logger: false,
       bodyLimit: 50 * 1024 * 1024,
@@ -463,8 +377,6 @@ export class Server {
       )
       .register(fastifyGracefulShutdown);
 
-    await updateXMLPromise;
-
     this.app.after(() => {
       this.app.gracefulShutdown(async (signal) => {
         this.logger.info(
@@ -472,79 +384,14 @@ export class Server {
           signal,
         );
 
-        const t = new Date().getTime();
-
-        try {
-          this.serverContext.eventService.push({
-            type: 'lifecycle',
-            message: `Initiated Server Shutdown`,
-            detail: {
-              time: t,
-            },
-            level: 'warning',
-          });
-        } catch (e) {
-          this.logger.debug(e, 'Error sending shutdown signal to frontend');
-        }
-
-        try {
-          this.logger.debug('Pausing all on-demand channels');
-          await this.serverContext.onDemandChannelService.pauseAllChannels();
-        } catch (e) {
-          this.logger.error(e, 'Error pausing on-demand channels');
-        }
-
-        this.logger.debug('Shutting down all sessions');
-        for (const session of values(
-          this.serverContext.sessionManager.allSessions(),
-        )) {
-          try {
-            await session.stop();
-          } catch (e) {
-            this.logger.error(
-              e,
-              'Error shutting down session (id=%s, type%s)',
-              session.id,
-              session.sessionType,
-            );
-          }
-        }
-
-        this.logger.debug('Shutting down all workers');
-        try {
-          await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
-        } catch (e) {
-          this.logger.error(e, 'Error shutting down workers');
-        }
-
-        this.serverContext.eventService.close();
-
-        try {
-          this.logger.debug('Waiting for pending jobs to complete!');
-          await Promise.race([
-            schedule.gracefulShutdown(),
-            new Promise<boolean>((resolve) => {
-              setTimeout(() => {
-                resolve(false);
-              }, 1000);
-            }).then(() => {
-              throw new Error(
-                'Scheduled job graceful shutdown timeout reached.',
-              );
-            }),
-          ]);
-        } catch (e) {
-          this.logger.error(e, 'Scheduled job graceful shutdown failed.');
-        }
-
-        this.logger.debug('All done, shutting down!');
+        await this.gracefulShutdown();
       });
     });
   }
 
-  async initAndRun() {
+  async runServer() {
     const start = performance.now();
-    await this.init();
+    await this.configureServer();
 
     const host = process.env[TUNARR_ENV_VARS.BIND_ADDR_ENV_VAR] ?? '0.0.0.0';
 
@@ -557,6 +404,7 @@ export class Server {
       'Took %d ms for the server to start',
       round(performance.now() - start, 2),
     );
+
     this.logger.info(
       `HTTP server listening on host:port: http://${
         host === '0.0.0.0' ? '*' : host
@@ -578,6 +426,73 @@ export class Server {
     });
 
     return this.app;
+  }
+
+  private async gracefulShutdown() {
+    const t = new Date().getTime();
+
+    try {
+      this.serverContext.eventService.push({
+        type: 'lifecycle',
+        message: `Initiated Server Shutdown`,
+        detail: {
+          time: t,
+        },
+        level: 'warning',
+      });
+    } catch (e) {
+      this.logger.debug(e, 'Error sending shutdown signal to frontend');
+    }
+
+    try {
+      this.logger.debug('Pausing all on-demand channels');
+      await this.serverContext.onDemandChannelService.pauseAllChannels();
+    } catch (e) {
+      this.logger.error(e, 'Error pausing on-demand channels');
+    }
+
+    this.logger.debug('Shutting down all sessions');
+    for (const session of values(
+      this.serverContext.sessionManager.allSessions(),
+    )) {
+      try {
+        await session.stop();
+      } catch (e) {
+        this.logger.error(
+          e,
+          'Error shutting down session (id=%s, type%s)',
+          session.id,
+          session.sessionType,
+        );
+      }
+    }
+
+    this.logger.debug('Shutting down all workers');
+    try {
+      await container.get<IWorkerPool>(KEYS.WorkerPool).shutdown(5_000);
+    } catch (e) {
+      this.logger.error(e, 'Error shutting down workers');
+    }
+
+    this.serverContext.eventService.close();
+
+    try {
+      this.logger.debug('Waiting for pending jobs to complete!');
+      await Promise.race([
+        schedule.gracefulShutdown(),
+        new Promise<boolean>((resolve) => {
+          setTimeout(() => {
+            resolve(false);
+          }, 1000);
+        }).then(() => {
+          throw new Error('Scheduled job graceful shutdown timeout reached.');
+        }),
+      ]);
+    } catch (e) {
+      this.logger.error(e, 'Scheduled job graceful shutdown failed.');
+    }
+
+    this.logger.debug('All done, shutting down!');
   }
 
   getOpenApiDocument() {

@@ -26,6 +26,7 @@ import type { interfaces } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
 import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
+import { App } from './App.ts';
 import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineBuilderFactory.ts';
@@ -37,6 +38,13 @@ import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedulerService.ts';
+import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLineupMigratorStartupTask.ts';
+import { ClearM3uCacheStartupTask } from './services/startup/ClearM3uCacheStartupTask.ts';
+import { GenerateGuideStartupTask } from './services/startup/GenerateGuideStartupTask.ts';
+import { ScheduleJobsStartupTask } from './services/startup/ScheduleJobsStartupTask.ts';
+import { SeedFfmpegInfoCache } from './services/startup/SeedFfmpegInfoCache.ts';
+import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevicesStartupTask.ts';
+import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
 
@@ -96,6 +104,7 @@ const RootModule = new ContainerModule((bind) => {
         ctx.container.get<MediaSourceApiFactory>(MediaSourceApiFactory),
     );
 
+  bind(FixerRunner).toSelf().inSingletonScope();
   bind(StartupService).toSelf().inSingletonScope();
   bind(TVGuideService).toSelf().inSingletonScope();
   bind(EventService).toSelf().inSingletonScope();
@@ -107,6 +116,16 @@ const RootModule = new ContainerModule((bind) => {
     KEYS.TimeSlotSchedulerServiceFactory,
   ).toAutoFactory(TimeSlotSchedulerService);
 
+  bind(KEYS.StartupTask).to(SeedSystemDevicesStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask).to(ClearM3uCacheStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask)
+    .to(ChannelLineupMigratorStartupTask)
+    .inSingletonScope();
+  bind(KEYS.StartupTask).to(SeedFfmpegInfoCache).inSingletonScope();
+  bind(KEYS.StartupTask).to(ScheduleJobsStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask).to(FixerRunner).inSingletonScope();
+  bind(KEYS.StartupTask).to(GenerateGuideStartupTask).inSingletonScope();
+
   if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);
   } else {
@@ -116,6 +135,8 @@ const RootModule = new ContainerModule((bind) => {
   bind<interfaces.AutoFactory<IWorkerPool>>(
     KEYS.WorkerPoolFactory,
   ).toAutoFactory(KEYS.WorkerPool);
+
+  bind(App).toSelf().inSingletonScope();
 });
 
 container.load(RootModule);
