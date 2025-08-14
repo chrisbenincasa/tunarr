@@ -190,7 +190,7 @@ export const EditTimeSlotDialogContent = ({
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>
         <Button
-          disabled={!isValid || isSubmitting || !isDirty}
+          disabled={!isValid || isSubmitting}
           onClick={() => commit()}
           variant="contained"
         >

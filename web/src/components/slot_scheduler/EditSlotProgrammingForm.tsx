@@ -91,9 +91,7 @@ export const EditSlotProgrammingForm = ({
       return;
     }
 
-    reset(newSlotForType(value), {
-      keepDefaultValues: true,
-    });
+    reset(newSlotForType(value));
   };
 
   const redirectShowAutoCompleteOpts = useMemo(
