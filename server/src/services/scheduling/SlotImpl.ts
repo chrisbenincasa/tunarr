@@ -3,14 +3,13 @@ import type { BaseSlot, SlotFillerTypes } from '@tunarr/types/api';
 import { isEmpty, some } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { Nullable } from '../../types/util.ts';
-import type { FillerProgramIterator } from './FillerProgramIterator.ts';
 import type { IterationState, ProgramIterator } from './ProgramIterator.js';
 import { slotMayHaveFiller } from './slotSchedulerUtil.js';
 
 export abstract class SlotImpl<SlotType extends BaseSlot> {
   protected fillerIteratorsByType: Record<
     SlotFillerTypes,
-    FillerProgramIterator[]
+    ProgramIterator<FillerProgram>[]
   > = {
     head: [],
     post: [],
@@ -23,7 +22,10 @@ export abstract class SlotImpl<SlotType extends BaseSlot> {
     protected slot: SlotType,
     private iterator: ProgramIterator,
     private random: Random,
-    private fillerIteratorsByListId: Record<string, FillerProgramIterator> = {},
+    private fillerIteratorsByListId: Record<
+      string,
+      ProgramIterator<FillerProgram>
+    > = {},
   ) {
     if (slotMayHaveFiller(this.slot) && this.slot.filler) {
       for (const filler of this.slot.filler) {

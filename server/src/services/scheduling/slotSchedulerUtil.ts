@@ -46,10 +46,6 @@ import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { retrySimple } from '../../util/index.ts';
-import {
-  FillerProgramIterator,
-  FillerProgramIterator as WeightedFillerProgramIterator,
-} from './FillerProgramIterator.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import { ProgramChunkedShuffle } from './ProgramChunkedShuffle.ts';
 import type { ProgramIterator } from './ProgramIterator.js';
@@ -59,9 +55,10 @@ import {
   slotIteratorKey,
 } from './ProgramIterator.js';
 import { ProgramOrdereredIterator } from './ProgramOrdereredIterator.ts';
-import { ProgramShuffler } from './ProgramShuffler.ts';
+import { ShuffleProgramIterator } from './ShuffleProgramIterator.ts';
 import type { SlotImpl } from './SlotImpl.ts';
 import { StaticProgramIterator } from './StaticProgramIterator.ts';
+import { WeightedFillerProgramIterator } from './WeightedFillerProgramIterator.ts';
 
 type ProgramMapping = {
   [K in 'content' | 'redirect' | 'custom' | 'filler']: Record<
@@ -262,7 +259,7 @@ export function createProgramIterators(
           .with(
             { type: 'custom-show', order: 'shuffle' },
             () =>
-              new ProgramShuffler(
+              new ShuffleProgramIterator(
                 programBySlotType.custom[slotId] ?? [],
                 random,
               ),
@@ -302,7 +299,7 @@ export function createProgramIterators(
             if (isEmpty(programs)) {
               throw new Error('Cannot schedule an empty filler list slot.');
             }
-            return new ProgramShuffler(programs, random);
+            return new ShuffleProgramIterator(programs, random);
           })
           .with({ type: P.union('movie', 'show') }, (slot) =>
             getContentProgramIterator(programBySlotType, slotId, slot, random),
@@ -321,14 +318,27 @@ export function createProgramIterators(
   );
 
   for (const fillerDef of slotFiller) {
-    const fakeSlot = {
-      type: 'filler',
-      fillerListId: fillerDef.fillerListId,
-      order: 'shuffle_prefer_short',
-      decayFactor: 0.5,
-      durationWeighting: 'linear',
-      recoveryFactor: 0.05,
-    } satisfies FillerProgrammingSlot;
+    const fakeSlot = match(fillerDef.fillerOrder)
+      .returnType<FillerProgrammingSlot>()
+      .with('uniform', () => ({
+        type: 'filler',
+        order: 'uniform',
+        decayFactor: 0.5,
+        recoveryFactor: 0.05,
+        durationWeighting: 'linear',
+        fillerListId: fillerDef.fillerListId,
+      }))
+      .with(P.union('shuffle_prefer_long', 'shuffle_prefer_short'), (order) => {
+        return {
+          type: 'filler',
+          fillerListId: fillerDef.fillerListId,
+          order,
+          decayFactor: 0.5,
+          durationWeighting: 'linear',
+          recoveryFactor: 0.05,
+        } satisfies FillerProgrammingSlot;
+      })
+      .exhaustive();
 
     const iteratorKey = slotIteratorKey(fakeSlot);
     const slotId = `filler.${fillerDef.fillerListId}`;
@@ -341,11 +351,17 @@ export function createProgramIterators(
     if (isEmpty(programs)) {
       throw new Error('Cannot schedule an empty filler list slot.');
     }
-    iteratorsFromSlots[iteratorKey] = new WeightedFillerProgramIterator(
-      programs as NonEmptyArray<FillerProgram>,
-      fakeSlot,
-      random,
-    );
+
+    const iterator =
+      fakeSlot.order === 'uniform'
+        ? new ShuffleProgramIterator(programs, random)
+        : new WeightedFillerProgramIterator(
+            programs as NonEmptyArray<FillerProgram>,
+            fakeSlot,
+            random,
+          );
+
+    iteratorsFromSlots[iteratorKey] = iterator;
   }
   return iteratorsFromSlots;
 }
@@ -364,7 +380,7 @@ export function slotMayHaveFiller(
 export function slotFillerIterators(
   slot: BaseSlot,
   map: Record<SlotIteratorKey, ProgramIterator>,
-): Record<string, FillerProgramIterator> {
+): Record<string, ProgramIterator<FillerProgram>> {
   if (!slotMayHaveFiller(slot)) {
     return {};
   }
@@ -372,12 +388,12 @@ export function slotFillerIterators(
     return {};
   }
 
-  const out: Record<string, FillerProgramIterator> = {};
+  const out: Record<string, ProgramIterator<FillerProgram>> = {};
   for (const filler of slot.filler) {
     const it =
-      map[fillerSlotIteratorKey(filler.fillerListId, 'shuffle_prefer_short')];
-    if (it && it instanceof FillerProgramIterator) {
-      out[filler.fillerListId] = it;
+      map[fillerSlotIteratorKey(filler.fillerListId, filler.fillerOrder)];
+    if (it) {
+      out[filler.fillerListId] = it as ProgramIterator<FillerProgram>;
     }
   }
 
@@ -434,7 +450,7 @@ function getContentProgramIterator(
         slot.direction === 'asc',
       );
     case 'shuffle':
-      return new ProgramShuffler(uniquePrograms, random);
+      return new ShuffleProgramIterator(uniquePrograms, random);
       break;
     case 'ordered_shuffle':
       return new ProgramChunkedShuffle(

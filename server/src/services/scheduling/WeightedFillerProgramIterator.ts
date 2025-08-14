@@ -1,6 +1,6 @@
 import type { FillerProgram } from '@tunarr/types';
 import type { FillerProgrammingSlot } from '@tunarr/types/api';
-import { findIndex, isNil, last, maxBy, sortBy, sum } from 'lodash-es';
+import { isNil, last, maxBy, sortBy, sum } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
@@ -11,10 +11,14 @@ import type {
   WeightedProgram,
 } from './ProgramIterator.ts';
 
-export class FillerProgramIterator implements ProgramIterator<FillerProgram> {
+export class WeightedFillerProgramIterator
+  implements ProgramIterator<FillerProgram>
+{
   private weightedPrograms: NonEmptyArray<WeightedProgram>;
   private lastSeenTimestampById = new Map<string, number>();
   private weightsById = new Map<string, number>();
+  // Optimization to skip the loop below.
+  private maxDuration: number;
 
   constructor(
     programs: NonEmptyArray<FillerProgram>,
@@ -23,13 +27,13 @@ export class FillerProgramIterator implements ProgramIterator<FillerProgram> {
     private decayFactor: number = slotDef.decayFactor,
     private resetRate: number = slotDef.recoveryFactor,
   ) {
-    const maxDuration = maxBy(programs, (p) => p.duration)!.duration;
+    this.maxDuration = maxBy(programs, (p) => p.duration)!.duration;
     const rawWeights = match([
       this.slotDef.order,
       this.slotDef.durationWeighting,
     ])
       .with(['shuffle_prefer_short', 'linear'], () =>
-        programs.map((p) => maxDuration - p.duration + 1),
+        programs.map((p) => this.maxDuration - p.duration + 1),
       )
       .with(['shuffle_prefer_short', 'log'], () =>
         programs.map((p) => Math.log(1 / p.duration)),
@@ -63,18 +67,20 @@ export class FillerProgramIterator implements ProgramIterator<FillerProgram> {
   }
 
   current(state: IterationState): Nullable<FillerProgram> {
-    const idx = findIndex(
-      this.weightedPrograms,
-      ({ program }) => program.duration > state.slotDuration,
-    );
-    if (idx === -1) {
-      // No programs are the right duration.
-      return null;
+    let idx = 0;
+    if (state.slotDuration > this.maxDuration) {
+      idx = this.weightedPrograms.length - 1;
+    } else {
+      while (idx < this.weightedPrograms.length) {
+        if (this.weightedPrograms[idx].program.duration > state.slotDuration) {
+          break;
+        }
+        idx++;
+      }
     }
-    const endIdx = idx === 0 ? this.weightedPrograms.length - 1 : idx - 1;
 
     const programsToConsider = this.weightedPrograms
-      .slice(0, endIdx)
+      .slice(0, idx)
       .filter(({ program }) => {
         const lastSeen = this.lastSeenTimestampById.get(program.id);
         if (

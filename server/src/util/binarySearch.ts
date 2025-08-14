@@ -34,10 +34,14 @@ export function binarySearch(
   return low;
 }
 
-export function binarySearchRange(seq: readonly number[], target: number) {
+export function binarySearchRange(
+  seq: readonly number[],
+  target: number,
+  isSorted: boolean = false,
+) {
   let low = 0,
     high = seq.length - 1;
-  const sorted = sortBy(seq);
+  const sorted = isSorted ? sortBy(seq) : seq;
   if (seq.length === 0 || target < 0 || target > sorted[seq.length - 1]) {
     return null;
   }

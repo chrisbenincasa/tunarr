@@ -3,12 +3,14 @@ import { nth, shuffle, slice } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { ProgramIterator } from './ProgramIterator.ts';
 
-export class ProgramShuffler implements ProgramIterator {
-  #programs: ChannelProgram[];
+export class ShuffleProgramIterator<ProgramT extends ChannelProgram>
+  implements ProgramIterator<ChannelProgram>
+{
+  #programs: ProgramT[];
   #position: number = 0;
 
   constructor(
-    programs: ChannelProgram[],
+    programs: ProgramT[],
     private random: Random,
   ) {
     this.#programs = shuffle(programs);
