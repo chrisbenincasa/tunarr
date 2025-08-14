@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.4](https://github.com/chrisbenincasa/tunarr/compare/v0.21.3...v0.21.4) (2025-08-14)
+
+
+### Features
+
+* **scheduling:** allow picking filler order for per-slot filler ([#1322](https://github.com/chrisbenincasa/tunarr/issues/1322)) ([72eb2a8](https://github.com/chrisbenincasa/tunarr/commit/72eb2a8a3dbd9ac9edbccb2982ae1e0b12d65e27))
+
+
+### Bug Fixes
+
+* fix subtitle extraction ([e6ac4d4](https://github.com/chrisbenincasa/tunarr/commit/e6ac4d45c1de6686189c1016815e976f06e01d47))
+
 ## [0.21.3](https://github.com/chrisbenincasa/tunarr/compare/v0.21.2...v0.21.3) (2025-08-14)
 
 
