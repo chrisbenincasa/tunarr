@@ -12,7 +12,7 @@ import type {
 } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import { isError, isString } from 'lodash-es';
-import type { z } from 'zod/v4';
+import { z } from 'zod/v4';
 
 export type ApiClientOptions = {
   name: string;
@@ -112,8 +112,9 @@ export abstract class BaseApiClient<
 
     this.logger.error(
       parsed.error,
-      'Unable to parse schema from response. Path: %s',
+      'Unable to parse schema from response. Path: %s\n%s',
       path,
+      z.prettifyError(parsed.error),
     );
 
     return this.makeErrorResult('parse_error');

@@ -1,6 +1,7 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import { tag } from '@tunarr/types';
+import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { capitalize, find, isEmpty, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Jellyfin } from '../../../helpers/constants.ts';
@@ -39,35 +40,33 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
 
   const { data: jellyfinGenres } = useJellyfinGenres(
     selectedServer?.id ?? tag(''),
-    selectedJellyfinLibrary?.Id ?? '',
+    selectedJellyfinLibrary?.ItemId ?? '',
     selectedServer?.type === Jellyfin && !!selectedJellyfinLibrary,
   );
 
   useEffect(() => {
     if (selectedServer?.type === Jellyfin && jellyfinLibraries) {
       if (
-        jellyfinLibraries.Items.length > 0 &&
+        jellyfinLibraries.length > 0 &&
         (!selectedLibrary || selectedLibrary.type !== Jellyfin)
       ) {
         const view =
           find(
-            jellyfinLibraries.Items,
-            ({ Id: id }) => id === initialLibraryId,
-          ) ?? sortBy(jellyfinLibraries.Items, sortJellyfinLibraries)[0];
+            jellyfinLibraries,
+            ({ ItemId: id }) => id === initialLibraryId,
+          ) ?? sortBy(jellyfinLibraries, sortJellyfinLibraries)[0];
         setProgrammingListLibrary({
           type: Jellyfin,
           view,
         });
         navigate({
           search: {
-            libraryId: view.Id,
+            libraryId: view.ItemId,
             mediaSourceId: selectedServer.id,
           },
         }).catch(console.error);
       }
-      addKnownMediaForJellyfinServer(selectedServer.id, [
-        ...jellyfinLibraries.Items,
-      ]);
+      addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
     }
   }, [
     initialLibraryId,
@@ -87,12 +86,12 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
         libraryUuid,
         Jellyfin,
       );
-      if (view) {
+      if (view && isJellyfinVirtualFolder(view)) {
         setProgrammingListLibrary({ type: Jellyfin, view });
         navigate({
           search: {
             mediaSourceId: selectedServer.id,
-            libraryId: view.Id,
+            libraryId: view.ItemId,
           },
         }).catch(console.error);
       }
@@ -134,23 +133,21 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
 
   return (
     !isNil(jellyfinLibraries) &&
-    jellyfinLibraries.Items.length > 0 &&
+    jellyfinLibraries.length > 0 &&
     selectedJellyfinLibrary && (
       <>
         <FormControl size="small" sx={{ minWidth: { sm: 200 } }}>
           <InputLabel>Library</InputLabel>
           <Select
             label="Library"
-            value={selectedJellyfinLibrary.Id}
+            value={selectedJellyfinLibrary.ItemId}
             onChange={(e) => onLibraryChange(e.target.value)}
           >
-            {sortBy(jellyfinLibraries.Items, sortJellyfinLibraries).map(
-              (lib) => (
-                <MenuItem key={lib.Id} value={lib.Id}>
-                  {lib.Name}
-                </MenuItem>
-              ),
-            )}
+            {sortBy(jellyfinLibraries, sortJellyfinLibraries).map((lib) => (
+              <MenuItem key={lib.ItemId} value={lib.ItemId}>
+                {lib.Name}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         {renderGenreChoices()}

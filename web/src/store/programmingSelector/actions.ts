@@ -8,11 +8,15 @@ import {
 } from '@tunarr/types';
 import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
 import { type EmbyItem } from '@tunarr/types/emby';
-import { type JellyfinItem } from '@tunarr/types/jellyfin';
+import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import {
+  isJellyfinVirtualFolder,
+  type JellyfinItem,
+} from '@tunarr/types/jellyfin';
+import {
+  isPlexDirectory,
   type PlexLibrarySection,
   type PlexMedia,
-  isPlexDirectory,
 } from '@tunarr/types/plex';
 import { type MediaSourceId } from '@tunarr/types/schemas';
 import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
@@ -76,7 +80,7 @@ export const clearProgrammingListLibrary = () =>
     state.currentMediaSourceView = undefined;
   });
 
-function uniqueId(item: PlexLibrarySection | PlexMedia): string {
+function plexItemUniqueId(item: PlexLibrarySection | PlexMedia): string {
   if (isPlexDirectory(item)) {
     return item.uuid;
   } else {
@@ -84,11 +88,25 @@ function uniqueId(item: PlexLibrarySection | PlexMedia): string {
   }
 }
 
+function jellyfinItemUniqueId(
+  item: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
+): string {
+  if (isJellyfinVirtualFolder(item)) {
+    return item.ItemId;
+  } else {
+    return item.Id;
+  }
+}
+
 export const addKnownMediaForServer = (
   serverId: MediaSourceId,
   media:
     | TypedKey<PlexLibrarySection[] | PlexMedia[], PlexT, 'items'>
-    | TypedKey<JellyfinItem[], JellyfinT, 'items'>
+    | TypedKey<
+        JellyfinItem[] | TunarrAmendedJellyfinVirtualFolder[],
+        JellyfinT,
+        'items'
+      >
     | TypedKey<EmbyItem[], EmbyT, 'items'>,
   parentId?: string,
 ) =>
@@ -109,13 +127,13 @@ export const addKnownMediaForServer = (
           if (isUndefined(item)) {
             continue;
           }
-          byGuid[uniqueId(item)] = { type: media.type, item };
+          byGuid[plexItemUniqueId(item)] = { type: media.type, item };
         }
         break;
       }
       case Jellyfin:
         for (const item of media.items) {
-          byGuid[item.Id] = { type: media.type, item };
+          byGuid[jellyfinItemUniqueId(item)] = { type: media.type, item };
         }
         break;
       case Emby:
@@ -143,10 +161,10 @@ export const addKnownMediaForServer = (
     let ids: string[];
     switch (media.type) {
       case Plex:
-        ids = map(media.items, uniqueId);
+        ids = map(media.items, plexItemUniqueId);
         break;
       case Jellyfin:
-        ids = map(media.items, 'Id');
+        ids = map(media.items, jellyfinItemUniqueId);
         break;
       case Emby:
         ids = map(media.items, 'Id');
@@ -182,7 +200,7 @@ export const addKnownMediaForPlexServer = (
 
 export const addKnownMediaForJellyfinServer = (
   serverId: MediaSourceId,
-  media: JellyfinItem[],
+  media: JellyfinItem[] | TunarrAmendedJellyfinVirtualFolder[],
   parentId?: string,
 ) =>
   addKnownMediaForServer(serverId, { type: Jellyfin, items: media }, parentId);

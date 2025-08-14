@@ -1,8 +1,9 @@
 import {
+  JellyfinGenresResponse,
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
-  JellyfinGenresResponse
+  TunarrAmendedJellyfinVirtualFolder,
 } from '@tunarr/types/jellyfin';
 import { makeEndpoint, parametersBuilder } from '@tunarr/zodios-core';
 import { z } from 'zod/v4';
@@ -14,8 +15,7 @@ export const jellyfinEndpoints = [
     parameters: parametersBuilder()
       .addPath('mediaSourceId', z.string())
       .build(),
-    // response: JellyfinLibraryResponse,
-    response: JellyfinLibraryItemsResponse,
+    response: z.array(TunarrAmendedJellyfinVirtualFolder),
     alias: 'getJellyfinUserLibraries',
   }),
   makeEndpoint({

@@ -241,7 +241,7 @@ export const JellyfinLibraryOptions = z.object({
 
 export const JellyfinLibrary = z.object({
   Name: z.string(),
-  CollectionType: z.string(),
+  CollectionType: JellyfinCollectionType.optional().catch('unknown'),
   ItemId: z.string(),
   LibraryOptions: JellyfinLibraryOptions,
 });
@@ -249,6 +249,33 @@ export const JellyfinLibrary = z.object({
 export type JellyfinLibrary = z.infer<typeof JellyfinLibrary>;
 
 export const JellyfinLibraryResponse = z.array(JellyfinLibrary);
+
+export const JellyfinVirtualFolder = z.object({
+  Name: z.string(),
+  CollectionType: JellyfinCollectionType.optional().catch('unknown'),
+  ItemId: z.string(),
+  LibraryOptions: JellyfinLibraryOptions,
+  Locations: z.array(z.string()),
+});
+
+export const TunarrAmendedJellyfinVirtualFolder = z.object({
+  ...JellyfinVirtualFolder.shape,
+  jellyfinType: z.literal('VirtualFolder'),
+});
+
+export type TunarrAmendedJellyfinVirtualFolder = z.infer<
+  typeof TunarrAmendedJellyfinVirtualFolder
+>;
+
+export function isJellyfinVirtualFolder(
+  item: TunarrAmendedJellyfinVirtualFolder | JellyfinItem,
+): item is TunarrAmendedJellyfinVirtualFolder {
+  return 'jellyfinType' in item && item.jellyfinType === 'VirtualFolder';
+}
+
+export type JellyfinVirtualFolder = z.infer<typeof JellyfinVirtualFolder>;
+
+export const JellyfinVirtualFolderResponse = JellyfinVirtualFolder.array();
 
 export const JellyfinMediaStream = z.object({
   Type: z.string(),

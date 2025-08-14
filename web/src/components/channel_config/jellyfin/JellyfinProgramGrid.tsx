@@ -89,7 +89,7 @@ export const JellyfinProgramGrid = ({
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id ?? tag<MediaSourceId>(''),
-    currentParentContext?.Id ?? selectedLibrary?.view.Id ?? '',
+    currentParentContext?.Id ?? selectedLibrary?.view.ItemId ?? '',
     itemTypes,
     /**enabled= */ isUndefined(depth) ||
       depth === 0 ||
