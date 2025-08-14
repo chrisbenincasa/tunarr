@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.3](https://github.com/chrisbenincasa/tunarr/compare/v0.21.2...v0.21.3) (2025-08-14)
+
+
+### Bug Fixes
+
+* fix jellyfin library selector ([#1320](https://github.com/chrisbenincasa/tunarr/issues/1320)) ([c898b3e](https://github.com/chrisbenincasa/tunarr/commit/c898b3ee9dfe6ed88b0232de9d0daca1565f1e72))
+* properly init channel cache ([ec3e98e](https://github.com/chrisbenincasa/tunarr/commit/ec3e98efe51553d56d6d4ed44be7dbb1c902cf4f))
+* synchronously initialize PersistentChannelCache ([838d8cc](https://github.com/chrisbenincasa/tunarr/commit/838d8cca3087cccb2d21eace73bf8b6c1a896ab4))
+* **ui:** actually fix issue with changing slot type not rendering ([23be5c0](https://github.com/chrisbenincasa/tunarr/commit/23be5c03916a495fdd1671d6a8b9a559dad5f1f7))
+
 ## [0.21.2](https://github.com/chrisbenincasa/tunarr/compare/v0.21.1...v0.21.2) (2025-08-13)
 
 
