@@ -56,6 +56,10 @@ export class PersistentChannelCache {
     );
   }
 
+  async init() {
+    return this.#db.read();
+  }
+
   getStreamPlayItem(channelId: string): StreamPlayCacheItem | undefined {
     return this.#db.data.streamPlayCache[channelId];
   }
