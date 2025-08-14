@@ -33,6 +33,9 @@ export type SlotFillerTypes = z.infer<typeof SlotFillerTypes>;
 export const SlotFiller = z.object({
   types: z.array(SlotFillerTypes).nonempty(),
   fillerListId: z.uuid(),
+  fillerOrder: SlotProgrammingFillerOrder.optional().default(
+    'shuffle_prefer_short',
+  ),
 });
 
 export type SlotFiller = z.infer<typeof SlotFiller>;

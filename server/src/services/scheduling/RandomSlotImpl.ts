@@ -1,6 +1,6 @@
+import type { FillerProgram } from '@tunarr/types';
 import type { RandomSlot, RandomSlotDurationSpec } from '@tunarr/types/api';
 import type { Random } from 'random-js';
-import type { FillerProgramIterator } from './FillerProgramIterator.ts';
 import type { ProgramIterator } from './ProgramIterator.js';
 import { SlotImpl } from './SlotImpl.js';
 
@@ -9,7 +9,10 @@ export class RandomSlotImpl extends SlotImpl<RandomSlot> {
     slot: RandomSlot,
     iterator: ProgramIterator,
     random: Random,
-    fillerIteratorsByListId: Record<string, FillerProgramIterator> = {},
+    fillerIteratorsByListId: Record<
+      string,
+      ProgramIterator<FillerProgram>
+    > = {},
   ) {
     super(slot, iterator, random, fillerIteratorsByListId);
   }
