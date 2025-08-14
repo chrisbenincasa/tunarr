@@ -36,30 +36,24 @@ export type PersistentChannelCacheProvider =
 
 @injectable()
 export class PersistentChannelCache {
-  #initialized: boolean = false;
   #db: Low<ChannelCacheSchema>;
 
   constructor(
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
-  ) {}
-
-  async init() {
-    if (!this.#initialized) {
-      this.#db = new Low<ChannelCacheSchema>(
-        new InMemoryCachedDbAdapter(
-          new SchemaBackedDbAdapter(
-            channelCacheSchema,
-            join(this.globalOptions.databaseDirectory, 'stream-cache.json'),
-          ),
+  ) {
+    this.#db = new Low<ChannelCacheSchema>(
+      new InMemoryCachedDbAdapter(
+        new SchemaBackedDbAdapter(
+          channelCacheSchema,
+          join(this.globalOptions.databaseDirectory, 'stream-cache.json'),
         ),
-        {
-          streamPlayCache: {},
-          fillerPlayTimeCache: {},
-          programPlayTimeCache: {},
-        },
-      );
-      return await this.#db.read();
-    }
+      ),
+      {
+        streamPlayCache: {},
+        fillerPlayTimeCache: {},
+        programPlayTimeCache: {},
+      },
+    );
   }
 
   getStreamPlayItem(channelId: string): StreamPlayCacheItem | undefined {
