@@ -1,7 +1,11 @@
 import type { ApiClient } from '@/external/api.ts';
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
 import { sequentialPromises } from '@/helpers/util.ts';
-import type { JellyfinItem } from '@tunarr/types/jellyfin';
+import {
+  isJellyfinVirtualFolder,
+  type JellyfinItem,
+  type TunarrAmendedJellyfinVirtualFolder,
+} from '@tunarr/types/jellyfin';
 import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
 
@@ -20,15 +24,18 @@ export const enumerateJellyfinItem = (
   apiClient: ApiClient,
   serverId: MediaSourceId,
   serverName: string,
-  initialItem: JellyfinItem,
+  initialItem: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
 ): (() => Promise<EnrichedJellyfinItem[]>) => {
   const seen = new Map<string, JellyfinItem[]>();
 
   return async function () {
     async function loopInner(
-      item: JellyfinItem,
+      item: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
     ): Promise<EnrichedJellyfinItem[]> {
-      if (JellyfinTerminalTypes.has(item.Type)) {
+      if (
+        !isJellyfinVirtualFolder(item) &&
+        JellyfinTerminalTypes.has(item.Type)
+      ) {
         // Only reliable way to filter out programs that were deleted
         // from disk but not updated in JF
         if (item.RunTimeTicks && item.RunTimeTicks > 0) {
@@ -37,8 +44,9 @@ export const enumerateJellyfinItem = (
           return [];
         }
       } else {
-        if (seen.has(item.Id)) {
-          return sequentialPromises(seen.get(item.Id) ?? [], loopInner).then(
+        const id = isJellyfinVirtualFolder(item) ? item.ItemId : item.Id;
+        if (seen.has(id)) {
+          return sequentialPromises(seen.get(id) ?? [], loopInner).then(
             flattenDeep,
           );
         }
@@ -48,7 +56,7 @@ export const enumerateJellyfinItem = (
             .getJellyfinItems({
               params: {
                 mediaSourceId: serverId,
-                libraryId: item.Id,
+                libraryId: id,
               },
               queries: {
                 itemTypes: [...JellyfinTerminalTypes],

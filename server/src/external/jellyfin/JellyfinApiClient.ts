@@ -13,9 +13,9 @@ import type {
 import {
   JellyfinAuthenticationResult,
   JellyfinLibraryItemsResponse,
-  JellyfinLibraryResponse,
   JellyfinSystemInfo,
   JellyfinUser,
+  JellyfinVirtualFolderResponse,
 } from '@tunarr/types/jellyfin';
 import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
@@ -209,7 +209,7 @@ export class JellyfinApiClient extends BaseApiClient {
   async getUserLibraries(userId?: string) {
     return this.doTypeCheckedGet(
       '/Library/VirtualFolders',
-      JellyfinLibraryResponse,
+      JellyfinVirtualFolderResponse,
       { params: { userId } },
     );
   }
@@ -217,7 +217,7 @@ export class JellyfinApiClient extends BaseApiClient {
   async getUserViews(userId?: string) {
     return this.doTypeCheckedGet(
       '/Library/VirtualFolders',
-      JellyfinLibraryItemsResponse,
+      JellyfinVirtualFolderResponse,
       {
         params: {
           userId: userId ?? this.options.userId,

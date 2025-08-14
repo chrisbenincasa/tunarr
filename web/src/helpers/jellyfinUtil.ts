@@ -1,3 +1,4 @@
+import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import {
   type JellyfinCollectionType,
   type JellyfinItem,
@@ -41,7 +42,9 @@ export const JellyfinTerminalTypes = new Set<JellyfinItemKind>([
   'MusicVideo',
 ]) as ReadonlySet<JellyfinItemKind>;
 
-export const sortJellyfinLibraries = (item: JellyfinItem) => {
+export const sortJellyfinLibraries = (
+  item: TunarrAmendedJellyfinVirtualFolder,
+) => {
   if (item.CollectionType) {
     switch (item.CollectionType) {
       case 'tvshows':

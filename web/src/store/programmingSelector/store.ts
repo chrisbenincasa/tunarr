@@ -1,6 +1,7 @@
 import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
 import { type PlexSearch } from '@tunarr/types/api';
 import { type EmbyItem } from '@tunarr/types/emby';
+import type { TunarrAmendedJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import {
   type PlexLibrarySection,
@@ -74,7 +75,10 @@ export type PlexMediaSourceView = TypedView<
   Plex
 >;
 
-export type JellyfinMediaSourceView = TypedView<JellyfinItem, Jellyfin>;
+export type JellyfinMediaSourceView = TypedView<
+  TunarrAmendedJellyfinVirtualFolder,
+  Jellyfin
+>;
 
 export type EmbyMediaSourceView = TypedView<EmbyItem, Emby>;
 
@@ -94,7 +98,7 @@ export type MediaGenre = TypedItem<string, Jellyfin | Plex | Emby>;
 
 export type MediaItems =
   | TypedItem<PlexLibrarySection | PlexMedia, Plex>
-  | TypedItem<JellyfinItem, Jellyfin>
+  | TypedItem<JellyfinItem | TunarrAmendedJellyfinVirtualFolder, Jellyfin>
   | TypedItem<EmbyItem, Emby>;
 
 export type KnownMediaMap = Record<MediaSourceId, Record<ItemUuid, MediaItems>>;

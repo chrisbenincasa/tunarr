@@ -24,6 +24,7 @@ import {
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
+import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import type { MediaSourceId } from '@tunarr/types/schemas';
 import { first, groupBy, isNil, mapValues } from 'lodash-es';
@@ -154,28 +155,31 @@ const JellyfinSelectedProgramListItem = ({
 
   const { title = media.Name ?? '', secondary = null } = match(media)
     .returnType<{ title?: string; secondary?: ReactNode }>()
+    .with(P.when(isJellyfinVirtualFolder), (dir) => ({
+      title: `Library - ${dir.Name}`,
+    }))
     .with(
       { Type: P.union('CollectionFolder', 'AggregateFolder', 'Folder') },
-      () => ({
+      (media) => ({
         title: `Folder - ${media.Name}`,
         secondary: `${pluralizeWithCount('item', media.ChildCount)}`,
       }),
     )
-    .with({ Type: 'Series' }, () => ({
+    .with({ Type: 'Series' }, (media) => ({
       secondary: `${pluralizeWithCount('season', media.ChildCount)}, ${media.RecursiveItemCount ?? 0} total ${pluralize(
         'episode',
         media.RecursiveItemCount ?? 0,
       )}`,
     }))
-    .with({ Type: 'Season' }, () => ({
+    .with({ Type: 'Season' }, (media) => ({
       secondary: `${media.SeriesName} - ${media.Name} (${pluralizeWithCount('episode', media.ChildCount)})`,
     }))
-    .with({ Type: 'Movie' }, () => ({
+    .with({ Type: 'Movie' }, (media) => ({
       secondary: `Movie${
         media.ProductionYear ? ', ' + media.ProductionYear : ''
       }`,
     }))
-    .with({ Type: 'Episode' }, () => {
+    .with({ Type: 'Episode' }, (media) => {
       const hasIndexes =
         !isNil(media.IndexNumber) && !isNil(media.ParentIndexNumber);
       const seasonEp = hasIndexes
@@ -189,7 +193,13 @@ const JellyfinSelectedProgramListItem = ({
     .otherwise(() => ({}));
 
   return (
-    <ListItem {...listChildProps} divider sx={{ px: 1 }} dense key={media.Id}>
+    <ListItem
+      {...listChildProps}
+      divider
+      sx={{ px: 1 }}
+      dense
+      key={isJellyfinVirtualFolder(media) ? media.ItemId : media.Id}
+    >
       <Tooltip
         placement="left"
         title={mediaSourcesById[selected.serverId]?.name ?? 'Jellyfin Server'}

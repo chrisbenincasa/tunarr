@@ -3,7 +3,7 @@ import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import { isQueryError } from '@/external/BaseApiClient.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { isDefined, nullToUndefined } from '@/util/index.js';
+import { inConstArr, isDefined, nullToUndefined } from '@/util/index.js';
 import { JellyfinLoginRequest } from '@tunarr/types/api';
 import type { JellyfinCollectionType } from '@tunarr/types/jellyfin';
 import {
@@ -11,10 +11,10 @@ import {
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
-  type JellyfinLibraryItemsResponse as JellyfinLibraryItemsResponseTyp,
+  TunarrAmendedJellyfinVirtualFolder,
 } from '@tunarr/types/jellyfin';
 import type { FastifyReply } from 'fastify/types/reply.js';
-import { filter, isEmpty, isNil, uniq } from 'lodash-es';
+import { isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
 import type {
   RouterPluginCallback,
@@ -25,7 +25,7 @@ const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
 });
 
-const ValidJellyfinCollectionTypes: JellyfinCollectionType[] = [
+const ValidJellyfinCollectionTypes = [
   'movies',
   'tvshows',
   'music',
@@ -36,7 +36,7 @@ const ValidJellyfinCollectionTypes: JellyfinCollectionType[] = [
   'boxsets',
   'folders',
   'unknown',
-];
+] satisfies JellyfinCollectionType[];
 
 function isNonEmptyTyped<T>(f: T[]): f is [T, ...T[]] {
   return !isEmpty(f);
@@ -78,6 +78,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         params: mediaSourceParams,
+        response: {
+          // HACK
+          200: z.array(TunarrAmendedJellyfinVirtualFolder),
+        },
       },
     },
     (req, res) =>
@@ -93,55 +97,58 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw new Error(response.message);
         }
 
-        const sanitizedResponse: JellyfinLibraryItemsResponseTyp = {
-          ...response.data,
-          Items: filter(response.data.Items, (library) => {
-            // Mixed collections don't have this set
-            if (!library.CollectionType) {
-              return true;
-            }
+        return res.send(
+          response.data
+            .filter((library) => {
+              // Mixed collections don't have this set
+              if (!library.CollectionType) {
+                return true;
+              }
 
-            return ValidJellyfinCollectionTypes.includes(
-              library.CollectionType,
-            );
-          }),
-        };
-
-        return res.send(sanitizedResponse);
+              return inConstArr(
+                ValidJellyfinCollectionTypes,
+                library.CollectionType ?? '',
+              );
+            })
+            .map((lib) => ({
+              ...lib,
+              jellyfinType: 'VirtualFolder',
+            })),
+        );
       }),
   );
 
-fastify.get(
-  '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
-  {
-    schema: {
-      params: mediaSourceParams.extend({
-        libraryId: z.string(),
-      }),
-      querystring: z.object({
-        includeItemTypes: z.string().optional(),
-      }),
+  fastify.get(
+    '/jellyfin/:mediaSourceId/libraries/:libraryId/genres',
+    {
+      schema: {
+        params: mediaSourceParams.extend({
+          libraryId: z.string(),
+        }),
+        querystring: z.object({
+          includeItemTypes: z.string().optional(),
+        }),
+      },
     },
-  },
-  (req, res) =>
-    withJellyfinMediaSource(req, res, async (mediaSource) => {
-      const api =
-        await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
-          mediaSource,
+    (req, res) =>
+      withJellyfinMediaSource(req, res, async (mediaSource) => {
+        const api =
+          await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+            mediaSource,
+          );
+
+        const response = await api.getGenres(
+          req.params.libraryId,
+          req.query.includeItemTypes,
         );
 
-      const response = await api.getGenres(
-        req.params.libraryId,
-        req.query.includeItemTypes,
-      );
+        if (isQueryError(response)) {
+          throw new Error(response.message);
+        }
 
-      if (isQueryError(response)) {
-        throw new Error(response.message);
-      }
-
-      return res.send(response.data);
-    }),
-);
+        return res.send(response.data);
+      }),
+  );
 
   fastify.get(
     '/jellyfin/:mediaSourceId/libraries/:libraryId/items',

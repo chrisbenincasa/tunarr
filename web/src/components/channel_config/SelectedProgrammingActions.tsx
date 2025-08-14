@@ -90,7 +90,7 @@ export default function SelectedProgrammingActions({
             .getJellyfinItems({
               params: {
                 mediaSourceId: selectedServer.id,
-                libraryId: library.view.Id,
+                libraryId: library.view.ItemId,
               },
               queries: {
                 itemTypes: jellyfinCollectionTypeToItemTypes(
