@@ -46,7 +46,6 @@ const KEYS = {
   Fixer: Symbol.for('Fixer'),
   WorkerPool: Symbol.for('WorkerPool'),
   WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
-  PersistentChannelCacheProvider: Symbol.for('PersistentChannelCacheProvider'),
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 };

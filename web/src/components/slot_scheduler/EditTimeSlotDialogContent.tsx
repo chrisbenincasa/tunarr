@@ -61,7 +61,7 @@ export const EditTimeSlotDialogContent = ({
   const {
     control,
     getValues,
-    formState: { isValid, isDirty, isSubmitting },
+    formState: { isValid, isSubmitting },
   } = formMethods;
 
   const updateSlotDay = useCallback(
