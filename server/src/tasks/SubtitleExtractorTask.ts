@@ -242,7 +242,7 @@ export class SubtitleExtractorTask extends Task {
         `0:${curr.subtitle.index}`,
         '-c:s',
         codec,
-        `"${curr.tmpPath}"`,
+        `${curr.tmpPath}`,
       );
       return prev;
     }, [] as string[]);
@@ -267,12 +267,13 @@ export class SubtitleExtractorTask extends Task {
             ? new HttpReconnectOptions().options()
             : []),
           '-i',
-          `"${stream.streamSource.path}"`,
+          `${stream.streamSource.path}`,
           ...subtitleOutputArgs,
         ],
         false,
         {},
         true,
+        300_000,
       );
     });
 

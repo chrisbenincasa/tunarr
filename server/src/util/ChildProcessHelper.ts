@@ -5,6 +5,7 @@ import { isEmpty } from 'lodash-es';
 import type { ExecOptions } from 'node:child_process';
 import { execFile } from 'node:child_process';
 import PQueue from 'p-queue';
+import type { Maybe } from '../types/util.ts';
 import { LoggerFactory } from './logging/LoggerFactory.ts';
 
 export class ChildProcessHelper {
@@ -17,6 +18,7 @@ export class ChildProcessHelper {
     swallowError: boolean = false,
     env?: NodeJS.ProcessEnv,
     isPath: boolean = true,
+    timeout: Maybe<number> = undefined,
   ): Promise<string> {
     return ChildProcessHelper.execQueue.add(
       async () => {
@@ -25,7 +27,11 @@ export class ChildProcessHelper {
           throw new Error(`Path at ${sanitizedPath} does not exist`);
         }
 
-        const opts: ExecOptions = {};
+        const opts: ExecOptions = {
+          windowsHide: true,
+          timeout,
+        };
+
         if (!isEmpty(env)) {
           opts.env = env;
         }
