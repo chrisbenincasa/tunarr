@@ -19,7 +19,7 @@ export const ProgramStreamDetails = ({ programId }: Props) => {
   const copy = useCopyToClipboard();
 
   return (
-    <Box>
+    <Box sx={{ maxHeight: '70vh' }}>
       <Button
         onClick={() =>
           copy(JSON.stringify(result, undefined, 2)).catch((e) =>

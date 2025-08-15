@@ -340,6 +340,8 @@ export default function ProgramDetailsDialog({
         open={open && !isUndefined(program)}
         onClose={handleClose}
         fullScreen={smallViewport}
+        maxWidth="md"
+        fullWidth
       >
         <DialogTitle
           variant="h4"
