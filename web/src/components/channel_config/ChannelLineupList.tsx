@@ -285,6 +285,7 @@ const ProgramListItem = ({
         ).toString({
           format: 'hex',
         }),
+        pr: enableDelete ? '96px' : undefined,
       }}
       key={startTime}
       secondaryAction={
