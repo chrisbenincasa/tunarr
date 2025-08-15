@@ -313,7 +313,7 @@ export class FfmpegInfo {
       '-show_streams',
       '-analyzeduration',
       '30',
-      `"${path}"`,
+      `${path}`,
     ]);
 
     const result = await FfprobeMediaInfoSchema.safeParseAsync(
