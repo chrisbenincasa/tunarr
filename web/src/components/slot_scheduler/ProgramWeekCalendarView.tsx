@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import type { ContentProgram } from '@tunarr/types';
-import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
 import 'dayjs/plugin/duration';
@@ -22,6 +21,7 @@ import 'dayjs/plugin/localeData';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { range } from 'lodash-es';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { usePrevious } from 'react-use';
 import { P, match } from 'ts-pattern';
 import { getTextContrast } from '../../helpers/colors.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';

@@ -31,7 +31,6 @@ import {
 import type { VisibilityState } from '@tanstack/react-table';
 import { seq } from '@tunarr/shared/util';
 import type { RandomSlot } from '@tunarr/types/api';
-import { usePrevious, useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import {
   capitalize,
@@ -58,6 +57,7 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePrevious, useToggle } from 'react-use';
 import { P, match } from 'ts-pattern';
 
 export const RandomSlotTable = () => {

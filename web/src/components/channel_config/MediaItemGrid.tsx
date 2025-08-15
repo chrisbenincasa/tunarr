@@ -14,13 +14,13 @@ import type {
   InfiniteData,
   UseInfiniteQueryResult,
 } from '@tanstack/react-query';
-import { usePrevious } from '@uidotdev/usehooks';
 import {
   compact,
   first,
   flatMap,
   isNil,
   isUndefined,
+  last,
   map,
   sumBy,
 } from 'lodash-es';
@@ -33,12 +33,16 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useKeyPressEvent, usePrevious } from 'react-use';
 
 import {
   useDebounceCallback,
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
+import { useShallow } from 'zustand/react/shallow';
+import useStore from '../../store/index.ts';
+import { uniqueIdForSelectedMedia } from '../../store/programmingSelector/selectors.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { AlphanumericFilters } from './AlphanumericFilters.tsx';
 
@@ -127,9 +131,21 @@ export function MediaItemGrid<PageDataType, ItemType>(
     modalItem: null,
     modalIndex: -1,
   });
+  const [shiftHeld, setShiftHeld] = useState(false);
+  const [hoveringItemIdx, setHoveringItemIndex] = useState(-1);
+  const x = useStore(
+    useShallow((s) => s.selectedMedia.map(uniqueIdForSelectedMedia)),
+  );
+
   const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedModalItemRef = useRef<HTMLDivElement>(null);
+
+  useKeyPressEvent(
+    'Shift',
+    () => setShiftHeld(true),
+    () => setShiftHeld(false),
+  );
 
   // We only need a single grid item ref because all grid items are the same
   // width. This ref is simply used to determine the width of grid items based
@@ -140,6 +156,9 @@ export function MediaItemGrid<PageDataType, ItemType>(
   const alphaFilterRef = useRef<HTMLDivElement>(null);
 
   const loadedItems = compact(flatMap(data?.pages, extractItems));
+  const lastSelectedIdx = useMemo(() => {
+    return loadedItems.findIndex((i) => getItemKey(i) === last(x));
+  }, [loadedItems, x]);
 
   const containerMinHeight = useMemo(() => {
     if (depth > 0) {
@@ -199,7 +218,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
     [handleAlphaNumFilter],
   );
 
-  const previousModalIndex = usePrevious(modalIndex);
+  const previousModalIndex = usePrevious(modalIndex) ?? -1;
 
   const setSizeDependentFields = useDebounceCallback(
     (containerWidth?: number, gridItemWidth?: number) => {
@@ -352,9 +371,26 @@ export function MediaItemGrid<PageDataType, ItemType>(
               ? selectedModalItemRef
               : null,
       });
+
+      console.log(lastSelectedIdx);
+      const shouldHighlight =
+        shiftHeld &&
+        hoveringItemIdx !== -1 &&
+        ((index < lastSelectedIdx && index >= hoveringItemIdx) ||
+          (index > lastSelectedIdx && index <= hoveringItemIdx));
+
+      console.log(shiftHeld, hoveringItemIdx, index);
       return (
         <Fragment key={getItemKey(item)}>
-          {gridItem}
+          <Box
+            onMouseEnter={() => setHoveringItemIndex(index)}
+            onMouseLeave={() => setHoveringItemIndex(-1)}
+            sx={{
+              backgroundColor: shouldHighlight ? 'green' : undefined,
+            }}
+          >
+            {gridItem}
+          </Box>
           {renderModal && (
             <InlineModal<ItemType>
               open={isOpen}

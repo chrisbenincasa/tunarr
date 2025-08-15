@@ -2,9 +2,9 @@ import { Box } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import type { PlexFilter } from '@tunarr/types/api';
 import { type PlexMedia } from '@tunarr/types/plex';
-import { usePrevious } from '@uidotdev/usehooks';
 import { flatten, isNull, isUndefined, last, map, range } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePrevious } from 'react-use';
 import { match, P } from 'ts-pattern';
 import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
 import {

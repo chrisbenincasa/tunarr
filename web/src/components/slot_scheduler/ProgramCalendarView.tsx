@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import 'dayjs/plugin/duration';
 import 'dayjs/plugin/localeData';
@@ -9,6 +8,7 @@ import weekday from 'dayjs/plugin/weekday';
 import { countBy, range } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useCallback, useMemo, useState } from 'react';
+import { usePrevious } from 'react-use';
 import { useDaysInMonth } from '../../hooks/calendarHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';

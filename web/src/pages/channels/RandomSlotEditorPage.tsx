@@ -19,7 +19,6 @@ import {
 import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
 import type { RandomSlotSchedule } from '@tunarr/types/api';
-import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
@@ -34,6 +33,7 @@ import {
 } from 'lodash-es';
 import React, { useCallback, useMemo } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import { useToggle } from 'react-use';
 import type { StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';

@@ -14,13 +14,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import type { RedirectProgram } from '@tunarr/types';
-import { usePrevious } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { filter, find, isNil, isUndefined } from 'lodash-es';
 import { useEffect } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { usePrevious } from 'react-use';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 import { uuidRegexPattern } from '../../helpers/util.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import {
@@ -28,9 +29,8 @@ import {
   setProgramAtIndex,
 } from '../../store/channelEditor/actions.ts';
 import useStore from '../../store/index.ts';
-import { NumericFormControllerText } from '../util/TypedController.tsx';
 import type { UIRedirectProgram } from '../../types/index.ts';
-import { betterHumanize } from '../../helpers/dayjs.ts';
+import { NumericFormControllerText } from '../util/TypedController.tsx';
 
 dayjs.extend(duration);
 
