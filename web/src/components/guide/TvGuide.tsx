@@ -1,4 +1,3 @@
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
   Box,
@@ -24,7 +23,6 @@ import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
-import { useSettings } from '../../store/settings/selectors.ts';
 import type { Maybe } from '../../types/util.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
@@ -61,8 +59,6 @@ type Props = {
 
 export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
   const theme = useTheme();
-  const { backendUri } = useSettings();
-
   // Workaround for issue with page jumping on-zoom or nav caused by collapsing
   // div when loading new guide data
   const ref = useRef<HTMLDivElement | null>(null);
@@ -82,8 +78,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const queryClient = useQueryClient();
   const { addListener, removeListener } = useServerEvents();
-
-  const copyToClipboard = useCopyToClipboard();
 
   const handleModalOpen = useCallback((program: TvGuideProgram | undefined) => {
     if (program && program.type === 'flex') {
