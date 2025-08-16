@@ -30,7 +30,7 @@ export const ChannelSummaryPage = () => {
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box>
           {isNonEmptyString(channel.icon.path) ? (
-            <Box component="img" src={channel.icon.path} />
+            <Box component="img" width={132} src={channel.icon.path} />
           ) : (
             <TunarrLogo style={{ width: '132px' }} />
           )}
