@@ -17,6 +17,7 @@ const KEYS = {
   DatabaseFactory: Symbol.for('DatabaseFactory'),
   ChannelDB: Symbol.for('ChannelDB'),
   ProgramDB: Symbol.for('ProgramDB'),
+  FillerListDB: Symbol.for('FillerListDB'),
   SettingsDB: Symbol.for('SettingsDB'),
   MediaSourceApiFactory: Symbol.for('MediaSourceApiFactory'),
   TimeSlotSchedulerServiceFactory: Symbol.for(
@@ -48,6 +49,9 @@ const KEYS = {
   WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
 
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
+
+  FillerPicker: Symbol.for('FillerPicker'),
+  ChannelCache: Symbol.for('ChannelCache'),
 };
 
 export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;

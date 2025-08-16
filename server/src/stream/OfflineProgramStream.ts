@@ -4,7 +4,6 @@ import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { makeLocalUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
@@ -30,18 +29,6 @@ export class OfflineProgramStream extends ProgramStream {
     outputFormat: OutputFormat,
   ) {
     super(context, outputFormat, settingsDB, cacheImageService, ffmpegFactory);
-
-    if (context.isLoading === true) {
-      context.targetChannel = {
-        ...context.targetChannel,
-        offline: {
-          ...context.targetChannel.offline,
-          mode: 'pic',
-          picture: makeLocalUrl('/images/loading-screen.png'),
-          soundtrack: undefined,
-        },
-      };
-    }
   }
 
   protected shutdownInternal() {}

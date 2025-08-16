@@ -87,6 +87,9 @@ export const debugFfmpegApiRouter: RouterPluginAsyncCallback = async (
           .getStream({ path: req.query.path });
         lineupItem = {
           duration: +dayjs.duration({ seconds: 30 }),
+          contentDuration: +dayjs.duration({ seconds: 30 }),
+          infiniteLoop: false,
+          streamDuration: +dayjs.duration({ seconds: 30 }),
           externalKey: 'none',
           externalSource: 'emby',
           externalSourceId: 'none',

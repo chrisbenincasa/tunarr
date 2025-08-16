@@ -45,6 +45,7 @@ import { LoadChannelCacheStartupTask } from './services/startup/LoadChannelCache
 import { ScheduleJobsStartupTask } from './services/startup/ScheduleJobsStartupTask.ts';
 import { SeedFfmpegInfoCache } from './services/startup/SeedFfmpegInfoCache.ts';
 import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevicesStartupTask.ts';
+import { ChannelCache } from './stream/ChannelCache.ts';
 import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
@@ -116,6 +117,7 @@ const RootModule = new ContainerModule((bind) => {
   bind<interfaces.AutoFactory<TimeSlotSchedulerService>>(
     KEYS.TimeSlotSchedulerServiceFactory,
   ).toAutoFactory(TimeSlotSchedulerService);
+  bind(KEYS.ChannelCache).to(ChannelCache).inSingletonScope();
 
   bind(KEYS.StartupTask).to(SeedSystemDevicesStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(ClearM3uCacheStartupTask).inSingletonScope();
@@ -143,7 +145,7 @@ const RootModule = new ContainerModule((bind) => {
 
 container.load(RootModule);
 container.load(dbContainer);
-container.load(StreamModule);
+container.load(new StreamModule());
 container.load(TasksModule);
 container.load(HealthCheckModule);
 container.load(FixerModule);

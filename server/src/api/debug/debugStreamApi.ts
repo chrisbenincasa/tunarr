@@ -67,7 +67,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           channel,
           channel,
           false,
-          false,
           true,
           channel.transcodeConfig,
           'mpegts',
@@ -292,7 +291,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       channel,
       channel,
       false,
-      false,
       true,
       transcodeConfig,
       'mpegts',
@@ -324,5 +322,8 @@ function createStreamItemFromProgram(
     plexFilePath: program.plexFilePath ?? undefined,
     filePath: program.filePath ?? undefined,
     programBeginMs: +dayjs(),
+    contentDuration: program.duration,
+    streamDuration: program.duration,
+    infiniteLoop: false,
   };
 }

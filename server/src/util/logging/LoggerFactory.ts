@@ -1,7 +1,7 @@
 import type { SettingsDB } from '@/db/SettingsDB.js';
 import type { Maybe, TupleToUnion } from '@/types/util.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
-import { isNonEmptyString, isProduction } from '@/util/index.js';
+import { isNonEmptyString, isProduction, isTest } from '@/util/index.js';
 import {
   forEach,
   isEmpty,
@@ -133,7 +133,7 @@ class LoggerFactoryImpl {
     );
   }
 
-  child(opts: GetChildLoggerArgs) {
+  child(opts: GetChildLoggerArgs): Logger {
     const { caller, className, ...rest } = opts;
 
     if (this.children[className]) {
@@ -254,7 +254,7 @@ class LoggerFactoryImpl {
 
     // We can only add these streams post-initialization because they
     // require configuration.
-    if (!isUndefined(this.settingsDB)) {
+    if (!isUndefined(this.settingsDB) && !isTest) {
       streams.push({
         // stream: pino.destination({
         // dest: join(

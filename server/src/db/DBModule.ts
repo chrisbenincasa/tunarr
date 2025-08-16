@@ -7,6 +7,7 @@ import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { Kysely } from 'kysely';
 import { DBAccess } from './DBAccess.ts';
+import { FillerDB } from './FillerListDB.ts';
 import type { DB } from './schema/db.ts';
 
 const DBModule = new ContainerModule((bind) => {
@@ -19,6 +20,7 @@ const DBModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<Kysely<DB>>>(KEYS.DatabaseFactory).toAutoFactory(
     KEYS.Database,
   );
+  bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
 });
 
 export { DBModule as dbContainer };

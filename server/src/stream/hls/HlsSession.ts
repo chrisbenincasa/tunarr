@@ -173,7 +173,6 @@ export class HlsSession extends BaseHlsSession {
         result.channelContext,
         result.sourceChannel,
         false,
-        result.lineupItem.type === 'loading',
         realtime,
         this.channel.transcodeConfig,
         this.sessionType,

@@ -26,6 +26,7 @@ import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import { FillerPicker } from '../services/FillerPicker.ts';
 import type { UpdatePlexPlayStatusScheduledTaskFactory } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from '../tasks/plex/UpdatePlexPlayStatusTask.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
@@ -41,7 +42,7 @@ export type OfflineStreamFactoryType = interfaces.MultiFactory<
   [PlayerContext, OutputFormat]
 >;
 
-const StreamModule = new ContainerModule((bind) => {
+const configure: interfaces.ContainerModuleCallBack = (bind) => {
   bind(SessionManager).toSelf().inSingletonScope();
 
   bindFactoryFunc<ProgramStreamFactory>(
@@ -136,10 +137,8 @@ const StreamModule = new ContainerModule((bind) => {
               playerContext.lineupItem.externalSource,
             )(playerContext, outputFormat);
           }
-          case 'loading':
           case 'offline':
           case 'error': {
-            // const isLoading = playerContext.lineupItem.type === 'loading';
             const isError = playerContext.lineupItem.type === 'error';
             return ctx.container.getNamed<OfflineStreamFactoryType>(
               KEYS.ProgramStreamFactory,
@@ -224,6 +223,14 @@ const StreamModule = new ContainerModule((bind) => {
   bind(ExternalStreamDetailsFetcherFactory).toSelf().inSingletonScope();
 
   bind(PersistentChannelCache).toSelf().inSingletonScope();
-});
+
+  bind(KEYS.FillerPicker).to(FillerPicker).inSingletonScope();
+};
+
+class StreamModule extends ContainerModule {
+  constructor() {
+    super(configure);
+  }
+}
 
 export { StreamModule };

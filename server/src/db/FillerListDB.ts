@@ -2,6 +2,7 @@ import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
+import { ContentProgram } from '@tunarr/types';
 import {
   CreateFillerListRequest,
   UpdateFillerListRequest,
@@ -28,8 +29,14 @@ import {
   uniq,
   values,
 } from 'lodash-es';
+import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { Maybe, Nilable } from '../types/util.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
+import {
+  FillerShowWithContent,
+  IFillerListDB,
+} from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
 import { ChannelFillerShow } from './schema/Channel.ts';
@@ -42,7 +49,7 @@ import { DB } from './schema/db.ts';
 import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
 
 @injectable()
-export class FillerDB {
+export class FillerDB implements IFillerListDB {
   constructor(
     @inject(ChannelCache) private channelCache: ChannelCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
@@ -50,7 +57,7 @@ export class FillerDB {
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {}
 
-  getFiller(id: string) {
+  getFiller(id: string): Promise<Maybe<FillerShowWithContent>> {
     return this.db
       .selectFrom('fillerShow')
       .where('uuid', '=', id)
@@ -59,7 +66,10 @@ export class FillerDB {
       .executeTakeFirst();
   }
 
-  async saveFiller(id: string, updateRequest: UpdateFillerListRequest) {
+  async saveFiller(
+    id: string,
+    updateRequest: UpdateFillerListRequest,
+  ): Promise<Nilable<FillerShowWithContent>> {
     const filler = await this.getFiller(id);
 
     if (isNil(filler)) {
@@ -179,7 +189,9 @@ export class FillerDB {
   }
 
   // Returns all channels a given filler list is a part of
-  async getFillerChannels(id: string) {
+  async getFillerChannels(
+    id: string,
+  ): Promise<Array<{ number: number; name: string }>> {
     return this.db
       .selectFrom('channelFillerShow')
       .where('channelFillerShow.fillerShowUuid', '=', id)
@@ -326,7 +338,9 @@ export class FillerDB {
       .execute();
   }
 
-  async getFillerPrograms(id: string) {
+  async getFillerPrograms(
+    id: string,
+  ): Promise<MarkRequired<ContentProgram, 'id'>[]> {
     const programs = await this.db
       .selectFrom('fillerShow')
       .where('fillerShow.uuid', '=', id)

@@ -137,7 +137,6 @@ export class VideoStream {
             result.channelContext,
             result.sourceChannel,
             audioOnly,
-            result.lineupItem.type === 'loading',
             true,
             channel.transcodeConfig,
             streamMode,

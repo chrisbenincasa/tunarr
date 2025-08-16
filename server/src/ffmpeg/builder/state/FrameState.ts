@@ -29,6 +29,7 @@ export const DefaultFrameState: Omit<
   pixelFormat: null,
   bitDepth: 8,
   forceSoftwareOverlay: false,
+  infiniteLoop: false,
 };
 
 export class FrameState {
@@ -47,6 +48,7 @@ export class FrameState {
   frameDataLocation: FrameDataLocation;
   deinterlace: boolean;
   pixelFormat: Nullable<PixelFormat>;
+  infiniteLoop: boolean = false;
 
   forceSoftwareOverlay = false;
 

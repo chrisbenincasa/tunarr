@@ -57,7 +57,6 @@ export class HlsSlowerSession extends BaseHlsSession {
     );
 
     return lineupItemResult.mapAsync(async (result) => {
-      const { lineupItem } = result;
       const transcodeBuffer = dayjs
         .duration(dayjs(this.transcodedUntil).diff(now))
         .asSeconds();
@@ -73,7 +72,6 @@ export class HlsSlowerSession extends BaseHlsSession {
         result.channelContext,
         result.sourceChannel,
         request.audioOnly,
-        lineupItem.type === 'loading',
         this.#realtimeTranscode,
         this.channel.transcodeConfig,
         this.sessionType,
