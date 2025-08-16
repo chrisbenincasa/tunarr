@@ -248,13 +248,15 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
-      const replacedPath = replace(
-        filePath,
-        streamSettings.pathReplace,
-        streamSettings.pathReplaceWith,
-      );
+      const replacedPath = isNonEmptyString(streamSettings.pathReplace)
+        ? replace(
+            filePath,
+            streamSettings.pathReplace,
+            streamSettings.pathReplaceWith,
+          )
+        : filePath;
       this.logger.debug(
-        'Plex server %s configured to use "direct" streaming. Attempting to load program from disk. Plex-reported path %s. Path after replace: %S',
+        'Plex server %s configured to use "direct" streaming. Attempting to load program from disk. Plex-reported path %s. Path after replace: %s',
         server.name,
         filePath,
         replacedPath,

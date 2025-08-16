@@ -130,14 +130,23 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     const filePath =
       details.directFilePath ?? first(itemMetadata?.MediaSources)?.Path;
     if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
+      const replacedPath = isNonEmptyString(streamSettings.pathReplace)
+        ? replace(
+            filePath,
+            streamSettings.pathReplace,
+            streamSettings.pathReplaceWith,
+          )
+        : filePath;
       streamSource = {
         type: 'file',
-        path: replace(
-          filePath,
-          streamSettings.pathReplace,
-          streamSettings.pathReplaceWith,
-        ),
+        path: replacedPath,
       };
+      this.logger.debug(
+        'Jellyfin server %s configured to use "direct" streaming. Attempting to load program from disk. JF-reported path %s. Path after replace: %s',
+        mediaSource.name,
+        filePath,
+        replacedPath,
+      );
     } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
       streamSource = {
         type: 'file',
