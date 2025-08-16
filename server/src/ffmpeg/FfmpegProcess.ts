@@ -109,7 +109,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.#processHandle.stderr.pipe(process.stderr, { end: false });
     }
 
-    const bufferedOut = new LastNBytesStream({ bufSizeBytes: 10 * 1024 });
+    const bufferedOut = new LastNBytesStream({ bufSizeBytes: 25 * 1024 });
     this.#processHandle.stderr.pipe(bufferedOut);
 
     if (this.#processKilled) {
@@ -164,7 +164,10 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
         console.log(bufferedBytes);
-        fs.writeFile(outPath, bufferedOut.getLastN()).catch((e) => {
+        fs.writeFile(
+          outPath,
+          bufferedBytes + `\n\nOriginal command: ${argsWithTokenRedacted}`,
+        ).catch((e) => {
           this.#logger.error(
             e,
             'Failed to write last %d bytes to out path: %s',
@@ -185,7 +188,9 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
             });
           }
         } else {
-          process.stderr.write(bufferedOut.getLastN());
+          process.stderr.write(
+            bufferedBytes + `\n\nOriginal command: ${argsWithTokenRedacted}`,
+          );
           this.emit('error', {
             code: code,
             cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,
@@ -298,6 +303,6 @@ class LastNBytesStream extends stream.Writable {
   }
 
   getLastN() {
-    return this.#buf.slice(0, this.#bytesWritten);
+    return this.#buf.subarray(0, this.#bytesWritten);
   }
 }
