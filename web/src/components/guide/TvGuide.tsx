@@ -1,16 +1,9 @@
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
-import {
-  Dvr as ProgrammingIcon,
-  TextSnippet,
-  PlayArrow as WatchIcon,
-} from '@mui/icons-material';
-import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
   Box,
   Button,
   CircularProgress,
-  MenuItem,
   styled,
   Tooltip,
   Typography,
@@ -18,7 +11,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
 import type { Channel } from '@tunarr/types';
 import { type ChannelLineup, type TvGuideProgram } from '@tunarr/types';
@@ -37,7 +29,7 @@ import type { Maybe } from '../../types/util.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
-import { StyledMenu } from '../base/StyledMenu.tsx';
+import { ChannelsTableOptionsMenu } from '../channels/ChannelsTableOptionsMenu.tsx';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
 import { TvGuideItem } from './TvGuideItem.tsx';
 
@@ -181,61 +173,13 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const renderChannelMenu = () => {
     return channelMenu ? (
-      <StyledMenu
-        id="channel-nav-menu"
-        slotProps={{
-          list: {
-            'aria-labelledby': 'channel-nav-button',
-          },
-        }}
+      <ChannelsTableOptionsMenu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-      >
-        <MenuItem
-          disableRipple
-          to={`/channels/${channelMenu.id}/edit`}
-          component={RouterLink}
-        >
-          <EditIcon />
-          Edit Channel
-        </MenuItem>
-        <MenuItem
-          disableRipple
-          onClick={() => {
-            copyToClipboard(channelMenu.id).catch(console.error);
-            setAnchorEl(null);
-          }}
-        >
-          <EditIcon />
-          Copy Channel ID
-        </MenuItem>
-        <MenuItem
-          disableRipple
-          to={`/channels/${channelMenu.id}/programming`}
-          component={RouterLink}
-        >
-          <ProgrammingIcon />
-          Modify Programing
-        </MenuItem>
-        <MenuItem
-          disableRipple
-          to={`/channels/${channelMenu.id}/watch`}
-          component={RouterLink}
-        >
-          <WatchIcon />
-          Watch Channel
-        </MenuItem>
-        <MenuItem
-          disableRipple
-          target="_blank"
-          href={`${backendUri}/stream/channels/${channelMenu.number}.m3u8`}
-          component="a"
-        >
-          <TextSnippet />
-          M3U Link
-        </MenuItem>
-      </StyledMenu>
+        row={channelMenu}
+        hideItems={['duplicate', 'delete']}
+      />
     ) : null;
   };
 

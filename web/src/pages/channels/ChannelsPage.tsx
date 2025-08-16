@@ -230,6 +230,7 @@ export default function ChannelsPage() {
         onClose={() => handleChannelMenuClose()}
         open={channelMenuOpen === row.id}
         row={row}
+        hideItems={['edit']}
       />
     );
   };

@@ -6,14 +6,7 @@ import {
   Stop,
   Tv,
 } from '@mui/icons-material';
-import {
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';
@@ -33,18 +26,20 @@ type Props = {
   anchorEl: PopoverAnchorEl;
   open: boolean;
   onClose: (e?: SyntheticEvent) => void;
+  hideItems?: ListItem[];
 };
+
+type ListItem = 'edit' | 'duplicate' | 'delete';
 
 export const ChannelsTableOptionsMenu = ({
   row,
   anchorEl,
   open,
   onClose,
+  hideItems,
 }: Props) => {
   const { backendUri } = useSettings();
   const copyToClipboard = useCopyToClipboard();
-  const theme = useTheme();
-  const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const apiClient = useTunarrApi();
@@ -96,11 +91,13 @@ export const ChannelsTableOptionsMenu = ({
           vertical: 'top',
           horizontal: 'right',
         }}
-        MenuListProps={{
-          'aria-labelledby': 'channel-options-button',
+        slotProps={{
+          list: {
+            'aria-labelledby': 'channel-options-button',
+          },
         }}
       >
-        {mediumViewport ? (
+        {!hideItems?.includes('edit') ? (
           <MenuItem
             to={`/channels/${channelId}/edit`}
             component={Link}
@@ -111,9 +108,22 @@ export const ChannelsTableOptionsMenu = ({
             <ListItemIcon>
               <Edit />
             </ListItemIcon>
-            <ListItemText>Edit</ListItemText>
+            <ListItemText>Edit Channel</ListItemText>
           </MenuItem>
         ) : null}
+
+        <MenuItem
+          to={`/channels/${channelId}/programming`}
+          component={Link}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <ListItemIcon>
+            <Edit />
+          </ListItemIcon>
+          <ListItemText>Modify Programming</ListItemText>
+        </MenuItem>
 
         <MenuItem
           onClick={(e) => {
@@ -142,7 +152,6 @@ export const ChannelsTableOptionsMenu = ({
           <ListItemText>Copy M3U URL</ListItemText>
         </MenuItem>
         <MenuItem
-          disableRipple
           onClick={(e) => {
             e.stopPropagation();
             copyToClipboard(channelId, 'Copied Channel ID!')
@@ -182,32 +191,36 @@ export const ChannelsTableOptionsMenu = ({
           </ListItemIcon>
           <ListItemText primary={`Stop Transcode Session`} />
         </MenuItem>
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            duplicateChannelMutation.mutate({
-              type: 'copy',
-              channelId,
-            });
-            handleClose(e);
-          }}
-        >
-          <ListItemIcon>
-            <CopyAll />{' '}
-          </ListItemIcon>
-          <ListItemText>Duplicate Channel</ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteConfirmOpen(true);
-          }}
-        >
-          <ListItemIcon>
-            <Delete />
-          </ListItemIcon>
-          <ListItemText>Delete Channel</ListItemText>
-        </MenuItem>
+        {!hideItems?.includes('duplicate') && (
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              duplicateChannelMutation.mutate({
+                type: 'copy',
+                channelId,
+              });
+              handleClose(e);
+            }}
+          >
+            <ListItemIcon>
+              <CopyAll />{' '}
+            </ListItemIcon>
+            <ListItemText>Duplicate Channel</ListItemText>
+          </MenuItem>
+        )}
+        {!hideItems?.includes('delete') && (
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirmOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <Delete />
+            </ListItemIcon>
+            <ListItemText>Delete Channel</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
       <ChannelDeleteDialog
         open={deleteConfirmOpen}
