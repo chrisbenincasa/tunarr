@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.21.5](https://github.com/chrisbenincasa/tunarr/compare/v0.21.4...v0.21.5) (2025-08-16)
+
+
+### Bug Fixes
+
+* allow adding emby programs to custom shows ([912b540](https://github.com/chrisbenincasa/tunarr/commit/912b54023c0aedf09948703b2138a2731f7ac7f4))
+* fix ffprobe command in stream details debug tab ([576f337](https://github.com/chrisbenincasa/tunarr/commit/576f337164676a6a37c72c35847476550994386a))
+* include original ffmpeg command in error file ([cc2776b](https://github.com/chrisbenincasa/tunarr/commit/cc2776ba08726b730675b867ead96222fc0e879b))
+
+
+### UI Changes
+
+* account for delete action in program list padding ([fba8bda](https://github.com/chrisbenincasa/tunarr/commit/fba8bda4b2a6116e0bacb02994289b04d23b70bd))
+* allow for larger steam detail dialogs ([ba2f767](https://github.com/chrisbenincasa/tunarr/commit/ba2f767b25665b9d51d56f490673771aa4f07f5e))
+* limit size of channel logo on summary page ([1e3af1a](https://github.com/chrisbenincasa/tunarr/commit/1e3af1ab9035dc3c9902ac75dd56f7ef6a15ed7f))
+* standardize channel menu ([119d280](https://github.com/chrisbenincasa/tunarr/commit/119d280712ecb4a6017d3836ad652f385479ff75))
+
 ## [0.21.4](https://github.com/chrisbenincasa/tunarr/compare/v0.21.3...v0.21.4) (2025-08-14)
 
 
