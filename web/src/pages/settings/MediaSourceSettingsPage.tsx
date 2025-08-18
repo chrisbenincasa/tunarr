@@ -52,11 +52,12 @@ export default function MediaSourceSettingsPage() {
   const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
+  const serverQuery = useMediaSources();
   const {
     data: servers,
     isPending: serversPending,
     error: serversError,
-  } = useMediaSources();
+  } = serverQuery;
 
   const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
 

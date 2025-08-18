@@ -85,7 +85,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
 
   useEffect(() => {
     if (open) {
-      reset();
+      reset(server ?? emptyDefaults);
     }
   }, [open, reset]);
 
@@ -106,7 +106,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['settings', 'media-sources'],
-        exact: false,
+        exact: true,
       });
       handleClose();
     },

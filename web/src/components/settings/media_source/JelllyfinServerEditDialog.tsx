@@ -90,7 +90,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
 
   useEffect(() => {
     if (open) {
-      reset();
+      reset(server ?? emptyDefaults);
     }
   }, [reset, open]);
 

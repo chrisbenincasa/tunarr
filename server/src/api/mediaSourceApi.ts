@@ -310,12 +310,12 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             serverName: req.body.name,
             action: 'update',
           },
-          level: 'warning',
+          level: 'info',
         });
 
         return res.status(200).send();
       } catch (err) {
-        logger.error(err, 'Could not update plex server. ');
+        logger.error(err, 'Could not update media source.');
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: 'Error updating media source.',
