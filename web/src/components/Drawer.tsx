@@ -12,9 +12,9 @@ import {
   Toolbar,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { useToggle } from '@uidotdev/usehooks';
 import { Transition } from 'notistack';
 import React, { useCallback, useRef, useState } from 'react';
+import { useToggle } from 'react-use';
 import type { NavItem } from '../hooks/useNavItems.tsx';
 import { useNavItems } from '../hooks/useNavItems.tsx';
 import VersionFooter from './VersionFooter.tsx';

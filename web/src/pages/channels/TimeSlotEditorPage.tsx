@@ -35,7 +35,6 @@ import { DateTimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
 import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
-import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -53,6 +52,7 @@ import {
 } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { useToggle } from 'react-use';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';

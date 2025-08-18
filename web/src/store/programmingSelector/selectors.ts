@@ -1,9 +1,11 @@
+import { createExternalId } from '@tunarr/shared';
 import { type FindChild, type MediaSourceSettings } from '@tunarr/types';
 import { filter } from 'lodash-es';
 import { useMemo } from 'react';
+import { match } from 'ts-pattern';
 import { useShallow } from 'zustand/react/shallow';
 import useStore from '..';
-import { Plex } from '../../helpers/constants.ts';
+import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { KnownMedia } from './KnownMedia';
 import {
   type CustomShowView,
@@ -111,4 +113,16 @@ export function useSelectedMedia<
     }
     return media as OutType[];
   });
+}
+export function uniqueIdForSelectedMedia(media: SelectedMedia) {
+  return match(media)
+    .with({ type: Plex }, (plex) =>
+      createExternalId(plex.type, plex.serverId, plex.id),
+    )
+    .with({ type: Jellyfin }, (jf) =>
+      createExternalId(jf.type, jf.serverId, jf.id),
+    )
+    .with({ type: Emby }, (em) => createExternalId(em.type, em.serverId, em.id))
+    .with({ type: 'custom-show' }, (cs) => '')
+    .exhaustive();
 }

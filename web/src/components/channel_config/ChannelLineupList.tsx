@@ -452,6 +452,7 @@ export default function ChannelLineupList(props: Props) {
 
     return (
       <ProgramListItem
+        key={idx}
         index={idx}
         program={program}
         style={style}

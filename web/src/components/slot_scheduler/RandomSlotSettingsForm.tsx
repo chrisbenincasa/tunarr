@@ -21,8 +21,8 @@ import type {
   RandomSlotDistributionType,
   RandomSlotSchedule,
 } from '@tunarr/types/api';
-import { useToggle } from '@uidotdev/usehooks';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useToggle } from 'react-use';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon';
 import {

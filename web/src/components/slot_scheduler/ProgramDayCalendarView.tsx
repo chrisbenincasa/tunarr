@@ -1,10 +1,10 @@
 import { ArrowBack, ArrowForward, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { Box, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { usePrevious } from '@uidotdev/usehooks';
 import type dayjs from 'dayjs';
 import { range } from 'lodash-es';
 import { useCallback, useRef, useState } from 'react';
+import { usePrevious } from 'react-use';
 import { getTextContrast } from '../../helpers/colors.ts';
 import { OneDayMillis } from '../../helpers/constants.ts';
 import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';

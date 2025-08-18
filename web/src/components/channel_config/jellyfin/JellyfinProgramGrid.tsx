@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { createExternalId } from '@tunarr/shared';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import type {
@@ -12,6 +13,7 @@ import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import { Jellyfin } from '../../../helpers/constants.ts';
 import {
   extractJellyfinItemId,
   jellyfinChildType,
@@ -158,7 +160,11 @@ export const JellyfinProgramGrid = ({
     [],
   );
 
-  const getItemKey = useCallback((item: JellyfinItem) => item.Id, []);
+  const getItemKey = useCallback(
+    (item: JellyfinItem) =>
+      createExternalId(Jellyfin, selectedServer.id, item.Id),
+    [selectedServer],
+  );
 
   const renderNestedGrid = useCallback(
     (props: NestedGridProps<JellyfinItem>) => {

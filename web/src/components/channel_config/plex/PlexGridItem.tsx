@@ -26,6 +26,7 @@ import type { SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
 import { match, P } from 'ts-pattern';
+import { Plex } from '../../../helpers/constants.ts';
 import { MediaGridItem, type GridItemMetadata } from '../MediaGridItem.tsx';
 import type { GridItemProps } from '../MediaItemGrid.tsx';
 
@@ -184,7 +185,7 @@ export const PlexGridItem = memo(
           <MediaGridItem
             {...props}
             key={props.item.guid}
-            itemSource="plex"
+            itemSource={Plex}
             ref={ref}
             metadata={metadata}
             onClick={handleItemClick}
