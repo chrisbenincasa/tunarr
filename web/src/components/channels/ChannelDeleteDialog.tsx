@@ -9,7 +9,10 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Channel } from '@tunarr/types';
 import type { SyntheticEvent } from 'react';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import {
+  deleteApiChannelsByIdMutation,
+  getChannelsQueryKey,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 type BaseProps = {
   onClose: (e: SyntheticEvent) => void;
@@ -28,23 +31,20 @@ type IsClosedProps = {
 type Props = BaseProps & (IsOpenProps | IsClosedProps);
 
 export const ChannelDeleteDialog = ({ open, onClose, channel }: Props) => {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
   const removeChannelMutation = useMutation({
-    mutationFn: (id: string) => {
-      return apiClient.deleteChannel(undefined, { params: { id } });
-    },
+    ...deleteApiChannelsByIdMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['channels'],
+        queryKey: getChannelsQueryKey(),
       });
     },
   });
 
   const removeChannel = (e: SyntheticEvent, id: string) => {
     e.stopPropagation();
-    removeChannelMutation.mutate(id);
+    removeChannelMutation.mutate({ path: { id } });
     onClose(e);
   };
 

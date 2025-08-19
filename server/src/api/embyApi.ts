@@ -47,8 +47,6 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     if (!routeOptions.schema) {
       routeOptions.schema = {};
     }
-
-    routeOptions.schema.hide = true;
   });
 
   fastify.post(
@@ -56,6 +54,12 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         body: EmbyLoginRequest,
+        response: {
+          200: z.object({
+            accessToken: z.string().optional(),
+            userId: z.string().optional(),
+          }),
+        },
       },
     },
     async (req, res) => {
@@ -78,6 +82,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         params: mediaSourceParams,
+        response: {
+          200: EmbyLibraryItemsResponse,
+        },
       },
     },
     (req, res) =>
@@ -153,7 +160,8 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .string()
             .optional()
             .transform((s) => s?.split(','))
-            .pipe(z.enum(['Artist', 'AlbumArtist']).array().optional()),
+            .pipe(z.enum(['Artist', 'AlbumArtist']).array().optional())
+            .or(z.array(z.enum(['Artist', 'AlbumArtist'])).optional()),
         }),
         response: {
           200: EmbyLibraryItemsResponse,

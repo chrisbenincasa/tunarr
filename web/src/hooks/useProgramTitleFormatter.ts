@@ -9,7 +9,6 @@ import { useCallback } from 'react';
 import { match } from 'ts-pattern';
 import { useCustomShows } from './useCustomShows';
 import { fillerListsQuery } from './useFillerLists.ts';
-import { useTunarrApi } from './useTunarrApi.ts';
 
 export const useProgramTitleFormatter = () => {
   const { data: customShows } = useCustomShows({
@@ -23,10 +22,8 @@ export const useProgramTitleFormatter = () => {
     staleTime: 30_000,
   });
 
-  const apiClient = useTunarrApi();
-
   const { data: fillerLists } = useSuspenseQuery({
-    ...fillerListsQuery(apiClient),
+    ...fillerListsQuery(),
     select: (data) => {
       const byId: Record<string, FillerList> = {};
       for (const show of data) {

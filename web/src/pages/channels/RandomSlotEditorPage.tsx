@@ -127,8 +127,10 @@ export default function RandomSlotEditorPage() {
     );
 
     updateLineupMutation.mutate({
-      channelId: channel!.id,
-      lineupRequest: {
+      path: {
+        id: channel!.id,
+      },
+      body: {
         type: 'random',
         schedule,
         programs: filteredLineup,

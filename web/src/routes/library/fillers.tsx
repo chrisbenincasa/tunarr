@@ -3,7 +3,7 @@ import FillerListsPage from '@/pages/library/FillerListsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/fillers')({
-  loader: ({ context: { queryClient, tunarrApiClientProvider } }) =>
-    queryClient.ensureQueryData(fillerListsQuery(tunarrApiClientProvider())),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(fillerListsQuery()),
   component: FillerListsPage,
 });

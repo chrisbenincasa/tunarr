@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   FfmpegSettings,
   TranscodeConfig,
@@ -36,9 +36,15 @@ import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.
 import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
 import type { DeepRequired } from 'ts-essentials';
 import { TranscodeConfigsTable } from '../../components/settings/ffmpeg/TranscodeConfigsTable.tsx';
+import {
+  deleteApiTranscodeConfigsByIdMutation,
+  getApiFfmpegInfoOptions,
+  getApiFfmpegInfoQueryKey,
+  getApiFfmpegSettingsQueryKey,
+  getApiVersionQueryKey,
+  putApiFfmpegSettingsMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useFfmpegSettings } from '../../hooks/settingsHooks.ts';
-import { useApiQuery } from '../../hooks/useApiQuery.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 const FfmpegLogOptions = ['disable', 'console', 'file'] as const;
 type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
@@ -46,12 +52,11 @@ type FfmpegLogOptions = TupleToUnion<typeof FfmpegLogOptions>;
 type FfmpegFormValues = DeepRequired<Omit<FfmpegSettings, 'configVersion'>>;
 
 export default function FfmpegSettingsPage() {
-  const apiClient = useTunarrApi();
   const { data: ffmpegSettings, error } = useFfmpegSettings();
-  const ffmpegInfo = useApiQuery({
-    queryKey: ['ffmpeg-info'],
-    queryFn: (apiClient) => apiClient.getFfmpegInfo(),
+  const ffmpegInfo = useQuery({
+    ...getApiFfmpegInfoOptions(),
   });
+
   const queryClient = useQueryClient();
   const systemState = useSystemState();
 
@@ -118,7 +123,8 @@ export default function FfmpegSettingsPage() {
   const snackbar = useSnackbar();
 
   const updateFfmpegSettingsMutation = useMutation({
-    mutationFn: apiClient.updateFfmpegSettings,
+    ...putApiFfmpegSettingsMutation(),
+    // mutationFn: apiClient.updateFfmpegSettings,
     onSuccess: (data) => {
       setRestoreTunarrDefaults(false);
       snackbar.enqueueSnackbar('Settings Saved!', {
@@ -128,7 +134,11 @@ export default function FfmpegSettingsPage() {
       return queryClient.invalidateQueries({
         predicate(query) {
           return some(
-            [['settings', 'ffmpeg-settings'], ['ffmpeg-info'], ['version']],
+            [
+              getApiFfmpegSettingsQueryKey(),
+              getApiFfmpegInfoQueryKey(),
+              getApiVersionQueryKey(),
+            ],
             (key) => isEqual(query.queryKey, key),
           );
         },
@@ -137,16 +147,19 @@ export default function FfmpegSettingsPage() {
   });
 
   const deleteTranscodeConfig = useMutation({
-    mutationFn: (id: string) =>
-      apiClient.deleteTranscodeConfig(undefined, { params: { id } }),
+    ...deleteApiTranscodeConfigsByIdMutation(),
+    // mutationFn: (id: string) =>
+    //   apiClient.deleteTranscodeConfig(undefined, { params: { id } }),
   });
 
   const updateFfmpegSettings: SubmitHandler<
     Omit<FfmpegSettings, 'configVersion'>
   > = (data) => {
     updateFfmpegSettingsMutation.mutate({
-      configVersion: defaultFfmpegSettings.configVersion,
-      ...data,
+      body: {
+        configVersion: defaultFfmpegSettings.configVersion,
+        ...data,
+      },
     });
   };
 
@@ -438,7 +451,9 @@ export default function FfmpegSettingsPage() {
         title={`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name}"?`}
         body="All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
         onConfirm={() =>
-          deleteTranscodeConfig.mutate(confirmDeleteTranscodeConfig!.id)
+          deleteTranscodeConfig.mutate({
+            path: { id: confirmDeleteTranscodeConfig!.id },
+          })
         }
         onClose={() => setConfirmDeleteTranscodeConfig(null)}
         dialogProps={{

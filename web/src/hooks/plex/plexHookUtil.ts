@@ -1,5 +1,4 @@
 import { createExternalId } from '@tunarr/shared';
-import { tag } from '@tunarr/types';
 import type {
   PlexEpisodeView,
   PlexLibraryListing,
@@ -10,13 +9,11 @@ import type {
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import { isPlexDirectory, isTerminalItem } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep, map } from 'lodash-es';
-import type { ApiClient } from '../../external/api.ts';
+import { queryPlexQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
+import { batchGetProgramsByExternalIds } from '../../generated/sdk.gen.ts';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
-
-export const emptyMediaSourceId = tag<MediaSourceId>('');
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -24,19 +21,18 @@ export type PlexPathMappings = [
 ];
 
 export const plexQueryOptions = <T>(
-  apiClient: ApiClient,
-  serverId: MediaSourceId,
+  serverId: string,
   path: string,
   enabled: boolean = true,
 ) => ({
-  queryKey: ['plex', serverId, path],
-  queryFn: fetchPlexPath<T>(apiClient, serverId, path),
+  queryKey: queryPlexQueryKey({ query: { id: serverId, path } }),
+  queryFn: fetchPlexPath<T>(serverId, path),
   enabled: enabled && serverId.length > 0 && path.length > 0,
 });
 
 export type EnrichedPlexMedia = PlexTerminalMedia & {
   // The internal Tunarr ID of the media source
-  serverId: MediaSourceId;
+  serverId: string;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here
@@ -46,13 +42,12 @@ export type EnrichedPlexMedia = PlexTerminalMedia & {
 };
 
 export const enumeratePlexItem = (
-  apiClient: ApiClient,
-  serverId: MediaSourceId,
+  serverId: string,
   serverName: string,
   initialItem: PlexMedia | PlexLibrarySection,
 ): (() => Promise<EnrichedPlexMedia[]>) => {
   const fetchPlexPathFunc = <T>(path: string) =>
-    fetchPlexPath<T>(apiClient, serverId, path)();
+    fetchPlexPath<T>(serverId, path)();
 
   async function loopInner(
     item: PlexMedia | PlexLibrarySection,
@@ -86,11 +81,13 @@ export const enumeratePlexItem = (
     // This is best effort - if the user saves these IDs later, the upsert
     // logic should figure out what is new/existing
     try {
-      const existingIdsByExternalId =
-        await apiClient.batchGetProgramsByExternalIds({ externalIds });
+      const existingIdsByExternalId = await batchGetProgramsByExternalIds({
+        body: { externalIds },
+        throwOnError: true,
+      });
       return map(res, (media) => {
         const existing =
-          existingIdsByExternalId[
+          existingIdsByExternalId.data[
             createExternalId('plex', serverName, media.ratingKey)
           ];
         return {

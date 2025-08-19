@@ -1,13 +1,11 @@
 import { Box } from '@mui/material';
 import type { MediaSourceSettings } from '@tunarr/types';
-import { tag } from '@tunarr/types';
 import type {
   JellyfinItem,
   JellyfinItemKind,
   JellyfinItemSortBy,
   JellyfinLibraryItemsResponse,
 } from '@tunarr/types/jellyfin';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -78,9 +76,9 @@ export const JellyfinProgramGrid = ({
     return [];
   }, [currentParentContext, selectedLibrary.view.CollectionType]);
 
-  const sortBy: NonEmptyArray<JellyfinItemSortBy> | null = useMemo(() => {
+  const sortBy = useMemo(() => {
     return match(selectedLibrary?.view.CollectionType)
-      .returnType<Nullable<NonEmptyArray<JellyfinItemSortBy>>>()
+      .returnType<NonEmptyArray<JellyfinItemSortBy>>()
       .with('homevideos', () => ['IsFolder', 'SortName'])
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
   }, [selectedLibrary?.view.CollectionType]);
@@ -88,7 +86,7 @@ export const JellyfinProgramGrid = ({
   const genre = useStore((s) => s.currentMediaGenre);
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
-    selectedServer?.id ?? tag<MediaSourceId>(''),
+    selectedServer?.id,
     currentParentContext?.Id ?? selectedLibrary?.view.ItemId ?? '',
     itemTypes,
     /**enabled= */ isUndefined(depth) ||

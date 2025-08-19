@@ -12,12 +12,7 @@ const watchPageSearchSchema = z.object({
 
 export const Route = createFileRoute('/channels/$channelId/watch')({
   validateSearch: (s) => watchPageSearchSchema.parse(s),
-  loader: ({
-    params: { channelId },
-    context: { queryClient, tunarrApiClientProvider },
-  }) =>
-    queryClient.ensureQueryData(
-      channelQuery(tunarrApiClientProvider(), channelId),
-    ),
+  loader: ({ params: { channelId }, context: { queryClient } }) =>
+    queryClient.ensureQueryData(channelQuery(channelId)),
   component: ChannelWatchPage,
 });

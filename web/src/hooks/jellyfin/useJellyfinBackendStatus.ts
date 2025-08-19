@@ -1,7 +1,9 @@
 import { isNonEmptyString, isValidUrl } from '@/helpers/util';
+import { useQuery } from '@tanstack/react-query';
 import type { JellyfinServerSettings } from '@tunarr/types';
 import type { MarkOptional } from 'ts-essentials';
-import { useApiQuery } from '../useApiQuery';
+import { postApiMediaSourcesForeignstatusOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { Jellyfin } from '../../helpers/constants.ts';
 
 export const useJellyfinBackendStatus = (
   {
@@ -17,26 +19,15 @@ export const useJellyfinBackendStatus = (
   >,
   enabled: boolean = true,
 ) => {
-  // const serverStatusResult = useApiQuery({
-  //   queryKey: ['plex-server', { id, uri, accessToken }, 'status'],
-  //   queryFn(apiClient) {
-  //     return apiClient.getPlexServerStatus({ params: { id: id! } });
-  //   },
-  //   enabled: enabled && isNonEmptyString(id),
-  //   retry: false,
-  //   staleTime: 0,
-  // });
-
-  const unknownServerStatusResult = useApiQuery({
-    queryKey: ['unknown-jellyfin-server', { id, uri, accessToken }, 'status'],
-    queryFn(apiClient) {
-      return apiClient.getUnknownMediaSourceStatus({
-        uri,
+  return useQuery({
+    ...postApiMediaSourcesForeignstatusOptions({
+      body: {
         accessToken,
+        type: Jellyfin,
+        uri,
         username,
-        type: 'jellyfin',
-      });
-    },
+      },
+    }),
     enabled:
       enabled &&
       !isNonEmptyString(id) &&
@@ -46,6 +37,4 @@ export const useJellyfinBackendStatus = (
     retry: false,
     staleTime: 0,
   });
-
-  return unknownServerStatusResult;
 };

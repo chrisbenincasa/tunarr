@@ -9,35 +9,32 @@ export const PlexFilterValueNodeSchema = z.object({
   value: z.string(),
 });
 
-export type PlexFilterValueNode = {
-  type: 'value';
-  field: string;
-  fieldType?: string;
-  op: string;
-  value: string;
-};
+export type PlexFilterValueNode = z.infer<typeof PlexFilterValueNodeSchema>;
 
-export type PlexFilterOperatorNode = {
-  type: 'op';
-  op: 'or' | 'and';
-  children: PlexFilter[];
-};
+export const PlexFilterOperatorNodeSchema = z.object({
+  type: z.literal('op'),
+  op: z.union([z.literal('or'), z.literal('and')]),
+  get children(): z.ZodArray<
+    z.ZodDiscriminatedUnion<
+      [typeof PlexFilterOperatorNodeSchema, typeof PlexFilterValueNodeSchema]
+    >
+  > {
+    return z.array(PlexFilterSchema);
+  },
+});
 
-// Hack to get recursive types working in zod
-export const PlexFilterOperatorNodeSchema: z.ZodType<PlexFilterOperatorNode> =
-  z.lazy(() =>
-    z.object({
-      type: z.literal('op'),
-      op: z.union([z.literal('or'), z.literal('and')]),
-      children: PlexFilterSchema.array(),
-    }),
-  );
+export type PlexFilterOperatorNode = z.infer<
+  typeof PlexFilterOperatorNodeSchema
+>;
 
-export const PlexFilterSchema = PlexFilterOperatorNodeSchema.or(
+export const PlexFilterSchema: z.ZodDiscriminatedUnion<
+  [typeof PlexFilterOperatorNodeSchema, typeof PlexFilterValueNodeSchema]
+> = z.discriminatedUnion('type', [
+  PlexFilterOperatorNodeSchema,
   PlexFilterValueNodeSchema,
-);
+]);
 
-export type PlexFilter = PlexFilterOperatorNode | PlexFilterValueNode;
+export type PlexFilter = z.infer<typeof PlexFilterSchema>;
 
 export const PlexSortSchema = z.object({
   field: z.string(),
@@ -60,3 +57,5 @@ export type ScopedPlexSearch = {
   search: PlexSearch;
   libraryKey: string;
 };
+
+z.globalRegistry.add(PlexFilterSchema, { id: 'PlexFilter' });

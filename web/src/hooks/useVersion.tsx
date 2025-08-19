@@ -1,20 +1,19 @@
 import { Close, Refresh } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
-import type { UseQueryOptions } from '@tanstack/react-query';
-import type { VersionApiResponse } from '@tunarr/types/api';
+import { useQuery } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-import { useApiQuery } from './useApiQuery.ts';
+import { StrictOmit } from 'ts-essentials';
+import { getApiVersionOptions } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useVersion = (
-  extraOpts: Omit<
-    UseQueryOptions<VersionApiResponse>,
+  extraOpts: StrictOmit<
+    ReturnType<typeof getApiVersionOptions>,
     'queryKey' | 'queryFn'
   > = {},
 ) => {
   const snackbar = useSnackbar();
-  const query = useApiQuery({
-    queryKey: ['version'],
-    queryFn: (apiClient) => apiClient.getServerVersions(),
+  const query = useQuery({
+    ...getApiVersionOptions(),
     ...extraOpts,
     staleTime: extraOpts.staleTime ?? 30 * 1000,
     refetchOnReconnect: true,

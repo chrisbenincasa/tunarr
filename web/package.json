@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.build.json --noEmit",
     "build-dev": "tsc -p tsconfig.build.json --noEmit --watch",
     "regen-routes": "tsr generate",
+    "generate-client": "openapi-ts",
     "prebuild": "make-vfs --verbose --dir ./dist --content-format import-bunfile --outfile dist/web-imports.js",
     "bundle": "vite build",
     "dev": "vite",
@@ -29,9 +30,7 @@
     "@tanstack/react-router": "^1.95.1",
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
-    "@tunarr/zodios-core": "^11.1.0",
     "@uidotdev/usehooks": "^2.4.1",
-    "@zodios/plugins": "^10.6.0",
     "axios": "^1.11.0",
     "bowser": "^2.11.0",
     "color": "^5.0.0",
@@ -62,6 +61,8 @@
     "zustand": "^4.4.6"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "0.80.12",
+    "@hey-api/vite-plugin": "^0.2.0",
     "@tanstack/react-table": "8.19.3",
     "@tanstack/router-cli": "^1.35.4",
     "@tanstack/router-devtools": "^1.36.0",

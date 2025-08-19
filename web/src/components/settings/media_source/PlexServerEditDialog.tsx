@@ -1,7 +1,6 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
 import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 import {
   CloudDoneOutlined,
   CloudOff,
@@ -35,6 +34,11 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import type { MarkOptional } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
+import { getApiMediaSourcesQueryKey } from '../../../generated/@tanstack/react-query.gen.ts';
+import {
+  postApiMediaSources,
+  putApiMediaSourcesById,
+} from '../../../generated/sdk.gen.ts';
 
 type Props = {
   open: boolean;
@@ -60,7 +64,6 @@ const emptyDefaults: PlexServerSettingsForm = {
 };
 
 export function PlexServerEditDialog({ open, onClose, server }: Props) {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
   const [showAccessToken, setShowAccessToken] = useState(false);
@@ -92,20 +95,20 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
   const updatePlexServerMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await apiClient.updateMediaSource(
-          { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
-          {
-            params: { id: newOrUpdatedServer.id },
-          },
-        );
+        await putApiMediaSourcesById({
+          body: { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          path: { id: newOrUpdatedServer.id },
+        });
         return { id: newOrUpdatedServer.id };
       } else {
-        return apiClient.createMediaSource(newOrUpdatedServer);
+        return postApiMediaSources({
+          body: newOrUpdatedServer,
+        });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
+        queryKey: getApiMediaSourcesQueryKey(),
         exact: true,
       });
       handleClose();

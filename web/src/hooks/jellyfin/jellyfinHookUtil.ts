@@ -1,4 +1,3 @@
-import type { ApiClient } from '@/external/api.ts';
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
 import { sequentialPromises } from '@/helpers/util.ts';
 import {
@@ -6,12 +5,12 @@ import {
   type JellyfinItem,
   type TunarrAmendedJellyfinVirtualFolder,
 } from '@tunarr/types/jellyfin';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
+import { getJellyfinLibraryItems } from '../../generated/sdk.gen.ts';
 
 export type EnrichedJellyfinItem = JellyfinItem & {
   // The internal Tunarr ID of the media source
-  serverId: MediaSourceId;
+  serverId: string;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here
@@ -21,8 +20,7 @@ export type EnrichedJellyfinItem = JellyfinItem & {
 };
 
 export const enumerateJellyfinItem = (
-  apiClient: ApiClient,
-  serverId: MediaSourceId,
+  serverId: string,
   serverName: string,
   initialItem: JellyfinItem | TunarrAmendedJellyfinVirtualFolder,
 ): (() => Promise<EnrichedJellyfinItem[]>) => {
@@ -51,22 +49,19 @@ export const enumerateJellyfinItem = (
           );
         }
 
-        return (
-          apiClient
-            .getJellyfinItems({
-              params: {
-                mediaSourceId: serverId,
-                libraryId: id,
-              },
-              queries: {
-                itemTypes: [...JellyfinTerminalTypes],
-                recursive: true,
-              },
-            })
-            // TODO: Use p-queue here to parallelize a bit
-            .then((result) => sequentialPromises(result.Items, loopInner))
-            .then(flattenDeep)
-        );
+        return getJellyfinLibraryItems({
+          path: {
+            mediaSourceId: serverId,
+            libraryId: id,
+          },
+          query: {
+            itemTypes: [...JellyfinTerminalTypes],
+            recursive: true,
+          },
+          throwOnError: true,
+        }) // TODO: Use p-queue here to parallelize a bit
+          .then((result) => sequentialPromises(result.data.Items, loopInner))
+          .then(flattenDeep);
       }
     }
 

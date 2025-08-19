@@ -195,11 +195,16 @@ export function EditChannelForm({
 
     if (isNew) {
       createChannelMutation.mutate({
-        type: 'new',
-        channel: dataTransform,
+        body: {
+          type: 'new',
+          channel: dataTransform,
+        },
       });
     } else {
-      updateChannelMutation.mutate(dataTransform);
+      updateChannelMutation.mutate({
+        path: { id: channel.id },
+        body: dataTransform,
+      });
     }
   };
 

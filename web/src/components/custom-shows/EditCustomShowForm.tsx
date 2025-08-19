@@ -1,4 +1,3 @@
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { queryClient } from '@/queryClient';
 import useStore from '@/store';
 import {
@@ -25,6 +24,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { type CustomShow } from '@tunarr/types';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
+import { getApiCustomShowsQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
+import {
+  createCustomShow,
+  putApiCustomShowsById,
+} from '../../generated/sdk.gen.ts';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 import { CustomShowSortToolsMenu } from './CustomShowSortToolsMenu.tsx';
 
@@ -44,7 +48,6 @@ export function EditCustomShowsForm({
   customShowPrograms,
   isNew,
 }: Props) {
-  const apiClient = useTunarrApi();
   const navigate = useNavigate();
   const customShowProgrammingChanged = useStore(
     (s) => s.customShowEditor.dirty.programs,
@@ -74,20 +77,19 @@ export function EditCustomShowsForm({
       data: CustomShowForm & { programs: UICustomShowProgram[] },
     ) => {
       if (isNew) {
-        return apiClient.createCustomShow({
-          name: data.name,
-          programs: data.programs,
-        });
+        return createCustomShow({ body: data });
       } else {
-        return apiClient.updateCustomShow(
-          { name: data.name, programs: data.programs },
-          { params: { id: customShow.id } },
-        );
+        return putApiCustomShowsById({
+          path: {
+            id: customShow.id,
+          },
+          body: data,
+        });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['custom-shows'],
+        queryKey: getApiCustomShowsQueryKey(),
         exact: false,
       });
       clearCurrentCustomShow();

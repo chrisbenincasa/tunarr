@@ -1,28 +1,18 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
-import {
-  emptyMediaSourceId,
-  plexQueryOptions,
-} from '@/hooks/plex/plexHookUtil.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
+import { plexQueryOptions } from '@/hooks/plex/plexHookUtil.ts';
 import useStore from '@/store/index.ts';
 import { setPlexMetadataFilters } from '@/store/plexMetadata/actions.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
 import type { Maybe } from '@/types/util.ts';
 import { useQuery } from '@tanstack/react-query';
 import type { PlexFiltersResponse } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { useEffect } from 'react';
 
-export const usePlexFilters = (
-  serverId: Maybe<MediaSourceId>,
-  plexKey: string,
-) => {
-  const apiClient = useTunarrApi();
+export const usePlexFilters = (serverId: Maybe<string>, plexKey: string) => {
   const key = `/library/sections/${plexKey}/all?includeMeta=1&includeAdvanced=1&X-Plex-Container-Start=0&X-Plex-Container-Size=0`;
   const query = useQuery<PlexFiltersResponse>({
     ...plexQueryOptions(
-      apiClient,
-      serverId ?? emptyMediaSourceId,
+      serverId ?? '',
       key,
       isNonEmptyString(serverId) && plexKey.length > 0,
     ),

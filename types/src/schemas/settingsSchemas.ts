@@ -1,5 +1,5 @@
 import z from 'zod/v4';
-import { type Tag, type TupleToUnion } from '../util.js';
+import { type TupleToUnion } from '../util.js';
 import { ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
@@ -106,14 +106,8 @@ export const FfmpegSettingsSchema = z.object({
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });
 
-const mediaSourceId = z.custom<MediaSourceId>((val) => {
-  return typeof val === 'string';
-});
-
-export type MediaSourceId = Tag<string, 'mediaSourceId'>;
-
 const BaseMediaSourceSettingsSchema = z.object({
-  id: mediaSourceId,
+  id: z.string(),
   name: z.string(),
   uri: z.string(),
   accessToken: z.string(),

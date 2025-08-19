@@ -1,6 +1,5 @@
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
 import type { EmbyMediaSourceView } from '@/store/programmingSelector/store.ts';
 import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
@@ -18,6 +17,10 @@ import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
+import {
+  getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems,
+  getJellyfinLibraryItems,
+} from '../../generated/sdk.gen.ts';
 import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { embyCollectionTypeToItemTypes } from '../../helpers/embyUtil.ts';
 import { jellyfinCollectionTypeToItemTypes } from '../../helpers/jellyfinUtil.ts';
@@ -42,7 +45,6 @@ export default function SelectedProgrammingActions({
   selectAllEnabled = true,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
-  const apiClient = useTunarrApi();
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
@@ -86,50 +88,48 @@ export default function SelectedProgrammingActions({
         case Jellyfin: {
           const library = selectedLibrary as JellyfinMediaSourceView;
 
-          prom = apiClient
-            .getJellyfinItems({
-              params: {
-                mediaSourceId: selectedServer.id,
-                libraryId: library.view.ItemId,
-              },
-              queries: {
-                itemTypes: jellyfinCollectionTypeToItemTypes(
-                  nullToUndefined(library.view.CollectionType),
-                ),
-                recursive: true,
-              },
-            })
-            .then((response) => {
-              addJellyfinSelectedMedia(selectedServer, response.Items);
-              addKnownMediaForServer(selectedServer.id, {
-                type: Jellyfin,
-                items: response.Items,
-              });
+          prom = getJellyfinLibraryItems({
+            path: {
+              mediaSourceId: selectedServer.id,
+              libraryId: library.view.ItemId,
+            },
+            query: {
+              itemTypes: jellyfinCollectionTypeToItemTypes(
+                nullToUndefined(library.view.CollectionType),
+              ),
+              recursive: true,
+            },
+            throwOnError: true,
+          }).then(({ data: response }) => {
+            addJellyfinSelectedMedia(selectedServer, response.Items);
+            addKnownMediaForServer(selectedServer.id, {
+              type: Jellyfin,
+              items: response.Items,
             });
+          });
           break;
         }
         case Emby: {
           const library = selectedLibrary as EmbyMediaSourceView;
 
-          prom = apiClient
-            .getEmbyItems({
-              params: {
-                mediaSourceId: selectedServer.id,
-                libraryId: library.view.Id,
-              },
-              queries: {
-                itemTypes: embyCollectionTypeToItemTypes(
-                  library.view.CollectionType,
-                ),
-              },
-            })
-            .then((response) => {
-              addEmbySelectedMedia(selectedServer, response.Items);
-              addKnownMediaForServer(selectedServer.id, {
-                type: Emby,
-                items: response.Items,
-              });
+          prom = getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
+            path: {
+              mediaSourceId: selectedServer.id,
+              libraryId: library.view.Id,
+            },
+            query: {
+              itemTypes: embyCollectionTypeToItemTypes(
+                library.view.CollectionType,
+              ),
+            },
+            throwOnError: true,
+          }).then(({ data: response }) => {
+            addEmbySelectedMedia(selectedServer, response.Items);
+            addKnownMediaForServer(selectedServer.id, {
+              type: Emby,
+              items: response.Items,
             });
+          });
           break;
         }
       }

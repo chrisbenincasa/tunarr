@@ -8,7 +8,6 @@ import { isError, isNil } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChannelTranscodeConfig } from '../hooks/settingsHooks.ts';
 import { useHls } from '../hooks/useHls.ts';
-import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 import { useSettings } from '../store/settings/selectors.ts';
 
 type VideoProps = {
@@ -17,7 +16,6 @@ type VideoProps = {
 
 export default function Video({ channelId }: VideoProps) {
   const { backendUri } = useSettings();
-  const apiClient = useTunarrApi();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { hls, resetHls } = useHls();
   const hlsSupported = useMemo(() => Hls.isSupported(), []);
@@ -80,7 +78,6 @@ export default function Video({ channelId }: VideoProps) {
     canLoadStream,
     channelId,
     manuallyStarted,
-    apiClient,
     backendUri,
   ]);
 

@@ -13,10 +13,10 @@ import type { Channel } from '@tunarr/types';
 import { isEmpty, trimEnd } from 'lodash-es';
 import type { SyntheticEvent } from 'react';
 import { useCallback, useState } from 'react';
+import { deleteApiChannelsByIdSessionsMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
 import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 import type { PopoverAnchorEl } from '../../types/dom.ts';
 import { ChannelDeleteDialog } from './ChannelDeleteDialog.tsx';
@@ -42,24 +42,20 @@ export const ChannelsTableOptionsMenu = ({
   const copyToClipboard = useCopyToClipboard();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const stopSessionsMutation = useMutation({
-    mutationKey: ['channels', 'stop-sessions'],
-    mutationFn: ({ id }: { id: string }) => {
-      return apiClient.stopChannelSessions(undefined, { params: { id } });
-    },
+    ...deleteApiChannelsByIdSessionsMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['channels', 'sessions'],
-        exact: true,
+        queryKey: ['Channels'],
+        exact: false,
       });
     },
   });
 
   const handleStopSessions = useCallback(
     (channelId: string) => {
-      stopSessionsMutation.mutate({ id: channelId });
+      stopSessionsMutation.mutate({ path: { id: channelId } });
     },
     [stopSessionsMutation],
   );
@@ -196,8 +192,10 @@ export const ChannelsTableOptionsMenu = ({
             onClick={(e) => {
               e.stopPropagation();
               duplicateChannelMutation.mutate({
-                type: 'copy',
-                channelId,
+                body: {
+                  type: 'copy',
+                  channelId,
+                },
               });
               handleClose(e);
             }}

@@ -5,7 +5,6 @@ import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useM3ULink } from '@/hooks/useM3ULink';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { useXmlTvLink } from '@/hooks/useXmlTvLink';
 import { useSettings } from '@/store/settings/selectors';
 import {
@@ -37,6 +36,10 @@ import { useSnackbar } from 'notistack';
 import { useState, useTransition } from 'react';
 import Markdown from 'react-markdown';
 import { match } from 'ts-pattern';
+import {
+  getApiSystemHealthQueryKey,
+  postApiSystemFixersByFixerIdRunMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 // TODO: Get these from server.
 const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
@@ -81,10 +84,6 @@ const CopyToClipboardButton = (
   );
 };
 
-type RunFixerArgs = {
-  fixerId: string;
-};
-
 const ChunkedChangelog = Changelog.split(/(?=\n##\s)/g);
 
 export const StatusPage = () => {
@@ -97,27 +96,27 @@ export const StatusPage = () => {
   const [changelogLinesVisible, setChangelogLinesVisible] = useState(6);
 
   const [runningFixers, setRunningFixers] = useState<Set<string>>(new Set());
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
 
   const runSystemFixer = useMutation({
-    mutationFn: ({ fixerId }: RunFixerArgs) =>
-      apiClient.runSystemFixer(undefined, { params: { fixerId } }),
-    onSuccess: async (_, { fixerId }) => {
-      await queryClient.invalidateQueries({ queryKey: ['system', 'health'] });
+    ...postApiSystemFixersByFixerIdRunMutation(),
+    onSuccess: async (_, { path: { fixerId } }) => {
+      await queryClient.invalidateQueries({
+        queryKey: getApiSystemHealthQueryKey(),
+      });
       snackbar.enqueueSnackbar(`Successfully ran system fixer ${fixerId}`, {
         variant: 'success',
       });
     },
-    onError: (err, { fixerId }) => {
+    onError: (err, { path: { fixerId } }) => {
       console.error(err);
       snackbar.enqueueSnackbar(
         `Error while running system fixer ${fixerId}. Check server logs for details.`,
         { variant: 'error' },
       );
     },
-    onSettled: (_data, _error, { fixerId }) => {
+    onSettled: (_data, _error, { path: { fixerId } }) => {
       setRunningFixers(
         (prev) => new Set(reject([...prev], (n) => n === fixerId)),
       );
@@ -187,7 +186,7 @@ export const StatusPage = () => {
                   onClick={() => {
                     // Have to make a new set of react won't re-render
                     setRunningFixers((prev) => new Set([...prev, fixer]));
-                    runSystemFixer.mutate({ fixerId: fixer });
+                    runSystemFixer.mutate({ path: { fixerId: fixer } });
                   }}
                 >
                   Attempt Auto-Fix

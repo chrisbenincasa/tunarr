@@ -1,26 +1,26 @@
 import { TranscodeConfigSettingsForm } from '@/components/settings/ffmpeg/TranscodeConfigSettingsForm';
 
 import { useTranscodeConfig } from '@/hooks/settingsHooks';
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 import { Route } from '@/routes/settings/ffmpeg_/$configId';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TranscodeConfig } from '@tunarr/types';
+import {
+  getApiTranscodeConfigsQueryKey,
+  putApiTranscodeConfigsByIdMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 export const EditTranscodeConfigSettingsPage = () => {
   const { configId } = Route.useParams();
 
   const transcodeConfig = useTranscodeConfig(configId);
 
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
   const updateConfigMutation = useMutation({
-    mutationFn: (data: TranscodeConfig) =>
-      apiClient.updateTranscodeConfig(data, { params: { id: configId } }),
+    ...putApiTranscodeConfigsByIdMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'transcode_configs'],
+        queryKey: getApiTranscodeConfigsQueryKey(),
         exact: false,
       });
     },
@@ -29,7 +29,9 @@ export const EditTranscodeConfigSettingsPage = () => {
   return (
     <TranscodeConfigSettingsForm
       initialConfig={transcodeConfig.data}
-      onSave={(conf) => updateConfigMutation.mutateAsync(conf)}
+      onSave={(conf) =>
+        updateConfigMutation.mutateAsync({ path: { id: configId }, body: conf })
+      }
     />
   );
 };

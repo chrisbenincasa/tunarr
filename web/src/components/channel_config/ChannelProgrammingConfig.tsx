@@ -26,7 +26,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { ZodiosError } from '@tunarr/zodios-core';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
   findIndex,
@@ -39,7 +38,6 @@ import {
 } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
-import { ZodError } from 'zod/v4';
 import type { CalendarState } from '../slot_scheduler/ProgramCalendarView.tsx';
 import { ProgramCalendarView } from '../slot_scheduler/ProgramCalendarView.tsx';
 import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView.tsx';
@@ -97,13 +95,7 @@ export function ChannelProgrammingConfig() {
         variant: 'error',
       });
 
-      console.error(error, vars.lineupRequest);
-      if (error instanceof ZodiosError) {
-        console.error(error.cause, error.message);
-        if (error.cause instanceof ZodError) {
-          console.error(error.cause.message, error.cause.issues);
-        }
-      }
+      console.error(error, vars.body);
     },
   });
 
@@ -116,7 +108,7 @@ export function ChannelProgrammingConfig() {
       !isUndefined(originalChannel) &&
       channel.startTime !== originalChannel.startTime
     ) {
-      updateChannelMutation.mutate(channel);
+      updateChannelMutation.mutate({ path: { id: channel.id }, body: channel });
     }
 
     // Group programs by their unique ID. This will disregard their durations,
@@ -161,8 +153,10 @@ export function ChannelProgrammingConfig() {
     );
 
     updateLineupMutation.mutate({
-      channelId: channel!.id,
-      lineupRequest: {
+      path: {
+        id: channel!.id,
+      },
+      body: {
         type: 'manual',
         lineup,
         programs: uniquePrograms,

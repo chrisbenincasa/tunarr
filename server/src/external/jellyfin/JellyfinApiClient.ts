@@ -332,19 +332,16 @@ export class JellyfinApiClient extends BaseApiClient {
   async getGenres(
     parentId?: string,
     includeItemTypes?: string,
-  ): Promise<QueryResult<string>> {
+  ): Promise<QueryResult<JellyfinLibraryItemsResponse>> {
     try {
-      const genresResult = await this.doGet<string>({
-        url: `/Genres`,
+      return this.doTypeCheckedGet('/Genres', JellyfinLibraryItemsResponse, {
         params: {
           parentId,
           userId: this.options.userId,
           includeItemTypes,
-          recursive: 'true',
+          recursive: true,
         },
       });
-
-      return this.makeSuccessResult(genresResult);
     } catch (e) {
       const err = caughtErrorToError(e);
       return this.makeErrorResult('generic_request_error', err.message);

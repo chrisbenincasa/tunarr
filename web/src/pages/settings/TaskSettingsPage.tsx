@@ -10,13 +10,17 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { map } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useApiQuery } from '../../hooks/useApiQuery.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import {
+  deleteApiChannelsM3uMutation,
+  getApiChannelsAllLineupsQueryKey,
+  getApiJobsOptions,
+  postApiJobsByIdRunMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 const StyledLoopIcon = styled(Loop)({
   animation: 'spin 2s linear infinite',
@@ -32,19 +36,16 @@ const StyledLoopIcon = styled(Loop)({
 
 // Separated so we can track mutation state individually
 function TaskRow({ task }: { task: Task }) {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
 
   const runJobMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return apiClient.runTask(undefined, { params: { id } });
-    },
+    ...postApiJobsByIdRunMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['channels', 'all', 'guide'],
+        queryKey: getApiChannelsAllLineupsQueryKey(),
       });
     },
-    onMutate: async (id: string) => {
+    onMutate: async ({ path: { id } }) => {
       await queryClient.cancelQueries({ queryKey: ['jobs'] });
       const prevJobs = queryClient.getQueryData<Task[]>(['jobs']);
       const now = new Date();
@@ -64,7 +65,7 @@ function TaskRow({ task }: { task: Task }) {
   });
 
   const runJobWithId = (id: string) => {
-    runJobMutation.mutate(id);
+    runJobMutation.mutate({ path: { id } });
   };
 
   return (
@@ -101,21 +102,14 @@ function TaskRow({ task }: { task: Task }) {
 }
 
 export default function TaskSettingsPage() {
-  const apiClient = useTunarrApi();
   const snackbar = useSnackbar();
-  const { isPending, data: tasks } = useApiQuery({
-    queryKey: ['jobs'],
-    queryFn: async (apiClient) => {
-      return apiClient.getTasks();
-    },
+  const { isPending, data: tasks } = useQuery({
+    ...getApiJobsOptions(),
     refetchInterval: 60 * 1000, // Check tasks every minute
   });
 
   const clearM3UCacheMutation = useMutation({
-    mutationFn() {
-      return apiClient.clearM3uCache(undefined);
-    },
-    mutationKey: ['m3u', 'cache'],
+    ...deleteApiChannelsM3uMutation(),
     onSuccess: () => {
       snackbar.enqueueSnackbar('Successfully cleared m3u cache', {
         variant: 'success',
@@ -165,11 +159,14 @@ export default function TaskSettingsPage() {
               <TableCell>
                 <Button
                   onClick={() =>
-                    clearM3UCacheMutation.mutate(void 0, {
-                      onSettled: () => {
-                        clearM3UCacheMutation.reset();
+                    clearM3UCacheMutation.mutate(
+                      {},
+                      {
+                        onSettled: () => {
+                          clearM3UCacheMutation.reset();
+                        },
                       },
-                    })
+                    )
                   }
                   disabled={clearM3UCacheMutation.isPending}
                   startIcon={

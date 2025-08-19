@@ -1,4 +1,5 @@
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -9,7 +10,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
-import { isEmpty, isError, isNil } from 'lodash-es';
+import { isEmpty, isNil } from 'lodash-es';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod/v4';
@@ -96,6 +97,17 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         tags: ['System'],
+        response: {
+          200: z.object({
+            audioEncoders: z
+              .object({ name: z.string(), ffmpegName: z.string() })
+              .array(),
+            videoEncoders: z
+              .object({ name: z.string(), ffmpegName: z.string() })
+              .array(),
+            hardwareAccelerationTypes: z.string().array(),
+          }),
+        },
       },
     },
     async (_, res) => {
@@ -103,11 +115,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       const [audioEncoders, videoEncoders] = await Promise.all([
         run(async () => {
           const res = await info.getAvailableAudioEncoders();
-          return isError(res) ? [] : res;
+          return res.getOrElse(() => [] as FfmpegEncoder[]);
         }),
         run(async () => {
           const res = await info.getAvailableVideoEncoders();
-          return isError(res) ? [] : res;
+          return res.getOrElse(() => [] as FfmpegEncoder[]);
         }),
       ]);
       const hwAccels = await info.getHwAccels();
@@ -119,8 +131,23 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.post('/upload/image', async (req, res) => {
-    try {
+  fastify.post(
+    '/upload/image',
+    {
+      schema: {
+        consumes: ['multipart/form-data'],
+        body: z.object({
+          file: z.file(),
+        }),
+        response: {
+          200: z.object({
+            name: z.string(),
+            fileUrl: z.string(),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
       const allSavedFiles = await req.saveRequestFiles();
 
       if (isEmpty(allSavedFiles)) {
@@ -159,18 +186,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       );
 
       return res.send({
-        status: true,
-        message: 'File is uploaded',
-        data: {
-          name: data.filename,
-          size: data.fields.size,
-          fileUrl: `${req.protocol}://${req.host}/images/uploads/${data.filename}`,
-        },
+        name: data.filename,
+        fileUrl: `${req.protocol}://${req.host}/images/uploads/${data.filename}`,
       });
-    } catch (err) {
-      return res.status(500).send(err);
-    }
-  });
+    },
+  );
 
   fastify.get('/xmltv-last-refresh', (_req, res) => {
     try {
@@ -273,8 +293,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     '/plex',
     {
       schema: {
-        hide: true,
         querystring: z.object({ id: z.string(), path: z.string() }),
+        operationId: 'queryPlex',
       },
     },
     async (req, res) => {

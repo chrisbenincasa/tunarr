@@ -1,6 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForJellyfinServer } from '@/store/programmingSelector/actions.ts';
-import { type QueryParamTypeForAlias } from '@/types/index.ts';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -8,36 +7,35 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { type JellyfinItemKind } from '@tunarr/types/jellyfin';
-import { type MediaSourceId } from '@tunarr/types/schemas';
 import { every, flatMap, isEmpty, isNil, omitBy, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { useApiQuery } from '../useApiQuery.ts';
+import type { StrictOmit } from 'ts-essentials';
+import {
+  getJellyfinLibrariesOptions,
+  getJellyfinLibraryGenresOptions,
+  getJellyfinLibraryItemsOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
+import { getJellyfinLibraryItems } from '../../generated/sdk.gen.ts';
+import type { GetJellyfinLibraryItemsData } from '../../generated/types.gen.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const useJellyfinUserLibraries = (
   mediaSourceId: string,
   enabled: boolean = true,
 ) => {
-  return useApiQuery({
-    queryKey: ['jellyfin', mediaSourceId, 'user_libraries'],
-    queryFn: (apiClient) =>
-      apiClient.getJellyfinUserLibraries({ params: { mediaSourceId } }),
+  return useQuery({
+    ...getJellyfinLibrariesOptions({ path: { mediaSourceId } }),
     enabled: enabled && isNonEmptyString(mediaSourceId),
   });
 };
 
 export const useJellyfinGenres = (
-  mediaSourceId: MediaSourceId,
+  mediaSourceId: string,
   libraryId: string,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
-
   return useQuery({
-    queryKey: ['jellyfin', mediaSourceId, 'libraries', libraryId, 'genres'],
-    queryFn: () =>
-      apiClient.getJellyfinGenres({ params: { mediaSourceId, libraryId } }),
+    ...getJellyfinLibraryGenresOptions({ path: { libraryId, mediaSourceId } }),
     enabled:
       isNonEmptyString(mediaSourceId) && isNonEmptyString(libraryId) && enabled,
     staleTime: 900_000, // 15 minutes
@@ -45,36 +43,26 @@ export const useJellyfinGenres = (
 };
 
 export const useJellyfinLibraryItems = (
-  mediaSourceId: MediaSourceId,
+  mediaSourceId: string,
   parentId: string,
   itemTypes: JellyfinItemKind[],
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
-
   const queryOpts = useMemo(() => {
     return queryOptions({
-      queryKey: [
-        'jellyfin',
-        mediaSourceId,
-        'library_items',
-        parentId,
-        pageParams,
-      ],
-      queryFn: () =>
-        apiClient.getJellyfinItems({
-          params: { mediaSourceId, libraryId: parentId },
-          queries: {
-            offset: pageParams?.offset,
-            limit: pageParams?.limit,
-            itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
-            sortBy: ['IsFolder', 'SortName'],
-          },
-        }),
+      ...getJellyfinLibraryItemsOptions({
+        path: { mediaSourceId, libraryId: parentId },
+        query: {
+          offset: pageParams?.offset,
+          limit: pageParams?.limit,
+          itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+          sortBy: ['IsFolder', 'SortName'],
+        },
+      }),
       enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
     });
-  }, [apiClient, enabled, itemTypes, mediaSourceId, pageParams, parentId]);
+  }, [enabled, itemTypes, mediaSourceId, pageParams, parentId]);
 
   const result = useQuery(queryOpts);
 
@@ -112,21 +100,19 @@ function getChunkSize(
 }
 
 export const useInfiniteJellyfinLibraryItems = (
-  mediaSourceId: MediaSourceId,
+  mediaSourceId: string,
   parentId: string,
   itemTypes: JellyfinItemKind[],
   enabled: boolean = true,
   initialChunkSize: number = 20,
   bufferSize: number = 0,
   additionalFilters: Partial<
-    Omit<
-      QueryParamTypeForAlias<'getJellyfinItems'>,
+    StrictOmit<
+      NonNullable<GetJellyfinLibraryItemsData['query']>,
       'offset' | 'limit' | 'itemTypes'
     >
   > = {},
 ) => {
-  const apiClient = useTunarrApi();
-
   const lastFetchSize = initialChunkSize + bufferSize;
 
   const queryOpts = useMemo(
@@ -141,15 +127,16 @@ export const useInfiniteJellyfinLibraryItems = (
           { itemTypes, additionalFilters },
         ],
         queryFn: ({ pageParam: { offset, pageSize } }) =>
-          apiClient.getJellyfinItems({
-            params: { mediaSourceId, libraryId: parentId },
-            queries: {
+          getJellyfinLibraryItems({
+            path: { mediaSourceId, libraryId: parentId },
+            query: {
               offset,
               limit: pageSize,
               itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
               ...omitBy(additionalFilters, isNil),
             },
-          }),
+            throwOnError: true,
+          }).then(({ data }) => data),
         enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
         initialPageParam: { offset: 0, pageSize: lastFetchSize },
         getNextPageParam: (res, all, { offset: lastOffset }) => {
@@ -173,7 +160,6 @@ export const useInfiniteJellyfinLibraryItems = (
       }),
     [
       additionalFilters,
-      apiClient,
       bufferSize,
       enabled,
       initialChunkSize,

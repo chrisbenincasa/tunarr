@@ -5,6 +5,10 @@ import { isError } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useMemo } from 'react';
+import {
+  postApiChannelsByChannelIdScheduleSlots,
+  postApiChannelsByChannelIdScheduleTimeSlots,
+} from '../../generated/sdk.gen.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
 import type { RandomSlotForm } from '../../pages/channels/RandomSlotEditorPage.tsx';
 import type { TimeSlotForm } from '../../pages/channels/TimeSlotEditorPage.tsx';
@@ -17,7 +21,6 @@ import {
   materializeProgramList,
   useChannelEditorLazy,
 } from '../../store/selectors.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 type TimeSlotMutArgs = { channelId: string; values: TimeSlotForm };
 type SlotMutArgs = { channelId: string; values: RandomSlotForm };
@@ -28,45 +31,38 @@ type TimeOrRandomForm =
 
 export const useScheduleSlots = () => {
   const snackbar = useSnackbar();
-  const apiClient = useTunarrApi();
   const {
     channelEditor: { currentEntity: channel },
   } = useChannelEditorLazy();
 
   const scheduleTimeSlotsMut = useMutation({
     mutationFn: ({ channelId, values }: TimeSlotMutArgs) =>
-      apiClient.scheduleTimeSlots(
-        {
+      postApiChannelsByChannelIdScheduleTimeSlots({
+        path: { channelId },
+        body: {
           schedule: {
             ...values,
             timeZoneOffset: new Date().getTimezoneOffset(),
             type: 'time',
           },
         },
-        {
-          params: {
-            channelId,
-          },
-        },
-      ),
+        throwOnError: true,
+      }).then(({ data }) => data),
   });
 
   const scheduleSlotsMut = useMutation({
     mutationFn: ({ channelId, values }: SlotMutArgs) =>
-      apiClient.scheduleSlots(
-        {
+      postApiChannelsByChannelIdScheduleSlots({
+        path: { channelId },
+        body: {
           schedule: {
             ...values,
             timeZoneOffset: new Date().getTimezoneOffset(),
             type: 'random',
           },
         },
-        {
-          params: {
-            channelId,
-          },
-        },
-      ),
+        throwOnError: true,
+      }).then(({ data }) => data),
   });
 
   const showPerfSnackbar = useCallback(

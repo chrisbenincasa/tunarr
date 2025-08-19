@@ -25,15 +25,9 @@ export async function preloadChannelAndProgramming({
   context,
 }: ChannelArgs) {
   const [channel, programming] = await Promise.allSettled([
+    context.queryClient.ensureQueryData(channelQuery(params.channelId)),
     context.queryClient.ensureQueryData(
-      channelQuery(context.tunarrApiClientProvider(), params.channelId),
-    ),
-    context.queryClient.ensureQueryData(
-      channelProgrammingQuery(
-        context.tunarrApiClientProvider(),
-        params.channelId,
-        true,
-      ),
+      channelProgrammingQuery(params.channelId, true),
     ),
   ]);
 
@@ -52,15 +46,13 @@ type FillerArgs = {
 };
 
 export async function preloadFillerAndProgramming({
-  context: { queryClient, tunarrApiClientProvider },
+  context: { queryClient },
   params: { fillerId },
 }: FillerArgs) {
-  const apiClient = tunarrApiClientProvider();
-
   // TODO if this is too slow we can use the router defer method
   const [fillerList, programming] = await Promise.all([
-    queryClient.ensureQueryData(fillerListQuery(apiClient, fillerId)),
-    queryClient.ensureQueryData(fillerListProgramsQuery(apiClient, fillerId)),
+    queryClient.ensureQueryData(fillerListQuery(fillerId)),
+    queryClient.ensureQueryData(fillerListProgramsQuery(fillerId)),
   ]);
 
   // TODO handle not found
@@ -83,15 +75,13 @@ type CustomShowArgs = {
 };
 
 export async function preloadCustomShowAndProgramming({
-  context: { queryClient, tunarrApiClientProvider },
+  context: { queryClient },
   params: { showId },
 }: CustomShowArgs) {
-  const apiClient = tunarrApiClientProvider();
-
   // TODO if this is too slow we can use the router defer method
   const [customShow, programming] = await Promise.all([
-    queryClient.ensureQueryData(customShowQuery(apiClient, showId)),
-    queryClient.ensureQueryData(customShowProgramsQuery(apiClient, showId)),
+    queryClient.ensureQueryData(customShowQuery(showId)),
+    queryClient.ensureQueryData(customShowProgramsQuery(showId)),
   ]);
 
   // TODO handle not found

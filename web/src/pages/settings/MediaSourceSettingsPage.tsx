@@ -9,7 +9,6 @@ import {
   useMediaSources,
   usePlexStreamSettings,
 } from '@/hooks/settingsHooks.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { HelpOutline } from '@mui/icons-material';
 import {
   Box,
@@ -42,6 +41,7 @@ import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { putApiPlexSettingsMutation } from '../../generated/@tanstack/react-query.gen.ts';
 
 const supportedPaths = [
   { value: 'network', string: 'Network' },
@@ -49,7 +49,6 @@ const supportedPaths = [
 ];
 
 export default function MediaSourceSettingsPage() {
-  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
 
   const serverQuery = useMediaSources();
@@ -87,7 +86,7 @@ export default function MediaSourceSettingsPage() {
   const queryClient = useQueryClient();
 
   const updatePlexStreamingSettingsMutation = useMutation({
-    mutationFn: apiClient.updatePlexStreamSettings,
+    ...putApiPlexSettingsMutation(),
     onSuccess: (data) => {
       snackbar.enqueueSnackbar('Settings Saved!', {
         variant: 'success',
@@ -95,7 +94,7 @@ export default function MediaSourceSettingsPage() {
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'plex-settings'],
+        queryKey: ['Settings'],
       });
     },
   });
@@ -104,7 +103,9 @@ export default function MediaSourceSettingsPage() {
     streamSettings,
   ) => {
     updatePlexStreamingSettingsMutation.mutate({
-      ...streamSettings,
+      body: {
+        ...streamSettings,
+      },
     });
   };
 

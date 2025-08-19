@@ -639,10 +639,7 @@ const MediaSourceInfo = z
     Formats: z.array(z.string()).nullable().optional(),
     Bitrate: z.number().int().nullable().optional(),
     // Timestamp: TransportStreamTimestamp.nullable().optional(),
-    RequiredHttpHeaders: z
-      .record(z.string(), z.string().nullable().optional())
-      .nullable()
-      .optional(),
+    RequiredHttpHeaders: z.record(z.string(), z.string()).nullish(),
     TranscodingUrl: z.string().nullable().optional(),
     // TranscodingSubProtocol: MediaStreamProtocol,
     TranscodingContainer: z.string().nullable().optional(),
@@ -707,10 +704,7 @@ export const JellyfinItem = z.object({
   IndexNumberEnd: z.number().int().nullable().optional(),
   ParentIndexNumber: z.number().int().nullable().optional(),
   // RemoteTrailers: z.array(MediaUrl).nullable().optional(),
-  ProviderIds: z
-    .record(z.string(), z.string().nullable().optional())
-    .nullable()
-    .optional(),
+  ProviderIds: z.record(z.string(), z.string()).nullable().optional(),
   IsHD: z.boolean().nullable().optional(),
   IsFolder: z.boolean().nullable().optional(),
   ParentId: z.string().nullable().optional(),

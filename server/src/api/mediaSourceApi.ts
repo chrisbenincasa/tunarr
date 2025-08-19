@@ -7,7 +7,6 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaSourceSettings } from '@tunarr/types';
-import { tag } from '@tunarr/types';
 import type {
   MediaSourceStatus,
   MediaSourceUnhealthyStatus,
@@ -55,7 +54,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           return match(source)
             .returnType<MediaSourceSettings | null>()
             .with({ type: P.union('plex', 'jellyfin', 'emby') }, (source) => ({
-              id: tag(source.uuid),
+              id: source.uuid,
               index: source.index,
               uri: source.uri,
               type: source.type,

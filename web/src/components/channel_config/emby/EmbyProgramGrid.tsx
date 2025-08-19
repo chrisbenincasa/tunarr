@@ -1,12 +1,11 @@
 import { Box } from '@mui/material';
-import { tag, type MediaSourceSettings } from '@tunarr/types';
+import { type MediaSourceSettings } from '@tunarr/types';
 import type {
   EmbyItem,
   EmbyItemKind,
   EmbyItemSortBy,
   EmbyLibraryItemsResponse,
 } from '@tunarr/types/emby';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { isEmpty, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -69,15 +68,15 @@ export const EmbyProgramGrid = ({
     return [];
   }, [currentParentContext, selectedLibrary.view.CollectionType]);
 
-  const sortBy: NonEmptyArray<EmbyItemSortBy> | null = useMemo(() => {
+  const sortBy = useMemo(() => {
     return match(selectedLibrary?.view.CollectionType)
-      .returnType<NonEmptyArray<EmbyItemSortBy> | null>()
+      .returnType<NonEmptyArray<EmbyItemSortBy>>()
       .with('homevideos', () => ['IsFolder', 'SortName'])
       .otherwise(() => ['IsFolder', 'SortName', 'ProductionYear']);
   }, [selectedLibrary?.view.CollectionType]);
 
   const itemsQuery = useInfiniteEmbyLibraryItems(
-    selectedServer?.id ?? tag<MediaSourceId>(''),
+    selectedServer?.id ?? '',
     currentParentContext?.Id ?? selectedLibrary?.view.Id ?? '',
     itemTypes,
     true,

@@ -49,10 +49,10 @@ import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
 import { ChannelsTableOptionsMenu } from '../../components/channels/ChannelsTableOptionsMenu.tsx';
+import { deleteApiChannelsByIdMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
 type ChannelRow = Channel;
@@ -84,7 +84,6 @@ const GlowingCircle = styled(Box, {
 }));
 
 export default function ChannelsPage() {
-  const apiClient = useTunarrApi();
   const { data: channels } = useChannelsSuspense({
     refetchOnWindowFocus: true,
   });
@@ -169,18 +168,16 @@ export default function ChannelsPage() {
   };
 
   const removeChannelMutation = useMutation({
-    mutationFn: (id: string) => {
-      return apiClient.deleteChannel(undefined, { params: { id } });
-    },
+    ...deleteApiChannelsByIdMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['channels'],
+        queryKey: ['Channels'],
       });
     },
   });
 
   const removeChannel = (id: string) => {
-    removeChannelMutation.mutate(id);
+    removeChannelMutation.mutate({ path: { id } });
     setDeleteChannelConfirmation(undefined);
   };
 

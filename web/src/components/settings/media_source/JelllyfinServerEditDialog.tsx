@@ -1,5 +1,4 @@
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import { jellyfinLogin } from '@/hooks/jellyfin/useJellyfinLogin.ts';
@@ -28,7 +27,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type JellyfinServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
@@ -36,6 +34,10 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
+import {
+  useCreateMediaSource,
+  useUpdateMediaSource,
+} from '../../../hooks/media-sources/mediaSourceHooks.ts';
 
 type Props = {
   open: boolean;
@@ -61,8 +63,6 @@ const emptyDefaults: JellyfinServerSettingsForm = {
 };
 
 export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
-  const apiClient = useTunarrApi();
-  const queryClient = useQueryClient();
   const snackbar = useSnackbar();
 
   const [showAccessToken, setShowAccessToken] = useState(false);
@@ -100,28 +100,8 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
   // keystroke due to re-renders
   const debounceSetError = useDebounceCallback(setError);
   const debounceClearError = useDebounceCallback(clearErrors);
-
-  const updateSourceMutation = useMutation({
-    mutationFn: async (newOrUpdatedServer: JellyfinServerSettingsForm) => {
-      if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await apiClient.updateMediaSource(
-          { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
-          {
-            params: { id: newOrUpdatedServer.id },
-          },
-        );
-        return { id: newOrUpdatedServer.id };
-      } else {
-        return apiClient.createMediaSource(newOrUpdatedServer);
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
-      });
-      handleClose();
-    },
-  });
+  const createMediaSourceMut = useCreateMediaSource();
+  const updateMediaSourceMut = useUpdateMediaSource();
 
   const showErrorSnack = (e: unknown) => {
     snackbar.enqueueSnackbar({
@@ -140,16 +120,30 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     if (isNonEmptyString(accessToken)) {
       void handleSubmit(
         (data) =>
-          updateSourceMutation.mutate({
-            ...data,
-            userId: null,
-            username: null,
-          }),
+          isNonEmptyString(data.id)
+            ? updateMediaSourceMut.mutate({
+                path: {
+                  id: data.id,
+                },
+                body: {
+                  ...data,
+                  id: data.id,
+                  userId: null,
+                  username: null,
+                },
+              })
+            : createMediaSourceMut.mutate({
+                body: {
+                  ...data,
+                  userId: null,
+                  username: null,
+                },
+              }),
         showErrorSnack,
       )(e);
     } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
       try {
-        const result = await jellyfinLogin(apiClient, {
+        const result = await jellyfinLogin({
           username,
           password,
           uri,
@@ -161,11 +155,25 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
         ) {
           void handleSubmit(
             (data) =>
-              updateSourceMutation.mutate({
-                ...data,
-                accessToken: result.accessToken!,
-                userId: result.userId!,
-              }),
+              isNonEmptyString(data.id)
+                ? updateMediaSourceMut.mutate({
+                    path: {
+                      id: data.id,
+                    },
+                    body: {
+                      ...data,
+                      id: data.id,
+                      accessToken: result.accessToken!,
+                      userId: result.userId!,
+                    },
+                  })
+                : createMediaSourceMut.mutate({
+                    body: {
+                      ...data,
+                      accessToken: result.accessToken!,
+                      userId: result.userId!,
+                    },
+                  }),
             showErrorSnack,
           )(e);
         } else {

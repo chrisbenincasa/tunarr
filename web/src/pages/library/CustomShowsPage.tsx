@@ -27,12 +27,11 @@ import {
 import { useSnackbar } from 'notistack';
 import React, { useCallback, useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { deleteCustomShowMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function CustomShowsPage() {
-  const apiClient = useTunarrApi();
   const { data: customShows } = useCustomShows();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -42,11 +41,10 @@ export default function CustomShowsPage() {
   const snackbar = useSnackbar();
 
   const deleteShowMutation = useMutation({
-    mutationFn: async (id: string) =>
-      apiClient.deleteCustomShow(undefined, { params: { id } }),
+    ...deleteCustomShowMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['custom-shows'],
+        queryKey: ['Custom Shows'],
         exact: false,
       });
     },
@@ -99,7 +97,9 @@ export default function CustomShowsPage() {
             Cancel
           </Button>
           <Button
-            onClick={() => deleteShowMutation.mutate(deleteConfirmationId!)}
+            onClick={() =>
+              deleteShowMutation.mutate({ path: { id: deleteConfirmationId! } })
+            }
             variant="contained"
           >
             Delete

@@ -29,13 +29,13 @@ import {
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import {
+  deleteApiFillerListsByIdMutation,
+  getApiFillerListsQueryKey,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
-
-type DeleteFillerListRequest = { id: string };
 
 export default function FillerListsPage() {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<
     string | undefined
@@ -43,11 +43,11 @@ export default function FillerListsPage() {
   const snackbar = useSnackbar();
 
   const deleteFillerList = useMutation({
-    mutationFn: ({ id }: DeleteFillerListRequest) =>
-      apiClient.deleteFillerList(undefined, { params: { id } }),
+    ...deleteApiFillerListsByIdMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['fillers'],
+        queryKey: getApiFillerListsQueryKey(),
+        exact: false,
       });
     },
     onError: (e) => {
@@ -105,7 +105,7 @@ export default function FillerListsPage() {
           </Button>
           <Button
             onClick={() =>
-              deleteFillerList.mutate({ id: deleteConfirmationId! })
+              deleteFillerList.mutate({ path: { id: deleteConfirmationId! } })
             }
             variant="contained"
           >

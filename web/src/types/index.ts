@@ -11,14 +11,7 @@ import {
   type Program,
   type RedirectProgram,
 } from '@tunarr/types';
-import { type ApiOf } from '@tunarr/zodios-core';
-import {
-  type ZodiosAliases,
-  type ZodiosQueryParamsByAlias,
-  type ZodiosResponseByAlias,
-} from '@tunarr/zodios-core/lib/zodios.types';
 import type { MarkRequired } from 'ts-essentials';
-import { type ApiClient } from '../external/api.ts';
 import type { EnrichedEmbyItem } from '../helpers/embyUtil.ts';
 import { type EnrichedPlexMedia } from '../hooks/plex/plexHookUtil.ts';
 import type { Emby } from './MediaSource';
@@ -30,23 +23,6 @@ export type EphemeralProgram = Omit<Program, 'id'>;
 export type PreloadedData<T extends (...args: any[]) => any> = Awaited<
   ReturnType<ReturnType<T>>
 >;
-
-// The expanded type of our API
-type ApiType = ApiOf<ApiClient>;
-
-export type ApiAliases = keyof ZodiosAliases<ApiType>;
-
-// For a given API endpoint alias on our Zodios instance, return
-// the response type
-export type ZodiosAliasReturnType<T extends ApiAliases> = Awaited<
-  ZodiosResponseByAlias<ApiType, T>
->;
-
-export type RequestMethodForAlias<T extends ApiAliases> =
-  ZodiosAliases<ApiType>[T];
-
-export type QueryParamTypeForAlias<T extends ApiAliases> =
-  ZodiosQueryParamsByAlias<ApiType, T>;
 
 export type UIIndex = { uiIndex: number; originalIndex: number };
 

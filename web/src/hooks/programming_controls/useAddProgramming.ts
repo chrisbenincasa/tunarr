@@ -7,7 +7,6 @@ import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { enumerateEmbyItem } from '../../helpers/embyUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import useStore from '../../store/index.ts';
 import { clearSelectedMedia } from '../../store/programmingSelector/actions.ts';
 import { type AddedMedia } from '../../types/index.ts';
@@ -16,7 +15,6 @@ import { useProgrammingSelectionContext } from '../useProgrammingSelectionContex
 export const useAddSelectedItems = () => {
   const { onAddMediaSuccess, onAddSelectedMedia } =
     useProgrammingSelectionContext();
-  const apiClient = useTunarrApi();
   const knownMedia = useKnownMedia();
   const selectedMedia = useStore((s) => s.selectedMedia);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +40,6 @@ export const useAddSelectedItems = () => {
 
             return map(
               await enumeratePlexItem(
-                apiClient,
                 selected.serverId,
                 selected.serverName,
                 media,
@@ -62,7 +59,6 @@ export const useAddSelectedItems = () => {
             }
 
             const items = await enumerateJellyfinItem(
-              apiClient,
               selected.serverId,
               selected.serverName,
               media,
@@ -82,7 +78,6 @@ export const useAddSelectedItems = () => {
             }
 
             const items = await enumerateEmbyItem(
-              apiClient,
               selected.serverId,
               selected.serverName,
               media,
@@ -111,13 +106,7 @@ export const useAddSelectedItems = () => {
         })
         .catch(console.error);
     },
-    [
-      apiClient,
-      knownMedia,
-      onAddMediaSuccess,
-      onAddSelectedMedia,
-      selectedMedia,
-    ],
+    [knownMedia, onAddMediaSuccess, onAddSelectedMedia, selectedMedia],
   );
 
   return { addSelectedItems, isLoading };

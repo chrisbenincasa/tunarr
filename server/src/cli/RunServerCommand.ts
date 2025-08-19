@@ -55,8 +55,6 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
 
     // Hard fail without database connection.
     assert(!!container.get<DBAccess>(DBAccess).db);
-    // await container.get(StartupService).runStartupServices();
-    // await container.get(Server).initAndRun();
     await container.get(App).start();
   },
 };

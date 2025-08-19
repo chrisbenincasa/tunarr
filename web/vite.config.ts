@@ -1,11 +1,13 @@
 import dotenv from '@dotenvx/dotenvx';
 dotenv.config({ debug: true });
 
+import { heyApiPlugin } from '@hey-api/vite-plugin';
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
+import apiConfig from './openapi-ts.config';
 import packageDef from './package.json' with { type: 'json' };
 
 export const BUILD_ENV_VAR = 'TUNARR_BUILD';
@@ -36,6 +38,7 @@ export default defineConfig({
       routesDirectory: path.resolve(__dirname, './src/routes'),
     }),
     svgr(),
+    heyApiPlugin({ config: apiConfig }),
   ],
   build: {
     sourcemap: true,

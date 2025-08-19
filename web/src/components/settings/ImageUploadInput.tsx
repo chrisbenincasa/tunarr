@@ -9,7 +9,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled } from '@mui/material/styles';
 import type { ChangeEvent } from 'react';
 import React, { useCallback, useRef } from 'react';
-import { useTunarrApi } from '../../hooks/useTunarrApi';
+import { postApiUploadImage } from '../../generated/sdk.gen.ts';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -45,7 +45,6 @@ export function ImageUploadInput({
   children,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const apiClient = useTunarrApi();
   const handleFileUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
@@ -62,8 +61,7 @@ export function ImageUploadInput({
 
         data.append('file', renamedFile);
 
-        apiClient
-          .uploadImage({ file: renamedFile })
+        postApiUploadImage({ body: { file: renamedFile }, throwOnError: true })
           .then((response) => {
             onChange(response.data.fileUrl);
           })
@@ -73,7 +71,7 @@ export function ImageUploadInput({
           });
       }
     },
-    [fileRenamer, apiClient, onChange, onUploadError],
+    [fileRenamer, onChange, onUploadError],
   );
 
   const onThumbUrlChange = useCallback(

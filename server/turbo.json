@@ -32,6 +32,10 @@
       "persistent": true,
       "cache": false,
       "interruptible": true
+    },
+    "generate-openapi": {
+      "inputs": ["./src/**"],
+      "dependsOn": ["^build"]
     }
   }
 }

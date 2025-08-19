@@ -1,37 +1,28 @@
-import type { DataTag } from '@tanstack/react-query';
 import {
   queryOptions,
   useQuery,
   useSuspenseQueries,
 } from '@tanstack/react-query';
 import type { Channel, CondensedChannelProgramming } from '@tunarr/types';
-import type { ApiClient } from '../external/api.ts';
+import { getApiChannelsByIdProgrammingOptions } from '../generated/@tanstack/react-query.gen.ts';
 import { channelQuery } from './useChannels.ts';
-import { useTunarrApi } from './useTunarrApi.ts';
 
 export const channelProgrammingQuery = (
-  apiClient: ApiClient,
   id: string,
   enabled: boolean = true,
   pageParams: { offset: number; limit: number } | undefined = undefined,
 ) =>
   queryOptions({
-    queryKey: ['channels', id, 'programming'] as DataTag<
-      ['channels', string, 'programming'],
-      CondensedChannelProgramming
-    >,
-    queryFn: async () =>
-      apiClient.getChannelProgramming({
-        params: { id },
-        queries: pageParams,
-      }),
+    ...getApiChannelsByIdProgrammingOptions({
+      path: { id },
+      query: pageParams,
+    }),
     enabled: id.length > 0 && enabled,
     staleTime: 10_000,
   });
 
 export const useChannelProgramming = (id: string, enabled: boolean = true) => {
-  const apiClient = useTunarrApi();
-  return useQuery(channelProgrammingQuery(apiClient, id, enabled));
+  return useQuery(channelProgrammingQuery(id, enabled));
 };
 
 export const useChannelAndProgramming = (
@@ -39,15 +30,14 @@ export const useChannelAndProgramming = (
   enabled: boolean = true,
   initialData?: { channel?: Channel; lineup?: CondensedChannelProgramming },
 ) => {
-  const apiClient = useTunarrApi();
   return useSuspenseQueries({
     queries: [
       {
-        ...channelQuery(apiClient, id, enabled),
+        ...channelQuery(id, enabled),
         initialData: initialData?.channel,
       },
       {
-        ...channelProgrammingQuery(apiClient, id, enabled),
+        ...channelProgrammingQuery(id, enabled),
         initialData: initialData?.lineup,
       },
     ],

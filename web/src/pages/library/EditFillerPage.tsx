@@ -6,15 +6,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function EditFillerPage() {
-  const apiClient = useTunarrApi();
   const { fillerId } = Route.useParams();
-  const [{ data: fillerList }] = useFillerListWithProgramming(
-    apiClient,
-    fillerId,
-  );
+  const [{ data: fillerList }] = useFillerListWithProgramming(fillerId);
   const fillerListPrograms = useStore((s) => s.fillerListEditor.programList);
 
   return (

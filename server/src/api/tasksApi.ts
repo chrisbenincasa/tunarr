@@ -65,7 +65,9 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['System', 'Tasks'],
         params: z.object({
           id: z.string(),
-          background: z.boolean().default(true),
+        }),
+        querystring: z.object({
+          background: z.stringbool().default(true),
         }),
         response: {
           200: z.any(),
@@ -88,11 +90,11 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send({ message: 'Task already running' });
       }
 
-      const taskPromise = task.runNow(req.params.background).catch((e) => {
+      const taskPromise = task.runNow(req.query.background).catch((e) => {
         logger.error('Async task triggered by API failed: %O', e);
       });
 
-      if (!req.params.background) {
+      if (!req.query.background) {
         return taskPromise
           .then((result) => res.status(200).send(result))
           .catch(() => res.status(500).send());

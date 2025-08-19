@@ -1,55 +1,41 @@
-import type { ApiClient } from '@/external/api.ts';
+import { useQueries, useSuspenseQuery } from '@tanstack/react-query';
 import {
-  queryOptions,
-  useQueries,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { apiQueryOptions, useApiSuspenseQuery } from './useApiQuery.ts';
-import { useTunarrApi } from './useTunarrApi.ts';
+  getApiChannelsByIdTranscodeConfigOptions,
+  getApiFfmpegSettingsOptions,
+  getApiHdhrSettingsOptions,
+  getApiMediaSourcesOptions,
+  getApiPlexSettingsOptions,
+  getApiTranscodeConfigsByIdOptions,
+  getApiTranscodeConfigsOptions,
+  getApiXmltvSettingsOptions,
+} from '../generated/@tanstack/react-query.gen.ts';
+import {
+  getApiMediaSources,
+  getApiPlexSettings,
+} from '../generated/sdk.gen.ts';
 
 export const useXmlTvSettings = () =>
-  useApiSuspenseQuery({
-    queryKey: ['settings', 'xmltv'],
-    queryFn: (apiClient) => apiClient.getXmlTvSettings(),
-  });
+  useSuspenseQuery(getApiXmltvSettingsOptions());
 
 export const useFfmpegSettings = () =>
-  useApiSuspenseQuery({
-    queryKey: ['settings', 'ffmpeg'],
-    queryFn: (apiClient) => apiClient.getFfmpegSettings(),
-  });
+  useSuspenseQuery(getApiFfmpegSettingsOptions());
 
 export const useMediaSources = () =>
-  useApiSuspenseQuery({
-    queryKey: ['settings', 'media-sources'],
-    queryFn: (apiClient) => apiClient.getMediaSources(),
-  });
-
-export const plexStreamSettingsQuery = apiQueryOptions({
-  queryKey: ['settings', 'plex-stream'],
-  queryFn: (apiClient) => apiClient.getPlexStreamSettings(),
-});
-
-export const plexStreamSettingsQueryWithApi = (apiClient: ApiClient) =>
-  queryOptions({
-    queryKey: ['settings', 'plex-stream'],
-    queryFn: () => apiClient.getPlexStreamSettings(),
-  });
+  useSuspenseQuery(getApiMediaSourcesOptions());
 
 export const usePlexStreamSettings = () =>
-  useApiSuspenseQuery(plexStreamSettingsQuery);
+  useSuspenseQuery(getApiPlexSettingsOptions());
 
 export const usePlexSettings = () => {
-  const apiClient = useTunarrApi();
   return useQueries({
     queries: [
       {
         queryKey: ['settings', 'media-sources'],
-        queryFn: () => apiClient.getMediaSources(),
+        queryFn: () => getApiMediaSources(),
       },
       {
         queryKey: ['settings', 'plex-stream'],
-        queryFn: () => apiClient.getPlexStreamSettings(),
+        queryFn: () => getApiPlexSettings(),
       },
     ],
     combine: (result) => {
@@ -73,48 +59,25 @@ export const usePlexSettings = () => {
   });
 };
 
-export const useHdhrSettings = () =>
-  useApiSuspenseQuery({
-    queryKey: ['settings', 'hdhr'],
-    queryFn: (apiClient) => apiClient.getHdhrSettings(),
+export const useHdhrSettings = () => {
+  return useSuspenseQuery({
+    ...getApiHdhrSettingsOptions(),
   });
-
-export const transcodeConfigsQueryOptions = (apiClient: ApiClient) =>
-  queryOptions({
-    queryKey: ['settings', 'transcode_configs'],
-    queryFn: () => apiClient.getTranscodeConfigs(),
-  });
-
-export const useTranscodeConfigs = () => {
-  const apiClient = useTunarrApi();
-  return useSuspenseQuery(transcodeConfigsQueryOptions(apiClient));
 };
 
-function fetchTranscodeConfigFunc(apiClient: ApiClient) {
-  return (id: string) => {
-    return apiClient.getTranscodeConfig({ params: { id } });
-  };
-}
+export const transcodeConfigsQueryOptions = () =>
+  getApiTranscodeConfigsOptions();
 
-export const transcodeConfigQueryOptions = (api: ApiClient, id: string) =>
-  queryOptions({
-    queryKey: ['settings', 'transcode_configs', id],
-    queryFn: () => fetchTranscodeConfigFunc(api)(id),
-  });
+export const useTranscodeConfigs = () => {
+  return useSuspenseQuery(transcodeConfigsQueryOptions());
+};
 
 export const useTranscodeConfig = (id: string) =>
-  useApiSuspenseQuery({
-    queryKey: ['settings', 'transcode_configs', id],
-    queryFn: (apiClient) => fetchTranscodeConfigFunc(apiClient)(id),
+  useSuspenseQuery({
+    ...getApiTranscodeConfigsByIdOptions({ path: { id } }),
   });
 
 export const useChannelTranscodeConfig = (channelId: string) =>
-  useApiSuspenseQuery({
-    queryKey: ['channels', channelId, 'transcode_config'],
-    queryFn: (apiClient) =>
-      apiClient.getChannelTranscodeConfig({
-        params: {
-          id: channelId,
-        },
-      }),
+  useSuspenseQuery({
+    ...getApiChannelsByIdTranscodeConfigOptions({ path: { id: channelId } }),
   });

@@ -1,6 +1,7 @@
-import { type ApiClient } from '@/external/api.ts';
 import { isNonEmptyString } from '@/helpers/util.ts';
-import { useApiQuery } from '../useApiQuery.ts';
+import { useQuery } from '@tanstack/react-query';
+import { jellyfinLoginOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { jellyfinLogin as apiJellyfinLogin } from '../../generated/sdk.gen.ts';
 
 type Opts = {
   uri: string;
@@ -8,19 +9,22 @@ type Opts = {
   password: string;
 };
 
-export const jellyfinLogin = (apiClient: ApiClient, opts: Opts) => {
-  return apiClient.jellyfinUserLogin({
-    ...opts,
-    url: opts.uri,
+export const jellyfinLogin = async (opts: Opts) => {
+  const result = await apiJellyfinLogin({
+    body: {
+      ...opts,
+      url: opts.uri,
+    },
+    throwOnError: true,
   });
+  return result.data;
 };
 
 export const useJellyinLogin = (opts: Opts, enabled: boolean = true) => {
-  return useApiQuery({
-    queryKey: ['jellyfin', 'login', opts],
-    queryFn(apiClient) {
-      return jellyfinLogin(apiClient, opts);
-    },
+  return useQuery({
+    ...jellyfinLoginOptions({
+      body: { url: opts.uri, password: opts.password, username: opts.username },
+    }),
     enabled:
       enabled &&
       isNonEmptyString(opts.uri) &&

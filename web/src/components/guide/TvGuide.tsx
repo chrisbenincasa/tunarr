@@ -138,24 +138,16 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
     setCurrentTime(dayjs().format('LT'));
   }, 60000);
 
-  useTvGuidesPrefetch(
-    channelId,
-    {
-      from: start.add(1, 'hour'),
-      to: end.add(1, 'hour'),
-    },
-    { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
-  );
+  useTvGuidesPrefetch(channelId, {
+    from: start.add(1, 'hour'),
+    to: end.add(1, 'hour'),
+  });
 
   const {
     isPending,
     error,
     data: channelLineup,
-  } = useTvGuides(
-    channelId,
-    { from: start, to: end },
-    { staleTime: dayjs.duration(5, 'minutes').asMilliseconds() },
-  );
+  } = useTvGuides(channelId, { from: start, to: end });
 
   const { data: channelsInfo } = useChannelsSuspense();
 
