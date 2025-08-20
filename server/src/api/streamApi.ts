@@ -32,6 +32,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   await fastify.register(fastifyStatic, {
+    // TODO: Is this even necessary anymore?
     root: join(process.cwd(), 'streams'),
     prefix: '/streams/',
     schemaHide: true,

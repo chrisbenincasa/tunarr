@@ -1,6 +1,4 @@
-import type { Nullable } from '@/types/util.js';
-import constants from '@tunarr/shared/constants';
-import { isNull, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import path from 'node:path';
 import { globalOptions } from '../globals.ts';
 import { isRunningInContainer } from './containerUtil.ts';
@@ -12,8 +10,8 @@ import {
   getEnvironmentLogLevel,
 } from './logging/LoggerFactory.ts';
 
-function getRuntimeSpecificPrefix() {
-  let prefix: Nullable<string> = null;
+function getRuntimeSpecificPrefix(): string {
+  let prefix: string;
   if (isRunningInContainer()) {
     // Making a lot of assumptions here...
     prefix = '/config';
@@ -55,11 +53,7 @@ export function getDefaultDatabaseDirectory(): string {
 
   const prefix = getRuntimeSpecificPrefix();
 
-  if (!isNull(prefix)) {
-    return path.join(prefix, 'tunarr');
-  }
-
-  return path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
+  return path.join(prefix, 'tunarr');
 }
 
 export function getDefaultDatabaseName() {

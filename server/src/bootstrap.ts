@@ -1,4 +1,3 @@
-import constants from '@tunarr/shared/constants';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
@@ -11,18 +10,8 @@ import {
   ImagesFolderName,
   SubtitlesCacheFolderName,
 } from './util/constants.ts';
-import { copyDirectoryContents, fileExists } from './util/fsUtil.js';
+import { fileExists } from './util/fsUtil.js';
 import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
-
-export async function migrateFromPreAlphaDefaultDb(targetDir: string) {
-  // In versions <=0.3.2, the default database directory was located
-  // at process.cwd()/.tunarr
-  const preAlphaPath = path.join(process.cwd(), constants.DEFAULT_DATA_DIR);
-  const hasPreAlphaDefaultDb = await fileExists(preAlphaPath);
-  if (hasPreAlphaDefaultDb) {
-    await copyDirectoryContents(preAlphaPath, targetDir);
-  }
-}
 
 /**
  * Initializes the Tunarr "database" directory at the configured location, including
@@ -47,8 +36,8 @@ async function initDbDirectories(opts: GlobalOptions) {
   }
 
   // TODO: This will be an option that the user can set...
-  if (!(await fileExists(path.join(process.cwd(), 'streams')))) {
-    await fs.mkdir(path.join(process.cwd(), 'streams'));
+  if (!(await fileExists(path.join(opts.databaseDirectory, 'streams')))) {
+    await fs.mkdir(path.join(opts.databaseDirectory, 'streams'));
   }
 }
 
@@ -62,7 +51,6 @@ export async function bootstrapTunarr(
       `Existing database at ${opts.databaseDirectory} not found, creating it.`,
     );
     await fs.mkdir(opts.databaseDirectory, { recursive: true });
-    await migrateFromPreAlphaDefaultDb(opts.databaseDirectory);
   }
 
   const settingsDb = new SettingsDBFactory(opts).get(

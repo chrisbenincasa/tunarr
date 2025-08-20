@@ -10,6 +10,7 @@ import { filter, isError, isString, map, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import { defaultHlsOptions } from '../../ffmpeg/ffmpeg.ts';
+import { serverOptions } from '../../globals.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 
 export abstract class BaseHlsSession<
@@ -39,7 +40,10 @@ export abstract class BaseHlsSession<
   get baseDirectory() {
     return isNonEmptyString(this.sessionOptions.transcodeDirectory)
       ? this.sessionOptions.transcodeDirectory
-      : path.resolve(process.cwd(), defaultHlsOptions.segmentBaseDirectory);
+      : path.join(
+          serverOptions().databaseDirectory,
+          defaultHlsOptions.segmentBaseDirectory,
+        );
   }
 
   get workingDirectory() {
