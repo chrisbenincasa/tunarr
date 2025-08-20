@@ -1,29 +1,20 @@
 import { resetCurrentLineup } from '@/store/channelEditor/actions';
-import type { UseMutationOptions } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CondensedChannelProgramming } from '@tunarr/types';
-import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
-import { ZodiosError } from '@tunarr/zodios-core';
-import { useTunarrApi } from './useTunarrApi';
-
-type MutateArgs = {
-  channelId: string;
-  lineupRequest: UpdateChannelProgrammingRequest;
-};
+import { postApiChannelsByIdProgrammingMutation } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useUpdateLineup = (
-  opts?: UseMutationOptions<CondensedChannelProgramming, Error, MutateArgs>,
+  opts?: ReturnType<typeof postApiChannelsByIdProgrammingMutation>,
 ) => {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ channelId, lineupRequest }: MutateArgs) => {
-      return apiClient.updateChannelProgramming(lineupRequest, {
-        params: { id: channelId },
-      });
-    },
+    ...postApiChannelsByIdProgrammingMutation(),
     onSuccess: async (...args) => {
-      const [response, { channelId }] = args;
+      const [
+        response,
+        {
+          path: { id: channelId },
+        },
+      ] = args;
 
       resetCurrentLineup(response);
 
@@ -38,10 +29,7 @@ export const useUpdateLineup = (
     },
     onError: async (...args) => {
       const error = args[0];
-      if (error instanceof ZodiosError) {
-        console.error(error.message, error.data, error.cause);
-      }
-
+      console.error(error);
       if (opts?.onError) {
         await opts.onError(...args);
       }

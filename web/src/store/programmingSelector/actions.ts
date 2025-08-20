@@ -18,7 +18,6 @@ import {
   type PlexLibrarySection,
   type PlexMedia,
 } from '@tunarr/types/plex';
-import { type MediaSourceId } from '@tunarr/types/schemas';
 import { has, isArray, isUndefined, map, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
@@ -99,7 +98,7 @@ function jellyfinItemUniqueId(
 }
 
 export const addKnownMediaForServer = (
-  serverId: MediaSourceId,
+  serverId: string,
   media:
     | TypedKey<PlexLibrarySection[] | PlexMedia[], PlexT, 'items'>
     | TypedKey<
@@ -193,20 +192,20 @@ export const addKnownMediaForServer = (
   });
 
 export const addKnownMediaForPlexServer = (
-  serverId: MediaSourceId,
+  serverId: string,
   media: PlexLibrarySection[] | PlexMedia[],
   parentId?: string,
 ) => addKnownMediaForServer(serverId, { type: Plex, items: media }, parentId);
 
 export const addKnownMediaForJellyfinServer = (
-  serverId: MediaSourceId,
+  serverId: string,
   media: JellyfinItem[] | TunarrAmendedJellyfinVirtualFolder[],
   parentId?: string,
 ) =>
   addKnownMediaForServer(serverId, { type: Jellyfin, items: media }, parentId);
 
 export const addKnownMediaForEmbyServer = (
-  serverId: MediaSourceId,
+  serverId: string,
   media: EmbyItem[],
   parentId?: string,
 ) => addKnownMediaForServer(serverId, { type: Emby, items: media }, parentId);
@@ -323,10 +322,7 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     state.selectedMedia = reject(state.selectedMedia, it);
   });
 
-export const removePlexSelectedMedia = (
-  serverId: MediaSourceId,
-  ids: string[],
-) =>
+export const removePlexSelectedMedia = (serverId: string, ids: string[]) =>
   useStore.setState((state) => {
     const idsSet = new Set([...ids]);
     state.selectedMedia = reject(

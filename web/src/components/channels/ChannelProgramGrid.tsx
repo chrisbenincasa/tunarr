@@ -1,6 +1,10 @@
 import { Box } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { ContentProgramParent } from '@tunarr/types';
+import type {
+  ContentProgramParent,
+  MusicArtistContentProgram,
+  TvShowContentProgram,
+} from '@tunarr/types';
 import { type ContentProgram } from '@tunarr/types';
 import type { MultiExternalIdType } from '@tunarr/types/schemas';
 import {
@@ -9,8 +13,13 @@ import {
 } from '@tunarr/types/schemas';
 import { identity, isEmpty, last, sumBy } from 'lodash-es';
 import { forwardRef, useCallback, useMemo, type ForwardedRef } from 'react';
+import {
+  getApiChannelsByIdArtists,
+  getApiChannelsByIdPrograms,
+  getApiChannelsByIdShows,
+  getApiProgramsByIdChildren,
+} from '../../generated/sdk.gen.ts';
 import { isNonEmptyString, prettyItemDuration } from '../../helpers/util.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 import type { GridItemMetadata } from '../channel_config/MediaGridItem.tsx';
 import { MediaGridItem } from '../channel_config/MediaGridItem.tsx';
@@ -176,7 +185,6 @@ export const ChannelProgramGrid = ({
   depth = 0,
   parentId,
 }: Props) => {
-  const apiClient = useTunarrApi();
   const hasProgramHierarchy =
     programType === 'episode' || programType === 'track';
 
@@ -193,14 +201,15 @@ export const ChannelProgramGrid = ({
   const terminalQuery = useInfiniteQuery({
     queryKey: ['channels', channelId, 'programs', programType, 'infinite'],
     queryFn: ({ pageParam }) =>
-      apiClient.getChannelPrograms({
-        params: { id: channelId },
-        queries: {
+      getApiChannelsByIdPrograms({
+        path: { id: channelId },
+        query: {
           type: programType as ContentProgramType,
           offset: pageParam,
           limit: 50,
         },
-      }),
+        throwOnError: true,
+      }).then(({ data }) => data),
     getNextPageParam: (pages, x) => {
       if (pages.length > 0 && isEmpty(last(pages))) {
         return null;
@@ -216,16 +225,25 @@ export const ChannelProgramGrid = ({
 
   const nestedQuery = useInfiniteQuery({
     queryKey: ['channels', channelId, 'programs', programType, 'infinite'],
-    queryFn: ({ pageParam }) =>
-      programType === 'show'
-        ? apiClient.getChannelShows({
-            params: { id: channelId },
-            queries: { offset: pageParam, limit: 50 },
+    queryFn: async ({
+      pageParam,
+    }): Promise<{
+      total: number;
+      result: Array<TvShowContentProgram> | Array<MusicArtistContentProgram>;
+    }> => {
+      const prom = await (programType === 'show'
+        ? getApiChannelsByIdShows({
+            path: { id: channelId },
+            query: { offset: pageParam, limit: 50 },
+            throwOnError: true,
           })
-        : apiClient.getChannelArtists({
-            params: { id: channelId },
-            queries: { offset: pageParam, limit: 50 },
-          }),
+        : getApiChannelsByIdArtists({
+            path: { id: channelId },
+            query: { offset: pageParam, limit: 50 },
+            throwOnError: true,
+          }));
+      return prom.data;
+    },
     getNextPageParam: (currentPage, pages) => {
       if ((currentPage.result?.length ?? 0) === 0) {
         return null;
@@ -249,10 +267,15 @@ export const ChannelProgramGrid = ({
       parentId,
     ],
     queryFn: ({ pageParam }) =>
-      apiClient.getProgramChildren({
-        params: { id: parentId ?? '' },
-        queries: { offset: pageParam, limit: 50, channelId },
-      }),
+      getApiProgramsByIdChildren({
+        path: { id: parentId ?? '' },
+        query: {
+          offset: pageParam,
+          limit: 50,
+          channelId,
+        },
+        throwOnError: true,
+      }).then(({ data }) => data),
     getNextPageParam: (currentPage, allPages) => {
       if (currentPage.result.programs.length < 50) {
         return null;

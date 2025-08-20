@@ -37,7 +37,7 @@ export type OfflineItem = z.infer<typeof OfflineLineupItemSchema>;
 export const RedirectLineupItemSchema = z
   .object({
     type: z.literal('redirect'),
-    channel: z.string().uuid(),
+    channel: z.uuid(),
   })
   .merge(BaseLineupItemSchema);
 export type RedirectItem = z.infer<typeof RedirectLineupItemSchema>;

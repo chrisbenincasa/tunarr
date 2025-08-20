@@ -4,7 +4,6 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import type { XmlTvSettings } from '@tunarr/types';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { XmlTvSettingsSchema } from '@tunarr/types/schemas';
 import { isError } from 'lodash-es';
@@ -46,6 +45,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     {
       schema: {
         tags: ['Settings'],
+        body: XmlTvSettingsSchema.partial(),
         response: {
           200: XmlTvSettingsSchema,
           500: BaseErrorSchema,
@@ -54,7 +54,7 @@ export const xmlTvSettingsRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       try {
-        const settings = req.body as Partial<XmlTvSettings>;
+        const settings = req.body;
         let xmltv = req.serverCtx.settings.xmlTvSettings();
         await req.serverCtx.settings.updateSettings('xmltv', {
           refreshHours:

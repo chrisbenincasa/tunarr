@@ -1,30 +1,30 @@
 import { checkNewPlexServers, plexLoginFlow } from '@/helpers/plexLogin.ts';
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InsertMediaSourceRequest } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback } from 'react';
+import {
+  getApiMediaSourcesQueryKey,
+  postApiMediaSourcesMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 export const usePlexLogin = () => {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
 
   const addPlexServerMutation = useMutation({
-    mutationFn: (newServer: InsertMediaSourceRequest) => {
-      return apiClient.createMediaSource(newServer);
-    },
+    ...postApiMediaSourcesMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
+        queryKey: getApiMediaSourcesQueryKey(),
+        exact: false,
       });
     },
   });
 
   return useCallback(() => {
     plexLoginFlow()
-      .then(checkNewPlexServers(apiClient))
+      .then(checkNewPlexServers)
       .then((connections) => {
         if (isEmpty(connections)) {
           snackbar.enqueueSnackbar({
@@ -41,17 +41,19 @@ export const usePlexLogin = () => {
 
         connections.forEach(({ server, connection }) =>
           addPlexServerMutation.mutate({
-            name: server.name,
-            uri: connection.uri,
-            accessToken: server.accessToken,
-            clientIdentifier: server.clientIdentifier,
-            // These will be backfilled later, they require use of a different API
-            userId: null,
-            username: null,
-            type: 'plex',
+            body: {
+              name: server.name,
+              uri: connection.uri,
+              accessToken: server.accessToken,
+              clientIdentifier: server.clientIdentifier,
+              // These will be backfilled later, they require use of a different API
+              userId: null,
+              username: null,
+              type: 'plex',
+            },
           }),
         );
       })
       .catch(console.error);
-  }, [addPlexServerMutation, apiClient, snackbar]);
+  }, [addPlexServerMutation, snackbar]);
 };

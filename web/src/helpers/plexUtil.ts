@@ -1,22 +1,17 @@
 import { forPlexMedia } from '@tunarr/shared/util';
 import type { PlexMedia } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
-import type { ApiClient } from '../external/api.ts';
+import { queryPlex } from '../generated/sdk.gen.ts';
 
-export const fetchPlexPath = <T>(
-  apiClient: ApiClient,
-  serverId: MediaSourceId,
-  path: string,
-) => {
+export const fetchPlexPath = <T>(serverId: string, path: string) => {
   return async () => {
-    return apiClient
-      .getPlexPath({
-        queries: {
-          id: serverId,
-          path,
-        },
-      })
-      .then((r) => r as T);
+    const r = await queryPlex({
+      query: {
+        id: serverId,
+        path,
+      },
+      throwOnError: true,
+    });
+    return r.data as T;
   };
 };
 

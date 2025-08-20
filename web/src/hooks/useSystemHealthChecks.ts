@@ -1,18 +1,9 @@
-import type { UseQueryOptions } from '@tanstack/react-query';
-import type { HealthCheck } from '@tunarr/types';
-import type { StrictOmit } from 'ts-essentials';
-import { useApiSuspenseQuery } from './useApiQuery';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { getApiSystemHealthOptions } from '../generated/@tanstack/react-query.gen.ts';
 
-export const useSystemHealthChecks = (
-  opts?: StrictOmit<
-    UseQueryOptions<Record<string, HealthCheck>>,
-    'queryKey' | 'queryFn'
-  >,
-) => {
-  return useApiSuspenseQuery({
-    ...opts,
-    queryKey: ['system', 'health'],
-    queryFn: (api) => api.getSystemHealth(),
+export const useSystemHealthChecks = () => {
+  return useSuspenseQuery({
+    ...getApiSystemHealthOptions(),
     staleTime: 15_000,
   });
 };

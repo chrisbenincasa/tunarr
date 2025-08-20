@@ -1,7 +1,8 @@
 import { type QueryClient } from '@tanstack/react-query';
 import { isUndefined } from 'lodash-es';
 import { type ReactNode, createContext, useEffect } from 'react';
-import { createApiClient } from '../external/api.ts';
+import { client } from '../generated/client.gen.ts';
+import { createClient } from '../generated/client/client.gen.ts';
 import useStore from '../store/index.ts';
 import { useSettings } from '../store/settings/selectors.ts';
 
@@ -13,8 +14,10 @@ import { useSettings } from '../store/settings/selectors.ts';
 // do not have access to the normal hook structure and they're overall
 // pretty hacky to begin with. A better solution would be to utilize
 // suspend queries with react-query, most likely.
-let apiClient = createApiClient(useStore.getState().settings.backendUri);
-
+let apiClient = createClient({
+  baseURL: useStore.getState().settings.backendUri,
+});
+console.log(apiClient.getConfig());
 // Gotta be careful using this... we're only exposing this
 // for the preloaders. All other usages should come from the
 // context API and related hooks.
@@ -36,10 +39,12 @@ export function TunarrApiProvider({
   useEffect(() => {
     // Only do this if something actually changed
     if (
-      (backendUri.length === 0 && !isUndefined(apiClient.baseURL)) ||
-      (backendUri.length > 0 && isUndefined(apiClient.baseURL))
+      (backendUri.length === 0 &&
+        !isUndefined(apiClient.getConfig().baseURL)) ||
+      (backendUri.length > 0 && isUndefined(apiClient.getConfig().baseURL))
     ) {
-      apiClient = createApiClient(backendUri);
+      apiClient = createClient({ baseURL: backendUri });
+      client.setConfig({ baseURL: backendUri });
     }
   }, [backendUri]);
 

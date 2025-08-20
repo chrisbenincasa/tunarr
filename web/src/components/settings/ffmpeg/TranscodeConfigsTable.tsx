@@ -12,40 +12,38 @@ import {
   useMaterialReactTable,
 } from 'material-react-table';
 import { useCallback, useMemo, useState } from 'react';
+import {
+  deleteApiTranscodeConfigsByIdMutation,
+  getApiTranscodeConfigsQueryKey,
+  postApiTranscodeConfigsByIdCopyMutation,
+} from '../../../generated/@tanstack/react-query.gen.ts';
 import { useTranscodeConfigs } from '../../../hooks/settingsHooks.ts';
-import { useTunarrApi } from '../../../hooks/useTunarrApi.ts';
 import { DeleteConfirmationDialog } from '../../DeleteConfirmationDialog.tsx';
 
 export const TranscodeConfigsTable = () => {
   const queryClient = useQueryClient();
-  const apiClient = useTunarrApi();
   const transcodeConfigs = useTranscodeConfigs();
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
 
   const duplicateConfigMutation = useMutation({
-    mutationFn: (baseId: string) => {
-      return apiClient.duplicateTranscodeConfig(undefined, {
-        params: { id: baseId },
-      });
-    },
+    ...postApiTranscodeConfigsByIdCopyMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
         exact: false,
-        queryKey: ['settings', 'transcode_configs'],
+        queryKey: getApiTranscodeConfigsQueryKey(),
       });
     },
   });
 
   const deleteTranscodeConfig = useMutation({
-    mutationFn: (id: string) =>
-      apiClient.deleteTranscodeConfig(undefined, { params: { id } }),
+    ...deleteApiTranscodeConfigsByIdMutation(),
   });
 
   const handleDuplicateConfig = useCallback(
     (id: string) => {
-      duplicateConfigMutation.mutate(id);
+      duplicateConfigMutation.mutate({ path: { id } });
     },
     [duplicateConfigMutation],
   );
@@ -172,7 +170,9 @@ export const TranscodeConfigsTable = () => {
         title={`Delete Transcoding Config "${confirmDeleteTranscodeConfig?.name}"?`}
         body="All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
         onConfirm={() =>
-          deleteTranscodeConfig.mutate(confirmDeleteTranscodeConfig!.id)
+          deleteTranscodeConfig.mutate({
+            path: { id: confirmDeleteTranscodeConfig!.id },
+          })
         }
         onClose={() => setConfirmDeleteTranscodeConfig(null)}
         dialogProps={{

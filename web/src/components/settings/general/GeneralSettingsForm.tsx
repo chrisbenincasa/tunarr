@@ -122,11 +122,14 @@ export function GeneralSettingsForm({
       cache: data.cache,
       server: data.server,
     };
-    updateSystemSettings.mutate(updateReq, {
-      onSuccess(data) {
-        reset(getBaseFormValues(data), { keepDirty: false });
+    updateSystemSettings.mutate(
+      { body: updateReq },
+      {
+        onSuccess(data) {
+          reset(getBaseFormValues(data), { keepDirty: false });
+        },
       },
-    });
+    );
   };
 
   const toggleBackupEnabled = useCallback(() => {

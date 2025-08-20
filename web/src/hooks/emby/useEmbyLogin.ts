@@ -1,6 +1,4 @@
-import { type ApiClient } from '@/external/api.ts';
-import { isNonEmptyString } from '@/helpers/util.ts';
-import { useApiQuery } from '../useApiQuery.ts';
+import { postApiEmbyLogin } from '../../generated/sdk.gen.ts';
 
 type Opts = {
   uri: string;
@@ -8,25 +6,12 @@ type Opts = {
   password: string;
 };
 
-export const embyLogin = (apiClient: ApiClient, opts: Opts) => {
-  return apiClient.embyUserLogin({
-    ...opts,
-    url: opts.uri,
-  });
-};
-
-export const useEmbyLogin = (opts: Opts, enabled: boolean = true) => {
-  return useApiQuery({
-    queryKey: ['emby', 'login', opts],
-    queryFn(apiClient) {
-      return embyLogin(apiClient, opts);
+export const embyLogin = (opts: Opts) => {
+  return postApiEmbyLogin({
+    body: {
+      ...opts,
+      url: opts.uri,
     },
-    enabled:
-      enabled &&
-      isNonEmptyString(opts.uri) &&
-      isNonEmptyString(opts.username) &&
-      isNonEmptyString(opts.password),
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+    throwOnError: true,
+  }).then(({ data }) => data);
 };

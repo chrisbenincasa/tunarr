@@ -3,7 +3,7 @@ import type {
   PlexResourcesResponse,
 } from '@tunarr/types/plex';
 import { compact, isEmpty, isError, isString, partition } from 'lodash-es';
-import type { ApiClient } from '../external/api.ts';
+import { postApiMediaSourcesForeignstatus } from '../generated/sdk.gen.ts';
 import { AsyncInterval } from './AsyncInterval.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -112,35 +112,38 @@ export const plexLoginFlow = async () => {
   return serversResponse.filter((server) => server.provides.includes('server'));
 };
 
-export const checkNewPlexServers =
-  (apiClient: ApiClient) => async (servers: PlexResourcesResponse) => {
-    return sequentialPromises(servers, async (server) => {
-      const [localConnections, remoteConnections] = partition(
-        server.connections,
-        (c) => c.local,
-      );
+export const checkNewPlexServers = async (servers: PlexResourcesResponse) => {
+  return sequentialPromises(servers, async (server) => {
+    const [localConnections, remoteConnections] = partition(
+      server.connections,
+      (c) => c.local,
+    );
 
-      for (const connection of [...localConnections, ...remoteConnections]) {
-        if (isEmpty(server.accessToken)) {
-          console.warn(
-            `Server at URL ${connection.uri} did not return an access token`,
-          );
-          continue;
-        }
-        const { healthy } = await apiClient.getUnknownMediaSourceStatus({
+    for (const connection of [...localConnections, ...remoteConnections]) {
+      if (isEmpty(server.accessToken)) {
+        console.warn(
+          `Server at URL ${connection.uri} did not return an access token`,
+        );
+        continue;
+      }
+
+      const { healthy } = await postApiMediaSourcesForeignstatus({
+        body: {
           name: server.name,
           accessToken: server.accessToken,
           uri: connection.uri,
           type: 'plex',
-        });
+        },
+        throwOnError: true,
+      }).then(({ data }) => data);
 
-        if (healthy) {
-          return { server, connection };
-        } else {
-          console.warn(
-            `Unable to reach Plex server "${server.name}" via ${connection.uri}`,
-          );
-        }
+      if (healthy) {
+        return { server, connection };
+      } else {
+        console.warn(
+          `Unable to reach Plex server "${server.name}" via ${connection.uri}`,
+        );
       }
-    }).then(compact);
-  };
+    }
+  }).then(compact);
+};

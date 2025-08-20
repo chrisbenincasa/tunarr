@@ -1,5 +1,4 @@
 import { seq } from '@tunarr/shared/util';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import type { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 
 /**
@@ -12,7 +11,7 @@ export class KnownMedia {
     private contentHierarchy: ContentHierarchyMap,
   ) {}
 
-  getMediaForSourceId(sourceId: MediaSourceId) {
+  getMediaForSourceId(sourceId: string) {
     const found = this.raw[sourceId];
     if (!found) {
       return {};
@@ -20,7 +19,7 @@ export class KnownMedia {
     return found;
   }
 
-  getMedia(sourceId: MediaSourceId, itemId: string): MediaItems | undefined {
+  getMedia(sourceId: string, itemId: string): MediaItems | undefined {
     return this.getMediaForSourceId(sourceId)[itemId];
   }
 
@@ -28,7 +27,7 @@ export class KnownMedia {
     MediaItemType extends MediaItems['type'],
     OutType = Extract<MediaItems, { type: MediaItemType }>['item'],
   >(
-    sourceId: MediaSourceId,
+    sourceId: string,
     itemId: string,
     type: MediaItemType,
   ): OutType | undefined {
@@ -44,15 +43,15 @@ export class KnownMedia {
     return media.item as OutType;
   }
 
-  getPlexMedia(sourceId: MediaSourceId, itemId: string) {
+  getPlexMedia(sourceId: string, itemId: string) {
     return this.getMediaOfType(sourceId, itemId, 'plex');
   }
 
-  getJellyfinMedia(sourceId: MediaSourceId, itemId: string) {
+  getJellyfinMedia(sourceId: string, itemId: string) {
     return this.getMediaOfType(sourceId, itemId, 'jellyfin');
   }
 
-  getChildren(sourceId: MediaSourceId, parentId: string) {
+  getChildren(sourceId: string, parentId: string) {
     const hierarchyForSource = this.contentHierarchy[sourceId];
     if (hierarchyForSource) {
       return seq.collect(hierarchyForSource[parentId] ?? [], (id) =>

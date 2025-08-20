@@ -14,7 +14,7 @@ export const Route = createFileRoute('/channels/$channelId/edit/')({
   validateSearch: (search) => editChannelParamsSchema.parse(search),
   loader: async ({ params, context }) => {
     const channel = await context.queryClient.ensureQueryData(
-      channelQuery(context.tunarrApiClientProvider(), params.channelId),
+      channelQuery(params.channelId),
     );
 
     if (isUndefined(channel)) {

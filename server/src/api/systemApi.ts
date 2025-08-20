@@ -28,6 +28,7 @@ import { PassThrough } from 'stream';
 import type { DeepReadonly, Writable } from 'ts-essentials';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
+import { MigrationStateSchema } from '../db/SettingsDB.ts';
 import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
 import { SystemDevicesService } from '../services/SystemDevicesService.ts';
 import { Result } from '../types/result.ts';
@@ -105,6 +106,9 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     {
       schema: {
         tags: ['System'],
+        response: {
+          200: MigrationStateSchema,
+        },
       },
     },
     async (req, res) => {
@@ -215,7 +219,10 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/debug/nvidia',
     {
       schema: {
-        hide: true,
+        tags: ['System'],
+        response: {
+          200: z.string(),
+        },
       },
     },
     async (req, res) => {
@@ -252,7 +259,10 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/debug/vaapi',
     {
       schema: {
-        hide: true,
+        tags: ['System'],
+        response: {
+          200: z.string(),
+        },
       },
     },
     async (_, res) => {
@@ -287,7 +297,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/debug/logs',
     {
       schema: {
-        hide: true,
+        tags: ['System', 'Logs'],
         querystring: z.object({
           download: TruthyQueryParam.optional(),
         }),
@@ -350,6 +360,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
     '/system/debug/env',
     {
       schema: {
+        tags: ['System'],
         response: {
           200: z.record(z.string(), z.string()),
         },

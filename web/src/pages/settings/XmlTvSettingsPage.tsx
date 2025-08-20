@@ -22,11 +22,10 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
+import { putApiXmltvSettingsMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { useXmlTvSettings } from '../../hooks/settingsHooks.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function XmlTvSettingsPage() {
-  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
   const { backendUri } = useSettings();
   const { data, error } = useXmlTvSettings();
@@ -51,7 +50,7 @@ export default function XmlTvSettingsPage() {
   const queryClient = useQueryClient();
 
   const updateXmlTvSettingsMutation = useMutation({
-    mutationFn: apiClient.updateXmlTvSettings,
+    ...putApiXmltvSettingsMutation(),
     onSuccess: (data) => {
       snackbar.enqueueSnackbar('Settings Saved!', {
         variant: 'success',
@@ -66,7 +65,9 @@ export default function XmlTvSettingsPage() {
 
   const updateXmlTvSettings: SubmitHandler<XmlTvSettings> = (data) => {
     updateXmlTvSettingsMutation.mutate({
-      ...data,
+      body: {
+        ...data,
+      },
     });
   };
 

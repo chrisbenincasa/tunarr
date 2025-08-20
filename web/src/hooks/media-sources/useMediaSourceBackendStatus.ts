@@ -1,7 +1,11 @@
 import { isNonEmptyString, isValidUrl } from '@/helpers/util';
+import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceSettings } from '@tunarr/types';
 import type { MarkOptional } from 'ts-essentials';
-import { useApiQuery } from '../useApiQuery';
+import {
+  getApiMediaSourcesByIdStatusOptions,
+  postApiMediaSourcesForeignstatusOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
 
 export const useMediaSourceBackendStatus = (
   {
@@ -15,29 +19,25 @@ export const useMediaSourceBackendStatus = (
   >,
   enabled: boolean = true,
 ) => {
-  const serverStatusResult = useApiQuery({
-    queryKey: ['media-sources', { id, uri, accessToken, type }, 'status'],
-    queryFn(apiClient) {
-      return apiClient.getMediaSourceStatus({ params: { id: id! } });
-    },
+  const serverStatusResult = useQuery({
+    ...getApiMediaSourcesByIdStatusOptions({
+      path: {
+        id: id!,
+      },
+    }),
     enabled: enabled && isNonEmptyString(id),
     retry: false,
     staleTime: 0,
   });
 
-  const unknownServerStatusResult = useApiQuery({
-    queryKey: [
-      'unknown-media-source',
-      { type, id, uri, accessToken },
-      'status',
-    ],
-    queryFn(apiClient) {
-      return apiClient.getUnknownMediaSourceStatus({
-        uri,
+  const unknownServerStatusResult = useQuery({
+    ...postApiMediaSourcesForeignstatusOptions({
+      body: {
         accessToken,
         type,
-      });
-    },
+        uri,
+      },
+    }),
     enabled:
       enabled &&
       !isNonEmptyString(id) &&

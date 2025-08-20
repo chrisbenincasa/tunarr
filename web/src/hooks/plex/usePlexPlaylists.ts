@@ -10,7 +10,6 @@ import { flatten, isNil, reject, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 /**
  * Currently makes the assumption that are operating on an a music library
@@ -22,7 +21,6 @@ export const usePlexPlaylistsInfinite = (
   pageSize: number,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
   const queryOpts = useMemo(() => {
     return infiniteQueryOptions({
       queryKey: [
@@ -45,7 +43,6 @@ export const usePlexPlaylistsInfinite = (
         }
 
         return fetchPlexPath<PlexPlaylists>(
-          apiClient,
           plexServer!.id,
           `/playlists?${plexQuery.toString()}`,
         )();
@@ -62,7 +59,7 @@ export const usePlexPlaylistsInfinite = (
         return last + res.size;
       },
     });
-  }, [apiClient, currentLibrary?.library.key, enabled, pageSize, plexServer]);
+  }, [currentLibrary?.library.key, enabled, pageSize, plexServer]);
 
   const queryResult = useInfiniteQuery(queryOpts);
 

@@ -7,26 +7,31 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { useApiQuery } from '../../hooks/useApiQuery.ts';
+import {
+  getApiSystemDebugEnvOptions,
+  getApiSystemDebugNvidiaOptions,
+  getApiSystemDebugVaapiOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useCopyToClipboardSync } from '../../hooks/useCopyToClipboard.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export const SystemDebugPage = () => {
   const [checkVaapiEnabled, setCheckVaapiEnabled] = useState(false);
   const [checkNvidiaEnabled, setCheckNvidiaEnabled] = useState(false);
   const queryClient = useQueryClient();
-  const apiClient = useTunarrApi();
   const copyToClipboard = useCopyToClipboardSync();
 
   const envData = useSuspenseQuery({
-    queryKey: ['system', 'debug', 'env'],
-    queryFn: () => apiClient.getServerEnvInfo(),
+    ...getApiSystemDebugEnvOptions(),
     staleTime: +dayjs.duration(1, 'hour'),
   });
 
@@ -49,18 +54,16 @@ export const SystemDebugPage = () => {
   const {
     isLoading: isLoadingVaapiCapabilities,
     data: vappiCapabilitiesResult,
-  } = useApiQuery({
-    queryKey: ['system', 'debug', 'vaapi'],
-    queryFn: (apiClient) => apiClient.getVaapiDebugInfo(),
+  } = useQuery({
+    ...getApiSystemDebugVaapiOptions(),
     enabled: checkVaapiEnabled,
   });
 
   const {
     isLoading: isLoadingNvidiaCapabilities,
     data: nvidiaCapabilitiesResult,
-  } = useApiQuery({
-    queryKey: ['system', 'debug', 'nvidia'],
-    queryFn: (apiClient) => apiClient.getNvidiaDebugInfo(),
+  } = useQuery({
+    ...getApiSystemDebugNvidiaOptions(),
     enabled: checkNvidiaEnabled,
   });
 

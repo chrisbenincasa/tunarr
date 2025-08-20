@@ -8,7 +8,6 @@ import {
   type PlexMedia,
   type PlexPlaylists,
 } from '@tunarr/types/plex';
-import { type MediaSourceId } from '@tunarr/types/schemas';
 import { type StateCreator } from 'zustand';
 import {
   type Emby,
@@ -37,7 +36,7 @@ export type JellyfinSelectedMedia = Typed<
 export type EmbySelectedMedia = Typed<ExternalSourceSelectedMedia, Emby>;
 
 export type ExternalSourceSelectedMedia = {
-  serverId: MediaSourceId;
+  serverId: string;
   // This is needed for "legacy" reasons right now
   serverName: string;
   id: ItemUuid;
@@ -101,12 +100,9 @@ export type MediaItems =
   | TypedItem<JellyfinItem | TunarrAmendedJellyfinVirtualFolder, Jellyfin>
   | TypedItem<EmbyItem, Emby>;
 
-export type KnownMediaMap = Record<MediaSourceId, Record<ItemUuid, MediaItems>>;
+export type KnownMediaMap = Record<string, Record<ItemUuid, MediaItems>>;
 
-export type ContentHierarchyMap = Record<
-  MediaSourceId,
-  Record<ItemUuid, ItemUuid[]>
->;
+export type ContentHierarchyMap = Record<string, Record<ItemUuid, ItemUuid[]>>;
 
 export interface ProgrammingListingsState {
   currentMediaSource?: MediaSourceSettings;

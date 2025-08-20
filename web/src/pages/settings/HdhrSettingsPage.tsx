@@ -20,11 +20,13 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../../components/util/TypedController.tsx';
+import {
+  getApiHdhrSettingsQueryKey,
+  putApiHdhrSettingsMutation,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useHdhrSettings } from '../../hooks/settingsHooks.ts';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
 
 export default function HdhrSettingsPage() {
-  const apiClient = useTunarrApi();
   const [restoreTunarrDefaults, setRestoreTunarrDefaults] =
     React.useState<boolean>(false);
 
@@ -50,7 +52,7 @@ export default function HdhrSettingsPage() {
   const queryClient = useQueryClient();
 
   const updateHdhrSettingsMutation = useMutation({
-    mutationFn: apiClient.updateHdhrSettings,
+    ...putApiHdhrSettingsMutation(),
     onSuccess: (data) => {
       snackbar.enqueueSnackbar('Settings Saved!', {
         variant: 'success',
@@ -58,7 +60,7 @@ export default function HdhrSettingsPage() {
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
-        queryKey: ['settings', 'hdhr-settings'],
+        queryKey: getApiHdhrSettingsQueryKey(),
       });
     },
   });
@@ -67,7 +69,9 @@ export default function HdhrSettingsPage() {
     data: HdhrSettings,
   ) => {
     updateHdhrSettingsMutation.mutate({
-      ...data,
+      body: {
+        ...data,
+      },
     });
   };
 

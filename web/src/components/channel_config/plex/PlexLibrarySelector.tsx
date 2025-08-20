@@ -1,5 +1,4 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { tag } from '@tunarr/types';
 import { isPlexDirectory } from '@tunarr/types/plex';
 import { find, isNil, map } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
@@ -26,15 +25,12 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
   const navigate = Route.useNavigate();
 
   const { data: plexLibraryChildren } = usePlexLibraries(
-    selectedServer?.id ?? tag(''),
+    selectedServer?.id ?? '',
     selectedServer?.type === Plex,
   );
 
   const { data: plexPlaylists, isLoading: plexPlaylistsLoading } =
-    usePlexPlaylists(
-      selectedServer?.id ?? tag(''),
-      selectedServer?.type === Plex,
-    );
+    usePlexPlaylists(selectedServer?.id ?? '', selectedServer?.type === Plex);
 
   const knownMedia = useKnownMedia();
 

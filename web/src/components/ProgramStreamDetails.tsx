@@ -1,19 +1,16 @@
 import { CopyAll } from '@mui/icons-material';
 import { Box, Button } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { getApiProgramsByIdStreamDetailsOptions } from '../generated/@tanstack/react-query.gen.ts';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
-import { useTunarrApi } from '../hooks/useTunarrApi.ts';
 
 type Props = {
   programId: string;
 };
 
 export const ProgramStreamDetails = ({ programId }: Props) => {
-  const apiClient = useTunarrApi();
   const { data: result } = useSuspenseQuery({
-    queryKey: ['programs', programId, 'stream_details'],
-    queryFn: () =>
-      apiClient.getProgramStreamDetails({ params: { id: programId } }),
+    ...getApiProgramsByIdStreamDetailsOptions({ path: { id: programId } }),
     staleTime: 60_000,
   });
   const copy = useCopyToClipboard();

@@ -3,7 +3,7 @@ import CustomShowsPage from '@/pages/library/CustomShowsPage';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/library/custom-shows')({
-  loader: ({ context: { queryClient, tunarrApiClientProvider } }) =>
-    queryClient.ensureQueryData(customShowsQuery(tunarrApiClientProvider())),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(customShowsQuery()),
   component: CustomShowsPage,
 });

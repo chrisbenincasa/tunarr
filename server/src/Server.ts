@@ -10,7 +10,15 @@ import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
+import fs from 'node:fs/promises';
 
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import {
+  jsonSchemaTransform,
+  jsonSchemaTransformObject,
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod';
 import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
@@ -33,14 +41,8 @@ import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
-import { filename, run } from './util/index.js';
+import { filename, isDev, run } from './util/index.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
-import {
-  serializerCompiler,
-  swaggerTransform,
-  validatorCompiler,
-  ZodTypeProvider,
-} from './util/zod.ts';
 
 const currentDirectory = dirname(filename(import.meta.url));
 
@@ -141,7 +143,15 @@ export class Server {
             },
           ],
         },
-        transform: swaggerTransform, //jsonSchemaTransform,
+        transform: (input) => {
+          const { schema, url } = jsonSchemaTransform(input);
+          // ensure that request bodies with "anyOf" are marked as required.
+          if (schema && schema.body && schema.body['anyOf']) {
+            schema.body['required'] = ['true'];
+          }
+          return { schema, url };
+        },
+        transformObject: jsonSchemaTransformObject,
       })
       // .register(fastifySwaggerUi, {
       //   routePrefix: '/docs',
@@ -424,6 +434,15 @@ export class Server {
       },
       level: 'success',
     });
+
+    if (isDev) {
+      const openapi = this.getOpenApiDocument();
+      const outputDir = path.resolve(process.cwd(), '..');
+      await fs.writeFile(
+        path.join(outputDir, 'tunarr-openapi.json'),
+        JSON.stringify(openapi),
+      );
+    }
 
     return this.app;
   }

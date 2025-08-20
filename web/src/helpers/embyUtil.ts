@@ -1,10 +1,9 @@
 import { type EmbyItem, type EmbyItemKind } from '@tunarr/types/emby';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { flattenDeep } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import type { ApiClient } from '../external/api.ts';
+import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../generated/sdk.gen.ts';
 import { JellyfinTerminalTypes } from './jellyfinUtil.ts';
 import { sequentialPromises } from './util.ts';
 
@@ -40,6 +39,8 @@ export const EmbyTerminalTypes = new Set<EmbyItemKind>([
   'Video',
   'Trailer',
 ]);
+
+const EmbyTerminalTypesArray = [...EmbyTerminalTypes];
 
 export function extractEmbyId(item: EmbyItem) {
   return item.Id;
@@ -114,7 +115,7 @@ export const sortEmbyLibraries = (item: EmbyItem) => {
 
 export type EnrichedEmbyItem = EmbyItem & {
   // The internal Tunarr ID of the media source
-  serverId: MediaSourceId;
+  serverId: string;
   // This is the Plex server name that the info was retrieved from
   serverName: string;
   // If we found an existing reference to this item on the server, we add it here
@@ -124,8 +125,7 @@ export type EnrichedEmbyItem = EmbyItem & {
 };
 
 export const enumerateEmbyItem = (
-  apiClient: ApiClient,
-  serverId: MediaSourceId,
+  serverId: string,
   serverName: string,
   initialItem: EmbyItem,
 ): (() => Promise<EnrichedEmbyItem[]>) => {
@@ -148,22 +148,19 @@ export const enumerateEmbyItem = (
           );
         }
 
-        return (
-          apiClient
-            .getEmbyItems({
-              params: {
-                mediaSourceId: serverId,
-                libraryId: item.Id,
-              },
-              queries: {
-                itemTypes: [...EmbyTerminalTypes],
-                recursive: true,
-              },
-            })
-            // TODO: Use p-queue here to parallelize a bit
-            .then((result) => sequentialPromises(result.Items, loopInner))
-            .then(flattenDeep)
-        );
+        return getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
+          path: {
+            mediaSourceId: serverId,
+            libraryId: item.Id,
+          },
+          query: {
+            itemTypes: EmbyTerminalTypesArray,
+            recursive: true,
+          },
+          throwOnError: true,
+        }) // TODO: Use p-queue here to parallelize a bit
+          .then((result) => sequentialPromises(result.data.Items, loopInner))
+          .then(flattenDeep);
       }
     }
 

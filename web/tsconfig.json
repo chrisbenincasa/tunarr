@@ -30,6 +30,7 @@
     }
   },
   "files": [
+    "openapi-ts.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "src/components/slot_scheduler/RandomSlotFormContext.tsx",

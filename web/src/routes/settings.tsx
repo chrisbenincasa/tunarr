@@ -35,7 +35,12 @@ function Wrapper() {
   const firstChild = useChildMatches();
   return (
     <SettingsLayout
-      currentTab={head(firstChild)?.fullPath.replace(/^\/settings/, '')}
+      currentTab={
+        '/' +
+        head(firstChild)
+          ?.fullPath.replace(/^\/settings/, '')
+          .split('/')[1]
+      }
     />
   );
 }

@@ -11,7 +11,6 @@ import {
   resolutionToString,
 } from '@/helpers/util';
 import { useFfmpegSettings } from '@/hooks/settingsHooks';
-import { useApiSuspenseQuery } from '@/hooks/useApiQuery';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Box,
@@ -30,6 +29,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type {
   SupportedTranscodeVideoOutputFormat,
   TranscodeConfig,
@@ -41,6 +41,7 @@ import type {
 import { useSnackbar } from 'notistack';
 import type { FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { getApiFfmpegInfoOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import Breadcrumbs from '../../Breadcrumbs.tsx';
 
 const VideoFormats: DropdownOption<SupportedTranscodeVideoOutputFormat>[] = [
@@ -141,9 +142,10 @@ export const TranscodeConfigSettingsForm = ({
 }: Props) => {
   const { data: ffmpegSettings } = useFfmpegSettings();
 
-  const ffmpegInfo = useApiSuspenseQuery({
-    queryKey: ['ffmpeg-info'],
-    queryFn: (apiClient) => apiClient.getFfmpegInfo(),
+  const ffmpegInfo = useSuspenseQuery({
+    // queryKey: ['ffmpeg-info'],
+    // queryFn: (apiClient) => apiClient.getFfmpegInfo(),
+    ...getApiFfmpegInfoOptions(),
   });
 
   const snackbar = useSnackbar();

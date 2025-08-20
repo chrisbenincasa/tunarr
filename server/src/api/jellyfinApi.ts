@@ -47,8 +47,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     if (!routeOptions.schema) {
       routeOptions.schema = {};
     }
-
-    routeOptions.schema.hide = true;
   });
 
   fastify.post(
@@ -56,6 +54,13 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     {
       schema: {
         body: JellyfinLoginRequest,
+        operationId: 'jellyfinLogin',
+        response: {
+          200: z.object({
+            accessToken: z.string().optional(),
+            userId: z.string().optional(),
+          }),
+        },
       },
     },
     async (req, res) => {
@@ -82,6 +87,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           // HACK
           200: z.array(TunarrAmendedJellyfinVirtualFolder),
         },
+        operationId: 'getJellyfinLibraries',
       },
     },
     (req, res) =>
@@ -128,6 +134,10 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         querystring: z.object({
           includeItemTypes: z.string().optional(),
         }),
+        response: {
+          200: JellyfinLibraryItemsResponse,
+        },
+        operationId: 'getJellyfinLibraryGenres',
       },
     },
     (req, res) =>
@@ -193,6 +203,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
         response: {
           200: JellyfinLibraryItemsResponse,
         },
+        operationId: 'getJellyfinLibraryItems',
       },
     },
     (req, res) =>

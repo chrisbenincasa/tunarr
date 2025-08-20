@@ -1,5 +1,4 @@
 import { isNonEmptyString, isValidUrlWithError, toggle } from '@/helpers/util';
-import { useTunarrApi } from '@/hooks/useTunarrApi';
 
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import { useMediaSourceBackendStatus } from '@/hooks/media-sources/useMediaSourceBackendStatus';
@@ -35,6 +34,10 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
+import {
+  postApiMediaSources,
+  putApiMediaSourcesById,
+} from '../../../generated/sdk.gen.ts';
 import { embyLogin } from '../../../hooks/emby/useEmbyLogin.ts';
 
 type Props = {
@@ -58,7 +61,6 @@ const emptyDefaults: EmbyServerSettingsForm = {
 };
 
 export function EmbyServerEditDialog({ open, onClose, server }: Props) {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
 
@@ -101,15 +103,15 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
   const updateSourceMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: EmbyServerSettingsForm) => {
       if (isNonEmptyString(newOrUpdatedServer.id)) {
-        await apiClient.updateMediaSource(
-          { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
-          {
-            params: { id: newOrUpdatedServer.id },
-          },
-        );
+        await putApiMediaSourcesById({
+          body: { ...newOrUpdatedServer, id: newOrUpdatedServer.id },
+          path: { id: newOrUpdatedServer.id },
+        });
         return { id: newOrUpdatedServer.id };
       } else {
-        return apiClient.createMediaSource(newOrUpdatedServer);
+        return postApiMediaSources({
+          body: newOrUpdatedServer,
+        });
       }
     },
     onSuccess: async () => {
@@ -146,7 +148,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
       )(e);
     } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
       try {
-        const result = await embyLogin(apiClient, {
+        const result = await embyLogin({
           username,
           password,
           uri,

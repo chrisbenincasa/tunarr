@@ -53,8 +53,8 @@ import { PagingParams } from '../types/schemas.ts';
 dayjs.extend(duration);
 
 const ChannelLineupQuery = z.object({
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
+  from: z.iso.date().optional().pipe(z.coerce.date()),
+  to: z.iso.date().optional().pipe(z.coerce.date()),
   includePrograms: z.coerce.boolean().default(false),
 });
 

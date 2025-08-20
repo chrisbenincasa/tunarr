@@ -1,6 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForEmbyServer } from '@/store/programmingSelector/actions.ts';
-import { type QueryParamTypeForAlias } from '@/types/index.ts';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -8,51 +7,55 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { type EmbyItemKind } from '@tunarr/types/emby';
-import { type MediaSourceId } from '@tunarr/types/schemas';
 import { every, flatMap, isEmpty, isNil, omitBy, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
+import type { StrictOmit } from 'ts-essentials';
+import {
+  getApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsOptions,
+  getApiEmbyByMediaSourceIdUserLibrariesOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
+import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../../generated/sdk.gen.ts';
+import type { GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData } from '../../generated/types.gen.ts';
 import { Emby } from '../../helpers/constants.ts';
-import { useApiQuery } from '../useApiQuery.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const useEmbyUserLibraries = (
   mediaSourceId: string,
   enabled: boolean = true,
 ) => {
-  return useApiQuery({
-    queryKey: ['emby', mediaSourceId, 'user_libraries'],
-    queryFn: (apiClient) =>
-      apiClient.getEmbyUserLibraries({ params: { mediaSourceId } }),
+  return useQuery({
+    ...getApiEmbyByMediaSourceIdUserLibrariesOptions({
+      path: { mediaSourceId },
+    }),
     enabled: enabled && isNonEmptyString(mediaSourceId),
   });
 };
 
 export const useEmbyLibraryItems = (
-  mediaSourceId: MediaSourceId,
+  mediaSourceId: string,
   parentId: string,
   itemTypes: EmbyItemKind[],
   pageParams: { offset: number; limit: number } | null = null,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
   const queryOpts = useMemo(
     () =>
       queryOptions({
-        queryKey: [Emby, mediaSourceId, 'library_items', parentId, pageParams],
-        queryFn: () =>
-          apiClient.getEmbyItems({
-            params: { mediaSourceId, libraryId: parentId },
-            queries: {
-              offset: pageParams?.offset,
-              limit: pageParams?.limit,
-              itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
-              recursive: true,
-            },
-          }),
+        ...getApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsOptions({
+          path: {
+            mediaSourceId,
+            libraryId: parentId,
+          },
+          query: {
+            offset: pageParams?.offset,
+            limit: pageParams?.limit,
+            itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
+            recursive: true,
+          },
+        }),
         enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
       }),
-    [apiClient, enabled, itemTypes, mediaSourceId, pageParams, parentId],
+    [enabled, itemTypes, mediaSourceId, pageParams, parentId],
   );
   const result = useQuery(queryOpts);
 
@@ -90,20 +93,21 @@ function getChunkSize(
 }
 
 export const useInfiniteEmbyLibraryItems = (
-  mediaSourceId: MediaSourceId,
+  mediaSourceId: string,
   parentId: string,
   itemTypes: EmbyItemKind[],
   enabled: boolean = true,
   initialChunkSize: number = 20,
   bufferSize: number = 0,
   additionalFilters: Partial<
-    Omit<
-      QueryParamTypeForAlias<'getEmbyItems'>,
+    StrictOmit<
+      NonNullable<
+        GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData['query']
+      >,
       'offset' | 'limit' | 'itemTypes'
     >
   > = {},
 ) => {
-  const apiClient = useTunarrApi();
   const lastFetchSize = initialChunkSize + bufferSize;
 
   const queryOpts = useMemo(
@@ -118,15 +122,19 @@ export const useInfiniteEmbyLibraryItems = (
           { itemTypes, additionalFilters },
         ],
         queryFn: ({ pageParam: { offset, pageSize } }) =>
-          apiClient.getEmbyItems({
-            params: { mediaSourceId, libraryId: parentId },
-            queries: {
+          getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
+            path: {
+              mediaSourceId,
+              libraryId: parentId,
+            },
+            query: {
               offset,
               limit: pageSize,
               itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
               ...omitBy(additionalFilters, isNil),
             },
-          }),
+            throwOnError: true,
+          }).then(({ data }) => data),
         enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
         initialPageParam: { offset: 0, pageSize: lastFetchSize },
         getNextPageParam: (res, all, { offset: lastOffset }) => {
@@ -150,7 +158,6 @@ export const useInfiniteEmbyLibraryItems = (
       }),
     [
       additionalFilters,
-      apiClient,
       bufferSize,
       enabled,
       initialChunkSize,

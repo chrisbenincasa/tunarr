@@ -1,11 +1,12 @@
+import type { UseQueryOptions } from '@tanstack/react-query';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import type { PlexLibrarySections, PlexPlaylists } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { identity, reject } from 'lodash-es';
+import type { queryPlexQueryKey } from '../../generated/@tanstack/react-query.gen.ts';
+import { queryPlexOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { queryPlex } from '../../generated/sdk.gen.ts';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import type { ExtractTypeKeys, FindChild } from '../../types/util.ts';
-import { useApiQuery } from '../useApiQuery.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 import { plexQueryOptions } from './plexHookUtil.ts';
 
 export type PlexPathMappings = [
@@ -17,7 +18,7 @@ export type PlexPathMappings = [
 declare const plexQueryArgsSymbol: unique symbol;
 
 type PlexQueryArgs<T> = {
-  serverId: MediaSourceId;
+  serverId: string;
   path: string;
   enabled: boolean;
   [plexQueryArgsSymbol]?: T;
@@ -28,29 +29,43 @@ export const usePlex = <
   ResponseType = FindChild<T, PlexPathMappings>,
   OutType = ResponseType,
 >(
-  serverId: MediaSourceId,
+  serverId: string,
   path: string,
   enabled: boolean = true,
   select: (response: ResponseType) => OutType = identity,
 ) => {
-  return useApiQuery({
-    queryKey: ['plex', serverId, path],
-    queryFn: (apiClient) =>
-      fetchPlexPath<ResponseType>(apiClient, serverId, path)(),
+  return useQuery({
+    ...queryPlexOptions({
+      query: {
+        id: serverId,
+        path,
+      },
+    }),
+    queryFn: async () => {
+      const result = await queryPlex({
+        query: { id: serverId, path },
+        throwOnError: true,
+      });
+      return result.data as ResponseType;
+    },
     enabled,
     select,
-  });
+  } as UseQueryOptions<
+    ResponseType,
+    Error,
+    OutType,
+    ReturnType<typeof queryPlexQueryKey>
+  >);
 };
 
 export const usePlexTyped = <T, OutType = T>(
-  serverId: MediaSourceId,
+  serverId: string,
   path: string,
   enabled: boolean = true,
   select: (response: T) => OutType = identity,
 ) => {
-  const apiClient = useTunarrApi();
   return useQuery({
-    ...plexQueryOptions<T>(apiClient, serverId, path, enabled),
+    ...plexQueryOptions<T>(serverId, path, enabled),
     select,
   });
 };
@@ -62,12 +77,10 @@ export const usePlexTyped = <T, OutType = T>(
 export const usePlexTyped2 = <T = unknown, U = unknown>(
   args: [PlexQueryArgs<T>, PlexQueryArgs<U>],
 ) => {
-  const apiClient = useTunarrApi();
   return useQueries({
     queries: args.map((query) => ({
       queryKey: ['plex', query.serverId, query.path],
       queryFn: fetchPlexPath<(typeof query)[typeof plexQueryArgsSymbol]>(
-        apiClient,
         query.serverId,
         query.path,
       ),
@@ -84,10 +97,7 @@ export const usePlexTyped2 = <T = unknown, U = unknown>(
   });
 };
 
-export const usePlexLibraries = (
-  serverId: MediaSourceId,
-  enabled: boolean = true,
-) =>
+export const usePlexLibraries = (serverId: string, enabled: boolean = true) =>
   usePlex<'/library/sections'>(
     serverId,
     '/library/sections',
@@ -98,7 +108,5 @@ export const usePlexLibraries = (
     }),
   );
 
-export const usePlexPlaylists = (
-  serverId: MediaSourceId,
-  enabled: boolean = true,
-) => usePlexTyped<PlexPlaylists>(serverId, '/playlists', enabled);
+export const usePlexPlaylists = (serverId: string, enabled: boolean = true) =>
+  usePlexTyped<PlexPlaylists>(serverId, '/playlists', enabled);

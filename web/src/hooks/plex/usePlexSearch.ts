@@ -16,7 +16,6 @@ import type {
   PlexLibraryShows,
   PlexMedia,
 } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import {
   flatMap,
   forEach,
@@ -30,11 +29,8 @@ import { match, P } from 'ts-pattern';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 const usePlexSearchQueryFn = () => {
-  const apiClient = useTunarrApi();
-
   return useCallback(
     (
       plexServer: PlexServerSettings,
@@ -77,12 +73,11 @@ const usePlexSearchQueryFn = () => {
         .otherwise(() => `/library/sections/${plexLibrary.library.key}/all`);
 
       return fetchPlexPath<PlexChildListing>(
-        apiClient,
         plexServer.id,
         `${path}?${plexQuery.toString()}`,
       )();
     },
-    [apiClient],
+    [],
   );
 };
 
@@ -100,7 +95,7 @@ const usePlexSearchQueryOptions = (
       currentLibrary?.library.key,
       searchParam,
     ] as DataTag<
-      ['plex-search', MediaSourceId, string, string],
+      ['plex-search', string, string, string],
       PlexLibraryMovies | PlexLibraryShows | PlexLibraryMusic
     >,
     enabled:

@@ -1,46 +1,33 @@
-import type { DataTag } from '@tanstack/react-query';
 import {
   queryOptions,
   useQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import type { Channel } from '@tunarr/types';
-import type { ApiClient } from '../external/api';
-import { useTunarrApi } from './useTunarrApi';
-
-export const channelsQuery = (
-  apiClient: ApiClient,
-  initialData: Channel[] = [],
-) =>
-  queryOptions({
-    queryKey: ['channels'] as DataTag<['channels'], Channel[]>,
-    queryFn: () => apiClient.getChannels(),
-    initialData,
-  });
+import type { StrictOmit } from 'ts-essentials';
+import {
+  getChannelsByNumberV2Options,
+  getChannelsOptions,
+} from '../generated/@tanstack/react-query.gen.ts';
 
 export const useChannels = (initialData: Channel[] = []) => {
-  const apiClient = useTunarrApi();
-  return useQuery(channelsQuery(apiClient, initialData));
+  return useQuery({
+    ...getChannelsOptions(),
+    initialData,
+  });
 };
 
 export const useChannelsSuspense = (
-  params?: Partial<ReturnType<typeof channelsQuery>>,
+  params?: Partial<
+    StrictOmit<ReturnType<typeof getChannelsOptions>, 'queryFn' | 'queryKey'>
+  >,
 ) => {
-  const apiClient = useTunarrApi();
-  return useSuspenseQuery({ ...channelsQuery(apiClient), ...(params ?? {}) });
+  return useSuspenseQuery({ ...getChannelsOptions(), ...params });
 };
 
-export const channelQuery = (
-  apiClient: ApiClient,
-  id: string,
-  enabled: boolean = true,
-) =>
+export const channelQuery = (id: string, enabled: boolean = true) =>
   queryOptions({
-    queryKey: ['channels', id] as DataTag<['channels', string], Channel>,
-    queryFn: async () =>
-      apiClient.getChannel({
-        params: { id },
-      }),
+    ...getChannelsByNumberV2Options({ path: { id } }),
     enabled: id.length > 0 && enabled,
     staleTime: 10_000,
   });
@@ -50,13 +37,11 @@ export const useChannel = (
   enabled: boolean = true,
   initialData: Channel | undefined = undefined,
 ) => {
-  const apiClient = useTunarrApi();
-  return useQuery({ ...channelQuery(apiClient, id, enabled), initialData });
+  return useQuery({ ...channelQuery(id, enabled), initialData });
 };
 
 export const useChannelSuspense = (id: string, enabled: boolean = true) => {
-  const apiClient = useTunarrApi();
-  return useSuspenseQuery(channelQuery(apiClient, id, enabled));
+  return useSuspenseQuery(channelQuery(id, enabled));
 };
 
 // If we absolutely have initialData defined, we can use this hook instead,
@@ -66,6 +51,5 @@ export const useChannelWithInitialData = (
   initialData: Channel,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
-  return useQuery({ ...channelQuery(apiClient, id, enabled), initialData });
+  return useQuery({ ...channelQuery(id, enabled), initialData });
 };

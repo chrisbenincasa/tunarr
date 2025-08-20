@@ -26,7 +26,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import { type MediaSourceSettings } from '@tunarr/types';
 import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { isPlexDirectory } from '@tunarr/types/plex';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { first, groupBy, isNil, mapValues } from 'lodash-es';
 import pluralize from 'pluralize';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -50,7 +49,7 @@ type SelectedProgramListItemProps<SelectedMediaType> = {
   selected: SelectedMediaType;
   knownMedia: KnownMedia;
   listChildProps: ListChildComponentProps;
-  mediaSourcesById: Record<MediaSourceId, MediaSourceSettings>;
+  mediaSourcesById: Record<string, MediaSourceSettings>;
 };
 
 const PlexSelectedProgramListItem = ({

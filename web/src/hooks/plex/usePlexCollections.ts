@@ -9,7 +9,6 @@ import { useCallback, useMemo } from 'react';
 import { fetchPlexPath } from '../../helpers/plexUtil.ts';
 import { addKnownMediaForPlexServer } from '../../store/programmingSelector/actions.ts';
 import { useQueryObserver } from '../useQueryObserver.ts';
-import { useTunarrApi } from '../useTunarrApi.ts';
 
 export const usePlexCollectionsInfinite = (
   plexServer: Maybe<PlexServerSettings>,
@@ -17,8 +16,6 @@ export const usePlexCollectionsInfinite = (
   pageSize: number,
   enabled: boolean = true,
 ) => {
-  const apiClient = useTunarrApi();
-
   const queryOpts = useMemo(() => {
     return infiniteQueryOptions({
       queryKey: [
@@ -34,7 +31,6 @@ export const usePlexCollectionsInfinite = (
         });
 
         return fetchPlexPath<PlexLibraryCollections>(
-          apiClient,
           plexServer!.id,
           `/library/sections/${
             currentLibrary?.library.key
@@ -57,7 +53,7 @@ export const usePlexCollectionsInfinite = (
         return last + res.size;
       },
     });
-  }, [apiClient, currentLibrary, enabled, pageSize, plexServer]);
+  }, [currentLibrary, enabled, pageSize, plexServer]);
 
   const query = useInfiniteQuery(queryOpts);
 

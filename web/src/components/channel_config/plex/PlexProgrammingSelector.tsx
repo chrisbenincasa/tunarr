@@ -4,8 +4,6 @@ import {
 } from '@/store/programmingSelector/selectors.ts';
 import { PlexMediaSourceLibraryViewType } from '@/store/programmingSelector/store.ts';
 import { Box, Tab, Tabs, Tooltip } from '@mui/material';
-import { tag } from '@tunarr/types';
-import type { MediaSourceId } from '@tunarr/types/schemas';
 import { filter, isNil } from 'lodash-es';
 import React, { useRef } from 'react';
 import { P, match } from 'ts-pattern';
@@ -83,7 +81,7 @@ export default function PlexProgrammingSelector({
   const itemContainer = useRef<HTMLDivElement>(null);
 
   const { data: directoryChildren } = usePlexLibraries(
-    selectedServer?.id ?? tag<MediaSourceId>(''),
+    selectedServer?.id ?? '',
     selectedServer?.type === 'plex',
   );
 

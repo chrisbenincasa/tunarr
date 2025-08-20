@@ -15,7 +15,10 @@ import { isEmpty } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
-import { useTunarrApi } from '../../hooks/useTunarrApi.ts';
+import {
+  postApiFillerLists,
+  putApiFillerListsById,
+} from '../../generated/sdk.gen.ts';
 import useStore from '../../store/index.ts';
 import type { UIFillerListProgram } from '../../types/index.ts';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
@@ -39,7 +42,6 @@ export function EditFillerListForm({
   fillerListPrograms,
   isNew,
 }: EditFillerListFormProps) {
-  const apiClient = useTunarrApi();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { programs: programsDirty } = useStore((s) => s.fillerListEditor.dirty);
@@ -61,17 +63,17 @@ export function EditFillerListForm({
     mutationKey: ['fillers', isNew ? 'new' : fillerList.id],
     mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
       if (isNew) {
-        return apiClient.createFillerList({ name, programs });
+        return postApiFillerLists({ body: { name, programs } });
       } else {
-        return apiClient.updateFillerList(
-          { name, programs },
-          { params: { id: fillerList.id } },
-        );
+        return putApiFillerListsById({
+          path: { id: fillerList.id },
+          body: { name, programs },
+        });
       }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['fillers'],
+        queryKey: ['Filler Lists'],
         exact: false,
       });
       if (isNew) {

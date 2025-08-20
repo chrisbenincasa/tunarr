@@ -1,4 +1,3 @@
-import { useTunarrApi } from '@/hooks/useTunarrApi.ts';
 import { CloudDoneOutlined, CloudOff, Delete, Edit } from '@mui/icons-material';
 import { IconButton, Link, TableCell, TableRow } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +5,7 @@ import type { MediaSourceSettings } from '@tunarr/types';
 import { capitalize, isNull, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { match } from 'ts-pattern';
+import { getApiMediaSourcesByIdStatusOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { Emby, Jellyfin, Plex } from '../../../helpers/constants.ts';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
 import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
@@ -14,7 +14,6 @@ import { MediaSourceDeleteDialog } from './MediaSourceDeleteDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
 
 export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
-  const apiClient = useTunarrApi();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const {
@@ -22,9 +21,7 @@ export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
     isLoading: backendStatusLoading,
     error: backendStatusError,
   } = useQuery({
-    queryKey: ['settings', 'media-sources', server.id, 'status'],
-    queryFn: () =>
-      apiClient.getMediaSourceStatus({ params: { id: server.id } }),
+    ...getApiMediaSourcesByIdStatusOptions({ path: { id: server.id } }),
     staleTime: 1000 * 60 * 5,
   });
 

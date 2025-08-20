@@ -1,6 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import { tag } from '@tunarr/types';
 import { isJellyfinVirtualFolder } from '@tunarr/types/jellyfin';
 import { capitalize, find, isEmpty, isNil, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
@@ -39,7 +38,7 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
     selectedLibrary?.type === Jellyfin ? selectedLibrary.view : undefined;
 
   const { data: jellyfinGenres } = useJellyfinGenres(
-    selectedServer?.id ?? tag(''),
+    selectedServer?.id ?? '',
     selectedJellyfinLibrary?.ItemId ?? '',
     selectedServer?.type === Jellyfin && !!selectedJellyfinLibrary,
   );

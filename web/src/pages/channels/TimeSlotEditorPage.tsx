@@ -223,8 +223,10 @@ export default function TimeSlotEditorPage() {
     );
 
     updateLineupMutation.mutate({
-      channelId: channel!.id,
-      lineupRequest: {
+      path: {
+        id: channel!.id,
+      },
+      body: {
         type: 'time',
         schedule,
         programs: filteredLineup,
