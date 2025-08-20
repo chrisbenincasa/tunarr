@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.6](https://github.com/chrisbenincasa/tunarr/compare/v0.21.5...v0.21.6) (2025-08-20)
+
+
+### Bug Fixes
+
+* default stream output directory to within Tunarr data directory ([d901652](https://github.com/chrisbenincasa/tunarr/commit/d90165271e628114eb00f3cbe30ff96d9d4f083d))
+* **ui:** ensure media source dialogs always update after edits ([ec213f0](https://github.com/chrisbenincasa/tunarr/commit/ec213f0e0d3bb0454e534bffe8d1734f094f07e9))
+
 ## [0.21.5](https://github.com/chrisbenincasa/tunarr/compare/v0.21.4...v0.21.5) (2025-08-16)
 
 
