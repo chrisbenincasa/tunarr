@@ -320,6 +320,10 @@ export function ChannelFlexConfig() {
                 Videos from the filler list will be randomly picked to play
                 unless there are cooldown restrictions to place or if no videos
                 are short enough for the remaining Flex time.
+                <br />
+                Each filler can be assigned a cooldown, which restricts how
+                frequently individual items are chosen from within the list when
+                filling flex time.
               </Typography>
               {!fillerListsLoading && renderFillerLists()}
               {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
@@ -336,7 +340,7 @@ export function ChannelFlexConfig() {
                 <>
                   <TextField
                     fullWidth
-                    label="Filler Cooldown (seconds)"
+                    label="Filler List Cooldown (seconds)"
                     margin="normal"
                     helperText={
                       errors.fillerRepeatCooldown?.type === 'validate'
@@ -347,7 +351,8 @@ export function ChannelFlexConfig() {
                     onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                   <Typography variant="caption" sx={{ ml: 1 }}>
-                    Minimum time (seconds) before replaying a filler
+                    Items from any filler list will not be chosen more
+                    frequently than this cooldown setting.
                   </Typography>
                 </>
               )}
