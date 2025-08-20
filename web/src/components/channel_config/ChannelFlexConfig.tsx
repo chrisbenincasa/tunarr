@@ -87,7 +87,7 @@ export function ChannelFlexConfig() {
       const oldLists = channelFillerLists ? [...channelFillerLists] : [];
 
       const newWeight = round(100 / (oldLists.length + 1), 2);
-      const distributeWeight = round((100 - newWeight) / oldLists.length, 2);
+      const distributeWeight = round(newWeight / oldLists.length, 2);
       const newLists = [
         {
           id,
