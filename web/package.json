@@ -61,7 +61,7 @@
     "zustand": "^4.4.6"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "0.80.12",
+    "@hey-api/openapi-ts": "0.80.16",
     "@hey-api/vite-plugin": "^0.2.0",
     "@tanstack/react-table": "8.19.3",
     "@tanstack/router-cli": "^1.35.4",
