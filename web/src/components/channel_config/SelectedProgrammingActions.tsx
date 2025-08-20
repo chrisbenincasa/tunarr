@@ -46,6 +46,7 @@ export default function SelectedProgrammingActions({
   toggleOrSetSelectedProgramsDrawer,
 }: Props) {
   const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView();
+  const currentGenre = useStore((s) => s.currentMediaGenre);
   const { urlFilter: plexSearch } = useStore(
     ({ plexSearch: plexQuery }) => plexQuery,
   );
@@ -98,6 +99,7 @@ export default function SelectedProgrammingActions({
                 nullToUndefined(library.view.CollectionType),
               ),
               recursive: true,
+              genres: currentGenre,
             },
             throwOnError: true,
           }).then(({ data: response }) => {
