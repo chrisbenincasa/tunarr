@@ -4,9 +4,6 @@ import {
   DialogContentText,
   FormControl,
   FormHelperText,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
 } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -14,29 +11,23 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { TimeField } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
+import { isNil } from 'lodash-es';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 
 type AddBreaksModalProps = {
   open: boolean;
   onClose: () => void;
 };
 
-export type AddBreaksConfig = {
-  afterMinutes: number;
-  minDurationSeconds: number;
-  maxDurationSeconds: number;
+type AddBreaksForm = {
+  afterDurationMs: number;
+  minDurationMs: number;
+  maxDurationMs: number;
 };
-
-const afterOptions = [5, 10, 15, 20, 25, 30, 60, 90, 120];
-
-const minDurationOptions = [
-  10, 15, 30, 45, 60, 90, 120, 180, 300, 450, 600, 1200, 1800,
-];
-
-const maxDurationOptions = [
-  10, 15, 30, 45, 60, 90, 120, 180, 300, 450, 600, 1200, 1800,
-];
 
 const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
   const addBreaks = useAddBreaks();
@@ -45,17 +36,21 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<AddBreaksConfig>({
+  } = useForm<AddBreaksForm>({
     mode: 'onChange',
     defaultValues: {
-      afterMinutes: 5,
-      minDurationSeconds: 10,
-      maxDurationSeconds: 120,
+      afterDurationMs: +dayjs.duration({ minutes: 5 }),
+      minDurationMs: +dayjs.duration({ seconds: 10 }),
+      maxDurationMs: +dayjs.duration({ seconds: 120 }),
     },
   });
 
-  const doSubmit: SubmitHandler<AddBreaksConfig> = (data) => {
-    addBreaks(data);
+  const doSubmit: SubmitHandler<AddBreaksForm> = (data) => {
+    addBreaks({
+      afterDuration: dayjs.duration(data.afterDurationMs),
+      maxDuration: dayjs.duration(data.maxDurationMs),
+      minDuration: dayjs.duration(data.minDurationMs),
+    });
     onClose();
   };
 
@@ -71,98 +66,135 @@ const AddBreaksModal = ({ open, onClose }: AddBreaksModalProps) => {
           Adds Flex breaks between programs, attempting to avoid groups of
           consecutive programs that exceed the specified number of minutes.
         </DialogContentText>
-        <Box sx={{ my: 1 }}>
-          <Stack flex={1}>
-            <FormControl fullWidth sx={{ my: 1, flexGrow: 1 }}>
-              <InputLabel id="add-breaks-after-label">After</InputLabel>
-              <Controller
-                control={control}
-                name="afterMinutes"
-                render={({ field }) => (
-                  <Select
-                    label={'After'}
-                    labelId="add-breaks-after-label"
-                    id="add-breaks-after"
-                    {...field}
-                  >
-                    {afterOptions.map((minute) => (
-                      <MenuItem key={minute} value={minute}>
-                        {`${minute} Minutes`}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
-            <FormControl fullWidth sx={{ my: 1, flexGrow: 1 }}>
-              <InputLabel id="rerun-block-label">Min Duration</InputLabel>
-              <Controller
-                control={control}
-                name="minDurationSeconds"
-                rules={{
-                  validate: {
-                    lt: (value, form) => {
-                      return value >= form.maxDurationSeconds
-                        ? 'Minimum duration must be less than max'
-                        : undefined;
+        <Box sx={{ mt: 2 }}>
+          <Stack flex={1} gap={1}>
+            <Controller
+              control={control}
+              name="afterDurationMs"
+              render={({ field, fieldState: { error } }) => (
+                <TimeField
+                  format="H[h] m[m]"
+                  {...field}
+                  value={dayjs().startOf('day').add(field.value)}
+                  onChange={(value) => {
+                    if (isNil(value)) {
+                      return;
+                    }
+                    field.onChange(
+                      +dayjs.duration({
+                        hours: value.hour(),
+                        minutes: value.minute(),
+                      }),
+                    );
+                  }}
+                  label="After Every"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !isNil(error),
+                      helperText:
+                        field.value === 0
+                          ? 'after every program'
+                          : betterHumanize(dayjs.duration(field.value), {
+                              exact: true,
+                              style: 'full',
+                            }),
                     },
-                  },
+                  }}
+                />
+              )}
+            />
+            <FormControl fullWidth sx={{ flexGrow: 1 }}>
+              <Controller
+                control={control}
+                name="minDurationMs"
+                rules={{
+                  min: 1,
                 }}
-                render={({ field }) => (
-                  <Select
-                    label={'Min Duration'}
-                    labelId="add-breaks-min-duration-label"
-                    id="add-breaks-min-duration"
+                render={({ field, fieldState: { error } }) => (
+                  <TimeField
+                    format="H[h] m[m] s[s]"
                     {...field}
-                  >
-                    {minDurationOptions.map((duration) => (
-                      <MenuItem key={duration} value={duration}>
-                        {`${duration} Seconds`}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                    value={dayjs().startOf('day').add(field.value)}
+                    onChange={(value) => {
+                      if (isNil(value)) {
+                        return;
+                      }
+                      field.onChange(
+                        +dayjs.duration({
+                          hours: value.hour(),
+                          minutes: value.minute(),
+                          seconds: value.second(),
+                        }),
+                      );
+                    }}
+                    label="Min Duration"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !isNil(error),
+                        helperText: betterHumanize(
+                          dayjs.duration(field.value),
+                          {
+                            exact: true,
+                            style: 'full',
+                          },
+                        ),
+                      },
+                    }}
+                  />
                 )}
               />
-              {errors.minDurationSeconds && (
+              {errors.minDurationMs && (
                 <FormHelperText error={true}>
-                  {errors.minDurationSeconds.message}
+                  {errors.minDurationMs.message}
                 </FormHelperText>
               )}
             </FormControl>
-            <FormControl sx={{ my: 1, display: 'flex', flexGrow: 1 }}>
-              <InputLabel id="add-breaks-max-duration-label">
-                Max Duration
-              </InputLabel>
+            <FormControl sx={{ display: 'flex', flexGrow: 1 }}>
               <Controller
                 control={control}
-                name="maxDurationSeconds"
+                name="maxDurationMs"
                 rules={{
-                  validate: {
-                    gt: (value, form) => {
-                      return value <= form.minDurationSeconds
-                        ? 'Maximum duration must be greater than min'
-                        : undefined;
-                    },
-                  },
+                  max: +dayjs.duration({ days: 1 }),
                 }}
-                render={({ field }) => (
-                  <Select
-                    label={'Max Duration'}
-                    labelId="add-breaks-max-duration-label"
-                    id="add-breaks-max-duration"
+                render={({ field, fieldState: { error } }) => (
+                  <TimeField
+                    format="H[h] m[m] s[s]"
                     {...field}
-                  >
-                    {maxDurationOptions.map((duration) => (
-                      <MenuItem key={duration} value={duration}>
-                        {`${duration} Seconds`}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                    value={dayjs().startOf('day').add(field.value)}
+                    onChange={(value) => {
+                      if (isNil(value)) {
+                        return;
+                      }
+                      field.onChange(
+                        +dayjs.duration({
+                          hours: value.hour(),
+                          minutes: value.minute(),
+                          seconds: value.second(),
+                        }),
+                      );
+                    }}
+                    label="Max Duration"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !isNil(error),
+                        helperText: betterHumanize(
+                          dayjs.duration(field.value),
+                          {
+                            exact: true,
+                            style: 'full',
+                          },
+                        ),
+                      },
+                    }}
+                  />
                 )}
               />
-              {errors.maxDurationSeconds && (
+              {errors.maxDurationMs && (
                 <FormHelperText error={true}>
-                  {errors.maxDurationSeconds.message}
+                  {errors.maxDurationMs.message}
                 </FormHelperText>
               )}
             </FormControl>

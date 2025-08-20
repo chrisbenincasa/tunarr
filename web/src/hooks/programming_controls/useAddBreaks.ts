@@ -1,9 +1,10 @@
-import type { AddBreaksConfig } from '@/components/programming_controls/AddBreaksModal';
+import useStore from '@/store';
 import { setCurrentLineup } from '@/store/channelEditor/actions';
 import { materializedProgramListSelector } from '@/store/selectors';
 import type { ChannelProgram } from '@tunarr/types';
 import { isFlexProgram } from '@tunarr/types';
-import useStore from '@/store';
+import type { Duration } from 'dayjs/plugin/duration';
+import { random } from '../../helpers/random.ts';
 
 export function useAddBreaks() {
   const programs = useStore(materializedProgramListSelector);
@@ -15,9 +16,9 @@ export function useAddBreaks() {
 
 function addBreaks(
   programs: ChannelProgram[],
-  { afterMinutes, minDurationSeconds, maxDurationSeconds }: AddBreaksConfig,
+  { afterDuration, minDuration, maxDuration }: AddBreaksConfig,
 ) {
-  const afterMillis = afterMinutes * 60 * 1000; // TODO add leeway?
+  const afterMillis = +afterDuration;
   const newPrograms: ChannelProgram[] = [];
 
   let durWithoutBreak = 0;
@@ -27,14 +28,11 @@ function addBreaks(
     } else {
       if (durWithoutBreak + program.duration >= afterMillis) {
         durWithoutBreak = 0;
+        const duration = random.integer(+minDuration, +maxDuration);
         newPrograms.push({
           persisted: false,
           type: 'flex',
-          duration:
-            1000 *
-            (minDurationSeconds +
-              Math.floor(maxDurationSeconds - minDurationSeconds) *
-                Math.random()),
+          duration,
         });
       } else {
         durWithoutBreak += program.duration;
@@ -45,3 +43,9 @@ function addBreaks(
 
   return newPrograms;
 }
+
+export type AddBreaksConfig = {
+  afterDuration: Duration;
+  minDuration: Duration;
+  maxDuration: Duration;
+};

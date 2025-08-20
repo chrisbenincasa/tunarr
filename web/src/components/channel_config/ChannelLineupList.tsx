@@ -366,7 +366,7 @@ const ProgramListItem = ({
                 sx: {
                   width: '100%',
                   fontSize: '0.875em', // Hack to get dense styles applied for virtualized lists
-                  display: 'inline-flex',
+                  display: 'inline-flex !important', // CSS is a mystery
                 },
               },
             }}
