@@ -1206,10 +1206,20 @@ export class FFMPEG implements IFFMPEG {
       '-hls_base_url',
       baseUrl,
       '-hls_segment_filename',
-      path.join('streams', hlsOpts.streamBasePath, hlsOpts.segmentNameFormat),
+      path.join(
+        hlsOpts.segmentBaseDirectory,
+
+        hlsOpts.streamBasePath,
+
+        hlsOpts.segmentNameFormat,
+      ),
       '-master_pl_name',
       'master.m3u8',
-      path.join('streams', hlsOpts.streamBasePath, hlsOpts.streamNameFormat),
+      path.join(
+        hlsOpts.segmentBaseDirectory,
+        hlsOpts.streamBasePath,
+        hlsOpts.streamNameFormat,
+      ),
     ];
   }
 
