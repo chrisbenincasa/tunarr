@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.21.7](https://github.com/chrisbenincasa/tunarr/compare/v0.21.6...v0.21.7) (2025-08-20)
+
+
+### Features
+
+* **ui:** remove restrictions on "add breaks" tool ([a23df83](https://github.com/chrisbenincasa/tunarr/commit/a23df830c412e4484a150c226cd7115415665d6c)), closes [#1333](https://github.com/chrisbenincasa/tunarr/issues/1333)
+
+
+### Bug Fixes
+
+* **ui:** fix filler list weight distribution ([5fe9595](https://github.com/chrisbenincasa/tunarr/commit/5fe95958ed03ec200e74b9b863342d42951e399e)), closes [#1316](https://github.com/chrisbenincasa/tunarr/issues/1316)
+* **ui:** scope select all to selected jellyfin genre ([2e77231](https://github.com/chrisbenincasa/tunarr/commit/2e772314ecea1ac0e0e0efecd73f61719dd573e7)), closes [#1332](https://github.com/chrisbenincasa/tunarr/issues/1332)
+
+
+### UI Changes
+
+* **ui:** make filler cooldown differences more clear ([d93805f](https://github.com/chrisbenincasa/tunarr/commit/d93805fee162a41fe192be5a8c06e16a542c7b71))
+
 ## [0.21.6](https://github.com/chrisbenincasa/tunarr/compare/v0.21.5...v0.21.6) (2025-08-20)
 
 
