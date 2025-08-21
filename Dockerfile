@@ -53,6 +53,7 @@ COPY types ./types
 COPY web ./web
 COPY patches ./patches
 COPY CHANGELOG.md CHANGELOG.md
+COPY tunarr-openapi.json tunarr-openapi.json
 
 # Dev container
 FROM ffmpeg-base AS dev
@@ -64,6 +65,7 @@ COPY ./web web
 COPY ./shared shared
 COPY ./types types
 COPY ./scripts scripts
+COPY ./patches patches
 COPY README.md README.md
 COPY package.json package.json
 COPY pnpm-lock.yaml pnpm-lock.yaml
