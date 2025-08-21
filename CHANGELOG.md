@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.8](https://github.com/chrisbenincasa/tunarr/compare/v0.21.7...v0.21.8) (2025-08-21)
+
+
+### Bug Fixes
+
+* use iso.datetime instead of iso.date for guide API ([30afcc5](https://github.com/chrisbenincasa/tunarr/commit/30afcc5633c73da1ab8079f84961dd882ea53477))
+
 ## [0.21.7](https://github.com/chrisbenincasa/tunarr/compare/v0.21.6...v0.21.7) (2025-08-20)
 
 
