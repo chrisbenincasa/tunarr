@@ -33,5 +33,3 @@ coverage/
 ## Build generated
 build/
 DerivedData/
-
-tunarr-openapi.json
