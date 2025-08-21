@@ -86,7 +86,7 @@ export class SubtitleExtractorTask extends Task {
 
   protected async runInternal(): Promise<unknown> {
     if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
-      this.logger.info('Subtitle extraction is not enabled, skipping task.');
+      this.logger.debug('Subtitle extraction is not enabled, skipping task.');
       return;
     }
 
