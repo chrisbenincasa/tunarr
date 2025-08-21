@@ -164,6 +164,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
 
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
         console.log(bufferedBytes);
+        this.#logger.error(bufferedBytes);
         fs.writeFile(
           outPath,
           bufferedBytes + `\n\nOriginal command: ${argsWithTokenRedacted}`,
