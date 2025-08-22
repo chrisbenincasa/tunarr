@@ -136,9 +136,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     {
       schema: {
         consumes: ['multipart/form-data'],
-        body: z.object({
-          file: z.file(),
-        }),
+        body: z.any(),
         response: {
           200: z.object({
             name: z.string(),
