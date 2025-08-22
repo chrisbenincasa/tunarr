@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.9](https://github.com/chrisbenincasa/tunarr/compare/v0.21.8...v0.21.9) (2025-08-22)
+
+
+### chore
+
+* release 0.21.9 ([217209f](https://github.com/chrisbenincasa/tunarr/commit/217209fcb851ca28780111d27acaccc02e49f9db))
+
 ## [0.21.8](https://github.com/chrisbenincasa/tunarr/compare/v0.21.7...v0.21.8) (2025-08-21)
 
 
