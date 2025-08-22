@@ -39,8 +39,8 @@ export default function ChannelProgrammingPage() {
   return (
     <div>
       <Breadcrumbs />
-      <Stack direction="row">
-        <Typography variant="h4" sx={{ mb: 2, flex: 1 }}>
+      <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+        <Typography variant="h4" sx={{ flex: 1 }}>
           {channel.name}
         </Typography>
         <Box>

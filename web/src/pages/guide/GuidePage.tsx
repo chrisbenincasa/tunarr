@@ -7,7 +7,6 @@ import {
   ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
 import {
-  Box,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -118,12 +117,12 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
       <Typography variant="h3" mb={2}>
         Guide
       </Typography>
-      <Box display={'flex'}>
+      <Stack direction={{ xs: 'column', sm: 'row' }}>
         <Stack
           flexGrow={1}
           alignItems={'center'}
           justifyContent={'flex-start'}
-          direction={'row'}
+          direction={{ xs: 'column', sm: 'row' }}
           sx={{ my: 1 }}
           spacing={2}
         >
@@ -157,7 +156,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
         <Stack
           flexGrow={1}
           alignItems={'center'}
-          justifyContent={'right'}
+          justifyContent={{ xs: 'center', sm: 'right' }}
           direction={'row'}
           sx={{ my: 1 }}
         >
@@ -179,7 +178,7 @@ export default function GuidePage({ channelId }: Props = { channelId: 'all' }) {
             <ArrowForwardIos />
           </IconButton>
         </Stack>
-      </Box>
+      </Stack>
       <TvGuide
         channelId={channelId}
         start={start}

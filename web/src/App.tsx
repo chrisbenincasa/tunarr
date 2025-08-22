@@ -219,7 +219,13 @@ export function Root({ children }: { children?: React.ReactNode }) {
         <Container
           disableGutters
           maxWidth="xl"
-          sx={{ mt: 4, mb: 4, pl: 5, pr: 5, maxWidth: 'calc(100vw - 80px)' }}
+          sx={{
+            mt: 4,
+            mb: ['56px', 4],
+            px: [undefined, 5],
+            pb: [4, undefined],
+            maxWidth: 'calc(100vw - 80px)',
+          }}
         >
           {version?.ffmpeg === 'unknown' ? (
             <Alert
