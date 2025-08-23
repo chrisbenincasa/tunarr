@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.10](https://github.com/chrisbenincasa/tunarr/compare/v0.21.9...v0.21.10) (2025-08-22)
+
+
+### Bug Fixes
+
+* fix channel logo upload validation (by ignoring it) ([fdfbe4a](https://github.com/chrisbenincasa/tunarr/commit/fdfbe4aa7643a4cb8c0e72e27016c614b2fbb847))
+
+
+### UI Changes
+
+* remove extra padding from mobile styles ([a7ead3a](https://github.com/chrisbenincasa/tunarr/commit/a7ead3a43df0072b183905b1b22e1febebb2fd86))
+
 ## [0.21.9](https://github.com/chrisbenincasa/tunarr/compare/v0.21.8...v0.21.9) (2025-08-22)
 
 
