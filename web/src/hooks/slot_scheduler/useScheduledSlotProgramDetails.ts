@@ -1,4 +1,8 @@
-import type { FillerProgramOption, SlotId } from '@/helpers/slotSchedulerUtil';
+import type {
+  CustomShowProgramOption,
+  FillerProgramOption,
+  SlotId,
+} from '@/helpers/slotSchedulerUtil';
 import { getSlotIdForProgram } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import { useChannelEditorLazy } from '@/store/selectors';
@@ -47,27 +51,36 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
 
     for (const scheduledSlotId of slotIds) {
       // Special case for now
-      const [, filleListId] = scheduledSlotId.split('.', 2);
+      const [, slotIdentifier] = scheduledSlotId.split('.', 2);
       if (scheduledSlotId.startsWith('filler')) {
         details[scheduledSlotId] = {
           programCount:
             programOptions.find(
               (opt): opt is FillerProgramOption =>
-                opt.type === 'filler' && opt.fillerListId === filleListId,
+                opt.type === 'filler' && opt.fillerListId === slotIdentifier,
             )?.programCount ?? 0,
           programDurations: [],
         };
       }
 
-      if (!programsBySlot.has(scheduledSlotId) || details[scheduledSlotId]) {
+      if (details[scheduledSlotId]) {
         continue;
       }
 
       const programs = programsBySlot.get(scheduledSlotId)!;
       const programCount = match(scheduledSlotId)
+        .with(P.string.startsWith('custom'), (cs) => {
+          const [, slotIdentifier] = cs.split('.', 2);
+          return (
+            programOptions.find(
+              (opt): opt is CustomShowProgramOption =>
+                opt.type === 'custom-show' &&
+                opt.customShowId === slotIdentifier,
+            )?.programCount ?? 0
+          );
+        })
         .with(
           P.string.startsWith('show'),
-          P.string.startsWith('custom'),
           P.string.startsWith('movie'),
           () =>
             uniqBy(

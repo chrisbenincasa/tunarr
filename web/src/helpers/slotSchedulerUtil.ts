@@ -19,6 +19,7 @@ import type { DropdownOption } from './DropdownOption';
 export type CustomShowProgramOption = DropdownOption<string> & {
   type: 'custom-show';
   customShowId: string;
+  programCount: number;
 };
 
 export type RedirectProgramOption = DropdownOption<string> & {

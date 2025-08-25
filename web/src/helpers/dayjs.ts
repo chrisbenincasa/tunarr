@@ -36,7 +36,6 @@ export function betterHumanize(
   dur: duration.Duration,
   options: Partial<Options> = {},
 ) {
-  console.log(+dur);
   const mergedOpts = merge({}, defaultOptions, options);
   const days = Math.floor(dur.asDays());
   const hrs = Math.floor(dur.asHours() % 24);

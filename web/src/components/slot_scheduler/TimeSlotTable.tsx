@@ -69,6 +69,7 @@ export const TimeSlotTable = () => {
   });
 
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
+  console.log(detailsBySlotId);
 
   const [currentEditingSlot, setCurrentEditingSlot] = useState<{
     slot: TimeSlot;

@@ -75,6 +75,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
           value: `custom-show.${show.id}`,
           customShowId: show.id,
           type: 'custom-show',
+          programCount: show.contentCount,
         }) satisfies ProgramOption,
     );
 

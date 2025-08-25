@@ -1,22 +1,18 @@
 import { seq } from '@tunarr/shared/util';
 import { ChannelProgram, CustomProgram, FillerProgram } from '@tunarr/types';
 import {
-  RandomSlot,
   RandomSlotScheduleSchema,
   SlotScheduleResult,
   TimeSlotScheduleResult,
 } from '@tunarr/types/api';
 import { ChannelProgramSchema } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { difference, flatten, isNumber, reduce, reject, uniq } from 'lodash-es';
+import { isNumber, reject } from 'lodash-es';
 import { z } from 'zod/v4';
-import { CustomShowDB } from '../../db/CustomShowDB.ts';
-import { FillerDB } from '../../db/FillerListDB.ts';
 import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { KEYS } from '../../types/inject.ts';
-import { uniqProperties } from '../../util/seq.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
-import { slotMayHaveFiller } from './slotSchedulerUtil.ts';
+import { SlotSchedulerHelper } from './SlotSchedulerHelper.ts';
 
 type MaterializedSlotScheduleResult = {
   programs: ChannelProgram[];
@@ -59,8 +55,8 @@ export class SlotSchedulerService {
   constructor(
     @inject(new LazyServiceIdentifier(() => KEYS.ChannelDB))
     private channelDB: IChannelDB,
-    @inject(CustomShowDB) private customShowDB: CustomShowDB,
-    @inject(FillerDB) private fillerDB: FillerDB,
+    @inject(SlotSchedulerHelper)
+    private slotSchedulerHelper: SlotSchedulerHelper,
   ) {}
 
   async schedule<
@@ -79,92 +75,18 @@ export class SlotSchedulerService {
       programs = request.programs;
     }
 
-    const [missingCustomShowPrograms, missingFillerPrograms] =
-      await Promise.all([
-        this.getMissingCustomShowPrograms(programs, request.schedule.slots),
-        this.getMissingFillerListPrograms(programs, request.schedule.slots),
-      ]);
+    const [customShowPrograms, fillerPrograms] = await Promise.all([
+      this.slotSchedulerHelper.materializeCustomShowPrograms(
+        request.schedule.slots,
+      ),
+      this.slotSchedulerHelper.materializeFillerLists(request.schedule.slots),
+    ]);
 
     programs = reject(programs, (p) => p.type === 'flex')
-      .concat(missingCustomShowPrograms)
-      .concat(missingFillerPrograms);
+      .concat(customShowPrograms)
+      .concat(fillerPrograms);
 
     return new RandomSlotScheduler(request.schedule).generateSchedule(programs);
-  }
-
-  private async getMissingCustomShowPrograms(
-    programs: ChannelProgram[],
-    slots: RandomSlot[],
-  ) {
-    const customShowIds = uniqProperties(
-      programs.filter((program) => program.type === 'custom'),
-      (p) => p.customShowId,
-    );
-
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slottedCustomShows = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'custom-show') {
-          acc.add(curr.customShowId);
-        }
-        return acc;
-      },
-      new Set<string>(),
-    );
-
-    const missingShows = difference([...slottedCustomShows], customShowIds);
-
-    // Query
-    return flatten(
-      await Promise.all(
-        missingShows.map((show) => this.customShowDB.getShowPrograms(show)),
-      ),
-    );
-  }
-
-  private async getMissingFillerListPrograms(
-    programs: ChannelProgram[],
-    slots: RandomSlot[],
-  ) {
-    const fillerListIds = uniqProperties(
-      programs.filter((program) => program.type === 'filler'),
-      (p) => p.fillerListId,
-    );
-
-    fillerListIds.push(
-      ...flatten(
-        seq.collect(slots, (slot) => {
-          if (slotMayHaveFiller(slot) && slot.filler) {
-            return uniq(slot.filler.map((filler) => filler.fillerListId));
-          }
-          return;
-        }),
-      ),
-    );
-
-    // Query
-    return flatten(
-      await Promise.all(
-        fillerListIds.map((list) =>
-          this.fillerDB.getFillerPrograms(list).then((programs) => {
-            // Actually make these filler programs -- this is a hack
-            return programs.map(
-              (program) =>
-                ({
-                  type: 'filler',
-                  duration: program.duration,
-                  fillerListId: list,
-                  id: program.id,
-                  persisted: true,
-                  program,
-                }) satisfies FillerProgram,
-            );
-          }),
-        ),
-      ),
-    );
   }
 
   private async getPrograms(channelId: string | number) {

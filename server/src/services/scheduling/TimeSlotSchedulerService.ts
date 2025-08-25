@@ -1,19 +1,16 @@
 import { seq } from '@tunarr/shared/util';
 import { ChannelProgram, CustomProgram, FillerProgram } from '@tunarr/types';
 import {
-  TimeSlot,
   TimeSlotScheduleResult,
   TimeSlotScheduleSchema,
 } from '@tunarr/types/api';
 import { ChannelProgramSchema } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { difference, flatten, isNumber, reduce, reject } from 'lodash-es';
+import { isNumber, reject } from 'lodash-es';
 import { z } from 'zod/v4';
-import { CustomShowDB } from '../../db/CustomShowDB.ts';
-import { FillerDB } from '../../db/FillerListDB.ts';
 import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { KEYS } from '../../types/inject.ts';
-import { uniqProperties } from '../../util/seq.ts';
+import { SlotSchedulerHelper } from './SlotSchedulerHelper.ts';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 
 type MaterializedTimeSlotScheduleResult = {
@@ -57,8 +54,8 @@ export class TimeSlotSchedulerService {
   constructor(
     @inject(new LazyServiceIdentifier(() => KEYS.ChannelDB))
     private channelDB: IChannelDB,
-    @inject(CustomShowDB) private customShowDB: CustomShowDB,
-    @inject(FillerDB) private fillerDB: FillerDB,
+    @inject(SlotSchedulerHelper)
+    private slotSchedulerHelper: SlotSchedulerHelper,
   ) {}
 
   async schedule<
@@ -77,111 +74,18 @@ export class TimeSlotSchedulerService {
       programs = request.programs;
     }
 
-    const [missingCustomShowPrograms, missingFillerPrograms] =
-      await Promise.all([
-        this.getMissingCustomShowPrograms(programs, request.schedule.slots),
-        this.getMissingFillerListPrograms(programs, request.schedule.slots),
-      ]);
+    const [customShowPrograms, fillerPrograms] = await Promise.all([
+      this.slotSchedulerHelper.materializeCustomShowPrograms(
+        request.schedule.slots,
+      ),
+      this.slotSchedulerHelper.materializeFillerLists(request.schedule.slots),
+    ]);
 
     programs = reject(programs, (p) => p.type === 'flex')
-      .concat(missingCustomShowPrograms)
-      .concat(missingFillerPrograms);
+      .concat(customShowPrograms)
+      .concat(fillerPrograms);
 
     return scheduleTimeSlots(request.schedule, programs);
-  }
-
-  private async getMissingCustomShowPrograms(
-    programs: ChannelProgram[],
-    slots: TimeSlot[],
-  ) {
-    const customShowIds = uniqProperties(
-      programs.filter((program) => program.type === 'custom'),
-      (p) => p.customShowId,
-    );
-
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slottedCustomShows = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'custom-show') {
-          acc.add(curr.customShowId);
-        }
-        return acc;
-      },
-      new Set<string>(),
-    );
-
-    const missingShows = difference([...slottedCustomShows], customShowIds);
-
-    // Query
-    return flatten(
-      await Promise.all(
-        missingShows.map((show) => this.customShowDB.getShowPrograms(show)),
-      ),
-    );
-  }
-
-  private async getMissingFillerListPrograms(
-    programs: ChannelProgram[],
-    slots: TimeSlot[],
-  ) {
-    const fillerListIds = uniqProperties(
-      programs.filter((program) => program.type === 'filler'),
-      (p) => p.fillerListId,
-    );
-
-    // Here's the big one - find shows that are included in the schedule but
-    // not currently saved to the channel.
-    const slotFiller = slots.flatMap((slot) => {
-      switch (slot.type) {
-        case 'filler':
-        case 'flex':
-        case 'redirect':
-          return [];
-        case 'movie':
-        case 'show':
-        case 'custom-show':
-          return slot.filler?.map(({ fillerListId }) => fillerListId) ?? [];
-      }
-    });
-
-    const slottedFillerLists = reduce(
-      slots,
-      (acc, curr) => {
-        if (curr.type === 'filler') {
-          acc.add(curr.fillerListId);
-        }
-        return acc;
-      },
-      new Set<string>(),
-    );
-
-    slotFiller.forEach((id) => slottedFillerLists.add(id));
-
-    const missing = difference([...slottedFillerLists], fillerListIds);
-
-    // Query
-    return flatten(
-      await Promise.all(
-        missing.map((list) =>
-          this.fillerDB.getFillerPrograms(list).then((programs) => {
-            // Actually make these filler programs -- this is a hack
-            return programs.map(
-              (program) =>
-                ({
-                  type: 'filler',
-                  duration: program.duration,
-                  fillerListId: list,
-                  id: program.id,
-                  persisted: true,
-                  program,
-                }) satisfies FillerProgram,
-            );
-          }),
-        ),
-      ),
-    );
   }
 
   private async getPrograms(channelId: string | number) {
