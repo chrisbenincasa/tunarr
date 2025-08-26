@@ -47,7 +47,7 @@ jobs:
 
       - name: Release
         id: semantic
-        uses: chrisbenincasa/semantic-release-action@4ca186a
+        uses: chrisbenincasa/semantic-release-action@4ca186aaf671302bc91973084d1cae5f63ff3170
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
