@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - dev
+      - media-scanner
 
 permissions:
   contents: read # for checkout
