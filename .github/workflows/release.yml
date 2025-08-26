@@ -47,7 +47,7 @@ jobs:
 
       - name: Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v4
+        uses: chrisbenincasa/semantic-release-action@4ca186a
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -60,3 +60,4 @@ jobs:
           echo ${{ steps.semantic.outputs.new_release_major_version }}
           echo ${{ steps.semantic.outputs.new_release_minor_version }}
           echo ${{ steps.semantic.outputs.new_release_patch_version }}
+          echo ${{ steps.semantic.outputs.new_release_prerelease_version }}
