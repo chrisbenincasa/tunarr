@@ -7,6 +7,7 @@ import { SettingsDBFactory } from './db/SettingsDBFactory.ts';
 import { type GlobalOptions, globalOptions } from './globals.js';
 import {
   CacheFolderName,
+  ChannelLineupsFolderName,
   ImagesFolderName,
   SubtitlesCacheFolderName,
 } from './util/constants.ts';
@@ -21,7 +22,7 @@ import { LoggerFactory, RootLogger } from './util/logging/LoggerFactory.js';
 async function initDbDirectories(opts: GlobalOptions) {
   // Early init, have to use the non-settings-based root Logger
   for (const subpaths of [
-    ['channel-lineups'],
+    [ChannelLineupsFolderName],
     [ImagesFolderName],
     [CacheFolderName],
     [CacheFolderName, ImagesFolderName],

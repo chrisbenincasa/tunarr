@@ -13,6 +13,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { dbOptions, GlobalOptions } from '../../globals.ts';
 import { KEYS } from '../../types/inject.ts';
+import {
+  CacheFolderName,
+  ChannelLineupsFolderName,
+  ImagesFolderName,
+  SettingsJsonFilename,
+} from '../../util/constants.ts';
 import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
@@ -98,15 +104,21 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     const sqlBackup = new SqliteDatabaseBackup();
     const sqlBackupFile = await sqlBackup.backup(
       dbOptions().dbName,
+      // TODO: have a constant for this
       path.join(tempDir, 'db.db'),
     );
 
     archive
       .file(sqlBackupFile, { name: 'db.db' })
-      .file(getDatabasePath('settings.json'), { name: 'settings.json' })
-      .directory(getDatabasePath('channel-lineups'), 'channel-lineups')
-      .directory(getDatabasePath('images'), 'images')
-      .directory(getDatabasePath('cache'), 'cache')
+      .file(getDatabasePath(SettingsJsonFilename), {
+        name: SettingsJsonFilename,
+      })
+      .directory(
+        getDatabasePath(ChannelLineupsFolderName),
+        ChannelLineupsFolderName,
+      )
+      .directory(getDatabasePath(ImagesFolderName), ImagesFolderName)
+      .directory(getDatabasePath(CacheFolderName), CacheFolderName)
       .glob('*.xml', { cwd: getDatabasePath('') });
     await archive.finalize();
 

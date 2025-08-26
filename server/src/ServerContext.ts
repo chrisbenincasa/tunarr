@@ -1,7 +1,6 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import { LegacyDbMigrator } from '@/migration/legacy_migration/legacyDbMigration.js';
 import { ChannelLineupMigrator } from '@/migration/lineups/ChannelLineupMigrator.js';
 import { FixerRunner } from '@/tasks/fixers/FixerRunner.js';
 import { KEYS } from '@/types/inject.js';
@@ -61,9 +60,6 @@ export class ServerContext {
 
   @inject(StreamProgramCalculator)
   public readonly streamProgramCalculator!: StreamProgramCalculator;
-
-  @inject(LegacyDbMigrator)
-  public readonly legacyDBMigrator!: LegacyDbMigrator;
 
   @inject(MediaSourceApiFactory)
   public readonly mediaSourceApiFactory!: MediaSourceApiFactory;
