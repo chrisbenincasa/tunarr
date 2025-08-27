@@ -322,8 +322,7 @@ export function ChannelFlexConfig() {
                 are short enough for the remaining Flex time.
                 <br />
                 Each filler can be assigned a cooldown, which restricts how
-                frequently individual items are chosen from within the list when
-                filling flex time.
+                frequently the list will be chosen during flex time.
               </Typography>
               {!fillerListsLoading && renderFillerLists()}
               {fillerListsLoading ? <Skeleton /> : renderAddFillerListEditor()}
