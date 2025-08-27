@@ -26,7 +26,7 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
 
   // Will be used eventually
   canDecode(
-    videoFormat: string,
+    videoFormat,
     _videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {
@@ -81,7 +81,7 @@ export class NvidiaHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   }
 
   canEncode(
-    videoFormat: string,
+    videoFormat,
     _videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {

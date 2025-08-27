@@ -1,4 +1,7 @@
-import type { HlsOptions, MpegDashOptions } from '@/ffmpeg/ffmpeg.js';
+import type { MpegDashOptions } from '@/ffmpeg/ffmpeg.js';
+import dayjs from 'dayjs';
+import type { HlsSessionType } from '../../stream/Session.ts';
+import type { Nullable } from '../../types/util.ts';
 
 export const VideoFormats = {
   Hevc: 'hevc',
@@ -43,11 +46,6 @@ export const OutputFormatTypes = {
 
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
-export type HlsOutputFormat = {
-  type: typeof OutputFormatTypes.Hls;
-  hlsOptions: HlsOptions;
-};
-
 export type MpegDashOutputFormat = {
   type: 'dash';
   options?: Partial<MpegDashOptions>;
@@ -85,11 +83,104 @@ export const NutOutputFormat = {
   type: OutputFormatTypes.Nut,
 } as const satisfies NutOutputFormat;
 
-export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormat {
-  return {
-    type: OutputFormatTypes.Hls,
-    hlsOptions: opts,
-  };
+export type HlsOptionsLegacy = {
+  hlsTime: number; // Duration of each clip in seconds,
+  hlsListSize: number; // Number of clips to have in the list
+  hlsDeleteThreshold: number;
+  segmentBaseDirectory: string;
+  streamBasePath: string;
+  streamBaseUrl: string;
+  segmentNameFormat: string;
+  streamNameFormat: string;
+  deleteThreshold: Nullable<number>;
+  appendSegments: boolean;
+  segmentType: 'mpegts' | 'fmp4';
+  fmpegInitFormat: Nullable<string>;
+};
+
+export type HlsOptions = {
+  // Duration of each clip in seconds
+  targetSegmentDuration: number;
+  sessionId: string; // Generally the channel ID
+  segmentType: 'mpegts' | 'fmp4';
+  segmentBaseDirectory: string;
+  streamBasePath: string;
+  hlsSessionType: HlsSessionType;
+  // Number of clips to have in the list
+  listSize: number;
+  deleteThreshold: Nullable<number>;
+  appendSegments: boolean;
+};
+
+export type HlsOutputFormatType = {
+  type: typeof OutputFormatTypes.Hls;
+  get segmentType(): 'mpegts' | 'fmp4';
+  set segmentType(t: 'mpegts' | 'fmp4');
+  segmentBaseDirectory: string;
+  streamBasePath: string;
+  streamNameFormat: string;
+  segmentNameFormat: string;
+  streamBaseUrl: string;
+  fmp4InitFormat: string;
+  segmentExt: 'ts' | 'm4s';
+};
+
+export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormatType {
+  return new HlsOutputFormatImpl(opts);
+}
+
+class HlsOutputFormatImpl {
+  readonly type = OutputFormatTypes.Hls;
+  #now = +dayjs();
+
+  static StreamNameFormat = 'stream.m3u8';
+
+  constructor(private opts: HlsOptions) {}
+
+  get targetSegmentDuration() {
+    return this.opts.targetSegmentDuration;
+  }
+
+  get segmentType() {
+    return this.opts.segmentType;
+  }
+
+  set segmentType(typ: 'mpegts' | 'fmp4') {
+    this.opts.segmentType = typ;
+  }
+
+  get segmentBaseDirectory() {
+    return this.opts.segmentBaseDirectory;
+  }
+
+  get streamBasePath() {
+    return this.opts.streamBasePath;
+  }
+
+  get streamNameFormat() {
+    return HlsOutputFormatImpl.StreamNameFormat;
+  }
+
+  get segmentExt() {
+    switch (this.opts.segmentType) {
+      case 'mpegts':
+        return 'ts';
+      case 'fmp4':
+        return 'm4s';
+    }
+  }
+
+  get segmentNameFormat() {
+    return 'data%06d.' + this.segmentExt;
+  }
+
+  get streamBaseUrl() {
+    return `/stream/channels/${this.opts.sessionId}/${this.opts.hlsSessionType}/`;
+  }
+
+  get fmp4InitFormat() {
+    return `${this.opts.sessionId}|${this.opts.hlsSessionType}|${this.#now}_init.mp4`;
+  }
 }
 
 export function MpegDashOutputFormat(
@@ -102,7 +193,7 @@ export function MpegDashOutputFormat(
 }
 
 export type OutputFormat =
-  | HlsOutputFormat
+  | HlsOutputFormatType
   | NutOutputFormat
   | MkvOutputFormat
   | MpegDashOutputFormat

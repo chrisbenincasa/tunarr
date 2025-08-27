@@ -11,7 +11,7 @@ export class QsvHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   }
 
   canDecode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Nilable<string>,
     pixelFormat: Nilable<PixelFormat>,
   ): boolean {
@@ -23,7 +23,7 @@ export class QsvHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
   }
 
   canEncode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Nilable<string>,
     pixelFormat: Nilable<PixelFormat>,
   ): boolean {

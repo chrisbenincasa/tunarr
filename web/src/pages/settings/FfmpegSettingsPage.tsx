@@ -301,6 +301,30 @@ export default function FfmpegSettingsPage() {
         </Stack>
         <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
           <InputLabel id="hls-direct-output-format-label">
+            HLS Segment Type
+          </InputLabel>
+          <Controller
+            control={control}
+            name="hlsSegmentType"
+            render={({ field }) => (
+              <Select
+                id="hls-segment-type"
+                label="HLS Segment Type"
+                labelId="hls-segment-type-label"
+                {...field}
+              >
+                <MenuItem value="mpegts">MPEG-TS</MenuItem>
+                <MenuItem value="fmp4">fMP4</MenuItem>
+              </Select>
+            )}
+          />
+          <FormHelperText>
+            Channels configured to use the HLS (not HLS Direct) will use this
+            container type for the segments they produce.
+          </FormHelperText>
+        </FormControl>
+        <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
+          <InputLabel id="hls-direct-output-format-label">
             HLS Direct Output Format
           </InputLabel>
           <Controller

@@ -136,7 +136,11 @@ export abstract class BaseHlsSession<
 
           const numSegments = filter(workingDirectoryFiles.get(), (f) => {
             const ext = extname(f);
-            return ext === '.ts' || ext === '.mp4';
+            return (
+              ext === '.ts' ||
+              (ext === '.mp4' && basename(f, '.mp4') !== 'init') ||
+              ext === '.m4s'
+            );
           }).length;
 
           const playlistExists = some(

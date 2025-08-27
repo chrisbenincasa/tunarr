@@ -29,7 +29,7 @@ import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { HlsConcatOutputFormat } from '@/ffmpeg/builder/options/HlsConcatOutputFormat.js';
-import { HlsOutputFormat } from '@/ffmpeg/builder/options/HlsOutputFormat.js';
+import { HlsFormatOutputOption } from '@/ffmpeg/builder/options/HlsFormatOutputOption.js';
 import { LogLevelOption } from '@/ffmpeg/builder/options/LogLevelOption.js';
 import { NoStatsOption } from '@/ffmpeg/builder/options/NoStatsOption.js';
 import { ConcatHttpReconnectOptions } from '@/ffmpeg/builder/options/input/ConcatHttpReconnectOptions.js';
@@ -365,7 +365,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     const movFlags =
       this.ffmpegState.outputFormat.type === OutputFormatTypes.Mp4 ||
       (this.ffmpegState.outputFormat.type === OutputFormatTypes.Hls &&
-        this.ffmpegState.hlsSegmentTemplate?.includes('m4s'))
+        this.ffmpegState.outputFormat.segmentExt === 'm4s')
         ? Mp4OutputOptions()
         : FastStartOutputOption();
     this.pipelineSteps.push(movFlags);
@@ -450,15 +450,17 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     if (
       !isNull(this.concatInputSource) &&
-      isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
-      isNonEmptyString(this.ffmpegState.hlsPlaylistPath) &&
-      isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
+      this.ffmpegState.outputFormat.type === OutputFormatTypes.Hls
+      // isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
+      // isNonEmptyString(this.ffmpegState.hlsPlaylistPath) &&
+      // isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
     ) {
       this.pipelineSteps.push(
-        new HlsConcatOutputFormat(
-          this.ffmpegState.hlsSegmentTemplate,
-          this.ffmpegState.hlsPlaylistPath,
-          this.ffmpegState.hlsBaseStreamUrl,
+        HlsConcatOutputFormat.create(
+          this.ffmpegState.outputFormat,
+          // this.ffmpegState.hlsSegmentTemplate,
+          // this.ffmpegState.hlsPlaylistPath,
+          // this.ffmpegState.hlsBaseStreamUrl,
         ),
       );
     } else {
@@ -751,25 +753,26 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         break;
       }
       case OutputFormatTypes.Hls: {
+        const output = this.ffmpegState.outputFormat;
         if (
-          isNonEmptyString(this.ffmpegState.hlsPlaylistPath) &&
-          isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
-          isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
+          this.desiredState.videoFormat === 'hevc' &&
+          output.segmentType !== 'fmp4'
         ) {
-          this.pipelineSteps.push(
-            new HlsOutputFormat(
-              this.desiredState,
-              this.context.videoStream?.frameRate,
-              this.ffmpegState.hlsPlaylistPath,
-              this.ffmpegState.hlsSegmentTemplate,
-              this.ffmpegState.hlsBaseStreamUrl,
-              isNil(this.ffmpegState.ptsOffset) ||
-                this.ffmpegState.ptsOffset === 0,
-              this.ffmpegState.encoderHwAccelMode ===
-                HardwareAccelerationMode.Qsv,
-            ),
-          );
+          this.logger.debug('Forcing fmp4 segment type for HEVC output');
+          output.segmentType = 'fmp4';
         }
+
+        this.pipelineSteps.push(
+          HlsFormatOutputOption.create(this.desiredState, output, {
+            frameRate: this.context.videoStream?.frameRate,
+            isFirstTranscode:
+              isNil(this.ffmpegState.ptsOffset) ||
+              this.ffmpegState.ptsOffset === 0,
+            oneSecondGop:
+              this.ffmpegState.encoderHwAccelMode ===
+              HardwareAccelerationMode.Qsv,
+          }),
+        );
         break;
       }
       case OutputFormatTypes.Dash:

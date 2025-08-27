@@ -104,6 +104,7 @@ export const FfmpegSettingsSchema = z.object({
   useNewFfmpegPipeline: z.boolean().default(true),
   hlsDirectOutputFormat: z.enum(['mkv', 'mpegts', 'mp4']).default('mpegts'),
   enableSubtitleExtraction: z.boolean().optional().default(false),
+  hlsSegmentType: z.enum(['mpegts', 'fmp4']).default('mpegts'),
 });
 
 const BaseMediaSourceSettingsSchema = z.object({

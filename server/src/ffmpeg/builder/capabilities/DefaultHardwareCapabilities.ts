@@ -11,7 +11,7 @@ export class DefaultHardwareCapabilities extends BaseFfmpegHardwareCapabilities 
   }
 
   canDecode(
-    videoFormat: string,
+    videoFormat,
     _videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {
@@ -23,7 +23,7 @@ export class DefaultHardwareCapabilities extends BaseFfmpegHardwareCapabilities 
   }
 
   canEncode(
-    videoFormat: string,
+    videoFormat,
     videoProfile: Maybe<string>,
     pixelFormat: Maybe<PixelFormat>,
   ): boolean {

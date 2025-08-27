@@ -36,25 +36,12 @@ import {
 } from '../util/index.js';
 import { FfmpegProcess } from './FfmpegProcess.js';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.js';
-import type { OutputFormat } from './builder/constants.ts';
+import type { HlsOptionsLegacy, OutputFormat } from './builder/constants.ts';
 import { MpegTsOutputFormat, NutOutputFormat } from './builder/constants.ts';
 import type { HlsWrapperOptions, IFFMPEG } from './ffmpegBase.ts';
 import type { FfmpegInfo } from './ffmpegInfo.js';
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
-
-export type HlsOptions = {
-  hlsTime: number; // Duration of each clip in seconds,
-  hlsListSize: number; // Number of clips to have in the list
-  hlsDeleteThreshold: number;
-  segmentBaseDirectory: string;
-  streamBasePath: string;
-  streamBaseUrl: string;
-  segmentNameFormat: string;
-  streamNameFormat: string;
-  deleteThreshold: Nullable<number>;
-  appendSegments: boolean;
-};
 
 export type MpegDashOptions = {
   windowSize: number; // number of segments kept in the manifest
@@ -73,7 +60,7 @@ export type ConcatOptions = {
   outputFormat: OutputFormat;
 };
 
-export const defaultHlsOptions: DeepRequired<HlsOptions> = {
+export const defaultHlsOptions: DeepRequired<HlsOptionsLegacy> = {
   hlsTime: 2,
   hlsListSize: 3,
   hlsDeleteThreshold: 3,
@@ -84,6 +71,8 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   streamBaseUrl: 'hls/',
   deleteThreshold: 3,
   appendSegments: false,
+  segmentType: 'mpegts',
+  fmpegInitFormat: null,
 };
 
 export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
@@ -293,7 +282,7 @@ export class FFMPEG implements IFFMPEG {
         );
         break;
       case 'hls':
-        ffmpegArgs.push(...this.getHlsOptions(outputFormat.hlsOptions));
+        ffmpegArgs.push(...this.getHlsOptions(outputFormat));
         break;
       case 'dash':
         ffmpegArgs.push(...this.getDashOptions(outputFormat.options));
@@ -1116,9 +1105,7 @@ export class FFMPEG implements IFFMPEG {
 
     switch (outputFormat.type) {
       case 'hls':
-        ffmpegArgs.push(
-          ...this.getHlsOptions(outputFormat.hlsOptions, streamStats),
-        );
+        ffmpegArgs.push(...this.getHlsOptions(outputFormat, streamStats));
         break;
       case 'nut':
         ffmpegArgs.push(`-f`, 'nut', `pipe:1`);
@@ -1158,7 +1145,7 @@ export class FFMPEG implements IFFMPEG {
   }
 
   private getHlsOptions(
-    opts?: Partial<HlsOptions>,
+    opts?: Partial<HlsOptionsLegacy>,
     streamStats?: StreamDetails,
   ) {
     const hlsOpts = merge({}, defaultHlsOptions, opts);
