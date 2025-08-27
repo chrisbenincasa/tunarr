@@ -57,6 +57,15 @@ export const setCurrentFillerList = (
     fillerListEditor.programList = [...zippedPrograms];
   });
 
+export const setCurrentFillerListPrograms = (programs: FillerListProgramming) =>
+  useStore.setState(({ fillerListEditor }) => {
+    fillerListEditor.dirty.programs = false;
+    fillerListEditor.programsLoaded = true;
+    const zippedPrograms = zipWithIndex(programs);
+    fillerListEditor.originalProgramList = [...zippedPrograms];
+    fillerListEditor.programList = [...zippedPrograms];
+  });
+
 export const updateCurrentFillerList = (show: Partial<FillerList>) =>
   useStore.setState(({ fillerListEditor }) => {
     fillerListEditor.currentEntity = merge(
