@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.11](https://github.com/chrisbenincasa/tunarr/compare/v0.21.10...v0.21.11) (2025-08-27)
+
+
+### Bug Fixes
+
+* **scheduling:** always use full custom show / filler list when generating slot schedule ([c3aa641](https://github.com/chrisbenincasa/tunarr/commit/c3aa6417a07dc436513a940b7f4aad8df45e99c0))
+* **streaming:** fix HLS stream paths in legacy streaming pipeline ([adc1113](https://github.com/chrisbenincasa/tunarr/commit/adc1113cdc36de15d453f70d275ca2c3e68e3425))
+
 ## [0.21.10](https://github.com/chrisbenincasa/tunarr/compare/v0.21.9...v0.21.10) (2025-08-22)
 
 
