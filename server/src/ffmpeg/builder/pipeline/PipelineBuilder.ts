@@ -1,5 +1,8 @@
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
-import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
+import type {
+  FfmpegState,
+  PipelineOptions,
+} from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
 import type { Pipeline } from './Pipeline.ts';
@@ -29,5 +32,9 @@ export interface PipelineBuilder {
    * @param currentState
    * @param desiredState
    */
-  build(currentState: FfmpegState, desiredState: FrameState): Pipeline;
+  build(
+    currentState: FfmpegState,
+    desiredState: FrameState,
+    pipelineOptions: PipelineOptions,
+  ): Pipeline;
 }

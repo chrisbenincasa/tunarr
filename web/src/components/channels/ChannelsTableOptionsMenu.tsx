@@ -14,6 +14,7 @@ import { isEmpty, trimEnd } from 'lodash-es';
 import type { SyntheticEvent } from 'react';
 import { useCallback, useState } from 'react';
 import { deleteApiChannelsByIdSessionsMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
 import { useCreateChannel } from '../../hooks/useCreateChannel.ts';
@@ -47,8 +48,7 @@ export const ChannelsTableOptionsMenu = ({
     ...deleteApiChannelsByIdSessionsMutation(),
     onSuccess: () => {
       return queryClient.invalidateQueries({
-        queryKey: ['Channels'],
-        exact: false,
+        predicate: invalidateTaggedQueries(['Channels']),
       });
     },
   });

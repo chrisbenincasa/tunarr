@@ -12,5 +12,8 @@ export function dbTranscodeConfigToApiSchema(
     normalizeFrameRate: numberToBoolean(config.normalizeFrameRate),
     deinterlaceVideo: numberToBoolean(config.deinterlaceVideo),
     isDefault: numberToBoolean(config.isDefault),
+    disableHardwareDecoder: numberToBoolean(config.disableHardwareDecoder),
+    disableHardwareEncoding: numberToBoolean(config.disableHardwareEncoding),
+    disableHardwareFilters: numberToBoolean(config.disableHardwareFilters),
   } satisfies TranscodeConfig;
 }

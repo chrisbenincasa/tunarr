@@ -76,14 +76,22 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
     const { videoStream, desiredState } = this.context;
 
-    let canDecode = this.hardwareCapabilities.canDecodeVideoStream(videoStream);
-    let canEncode = this.hardwareCapabilities.canEncodeState(desiredState);
+    let canDecode = this.context.pipelineOptions?.disableHardwareDecoding
+      ? false
+      : this.hardwareCapabilities.canDecodeVideoStream(videoStream);
+    let canEncode = this.context.pipelineOptions?.disableHardwareEncoding
+      ? false
+      : this.hardwareCapabilities.canEncodeState(desiredState);
 
-    if (this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut) {
+    if (
+      canEncode &&
+      this.ffmpegState.outputFormat.type === OutputFormatTypes.Nut
+    ) {
       canEncode = false;
     }
 
     if (
+      canDecode &&
       (this.context.videoStream.codec === VideoFormats.H264 ||
         this.context.videoStream.codec === VideoFormats.Hevc) &&
       this.context.videoStream.pixelFormat?.bitDepth === 10
@@ -243,7 +251,10 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       !desiredState.scaledSize.equals(desiredState.paddedSize);
 
     let scaleFilter: FilterOption;
-    if (needsScale && (noHardware || onlySoftwareFilters)) {
+    if (
+      this.context.pipelineOptions.disableHardwareFilters ||
+      (needsScale && (noHardware || onlySoftwareFilters))
+    ) {
       scaleFilter = ScaleFilter.create(
         currentState,
         ffmpegState,

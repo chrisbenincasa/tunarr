@@ -3,7 +3,7 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import { isNonEmptyString } from '@/util/index.js';
-import type { HardwareAccelerationMode } from '../../../db/schema/TranscodeConfig.ts';
+import { HardwareAccelerationMode } from '../../../db/schema/TranscodeConfig.js';
 import type { Nullable } from '../../../types/util.ts';
 import { FilterOption } from './FilterOption.ts';
 import { HardwareDownloadCudaFilter } from './nvidia/HardwareDownloadCudaFilter.ts';
@@ -23,7 +23,7 @@ export class PadFilter extends FilterOption {
     super();
     this.desiredPaddedSize = desiredState.paddedSize;
     this.hwDownloadFilter =
-      decoderHwAccelMode === 'cuda'
+      decoderHwAccelMode === HardwareAccelerationMode.Cuda
         ? new HardwareDownloadCudaFilter(this.currentState.pixelFormat, null)
         : new HardwareDownloadFilter(this.currentState);
     this.filter = this.generateFilter();
@@ -34,7 +34,11 @@ export class PadFilter extends FilterOption {
   }
 
   static forCuda(currentState: FrameState, desiredState: FrameState) {
-    return new PadFilter('cuda', currentState, desiredState);
+    return new PadFilter(
+      HardwareAccelerationMode.Cuda,
+      currentState,
+      desiredState,
+    );
   }
 
   nextState(currentState: FrameState): FrameState {

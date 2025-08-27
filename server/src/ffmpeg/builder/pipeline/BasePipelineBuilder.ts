@@ -40,7 +40,10 @@ import { ReadrateInputOption } from '@/ffmpeg/builder/options/input/ReadrateInpu
 import { StreamSeekInputOption } from '@/ffmpeg/builder/options/input/StreamSeekInputOption.js';
 import { UserAgentInputOption } from '@/ffmpeg/builder/options/input/UserAgentInputOption.js';
 import type { AudioState } from '@/ffmpeg/builder/state/AudioState.js';
-import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
+import type {
+  FfmpegState,
+  PipelineOptions,
+} from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { DataProps } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
@@ -54,7 +57,7 @@ import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
-import type { MarkRequired } from 'ts-essentials';
+import type { DeepReadonly, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
   OutputFormatTypes,
@@ -133,23 +136,8 @@ export type PipelineAudioFunctionArgs = {
   pipelineSteps: IPipelineStep[];
 };
 
-// export type PipelineBuilderContext = {
-//   videoStream?: VideoStream;
-//   audioStream?: AudioStream;
-//   ffmpegState: FfmpegState;
-//   desiredState: FrameState;
-//   desiredAudioState?: AudioState;
-//   pipelineSteps: PipelineStep[];
-//   filterChain: FilterChain;
-
-//   hasWatermark: boolean;
-//   hasSubtitleOverlay: boolean;
-//   shouldDeinterlace: boolean;
-//   is10BitOutput: boolean;
-//   isIntelVaapiOrQsv: boolean;
-// };
-
 type PipelineBuilderContextProps = DataProps<PipelineBuilderContext>;
+
 export class PipelineBuilderContext {
   videoStream?: VideoStream;
   audioStream?: AudioStream;
@@ -157,6 +145,8 @@ export class PipelineBuilderContext {
   ffmpegState: FfmpegState;
   desiredState: FrameState;
   desiredAudioState?: AudioState;
+  pipelineOptions: DeepReadonly<PipelineOptions>;
+
   pipelineSteps: PipelineStep[];
   filterChain: FilterChain;
   hasWatermark: boolean;
@@ -329,7 +319,11 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     });
   }
 
-  build(ffmpegState: FfmpegState, desiredState: FrameState): Pipeline {
+  build(
+    ffmpegState: FfmpegState,
+    desiredState: FrameState,
+    pipelineOptions: PipelineOptions,
+  ): Pipeline {
     this.context = new PipelineBuilderContext({
       videoStream: first(this.videoInputSource.streams),
       audioStream: first(this.audioInputSource?.streams),
@@ -343,6 +337,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
       shouldDeinterlace: desiredState.deinterlace,
       isIntelVaapiOrQsv: false,
+      pipelineOptions,
     });
 
     this.logger.debug(
@@ -474,10 +469,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         this.context.filterChain,
       ),
     );
-
-    if (isNull(this.audioInputSource)) {
-      this.pipelineSteps.push(new CopyAudioEncoder());
-    }
 
     return new Pipeline(this.pipelineSteps, {
       videoInput: this.videoInputSource,

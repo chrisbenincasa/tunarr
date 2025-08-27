@@ -5,7 +5,7 @@
     ],
     "exclude": [
         "vitest.config.ts",
-        "./build/**/*",
+        "./dist/**/*",
         "./**/*.test.ts",
         "./**/*.ignore.ts"
     ],

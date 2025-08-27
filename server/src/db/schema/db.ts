@@ -18,7 +18,7 @@ import type {
   ChannelSubtitlePreferencesTable,
   CustomShowSubtitlePreferencesTable,
 } from './SubtitlePreferences.ts';
-import type { TrannscodeConfigTable } from './TranscodeConfig.ts';
+import type { TranscodeConfigTable } from './TranscodeConfig.ts';
 
 export interface DB {
   cachedImage: CachedImageTable;
@@ -38,7 +38,7 @@ export interface DB {
   programExternalId: ProgramExternalIdTable;
   programGrouping: ProgramGroupingTable;
   programGroupingExternalId: ProgramGroupingExternalIdTable;
-  transcodeConfig: TrannscodeConfigTable;
+  transcodeConfig: TranscodeConfigTable;
 
   // Legacy migration table
   mikroOrmMigrations: MikroOrmMigrationsTable;

@@ -40,6 +40,7 @@ import {
   map,
   mapValues,
   nth,
+  sumBy,
   uniq,
   values,
 } from 'lodash-es';
@@ -432,9 +433,13 @@ export class TVGuideService {
         throw new Error(channel.number + " wasn't preprocesed correctly???!?");
       }
 
+      const channelDuration =
+        channel.duration <= 0
+          ? sumBy(lineup.items, ({ durationMs }) => durationMs)
+          : channel.duration;
       // How many ms we are "into" the current channel cycle
       let channelProgress =
-        (currentUpdateTimeMs - channelStartTime) % channel.duration;
+        (currentUpdateTimeMs - channelStartTime) % channelDuration;
 
       // The timestamp of the start of this cycle
       const startOfCycle = currentUpdateTimeMs - channelProgress;

@@ -63,4 +63,7 @@ export const TranscodeConfigSchema = z.object({
   errorScreen: z.enum(SupportedErrorScreens),
   errorScreenAudio: z.enum(SupportedErrorAudioTypes),
   isDefault: z.boolean(),
+  disableHardwareDecoder: z.boolean().default(false),
+  disableHardwareEncoding: z.boolean().default(false),
+  disableHardwareFilters: z.boolean().default(false),
 });

@@ -90,15 +90,20 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     const { videoStream, ffmpegState, desiredState, pipelineSteps } =
       this.context;
 
-    let canDecode = this.hardwareCapabilities.canDecodeVideoStream(videoStream);
-    let canEncode = this.hardwareCapabilities.canEncodeState(desiredState);
+    let canDecode = this.context.pipelineOptions?.disableHardwareDecoding
+      ? false
+      : this.hardwareCapabilities.canDecodeVideoStream(videoStream);
+    let canEncode = this.context.pipelineOptions?.disableHardwareEncoding
+      ? false
+      : this.hardwareCapabilities.canEncodeState(desiredState);
 
     // Hardcode this assumption for now
-    if (desiredState.videoFormat === VideoFormats.Raw) {
+    if (canEncode && desiredState.videoFormat === VideoFormats.Raw) {
       canEncode = false;
     }
 
     if (
+      canDecode &&
       this.context.shouldDeinterlace &&
       videoStream.codec === VideoFormats.Mpeg2Video
     ) {
@@ -215,10 +220,11 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     // TODO: is this necessary?
     // See: https://trac.ffmpeg.org/ticket/9442
     const needsSoftwareWatermarkOverlay =
-      (this.context.hasWatermark &&
-        !isEmpty(this.watermarkInputSource?.watermark.fadeConfig)) ||
-      (isDefined(this.watermarkInputSource?.watermark.duration) &&
-        this.watermarkInputSource.watermark.duration > 0);
+      this.context.hasWatermark &&
+      (!isEmpty(this.watermarkInputSource?.watermark.fadeConfig) ||
+        (isDefined(this.watermarkInputSource?.watermark.duration) &&
+          this.watermarkInputSource.watermark.duration > 0) ||
+        this.context.pipelineOptions?.disableHardwareFilters);
 
     // If we're certain that we're about to use a hardware overlay of some sort
     // then ensure the video stream is uploaded to hardware.
@@ -226,6 +232,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       currentState.frameDataLocation === FrameDataLocation.Software &&
       currentState.bitDepth === 8 &&
       !this.context.isSubtitleTextContext() &&
+      !this.context.pipelineOptions.disableHardwareFilters &&
       (this.context.isSubtitleOverlay() ||
         (this.context.hasWatermark && !needsSoftwareWatermarkOverlay))
     ) {
@@ -402,7 +409,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       //     ? new PixelFormatNv12(this.context.videoStream.pixelFormat.name)
       //     : this.context.videoStream.pixelFormat;
 
-      const padStep = PadFilter.forCuda(currentState, this.desiredState);
+      const padStep = this.context.pipelineOptions?.disableHardwareFilters
+        ? PadFilter.create(currentState, this.desiredState)
+        : PadFilter.forCuda(currentState, this.desiredState);
 
       nextState = padStep.nextState(nextState);
       this.videoInputSource.filterSteps.push(padStep);
@@ -551,19 +560,20 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         new PixelFormatFilter(new PixelFormatYuva420P()),
       );
 
+      const needsSubtitleScale = this.videoInputSource.hasAnyFilterStep([
+        ScaleCudaFilter,
+        ScaleNppFilter,
+        ScaleFilter,
+        PadFilter,
+      ]);
+
       if (currentState.bitDepth === 8) {
-        const needsSubtitleScale = this.videoInputSource.hasAnyFilterStep([
-          ScaleCudaFilter,
-          ScaleNppFilter,
-          ScaleFilter,
-          PadFilter,
-        ]);
         const hasNpp = this.ffmpegCapabilities.hasFilter(
           KnownFfmpegFilters.ScaleNpp,
         );
 
         if (needsSubtitleScale) {
-          if (hasNpp) {
+          if (hasNpp && !this.context.pipelineOptions?.disableHardwareFilters) {
             // Use a hardware scale. Only scale_npp supports yuva
             const hwUpload = new HardwareUploadCudaFilter(
               currentState.updateFrameLocation(FrameDataLocation.Software),
@@ -572,39 +582,55 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
               FrameDataLocation.Hardware;
             this.subtitleInputSource.filterSteps.push(hwUpload);
 
-            const filter = new SubtitleScaleNppFilter(
-              this.desiredState.paddedSize,
+            this.subtitleInputSource.filterSteps.push(
+              new SubtitleScaleNppFilter(this.desiredState.paddedSize),
             );
-            this.subtitleInputSource.filterSteps.push(filter);
           } else {
-            // Otherwise perform the scale on software and the upload to the GPU
+            // Otherwise perform the scale on software and the upload to the GPU, unless
+            // explicitly stated otherwise
             this.subtitleInputSource.addFilter(
               new ImageScaleFilter(this.desiredState.paddedSize),
             );
-            this.subtitleInputSource.addFilter(
-              new HardwareUploadCudaFilter(
-                currentState.updateFrameLocation(FrameDataLocation.Software),
-              ),
-            );
+
+            if (!this.context.pipelineOptions?.disableHardwareFilters) {
+              this.subtitleInputSource.addFilter(
+                new HardwareUploadCudaFilter(
+                  currentState.updateFrameLocation(FrameDataLocation.Software),
+                ),
+              );
+              this.subtitleInputSource.frameDataLocation =
+                FrameDataLocation.Hardware;
+            }
           }
         } else {
-          if (needsSubtitleScale) {
-            const filter = new ImageScaleFilter(this.desiredState.paddedSize);
-            this.subtitleInputSource.filterSteps.push(filter);
-          }
+          // if (needsSubtitleScale) {
+          //   const filter = new ImageScaleFilter(this.desiredState.paddedSize);
+          //   this.subtitleInputSource.filterSteps.push(filter);
+          // }
 
-          const hwUpload = new HardwareUploadCudaFilter(
-            currentState.updateFrameLocation(FrameDataLocation.Software),
-          );
-          this.subtitleInputSource.frameDataLocation =
-            FrameDataLocation.Hardware;
-          this.subtitleInputSource.filterSteps.push(hwUpload);
+          if (!this.context.pipelineOptions?.disableHardwareFilters) {
+            const hwUpload = new HardwareUploadCudaFilter(
+              currentState.updateFrameLocation(FrameDataLocation.Software),
+            );
+            this.subtitleInputSource.frameDataLocation =
+              FrameDataLocation.Hardware;
+            this.subtitleInputSource.filterSteps.push(hwUpload);
+          }
         }
 
-        this.context.filterChain.subtitleOverlayFilterSteps.push(
-          new OverlaySubtitleCudaFilter(),
-        );
+        if (this.context.pipelineOptions?.disableHardwareFilters) {
+          this.context.filterChain.subtitleOverlayFilterSteps.push(
+            new SubtitleOverlayFilter(
+              this.desiredState.pixelFormat ?? new PixelFormatYuv420P(),
+            ),
+          );
+        } else {
+          this.context.filterChain.subtitleOverlayFilterSteps.push(
+            new OverlaySubtitleCudaFilter(),
+          );
+        }
       } else {
+        // 10-bit case
         if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
           currentState = this.addFilterToVideoChain(
             currentState,
@@ -613,14 +639,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
           this.videoInputSource.frameDataLocation = FrameDataLocation.Software;
         }
 
-        const needsScale = this.videoInputSource.hasAnyFilterStep([
-          ScaleCudaFilter,
-          ScaleNppFilter,
-          ScaleFilter,
-          PadFilter,
-        ]);
-
-        if (needsScale) {
+        if (needsSubtitleScale) {
           this.subtitleInputSource.addFilter(
             new ImageScaleFilter(this.desiredState.paddedSize),
           );

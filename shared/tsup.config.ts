@@ -10,7 +10,7 @@ export default defineConfig((opts) => ({
   dts: !!opts.dts,
   splitting: false,
   format: 'esm',
-  outDir: 'build',
+  outDir: 'dist',
   sourcemap: true,
   tsconfig: 'tsconfig.prod.json',
 }));

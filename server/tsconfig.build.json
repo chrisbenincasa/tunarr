@@ -6,7 +6,7 @@
         "mikro-orm.base.config.ts"
     ],
     "exclude": [
-        "./build/**/*",
+        "./dist/**/*",
         "./tests/**/*",
         "./src/**/*.test.ts",
         "./src/**/*.ignore.ts",

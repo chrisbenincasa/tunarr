@@ -9,7 +9,7 @@
         "moduleResolution": "nodenext",
         "resolveJsonModule": true,
         "rootDir": ".",
-        "outDir": "build",
+        "outDir": "dist",
         "allowSyntheticDefaultImports": true,
         "importHelpers": true,
         "alwaysStrict": true,

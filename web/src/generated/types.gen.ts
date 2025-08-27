@@ -6075,6 +6075,9 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   };
 };
 
@@ -13106,6 +13109,9 @@ export type GetApiTranscodeConfigsResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   }>;
 };
 
@@ -13146,6 +13152,9 @@ export type PostApiTranscodeConfigsData = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder?: boolean;
+    disableHardwareEncoding?: boolean;
+    disableHardwareFilters?: boolean;
   };
   path?: never;
   query?: never;
@@ -13190,6 +13199,9 @@ export type PostApiTranscodeConfigsResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   };
 };
 
@@ -13266,6 +13278,9 @@ export type GetApiTranscodeConfigsByIdResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   };
 };
 
@@ -13307,6 +13322,9 @@ export type PutApiTranscodeConfigsByIdData = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder?: boolean;
+    disableHardwareEncoding?: boolean;
+    disableHardwareFilters?: boolean;
   };
   path: {
     id: string;
@@ -13353,6 +13371,9 @@ export type PutApiTranscodeConfigsByIdResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   };
 };
 
@@ -13417,6 +13438,9 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
     errorScreen: 'static' | 'pic' | 'blank' | 'testsrc' | 'text' | 'kill';
     errorScreenAudio: 'silent' | 'sine' | 'whitenoise';
     isDefault: boolean;
+    disableHardwareDecoder: boolean;
+    disableHardwareEncoding: boolean;
+    disableHardwareFilters: boolean;
   };
 };
 

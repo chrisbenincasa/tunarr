@@ -398,12 +398,18 @@ importers:
         specifier: ^4.0.17
         version: 4.0.17
     devDependencies:
+      '@rollup/plugin-swc':
+        specifier: ^0.4.0
+        version: 0.4.0(@swc/core@1.10.9)(rollup@4.20.0)
       '@types/lodash-es':
         specifier: 4.17.9
         version: 4.17.9
       '@types/node':
         specifier: 22.10.7
         version: 22.10.7
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7))
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
