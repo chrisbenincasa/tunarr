@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { filter, isError, isString, map, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
-import { defaultHlsOptions } from '../../ffmpeg/ffmpeg.ts';
+import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
 import { serverOptions } from '../../globals.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 

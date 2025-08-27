@@ -1,13 +1,12 @@
 import type { Maybe } from '@/types/util.js';
-import type {
-  ChannelConcatStreamMode,
-  ChannelStreamMode,
-} from '@tunarr/types/schemas';
+import type { ChannelStreamMode, Watermark } from '@tunarr/types';
+import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { DeepReadonly, StrictExclude } from 'ts-essentials';
-import type { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
+import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import type { StreamDetails, StreamSource } from '../stream/types.ts';
 import type { OutputFormat } from './builder/constants.ts';
-import type { ConcatOptions, StreamSessionCreateArgs } from './ffmpeg.ts';
+import type { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
 
 export type HlsWrapperOptions = DeepReadonly<
   Omit<ConcatOptions, 'mode'> & {
@@ -70,3 +69,25 @@ export abstract class IFFMPEG {
     realtime?: boolean,
   ): Promise<Maybe<FfmpegTranscodeSession>>;
 }
+export type StreamSessionCreateArgs = {
+  stream: {
+    source: StreamSource;
+    details: StreamDetails;
+  };
+  options: StreamOptions;
+  lineupItem: ContentBackedStreamLineupItem;
+};
+export type ConcatOptions = {
+  mode: ChannelConcatStreamMode;
+  outputFormat: OutputFormat;
+};
+export type StreamOptions = {
+  startTime: Duration;
+  duration: Duration;
+  watermark?: Watermark;
+  realtime?: boolean; // = true,
+  extraInputHeaders?: Record<string, string>;
+  outputFormat: OutputFormat;
+  ptsOffset?: number;
+  streamMode: ChannelStreamMode;
+};

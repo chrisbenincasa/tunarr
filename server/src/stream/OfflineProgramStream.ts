@@ -1,7 +1,6 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import { Result } from '@/types/result.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -9,6 +8,7 @@ import { makeLocalUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { isError, isUndefined } from 'lodash-es';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
+import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import type { PlayerContext } from './PlayerStreamContext.ts';
 import { ProgramStream } from './ProgramStream.ts';
 

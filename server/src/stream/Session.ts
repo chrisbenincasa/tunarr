@@ -22,7 +22,6 @@ type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
 export type SessionOptions = {
   cleanupDelay?: number;
   stalenessMs?: number;
-  useNewPipeline?: boolean;
 };
 
 export type HlsSessionType = StrictExtract<

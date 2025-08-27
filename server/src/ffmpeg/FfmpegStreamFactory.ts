@@ -58,8 +58,11 @@ import {
 } from './builder/state/FfmpegState.ts';
 import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
-import type { ConcatOptions, StreamSessionCreateArgs } from './ffmpeg.ts';
-import type { HlsWrapperOptions } from './ffmpegBase.ts';
+import type {
+  ConcatOptions,
+  HlsWrapperOptions,
+  StreamSessionCreateArgs,
+} from './ffmpegBase.ts';
 import { IFFMPEG } from './ffmpegBase.ts';
 import type { FfmpegInfo } from './ffmpegInfo.ts';
 

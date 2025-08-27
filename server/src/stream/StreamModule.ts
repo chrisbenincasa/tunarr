@@ -178,7 +178,6 @@ const StreamModule = new ContainerModule((bind) => {
         channel,
         options,
         ctx.container.get(StreamProgramCalculator),
-        ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
         ctx.container.get<ProgramStreamFactory>(KEYS.ProgramStreamFactory),
         ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
       );

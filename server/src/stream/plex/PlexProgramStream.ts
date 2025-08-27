@@ -4,7 +4,6 @@ import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import { ProgramStream } from '@/stream/ProgramStream.js';
@@ -21,6 +20,7 @@ import type { interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
 import { v4 } from 'uuid';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
+import type { StreamOptions } from '../../ffmpeg/ffmpegBase.ts';
 import { GlobalScheduler } from '../../services/Scheduler.ts';
 import type { PlexStreamDetails } from './PlexStreamDetails.js';
 

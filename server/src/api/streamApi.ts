@@ -281,7 +281,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         querystring: z.object({
           mode: ChannelStreamModeSchema.optional(),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -316,9 +315,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       switch (mode) {
         case 'hls':
           sessionResult = await req.serverCtx.sessionManager
-            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {
-              useNewPipeline: req.query.useNewPipeline,
-            })
+            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {})
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);

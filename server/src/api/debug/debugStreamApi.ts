@@ -12,7 +12,6 @@ import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { OfflineStreamFactoryType } from '@/stream/StreamModule.js';
 import { KEYS } from '@/types/inject.js';
-import { TruthyQueryParam } from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
@@ -33,7 +32,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         tags: ['Debug'],
         querystring: z.object({
           duration: z.coerce.number().default(30_000),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -71,7 +69,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           false,
           false,
           true,
-          req.query.useNewPipeline ?? false,
           channel.transcodeConfig,
           'mpegts',
         ),
@@ -92,7 +89,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         tags: ['Debug'],
         querystring: z.object({
           channelId: z.uuid().or(z.coerce.number()).optional(),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -132,7 +128,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
           channel,
           channel,
           true,
-          req.query.useNewPipeline ?? false,
           channel.transcodeConfig,
           'mpegts',
         ),
@@ -206,7 +201,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         }),
         querystring: z.object({
           start: z.literal('random').or(z.coerce.number()).optional(),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -280,7 +274,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
         firstChannel,
         firstChannel.transcodeConfig!,
         startTime * 1000,
-        req.query.useNewPipeline,
       );
       return res.header('Content-Type', 'video/mp2t').send(outStream);
     },
@@ -291,7 +284,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     channel: Channel,
     transcodeConfig: TranscodeConfig,
     startTime: number = 0,
-    useNewPipeline: boolean = false,
   ) {
     const lineupItem = createStreamItemFromProgram(program);
     lineupItem.startOffset = startTime;
@@ -302,7 +294,6 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
       false,
       false,
       true,
-      useNewPipeline,
       transcodeConfig,
       'mpegts',
     );
