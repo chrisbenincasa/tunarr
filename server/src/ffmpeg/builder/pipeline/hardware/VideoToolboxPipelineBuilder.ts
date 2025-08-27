@@ -47,12 +47,14 @@ export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
       return;
     }
 
-    const canDecode = this.hardwareCapabilities.canDecodeVideoStream(
-      this.context.videoStream,
-    );
-    const canEncode = this.hardwareCapabilities.canEncodeState(
-      this.desiredState,
-    );
+    const canDecode = this.context.pipelineOptions?.disableHardwareDecoding
+      ? false
+      : this.hardwareCapabilities.canDecodeVideoStream(
+          this.context.videoStream,
+        );
+    const canEncode = this.context.pipelineOptions?.disableHardwareEncoding
+      ? false
+      : this.hardwareCapabilities.canEncodeState(this.desiredState);
 
     this.pipelineSteps.push(new VideoToolboxHardwareAccelerationOption());
 

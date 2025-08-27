@@ -11,25 +11,25 @@
     "bundle": "tsup",
     "build": "tsup --dts",
     "build-dev": "tsup --dts --watch",
-    "clean": "rimraf ./build/",
+    "clean": "rimraf ./dist/",
     "dev": "tsup --dts --watch",
     "test": "vitest --run"
   },
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./constants": {
-      "types": "./build/constants/index.d.ts",
-      "default": "./build/constants/index.js"
+      "types": "./dist/constants/index.d.ts",
+      "default": "./dist/constants/index.js"
     },
     "./util": {
-      "types": "./build/util/index.d.ts",
-      "default": "./build/util/index.js"
+      "types": "./dist/util/index.d.ts",
+      "default": "./dist/util/index.js"
     },
     "./types": {
-      "types": "./build/types/index.d.ts"
+      "types": "./dist/types/index.d.ts"
     }
   },
   "main": "index.ts",
@@ -42,8 +42,10 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@rollup/plugin-swc": "^0.4.0",
     "@types/lodash-es": "4.17.9",
     "@types/node": "22.10.7",
+    "@vitest/coverage-v8": "^3.2.4",
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.1",
     "tsup": "^8.0.2",

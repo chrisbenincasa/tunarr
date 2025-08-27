@@ -35,6 +35,9 @@ const defaultNewTranscodeConfig: TranscodeConfig = {
   videoBitDepth: 8,
   videoPreset: '',
   videoProfile: '',
+  disableHardwareDecoder: false,
+  disableHardwareEncoding: false,
+  disableHardwareFilters: false,
 };
 
 export const NewTranscodeConfigSettingsPage = () => {

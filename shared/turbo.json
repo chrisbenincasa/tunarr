@@ -4,11 +4,11 @@
   "tasks": {
     "bundle": {
       "dependsOn": ["@tunarr/types#build"],
-      "outputs": ["build/**"]
+      "outputs": ["dist/**"]
     },
     "build": {
       "dependsOn": ["@tunarr/types#build"],
-      "outputs": ["build/**"]
+      "outputs": ["dist/**"]
     },
     "build-dev": {
       "dependsOn": ["@tunarr/types#build"],

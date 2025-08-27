@@ -51,7 +51,11 @@ import { VideoInputSource } from './builder/input/VideoInputSource.ts';
 import { WatermarkInputSource } from './builder/input/WatermarkInputSource.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { AudioState } from './builder/state/AudioState.ts';
-import { FfmpegState } from './builder/state/FfmpegState.ts';
+import type { PipelineOptions } from './builder/state/FfmpegState.ts';
+import {
+  DefaultPipelineOptions,
+  FfmpegState,
+} from './builder/state/FfmpegState.ts';
 import { FrameState } from './builder/state/FrameState.ts';
 import { FrameSize } from './builder/types.ts';
 import type { ConcatOptions, StreamSessionCreateArgs } from './ffmpeg.ts';
@@ -249,6 +253,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoFormat: playbackParams.videoFormat,
         // videoPreset: playbackParams.video
       }),
+      DefaultPipelineOptions,
     );
 
     pipeline.inputs.concatInput?.addOptions(
@@ -491,6 +496,14 @@ export class FfmpegStreamFactory extends IFFMPEG {
       this.transcodeConfig.resolution,
     );
 
+    const pipelineOptions: PipelineOptions = {
+      ...DefaultPipelineOptions,
+      decoderThreadCount: this.transcodeConfig.threadCount,
+      encoderThreadCount: this.transcodeConfig.threadCount,
+      vaapiDevice: this.getVaapiDevice(),
+      vaapiDriver: this.getVaapiDriver(),
+    };
+
     const pipeline = builder.build(
       FfmpegState.create({
         version: await this.ffmpegInfo.getVersion(),
@@ -520,6 +533,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoProfile: null, // 'main', // TODO:
         deinterlace: playbackParams.deinterlace,
       }),
+      pipelineOptions,
     );
 
     return new FfmpegTranscodeSession(
@@ -651,6 +665,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoProfile: null, // TODO:
         deinterlace: false,
       }),
+      DefaultPipelineOptions,
     );
 
     return new FfmpegTranscodeSession(
@@ -757,6 +772,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoProfile: null, // TODO:
         deinterlace: false,
       }),
+      DefaultPipelineOptions,
     );
 
     return new FfmpegTranscodeSession(
@@ -777,7 +793,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       ? this.transcodeConfig.vaapiDevice
       : isLinux()
         ? '/dev/dri/renderD128'
-        : undefined;
+        : null;
   }
 
   private getVaapiDriver() {

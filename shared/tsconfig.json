@@ -8,7 +8,7 @@
         ],
         "moduleResolution": "nodenext",
         "rootDir": ".",
-        "outDir": "build",
+        "outDir": "dist",
         "allowSyntheticDefaultImports": true,
         "importHelpers": true,
         "alwaysStrict": true,
@@ -33,7 +33,7 @@
         "./src/**/*.ts",
     ],
     "exclude": [
-        "./build/**/*",
+        "./dist/**/*",
         "./**/*.ignore.ts"
     ],
 }

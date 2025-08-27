@@ -86,7 +86,7 @@ export type ErrorScreenType = TupleToUnion<typeof ErrorScreenTypes>;
 export const ErrorScreenAudioTypes = ['silent', 'sine', 'whitenoise'] as const;
 export type ErrorScreenAudioType = TupleToUnion<typeof ErrorScreenAudioTypes>;
 
-export const TranscodeConfigColumns: (keyof TrannscodeConfigTable)[] = [
+export const TranscodeConfigColumns: (keyof TranscodeConfigTable)[] = [
   'audioBitRate',
   'audioBufferSize',
   'audioChannels',
@@ -115,7 +115,7 @@ export const TranscodeConfigColumns: (keyof TrannscodeConfigTable)[] = [
 ] as const;
 
 type TranscodeConfigFields<Alias extends string = 'transcodeConfig'> =
-  readonly `${Alias}.${keyof TrannscodeConfigTable}`[];
+  readonly `${Alias}.${keyof TranscodeConfigTable}`[];
 
 export const AllTranscodeConfigColumns: TranscodeConfigFields =
   TranscodeConfigColumns.map((key) => `transcodeConfig.${key}` as const);
@@ -156,6 +156,10 @@ export const TranscodeConfig = sqliteTable(
       .notNull(),
 
     isDefault: integer({ mode: 'boolean' }).default(false).notNull(),
+
+    disableHardwareDecoder: integer({ mode: 'boolean' }).default(false),
+    disableHardwareEncoding: integer({ mode: 'boolean' }).default(false),
+    disableHardwareFilters: integer({ mode: 'boolean' }).default(false),
   },
   (table) => [
     check(
@@ -191,10 +195,10 @@ export const TranscodeConfig = sqliteTable(
   ],
 );
 
-export type TrannscodeConfigTable = KyselifyBetter<typeof TranscodeConfig>;
-export type TranscodeConfig = Selectable<TrannscodeConfigTable>;
-export type NewTranscodeConfig = Insertable<TrannscodeConfigTable>;
-export type TranscodeConfigUpdate = Updateable<TrannscodeConfigTable>;
+export type TranscodeConfigTable = KyselifyBetter<typeof TranscodeConfig>;
+export type TranscodeConfig = Selectable<TranscodeConfigTable>;
+export type NewTranscodeConfig = Insertable<TranscodeConfigTable>;
+export type TranscodeConfigUpdate = Updateable<TranscodeConfigTable>;
 
 export const defaultTranscodeConfig = (
   isDefault?: boolean,

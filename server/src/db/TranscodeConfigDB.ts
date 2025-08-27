@@ -74,6 +74,9 @@ export class TranscodeConfigDB {
       deinterlaceVideo: booleanToNumber(config.deinterlaceVideo),
       disableChannelOverlay: booleanToNumber(config.disableChannelOverlay),
       isDefault: booleanToNumber(config.disableChannelOverlay),
+      disableHardwareDecoder: booleanToNumber(config.disableHardwareDecoder),
+      disableHardwareEncoding: booleanToNumber(config.disableHardwareEncoding),
+      disableHardwareFilters: booleanToNumber(config.disableHardwareFilters),
     };
 
     return this.db
@@ -118,6 +121,15 @@ export class TranscodeConfigDB {
         updatedConfig.disableChannelOverlay,
       ),
       isDefault: booleanToNumber(updatedConfig.isDefault),
+      disableHardwareDecoder: booleanToNumber(
+        updatedConfig.disableHardwareDecoder,
+      ),
+      disableHardwareEncoding: booleanToNumber(
+        updatedConfig.disableHardwareEncoding,
+      ),
+      disableHardwareFilters: booleanToNumber(
+        updatedConfig.disableHardwareFilters,
+      ),
     };
 
     return this.db
@@ -173,8 +185,7 @@ export class TranscodeConfigDB {
         await tx
           .deleteFrom('transcodeConfig')
           .where('uuid', '=', id)
-          // TODO: Blocked in https://github.com/oven-sh/bun/issues/16909
-          // .limit(1)
+          .limit(1)
           .execute();
         return;
       }
@@ -192,8 +203,7 @@ export class TranscodeConfigDB {
           .updateTable('transcodeConfig')
           .set('isDefault', 1)
           .where('uuid', '=', newDefaultConfig.uuid)
-          // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-          // .limit(1)
+          .limit(1)
           .execute();
         await tx
           .updateTable('channel')
@@ -204,8 +214,7 @@ export class TranscodeConfigDB {
       await tx
         .deleteFrom('transcodeConfig')
         .where('uuid', '=', id)
-        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-        // .limit(1)
+        .limit(1)
         .execute();
     });
   }

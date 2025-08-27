@@ -212,7 +212,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     {
       schema: {
         params: z.object({
-          id: z.string().uuid(),
+          id: z.uuid(),
         }),
         response: {
           200: TranscodeConfigSchema,

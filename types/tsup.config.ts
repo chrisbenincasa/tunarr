@@ -11,7 +11,7 @@ export default defineConfig((opts) => ({
   },
   format: 'esm',
   dts: !!opts.dts,
-  outDir: 'build',
+  outDir: 'dist',
   splitting: false,
   sourcemap: false,
   target: 'esnext',

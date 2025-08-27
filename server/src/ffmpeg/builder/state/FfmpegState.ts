@@ -1,10 +1,10 @@
-import type { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import type { DataProps } from '@/ffmpeg/builder/types.js';
 import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import type { FfmpegLogLevel } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
-import { isNil, merge } from 'lodash-es';
+import { merge } from 'lodash-es';
 import path from 'node:path';
 import type { MarkRequired } from 'ts-essentials';
 import type { OutputFormat } from '../constants.ts';
@@ -13,6 +13,28 @@ import {
   OutputFormatTypes,
   OutputLocation,
 } from '../constants.ts';
+
+export type PipelineOptions = {
+  decoderThreadCount: Nullable<number>;
+  encoderThreadCount: Nullable<number>;
+  filterThreadCount: Nullable<number>;
+  disableHardwareDecoding?: boolean;
+  disableHardwareEncoding?: boolean;
+  disableHardwareFilters?: boolean;
+  vaapiDevice: Nullable<string>;
+  vaapiDriver: Nullable<string>;
+};
+
+export const DefaultPipelineOptions: PipelineOptions = {
+  decoderThreadCount: null,
+  encoderThreadCount: null,
+  filterThreadCount: null,
+  disableHardwareDecoding: false,
+  disableHardwareEncoding: false,
+  disableHardwareFilters: false,
+  vaapiDevice: null,
+  vaapiDriver: null,
+};
 
 export const DefaultFfmpegState: Partial<DataProps<FfmpegState>> = {
   threadCount: null,
@@ -32,7 +54,8 @@ type FfmpegStateFields = MarkRequired<
 >;
 
 export class FfmpegState {
-  version: FfmpegVersionResult;
+  readonly version: FfmpegVersionResult;
+
   threadCount: Nullable<number> = null;
   start: Nullable<Duration> = null;
   duration: Nullable<Duration> = null;
@@ -42,9 +65,9 @@ export class FfmpegState {
   doNotMapMetadata: boolean;
   metadataServiceName: Nullable<string> = null;
   metadataServiceProvider: Nullable<string> = null;
+  decoderHwAccelMode: HardwareAccelerationMode = HardwareAccelerationMode.None;
+  encoderHwAccelMode: HardwareAccelerationMode = HardwareAccelerationMode.None;
 
-  decoderHwAccelMode: HardwareAccelerationMode = 'none';
-  encoderHwAccelMode: HardwareAccelerationMode = 'none';
   softwareScalingAlgorithm: string = 'fast_bilinear';
   softwareDeinterlaceFilter: string = 'yadif=1';
   vaapiDevice: Nullable<string> = null;
@@ -108,36 +131,5 @@ export class FfmpegState {
 
   static defaultWithVersion(version: FfmpegVersionResult) {
     return this.create({ version });
-  }
-
-  // HACK: kinda hacky here!
-  isAtLeastVersion(
-    version: { major: number; minor?: number },
-    permissive: boolean = true,
-  ) {
-    if (this.version.isUnknown || isNil(this.version.majorVersion)) {
-      return permissive;
-    }
-
-    const { major, minor } = version;
-
-    if (this.version.majorVersion > major) {
-      return true;
-    }
-
-    if (this.version.majorVersion === major) {
-      if (isNil(this.version.minorVersion)) {
-        return permissive;
-      }
-
-      // We're not looking for a minor version
-      if (isNil(minor)) {
-        return true;
-      }
-
-      return this.version.minorVersion >= minor;
-    }
-
-    return false;
   }
 }

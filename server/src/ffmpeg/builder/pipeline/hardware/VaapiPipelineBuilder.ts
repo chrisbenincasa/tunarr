@@ -85,11 +85,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     const { videoStream, desiredState, ffmpegState } = this.context;
 
-    const canDecode =
-      this.hardwareCapabilities.canDecodeVideoStream(videoStream);
-    let canEncode = this.hardwareCapabilities.canEncodeState(desiredState);
+    const canDecode = this.context.pipelineOptions?.disableHardwareDecoding
+      ? false
+      : this.hardwareCapabilities.canDecodeVideoStream(videoStream);
+    let canEncode = this.context.pipelineOptions?.disableHardwareEncoding
+      ? false
+      : this.hardwareCapabilities.canEncodeState(desiredState);
 
-    if (ffmpegState.outputFormat.type === OutputFormatTypes.Nut) {
+    if (canEncode && ffmpegState.outputFormat.type === OutputFormatTypes.Nut) {
       canEncode = false;
     }
 
@@ -164,10 +167,11 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
-    // Set crop
+    // TODO: Set crop
 
     // TODO: Make vaapi driver a union
     const forceSoftwareOverlay =
+      this.context.pipelineOptions?.disableHardwareFilters ||
       (this.context.hasWatermark && this.context.isSubtitleOverlay()) ||
       ffmpegState.vaapiDriver === 'radeonsi';
 
@@ -329,7 +333,8 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     let nextState = currentState;
     if (this.context.shouldDeinterlace) {
       const filter =
-        this.context.ffmpegState.decoderHwAccelMode === 'vaapi'
+        this.context.ffmpegState.decoderHwAccelMode ===
+        HardwareAccelerationMode.Vaapi
           ? new DeinterlaceVaapiFilter(currentState)
           : new DeinterlaceFilter(this.context.ffmpegState, currentState);
       nextState = filter.nextState(currentState);
@@ -341,7 +346,6 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   protected setScale(currentState: FrameState): FrameState {
     let nextState = currentState;
     const { desiredState, ffmpegState, shouldDeinterlace } = this.context;
-    // TODO: Watermark, subtitles, interface
     let scaleOption: FilterOption;
     if (
       !currentState.scaledSize.equals(desiredState.scaledSize) &&

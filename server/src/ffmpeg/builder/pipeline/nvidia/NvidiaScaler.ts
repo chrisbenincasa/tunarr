@@ -32,11 +32,13 @@ export class NvidiaScaler {
     const noHardwareFilters = !desiredState.deinterlace;
     const needsToPad = !currentState.paddedSize.equals(desiredState.paddedSize);
 
-    if (
-      decodeToSoftware &&
-      (needsToPad || noHardwareFilters) &&
-      softwareEncoder
-    ) {
+    const useSoftwareScale =
+      (decodeToSoftware &&
+        (needsToPad || noHardwareFilters) &&
+        softwareEncoder) ||
+      context.pipelineOptions?.disableHardwareFilters;
+
+    if (useSoftwareScale) {
       scaleStep = ScaleFilter.create(
         currentState,
         ffmpegState,

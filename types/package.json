@@ -11,9 +11,9 @@
     "build-dev": "tsc --declaration --watch",
     "gen-emby": "typed-openapi https://swagger.emby.media/openapi.json -r zod -o ./build/emby-generated.ts"
   },
-  "main": "./build/src/index.js",
-  "module": "./build/src/index.js",
-  "types": "./build/src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "keywords": [],
   "author": "chrisbenincasa",
   "type": "module",
@@ -33,29 +33,29 @@
   },
   "exports": {
     ".": {
-      "types": "./build/src/index.d.ts",
-      "default": "./build/src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./package.json": "./package.json",
     "./schemas": {
-      "types": "./build/src/schemas/index.d.ts",
-      "default": "./build/src/schemas/index.js"
+      "types": "./dist/src/schemas/index.d.ts",
+      "default": "./dist/src/schemas/index.js"
     },
     "./plex": {
-      "types": "./build/src/plex/index.d.ts",
-      "default": "./build/src/plex/index.js"
+      "types": "./dist/src/plex/index.d.ts",
+      "default": "./dist/src/plex/index.js"
     },
     "./jellyfin": {
-      "types": "./build/src/jellyfin/index.d.ts",
-      "default": "./build/src/jellyfin/index.js"
+      "types": "./dist/src/jellyfin/index.d.ts",
+      "default": "./dist/src/jellyfin/index.js"
     },
     "./emby": {
-      "types": "./build/src/emby/index.d.ts",
-      "default": "./build/src/emby/index.js"
+      "types": "./dist/src/emby/index.d.ts",
+      "default": "./dist/src/emby/index.js"
     },
     "./api": {
-      "types": "./build/src/api/index.d.ts",
-      "default": "./build/src/api/index.js"
+      "types": "./dist/src/api/index.d.ts",
+      "default": "./dist/src/api/index.js"
     }
   }
 }
