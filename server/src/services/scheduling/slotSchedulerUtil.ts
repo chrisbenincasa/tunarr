@@ -2,6 +2,9 @@ import { createExternalIdFromMulti } from '@tunarr/shared';
 import constants from '@tunarr/shared/constants';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import {
+  isContentProgram,
+  isCustomProgram,
+  isFillerProgram,
   isFlexProgram,
   type ChannelProgram,
   type CondensedChannelProgram,
@@ -30,6 +33,7 @@ import {
   filter,
   first,
   forEach,
+  groupBy,
   isEmpty,
   isNull,
   last,
@@ -45,7 +49,7 @@ import {
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import { retrySimple } from '../../util/index.ts';
+import { groupByTyped, retrySimple } from '../../util/index.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
 import { ProgramChunkedShuffle } from './ProgramChunkedShuffle.ts';
 import type { ProgramIterator } from './ProgramIterator.js';
@@ -112,6 +116,83 @@ export const getSlotIdForProgram = (
       return 'flex';
   }
 };
+
+function deduplicateContentPrograms(programs: ContentProgram[]) {
+  // Remove any duplicates.
+  // We don't need to go through and remove flex since
+  // they will just be ignored during schedule generation
+  const seenDBIds = new Set<string>();
+  const seenIds = new Set<string>();
+  return filter(programs, (p) => {
+    if (p.persisted && isNonEmptyString(p.id)) {
+      if (!seenDBIds.has(p.id)) {
+        seenDBIds.add(p.id);
+        forEach(p.externalIds, (eid) => {
+          if (eid.type === 'multi') {
+            seenIds.add(createExternalIdFromMulti(eid));
+          }
+        });
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    const externalIds = filter(
+      p.externalIds,
+      (eid): eid is MultiExternalId => eid.type === 'multi',
+    );
+    const eids = map(externalIds, createExternalIdFromMulti);
+    if (some(eids, (eid) => seenIds.has(eid))) {
+      return false;
+    }
+
+    forEach(eids, (eid) => seenIds.add(eid));
+    return true;
+  });
+}
+
+function deduplicateCustomPrograms(programs: CustomProgram[]) {
+  const byCustomShowId = groupBy(programs, (program) => program.customShowId);
+  const unique: CustomProgram[] = [];
+  for (const [_, programs] of Object.entries(byCustomShowId)) {
+    unique.push(...uniqBy(programs, (p) => p.id));
+  }
+  return unique;
+}
+
+function deduplicateFillerPrograms(programs: FillerProgram[]) {
+  const byFillerListId = groupBy(programs, (program) => program.fillerListId);
+  const unique: FillerProgram[] = [];
+  for (const [_, programs] of Object.entries(byFillerListId)) {
+    unique.push(...uniqBy(programs, (p) => p.id));
+  }
+  return unique;
+}
+
+export function deduplicatePrograms(programs: ChannelProgram[]) {
+  const programsByType = groupByTyped(programs, (program) => program.type);
+  const uniquePrograms = [
+    ...(programsByType['flex'] ?? []),
+    ...(programsByType['redirect'] ?? []),
+  ];
+  uniquePrograms.push(
+    ...deduplicateContentPrograms(
+      (programsByType['content'] ?? []).filter(isContentProgram),
+    ),
+  );
+  uniquePrograms.push(
+    ...deduplicateCustomPrograms(
+      (programsByType['custom'] ?? []).filter(isCustomProgram),
+    ),
+  );
+  uniquePrograms.push(
+    ...deduplicateFillerPrograms(
+      (programsByType['filler'] ?? []).filter(isFillerProgram),
+    ),
+  );
+  return uniquePrograms;
+}
 
 /**
  * Creates a mapping of 'schedulable' content

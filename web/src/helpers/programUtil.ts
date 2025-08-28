@@ -21,7 +21,7 @@ function getGrandparentExternalId(program: ContentProgram) {
   );
 }
 
-export function getProgramGroupingKey(program: ChannelProgram) {
+export function getProgramGroupingKey(program: ChannelProgram): string {
   return match(program)
     .with(
       {
@@ -35,9 +35,17 @@ export function getProgramGroupingKey(program: ChannelProgram) {
         program.grandparent?.id ?? getGrandparentExternalId(program);
       return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
     })
-    .with({ type: 'custom' }, (program) => `custom.${program.customShowId}`)
+    .with(
+      { type: 'custom' },
+      (program) =>
+        `custom.${program.customShowId}.${program.program ? getProgramGroupingKey(program.program) : ''}`,
+    )
     .with({ type: 'redirect' }, (program) => `redirect.${program.channel}`)
     .with({ type: 'flex' }, () => 'flex')
-    .with({ type: 'filler' }, (program) => `filler.${program.fillerListId}`)
+    .with(
+      { type: 'filler' },
+      (program) =>
+        `filler.${program.fillerListId}.${program.program ? getProgramGroupingKey(program.program) : ''}`,
+    )
     .exhaustive();
 }

@@ -47,6 +47,7 @@ import {
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
+  deduplicatePrograms,
   distributeFlex,
   maybeAddPrePostFiller,
   pushOrExtendFlex,
@@ -82,7 +83,9 @@ class ScheduleContext {
     this.#random = new Random(MersenneTwister19937.seedWithArray(this.#seed));
     this.#programmingIteratorsById = createProgramIterators(
       schedule.slots,
-      createProgramMap(reject(programming, (p) => isFlexProgram(p))),
+      createProgramMap(
+        deduplicatePrograms(reject(programming, (p) => isFlexProgram(p))),
+      ),
       this.#random,
     );
     this.#startTime = this.#timeCursor = startTime;

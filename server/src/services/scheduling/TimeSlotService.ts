@@ -43,6 +43,7 @@ import {
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
+  deduplicatePrograms,
   distributeFlex,
   maybeAddPrePostFiller,
   slotFillerIterators,
@@ -120,7 +121,9 @@ export async function scheduleTimeSlots(
 
   // Load programs
   // TODO: include redirects and custom programs!
-  const allPrograms = reject<ChannelProgram>(channelProgramming, isFlexProgram);
+  const allPrograms = deduplicatePrograms(
+    reject<ChannelProgram>(channelProgramming, isFlexProgram),
+  );
   const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
     createProgramMap(allPrograms),
