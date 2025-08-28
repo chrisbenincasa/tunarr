@@ -2,9 +2,10 @@ import { removeFillerListProgram } from '@/store/entityEditor/util.ts';
 import {
   clearCurrentFillerList,
   resetFillerList,
+  setCurrentFillerList,
   updateCurrentFillerList,
 } from '@/store/fillerListEditor/action.ts';
-import { Delete, Tv, Undo } from '@mui/icons-material';
+import { Delete, Save, Tv, Undo } from '@mui/icons-material';
 import { Button, Divider, Stack, TextField, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -12,15 +13,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { FillerList } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import {
   postApiFillerLists,
   putApiFillerListsById,
 } from '../../generated/sdk.gen.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import useStore from '../../store/index.ts';
 import type { UIFillerListProgram } from '../../types/index.ts';
+import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 import ChannelLineupList from '../channel_config/ChannelLineupList.tsx';
 
 export type FillerListMutationArgs = {
@@ -44,14 +47,16 @@ export function EditFillerListForm({
 }: EditFillerListFormProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { programs: programsDirty } = useStore((s) => s.fillerListEditor.dirty);
+  const {
+    programList,
+    dirty: { programs: programsDirty },
+  } = useStore((s) => s.fillerListEditor);
 
   const {
     control,
-    setValue,
     handleSubmit,
     getValues,
-    formState: { isValid },
+    formState: { isValid, isDirty, isSubmitting },
   } = useForm<FillerListFormType>({
     mode: 'onChange',
     defaultValues: {
@@ -63,19 +68,31 @@ export function EditFillerListForm({
     mutationKey: ['fillers', isNew ? 'new' : fillerList.id],
     mutationFn: async ({ name, programs }: FillerListMutationArgs) => {
       if (isNew) {
-        return postApiFillerLists({ body: { name, programs } });
+        return postApiFillerLists({
+          body: { name, programs },
+          throwOnError: true,
+        });
       } else {
         return putApiFillerListsById({
           path: { id: fillerList.id },
           body: { name, programs },
+          throwOnError: true,
         });
       }
     },
-    onSuccess: async () => {
+    onSuccess: async ({ data }, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ['Filler Lists'],
-        exact: false,
+        predicate: invalidateTaggedQueries('Filler Lists'),
       });
+
+      setCurrentFillerList(
+        {
+          ...fillerList,
+          ...data,
+        },
+        variables.programs,
+      );
+
       if (isNew) {
         clearCurrentFillerList();
         navigate({ to: '/library/fillers' }).catch(console.warn);
@@ -84,25 +101,17 @@ export function EditFillerListForm({
     onError: (e) => console.error(e),
   });
 
-  const onCancel = useCallback(() => {
-    navigate({ to: '/library/fillers' }).catch(console.warn);
-  }, [navigate]);
-
   const saveFiller: SubmitHandler<FillerListFormType> = (data) => {
     return saveShowMutation.mutateAsync({
       id: fillerList?.id,
       name: data.name,
-      programs: data.programs,
+      programs: programList,
     });
   };
 
   const deleteProgramAtIndex = useCallback((idx: number) => {
     removeFillerListProgram(idx);
   }, []);
-
-  useEffect(() => {
-    setValue('programs', fillerListPrograms);
-  }, [fillerListPrograms, setValue]);
 
   const navToProgramming = () => {
     if (isNew) {
@@ -165,6 +174,21 @@ export function EditFillerListForm({
                 Add Media
               </Button>
             </Tooltip>
+            <Button
+              disabled={
+                !isValid ||
+                isSubmitting ||
+                (!isDirty && !programsDirty) ||
+                fillerListPrograms.length === 0
+              }
+              variant="contained"
+              type="submit"
+              startIcon={
+                saveShowMutation.isPending ? <RotatingLoopIcon /> : <Save />
+              }
+            >
+              Save
+            </Button>
           </Stack>
           <ChannelLineupList
             type="selector"
@@ -180,21 +204,6 @@ export function EditFillerListForm({
             }}
           />
         </Box>
-        <Stack
-          spacing={2}
-          direction="row"
-          justifyContent="right"
-          sx={{ mt: 2 }}
-        >
-          <Button onClick={() => onCancel()}>Cancel</Button>
-          <Button
-            disabled={!isValid || fillerListPrograms.length === 0}
-            variant="contained"
-            type="submit"
-          >
-            Save
-          </Button>
-        </Stack>
       </Stack>
     </Box>
   );
