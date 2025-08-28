@@ -2,11 +2,9 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { Channel } from '@/db/schema/Channel.js';
 import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
-import { FFMPEG } from '@/ffmpeg/ffmpeg.js';
 import type { IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
 import { KEYS } from '@/types/inject.js';
 import type { ChannelStreamMode } from '@tunarr/types';
-import { ChannelStreamModes } from '@tunarr/types';
 import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
@@ -36,25 +34,11 @@ const FFmpegModule = new ContainerModule((bind) => {
   }).whenTargetNamed(FfmpegStreamFactory.name);
 
   bindFactoryFunc<FFmpegFactory>(bind, KEYS.FFmpegFactory, (ctx) => {
-    const settingsDB = ctx.container.get<ISettingsDB>(KEYS.SettingsDB);
     return (transcodeConfig, channel, streamMode) => {
-      const ffmpegSettings = settingsDB.ffmpegSettings();
-      if (
-        ffmpegSettings.useNewFfmpegPipeline ||
-        streamMode === ChannelStreamModes.HlsDirect
-      ) {
-        return ctx.container.getNamed<FFmpegFactory>(
-          KEYS.FFmpegFactory,
-          FfmpegStreamFactory.name,
-        )(transcodeConfig, channel, streamMode);
-      } else {
-        return new FFMPEG(
-          settingsDB,
-          ctx.container.get(FfmpegInfo),
-          transcodeConfig,
-          channel,
-        );
-      }
+      return ctx.container.getNamed<FFmpegFactory>(
+        KEYS.FFmpegFactory,
+        FfmpegStreamFactory.name,
+      )(transcodeConfig, channel, streamMode);
     };
   }).whenTargetIsDefault();
 });

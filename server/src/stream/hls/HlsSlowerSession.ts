@@ -1,7 +1,5 @@
-import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { defaultHlsOptions } from '@/ffmpeg/ffmpeg.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
 import type { Result } from '@/types/result.js';
@@ -11,6 +9,7 @@ import { basename } from 'node:path';
 import type { StrictOmit } from 'ts-essentials';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import {
+  defaultHlsOptions,
   HlsOutputFormat,
   NutOutputFormat,
 } from '../../ffmpeg/builder/constants.ts';
@@ -36,7 +35,6 @@ export class HlsSlowerSession extends BaseHlsSession {
     channel: ChannelWithTranscodeConfig,
     options: BaseHlsSessionOptions,
     programCalculator: StreamProgramCalculator,
-    private settingsDB: ISettingsDB,
     private programStreamFactory: ProgramStreamFactory,
     private ffmpegFactory: FFmpegFactory,
   ) {
@@ -77,8 +75,6 @@ export class HlsSlowerSession extends BaseHlsSession {
         request.audioOnly,
         lineupItem.type === 'loading',
         this.#realtimeTranscode,
-        this.sessionOptions.useNewPipeline ??
-          this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
         this.channel.transcodeConfig,
         this.sessionType,
       );
@@ -100,8 +96,6 @@ export class HlsSlowerSession extends BaseHlsSession {
             result.channelContext,
             this.channel,
             /*realtime=*/ true,
-            this.sessionOptions.useNewPipeline ??
-              this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
             this.channel.transcodeConfig,
             this.sessionType,
           ),

@@ -101,7 +101,6 @@ export const FfmpegSettingsSchema = z.object({
   deinterlaceFilter: z
     .enum(['none', 'bwdif=0', 'bwdif=1', 'w3fdif', 'yadif=0', 'yadif=1'])
     .default('none'),
-  useNewFfmpegPipeline: z.boolean().default(true),
   hlsDirectOutputFormat: z.enum(['mkv', 'mpegts', 'mp4']).default('mpegts'),
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });

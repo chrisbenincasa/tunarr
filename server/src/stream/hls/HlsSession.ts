@@ -175,8 +175,6 @@ export class HlsSession extends BaseHlsSession {
         false,
         result.lineupItem.type === 'loading',
         realtime,
-        this.sessionOptions.useNewPipeline ??
-          this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
         this.channel.transcodeConfig,
         this.sessionType,
       );
@@ -208,8 +206,6 @@ export class HlsSession extends BaseHlsSession {
             result.channelContext,
             this.channel,
             realtime,
-            this.sessionOptions.useNewPipeline ??
-              this.settingsDB.ffmpegSettings().useNewFfmpegPipeline,
             this.channel.transcodeConfig,
             this.sessionType,
           ),

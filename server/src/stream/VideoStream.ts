@@ -139,7 +139,6 @@ export class VideoStream {
             audioOnly,
             result.lineupItem.type === 'loading',
             true,
-            ffmpegSettings.useNewFfmpegPipeline,
             channel.transcodeConfig,
             streamMode,
           );

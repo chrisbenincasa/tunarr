@@ -30,7 +30,6 @@ import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
-import { CheckboxFormController } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
 import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
@@ -273,31 +272,6 @@ export default function FfmpegSettingsPage() {
               </FormControl>
             )}
           </Stack>
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <CheckboxFormController
-                  control={control}
-                  negate
-                  name="useNewFfmpegPipeline"
-                />
-              }
-              label="Use Old FFmpeg Pipeline"
-            />
-            <FormHelperText>
-              Generate FFmpeg commands using Tunarr's old FFmpeg pipeline code.
-              The old code is similar to the original FFmpeg code from dizqueTV.
-              The new code is more advanced than the original pipeline code and
-              is recommended in most scenarios. The old pipeline is considered
-              deprecated and will be removed in a future release. <br />
-              If you are using hardware acceleration (recommended), it is also
-              highly recommended to use the new pipeline, as it attempts to push
-              as much of the pipeline onto hardware as possible whereas the
-              original code would only encode using hardware. Additionally, some
-              options on this page will change (or disappear) depending on which
-              mode is chosen.
-            </FormHelperText>
-          </FormControl>
         </Stack>
         <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
           <InputLabel id="hls-direct-output-format-label">

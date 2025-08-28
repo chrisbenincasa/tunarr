@@ -1,4 +1,45 @@
-import type { HlsOptions, MpegDashOptions } from '@/ffmpeg/ffmpeg.js';
+import type { DeepRequired } from 'ts-essentials';
+import type { Nullable } from '../../types/util.ts';
+
+export type HlsOptions = {
+  hlsTime: number; // Duration of each clip in seconds,
+  hlsListSize: number; // Number of clips to have in the list
+  hlsDeleteThreshold: number;
+  segmentBaseDirectory: string;
+  streamBasePath: string;
+  streamBaseUrl: string;
+  segmentNameFormat: string;
+  streamNameFormat: string;
+  deleteThreshold: Nullable<number>;
+  appendSegments: boolean;
+};
+
+export const defaultHlsOptions: DeepRequired<HlsOptions> = {
+  hlsTime: 2,
+  hlsListSize: 3,
+  hlsDeleteThreshold: 3,
+  segmentBaseDirectory: 'streams', // Relative to cwd
+  streamBasePath: 'stream_%v',
+  segmentNameFormat: 'data%05d.ts',
+  streamNameFormat: 'stream.m3u8',
+  streamBaseUrl: 'hls/',
+  deleteThreshold: 3,
+  appendSegments: false,
+};
+
+export type MpegDashOptions = {
+  windowSize: number; // number of segments kept in the manifest
+  segmentDuration: number; // segment duration in secodns
+  segmentType: 'auto' | 'mp4' | 'webm';
+  fragType: 'auto' | 'every_frame' | 'duration' | 'pframes';
+};
+
+export const defaultMpegDashOptions: DeepRequired<MpegDashOptions> = {
+  segmentDuration: 2,
+  windowSize: 3,
+  segmentType: 'auto',
+  fragType: 'auto',
+};
 
 export const VideoFormats = {
   Hevc: 'hevc',

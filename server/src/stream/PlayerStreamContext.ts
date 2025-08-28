@@ -25,7 +25,6 @@ export class PlayerContext {
     public audioOnly: boolean,
     public isLoading: boolean,
     public realtime: boolean,
-    public useNewPipeline: boolean,
     public transcodeConfig: TranscodeConfig,
     public streamMode: ChannelStreamMode,
   ) {}
@@ -36,7 +35,6 @@ export class PlayerContext {
     targetChannel: Channel,
     sourceChannel: Channel,
     realtime: boolean,
-    useNewPipeline: boolean,
     transcodeConfig: TranscodeConfig,
     streamMode: ChannelStreamMode,
   ): PlayerContext {
@@ -54,7 +52,6 @@ export class PlayerContext {
       false,
       false,
       realtime,
-      useNewPipeline,
       transcodeConfig,
       streamMode,
     );

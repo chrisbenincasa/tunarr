@@ -1,7 +1,6 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
-import type { StreamOptions } from '@/ffmpeg/ffmpeg.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
 import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
@@ -14,6 +13,7 @@ import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.js';
+import type { StreamOptions } from '../ffmpeg/ffmpegBase.ts';
 import {
   attempt,
   isDefined,
