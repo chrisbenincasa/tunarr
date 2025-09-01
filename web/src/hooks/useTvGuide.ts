@@ -22,7 +22,7 @@ function lineupQueryOpts(channelId: string, range: { from: Dayjs; to: Dayjs }) {
       path: { id: channelId },
       query: {
         from: range.from.toISOString(),
-        to: range.from.toISOString(),
+        to: range.to.toISOString(),
       },
     }),
     select: (lineup) => [lineup],
