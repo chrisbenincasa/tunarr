@@ -1,4 +1,6 @@
-import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Launch } from '@mui/icons-material';
+import { Box, Grid, Link, Paper, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
 import type { ChannelStreamMode } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
@@ -103,9 +105,22 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
       </Grid>
       <Grid size={{ xs: 12, md: 2 }} sx={{ p: 1 }}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="overline">Transcode Config</Typography>
+          <Typography variant="overline">
+            Transcode Config{' '}
+            <Link
+              component={RouterLink}
+              to={`/settings/ffmpeg/${transcodeConfig?.id ?? ''}`}
+            >
+              {' '}
+              <Launch sx={{ fontSize: 'inherit' }} />
+            </Link>
+          </Typography>
           <Typography
-            sx={{ whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}
+            sx={{
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+            }}
             variant="h5"
           >
             {transcodeConfig?.name}
