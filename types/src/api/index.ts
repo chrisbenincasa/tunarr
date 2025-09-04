@@ -146,12 +146,16 @@ export const TimeBasedProgramLineupSchema = z.object({
   // programs included in at least one time slot...
   programs: z.array(ChannelProgramSchema),
   schedule: TimeSlotScheduleSchema,
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export const RandomSlotProgramLineupSchema = z.object({
   type: z.literal('random'),
   programs: z.array(ChannelProgramSchema),
   schedule: RandomSlotScheduleSchema,
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export const UpdateChannelProgrammingRequestSchema = z.discriminatedUnion(
@@ -341,6 +345,7 @@ export const TimeSlotScheduleResult = z.object({
   lineup: CondensedChannelProgramSchema.array(),
   programs: z.record(z.string(), ContentProgramSchema),
   seed: z.number().array(),
+  discardCount: z.number(),
 });
 
 export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;
@@ -350,6 +355,7 @@ export const SlotScheduleResult = z.object({
   lineup: CondensedChannelProgramSchema.array(),
   programs: z.record(z.string(), ContentProgramSchema),
   seed: z.number().array(),
+  discardCount: z.number(),
 });
 
 export type SlotScheduleResult = z.infer<typeof SlotScheduleResult>;

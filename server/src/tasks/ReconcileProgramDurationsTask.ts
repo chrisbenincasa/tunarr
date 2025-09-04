@@ -105,7 +105,7 @@ export class ReconcileProgramDurationsTask extends Task {
 
       let changed = false;
       const newLineupItems = map(lineup.items, (item) => {
-        if (isContentItem(item)) {
+        if (isContentItem(item) && item.fillerType !== 'fallback') {
           const dbItemDuration = cachedPrograms[item.id];
           if (
             !isUndefined(dbItemDuration) &&

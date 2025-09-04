@@ -1083,6 +1083,7 @@ export class ChannelDB implements IChannelDB {
             type: 'programs',
             programs: req.programs,
             schedule: req.schedule,
+            seed: req.seed,
           },
         });
 
@@ -1095,6 +1096,7 @@ export class ChannelDB implements IChannelDB {
             type: 'programs',
             programs: req.programs,
             schedule: req.schedule,
+            seed: req.seed,
           },
         });
 
@@ -1741,6 +1743,15 @@ export class ChannelDB implements IChannelDB {
           index: customShowIndexes[item.customShowId][item.id] ?? -1,
           id: item.id,
         };
+      } else if (item.fillerListId) {
+        p = {
+          persisted: true,
+          type: 'filler',
+          fillerListId: item.fillerListId,
+          fillerType: item.fillerType,
+          id: item.id,
+          duration: item.durationMs,
+        };
       } else {
         if (dbProgramIds.has(item.id)) {
           p = {
@@ -1823,6 +1834,7 @@ function channelProgramToLineupItemFunc(
         durationMs: program.duration,
         id: program.id,
         fillerListId: program.fillerListId,
+        fillerType: program.fillerType,
       }))
       .with({ type: 'redirect' }, (program) => ({
         type: 'redirect',
@@ -1834,28 +1846,4 @@ function channelProgramToLineupItemFunc(
         durationMs: program.duration,
       }))
       .exhaustive();
-
-  //   custom: (program) => ({
-  //     type: 'content', // Custom program
-  //     durationMs: program.duration,
-  //     id: program.id,
-  //     customShowId: program.customShowId,
-  //   }),
-  //   content: (program) => {
-  //     return {
-  //       type: 'content',
-  //       id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
-  //       durationMs: program.duration,
-  //     };
-  //   },
-  //   redirect: (program) => ({
-  //     type: 'redirect',
-  //     channel: program.channel,
-  //     durationMs: program.duration,
-  //   }),
-  //   flex: (program) => ({
-  //     type: 'offline',
-  //     durationMs: program.duration,
-  //   }),
-  // });
 }

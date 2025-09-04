@@ -51,6 +51,7 @@ export abstract class Task<Args extends unknown[] = [], Data = unknown> {
   public abstract ID: string | Tag<string, TaskMetadata<Args, Data>>;
 
   constructor(logger?: Logger) {
+    logger?.setBindings({ caller: this.constructor.name });
     this.logger =
       logger ?? LoggerFactory.child({ className: this.constructor.name });
   }

@@ -24,6 +24,8 @@ export const ChannelSlotScheduleRequest = z.object({
   channelId: z.number().or(z.string()),
   schedule: RandomSlotScheduleSchema,
   materializeResult: z.boolean(),
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -35,6 +37,8 @@ export const ProgramsSlotScheduleRequest = z.object({
   programs: z.array(ChannelProgramSchema),
   schedule: RandomSlotScheduleSchema,
   materializeResult: z.boolean(),
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -86,7 +90,11 @@ export class SlotSchedulerService {
       .concat(customShowPrograms)
       .concat(fillerPrograms);
 
-    return new RandomSlotScheduler(request.schedule).generateSchedule(programs);
+    return new RandomSlotScheduler(request.schedule).generateSchedule(
+      programs,
+      request.seed,
+      request.discardCount,
+    );
   }
 
   private async getPrograms(channelId: string | number) {

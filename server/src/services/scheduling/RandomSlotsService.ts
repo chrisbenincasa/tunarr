@@ -70,6 +70,7 @@ class ScheduleContext {
   #currentSlotIndex = 0;
   #seed: number[];
   #random: Random;
+  #engine: MersenneTwister19937;
   #contentProgramsById: Record<string, ContentProgram>;
   #condensedProgramsById: Record<string, CondensedChannelProgram>;
 
@@ -78,9 +79,13 @@ class ScheduleContext {
     programming: ChannelProgram[],
     startTime: dayjs.Dayjs,
     seed: number[] = createEntropy(),
+    discardCount: number = 0,
   ) {
     this.#seed = seed;
-    this.#random = new Random(MersenneTwister19937.seedWithArray(this.#seed));
+    this.#engine = MersenneTwister19937.seedWithArray(this.#seed).discard(
+      discardCount,
+    );
+    this.#random = new Random(this.#engine);
     this.#programmingIteratorsById = createProgramIterators(
       schedule.slots,
       createProgramMap(
@@ -194,6 +199,7 @@ class ScheduleContext {
       seed: this.#seed,
       startTime: +this.#startTime,
       programs: this.#contentProgramsById,
+      discardCount: this.#engine.getUseCount(),
     };
   }
 }
@@ -204,6 +210,7 @@ export class RandomSlotScheduler {
   generateSchedule(
     programming: ChannelProgram[],
     seed: number[] = createEntropy(),
+    discardCount: number = 0,
     startTime: dayjs.Dayjs = dayjs.tz(),
   ): SlotScheduleResult {
     this.validateSchedule();
@@ -213,6 +220,7 @@ export class RandomSlotScheduler {
       programming,
       startTime,
       seed,
+      discardCount,
     );
 
     const { maxDays, padMs, padStyle, flexPreference, randomDistribution } =

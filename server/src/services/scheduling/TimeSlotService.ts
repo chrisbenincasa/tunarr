@@ -101,9 +101,11 @@ function pushOrExtendFlex(
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
   channelProgramming: ChannelProgram[],
+  seed: number[] = createEntropy(),
+  discardCount: number = 0,
 ): Promise<TimeSlotScheduleResult> {
-  const seed = createEntropy();
-  const random = new Random(MersenneTwister19937.seedWithArray(seed));
+  const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
+  const random = new Random(mt);
   const contentProgramsById: Record<string, ContentProgram> = {};
   const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
   for (const program of channelProgramming) {
@@ -362,5 +364,6 @@ export async function scheduleTimeSlots(
     programs: contentProgramsById,
     startTime: +t0,
     seed,
+    discardCount: mt.getUseCount(),
   };
 }

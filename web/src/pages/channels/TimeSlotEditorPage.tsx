@@ -62,6 +62,7 @@ import { toggle } from '../../helpers/util.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
+import { Maybe } from '../../types/util.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -120,6 +121,8 @@ export default function TimeSlotEditorPage() {
   const [startTime, setStartTime] = useState(
     channel?.startTime ? dayjs(channel?.startTime) : dayjs(),
   );
+  const [randomState, setRandomState] =
+    useState<Maybe<{ seed?: number[]; discardCount?: number }>>();
 
   const [settingsOpen, setSettingsOpen] = useState(true);
 
@@ -230,6 +233,8 @@ export default function TimeSlotEditorPage() {
         type: 'time',
         schedule,
         programs: filteredLineup,
+        seed: randomState?.seed,
+        discardCount: randomState?.discardCount,
       },
     });
   };
@@ -283,8 +288,9 @@ export default function TimeSlotEditorPage() {
   const calculateSlots = () => {
     toggleIsCalculatingSlots(true);
     scheduleTimeSlots(getValues())
-      .then(({ startTime }) => {
+      .then(({ startTime, seed, discardCount }) => {
         setStartTime(dayjs(startTime));
+        setRandomState({ seed, discardCount });
       })
       .catch((e) => {
         console.error(e);

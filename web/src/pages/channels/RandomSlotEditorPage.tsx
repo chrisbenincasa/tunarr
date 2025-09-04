@@ -32,7 +32,7 @@ import {
   orderBy,
   round,
 } from 'lodash-es';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
@@ -44,6 +44,7 @@ import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
+import { Maybe } from '../../types/util.ts';
 
 dayjs.extend(duration);
 
@@ -73,6 +74,8 @@ export default function RandomSlotEditorPage() {
   const { dropdownOpts: programOptions, nameById: programOptionNameById } =
     useSlotProgramOptions();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
+  const [randomState, setRandomState] =
+    useState<Maybe<{ seed?: number[]; discardCount?: number }>>();
 
   const hasExistingTimeSlotSchedule =
     !isNil(loadedSchedule) && loadedSchedule.type === 'time';
@@ -134,6 +137,8 @@ export default function RandomSlotEditorPage() {
         type: 'random',
         schedule,
         programs: filteredLineup,
+        seed: randomState?.seed,
+        discardCount: randomState?.discardCount,
       },
     });
   };
@@ -162,9 +167,13 @@ export default function RandomSlotEditorPage() {
     });
   }, [newLineup, programOptionNameById]);
 
-  const onCalculateSlotsEnd = useCallback(() => {
-    toggleIsCalculatingSlots(false);
-  }, [toggleIsCalculatingSlots]);
+  const onCalculateSlotsEnd = useCallback(
+    (state?: { seed?: number[]; discardCount?: number }) => {
+      setRandomState(state);
+      toggleIsCalculatingSlots(false);
+    },
+    [toggleIsCalculatingSlots],
+  );
 
   if (isUndefined(channel)) {
     return <div>Loading</div>;
