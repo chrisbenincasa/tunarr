@@ -535,6 +535,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         videoFormat: playbackParams.videoFormat,
         videoProfile: null, // 'main', // TODO:
         deinterlace: playbackParams.deinterlace,
+        infiniteLoop: lineupItem.infiniteLoop,
       }),
       pipelineOptions,
     );

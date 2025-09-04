@@ -529,6 +529,11 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     this.setRealtime();
 
+    if (this.desiredState.infiniteLoop) {
+      this.videoInputSource?.addOption(new InfiniteLoopInputOption());
+      this.audioInputSource?.addOption(new InfiniteLoopInputOption());
+    }
+
     if (
       this.desiredState.videoFormat !== VideoFormats.Copy &&
       this.desiredState.frameRate

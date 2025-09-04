@@ -13,6 +13,7 @@ import {
   StreamLineupItemSchema,
   isCommercialLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
+import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { KEYS } from '../types/inject.ts';
 
 const SLACK = constants.SLACK;
@@ -98,7 +99,7 @@ export class PersistentChannelCache {
 }
 
 @injectable()
-export class ChannelCache {
+export class ChannelCache implements IStreamLineupCache {
   constructor(
     @inject(PersistentChannelCache)
     private persistentChannelCache: PersistentChannelCache,

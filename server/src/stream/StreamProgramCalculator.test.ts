@@ -1,0 +1,289 @@
+import { faker } from '@faker-js/faker';
+import dayjs from 'dayjs';
+import { now, sumBy } from 'lodash-es';
+import { instance, mock, verify, when } from 'ts-mockito';
+import { test as baseTest } from 'vitest';
+import { LineupItem } from '../db/derived_types/Lineup.ts';
+import { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
+import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
+import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
+import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
+import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
+import {
+  createChannel,
+  createFakeProgram,
+} from '../testing/fakes/entityCreators.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
+import { StreamProgramCalculator } from './StreamProgramCalculator.ts';
+
+describe('StreamProgramCalculator', () => {
+  baseTest('getCurrentLineupItem simple', async () => {
+    const fillerDB = mock<IFillerListDB>();
+    const channelDB = mock<IChannelDB>();
+    const programDB = mock<IProgramDB>();
+    const fillerPicker = mock<IFillerPicker>();
+    const channelCache = mock<IStreamLineupCache>();
+
+    const startTime = dayjs(new Date(2025, 8, 17, 8));
+    const channelId = faker.string.uuid();
+    const programId1 = faker.string.uuid();
+    const programId2 = faker.string.uuid();
+
+    const lineup: LineupItem[] = [
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId1,
+      },
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId2,
+      },
+    ];
+
+    when(programDB.getProgramById(programId1)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({ uuid: programId1, duration: lineup[0].durationMs }),
+      ),
+    );
+
+    when(programDB.getProgramById(programId2)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+      ),
+    );
+
+    const channel = createChannel({
+      uuid: channelId,
+      number: 1,
+      startTime: +startTime.subtract(1, 'hour'),
+      duration: sumBy(lineup, ({ durationMs }) => durationMs),
+    });
+
+    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+
+    when(channelDB.loadLineup(channelId)).thenReturn(
+      Promise.resolve({
+        version: 1,
+        items: lineup,
+        startTimeOffsets: calculateStartTimeOffsets(lineup),
+        lastUpdated: now(),
+      }),
+    );
+
+    const calc = new StreamProgramCalculator(
+      LoggerFactory.root,
+      instance(fillerDB),
+      instance(channelDB),
+      instance(channelCache),
+      instance(programDB),
+      instance(fillerPicker),
+    );
+
+    const out = (
+      await calc.getCurrentLineupItem({
+        allowSkip: false,
+        channelId: 1,
+        startTime: +startTime,
+      })
+    ).get();
+
+    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+      streamDuration: +dayjs.duration(6, 'minutes'),
+      programId: programId1,
+      infiniteLoop: false,
+      programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
+      startOffset: +dayjs.duration(16, 'minutes'),
+    });
+
+    verify(
+      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+    ).once();
+  });
+
+  baseTest('getCurrentLineupItem filler lineup item', async () => {
+    const fillerDB = mock<IFillerListDB>();
+    const channelDB = mock<IChannelDB>();
+    const programDB = mock<IProgramDB>();
+    const fillerPicker = mock<IFillerPicker>();
+    const channelCache = mock<IStreamLineupCache>();
+
+    const startTime = dayjs(new Date(2025, 8, 17, 8));
+    const channelId = faker.string.uuid();
+    const programId1 = faker.string.uuid();
+    const programId2 = faker.string.uuid();
+    const fillerListId = faker.string.uuid();
+
+    const lineup: LineupItem[] = [
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId1,
+        fillerListId: fillerListId,
+      },
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId2,
+      },
+    ];
+
+    when(programDB.getProgramById(programId1)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({ uuid: programId1, duration: lineup[0].durationMs }),
+      ),
+    );
+
+    when(programDB.getProgramById(programId2)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+      ),
+    );
+
+    const channel = createChannel({
+      uuid: channelId,
+      number: 1,
+      startTime: +startTime.subtract(1, 'hour'),
+      duration: sumBy(lineup, ({ durationMs }) => durationMs),
+    });
+
+    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+
+    when(channelDB.loadLineup(channelId)).thenReturn(
+      Promise.resolve({
+        version: 1,
+        items: lineup,
+        startTimeOffsets: calculateStartTimeOffsets(lineup),
+        lastUpdated: now(),
+      }),
+    );
+
+    const calc = new StreamProgramCalculator(
+      LoggerFactory.root,
+      instance(fillerDB),
+      instance(channelDB),
+      instance(channelCache),
+      instance(programDB),
+      instance(fillerPicker),
+    );
+
+    const out = (
+      await calc.getCurrentLineupItem({
+        allowSkip: false,
+        channelId: 1,
+        startTime: +startTime,
+      })
+    ).get();
+
+    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+      streamDuration: +dayjs.duration(6, 'minutes'),
+      programId: programId1,
+      infiniteLoop: false,
+      programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
+      startOffset: +dayjs.duration(16, 'minutes'),
+      fillerId: fillerListId,
+      type: 'commercial',
+    });
+
+    verify(
+      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+    ).once();
+  });
+
+  baseTest('getCurrentLineupItem loop filler lineup item', async () => {
+    const fillerDB = mock<IFillerListDB>();
+    const channelDB = mock<IChannelDB>();
+    const programDB = mock<IProgramDB>();
+    const fillerPicker = mock<IFillerPicker>();
+    const channelCache = mock<IStreamLineupCache>();
+
+    const startTime = dayjs(new Date(2025, 8, 17, 8));
+    const channelId = faker.string.uuid();
+    const programId1 = faker.string.uuid();
+    const programId2 = faker.string.uuid();
+    const fillerListId = faker.string.uuid();
+
+    const lineup: LineupItem[] = [
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId1,
+        fillerListId: fillerListId,
+      },
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId2,
+      },
+    ];
+
+    when(programDB.getProgramById(programId1)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({
+          uuid: programId1,
+          duration: +dayjs.duration({ minutes: 2 }),
+        }),
+      ),
+    );
+
+    when(programDB.getProgramById(programId2)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+      ),
+    );
+
+    const channel = createChannel({
+      uuid: channelId,
+      number: 1,
+      startTime: +startTime.subtract(1, 'hour'),
+      duration: sumBy(lineup, ({ durationMs }) => durationMs),
+    });
+
+    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+
+    when(channelDB.loadLineup(channelId)).thenReturn(
+      Promise.resolve({
+        version: 1,
+        items: lineup,
+        startTimeOffsets: calculateStartTimeOffsets(lineup),
+        lastUpdated: now(),
+      }),
+    );
+
+    const calc = new StreamProgramCalculator(
+      LoggerFactory.root,
+      instance(fillerDB),
+      instance(channelDB),
+      instance(channelCache),
+      instance(programDB),
+      instance(fillerPicker),
+    );
+
+    const out = (
+      await calc.getCurrentLineupItem({
+        allowSkip: false,
+        channelId: 1,
+        startTime: +startTime,
+      })
+    ).get();
+
+    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+      streamDuration: +dayjs.duration(6, 'minutes'),
+      programId: programId1,
+      infiniteLoop: true,
+      programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
+      startOffset: +dayjs.duration(16, 'minutes'),
+      fillerId: fillerListId,
+      type: 'commercial',
+      duration: +dayjs.duration(22, 'minutes'),
+      contentDuration: +dayjs.duration(2, 'minutes'),
+    });
+
+    verify(
+      channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
+    ).once();
+  });
+});

@@ -13,7 +13,6 @@ const baseStreamLineupItemSchema = z.object({
   streamDuration: z
     .number()
     .nonnegative()
-    .optional()
     .describe('The amount of time left in the stream'),
   // beginningOffset: z.number().nonnegative().optional(),
   title: z.string().optional(),
@@ -120,34 +119,26 @@ export type OfflineStreamLineupItem = z.infer<
   typeof OfflineStreamLineupItemSchema
 >;
 
-export const LoadingStreamLineupItemSchema = baseStreamLineupItemSchema
-  .extend({
-    type: z.literal('loading'),
-  })
-  .required({ streamDuration: true });
-
-export type LoadingStreamLineupItem = z.infer<
-  typeof LoadingStreamLineupItemSchema
->;
-
 const BaseContentBackedStreamLineupItemSchema =
   baseStreamLineupItemSchema.extend({
     // ID in the program DB table
-    programId: z.string().uuid(),
+    programId: z.uuid(),
     // These are taken from the Program DB entity
     plexFilePath: z.string().optional(),
     externalSourceId: z.string(),
     filePath: z.string().optional(),
     externalKey: z.string(),
     programType: ContentProgramTypeSchema,
-    externalSource: z.nativeEnum(MediaSourceType),
+    externalSource: z.enum(MediaSourceType),
+    infiniteLoop: z.boolean(),
+    contentDuration: z.number().describe('The duration of the content itself'),
   });
 
 const CommercialStreamLineupItemSchema =
   BaseContentBackedStreamLineupItemSchema.extend({
     type: z.literal('commercial'),
     fillerId: z.string(),
-  }).required({ streamDuration: true });
+  });
 
 export type CommercialStreamLineupItem = z.infer<
   typeof CommercialStreamLineupItemSchema
@@ -182,7 +173,6 @@ export type RedirectStreamLineupItem = z.infer<
 export const StreamLineupItemSchema = z.discriminatedUnion('type', [
   ProgramStreamLineupItemSchema,
   CommercialStreamLineupItemSchema,
-  LoadingStreamLineupItemSchema,
   OfflineStreamLineupItemSchema,
   RedirectStreamLineupItemSchema,
   ErrorStreamLineupItemSchema,
@@ -198,6 +188,7 @@ export type StreamLineupItem = z.infer<typeof StreamLineupItemSchema>;
 // consolidated as we rewrite pieces of the streaming pipeline.
 export const EnrichedLineupItemSchema = z.discriminatedUnion('type', [
   ProgramStreamLineupItemSchema,
+  CommercialStreamLineupItemSchema,
   OfflineStreamLineupItemSchema,
   RedirectStreamLineupItemSchema,
   ErrorStreamLineupItemSchema,
@@ -214,5 +205,6 @@ export function createOfflineStreamLineupItem(
     startOffset: 0,
     type: 'offline',
     programBeginMs,
+    streamDuration: duration,
   };
 }

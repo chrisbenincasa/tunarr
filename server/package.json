@@ -80,6 +80,7 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@rollup/plugin-swc": "^0.4.0",
     "@types/archiver": "^6.0.2",
     "@types/async-retry": "^1.4.8",
@@ -112,6 +113,7 @@
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.3",
     "ts-essentials": "^10.0.0",
+    "ts-mockito": "^2.6.1",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.19.2",
     "typed-emitter": "^2.1.0",
