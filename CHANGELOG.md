@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.22.0](https://github.com/chrisbenincasa/tunarr/compare/v0.21.11...v0.22.0) (2025-09-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* expose advanced transcode parameters ([#1347](https://github.com/chrisbenincasa/tunarr/issues/1347))
+
+### Features
+
+* expose advanced transcode parameters ([#1347](https://github.com/chrisbenincasa/tunarr/issues/1347)) ([f13e3bb](https://github.com/chrisbenincasa/tunarr/commit/f13e3bbefb8bda8dd1dd39af83027a1e1c745643)), closes [#1090](https://github.com/chrisbenincasa/tunarr/issues/1090)
+* **scheduling:** keep random ordering stable between preview/save in slots ([#1354](https://github.com/chrisbenincasa/tunarr/issues/1354)) ([afcbac9](https://github.com/chrisbenincasa/tunarr/commit/afcbac9ed43886b988992954f8135a6add25a643))
+
+
+### Bug Fixes
+
+* do not pass userId in Jellyfin library requests ([62b853d](https://github.com/chrisbenincasa/tunarr/commit/62b853d6cb775cb7931994429905a8542b7bc850))
+* ensure fallback filler is looped for the duration of the stream block ([#1329](https://github.com/chrisbenincasa/tunarr/issues/1329)) ([c16b208](https://github.com/chrisbenincasa/tunarr/commit/c16b208362b23fc75ac12d93c745afa3e746f8df))
+* **scheduling:** keep relevant existing values when switching program types in slot editor ([4880e42](https://github.com/chrisbenincasa/tunarr/commit/4880e42c745f36c667435652f7b888f1695c2c52)), closes [#1352](https://github.com/chrisbenincasa/tunarr/issues/1352)
+* **scheduling:** properly deduplicate custom/filler programs for slot algos ([0e49c41](https://github.com/chrisbenincasa/tunarr/commit/0e49c4149cc070024026c472d1a69814dfc76057))
+* several fixes to filler editor and programming ([#1350](https://github.com/chrisbenincasa/tunarr/issues/1350)) ([aba6018](https://github.com/chrisbenincasa/tunarr/commit/aba6018a3edfd962ff1e40a817b8052afefee40c))
+* **ui:** ensure correct guide end time is passed for specific channel guide queries ([dd2b9a3](https://github.com/chrisbenincasa/tunarr/commit/dd2b9a350ea7e07c564670ad562b098bcae85ab5))
+* **ui:** fix transcode config name overlay in summary page ([b00a68a](https://github.com/chrisbenincasa/tunarr/commit/b00a68a9705f57f7049663d8b20a1e3f67cddd4c))
+* **ui:** invalidate relevant queries after transcode config is deleted ([abf3b8b](https://github.com/chrisbenincasa/tunarr/commit/abf3b8bf39966bfe34a6a1310719cca6afe44546))
+
+
+### UI Changes
+
+* fix wording for channel flex cooldown ([c135fe7](https://github.com/chrisbenincasa/tunarr/commit/c135fe7c31319d3a66542e2b9736faf34e9191ee))
+
 ## [0.21.11](https://github.com/chrisbenincasa/tunarr/compare/v0.21.10...v0.21.11) (2025-08-27)
 
 
