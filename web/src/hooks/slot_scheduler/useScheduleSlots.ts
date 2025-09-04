@@ -117,6 +117,8 @@ export const useScheduleSlots = () => {
             return {
               programs: materialized,
               startTime: res.startTime,
+              seed: res.seed,
+              discardCount: res.discardCount,
             };
           })
           .catch((e) => {
@@ -132,13 +134,16 @@ export const useScheduleSlots = () => {
           });
       };
 
-      return new Promise<{ programs: ChannelProgram[]; startTime: number }>(
-        (resolve, reject) => {
-          setTimeout(() => {
-            generateScheduleInner().then(resolve).catch(reject);
-          });
-        },
-      );
+      return new Promise<{
+        programs: ChannelProgram[];
+        startTime: number;
+        seed: number[];
+        discardCount: number;
+      }>((resolve, reject) => {
+        setTimeout(() => {
+          generateScheduleInner().then(resolve).catch(reject);
+        });
+      });
     },
     [
       channel,

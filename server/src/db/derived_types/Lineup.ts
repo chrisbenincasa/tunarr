@@ -3,6 +3,7 @@ import {
   LineupScheduleSchema,
   SchedulingOperationSchema,
 } from '@tunarr/types/api';
+import { FillerType } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import { z } from 'zod/v4';
 
@@ -20,6 +21,7 @@ export const ContentLineupItemSchema = z
     // references to these content items in the lineup
     customShowId: z.uuid().optional(),
     fillerListId: z.uuid().optional(),
+    fillerType: FillerType.optional(),
   })
   .merge(BaseLineupItemSchema);
 

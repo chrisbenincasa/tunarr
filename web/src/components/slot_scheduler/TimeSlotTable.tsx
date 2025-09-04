@@ -1,19 +1,22 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
-import { OneWeekMillis, getTimeSlotId } from '@/helpers/slotSchedulerUtil.ts';
+import { getTimeSlotId, OneWeekMillis } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import {
   Box,
+  BoxProps,
   Dialog,
   DialogTitle,
   IconButton,
   Stack,
+  styled,
   Tab,
   Tabs,
   Tooltip,
 } from '@mui/material';
-import type { TimeSlot } from '@tunarr/types/api';
+import { blue, green, orange, pink, purple } from '@mui/material/colors';
+import { type SlotFiller, type TimeSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
@@ -50,6 +53,28 @@ import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
 
+interface CircleProps extends BoxProps {
+  color?: string;
+}
+
+const SmallCircle = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'color',
+})<CircleProps>(({ color = '#87CEEB' }) => ({
+  width: '50px',
+  height: '50px',
+  borderRadius: '50%',
+  backgroundColor: color,
+  boxShadow: `0 0 10px ${color}`,
+}));
+
+const fillerKindToColor = {
+  head: blue['A100'],
+  pre: purple['A100'],
+  post: green['200'],
+  tail: orange['A100'],
+  fallback: pink['A100'],
+};
+
 export const TimeSlotTable = () => {
   const providedDjs = useDayjs();
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
@@ -69,7 +94,6 @@ export const TimeSlotTable = () => {
   });
 
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
-  console.log(detailsBySlotId);
 
   const [currentEditingSlot, setCurrentEditingSlot] = useState<{
     slot: TimeSlot;
@@ -273,6 +297,56 @@ export const TimeSlotTable = () => {
           return value;
         },
         enableSorting: false,
+      },
+      {
+        header: 'Filler',
+        id: 'filler',
+        accessorFn: (row) => {
+          switch (row.type) {
+            case 'movie':
+            case 'show':
+            case 'custom-show':
+              return row.filler ?? [];
+            case 'filler':
+            case 'flex':
+            case 'redirect':
+              return [];
+          }
+        },
+        Cell: ({ cell }) => {
+          const filler = cell.getValue<SlotFiller[]>();
+          const fillerKinds = uniq(filler.flatMap((f) => f.types));
+          if (fillerKinds.length === 0) {
+            return '-';
+          }
+
+          return (
+            <Stack direction="row" spacing={1}>
+              {(['head', 'pre', 'post', 'tail', 'fallback'] as const).map(
+                (type) => {
+                  return (
+                    <Tooltip
+                      placement="top"
+                      title={capitalize(type)}
+                      key={type}
+                    >
+                      <SmallCircle
+                        color={fillerKindToColor[type]}
+                        sx={{
+                          width: '10px',
+                          height: '10px',
+                          visibility: fillerKinds.includes(type)
+                            ? 'visible'
+                            : 'hidden',
+                        }}
+                      />
+                    </Tooltip>
+                  );
+                },
+              )}
+            </Stack>
+          );
+        },
       },
     ];
   }, [currentPeriod, programOptions, startOfPeriod]);

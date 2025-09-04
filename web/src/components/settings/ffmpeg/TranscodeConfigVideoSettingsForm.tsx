@@ -1,5 +1,4 @@
-import type {
-  SelectChangeEvent} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import {
   FormControl,
   FormControlLabel,
@@ -26,7 +25,6 @@ import {
   resolutionFromAnyString,
   resolutionToString,
 } from '../../../helpers/util.ts';
-import { useFfmpegSettings } from '../../../hooks/settingsHooks.ts';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -73,7 +71,6 @@ const VideoHardwareAccelerationOptions: DropdownOption<SupportedHardwareAccels>[
   ] as const;
 
 export const TranscodeConfigVideoSettingsForm = () => {
-  const { data: ffmpegSettings } = useFfmpegSettings();
   const ffmpegInfo = useSuspenseQuery({
     ...getApiFfmpegInfoOptions(),
   });
@@ -220,36 +217,32 @@ export const TranscodeConfigVideoSettingsForm = () => {
         />
       </Stack>
       <Stack gap={1}>
-        {ffmpegSettings.useNewFfmpegPipeline && (
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <CheckboxFormController
-                  control={control}
-                  name="deinterlaceVideo"
-                />
-              }
-              label={'Auto Deinterlace Video'}
-            />
-            <FormHelperText></FormHelperText>
-          </FormControl>
-        )}
-        {ffmpegSettings.useNewFfmpegPipeline && (
-          <FormControl fullWidth>
-            <FormControlLabel
-              control={
-                <CheckboxFormController
-                  control={control}
-                  name="normalizeFrameRate"
-                />
-              }
-              label={'Normalize Frame Rate'}
-            />
-            <FormHelperText>
-              Output video at a constant frame rate.
-            </FormHelperText>
-          </FormControl>
-        )}
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <CheckboxFormController
+                control={control}
+                name="deinterlaceVideo"
+              />
+            }
+            label={'Auto Deinterlace Video'}
+          />
+          <FormHelperText></FormHelperText>
+        </FormControl>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <CheckboxFormController
+                control={control}
+                name="normalizeFrameRate"
+              />
+            }
+            label={'Normalize Frame Rate'}
+          />
+          <FormHelperText>
+            Output video at a constant frame rate.
+          </FormHelperText>
+        </FormControl>
       </Stack>
     </Stack>
   );

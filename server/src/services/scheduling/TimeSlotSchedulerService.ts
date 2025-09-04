@@ -23,6 +23,8 @@ export const ChannelTimeSlotScheduleRequest = z.object({
   channelId: z.number().or(z.string()),
   schedule: TimeSlotScheduleSchema,
   materializeResult: z.boolean(),
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export type ChannelTimeSlotScheduleRequest = z.infer<
@@ -34,6 +36,8 @@ export const ProgramsTimeSlotScheduleRequest = z.object({
   programs: z.array(ChannelProgramSchema),
   schedule: TimeSlotScheduleSchema,
   materializeResult: z.boolean(),
+  seed: z.number().array().optional(),
+  discardCount: z.number().optional(),
 });
 
 export type ProgramsTimeSlotScheduleRequest = z.infer<
@@ -85,7 +89,12 @@ export class TimeSlotSchedulerService {
       .concat(customShowPrograms)
       .concat(fillerPrograms);
 
-    return scheduleTimeSlots(request.schedule, programs);
+    return scheduleTimeSlots(
+      request.schedule,
+      programs,
+      request.seed,
+      request.discardCount ?? 0,
+    );
   }
 
   private async getPrograms(channelId: string | number) {

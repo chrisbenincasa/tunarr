@@ -43,7 +43,7 @@ const padStyleOptions: DropdownOption<RandomSlotSchedule['padStyle']>[] = [
 
 type Props = {
   onCalculateStart?: () => void;
-  onCalculateEnd?: () => void;
+  onCalculateEnd?: (state?: { seed?: number[]; discardCount?: number }) => void;
 };
 
 export const RandomSlotSettingsForm = ({
@@ -65,11 +65,12 @@ export const RandomSlotSettingsForm = ({
       ...values,
       slots: values.slots.map((slot, idx) => ({ ...slot, index: idx })),
     })
+      .then(({ seed, discardCount }) => {
+        toggleIsCalculatingSlots(false);
+        onCalculateEnd?.({ seed, discardCount });
+      })
       .catch((e) => {
         console.error(e);
-      })
-      .finally(() => {
-        toggleIsCalculatingSlots(false);
         onCalculateEnd?.();
       });
   };

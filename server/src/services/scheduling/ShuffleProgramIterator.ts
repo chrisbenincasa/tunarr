@@ -1,5 +1,5 @@
 import type { ChannelProgram } from '@tunarr/types';
-import { nth, shuffle, slice } from 'lodash-es';
+import { nth, slice } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { ProgramIterator } from './ProgramIterator.ts';
 
@@ -13,7 +13,7 @@ export class ShuffleProgramIterator<ProgramT extends ChannelProgram>
     programs: ProgramT[],
     private random: Random,
   ) {
-    this.#programs = shuffle(programs);
+    this.#programs = this.random.shuffle(programs);
   }
 
   current() {
