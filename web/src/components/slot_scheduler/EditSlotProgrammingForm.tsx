@@ -1,6 +1,4 @@
 import type {
-  CustomShowProgramOption,
-  FillerProgramOption,
   ProgramOption,
   RedirectProgramOption,
 } from '@/helpers/slotSchedulerUtil';
@@ -15,21 +13,22 @@ import {
 } from '@mui/material';
 import type { BaseSlot } from '@tunarr/types/api';
 import { filter, find, first, map, uniqBy } from 'lodash-es';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { match } from 'ts-pattern';
 import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.tsx';
 import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
 import { ShowSlotProgrammingForm } from './ShowSlotProgrammingForm.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
-type EditSlotProgramProps = {
+type EditSlotProgramProps<SlotType extends BaseSlot> = {
   programOptions: ProgramOption[];
+  newSlotForType: (type: SlotType['type']) => SlotType;
 };
 
-export const EditSlotProgrammingForm = ({
+export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
   programOptions,
-}: EditSlotProgramProps) => {
+  newSlotForType,
+}: EditSlotProgramProps<SlotType>) => {
   const { watch, control, reset } = useFormContext<BaseSlot>();
   const type = watch('type');
   const availableTypes = useMemo(() => {
@@ -39,59 +38,12 @@ export const EditSlotProgrammingForm = ({
     );
   }, [programOptions]);
 
-  const newSlotForType = useCallback(
-    (type: BaseSlot['type']) => {
-      return match(type)
-        .returnType<BaseSlot>()
-        .with('custom-show', () => ({
-          type: 'custom-show',
-          order: 'next',
-          direction: 'asc',
-          customShowId: find(
-            programOptions,
-            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
-          )!.customShowId,
-        }))
-        .with('movie', () => ({
-          type: 'movie',
-          order: 'alphanumeric',
-          direction: 'asc',
-        }))
-        .with('filler', () => ({
-          type: 'filler',
-          order: 'shuffle_prefer_short',
-          decayFactor: 0.5,
-          durationWeighting: 'linear',
-          recoveryFactor: 0.05,
-          fillerListId: programOptions.find(
-            (opt): opt is FillerProgramOption => opt.type === 'filler',
-          )!.fillerListId,
-        }))
-        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
-        .with('redirect', () => ({
-          type: 'redirect',
-          channelId: programOptions.find((opt) => opt.type === 'redirect')!
-            .channelId,
-          order: 'next',
-          direction: 'asc',
-        }))
-        .with('show', () => ({
-          type: 'show',
-          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
-          order: 'next',
-          direction: 'asc',
-        }))
-        .exhaustive();
-    },
-    [programOptions],
-  );
-
   const handleTypeChange = (value: BaseSlot['type']) => {
     if (value === type) {
       return;
     }
 
-    reset(newSlotForType(value));
+    reset((prev) => ({ ...prev, ...newSlotForType(value) }));
   };
 
   const redirectShowAutoCompleteOpts = useMemo(

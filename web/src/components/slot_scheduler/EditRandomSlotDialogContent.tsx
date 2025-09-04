@@ -1,6 +1,10 @@
 import { NumericFormControllerText } from '@/components/util/TypedController.tsx';
 import { betterHumanize } from '@/helpers/dayjs.ts';
-import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import type {
+  CustomShowProgramOption,
+  FillerProgramOption,
+  ProgramOption,
+} from '@/helpers/slotSchedulerUtil';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import {
@@ -20,9 +24,11 @@ import { TimeField } from '@mui/x-date-pickers';
 import type { RandomSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { isNil, map } from 'lodash-es';
+import { find, isNil, map } from 'lodash-es';
 import React, { useCallback, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
+import type { StrictOmit } from 'ts-essentials';
+import { match } from 'ts-pattern';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
@@ -34,6 +40,12 @@ type EditRandomSlotDialogContentProps = {
   programOptions: ProgramOption[];
   onClose: () => void;
 };
+
+// Just the fields required for content
+type PartialRandomSlot = StrictOmit<
+  RandomSlot,
+  'durationSpec' | 'cooldownMs' | 'weight'
+>;
 
 export const EditRandomSlotDialogContent = ({
   slot,
@@ -99,6 +111,54 @@ export const EditRandomSlotDialogContent = ({
       originalOnChange(millis);
     },
     [],
+  );
+
+  const newSlotForType = useCallback(
+    (type: RandomSlot['type']) => {
+      return match(type)
+        .returnType<PartialRandomSlot>()
+        .with('custom-show', () => ({
+          type: 'custom-show',
+          order: 'next',
+          direction: 'asc',
+          customShowId: find(
+            programOptions,
+            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
+          )!.customShowId,
+        }))
+        .with('movie', () => ({
+          type: 'movie',
+          order: 'alphanumeric',
+          direction: 'asc',
+        }))
+        .with('filler', () => ({
+          type: 'filler',
+          order: 'shuffle_prefer_short',
+          direction: 'asc',
+          decayFactor: 0.5,
+          durationWeighting: 'linear',
+          recoveryFactor: 0.05,
+          fillerListId: programOptions.find(
+            (opt): opt is FillerProgramOption => opt.type === 'filler',
+          )!.fillerListId,
+        }))
+        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
+        .with('redirect', () => ({
+          type: 'redirect',
+          channelId: programOptions.find((opt) => opt.type === 'redirect')!
+            .channelId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .with('show', () => ({
+          type: 'show',
+          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .exhaustive();
+    },
+    [programOptions],
   );
 
   // const slotId = getRandomSlotId(programming);
@@ -240,7 +300,10 @@ export const EditRandomSlotDialogContent = ({
                 )}
               </Stack>
               <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm programOptions={programOptions} />
+                <EditSlotProgrammingForm
+                  programOptions={programOptions}
+                  newSlotForType={newSlotForType}
+                />
               </FormProvider>
               {distribution === 'weighted' && (
                 <Stack direction="row" spacing={2} alignItems="center">

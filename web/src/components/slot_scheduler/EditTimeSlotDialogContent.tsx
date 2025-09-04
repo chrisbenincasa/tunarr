@@ -1,4 +1,8 @@
-import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
+import type {
+  CustomShowProgramOption,
+  FillerProgramOption,
+  ProgramOption,
+} from '@/helpers/slotSchedulerUtil';
 import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
 import {
   Box,
@@ -17,9 +21,11 @@ import { TimePicker } from '@mui/x-date-pickers';
 import type { TimeSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { isNil, map } from 'lodash-es';
+import { find, isNil, map } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
+import type { StrictOmit } from 'ts-essentials';
+import { match } from 'ts-pattern';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { TabPanel } from '../TabPanel.tsx';
@@ -42,6 +48,8 @@ type EditTimeSlotDialogContentProps = {
   programOptions: ProgramOption[];
   onClose: () => void;
 };
+
+type PartialTimeSlot = StrictOmit<TimeSlot, 'startTime'>;
 
 export const EditTimeSlotDialogContent = ({
   slot,
@@ -90,6 +98,53 @@ export const EditTimeSlotDialogContent = ({
 
   const slotType = formMethods.watch('type');
   const [tab, setTab] = useState(0);
+
+  const newSlotForType = useCallback(
+    (type: TimeSlot['type']) => {
+      return match(type)
+        .returnType<PartialTimeSlot>()
+        .with('custom-show', () => ({
+          type: 'custom-show',
+          order: 'next',
+          direction: 'asc',
+          customShowId: find(
+            programOptions,
+            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
+          )!.customShowId,
+        }))
+        .with('movie', () => ({
+          type: 'movie',
+          order: 'alphanumeric',
+          direction: 'asc',
+        }))
+        .with('filler', () => ({
+          type: 'filler',
+          order: 'shuffle_prefer_short',
+          decayFactor: 0.5,
+          durationWeighting: 'linear',
+          recoveryFactor: 0.05,
+          fillerListId: programOptions.find(
+            (opt): opt is FillerProgramOption => opt.type === 'filler',
+          )!.fillerListId,
+        }))
+        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
+        .with('redirect', () => ({
+          type: 'redirect',
+          channelId: programOptions.find((opt) => opt.type === 'redirect')!
+            .channelId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .with('show', () => ({
+          type: 'show',
+          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
+          order: 'next',
+          direction: 'asc',
+        }))
+        .exhaustive();
+    },
+    [programOptions],
+  );
 
   const commit = () => {
     slotArray.update(index, getValues());
@@ -176,7 +231,10 @@ export const EditTimeSlotDialogContent = ({
                 />
               </Stack>
               <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm programOptions={programOptions} />
+                <EditSlotProgrammingForm
+                  programOptions={programOptions}
+                  newSlotForType={newSlotForType}
+                />
               </FormProvider>
             </Stack>
           </TabPanel>
