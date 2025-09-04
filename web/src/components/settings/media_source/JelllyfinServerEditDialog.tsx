@@ -118,7 +118,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     const { accessToken, username, password, uri } = getValues();
 
     if (isNonEmptyString(accessToken)) {
-      void handleSubmit(
+      await handleSubmit(
         (data) =>
           isNonEmptyString(data.id)
             ? updateMediaSourceMut.mutate({
@@ -140,7 +140,12 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                 },
               }),
         showErrorSnack,
-      )(e);
+      )(e).catch((err) => {
+        console.error(err);
+        showErrorSnack(err);
+      });
+
+      handleClose();
     } else if (isNonEmptyString(username) && isNonEmptyString(password)) {
       try {
         const result = await jellyfinLogin({
@@ -153,7 +158,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
           isNonEmptyString(result.accessToken) &&
           isNonEmptyString(result.userId)
         ) {
-          void handleSubmit(
+          await handleSubmit(
             (data) =>
               isNonEmptyString(data.id)
                 ? updateMediaSourceMut.mutate({
@@ -175,13 +180,17 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                     },
                   }),
             showErrorSnack,
-          )(e);
+          )(e).catch((err) => {
+            console.error(err);
+            showErrorSnack(err);
+          });
         } else {
           showErrorSnack(
             'Did not receive an accessToken or userId from Jellyfin server.',
           );
           // Pop snackbar
         }
+        handleClose();
       } catch (e) {
         showErrorSnack(e);
       }

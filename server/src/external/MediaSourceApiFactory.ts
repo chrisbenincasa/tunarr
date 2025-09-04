@@ -65,18 +65,8 @@ export class MediaSourceApiFactory {
   }
 
   getJellyfinApiClient(opts: ApiClientOptions) {
-    return this.getTyped(MediaSourceType.Jellyfin, opts, async (opts) => {
-      let userId = opts.userId;
-      if (isEmpty(opts.userId)) {
-        const usersMeResult = await Result.attemptAsync(() =>
-          JellyfinApiClient.findUserId(opts, opts.accessToken, true),
-        ).then((_) => _.map((res) => res?.Id).filter(isNonEmptyString));
-
-        if (usersMeResult.isSuccess()) {
-          userId = usersMeResult.get();
-        }
-      }
-      return new JellyfinApiClient({ ...opts, userId });
+    return this.getTyped(MediaSourceType.Jellyfin, opts, (opts) => {
+      return Promise.resolve(new JellyfinApiClient(opts));
     });
   }
 

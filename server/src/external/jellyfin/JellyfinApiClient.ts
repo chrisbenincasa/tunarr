@@ -14,7 +14,6 @@ import {
   JellyfinAuthenticationResult,
   JellyfinLibraryItemsResponse,
   JellyfinSystemInfo,
-  JellyfinUser,
   JellyfinVirtualFolderResponse,
 } from '@tunarr/types/jellyfin';
 import type { AxiosRequestConfig } from 'axios';
@@ -101,35 +100,6 @@ export class JellyfinApiClient extends BaseApiClient {
     });
   }
 
-  static async findUserId(
-    server: Omit<ApiClientOptions, 'apiKey' | 'type'>,
-    apiKey: string,
-    errorExpected: boolean = false,
-  ) {
-    try {
-      const response = await axios.get(`${server.url}/Users/Me`, {
-        headers: {
-          Authorization: getJellyfinAuthorization(apiKey, undefined),
-        },
-      });
-
-      return JellyfinUser.parseAsync(response.data);
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.config) {
-          new JellyfinRequestRedacter().redact(error.config);
-        }
-      }
-
-      if (!errorExpected) {
-        LoggerFactory.root.error(error, 'Error retrieving Jellyfin users', {
-          className: JellyfinApiClient.name,
-        });
-      }
-      return;
-    }
-  }
-
   static async login(
     serverUrl: string,
     username: string,
@@ -177,6 +147,9 @@ export class JellyfinApiClient extends BaseApiClient {
       const [meResult, allUsersResult] = await Promise.allSettled([
         this.doGet({
           url: '/Users/Me',
+          params: {
+            userId: this.options.userId,
+          },
         }),
         this.doGet({
           url: '/Users',
@@ -206,21 +179,19 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doTypeCheckedGet('/System/Info', JellyfinSystemInfo);
   }
 
-  async getUserLibraries(userId?: string) {
+  async getUserLibraries() {
     return this.doTypeCheckedGet(
       '/Library/VirtualFolders',
       JellyfinVirtualFolderResponse,
-      { params: { userId } },
     );
   }
 
-  async getUserViews(userId?: string) {
+  async getUserViews() {
     return this.doTypeCheckedGet(
       '/Library/VirtualFolders',
       JellyfinVirtualFolderResponse,
       {
         params: {
-          userId: userId ?? this.options.userId,
           includeExternalContent: false,
           presetViews: [
             'movies',
@@ -245,7 +216,6 @@ export class JellyfinApiClient extends BaseApiClient {
     const result = await this.getItems(
       null,
       null,
-      null,
       ['MediaStreams', 'MediaSources', ...extraFields],
       { offset: 0, limit: 1 },
       {
@@ -263,7 +233,6 @@ export class JellyfinApiClient extends BaseApiClient {
   }
 
   async getItems(
-    userId: Nilable<string>, // Not required if we are using an access token
     parentId: Nilable<string>,
     itemTypes: Nilable<JellyfinItemKind[]> = null,
     extraFields: JellyfinItemFields[] = [],
@@ -277,7 +246,7 @@ export class JellyfinApiClient extends BaseApiClient {
     return this.doTypeCheckedGet('/Items', JellyfinLibraryItemsResponse, {
       params: omitBy(
         {
-          userId: userId ?? this.options.userId,
+          userId: this.options.userId,
           parentId: parentId,
           fields: union(extraFields, RequiredLibraryFields).join(','),
           startIndex: pageParams?.offset,

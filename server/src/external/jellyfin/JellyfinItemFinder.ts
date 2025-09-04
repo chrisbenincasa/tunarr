@@ -183,7 +183,6 @@ export class JellyfinItemFinder {
 
         const queryResult = await jfClient.getItems(
           null,
-          null,
           [jellyfinItemType],
           [],
           null,

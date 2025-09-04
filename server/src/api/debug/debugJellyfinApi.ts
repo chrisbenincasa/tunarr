@@ -16,8 +16,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       schema: {
         tags: ['Debug'],
         querystring: z.object({
-          userId: z.string(),
-          uri: z.string().url(),
+          userId: z.string().optional(),
+          uri: z.url(),
           apiKey: z.string(),
         }),
       },
@@ -26,12 +26,12 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       const client = new JellyfinApiClient({
         url: req.query.uri,
         accessToken: req.query.apiKey,
-        userId: req.query.userId,
+        userId: req.query.userId ?? null,
         name: 'debug',
         username: null,
       });
 
-      await res.send(await client.getUserLibraries(req.query.userId));
+      await res.send(await client.getUserLibraries());
     },
   );
 
@@ -68,7 +68,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
       }
 
       await res.send(
-        await client.getItems(null, req.query.parentId, [], [], pageParams),
+        await client.getItems(req.query.parentId, [], [], pageParams),
       );
     },
   );

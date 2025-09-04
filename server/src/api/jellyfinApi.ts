@@ -219,7 +219,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : null;
 
         const response = await api.getItems(
-          null,
           req.query.parentId ?? req.params.libraryId,
           req.query.itemTypes ?? [],
           uniq([
