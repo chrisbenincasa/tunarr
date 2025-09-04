@@ -17,6 +17,7 @@ import {
   getApiTranscodeConfigsQueryKey,
   postApiTranscodeConfigsByIdCopyMutation,
 } from '../../../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '../../../hooks/settingsHooks.ts';
 import { DeleteConfirmationDialog } from '../../DeleteConfirmationDialog.tsx';
 
@@ -39,6 +40,11 @@ export const TranscodeConfigsTable = () => {
 
   const deleteTranscodeConfig = useMutation({
     ...deleteApiTranscodeConfigsByIdMutation(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        predicate: invalidateTaggedQueries('Settings'),
+      });
+    },
   });
 
   const handleDuplicateConfig = useCallback(
