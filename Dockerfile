@@ -53,7 +53,6 @@ COPY types ./types
 COPY web ./web
 COPY patches ./patches
 COPY CHANGELOG.md CHANGELOG.md
-COPY tunarr-openapi.json tunarr-openapi.json
 
 # Dev container
 FROM ffmpeg-base AS dev
