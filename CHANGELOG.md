@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/chrisbenincasa/tunarr/compare/v0.22.0...v0.22.0) (2025-09-05)
+
+
+### chore
+
+* fix docker build ([37c6708](https://github.com/chrisbenincasa/tunarr/commit/37c6708919e0331dcd23f6595075c749f013922d))
+
 ## [0.22.0](https://github.com/chrisbenincasa/tunarr/compare/v0.21.11...v0.22.0) (2025-09-04)
 
 
