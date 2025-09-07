@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2](https://github.com/chrisbenincasa/tunarr/compare/v0.22.1...v0.22.2) (2025-09-07)
+
+
+### Bug Fixes
+
+* **streaming:** always use streamDuration for duration in ffmpeg pipeline ([#1357](https://github.com/chrisbenincasa/tunarr/issues/1357)) ([9eac043](https://github.com/chrisbenincasa/tunarr/commit/9eac043d5c6d9cfff929feec0fe73e24a6ed2eda))
+
 ## [0.22.1](https://github.com/chrisbenincasa/tunarr/compare/v0.22.0...v0.22.1) (2025-09-05)
 
 
