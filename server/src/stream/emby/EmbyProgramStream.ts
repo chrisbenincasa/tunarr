@@ -117,10 +117,7 @@ export class EmbyProgramStream extends ProgramStream {
       },
       options: {
         startTime: start,
-        duration:
-          +start === 0
-            ? dayjs.duration(lineupItem.duration)
-            : dayjs.duration(lineupItem.streamDuration ?? lineupItem.duration),
+        duration: dayjs.duration(lineupItem.streamDuration),
         watermark,
         realtime: this.context.realtime,
         extraInputHeaders: {},

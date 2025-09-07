@@ -43,7 +43,7 @@ export class OfflineProgramStream extends ProgramStream {
         this.context.streamMode,
       );
       const lineupItem = this.context.lineupItem;
-      let duration = dayjs.duration(lineupItem.streamDuration ?? 0);
+      let duration = dayjs.duration(lineupItem.streamDuration);
       const start = dayjs.duration(lineupItem.startOffset ?? 0);
       if (+duration > +start) {
         duration = duration.subtract(start);

@@ -126,11 +126,7 @@ export class PlexProgramStream extends ProgramStream {
       },
       options: {
         startTime: start,
-        duration: dayjs.duration(
-          +start === 0
-            ? lineupItem.duration
-            : (lineupItem.streamDuration ?? lineupItem.duration),
-        ),
+        duration: dayjs.duration(lineupItem.streamDuration),
         watermark,
         realtime: this.context.realtime,
         outputFormat: this.outputFormat,
