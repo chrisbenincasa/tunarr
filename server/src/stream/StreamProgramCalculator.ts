@@ -312,7 +312,6 @@ export class StreamProgramCalculator {
     timestamp: number,
     channel: MinimalChannelDetails,
     channelLineup: Lineup,
-    streamDuration?: number,
   ): Promise<ProgramAndTimeElapsed> {
     if (channel.startTime > timestamp) {
       this.logger.debug(
@@ -376,7 +375,7 @@ export class StreamProgramCalculator {
         (currentProgramIndex + 1) % channelLineup.items.length
       ].durationMs;
 
-    streamDuration ??= nextOffset - currOffset - elapsed;
+    const streamDuration = nextOffset - currOffset - elapsed;
 
     const lineupItem = channelLineup.items[currentProgramIndex];
     let program: EnrichedLineupItem;
