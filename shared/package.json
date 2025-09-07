@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/shared",
-  "version": "0.22.1",
+  "version": "0.22.2",
   "description": "Utility functions shared between server and web",
   "private": true,
   "keywords": [],
