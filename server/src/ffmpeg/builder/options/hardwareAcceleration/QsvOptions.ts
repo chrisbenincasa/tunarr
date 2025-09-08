@@ -15,7 +15,7 @@ export class QsvHardwareAccelerationOption extends GlobalOption {
   options(): string[] {
     const initDevice =
       os.type().toLowerCase() === 'windows_nt'
-        ? 'd3d11va=hw:,vendor=0x8086'
+        ? 'qsv=hw'
         : 'qsv=hw:hw,child_device_type=vaapi';
     const initDeviceOpts = [
       '-init_hw_device',
