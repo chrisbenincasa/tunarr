@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.23.0-alpha.1](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha...v0.23.0-alpha.1) (2025-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* fix bundler
+
+### chore
+
+* fix bundler ([b04ce96](https://github.com/chrisbenincasa/tunarr/commit/b04ce9673d53433fb2265d381459da37866714b5))
+
 ## [0.23.0-alpha](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.23.0-alpha) (2025-09-15)
 
 
