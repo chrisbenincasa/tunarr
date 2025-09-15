@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.23.0-alpha](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.23.0-alpha) (2025-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* 
+
+### Features
+
+* media library scanner + full library search ([4dd117c](https://github.com/chrisbenincasa/tunarr/commit/4dd117cb694950ffe125c8c65d53d6fb01dc2bac))
+
+
+### Bug Fixes
+
+* allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
+* **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
+
 ## [0.22.2](https://github.com/chrisbenincasa/tunarr/compare/v0.22.1...v0.22.2) (2025-09-07)
 
 
