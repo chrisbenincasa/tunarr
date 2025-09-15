@@ -328,9 +328,12 @@ importers:
       drizzle-kit:
         specifier: ^0.30.6
         version: 0.30.6
+      esbuild:
+        specifier: ^0.21.5
+        version: 0.21.5
       esbuild-plugin-pino:
         specifier: ^2.3.3
-        version: 2.3.3(esbuild@0.19.12)(pino-pretty@11.3.0)(pino@9.9.2)(thread-stream@3.1.0)
+        version: 2.3.3(esbuild@0.21.5)(pino-pretty@11.3.0)(pino@9.9.2)(thread-stream@3.1.0)
       fast-check:
         specifier: ^4.2.0
         version: 4.2.0
@@ -12740,9 +12743,9 @@ snapshots:
       is-date-object: 1.0.5
       is-symbol: 1.0.4
 
-  esbuild-plugin-pino@2.3.3(esbuild@0.19.12)(pino-pretty@11.3.0)(pino@9.9.2)(thread-stream@3.1.0):
+  esbuild-plugin-pino@2.3.3(esbuild@0.21.5)(pino-pretty@11.3.0)(pino@9.9.2)(thread-stream@3.1.0):
     dependencies:
-      esbuild: 0.19.12
+      esbuild: 0.21.5
       pino: 9.9.2
     optionalDependencies:
       pino-pretty: 11.3.0
