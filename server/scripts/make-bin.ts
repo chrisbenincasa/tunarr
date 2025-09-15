@@ -114,7 +114,7 @@ for (const arch of args.target) {
       const betterSqliteDlStream = await retry(() => {
         const url = getBetterSqlite3DownloadUrl(
           serverPackage.dependencies['better-sqlite3'],
-          nodeAbi.getAbi('22.13.1', 'node'),
+          nodeAbi.getAbi('22.17.1', 'node'),
           osString,
           archString,
         );
@@ -182,7 +182,7 @@ for (const arch of args.target) {
         '-c',
         'pkg.config.json',
         '-t',
-        `node22.15.1-${arch}`,
+        `node22.17.1-${arch}`,
         `${dir.path}/dist/bundle.cjs`,
         // Look into whether we want this sometimes...
         '--no-bytecode',
