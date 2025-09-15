@@ -1,5 +1,5 @@
 {
-  "bootstrap-sha": "3f92f16fb02166239bc33b0f9b4ca5727b3be52b",
+  "bootstrap-sha": "31c0ba34fd2dcf535fd3993952da0aba45bd0fa0",
   "packages": {
     ".": {
       "changelog-path": "CHANGELOG.md",
@@ -10,7 +10,7 @@
       "versioning": "prerelease",
       "prerelease": true,
       "prerelease-type": "alpha",
-      "bootstrap-sha": "3f92f16fb02166239bc33b0f9b4ca5727b3be52b",
+      "bootstrap-sha": "31c0ba34fd2dcf535fd3993952da0aba45bd0fa0",
       "include-v-in-tag": true,
       "include-component-in-tag": false,
       "extra-files": [
