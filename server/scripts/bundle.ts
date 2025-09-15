@@ -1,7 +1,6 @@
 import '@dotenvx/dotenvx/config';
 
 import esbuild from 'esbuild';
-import esbuildPluginPino from 'esbuild-plugin-pino';
 import fg from 'fast-glob';
 import fs from 'node:fs';
 import { basename } from 'node:path';
@@ -9,6 +8,10 @@ import { format } from 'node:util';
 import { rimraf } from 'rimraf';
 import { nativeNodeModulesPlugin } from '../esbuild/native-node-module.ts';
 import { nodeProtocolPlugin } from '../esbuild/node-protocol.ts';
+
+import { createRequire } from 'node:module';
+const __require = createRequire(import.meta.url);
+const esbuildPluginPino = __require('esbuild-plugin-pino');
 
 const DIST_DIR = 'dist';
 

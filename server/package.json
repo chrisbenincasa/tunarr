@@ -105,6 +105,7 @@
     "del-cli": "^3.0.1",
     "dotenv-cli": "^7.4.4",
     "drizzle-kit": "^0.30.6",
+    "esbuild": "^0.21.5",
     "esbuild-plugin-pino": "^2.3.3",
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
