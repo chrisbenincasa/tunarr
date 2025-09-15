@@ -36,6 +36,7 @@ export type GridItemMetadata = {
   isPlaylist: boolean;
   hasThumbnail: boolean;
   childCount: number | null;
+  mayHaveChildren?: boolean;
   aspectRatio: 'portrait' | 'landscape' | 'square';
   title: string;
   subtitle: JSX.Element | string | null;
@@ -81,6 +82,7 @@ const MediaGridItemInner = <T,>(
       title,
       subtitle,
       childCount,
+      mayHaveChildren,
       isFolder = false,
     },
     style,
@@ -120,7 +122,7 @@ const MediaGridItemInner = <T,>(
     [itemId, props.itemSource, selectedMedia],
   );
 
-  const handleItem = useCallback(
+  const toggleItemSelect = useCallback(
     (e: MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
       e.stopPropagation();
       if (enableSelection && selectedMediaItem) {
@@ -197,7 +199,9 @@ const MediaGridItemInner = <T,>(
             ...style,
           }}
           onClick={(e) =>
-            (childCount ?? 0) === 0 ? handleItem(e) : handleClick()
+            (childCount ?? 0) > 0 || mayHaveChildren
+              ? handleClick()
+              : toggleItemSelect(e)
           }
           ref={ref}
         >
@@ -283,7 +287,7 @@ const MediaGridItemInner = <T,>(
                 <IconButton
                   aria-label={`star ${title}`}
                   onClick={(event: MouseEvent<HTMLButtonElement>) =>
-                    handleItem(event)
+                    toggleItemSelect(event)
                   }
                 >
                   {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}

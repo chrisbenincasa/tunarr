@@ -21,6 +21,7 @@ import { first, isNil, map } from 'lodash-es';
 import pluralize from 'pluralize';
 import type { MouseEvent } from 'react';
 import React, { Fragment, useCallback } from 'react';
+import { isJellyfinParentItem } from '../../../helpers/jellyfinUtil.ts';
 
 export interface JellyfinListItemProps {
   item: JellyfinItem;
@@ -39,6 +40,7 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
   const selectedServer = useCurrentMediaSource('jellyfin')!;
   const { item, style, onPushParent } = props;
   const childCount = item.RecursiveItemCount ?? item.ChildCount ?? 0;
+  const mayHaveChildren = isJellyfinParentItem(item);
   const hasChildren = !isTerminalJellyfinItem(item) && childCount > 0;
 
   const selectedMedia = useSelectedMedia('jellyfin');
@@ -105,11 +107,14 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
     }
   };
 
+  const isDisabled =
+    !isTerminalJellyfinItem(item) && childCount === 0 && !mayHaveChildren;
+
   return (
     <Fragment key={item.Id}>
       <ListItem divider disablePadding style={style}>
         <ListItemButton
-          disabled={!isTerminalJellyfinItem(item) && childCount === 0}
+          disabled={isDisabled}
           onClick={handleClick}
           dense
           sx={{
@@ -126,7 +131,7 @@ export function JellyfinListItem(props: JellyfinListItemProps) {
           )}
           <ListItemText primary={item.Name} secondary={getSecondaryText()} />
           <Button
-            disabled={!isTerminalJellyfinItem(item) && childCount === 0}
+            disabled={isDisabled}
             onClick={(e) => handleItem(e)}
             variant="contained"
           >

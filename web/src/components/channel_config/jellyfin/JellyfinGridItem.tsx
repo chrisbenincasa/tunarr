@@ -17,6 +17,7 @@ import { useCurrentMediaSource } from '@/store/programmingSelector/selectors.ts'
 import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { match, P } from 'ts-pattern';
+import { isJellyfinParentItem } from '../../../helpers/jellyfinUtil.ts';
 import { type GridItemMetadata, MediaGridItem } from '../MediaGridItem.tsx';
 import { type GridItemProps } from '../MediaItemGrid.tsx';
 
@@ -183,6 +184,7 @@ export const JellyfinGridItem = memo(
             isPlaylist: item.Type === 'Playlist',
             hasThumbnail: isNonEmptyString((item.ImageTags ?? {})['Primary']),
             childCount: extractChildCount(item),
+            mayHaveChildren: isJellyfinParentItem(item),
             title: item.Name ?? '',
             aspectRatio: isMusicItem(item)
               ? 'square'

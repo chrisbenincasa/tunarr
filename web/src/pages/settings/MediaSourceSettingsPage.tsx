@@ -42,6 +42,7 @@ import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { putApiPlexSettingsMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 
 const supportedPaths = [
   { value: 'network', string: 'Network' },
@@ -94,7 +95,7 @@ export default function MediaSourceSettingsPage() {
       setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
-        queryKey: ['Settings'],
+        predicate: invalidateTaggedQueries('Settings'),
       });
     },
   });

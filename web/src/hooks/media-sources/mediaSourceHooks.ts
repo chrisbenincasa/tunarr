@@ -3,6 +3,7 @@ import {
   postApiMediaSourcesMutation,
   putApiMediaSourcesByIdMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 
 type Callbacks = {
   onSuccess?: () => void;
@@ -14,8 +15,7 @@ export const useUpdateMediaSource = (callbacks?: Callbacks) => {
     ...putApiMediaSourcesByIdMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
-        exact: false,
+        predicate: invalidateTaggedQueries('Media Source'),
       });
       callbacks?.onSuccess?.();
     },
@@ -29,8 +29,7 @@ export const useCreateMediaSource = (callbacks?: Callbacks) => {
     ...postApiMediaSourcesMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['settings', 'media-sources'],
-        exact: false,
+        predicate: invalidateTaggedQueries('Media Source'),
       });
       callbacks?.onSuccess?.();
     },
