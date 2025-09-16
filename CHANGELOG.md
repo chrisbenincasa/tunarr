@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.2](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.1...v0.23.0-alpha.2) (2025-09-16)
+
+
+### chore
+
+* release 0.23.0-alpha.2 ([3e59558](https://github.com/chrisbenincasa/tunarr/commit/3e59558bca98a72ef21724112747caefe459e477))
+
 ## [0.23.0-alpha.1](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha...v0.23.0-alpha.1) (2025-09-15)
 
 
