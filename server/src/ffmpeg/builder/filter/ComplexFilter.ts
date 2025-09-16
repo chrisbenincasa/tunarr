@@ -22,7 +22,7 @@ export class ComplexFilter implements FilterOptionPipelineStep {
     private audioInputSource: Nullable<AudioInputSource>,
     private subtitleInputSource: Nullable<SubtitlesInputSource>,
     private watermarkInputSource: Nullable<WatermarkInputSource>,
-    private filterChain: FilterChain,
+    public readonly filterChain: FilterChain,
   ) {}
 
   readonly affectsFrameState: boolean = false;

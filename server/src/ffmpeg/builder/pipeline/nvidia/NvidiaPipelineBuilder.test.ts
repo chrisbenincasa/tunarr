@@ -2,6 +2,7 @@ import { FileStreamSource } from '../../../../stream/types.ts';
 import { LoggerFactory } from '../../../../util/logging/LoggerFactory.ts';
 import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
 import { NvidiaHardwareCapabilities } from '../../capabilities/NvidiaHardwareCapabilities.ts';
+import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
 import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
 import { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
@@ -94,6 +95,67 @@ describe('NvidiaPipelineBuilder', () => {
     );
 
     console.log(out.getCommandArgs().join(' '));
+  });
+
+  test('should work software decode', () => {
+    const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+    const binaryCapabilities = new FfmpegCapabilities(
+      new Set(),
+      new Map(),
+      new Set(),
+    );
+    const video = VideoInputSource.withStream(
+      new FileStreamSource('/path/to/video.mp2'),
+      VideoStream.create({
+        codec: 'mpeg2video',
+        profile: 'main',
+        displayAspectRatio: '4:3',
+        frameSize: FrameSize.withDimensions(352, 480),
+        index: 0,
+        pixelFormat: new PixelFormatYuv420P(),
+        sampleAspectRatio: '1:1',
+      }),
+    );
+
+    const builder = new NvidiaPipelineBuilder(
+      capabilities,
+      binaryCapabilities,
+      video,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    const state = FfmpegState.create({
+      version: {
+        versionString: 'n7.0.2-15-g0458a86656-20240904',
+        majorVersion: 7,
+        minorVersion: 0,
+        patchVersion: 2,
+        isUnknown: false,
+      },
+      softwareDeinterlaceFilter: 'none',
+    });
+
+    const out = builder.build(
+      state,
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+        deinterlace: true,
+      }),
+      DefaultPipelineOptions,
+    );
+
+    const deinterlace = out
+      .getComplexFilter()
+      ?.filterChain.videoFilterSteps.find(
+        (step) => step instanceof DeinterlaceFilter,
+      );
+    expect(deinterlace?.filter).toBe('yadif=1');
   });
 
   test('should work with hardware filters disabled', () => {
