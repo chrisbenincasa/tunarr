@@ -153,7 +153,7 @@ export type FfmpegPlaybackParams = {
   deinterlace?: boolean;
 
   // audio details
-  audioFormat: string;
+  audioFormat: TranscodeAudioOutputFormat;
   audioBitrate?: number;
   audioBufferSize?: number;
   audioChannels?: number;

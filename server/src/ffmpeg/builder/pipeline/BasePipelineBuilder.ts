@@ -607,12 +607,12 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.audioInputSource?.filterSteps.push(
         new AudioResampleFilter(asyncSamples),
       );
-    }
 
-    if (!isNull(this.context.desiredAudioState.audioDuration)) {
-      this.audioInputSource?.filterSteps.push(
-        AudioPadFilter.create(this.context.desiredAudioState.audioDuration),
-      );
+      if (!isNull(this.context.desiredAudioState.audioDuration)) {
+        this.audioInputSource?.filterSteps.push(
+          AudioPadFilter.create(this.context.desiredAudioState.audioDuration),
+        );
+      }
     }
   }
 

@@ -1,6 +1,7 @@
 import type { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isNil, omitBy } from 'lodash-es';
 import type { AnyFunction } from 'ts-essentials';
+import type { TranscodeAudioOutputFormat } from '../../../db/schema/TranscodeConfig.ts';
 
 export type AudioStateFields = ExcludeByValueType<AudioState, AnyFunction>;
 
@@ -15,7 +16,7 @@ const DefaultAudioState: AudioState = {
 };
 
 export class AudioState {
-  audioEncoder: string;
+  audioEncoder: TranscodeAudioOutputFormat;
   audioChannels: Nullable<number>;
   audioBitrate: Nullable<number>;
   audioBufferSize: Nullable<number>;
