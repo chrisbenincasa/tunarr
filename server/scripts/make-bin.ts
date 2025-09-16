@@ -142,7 +142,7 @@ for (const arch of args.target) {
 
       const meilisearchBinaryPath = await grabMeilisearch(
         nodePlatform,
-        arch,
+        archString,
         `./bin/meilisearch-${arch}`,
       );
       if (!meilisearchBinaryPath) {
