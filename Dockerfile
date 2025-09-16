@@ -112,4 +112,6 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # Create a symlink to the executable in /tunarr. This simplifies things for the
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
+RUN mkdir /tunarr/bin
+RUN ln -s /tunarr/server/bin/meilisearch /tunarr/bin/meilisearch
 RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr
