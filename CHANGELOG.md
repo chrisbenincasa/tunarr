@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.5](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.4...v0.23.0-alpha.5) (2025-09-16)
+
+
+### Bug Fixes
+
+* pass just arch string to meilisearch downloader ([2c6af77](https://github.com/chrisbenincasa/tunarr/commit/2c6af7797eec14ede06cefa0fb114378d3b5432f))
+
 ## [0.23.0-alpha.4](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.3...v0.23.0-alpha.4) (2025-09-16)
 
 
