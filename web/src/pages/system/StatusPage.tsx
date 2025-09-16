@@ -42,12 +42,12 @@ import {
 } from '../../generated/@tanstack/react-query.gen.ts';
 
 // TODO: Get these from server.
-const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
+// const MissingSeasonNumbersCheck = 'MissingSeasonNumbers';
 const FfmpegVersionCheck = 'FfmpegVersion';
 const HardwareAccelerationCheck = 'HardwareAcceleration';
 const FfmpegDebugLoggingCheck = 'FfmpegDebugLogging';
-const MissingProgramAssociationsHealthCheck =
-  'MissingProgramAssociationsHealthCheck';
+// const MissingProgramAssociationsHealthCheck =
+//   'MissingProgramAssociationsHealthCheck';
 const FfmpegTranscodeDirectory = 'FfmpegTranscodeDirectory';
 const BaseImageHealthCheck = 'BaseImageHealthCheck';
 
@@ -56,8 +56,8 @@ const AllKnownChecks = [
   HardwareAccelerationCheck,
   FfmpegTranscodeDirectory,
   FfmpegDebugLoggingCheck,
-  MissingSeasonNumbersCheck,
-  MissingProgramAssociationsHealthCheck,
+  // MissingSeasonNumbersCheck,
+  // MissingProgramAssociationsHealthCheck,
   BaseImageHealthCheck,
 ] as const;
 
@@ -127,24 +127,24 @@ export const StatusPage = () => {
     const checkRows = compact(
       map(AllKnownChecks, (check) => {
         const prettyName = match(check)
-          .with(MissingSeasonNumbersCheck, () => 'Missing Season Numbers')
+          // .with(MissingSeasonNumbersCheck, () => 'Missing Season Numbers')
           .with(FfmpegVersionCheck, () => 'FFmpeg Version')
           .with(HardwareAccelerationCheck, () => 'Hardware Acceleration')
           .with(FfmpegDebugLoggingCheck, () => 'FFmpeg Report Logging')
-          .with(
-            MissingProgramAssociationsHealthCheck,
-            () => 'Missing Program Associations',
-          )
+          // .with(
+          //   MissingProgramAssociationsHealthCheck,
+          //   () => 'Missing Program Associations',
+          // )
           .with(FfmpegTranscodeDirectory, () => 'FFmpeg Transcode Directory')
           .with(BaseImageHealthCheck, () => 'Base Docker Image Tag')
           .exhaustive();
 
         const fixer = match(check)
-          .with(MissingSeasonNumbersCheck, () => 'MissingSeasonNumbersFixer')
-          .with(
-            MissingProgramAssociationsHealthCheck,
-            () => 'BackfillProgramGroupings',
-          )
+          // .with(MissingSeasonNumbersCheck, () => 'MissingSeasonNumbersFixer')
+          // .with(
+          //   MissingProgramAssociationsHealthCheck,
+          //   () => 'BackfillProgramGroupings',
+          // )
           .otherwise(() => null);
 
         const data = systemHealthQuery.data?.[check];
