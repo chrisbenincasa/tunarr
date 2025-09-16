@@ -23,12 +23,10 @@ import {
   Tooltip,
   Typography,
   useTheme,
-  type SelectChangeEvent,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
-import { TimePicker } from '@mui/x-date-pickers';
 import {
   LogLevels,
   type CacheSettings,
@@ -37,13 +35,18 @@ import {
   type SystemSettings,
 } from '@tunarr/types';
 import { type UpdateSystemSettingsRequest } from '@tunarr/types/api';
-import { type BackupSettings, type EverySchedule } from '@tunarr/types/schemas';
+import { type BackupSettings } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { first, isNull, map, trim, trimEnd } from 'lodash-es';
+import { map, trim, trimEnd } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import pluralize from 'pluralize';
 import { useCallback } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import {
+  Controller,
+  FormProvider,
+  useFieldArray,
+  useForm,
+} from 'react-hook-form';
+import { BackupForm } from './BackupForm.tsx';
 
 const LogLevelChoices = [
   {
@@ -85,16 +88,17 @@ export function GeneralSettingsForm({
     server: systemSettings.server,
   });
 
+  const settingsForm = useForm<GeneralSettingsFormData>({
+    defaultValues: getBaseFormValues(systemSettings),
+  });
+
   const {
     control,
     handleSubmit,
     reset,
     formState: { isDirty, isValid, isSubmitting },
     watch,
-    setValue,
-  } = useForm<GeneralSettingsFormData>({
-    defaultValues: getBaseFormValues(systemSettings),
-  });
+  } = settingsForm;
 
   const { remove, append } = useFieldArray({
     control,
@@ -103,16 +107,11 @@ export function GeneralSettingsForm({
 
   const backupsValue = watch('backup');
   const backupsEnabled = backupsValue.configurations.length > 0;
-  const currentBackupSchedule = first(backupsValue.configurations)?.schedule as
-    | EverySchedule
-    | undefined;
 
   const onSave = (data: GeneralSettingsFormData) => {
     const newBackendUri = trimEnd(trim(data.backendUri), '/');
     setBackendUri(newBackendUri);
-    snackbar.enqueueSnackbar('Settings Saved!', {
-      variant: 'success',
-    });
+
     const updateReq: UpdateSystemSettingsRequest = {
       logging: {
         logLevel: data.logLevel === 'env' ? undefined : data.logLevel,
@@ -122,11 +121,24 @@ export function GeneralSettingsForm({
       cache: data.cache,
       server: data.server,
     };
+
     updateSystemSettings.mutate(
       { body: updateReq },
       {
         onSuccess(data) {
           reset(getBaseFormValues(data), { keepDirty: false });
+          snackbar.enqueueSnackbar('Settings Saved!', {
+            variant: 'success',
+          });
+        },
+        onError: (err) => {
+          console.error(err);
+          snackbar.enqueueSnackbar(
+            'Error while saving settings. Please check console for details.',
+            {
+              variant: 'error',
+            },
+          );
         },
       },
     );
@@ -156,26 +168,6 @@ export function GeneralSettingsForm({
     }
   }, [append, backupsEnabled, remove]);
 
-  function handleArchiveFormatUpdate(ev: SelectChangeEvent) {
-    if (ev.target.value === 'zip' || ev.target.value === 'tar') {
-      setValue(
-        'backup.configurations.0.outputs.0.archiveFormat',
-        ev.target.value,
-        { shouldDirty: true },
-      );
-      setValue('backup.configurations.0.outputs.0.gzip', false, {
-        shouldDirty: true,
-      });
-    } else if (ev.target.value === 'targz') {
-      setValue('backup.configurations.0.outputs.0.archiveFormat', 'tar', {
-        shouldDirty: true,
-      });
-      setValue('backup.configurations.0.outputs.0.gzip', true, {
-        shouldDirty: true,
-      });
-    }
-  }
-
   function renderBackupsForm() {
     return (
       <Grid container spacing={2}>
@@ -196,115 +188,9 @@ export function GeneralSettingsForm({
           </FormControl>
         </Grid>
         {backupsEnabled && (
-          <>
-            <Grid size={{ xs: 6 }}>
-              <Controller
-                control={control}
-                name="backup.configurations.0.outputs.0.outputPath"
-                render={({ field }) => (
-                  <TextField
-                    fullWidth
-                    label="Output Path"
-                    {...field}
-                    helperText="By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 3 }}>
-              <NumericFormControllerText
-                control={control}
-                name="backup.configurations.0.outputs.0.maxBackups"
-                prettyFieldName="Max Backups"
-                rules={{ min: 0 }}
-                TextFieldProps={{
-                  label: 'Max Backups',
-                  helperText: 'Set to 0 to never delete backups',
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Archive Format</InputLabel>
-                <Controller
-                  control={control}
-                  name="backup.configurations.0.outputs.0.archiveFormat"
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      value={
-                        field.value === 'tar' &&
-                        backupsValue.configurations[0].outputs[0].gzip
-                          ? 'targz'
-                          : field.value
-                      }
-                      label="Archive Format"
-                      onChange={(ev) => handleArchiveFormatUpdate(ev)}
-                    >
-                      <MenuItem value="zip">.zip</MenuItem>
-                      <MenuItem value="tar">.tar</MenuItem>
-                      <MenuItem value="targz">.tar.gz</MenuItem>
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Typography>Every</Typography>
-                <NumericFormControllerText
-                  control={control}
-                  name="backup.configurations.0.schedule.increment"
-                  prettyFieldName="Max Backups"
-                  rules={{ min: 1 }}
-                  TextFieldProps={{
-                    sx: { width: '30%' },
-                  }}
-                />
-                <Controller
-                  control={control}
-                  name="backup.configurations.0.schedule.unit"
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      value={
-                        field.value === 'day' || field.value === 'hour'
-                          ? field.value
-                          : 'day'
-                      }
-                      sx={{ minWidth: '25%' }}
-                    >
-                      <MenuItem value="hour">
-                        {pluralize('Hour', currentBackupSchedule!.increment)}
-                      </MenuItem>
-                      <MenuItem value="day">
-                        {pluralize('Day', currentBackupSchedule!.increment)}
-                      </MenuItem>
-                    </Select>
-                  )}
-                />
-
-                {currentBackupSchedule!.unit === 'day' && (
-                  <TimePicker
-                    value={dayjs()
-                      .startOf('day')
-                      .add(currentBackupSchedule!.offsetMs)}
-                    onChange={(value) =>
-                      setValue(
-                        'backup.configurations.0.schedule.offsetMs',
-                        isNull(value)
-                          ? 0
-                          : value
-                              .mod(dayjs.duration(1, 'day'))
-                              .asMilliseconds(),
-                        { shouldDirty: true },
-                      )
-                    }
-                  />
-                )}
-              </Stack>
-            </Grid>
-          </>
+          <FormProvider {...settingsForm}>
+            <BackupForm />
+          </FormProvider>
         )}
       </Grid>
     );
