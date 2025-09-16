@@ -131,7 +131,7 @@ export async function grabMeilisearch(
     .with(['linux', 'arm64'], () => 'linux-aarch64')
     .with(['darwin', 'x64'], () => 'macos-amd64')
     .with(['darwin', 'arm64'], () => 'macos-apple-silicon')
-    .with(['win32', 'x64'], () => 'windows-amd64')
+    .with(['win32', 'x64'], () => 'windows-amd64.exe')
     .otherwise(() => null);
   if (!meilisearchArchName) {
     console.error(`Unsupported platform/arch combo: ${platform} / ${arch}`);

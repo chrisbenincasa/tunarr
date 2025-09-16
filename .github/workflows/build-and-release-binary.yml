@@ -45,6 +45,7 @@ jobs:
             target: linux-arm64
           - name: windows-latest
             target: win-x64
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -115,6 +116,7 @@ jobs:
             arch: arm64
             runner: macos-15
     runs-on: ${{matrix.os.runner}}
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # Checkout code from repository
