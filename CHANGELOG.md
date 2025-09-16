@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.4](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.3...v0.23.0-alpha.4) (2025-09-16)
+
+
+### Bug Fixes
+
+* unclear why platform/arch is suddenly broken ([18c794e](https://github.com/chrisbenincasa/tunarr/commit/18c794eab7159df74f7b54037bcb5a30c76233e5))
+
 ## [0.23.0-alpha.3](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.2...v0.23.0-alpha.3) (2025-09-16)
 
 
