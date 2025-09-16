@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0-alpha.3](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.2...v0.23.0-alpha.3) (2025-09-16)
+
+
+### Bug Fixes
+
+* create release archives with bundled meilisearch ([c96a19f](https://github.com/chrisbenincasa/tunarr/commit/c96a19f1a58ade276c309fa082617a8e35085a06))
+* link meilisearch binary in Dockerfile ([44c02bf](https://github.com/chrisbenincasa/tunarr/commit/44c02bfef66a987b03246fe5c9db7b754db2d236))
+
 ## [0.23.0-alpha.2](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.1...v0.23.0-alpha.2) (2025-09-16)
 
 
