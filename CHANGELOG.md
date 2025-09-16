@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.6](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.5...v0.23.0-alpha.6) (2025-09-16)
+
+
+### Bug Fixes
+
+* meilisearch paths...again ([92fdad2](https://github.com/chrisbenincasa/tunarr/commit/92fdad2f4f2d81a56bd021c762dbc87685611d83))
+
 ## [0.23.0-alpha.5](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.4...v0.23.0-alpha.5) (2025-09-16)
 
 
