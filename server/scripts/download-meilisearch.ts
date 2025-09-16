@@ -119,7 +119,9 @@ export async function grabMeilisearch(
     return outPath;
   }
 
-  console.info(`Downloading meilisearch version ${wantedVersion} from Github`);
+  console.info(
+    `Downloading meilisearch version ${wantedVersion} for ${platform} ${arch} from Github`,
+  );
 
   const response = await axios.get<getReleaseByTagResponse>(
     `https://api.github.com/repos/meilisearch/meilisearch/releases/tags/v${wantedVersion}`,
@@ -133,9 +135,7 @@ export async function grabMeilisearch(
     .with(['win32', 'x64'], () => 'windows-amd64')
     .otherwise(() => null);
   if (!meilisearchArchName) {
-    console.error(
-      `Unsupported platform/arch combo: ${os.platform()} / ${os.arch()}`,
-    );
+    console.error(`Unsupported platform/arch combo: ${platform} / ${arch}`);
     return;
   }
 
