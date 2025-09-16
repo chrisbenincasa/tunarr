@@ -100,7 +100,12 @@ async function copyToTarget(targetPath: string) {
   await fs.cp(outPath, targetPath);
 }
 
-export async function grabMeilisearch(targetPath?: string) {
+export async function grabMeilisearch(
+  platform: NodeJS.Platform = os.platform(),
+  arch: string = os.arch(),
+  targetPath?: string,
+) {
+  const outPath = `meilisearch-${platform}-${arch}`;
   const needsDownload = await needsToDownloadNewBinary();
 
   if (!needsDownload) {
@@ -120,7 +125,7 @@ export async function grabMeilisearch(targetPath?: string) {
     `https://api.github.com/repos/meilisearch/meilisearch/releases/tags/v${wantedVersion}`,
   );
   const assetsByName = groupByUniq(response.data.assets, (asset) => asset.name);
-  const meilisearchArchName = match([os.platform(), os.arch()])
+  const meilisearchArchName = match([platform, arch])
     .with(['linux', 'x64'], () => 'linux-amd64')
     .with(['linux', 'arm64'], () => 'linux-aarch64')
     .with(['darwin', 'x64'], () => 'macos-amd64')
@@ -163,5 +168,5 @@ export async function grabMeilisearch(targetPath?: string) {
 }
 
 if (process.argv[1] === import.meta.filename) {
-  await grabMeilisearch(process.argv?.[2]);
+  await grabMeilisearch(os.platform(), os.arch(), process.argv?.[2]);
 }

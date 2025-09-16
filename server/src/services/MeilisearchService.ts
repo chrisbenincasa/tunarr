@@ -13,11 +13,12 @@ import dayjs from 'dayjs';
 import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
-import { find, isEmpty, isNull, isString } from 'lodash-es';
+import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
 import { EnqueuedTaskObject, MeiliSearch, Settings, Task } from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
 import { match, P } from 'ts-pattern';
@@ -411,14 +412,35 @@ export class MeilisearchService implements ISearchService {
           await fs.truncate(searchServerLogFile);
         }
 
-        this.proc = await this.childProcessHelper.spawn(
-          getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH) ??
-            path.join(process.cwd(), 'bin', 'meilisearch'),
-          args,
-          {
-            maxAttempts: 3,
-          },
-        );
+        let executablePath: Maybe<string>;
+        const binaryName =
+          os.platform() === 'win32' ? 'meilisearch.exe' : 'meilisearch';
+        const testPaths = [
+          getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH),
+          path.join(process.cwd(), 'bin', binaryName),
+          path.join(process.cwd(), binaryName),
+        ];
+        for (const testPath of testPaths) {
+          if (!testPath) {
+            continue;
+          }
+
+          if (await fileExists(testPath)) {
+            executablePath = testPath;
+            break;
+          }
+        }
+
+        if (!isNonEmptyString(executablePath)) {
+          throw new Error(
+            `Could not find meilisearch binary at any of the tested paths: ${compact(testPaths).join(', ')}`,
+          );
+        }
+
+        this.proc = await this.childProcessHelper.spawn(executablePath, args, {
+          maxAttempts: 3,
+        });
+        this.logger.info('Meilisearch service started on port %d', this.port);
         const outStream = createWriteStream(searchServerLogFile);
         this.proc.process?.stdout.pipe(outStream);
         this.proc.process?.stderr.pipe(outStream);

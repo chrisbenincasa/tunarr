@@ -21,6 +21,7 @@
       "dependsOn": ["^build"]
     },
     "make-bin": {
+      "cache": false,
       "dependsOn": ["bundle"],
       "outputs": ["bin/**"]
     },

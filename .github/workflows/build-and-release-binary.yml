@@ -83,7 +83,7 @@ jobs:
         run: pnpm turbo bundle --filter=@tunarr/web
 
       - name: Build Executable
-        run: pnpm turbo make-bin -- --target ${{matrix.os.target}}
+        run: pnpm turbo make-bin -- --target ${{matrix.os.target}} --output-archives
 
       - name: Upload Edge Binary
         uses: softprops/action-gh-release@v2

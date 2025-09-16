@@ -1,7 +1,9 @@
 import { exec } from '@yao-pkg/pkg';
+import archiver from 'archiver';
 import retry from 'async-retry';
 import axios from 'axios';
 import nodeAbi from 'node-abi';
+import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import stream from 'node:stream';
@@ -9,6 +11,7 @@ import { format } from 'node:util';
 import { rimraf } from 'rimraf';
 import * as tar from 'tar';
 import tmp from 'tmp-promise';
+import { match } from 'ts-pattern';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
@@ -79,6 +82,10 @@ const args = await yargs(hideBin(process.argv))
     type: 'boolean',
     default: false,
   })
+  .option('output-archives', {
+    type: 'boolean',
+    default: false,
+  })
   .parseAsync();
 
 !(await fileExists('./bin')) && (await fs.mkdir('./bin'));
@@ -124,7 +131,20 @@ for (const arch of args.target) {
         });
       });
 
-      const meilisearchBinaryPath = await grabMeilisearch();
+      const nodePlatform = match(osString)
+        .returnType<NodeJS.Platform>()
+        .with('win', () => 'win32')
+        .with('macos', () => 'darwin')
+        .with('linux', () => 'linux')
+        .otherwise(() => {
+          throw new Error(`Unrecognized osString ${osString}`);
+        });
+
+      const meilisearchBinaryPath = await grabMeilisearch(
+        nodePlatform,
+        arch,
+        `./bin/meilisearch-${arch}`,
+      );
       if (!meilisearchBinaryPath) {
         throw new Error('Could not download Meilisearch binary');
       } else {
@@ -196,13 +216,39 @@ for (const arch of args.target) {
 
       await exec(pkgArgs);
 
-      console.log(`Build binary at ${dir.path}/dist/bin/${execName}`);
+      console.log(`Built binary at ${dir.path}/dist/bin/${execName}`);
 
       process.chdir(originalWorkingDir);
 
       await fs.cp(`${dir.path}/dist/bin/${execName}`, `./bin/${execName}`);
 
       console.info(`Copied binary to bin/${execName}`);
+
+      if (args.outputArchives) {
+        console.info('Creating release archive');
+
+        const targetIsWindows = osString === 'win';
+        const format = targetIsWindows ? 'zip' : 'tar';
+        const archive = archiver(format, { gzip: !targetIsWindows });
+        const finishedPromise = new Promise<void>((resolve, reject) => {
+          archive.on('end', () => resolve(void 0));
+          archive.on('error', reject);
+          archive.on('entry', (entry) => {
+            console.debug('Added entry to backup: %s', entry.name);
+          });
+        });
+
+        const outStream = createWriteStream(
+          `./bin/${execName}.${format}${targetIsWindows ? '' : '.gz'}`,
+        );
+        archive.pipe(outStream);
+        archive.file(`./bin/${execName}`, { name: execName });
+        archive.file(`./bin/meilisearch-${arch}`, {
+          name: 'meilisearch' + (targetIsWindows ? '.exe' : ''),
+        });
+        await archive.finalize();
+        await finishedPromise;
+      }
     },
     { unsafeCleanup: true, mode: 0o755 },
   );
