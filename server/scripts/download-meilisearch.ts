@@ -105,7 +105,6 @@ export async function grabMeilisearch(
   arch: string = os.arch(),
   targetPath?: string,
 ) {
-  const outPath = `meilisearch-${platform}-${arch}`;
   const needsDownload = await needsToDownloadNewBinary();
 
   if (!needsDownload) {
