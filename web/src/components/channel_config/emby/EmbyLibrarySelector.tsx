@@ -59,7 +59,7 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
       if (!selectedServer) {
         return;
       }
-      const view = embyLibraries?.find((lib) => lib.externalId === libraryUuid);
+      const view = embyLibraries?.find((lib) => lib.uuid === libraryUuid);
       if (view) {
         setProgrammingListLibrary({
           type: Emby,

@@ -73,19 +73,10 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
       if (!selectedServer) {
         return;
       }
-      // const view = knownMedia.getMediaOfType(
-      //   selectedServer.id,
-      //   libraryUuid,
-      //   Jellyfin,
-      // );
-      const view = jellyfinLibraries?.find(
-        (lib) => lib.externalId === libraryUuid,
-      );
-      if (
-        view
-        // isJellyfinVirtualFolder(view) &&
-        // isNonEmptyString(view)
-      ) {
+
+      const view = jellyfinLibraries?.find((lib) => lib.uuid === libraryUuid);
+
+      if (view) {
         setProgrammingListLibrary({
           type: Jellyfin,
           view,
