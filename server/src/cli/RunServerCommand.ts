@@ -12,6 +12,7 @@ import {
   getNumericEnvVar,
   TUNARR_ENV_VARS,
 } from '../util/env.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { GlobalArgsType } from './types.ts';
 
 export type ServerArgsType = GlobalArgsType & {
@@ -56,6 +57,16 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
       portSetting;
     // port precedence - env var -> argument -> settings
     setServerOptions({ ...opts, port: portToUse });
+
+    process.on('uncaughtException', (err) => {
+      LoggerFactory.root.error(err, 'Uncaught exception');
+      LoggerFactory.root.flush();
+    });
+
+    process.on('unhandledRejection', (err) => {
+      LoggerFactory.root.error(err, 'Uncaught exception');
+      LoggerFactory.root.flush();
+    });
 
     // Hard fail without database connection.
     assert(!!container.get<DBAccess>(DBAccess).db);

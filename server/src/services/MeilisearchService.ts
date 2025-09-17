@@ -372,6 +372,8 @@ export class MeilisearchService implements ISearchService {
           '--db-path',
           `${this.dbPath}`,
           '--no-analytics',
+          '--log-level',
+          'trace',
         ];
 
         const indexingRamSetting =
@@ -398,7 +400,10 @@ export class MeilisearchService implements ISearchService {
 
         if (
           !isWindows() &&
-          getBooleanEnvVar(TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY)
+          getBooleanEnvVar(
+            TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY,
+            os.platform() === 'linux',
+          )
         ) {
           args.push('--experimental-reduce-indexing-memory-usage');
         }
@@ -439,6 +444,9 @@ export class MeilisearchService implements ISearchService {
 
         this.proc = await this.childProcessHelper.spawn(executablePath, args, {
           maxAttempts: 3,
+          additionalOpts: {
+            cwd: this.serverOptions.databaseDirectory,
+          },
         });
         this.logger.info('Meilisearch service started on port %d', this.port);
         const outStream = createWriteStream(searchServerLogFile);

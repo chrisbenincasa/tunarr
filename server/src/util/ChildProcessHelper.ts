@@ -3,7 +3,11 @@ import { isNonEmptyString } from '@/util/index.js';
 import { sanitizeForExec } from '@/util/strings.js';
 import { inject, injectable } from 'inversify';
 import { isEmpty } from 'lodash-es';
-import type { ChildProcessByStdio, ExecOptions } from 'node:child_process';
+import type {
+  ChildProcessByStdio,
+  ExecOptions,
+  SpawnOptions,
+} from 'node:child_process';
 import { execFile, spawn } from 'node:child_process';
 import events from 'node:events';
 import { Readable } from 'node:stream';
@@ -18,6 +22,7 @@ type SpawnOpts = {
   name: string;
   restartOnFailure: boolean;
   maxAttempts: number;
+  additionalOpts?: SpawnOptions;
 };
 
 type ChildProcessEvents = {
@@ -72,6 +77,7 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
 
     this.logger.debug('Starting process: %s %O', this.path, this.args);
     const proc = spawn(this.path, this.args, {
+      ...(this.opts.additionalOpts ?? {}),
       stdio: ['ignore', 'pipe', 'pipe'],
       signal: this.controller.signal,
       env: this.env,
@@ -102,6 +108,7 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
 
       if (!this.wasAborted && code !== 0) {
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
+        this.logger.error(bufferedBytes);
         console.error(bufferedBytes);
       }
 
