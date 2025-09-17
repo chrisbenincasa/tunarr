@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.22.3](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.22.3) (2025-09-16)
+
+
+### Bug Fixes
+
+* allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
+* correct set the isDefault bit on new transcode configs ([180841c](https://github.com/chrisbenincasa/tunarr/commit/180841c1b931d35e693a6bbd0886f819b318db28))
+* **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
+* **streaming:** do not apply apad when audio encoder is copy ([92bce8a](https://github.com/chrisbenincasa/tunarr/commit/92bce8ac2c159b3f8f20ddec9503edcd82f57558)), closes [#1311](https://github.com/chrisbenincasa/tunarr/issues/1311)
+* **streaming:** fallback to yadif=1 when configured software deinterlace is none ([3a5e69d](https://github.com/chrisbenincasa/tunarr/commit/3a5e69d925468662347ac338763a695fd51ab16b))
+* **ui:** add missing BackupForm file erroneously left out ([67b97b0](https://github.com/chrisbenincasa/tunarr/commit/67b97b05d97f1f20aa9ce0164a235ae13ce7f09b))
+* **ui:** disable various audio stream forms when encoder is set to copy ([2aa12c3](https://github.com/chrisbenincasa/tunarr/commit/2aa12c34e514e2c5faaa927290435ed955f068b3))
+* **ui:** properly handle keyboard input for backup time picker ([39a6d70](https://github.com/chrisbenincasa/tunarr/commit/39a6d70efd483c721086c5e4d9d177e12c4278a7)), closes [#1361](https://github.com/chrisbenincasa/tunarr/issues/1361)
+
+
+### UI Changes
+
+* hide missing season/associations health checks ([59265a8](https://github.com/chrisbenincasa/tunarr/commit/59265a8b2666ffbcc217b33f8daba75e4a175355))
+
 ## [0.22.2](https://github.com/chrisbenincasa/tunarr/compare/v0.22.1...v0.22.2) (2025-09-07)
 
 
