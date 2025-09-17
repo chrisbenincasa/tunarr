@@ -12,8 +12,8 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { EmbyItemKind } from '@tunarr/types/emby';
-import { JellyfinItemKind } from '@tunarr/types/jellyfin';
+import type { EmbyItemKind } from '@tunarr/types/emby';
+import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
@@ -87,10 +87,10 @@ export default function SelectedProgrammingActions({
         ).then((res) => {
           addSelectedMedia(
             res.map((program) => ({
-              type: Imported,
+              type: program.sourceType,
               id: program.uuid,
               mediaSource: selectedServer,
-              libraryId: selectedLibrary!.view.id,
+              libraryId: selectedLibrary.view.id,
             })),
           );
           addKnownMediaForServer(selectedServer.id, res);
