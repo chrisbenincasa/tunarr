@@ -1,4 +1,3 @@
-import { Endpoints } from '@octokit/types';
 import axios from 'axios';
 import { execSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -7,10 +6,22 @@ import os from 'node:os';
 import { dirname } from 'node:path';
 import stream from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { format } from 'node:util';
 import { match } from 'ts-pattern';
 import serverPackage from '../package.json' with { type: 'json' };
+import { Nullable } from '../src/types/util.ts';
 import { fileExists } from '../src/util/fsUtil.ts';
-import { groupByUniq } from '../src/util/index.ts';
+
+const meilisearchDownloadFmt =
+  'https://github.com/meilisearch/meilisearch/releases/download/v%s/meilisearch-%s-%s';
+
+function getMeilisearchDownloadUrl(
+  version: string,
+  platform: string,
+  arch: string,
+): string {
+  return format(meilisearchDownloadFmt, version, platform, arch);
+}
 
 const outPath = './bin/meilisearch';
 const wantedVersion = serverPackage.meilisearch.version;
@@ -89,9 +100,6 @@ async function needsToDownloadNewBinary() {
   return shouldDownload;
 }
 
-type getReleaseByTagResponse =
-  Endpoints['GET /repos/{owner}/{repo}/releases/tags/{tag}']['response']['data'];
-
 async function copyToTarget(targetPath: string) {
   const dir = dirname(targetPath);
   if (!(await fileExists(dir))) {
@@ -122,31 +130,43 @@ export async function grabMeilisearch(
     `Downloading meilisearch version ${wantedVersion} for ${platform} ${arch} from Github`,
   );
 
-  const response = await axios.get<getReleaseByTagResponse>(
-    `https://api.github.com/repos/meilisearch/meilisearch/releases/tags/v${wantedVersion}`,
-  );
-  const assetsByName = groupByUniq(response.data.assets, (asset) => asset.name);
-  const meilisearchArchName = match([platform, arch])
-    .with(['linux', 'x64'], () => 'linux-amd64')
-    .with(['linux', 'arm64'], () => 'linux-aarch64')
-    .with(['darwin', 'x64'], () => 'macos-amd64')
-    .with(['darwin', 'arm64'], () => 'macos-apple-silicon')
-    .with(['win32', 'x64'], () => 'windows-amd64.exe')
+  const meilisearchPlatformAndArch = match([platform, arch])
+    .returnType<
+      Nullable<{ meilisearchPlatform: string; meilisearchArch: string }>
+    >()
+    .with(['linux', 'x64'], () => ({
+      meilisearchPlatform: 'linux',
+      meilisearchArch: 'amd64',
+    }))
+    .with(['linux', 'arm64'], () => ({
+      meilisearchPlatform: 'linux',
+      meilisearchArch: 'aarch64',
+    }))
+    .with(['darwin', 'x64'], () => ({
+      meilisearchPlatform: 'macos',
+      meilisearchArch: 'amd64',
+    }))
+    .with(['darwin', 'arm64'], () => ({
+      meilisearchPlatform: 'macos',
+      meilisearchArch: 'apple-silicon',
+    }))
+    .with(['win32', 'x64'], () => ({
+      meilisearchPlatform: 'windows',
+      meilisearchArch: 'amd64.exe',
+    }))
     .otherwise(() => null);
-  if (!meilisearchArchName) {
+  if (!meilisearchPlatformAndArch) {
     console.error(`Unsupported platform/arch combo: ${platform} / ${arch}`);
-    return;
-  }
-
-  const asset = assetsByName[`meilisearch-${meilisearchArchName}`];
-  if (!asset) {
-    console.error(`No asset found for type: ${meilisearchArchName}`);
     return;
   }
 
   const outStream = await axios.request<stream.Readable>({
     method: 'get',
-    url: asset.browser_download_url,
+    url: getMeilisearchDownloadUrl(
+      wantedVersion,
+      meilisearchPlatformAndArch.meilisearchPlatform,
+      meilisearchPlatformAndArch.meilisearchArch,
+    ),
     responseType: 'stream',
   });
 
