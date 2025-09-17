@@ -180,6 +180,7 @@ export class MediaSourceLibraryRefresher {
           lib.CollectionType &&
           isDefined(this.jellyfinLibraryTypeToTunarrType(lib.CollectionType)),
       );
+    this.logger.trace('Existing Jellyfin libraries: %O', mediaSource.libraries);
     const jellyfinLibraryKeys = new Set(
       jellyfinLibraries.map((lib) => lib.ItemId),
     );
@@ -215,8 +216,20 @@ export class MediaSourceLibraryRefresher {
       } satisfies NewMediaSourceLibrary);
     }
 
-    const librariesToRemove = mediaSource.libraries.filter((existing) =>
-      removedLibraries.has(existing.externalKey),
+    const seenExternalIds = new Set<string>();
+    const dupeLibrariesToRemove: string[] = [];
+    for (const library of mediaSource.libraries) {
+      if (seenExternalIds.has(library.externalKey)) {
+        dupeLibrariesToRemove.push(library.uuid);
+      } else {
+        seenExternalIds.add(library.externalKey);
+      }
+    }
+
+    const librariesToRemove = mediaSource.libraries.filter(
+      (existing) =>
+        removedLibraries.has(existing.externalKey) ||
+        dupeLibrariesToRemove.includes(existing.uuid),
     );
 
     this.logger.debug(
