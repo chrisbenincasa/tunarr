@@ -729,6 +729,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         startIndex: 0,
         limit: 0,
         recursive: true,
+        includeItemTypes: itemType,
       },
     }).then((_) => _.map((response) => response.TotalRecordCount));
   }
