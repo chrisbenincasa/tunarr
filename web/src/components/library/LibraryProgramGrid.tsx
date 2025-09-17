@@ -1,9 +1,9 @@
-import { Box, LinearProgress } from '@mui/material';
+import { Box, LinearProgress, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { MediaSourceLibrary, ProgramOrFolder } from '@tunarr/types';
 import { type ProgramLike } from '@tunarr/types';
 import type { ProgramSearchResponse, SearchRequest } from '@tunarr/types/api';
-import { isEmpty, last } from 'lodash-es';
+import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
 import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
@@ -13,9 +13,10 @@ import {
   addKnownMediaForServer,
   setSearchRequest,
 } from '../../store/programmingSelector/actions.ts';
+import type {
+  RenderNestedGrid} from '../channel_config/MediaItemGrid.tsx';
 import {
   MediaItemGrid,
-  RenderNestedGrid,
   type GridItemProps,
 } from '../channel_config/MediaItemGrid.tsx';
 import { MediaItemList } from '../channel_config/MediaItemList.tsx';
@@ -168,6 +169,8 @@ export const LibraryProgramGrid = ({
     [library, disableProgramSelection],
   );
 
+  const totalHits = search.data?.pages?.[0].totalHits;
+
   return (
     <Box>
       {depth === 0 && (
@@ -180,9 +183,13 @@ export const LibraryProgramGrid = ({
               }
             />
           )}
+          {!isUndefined(totalHits) && (
+            <Typography textAlign="right" variant="subtitle2">
+              Total hits: {totalHits >= 1000 ? '>1000' : totalHits}
+            </Typography>
+          )}
         </>
       )}
-
       {search.isLoading && <LinearProgress />}
       {viewType === 'grid' ? (
         <MediaItemGrid
