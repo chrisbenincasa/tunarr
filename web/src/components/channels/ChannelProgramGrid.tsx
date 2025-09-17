@@ -68,6 +68,7 @@ const GridItemImpl = forwardRef(
         subtitle: `${prettyItemDuration(program.duration)}${year ? ` (${year})` : ''}`,
         thumbnailUrl: `${backendUri}/api/programs/${program.id}/thumb`,
         title: program.title,
+        persisted: true,
       } satisfies GridItemMetadata;
     }, [
       backendUri,
@@ -123,6 +124,8 @@ const ParentGridItemImpl = forwardRef(
         subtitle: year ? (program.year?.toString() ?? null) : null,
         thumbnailUrl: `${backendUri}/api/programs/${program.id}/thumb`,
         title: program.title ?? '',
+        mayHaveChildren: true,
+        persisted: true,
       } satisfies GridItemMetadata;
     }, [backendUri, program.id, program.title, program.type, program.year]);
 

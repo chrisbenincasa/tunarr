@@ -112,20 +112,20 @@ export abstract class MediaSourceMovieLibraryScanner<
 
       const result = await this.scanMovie(context, movie).then((result) =>
         result.flatMapAsync((fullApiMovie) => {
-          return Result.attemptAsync(() =>
-            this.programDB
-              .upsertPrograms([
-                this.programMinter.mintMovie(
-                  mediaSource,
-                  library,
-                  fullApiMovie,
-                ),
-              ])
+          return Result.attemptAsync(() => {
+            const minted = this.programMinter.mintMovie(
+              mediaSource,
+              library,
+              fullApiMovie,
+            );
+
+            return this.programDB
+              .upsertPrograms([minted])
               .then((_) => _.filter(isMovieProgram))
               .then(
                 (upsertedMovies) => [fullApiMovie, upsertedMovies] as const,
-              ),
-          );
+              );
+          });
         }),
       );
 

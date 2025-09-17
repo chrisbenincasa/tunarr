@@ -371,6 +371,14 @@ export const MediaSourceMediaLocation = BaseMediaLocation.extend({
   externalKey: z.string(),
 });
 
+export const MediaChapter = z.object({
+  index: z.number().nonnegative(),
+  startTime: z.number().nonnegative(),
+  endTime: z.number().nonnegative(),
+  title: z.string().nullish(),
+  chapterType: z.enum(['chapter', 'intro', 'outro']).default('chapter'),
+});
+
 export const MediaLocation = LocalMediaLocation.or(MediaSourceMediaLocation);
 
 export const MediaStreamType = z.enum([
@@ -386,18 +394,18 @@ export const MediaStream = z.object({
   codec: z.string(),
   profile: z.string(),
   streamType: MediaStreamType,
-  languageCodeISO6392: z.string().optional(),
+  languageCodeISO6392: z.string().nullish(),
   // TODO: consider breaking stream out to a union for each subtype
-  channels: z.number().optional(),
-  title: z.string().optional(),
-  default: z.boolean().optional(),
-  hasAttachedPicture: z.boolean().optional(),
-  pixelFormat: z.string().optional(),
-  bitDepth: z.number().optional(),
-  fileName: z.string().optional(),
-  mimeType: z.string().optional(),
-  selected: z.boolean().optional(),
-  frameRate: z.string().or(z.number()).optional(),
+  channels: z.number().nullish(),
+  title: z.string().nullish(),
+  default: z.boolean().nullish(),
+  hasAttachedPicture: z.boolean().nullish(),
+  pixelFormat: z.string().nullish(),
+  bitDepth: z.number().nullish(),
+  fileName: z.string().nullish(),
+  mimeType: z.string().nullish(),
+  selected: z.boolean().nullish(),
+  frameRate: z.string().or(z.number()).nullish(),
 });
 
 export const MediaItem = z.object({
@@ -405,9 +413,10 @@ export const MediaItem = z.object({
   duration: z.number().nonnegative(),
   sampleAspectRatio: z.string(),
   displayAspectRatio: z.string(),
-  frameRate: z.number().or(z.string()).optional(),
-  resolution: ResolutionSchema.optional(),
+  frameRate: z.number().or(z.string()).nullish(),
+  resolution: ResolutionSchema.nullish(),
   locations: z.array(MediaLocation),
+  chapters: z.array(MediaChapter).nullish(),
 });
 
 const BaseProgram = BaseItem.extend({

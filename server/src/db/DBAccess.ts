@@ -4,10 +4,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Mutex } from 'async-mutex';
 import Sqlite from 'better-sqlite3';
 import dayjs from 'dayjs';
-import {
-  drizzle,
-  type BetterSQLite3Database,
-} from 'drizzle-orm/better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import {
   CamelCasePlugin,
   Kysely,
@@ -24,6 +21,8 @@ import {
 import type { Maybe } from '../types/util.ts';
 import { getDefaultDatabaseName } from '../util/defaults.ts';
 import type { DB } from './schema/db.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
+import { schema } from './schema/index.ts';
 
 const lock = new Mutex();
 
@@ -34,7 +33,7 @@ class Connection {
   private logger!: Logger;
 
   readonly kysely!: Kysely<DB>;
-  readonly drizzle!: BetterSQLite3Database;
+  readonly drizzle!: DrizzleDBAccess;
   readonly sqlite!: Sqlite.Database;
 
   constructor(readonly name: string) {
@@ -90,6 +89,7 @@ class Connection {
     this.drizzle = drizzle({
       client: this.sqlite,
       casing: 'snake_case',
+      schema,
     });
   }
 
@@ -266,6 +266,10 @@ export class DBAccess {
 
   get db(): Maybe<Kysely<DB>> {
     return this.getKyselyDatabase();
+  }
+
+  get drizzle(): Maybe<DrizzleDBAccess> {
+    return this.getConnection()?.drizzle;
   }
 
   getConnection(name: string = getDefaultDatabaseName()): Maybe<Connection> {

@@ -1,6 +1,10 @@
 import type { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
-import type { ProgramDao, ProgramType } from '@/db/schema/Program.js';
+import type {
+  NewProgramDao,
+  ProgramDao,
+  ProgramType,
+} from '@/db/schema/Program.js';
 import type {
   MinimalProgramExternalId,
   NewProgramExternalId,
@@ -11,7 +15,7 @@ import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
 import type {
   MusicAlbumWithExternalIds,
   NewProgramGroupingWithExternalIds,
-  NewProgramWithExternalIds,
+  NewProgramVersion,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
@@ -132,7 +136,7 @@ export interface IProgramDB {
   ): Promise<MarkNonNullable<ProgramDao, 'mediaSourceId'>[]>;
 
   upsertPrograms(
-    programs: NewProgramWithExternalIds[],
+    programs: ProgramUpsertRequest[],
     programUpsertBatchSize?: number,
   ): Promise<ProgramWithExternalIds[]>;
 
@@ -221,4 +225,10 @@ export type ProgramGroupingChildCounts = {
   type: ProgramGroupingType;
   childCount?: number;
   grandchildCount?: number;
+};
+
+export type ProgramUpsertRequest = {
+  program: NewProgramDao;
+  externalIds: NewSingleOrMultiExternalId[];
+  versions: NewProgramVersion[];
 };

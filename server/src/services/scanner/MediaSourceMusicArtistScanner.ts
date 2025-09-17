@@ -249,8 +249,8 @@ export abstract class MediaSourceMusicArtistScanner<
               trackWithJoins,
             );
 
-            dao.tvShowUuid = artist.uuid;
-            dao.seasonUuid = album.uuid;
+            dao.program.tvShowUuid = artist.uuid;
+            dao.program.seasonUuid = album.uuid;
 
             return Result.attemptAsync(() =>
               this.programDB.upsertPrograms([dao]),

@@ -543,7 +543,6 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           }, 60000);
         }),
       ]);
-      console.log(status);
 
       return res.send(status);
     },

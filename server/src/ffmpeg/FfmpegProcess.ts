@@ -163,7 +163,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
         );
 
         const bufferedBytes = bufferedOut.getLastN().toString('utf-8');
-        console.log(bufferedBytes);
+        console.error(bufferedBytes);
         this.#logger.error(bufferedBytes);
         fs.writeFile(
           outPath,

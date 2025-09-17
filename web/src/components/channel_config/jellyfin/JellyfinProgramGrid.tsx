@@ -181,7 +181,6 @@ export const JellyfinProgramGrid = ({
   const renderGridItem = useCallback(
     (props: GridItemProps<ProgramOrFolder>) => (
       <ProgramGridItem key={props.item.uuid} {...props} />
-      // <JellyfinGridItem key={props.item.Id} {...props} />
     ),
     [],
   );

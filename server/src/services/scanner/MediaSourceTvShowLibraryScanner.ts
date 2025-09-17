@@ -248,8 +248,8 @@ export abstract class MediaSourceTvShowLibraryScanner<
               episodeWithJoins,
             );
 
-            dao.tvShowUuid = show.uuid;
-            dao.seasonUuid = season.uuid;
+            dao.program.tvShowUuid = show.uuid;
+            dao.program.seasonUuid = season.uuid;
 
             return Result.attemptAsync(() =>
               this.programDB.upsertPrograms([dao]),

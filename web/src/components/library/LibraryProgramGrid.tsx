@@ -13,8 +13,7 @@ import {
   addKnownMediaForServer,
   setSearchRequest,
 } from '../../store/programmingSelector/actions.ts';
-import type {
-  RenderNestedGrid} from '../channel_config/MediaItemGrid.tsx';
+import type { RenderNestedGrid } from '../channel_config/MediaItemGrid.tsx';
 import {
   MediaItemGrid,
   type GridItemProps,
@@ -150,6 +149,7 @@ export const LibraryProgramGrid = ({
       <ProgramGridItem
         key={gridItemProps.item.uuid}
         disableSelection={disableProgramSelection}
+        persisted
         {...gridItemProps}
       />
     );

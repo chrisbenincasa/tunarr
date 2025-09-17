@@ -14,9 +14,12 @@ import type {
 } from './MediaSource.ts';
 import type { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
 import type { ProgramTable } from './Program.ts';
+import type { ProgramChapterTable } from './ProgramChapter.ts';
 import type { ProgramExternalIdTable } from './ProgramExternalId.ts';
 import type { ProgramGroupingTable } from './ProgramGrouping.ts';
 import type { ProgramGroupingExternalIdTable } from './ProgramGroupingExternalId.ts';
+import type { ProgramMediaStreamTable } from './ProgramMediaStream.ts';
+import type { ProgramVersionTable } from './ProgramVersion.ts';
 import type {
   ChannelSubtitlePreferencesTable,
   CustomShowSubtitlePreferencesTable,
@@ -39,7 +42,10 @@ export interface DB {
   mediaSource: MediaSourceTable;
   mediaSourceLibrary: MediaSourceLibraryTable;
   program: ProgramTable;
+  programChapter: ProgramChapterTable;
   programExternalId: ProgramExternalIdTable;
+  programMediaStream: ProgramMediaStreamTable;
+  programVersion: ProgramVersionTable;
   programGrouping: ProgramGroupingTable;
   programGroupingExternalId: ProgramGroupingExternalIdTable;
   transcodeConfig: TranscodeConfigTable;

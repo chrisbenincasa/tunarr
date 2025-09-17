@@ -22,11 +22,32 @@ export const PlexJoinItemSchema = z.object({
   tag: z.string(),
 });
 
+export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
+
 export const PlexActorSchema = PlexJoinItemSchema.extend({
   role: z.string().optional(),
 });
 
-export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
+export const PlexChapterSchema = z.object({
+  id: z.number(),
+  filter: z.string().optional(),
+  index: z.number(),
+  startTimeOffset: z.number(),
+  endTimeOffset: z.number(),
+  thumb: z.string().optional(),
+  tag: z.string().optional(),
+});
+
+export type PlexChapter = z.infer<typeof PlexChapterSchema>;
+
+export const PlexMarkerSchema = z.object({
+  startTimeOffset: z.number(),
+  endTimeOffset: z.number(),
+  final: z.boolean().optional(), // If there are multiple, this indicates the last
+  type: z.string(), // Loose for now. Generally intro or credits
+});
+
+export type PlexMarker = z.infer<typeof PlexMarkerSchema>;
 
 export const PlexMediaContainerMetadataSchema = z.object({
   size: z.number(),
@@ -378,6 +399,8 @@ export const PlexMovieSchema = BasePlexMediaSchema.extend({
   Director: z.array(PlexJoinItemSchema).optional(),
   Writer: z.array(PlexJoinItemSchema).optional(),
   Role: z.array(PlexActorSchema).optional(),
+  Marker: z.array(PlexMarkerSchema).optional(),
+  Chapter: z.array(PlexChapterSchema).optional(),
 }).extend(neverDirectory.shape);
 
 export type PlexMovie = z.infer<typeof PlexMovieSchema>;
@@ -606,6 +629,8 @@ export const PlexEpisodeSchema = BasePlexMediaSchema.extend({
   Director: z.array(PlexJoinItemSchema).optional(),
   Writer: z.array(PlexJoinItemSchema).optional(),
   Role: z.array(PlexActorSchema).optional(),
+  Marker: z.array(PlexMarkerSchema).optional(),
+  Chapter: z.array(PlexChapterSchema).optional(),
 }).merge(neverDirectory);
 
 export type PlexEpisode = Alias<z.infer<typeof PlexEpisodeSchema>>;

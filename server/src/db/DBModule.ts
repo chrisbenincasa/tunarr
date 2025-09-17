@@ -10,6 +10,7 @@ import { DBAccess } from './DBAccess.ts';
 import { FillerDB } from './FillerListDB.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
 import type { DB } from './schema/db.ts';
+import type { DrizzleDBAccess } from './schema/index.ts';
 
 const DBModule = new ContainerModule((bind) => {
   bind<IProgramDB>(KEYS.ProgramDB).to(ProgramDB).inSingletonScope();
@@ -17,6 +18,9 @@ const DBModule = new ContainerModule((bind) => {
   bind<DBAccess>(DBAccess).toSelf().inSingletonScope();
   bind<Kysely<DB>>(KEYS.Database)
     .toDynamicValue((ctx) => ctx.container.get(DBAccess).db!)
+    .whenTargetIsDefault();
+  bind<DrizzleDBAccess>(KEYS.DrizzleDB)
+    .toDynamicValue((ctx) => ctx.container.get(DBAccess).drizzle!)
     .whenTargetIsDefault();
   bind<interfaces.Factory<Kysely<DB>>>(KEYS.DatabaseFactory).toAutoFactory(
     KEYS.Database,

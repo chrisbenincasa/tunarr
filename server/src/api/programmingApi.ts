@@ -21,6 +21,7 @@ import {
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
+import type { ProgramGrouping } from '@tunarr/types';
 import {
   tag,
   type Episode,
@@ -28,7 +29,6 @@ import {
   type MusicAlbum,
   type MusicArtist,
   type MusicTrack,
-  type ProgramGrouping,
   type Season,
   type Show,
   type TerminalProgram,
@@ -40,7 +40,10 @@ import {
   ProgramSearchResponse,
   SearchFilterQuerySchema,
 } from '@tunarr/types/api';
-import { ContentProgramSchema } from '@tunarr/types/schemas';
+import {
+  ContentProgramSchema,
+  TerminalProgramSchema,
+} from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import type { HttpHeader } from 'fastify/types/utils.js';
@@ -66,15 +69,13 @@ import {
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
-import {
-  AllProgramFields,
-  selectProgramsBuilder,
-} from '../db/programQueryHelpers.ts';
+import { AllProgramFields } from '../db/programQueryHelpers.ts';
 import type { MediaSourceId } from '../db/schema/base.ts';
 import type {
   MediaSourceWithLibraries,
   ProgramWithRelations,
 } from '../db/schema/derivedTypes.js';
+import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import type {
   ProgramGroupingSearchDocument,
   ProgramSearchDocument,
@@ -83,6 +84,7 @@ import type {
 import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import { KEYS } from '../types/inject.ts';
 import type { Path } from '../types/path.ts';
 import type { Maybe } from '../types/util.ts';
 
@@ -288,6 +290,7 @@ function convertProgramGroupingSearchResult(
         ({
           ...season,
           ...base,
+          type: 'season',
           identifiers,
           uuid,
           canonicalId: grouping.canonicalId!,
@@ -412,13 +415,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
         const mediaSource = allMediaSourcesById[mediaSourceId];
         if (!mediaSource) {
-          console.log('no media src');
           return;
         }
         const libraryId = decodeCaseSensitiveId(program.libraryId);
         const library = allLibrariesById[libraryId];
         if (!library) {
-          console.log('no library');
           return;
         }
 
@@ -441,8 +442,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             library,
           );
         }
-
-        console.log('here');
 
         return;
       });
@@ -590,24 +589,47 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         tags: ['Programs'],
         params: BasicIdParamSchema,
+        response: {
+          200: TerminalProgramSchema,
+          404: z.void(),
+          500: z.void(),
+        },
       },
     },
     async (req, res) => {
-      return res.send(
-        req.serverCtx.programConverter.programDaoToContentProgram(
-          await selectProgramsBuilder(req.serverCtx.databaseFactory(), {
-            joins: {
-              tvSeason: true,
-              tvShow: true,
-              trackAlbum: true,
-              trackArtist: true,
+      const db = container.get<DrizzleDBAccess>(KEYS.DrizzleDB);
+      const dbRes = await db.query.program.findFirst({
+        where: (program, { eq }) => eq(program.uuid, req.params.id),
+        with: {
+          season: true,
+          show: true,
+          album: true,
+          artist: true,
+          externalIds: true,
+          mediaLibrary: true,
+          versions: {
+            with: {
+              mediaStreams: true,
+              chapters: true,
             },
-          })
-            .where('uuid', '=', req.params.id)
-            .executeTakeFirstOrThrow(),
-          [],
-        ),
-      );
+          },
+        },
+      });
+
+      if (!dbRes) {
+        return res.status(404).send();
+      }
+
+      if (dbRes.mediaSourceId && dbRes.libraryId && dbRes.canonicalId) {
+        const converted =
+          req.serverCtx.programConverter.programDaoToTerminalProgram(dbRes);
+
+        if (!converted) {
+          return res.status(404).send();
+        }
+
+        return res.send(converted);
+      }
     },
   );
 

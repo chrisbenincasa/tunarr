@@ -1,4 +1,4 @@
-import { seq } from '@tunarr/shared/util';
+import { nullToUndefined, seq } from '@tunarr/shared/util';
 import { FindChild, tag, Tag, TupleToUnion } from '@tunarr/types';
 import { SearchFilter } from '@tunarr/types/api';
 import {
@@ -1081,8 +1081,6 @@ export class MeilisearchService implements ISearchService {
       this.logger.warn('No external ids for item id %s', program.uuid);
     }
 
-    console.log(validEids);
-
     const mergedExternalIds = validEids.map(
       (eid) =>
         `${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
@@ -1148,9 +1146,9 @@ export class MeilisearchService implements ISearchService {
       videoWidth: width,
       videoHeight: height,
       videoCodec: videoStream?.codec,
-      videoBitDepth: videoStream?.bitDepth,
+      videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
-      audioChannels: audioStream?.channels,
+      audioChannels: nullToUndefined(audioStream?.channels),
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 

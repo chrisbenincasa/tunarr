@@ -3,6 +3,7 @@ import type { Maybe, Nilable, Nullable } from '@/types/util.js';
 import {
   attemptSync,
   caughtErrorToError,
+  isDefined,
   isNonEmptyString,
   nullToUndefined,
   parseIntOrNull,
@@ -10,7 +11,7 @@ import {
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
-import type { Folder, Library } from '@tunarr/types';
+import type { Folder, Library, MediaChapter } from '@tunarr/types';
 import type { MediaSourceStatus, PagedResult } from '@tunarr/types/api';
 import type {
   JellyfinItem as ApiJellyfinItem,
@@ -30,7 +31,9 @@ import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import {
+  every,
   find,
+  floor,
   forEach,
   groupBy,
   isBoolean,
@@ -1060,6 +1063,31 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         },
       ) ?? [];
 
+    const chapters: MediaChapter[] = [];
+    const apiChapters = item.Chapters ?? [];
+    // We can't get end times unless they all have starts...
+    if (
+      (item.RunTimeTicks ?? 0) > 0 &&
+      every(apiChapters, (c) => isDefined(c.StartPositionTicks))
+    ) {
+      for (let i = 0; i < apiChapters.length; i++) {
+        const chapter = apiChapters[i];
+        const isLast = i === apiChapters.length - 1;
+        const end = floor(
+          isLast
+            ? item.RunTimeTicks! / 10_000
+            : apiChapters[i + 1].StartPositionTicks! / 10_000,
+        );
+        chapters.push({
+          chapterType: 'chapter',
+          endTime: end,
+          index: i,
+          startTime: chapter.StartPositionTicks!,
+          title: chapter.Name,
+        });
+      }
+    }
+
     return {
       displayAspectRatio: videoStream.AspectRatio ?? '',
       sampleAspectRatio: isAnamorphic ? '0:0' : '1:1',
@@ -1078,6 +1106,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         widthPx: width,
         heightPx: height,
       },
+      chapters,
     };
   }
 

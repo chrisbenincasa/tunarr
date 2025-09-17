@@ -14,6 +14,7 @@ const KEYS = {
   MutexMap: Symbol.for('MutexMap'),
 
   Database: Symbol.for('Database'),
+  DrizzleDB: Symbol.for('DrizzleDB'),
   DatabaseFactory: Symbol.for('DatabaseFactory'),
   ChannelDB: Symbol.for('ChannelDB'),
   ProgramDB: Symbol.for('ProgramDB'),

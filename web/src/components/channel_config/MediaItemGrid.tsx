@@ -50,6 +50,7 @@ export interface GridItemProps<ItemType> {
   depth: number;
   ref: ForwardedRef<HTMLDivElement>;
   disableSelection?: boolean;
+  persisted?: boolean; // Temp hack
 }
 
 export interface ListItemProps<ItemType> {

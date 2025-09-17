@@ -1,5 +1,5 @@
 import { type TupleToUnion } from '@tunarr/types';
-import { inArray } from 'drizzle-orm';
+import { inArray, relations } from 'drizzle-orm';
 import {
   type AnySQLiteColumn,
   check,
@@ -12,6 +12,7 @@ import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkRequiredNotNull } from '../../types/util.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSourceLibrary } from './MediaSource.ts';
+import { Program } from './Program.ts';
 import type { ProgramGroupingTable as RawProgramGrouping } from './ProgramGrouping.ts';
 
 export const ProgramGroupingType = {
@@ -55,6 +56,23 @@ export const ProgramGrouping = sqliteTable(
       inArray(table.type, table.type.enumValues).inlineParams(),
     ),
   ],
+);
+
+export const ProgramGroupingRelations = relations(
+  ProgramGrouping,
+  ({ many, one }) => ({
+    artist: one(ProgramGrouping, {
+      fields: [ProgramGrouping.artistUuid],
+      references: [ProgramGrouping.uuid],
+      relationName: 'artist',
+    }),
+    show: one(ProgramGrouping, {
+      fields: [ProgramGrouping.showUuid],
+      references: [ProgramGrouping.uuid],
+      relationName: 'show',
+    }),
+    children: many(Program),
+  }),
 );
 
 export type ProgramGroupingTable = KyselifyBetter<typeof ProgramGrouping>;
