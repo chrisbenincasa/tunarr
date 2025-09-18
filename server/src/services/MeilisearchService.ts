@@ -119,6 +119,13 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'mediaSourceId',
     'libraryId',
     'tags',
+    'videoBitDepth',
+    'videoCodec',
+    'videoDynamicRange',
+    'videoHeight',
+    'videoWidth',
+    'audioChannels',
+    'audioCodec',
   ],
   sortable: [
     'title',
