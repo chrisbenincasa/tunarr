@@ -495,6 +495,8 @@ export class StreamProgramCalculator {
       );
     }
 
+    timeElapsed = Math.round(timeElapsed);
+
     if (program.type === 'error') {
       return {
         type: 'error',
@@ -569,6 +571,8 @@ export class StreamProgramCalculator {
             1,
             Math.min(filler.duration - fillerstart, streamDuration),
           );
+          const startOffset = Math.round(fillerstart);
+
           return {
             // just add the video, starting at 0, playing the entire duration
             type: 'commercial',
@@ -579,7 +583,7 @@ export class StreamProgramCalculator {
               externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
                 ? MediaSourceType.Jellyfin
                 : MediaSourceType.Plex,
-            startOffset: fillerstart,
+            startOffset,
             streamDuration,
             contentDuration: filler.duration,
             duration: program.duration,
