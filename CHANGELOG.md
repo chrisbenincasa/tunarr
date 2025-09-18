@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.23.0-alpha.7](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.6...v0.23.0-alpha.7) (2025-09-17)
+
+
+### Features
+
+* add search hit counter to program grid ([bddca22](https://github.com/chrisbenincasa/tunarr/commit/bddca22a7541db39b309661523e85e9fb68fabb3))
+
+
+### Bug Fixes
+
+* bundle and start meilisearch properly on macOS ([32d2e23](https://github.com/chrisbenincasa/tunarr/commit/32d2e2360dee3adb1dba1ea660a0289004e4e2e4))
+* do not use github api to pull meilisearch releases ([169503c](https://github.com/chrisbenincasa/tunarr/commit/169503cb950932701d2527815ded3277429cfa2e))
+* ensure we do not save duplicate libraries by external_id ([071be3b](https://github.com/chrisbenincasa/tunarr/commit/071be3bd197093b2581b101de8818be46e0ff6df))
+* extract proper child counts for JF parent items ([1261f22](https://github.com/chrisbenincasa/tunarr/commit/1261f22cc32e443cdaa56951b4754ce79e492ab7))
+* meilisearch windows build needs exe extension ([13ffcd2](https://github.com/chrisbenincasa/tunarr/commit/13ffcd2d42039017509fff8cf5128a8c7dea50f4))
+* **ui:** allow switching non-synced JF/Emby libraries ([0d812ed](https://github.com/chrisbenincasa/tunarr/commit/0d812eda2cc250e81e87d84b8ef471729ac2a727))
+* **ui:** properly show selection state on imported items ([fff1f6c](https://github.com/chrisbenincasa/tunarr/commit/fff1f6cb519cddde432ae79f7b5ae55313e34d4f))
+
 ## [0.23.0-alpha.6](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.5...v0.23.0-alpha.6) (2025-09-16)
 
 
