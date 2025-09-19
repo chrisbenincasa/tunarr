@@ -43,8 +43,9 @@ function searchItemTypeFromLibraryType(
     case 'tracks':
       return 'artist';
     case 'other_videos':
+      return 'other_video';
     case 'music_videos':
-      throw new Error('unsupported');
+      return 'music_video';
   }
 }
 

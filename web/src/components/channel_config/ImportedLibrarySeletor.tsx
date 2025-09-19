@@ -1,7 +1,7 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
-import { find, sortBy } from 'lodash-es';
+import { find, orderBy, sortBy } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Imported } from '../../helpers/constants.ts';
 import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
@@ -13,14 +13,14 @@ function sortLibraries(lib: MediaSourceLibrary): number {
   const factor = lib.enabled && lib.lastScannedAt ? -1 : 1;
   switch (lib.mediaType) {
     case 'shows':
-      return factor * 1;
+      return factor * 4;
     case 'movies':
-      return factor * 2;
-    case 'tracks':
       return factor * 3;
+    case 'tracks':
+      return factor * 2;
     case 'other_videos':
     case 'music_videos':
-      return factor * 10;
+      return factor * 1;
   }
 }
 
@@ -102,7 +102,7 @@ export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
             value={selectedImportedLibrary?.id}
             onChange={(e) => handleLibraryChange(e.target.value)}
           >
-            {sortBy(libraries, sortLibraries).map((lib) => (
+            {orderBy(libraries, sortLibraries, 'desc').map((lib) => (
               <MenuItem
                 key={lib.id}
                 value={lib.id}

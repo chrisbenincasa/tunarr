@@ -7,7 +7,6 @@ import { useEmbyUserLibraries } from '../../../hooks/emby/useEmbyApi.ts';
 import { useProgrammingSelectionContext } from '../../../hooks/useProgrammingSelectionContext.ts';
 import useStore from '../../../store/index.ts';
 import { setProgrammingListLibrary } from '../../../store/programmingSelector/actions.ts';
-import { useKnownMedia } from '../../../store/programmingSelector/selectors.ts';
 
 type Props = {
   initialLibraryId?: string;
@@ -17,7 +16,6 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
   const { onLibraryChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
-  const knownMedia = useKnownMedia();
 
   const { data: embyLibraries } = useEmbyUserLibraries(
     selectedServer?.id ?? '',
@@ -68,7 +66,7 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
         onLibraryChange(view.externalId);
       }
     },
-    [knownMedia, selectedServer],
+    [embyLibraries, onLibraryChange, selectedServer],
   );
 
   return (
