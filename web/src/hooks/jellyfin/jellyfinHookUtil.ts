@@ -1,5 +1,4 @@
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
-import { sequentialPromises } from '@/helpers/util.ts';
 import type { Library, ProgramOrFolder, TerminalProgram } from '@tunarr/types';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
@@ -49,9 +48,10 @@ export const enumerateJellyfinItem = (
         return acc;
       } else {
         if (seen.has(item.uuid)) {
-          return sequentialPromises(seen.get(item.uuid) ?? [], (next) =>
-            loopInner(next, item, acc),
-          ).then(flattenDeep);
+          for (const program of seen.get(item.uuid) ?? []) {
+            acc = await loopInner(program, item, acc);
+          }
+          return acc;
         }
 
         if (parent?.type === 'show' && item.type === 'season') {
@@ -71,11 +71,12 @@ export const enumerateJellyfinItem = (
           },
           throwOnError: true,
         }) // TODO: Use p-queue here to parallelize a bit
-          .then((result) =>
-            sequentialPromises(result.data.result, (program) =>
-              loopInner(program, item, acc),
-            ),
-          )
+          .then(async (result) => {
+            for (const program of result.data.result) {
+              acc = await loopInner(program, item, acc);
+            }
+            return acc;
+          })
           .then(flattenDeep);
       }
     }

@@ -8,11 +8,9 @@ import type {
   PlexLibrarySections,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
-import { flattenDeep } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
 import { getApiPlexByMediaSourceIdItemsByItemIdChildren } from '../../generated/sdk.gen.ts';
-import { sequentialPromises } from '../../helpers/util.ts';
 
 export type PlexPathMappings = [
   ['/library/sections', PlexLibrarySections],
@@ -70,12 +68,11 @@ export const enumeratePlexItem = async (
           .exhaustive(),
       },
       throwOnError: true,
-    })
-      .then(async (result) => {
-        return sequentialPromises(result.data, (x) =>
-          enumeratePlexItem(mediaSource, x, item, acc),
-        );
-      })
-      .then((allResults) => flattenDeep(allResults));
+    }).then(async (result) => {
+      for (const nextItem of result.data) {
+        acc = await enumeratePlexItem(mediaSource, nextItem, item, acc);
+      }
+      return acc;
+    });
   }
 };
