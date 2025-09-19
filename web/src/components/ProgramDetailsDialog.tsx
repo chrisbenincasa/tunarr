@@ -43,6 +43,7 @@ import { P, match } from 'ts-pattern';
 import { isNonEmptyString, prettyItemDuration } from '../helpers/util';
 import { useSettings } from '../store/settings/selectors';
 import { ProgramStreamDetails } from './ProgramStreamDetails.tsx';
+import { RawProgramDetails } from './RawProgramDetails.tsx';
 import { TabPanel } from './TabPanel.tsx';
 
 type Props = {
@@ -367,6 +368,14 @@ export default function ProgramDetailsDialog({
               label="Stream Info"
               disabled={program.type === 'redirect' || program.type === 'flex'}
             />
+            <Tab
+              label="Program Info"
+              disabled={
+                program.type === 'redirect' ||
+                program.type === 'flex' ||
+                !program.persisted
+              }
+            />
           </Tabs>
           <TabPanel index={0} value={tab}>
             <Stack spacing={2}>
@@ -453,6 +462,21 @@ export default function ProgramDetailsDialog({
               >
                 <Suspense fallback={<LinearProgress />}>
                   <ProgramStreamDetails programId={program.id} />
+                </Suspense>
+              </ErrorBoundary>
+            ) : null}
+          </TabPanel>
+          <TabPanel index={2} value={tab}>
+            {program.type === 'content' &&
+            program.persisted &&
+            isNonEmptyString(program.id) ? (
+              <ErrorBoundary
+                fallback={
+                  <>Failed to load item details! Check logs for details</>
+                }
+              >
+                <Suspense fallback={<LinearProgress />}>
+                  <RawProgramDetails programId={program.id} />
                 </Suspense>
               </ErrorBoundary>
             ) : null}

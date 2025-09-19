@@ -43,16 +43,17 @@ import {
 const RequiredLibraryFields = [
   'Path',
   'Genres',
-  'Tags',
+  // 'Tags',
   'DateCreated',
-  'Etag',
+  // 'Etag',
   'Overview',
   'Taglines',
   'Studios',
   'People',
-  'OfficialRating',
+  // 'OfficialRating',
   'ProviderIds',
   'Chapters',
+  'PremiereDate',
 ];
 
 function getEmbyAuthorization(apiKey: Maybe<string>, clientId: Maybe<string>) {

@@ -47,9 +47,10 @@ const RequiredLibraryFields = [
   'Taglines',
   'Studios',
   'People',
-  'OfficialRating',
   'ProviderIds',
   'Chapters',
+  'PremiereDate',
+  'OfficialRating',
 ];
 
 function getJellyfinAuthorization(
