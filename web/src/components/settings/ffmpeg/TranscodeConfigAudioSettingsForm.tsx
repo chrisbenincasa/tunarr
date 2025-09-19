@@ -62,11 +62,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
           control={control}
           name="audioBitRate"
           prettyFieldName="Audio Bitrate"
-          disabled={encoder === 'copy'}
           TextFieldProps={{
             id: 'audio-bitrate',
             label: 'Audio Bitrate',
             fullWidth: true,
+            disabled: encoder === 'copy',
             helperText:
               encoder === 'copy'
                 ? 'Bitrate cannot be changed when copying input audio'
@@ -82,11 +82,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
           control={control}
           name="audioBufferSize"
           prettyFieldName="Audio Buffer Size"
-          disabled={encoder === 'copy'}
           TextFieldProps={{
             id: 'audio-buffer-size',
             label: 'Audio Buffer Size',
             fullWidth: true,
+            disabled: encoder === 'copy',
             helperText:
               encoder === 'copy'
                 ? 'Buffer size cannot be changed when copying input audio'
@@ -130,11 +130,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
         control={control}
         name="audioSampleRate"
         prettyFieldName="Audio Sample Rate"
-        disabled={encoder === 'copy'}
         TextFieldProps={{
           id: 'audio-sample-rate',
           label: 'Audio Sample Rate',
           fullWidth: true,
+          disabled: encoder === 'copy',
           helperText:
             encoder === 'copy'
               ? 'Sample rate cannot be changed when copying input audio'
