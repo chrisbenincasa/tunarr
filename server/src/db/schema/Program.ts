@@ -1,5 +1,6 @@
 import type { TupleToUnion } from '@tunarr/types';
-import { inArray } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
+import { inArray, relations } from 'drizzle-orm';
 import {
   check,
   index,
@@ -10,15 +11,17 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkNotNilable } from '../../types/util.ts';
+import type { MediaSourceName } from './base.ts';
+import { type MediaSourceId } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import {
   MediaSource,
   MediaSourceLibrary,
   MediaSourceTypes,
 } from './MediaSource.ts';
+import { ProgramExternalId } from './ProgramExternalId.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
-import type { MediaSourceName } from './base.ts';
-import { type MediaSourceId } from './base.ts';
+import { ProgramVersion } from './ProgramVersion.ts';
 
 export const ProgramTypes = [
   'movie',
@@ -103,8 +106,42 @@ export const Program = sqliteTable(
   ],
 );
 
+export const ProgramRelations = relations(Program, ({ many, one }) => ({
+  versions: many(ProgramVersion, { relationName: 'versions' }),
+  artist: one(ProgramGrouping, {
+    fields: [Program.artistUuid],
+    references: [ProgramGrouping.uuid],
+    relationName: 'children',
+  }),
+  album: one(ProgramGrouping, {
+    fields: [Program.albumUuid],
+    references: [ProgramGrouping.uuid],
+    relationName: 'children',
+  }),
+  season: one(ProgramGrouping, {
+    fields: [Program.seasonUuid],
+    references: [ProgramGrouping.uuid],
+    relationName: 'children',
+  }),
+  show: one(ProgramGrouping, {
+    fields: [Program.tvShowUuid],
+    references: [ProgramGrouping.uuid],
+    relationName: 'children',
+  }),
+  mediaSource: one(MediaSource, {
+    fields: [Program.mediaSourceId],
+    references: [MediaSource.uuid],
+  }),
+  mediaLibrary: one(MediaSourceLibrary, {
+    fields: [Program.libraryId],
+    references: [MediaSourceLibrary.uuid],
+  }),
+  externalIds: many(ProgramExternalId),
+}));
+
 export type ProgramTable = KyselifyBetter<typeof Program>;
 export type ProgramDao = Selectable<ProgramTable>;
+export type ProgramOrm = InferSelectModel<typeof Program>;
 // Make canonicalId required on insert.
 export type NewProgramDao = MarkNotNilable<
   Insertable<ProgramTable>,

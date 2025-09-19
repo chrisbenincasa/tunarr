@@ -6,6 +6,7 @@ import {
   inConstArr,
   isDefined,
   isNonEmptyString,
+  zipWithIndex,
 } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
@@ -13,6 +14,7 @@ import { seq } from '@tunarr/shared/util';
 import type {
   Collection,
   Library,
+  MediaChapter,
   Playlist,
   ProgramOrFolder,
 } from '@tunarr/types';
@@ -29,7 +31,6 @@ import type {
   PlexMediaAudioStream,
   PlexMediaContainerMetadata,
   PlexMediaContainerResponse,
-  PlexMediaDescription,
   PlexMediaNoCollectionOrPlaylist,
   PlexMediaNoCollectionPlaylist,
   PlexMediaVideoStream,
@@ -80,6 +81,7 @@ import {
   isUndefined,
   map,
   maxBy,
+  orderBy,
   reject,
   sortBy,
 } from 'lodash-es';
@@ -1249,7 +1251,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       episodeNumber: plexEpisode.index ?? 0,
       mediaItem: plexMediaStreamsInject(
         plexEpisode.ratingKey,
-        plexEpisode.Media,
+        plexEpisode,
       ).getOrElse(() => emptyMediaItem(plexEpisode)),
       genres: [],
       releaseDate: plexEpisode.originallyAvailableAt
@@ -1408,7 +1410,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       releaseDateString: plexMovie.originallyAvailableAt ?? null,
       mediaItem: plexMediaStreamsInject(
         plexMovie.ratingKey,
-        plexMovie.Media,
+        plexMovie,
       ).getOrElse(() => emptyMediaItem(plexMovie)),
       duration: plexMovie.duration,
       actors,
@@ -1577,7 +1579,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       trackNumber: plexTrack.index ?? 0,
       mediaItem: plexMediaStreamsInject(
         plexTrack.ratingKey,
-        plexTrack.Media,
+        plexTrack,
       ).getOrElse(() => emptyMediaItem(plexTrack)),
       // TODO:
       // genres: plexJoinItemInject(plexTrack.Genre),
@@ -1721,9 +1723,10 @@ function emptyMediaItem(item: PlexTerminalMedia): Maybe<MediaItem> {
 
 function plexMediaStreamsInject(
   itemId: string,
-  plexMedia: Maybe<PlexMediaDescription[]>,
+  plexItem: PlexTerminalMedia,
   requireVideoStream: boolean = true,
 ): Result<MediaItem> {
+  const plexMedia = plexItem.Media;
   if (isNil(plexMedia) || isEmpty(plexMedia)) {
     return Result.forError(
       new Error(`Plex item ID = ${itemId} has no Media streams`),
@@ -1835,6 +1838,56 @@ function plexMediaStreamsInject(
     ),
   );
 
+  const chapters: MediaChapter[] =
+    plexItem.type === 'movie' || plexItem.type === 'episode'
+      ? (plexItem.Chapter?.map((chapter) => {
+          return {
+            index: chapter.index,
+            endTime: chapter.endTimeOffset,
+            startTime: chapter.startTimeOffset,
+            chapterType: 'chapter',
+            title: chapter.tag,
+          } satisfies MediaChapter;
+        }) ?? [])
+      : [];
+
+  const markers =
+    plexItem.type === 'movie' || plexItem.type === 'episode'
+      ? (plexItem.Marker ?? [])
+      : [];
+  const intros = zipWithIndex(
+    orderBy(
+      markers.filter((marker) => marker.type === 'intro'),
+      (marker) => marker.startTimeOffset,
+      'asc',
+    ),
+  ).map(
+    ([marker, index]) =>
+      ({
+        chapterType: 'intro',
+        endTime: marker.endTimeOffset,
+        startTime: marker.startTimeOffset,
+        index,
+      }) satisfies MediaChapter,
+  );
+  const outros = zipWithIndex(
+    orderBy(
+      markers.filter((marker) => marker.type === 'credits'),
+      (marker) => marker.startTimeOffset,
+      'asc',
+    ),
+  ).map(
+    ([marker, index]) =>
+      ({
+        chapterType: 'intro',
+        endTime: marker.endTimeOffset,
+        startTime: marker.startTimeOffset,
+        index,
+      }) satisfies MediaChapter,
+  );
+
+  chapters.push(...intros, ...outros);
+
   return Result.success({
     // Handle if this is not present...
     duration: relevantMedia.duration!,
@@ -1859,5 +1912,6 @@ function plexMediaStreamsInject(
         sourceType: MediaSourceType.Plex,
       },
     ],
+    chapters,
   });
 }

@@ -2,7 +2,12 @@ import {
   addSelectedMedia,
   removeSelectedMedia,
 } from '@/store/programmingSelector/actions.ts';
-import { CheckCircle, Folder, RadioButtonUnchecked } from '@mui/icons-material';
+import {
+  CheckCircle,
+  Folder,
+  InfoSharp,
+  RadioButtonUnchecked,
+} from '@mui/icons-material';
 import type { Theme } from '@mui/material';
 import {
   Box,
@@ -30,6 +35,7 @@ import type {
   PlexSelectedMedia,
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
+import { NewProgramDetailsDialog } from '../programs/NewProgramDetailsDialog.tsx';
 
 export type GridItemMetadata = {
   itemId: string;
@@ -43,25 +49,25 @@ export type GridItemMetadata = {
   thumbnailUrl: string;
   selectedMedia?: SelectedMedia;
   isFolder?: boolean;
+  persisted: boolean;
 };
 
-type Props<T> = {
-  item: T;
+type Props<ItemTypeT> = {
+  item: ItemTypeT;
   itemSource: SelectedMedia['type'];
-  // extractors: GridItemMetadataExtractors<T>;
   metadata: GridItemMetadata;
   style?: React.CSSProperties;
   index: number;
   isModalOpen: boolean;
-  onClick: (item: T) => void;
-  onSelect: (item: T) => void;
+  onClick: (item: ItemTypeT) => void;
+  onSelect: (item: ItemTypeT) => void;
   depth: number;
   enableSelection?: boolean;
   disablePadding?: boolean;
 };
 
-const MediaGridItemInner = <T,>(
-  props: Props<T>,
+const MediaGridItemInner = <ItemTypeT,>(
+  props: Props<ItemTypeT>,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
   const theme = useTheme();
@@ -69,6 +75,8 @@ const MediaGridItemInner = <T,>(
     theme.palette.text.primary,
     theme.palette.mode === 'light' ? 0.11 : 0.13,
   );
+
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const darkMode = useIsDarkMode();
 
@@ -85,6 +93,7 @@ const MediaGridItemInner = <T,>(
       childCount,
       mayHaveChildren = false,
       isFolder = false,
+      persisted,
     },
     style,
     isModalOpen,
@@ -173,140 +182,178 @@ const MediaGridItemInner = <T,>(
     [darkMode, depth, isModalOpen],
   );
 
+  const showInfo = useCallback((e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDialogOpen(true);
+  }, []);
+
+  const hasChildren = (childCount ?? 0) > 0 || mayHaveChildren;
+
   return (
-    <Fade
-      in={
-        isInViewport &&
-        !isUndefined(item) &&
-        (isFolder ||
-          (hasThumbnail &&
-            (imageLoaded === 'success' || imageLoaded === 'error')) ||
-          !hasThumbnail)
-      }
-      timeout={400}
-      ref={imageContainerRef}
-    >
-      <div>
-        <ImageListItem
-          component={Grid}
-          key={itemId}
-          sx={{
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            flexGrow: 1,
-            paddingLeft: disablePadding ? undefined : '8px !important',
-            paddingRight: disablePadding ? undefined : '8px',
-            paddingTop: disablePadding ? undefined : '8px',
-            height: 'auto',
-            backgroundColor: backgroundColor,
-            ...style,
-          }}
-          onClick={(e) =>
-            (childCount ?? 0) > 0 || mayHaveChildren
-              ? handleClick()
-              : toggleItemSelect(e)
-          }
-          ref={ref}
-        >
-          {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
-            (isFolder ? (
-              <Box
+    <>
+      <Fade
+        in={
+          isInViewport &&
+          !isUndefined(item) &&
+          (isFolder ||
+            (hasThumbnail &&
+              (imageLoaded === 'success' || imageLoaded === 'error')) ||
+            !hasThumbnail)
+        }
+        timeout={400}
+        ref={imageContainerRef}
+      >
+        <div>
+          <ImageListItem
+            component={Grid}
+            key={itemId}
+            sx={{
+              cursor: enableSelection || hasChildren ? 'pointer' : 'default',
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1,
+              paddingLeft: disablePadding ? undefined : '8px !important',
+              paddingRight: disablePadding ? undefined : '8px',
+              paddingTop: disablePadding ? undefined : '8px',
+              height: 'auto',
+              backgroundColor: backgroundColor,
+              ...style,
+            }}
+            onClick={(e) => (hasChildren ? handleClick() : toggleItemSelect(e))}
+            ref={ref}
+          >
+            {persisted && !hasChildren && (
+              <InfoSharp
+                inheritViewBox
+                onClick={(e) => showInfo(e)}
                 sx={{
-                  position: 'relative',
-                  minHeight,
-                  maxHeight: '100%',
-                  textAlign: 'center',
+                  position: 'absolute',
+                  zIndex: 2,
+                  top: disablePadding ? 8 : 16,
+                  right: disablePadding ? 8 : 16,
+                  cursor: 'pointer',
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(0, 0, 0, 0.7)'
+                      : 'rgba(255, 255, 255, 0.7)',
+                  borderRadius: '50%',
+                  '&:hover': {
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(0, 0, 0, 1)'
+                        : 'rgba(255, 255, 255, 1)',
+                  },
                 }}
-              >
-                <Folder
-                  sx={{
-                    display: 'inline-block',
-                    margin: '0 auto',
-                    fontSize: '8em',
-                  }}
-                />
-              </Box>
-            ) : hasThumbnail ? (
-              <Box
-                sx={{
-                  position: 'relative',
-                  minHeight,
-                  maxHeight: '100%',
-                }}
-              >
-                <img
-                  src={thumbnailUrl}
-                  style={{
-                    borderRadius: '5%',
-                    height: 'auto',
-                    width: '100%',
-                    visibility:
-                      imageLoaded === 'success' ? 'visible' : 'hidden',
-                    zIndex: 2,
-                    display: imageLoaded === 'error' ? 'none' : undefined,
-                  }}
-                  onLoad={() => setImageLoaded('success')}
-                  onError={() => setImageLoaded('error')}
-                />
-                <Box
-                  component="div"
-                  sx={{
-                    background: skeletonBgColor,
-                    borderRadius: '5%',
-                    position:
-                      imageLoaded === 'success' ? 'absolute' : 'relative',
-                    top: 0,
-                    left: 0,
-                    aspectRatio:
-                      aspectRatio === 'square'
-                        ? '1/1'
-                        : aspectRatio === 'landscape'
-                          ? '1.77/1'
-                          : '2/3',
-                    width: '100%',
-                    height: 'auto',
-                    zIndex: 1,
-                    opacity: imageLoaded === 'success' ? 0 : 1,
-                    visibility:
-                      imageLoaded === 'success' ? 'hidden' : 'visible',
-                    minHeight,
-                  }}
-                ></Box>
-              </Box>
-            ) : (
-              <Skeleton
-                animation={false}
-                variant="rounded"
-                sx={{ borderRadius: '5%' }}
-                height={minHeight}
               />
-            ))}
-          <ImageListItemBar
-            title={title}
-            subtitle={subtitle}
-            position="below"
-            actionIcon={
-              enableSelection ? (
-                <IconButton
-                  aria-label={`star ${title}`}
-                  onClick={(event: MouseEvent<HTMLButtonElement>) =>
-                    toggleItemSelect(event)
-                  }
+            )}
+
+            {isInViewport && // TODO: Eventually turn this into isNearViewport so images load before they hit the viewport
+              (isFolder ? (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    minHeight,
+                    maxHeight: '100%',
+                    textAlign: 'center',
+                  }}
                 >
-                  {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
-                </IconButton>
-              ) : null
-            }
-            actionPosition="right"
-          />
-        </ImageListItem>
-      </div>
-    </Fade>
+                  <Folder
+                    sx={{
+                      display: 'inline-block',
+                      margin: '0 auto',
+                      fontSize: '8em',
+                    }}
+                  />
+                </Box>
+              ) : hasThumbnail ? (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    minHeight,
+                    maxHeight: '100%',
+                  }}
+                >
+                  <img
+                    src={thumbnailUrl}
+                    style={{
+                      borderRadius: '5%',
+                      height: 'auto',
+                      width: '100%',
+                      visibility:
+                        imageLoaded === 'success' ? 'visible' : 'hidden',
+                      zIndex: 2,
+                      display: imageLoaded === 'error' ? 'none' : undefined,
+                    }}
+                    onLoad={() => setImageLoaded('success')}
+                    onError={() => setImageLoaded('error')}
+                  />
+                  <Box
+                    component="div"
+                    sx={{
+                      background: skeletonBgColor,
+                      borderRadius: '5%',
+                      position:
+                        imageLoaded === 'success' ? 'absolute' : 'relative',
+                      top: 0,
+                      left: 0,
+                      aspectRatio:
+                        aspectRatio === 'square'
+                          ? '1/1'
+                          : aspectRatio === 'landscape'
+                            ? '1.77/1'
+                            : '2/3',
+                      width: '100%',
+                      height: 'auto',
+                      zIndex: 1,
+                      opacity: imageLoaded === 'success' ? 0 : 1,
+                      visibility:
+                        imageLoaded === 'success' ? 'hidden' : 'visible',
+                      minHeight,
+                    }}
+                  ></Box>
+                </Box>
+              ) : (
+                <Skeleton
+                  animation={false}
+                  variant="rounded"
+                  sx={{ borderRadius: '5%' }}
+                  height={minHeight}
+                />
+              ))}
+            <ImageListItemBar
+              title={title}
+              subtitle={subtitle}
+              position="below"
+              actionIcon={
+                enableSelection ? (
+                  <IconButton
+                    aria-label={`star ${title}`}
+                    onClick={(event: MouseEvent<HTMLButtonElement>) =>
+                      toggleItemSelect(event)
+                    }
+                  >
+                    {isSelected ? <CheckCircle /> : <RadioButtonUnchecked />}
+                  </IconButton>
+                ) : null
+              }
+              actionPosition="right"
+            />
+          </ImageListItem>
+        </div>
+      </Fade>
+      {!hasChildren && persisted && (
+        <NewProgramDetailsDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          programId={itemId}
+        />
+      )}
+    </>
   );
 };
 // );
 
-export const MediaGridItem = forwardRef(MediaGridItemInner) as <T>(
-  props: Props<T> & { ref?: ForwardedRef<HTMLDivElement> },
+export const MediaGridItem = forwardRef(MediaGridItemInner) as <ItemTypeT>(
+  props: Props<ItemTypeT> & { ref?: ForwardedRef<HTMLDivElement> },
 ) => ReturnType<typeof MediaGridItemInner>;

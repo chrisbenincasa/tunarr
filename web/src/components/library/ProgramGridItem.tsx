@@ -1,11 +1,12 @@
 import { useSettings } from '@/store/settings/selectors.ts';
 import { createExternalId } from '@tunarr/shared';
-import { getChildItemType, Library, ProgramOrFolder, tag } from '@tunarr/types';
+import type { Library, ProgramOrFolder } from '@tunarr/types';
+import { getChildItemType, tag } from '@tunarr/types';
 import { isEqual } from 'lodash-es';
 import pluralize from 'pluralize';
+import type { JSX } from 'react';
 import {
   forwardRef,
-  JSX,
   memo,
   useCallback,
   useMemo,
@@ -63,7 +64,13 @@ export const ProgramGridItem = memo(
       props: GridItemProps<T>,
       ref: ForwardedRef<HTMLDivElement>,
     ) => {
-      const { item, index, moveModal, disableSelection } = props;
+      const {
+        item,
+        index,
+        moveModal,
+        disableSelection,
+        persisted = false,
+      } = props;
       const settings = useSettings();
       const currentServer = useCurrentMediaSource();
 
@@ -142,8 +149,17 @@ export const ProgramGridItem = memo(
                 : 'portrait',
             isPlaylist: false,
             isFolder: item.type === 'folder',
+            persisted,
           }) satisfies GridItemMetadata,
-        [isEpisode, isMusicItem, item, thumbnailUrlFunc],
+        [
+          currentServer,
+          isEpisode,
+          isMusicItem,
+          item,
+          persisted,
+          props.item.sourceType,
+          thumbnailUrl,
+        ],
       );
 
       return (

@@ -1,4 +1,4 @@
-import { inArray, sql } from 'drizzle-orm';
+import { inArray, relations, sql } from 'drizzle-orm';
 import {
   check,
   index,
@@ -56,6 +56,20 @@ export const ProgramExternalId = sqliteTable(
       inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
     ),
   ],
+);
+
+export const ProgramExternalIdRelations = relations(
+  ProgramExternalId,
+  ({ one }) => ({
+    program: one(Program, {
+      fields: [ProgramExternalId.programUuid],
+      references: [Program.uuid],
+    }),
+    mediaSource: one(MediaSource, {
+      fields: [ProgramExternalId.mediaSourceId],
+      references: [MediaSource.uuid],
+    }),
+  }),
 );
 
 export type ProgramExternalIdTable = KyselifyBetter<typeof ProgramExternalId>;

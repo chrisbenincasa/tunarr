@@ -9,6 +9,9 @@ import type {
   ItemOrFolder,
   ItemSchema,
   Library,
+  MediaChapter,
+  MediaItem,
+  MediaStream,
   Movie,
   MusicAlbum,
   MusicAlbumContentProgramSchema,
@@ -155,6 +158,10 @@ export type Collection = z.infer<typeof Collection>;
 export type Playlist = z.infer<typeof Playlist>;
 export type Library = z.infer<typeof Library>;
 
+export type MediaStream = z.infer<typeof MediaStream>;
+export type MediaItem = z.infer<typeof MediaItem>;
+export type MediaChapter = z.infer<typeof MediaChapter>;
+
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,
 ): f is EpisodeWithHierarchy {
@@ -208,5 +215,16 @@ export function isTerminalItemType(program: ProgramOrFolder | Library) {
     program.type === 'episode' ||
     program.type === 'track' ||
     program.type === 'other_video'
+  );
+}
+
+export function isStructuralItemType(
+  program: ProgramOrFolder | Library,
+): program is StructuralProgramGrouping {
+  return (
+    program.type === 'folder' ||
+    program.type === 'collection' ||
+    program.type === 'playlist' ||
+    program.type === 'library'
   );
 }

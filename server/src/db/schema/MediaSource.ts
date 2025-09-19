@@ -1,11 +1,13 @@
 import type { TupleToUnion } from '@tunarr/types';
-import { inArray } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
+import { inArray, relations } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Updateable } from 'kysely';
 import { type Insertable, type Selectable } from 'kysely';
-import { type KyselifyBetter } from './KyselifyBetter.ts';
 import type { MediaSourceName } from './base.ts';
 import { type MediaSourceId } from './base.ts';
+import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { Program } from './Program.ts';
 
 export const MediaSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
 
@@ -45,6 +47,11 @@ export const MediaSource = sqliteTable(
     ),
   ],
 );
+
+export const MediaSourceRelations = relations(MediaSource, ({ many }) => ({
+  libraries: many(MediaSourceLibrary),
+  programs: many(Program),
+}));
 
 export const MediaSourceFields: (keyof MediaSourceTable)[] = [
   'accessToken',
@@ -99,6 +106,17 @@ export const MediaSourceLibrary = sqliteTable(
   ],
 );
 
+export const MediaSourceLibraryRelations = relations(
+  MediaSourceLibrary,
+  ({ one, many }) => ({
+    programs: many(Program),
+    one: one(MediaSource, {
+      fields: [MediaSourceLibrary.mediaSourceId],
+      references: [MediaSource.uuid],
+    }),
+  }),
+);
+
 export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
   'enabled',
   'externalKey',
@@ -111,6 +129,7 @@ export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
 
 export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;
 export type MediaSourceLibrary = Selectable<MediaSourceLibraryTable>;
+export type MediaSourceLibraryOrm = InferSelectModel<typeof MediaSourceLibrary>;
 export type NewMediaSourceLibrary = Insertable<MediaSourceLibraryTable>;
 export type MediaSourceLibraryUpdate = Updateable<MediaSourceLibraryTable>;
 

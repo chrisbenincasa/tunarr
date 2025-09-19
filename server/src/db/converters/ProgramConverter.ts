@@ -9,23 +9,30 @@ import {
   ChannelProgram,
   ContentProgram,
   ContentProgramParent,
+  Episode,
   ExternalId,
   FlexProgram,
+  Identifier,
+  MediaStream,
   MusicAlbumContentProgram,
   MusicArtistContentProgram,
   RedirectProgram,
+  TerminalProgram,
   TvSeasonContentProgram,
   TvShowContentProgram,
+  untag,
 } from '@tunarr/types';
 import {
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
 } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { find, isNil, omitBy } from 'lodash-es';
+import { find, first, isNil, omitBy, orderBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
+import { match } from 'ts-pattern';
 import { MarkNonNullable, Nullable } from '../../types/util.ts';
 import {
   LineupItem,
@@ -43,6 +50,7 @@ import type {
   MusicAlbumWithExternalIds,
   MusicArtistWithExternalIds,
   ProgramWithRelations,
+  ProgramWithRelationsOrm,
   TvSeasonWithExternalIds,
   TvShowWithExternalIds,
 } from '../schema/derivedTypes.ts';
@@ -92,7 +100,6 @@ export class ProgramConverter {
       }
       return this.redirectLineupItemToProgram(item, redirectChannel);
     } else if (item.type === 'content') {
-      console.log(channel.programs);
       const program =
         preMaterializedProgram && preMaterializedProgram.uuid === item.id
           ? preMaterializedProgram
@@ -128,6 +135,110 @@ export class ProgramConverter {
         >,
   ): Nullable<MarkRequired<ContentProgram, 'id'>> {
     return this.programDaoToContentProgram(program);
+  }
+
+  programDaoToTerminalProgram(
+    program: ProgramWithRelationsOrm,
+  ): TerminalProgram | null {
+    if (
+      !program.mediaSourceId ||
+      !program.externalIds ||
+      !program.canonicalId ||
+      !program.libraryId
+    ) {
+      this.logger.error(
+        'Program missing critical fields. Aborting: %O',
+        program,
+      );
+      return null;
+    }
+
+    const base = {
+      ...program,
+      type: program.type,
+      mediaSourceId: untag(program.mediaSourceId),
+      canonicalId: program.canonicalId,
+      libraryId: program.libraryId,
+      externalId: program.externalKey,
+      externalLibraryId: program.mediaLibrary?.externalKey ?? '',
+      identifiers: program.externalIds.map(
+        (eid) =>
+          ({
+            id: eid.externalKey,
+            type: eid.sourceType,
+            sourceId: eid.externalSourceId ?? undefined,
+          }) satisfies Identifier,
+      ),
+      tags: [],
+      originalTitle: null,
+      releaseDate: program.originalAirDate
+        ? +dayjs(program.originalAirDate)
+        : null,
+      releaseDateString: program.originalAirDate,
+    };
+
+    const typed = match(program)
+      .returnType<TerminalProgram>()
+      .with({ type: 'movie' }, (movie) => ({
+        ...base,
+        type: 'movie',
+        plot: movie.summary,
+        tagline: null,
+      }))
+      .with(
+        { type: 'episode' },
+        (episode) =>
+          ({
+            ...base,
+            type: 'episode' as const,
+            summary: episode.summary,
+            episodeNumber: episode.episode ?? 0,
+            season: undefined,
+          }) satisfies Episode,
+      )
+      .with({ type: 'track' }, (track) => ({
+        ...base,
+        type: 'track',
+        trackNumber: track.episode ?? 0,
+        album: undefined, // TODO:
+      }))
+      .with({ type: 'music_video' }, () => ({ ...base, type: 'music_video' }))
+      .with({ type: 'other_video' }, () => ({ ...base, type: 'other_video' }))
+      .exhaustive();
+
+    const version = first(program.versions);
+    if (version) {
+      typed.mediaItem = {
+        ...version,
+        streams: orderBy(
+          version.mediaStreams?.map(
+            (stream) =>
+              ({
+                ...stream,
+                default: stream.default,
+                streamType: stream.streamKind,
+              }) satisfies MediaStream,
+          ) ?? [],
+          'index',
+          'asc',
+        ),
+        chapters: orderBy(
+          version.chapters,
+          (c) => [
+            match(c.chapterType)
+              .with('chapter', () => 0)
+              .with('intro', () => 1)
+              .with('outro', () => 2)
+              .exhaustive(),
+            c.index,
+          ],
+          ['asc', 'asc'],
+        ),
+        locations: [],
+      };
+    }
+
+    return typed;
   }
 
   programDaoToContentProgram(

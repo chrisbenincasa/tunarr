@@ -249,6 +249,7 @@ export type ProgramJoins = {
   tvShow: boolean | ProgramGroupingFields;
   tvSeason: boolean | ProgramGroupingFields;
   customShows: boolean;
+  programVersions: boolean;
 };
 
 const defaultProgramJoins: ProgramJoins = {
@@ -257,6 +258,7 @@ const defaultProgramJoins: ProgramJoins = {
   tvShow: false,
   tvSeason: false,
   customShows: false,
+  programVersions: false,
 };
 
 export const AllProgramJoins: ProgramJoins = {
@@ -265,6 +267,7 @@ export const AllProgramJoins: ProgramJoins = {
   tvSeason: true,
   tvShow: true,
   customShows: true,
+  programVersions: true,
 };
 
 type ProgramField = `program.${keyof RawProgram}`;
@@ -419,14 +422,17 @@ function baseWithProgramsExpressionBuilder(
         ),
       ),
     )
-    .$if(!!opts.joins.tvShow, (qb) =>
-      qb.select((eb) =>
-        withTvShow(
-          eb,
-          getJoinFields('tvShow'),
-          opts.includeGroupingExternalIds,
+    .$if(
+      !!opts.joins.tvShow,
+      (qb) =>
+        qb.select((eb) =>
+          withTvShow(
+            eb,
+            getJoinFields('tvShow'),
+            opts.includeGroupingExternalIds,
+          ),
         ),
-      ),
+      // $if(!!opts.joins.programVersions, qb => qb.select(eb => ))
     )
     .$if(!!opts.joins.customShows, (qb) => qb.select(withProgramCustomShows));
 }

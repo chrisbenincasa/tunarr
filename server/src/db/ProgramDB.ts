@@ -3,6 +3,7 @@ import type {
   IProgramDB,
   ProgramGroupingChildCounts,
   ProgramGroupingExternalIdLookup,
+  ProgramUpsertRequest,
   WithChannelIdFilter,
 } from '@/db/interfaces/IProgramDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -83,6 +84,7 @@ import {
   mapToObj,
   programExternalIdString,
   run,
+  unzip,
 } from '../util/index.ts';
 import { ProgramGroupingMinter } from './converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from './converters/ProgramMinter.ts';
@@ -112,6 +114,7 @@ import {
   ProgramType,
   ProgramDao as RawProgram,
 } from './schema/Program.ts';
+import { NewProgramChapter, ProgramChapter } from './schema/ProgramChapter.ts';
 import {
   MinimalProgramExternalId,
   NewProgramExternalId,
@@ -133,12 +136,17 @@ import {
   ProgramGroupingExternalIdFieldsWithAlias,
   toInsertableProgramGroupingExternalId,
 } from './schema/ProgramGroupingExternalId.ts';
+import {
+  NewProgramMediaStream,
+  ProgramMediaStream,
+} from './schema/ProgramMediaStream.ts';
+import { ProgramVersion } from './schema/ProgramVersion.ts';
 import { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { DB } from './schema/db.ts';
 import type {
   MusicAlbumWithExternalIds,
   NewProgramGroupingWithExternalIds,
-  NewProgramWithExternalIds,
+  NewProgramVersion,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
@@ -881,27 +889,36 @@ export class ProgramDB implements IProgramDB {
   }
 
   async upsertPrograms(
-    programs: NewProgramWithExternalIds[],
+    requests: ProgramUpsertRequest[],
     programUpsertBatchSize: number = 100,
   ) {
-    if (isEmpty(programs)) {
+    if (isEmpty(requests)) {
       return [];
     }
 
     const db = this.db;
 
+    // Group related items by canonicalId because the UUID we get back
+    // from the upsert may not be the one we generated (if an existing entry)
+    // already exists
     const externalIdsByProgramCanonicalId = groupByFunc(
-      programs,
-      (program) => program.canonicalId ?? programExternalIdString(program),
+      requests,
+      ({ program }) => program.canonicalId,
       (program) => program.externalIds,
     );
 
+    const programVersionsByCanonicalId = groupByFunc(
+      requests,
+      ({ program }) => program.canonicalId,
+      (request) => request.versions,
+    );
+
     return await Promise.all(
-      chunk(programs, programUpsertBatchSize).map(async (c) => {
+      chunk(requests, programUpsertBatchSize).map(async (c) => {
         const chunkResult = await db.transaction().execute((tx) =>
           tx
             .insertInto('program')
-            .values(c.map((program) => omit(program, 'externalIds')))
+            .values(c.map(({ program }) => program))
             .onConflict((oc) =>
               oc
                 .columns(['sourceType', 'mediaSourceId', 'externalKey'])
@@ -912,13 +929,15 @@ export class ProgramDB implements IProgramDB {
                 ),
             )
             .returningAll()
-            .$narrowType<{ mediaSourceId: NotNull }>()
+            // All new programs must have mediaSourceId and canonicalId. This is enforced
+            // by the NewProgramDao type
+            .$narrowType<{ mediaSourceId: NotNull; canonicalId: NotNull }>()
             .execute(),
         );
 
         const allExternalIds = flatten(c.map((program) => program.externalIds));
         for (const program of chunkResult) {
-          const key = program.canonicalId ?? programExternalIdString(program);
+          const key = program.canonicalId;
           const eids = externalIdsByProgramCanonicalId[key] ?? [];
           for (const eid of eids) {
             eid.programUuid = program.uuid;
@@ -927,6 +946,17 @@ export class ProgramDB implements IProgramDB {
 
         const externalIdsByProgramId =
           await this.upsertProgramExternalIds(allExternalIds);
+
+        const versionsToInsert: NewProgramVersion[] = [];
+        for (const program of chunkResult) {
+          for (const version of programVersionsByCanonicalId[
+            program.canonicalId
+          ] ?? []) {
+            version.programId = program.uuid;
+            versionsToInsert.push(version);
+          }
+        }
+        await this.upsertProgramVersions(versionsToInsert);
 
         return chunkResult.map(
           (upsertedProgram) =>
@@ -937,6 +967,102 @@ export class ProgramDB implements IProgramDB {
         );
       }),
     ).then(flatten);
+  }
+
+  private async upsertProgramVersions(versions: NewProgramVersion[]) {
+    if (versions.length === 0) {
+      this.logger.warn('No program versions passed for item');
+      return [];
+    }
+
+    const insertedVersions: ProgramVersion[] = [];
+    await this.db.transaction().execute(async (tx) => {
+      const byProgramId = groupByUniq(versions, (version) => version.programId);
+      for (const batch of chunk(Object.entries(byProgramId), 50)) {
+        const [programIds, versionBatch] = unzip(batch);
+        // We probably need to delete here, because we never really delete
+        // programs on the upsert path.
+        await tx
+          .deleteFrom('programVersion')
+          .where('programId', 'in', programIds)
+          .executeTakeFirstOrThrow();
+
+        const insertResult = await tx
+          .insertInto('programVersion')
+          .values(
+            versionBatch.map((version) =>
+              omit(version, ['chapters', 'mediaStreams']),
+            ),
+          )
+          .returningAll()
+          .execute();
+
+        await Promise.all([
+          this.upsertProgramMediaStreams(
+            versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
+            tx,
+          ),
+          this.upsertProgramChapters(
+            versionBatch.flatMap(({ chapters }) => chapters ?? []),
+            tx,
+          ),
+        ]);
+
+        insertedVersions.push(...insertResult);
+      }
+    });
+    return insertedVersions;
+  }
+
+  private async upsertProgramMediaStreams(
+    streams: NewProgramMediaStream[],
+    tx: Kysely<DB> = this.db,
+  ) {
+    if (streams.length === 0) {
+      this.logger.warn('No media streams passed for version');
+      return [];
+    }
+
+    const byVersionId = groupBy(streams, (stream) => stream.programVersionId);
+    const inserted: ProgramMediaStream[] = [];
+    for (const batch of chunk(Object.entries(byVersionId), 50)) {
+      const [_, streams] = unzip(batch);
+      // TODO: Do we need to delete first?
+      // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
+      inserted.push(
+        ...(await tx
+          .insertInto('programMediaStream')
+          .values(flatten(streams))
+          .returningAll()
+          .execute()),
+      );
+    }
+    return inserted;
+  }
+
+  private async upsertProgramChapters(
+    chapters: NewProgramChapter[],
+    tx: Kysely<DB> = this.db,
+  ) {
+    if (chapters.length === 0) {
+      return [];
+    }
+
+    const byVersionId = groupBy(chapters, (stream) => stream.programVersionId);
+    const inserted: ProgramChapter[] = [];
+    for (const batch of chunk(Object.entries(byVersionId), 50)) {
+      const [_, streams] = unzip(batch);
+      // TODO: Do we need to delete first?
+      // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
+      inserted.push(
+        ...(await tx
+          .insertInto('programChapter')
+          .values(flatten(streams))
+          .returningAll()
+          .execute()),
+      );
+    }
+    return inserted;
   }
 
   async upsertProgramExternalIds(

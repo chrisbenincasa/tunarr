@@ -395,7 +395,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       const pool = container.get(TunarrWorkerPool);
 
       const response = await pool.queueTask({ type: 'status' });
-      console.log(response);
       return res.send(response);
     },
   );
@@ -414,7 +413,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         pool.queueTask({ type: 'restart', code: 1 }),
         new Promise((_, rej) => setTimeout(() => rej(new Error('')), 5_000)),
       ]);
-      console.log(response);
       return res.send(response);
     },
   );

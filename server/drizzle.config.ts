@@ -6,6 +6,6 @@ export default defineConfig({
   out: './src/migration/db/sql',
   casing: 'snake_case',
   dbCredentials: {
-    url: process.env.TUNARR_DATABASE_PATH,
+    url: process.env.TUNARR_DATABASE_PATH!,
   },
 });

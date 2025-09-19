@@ -5,7 +5,13 @@ import type {
   NewSingleOrMultiExternalId,
 } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
-import { tag, type ContentProgram } from '@tunarr/types';
+import {
+  isTerminalItemType,
+  ProgramLike,
+  tag,
+  TerminalProgram,
+  type ContentProgram,
+} from '@tunarr/types';
 import type { JellyfinItem } from '@tunarr/types/jellyfin';
 import type {
   PlexMovie as ApiPlexMovie,
@@ -22,7 +28,7 @@ import {
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { find, first, head, isError } from 'lodash-es';
-import { P, match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { Canonicalizer } from '../../services/Canonicalizer.ts';
 import {
@@ -35,18 +41,19 @@ import { Maybe } from '../../types/util.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
+import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { MediaSource, MediaSourceLibrary } from '../schema/MediaSource.ts';
-import type {
-  NewProgramDao,
-  NewProgramDao as NewRawProgram,
-} from '../schema/Program.ts';
+import type { NewProgramDao } from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
+import { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
 import { MediaSourceId, MediaSourceName } from '../schema/base.ts';
 import {
   NewEpisodeProgram,
   NewMovieProgram,
   NewMusicTrack,
+  NewProgramVersion,
   NewProgramWithExternalIds,
+  NewProgramWithRelations,
 } from '../schema/derivedTypes.js';
 
 // type MovieMintRequest =
@@ -72,7 +79,7 @@ export class ProgramDaoMinter {
     private jellyfinCanonicalizer: Canonicalizer<JellyfinItem>,
   ) {}
 
-  contentProgramDtoToDao(program: ContentProgram): Maybe<NewRawProgram> {
+  contentProgramDtoToDao(program: ContentProgram): Maybe<NewProgramDao> {
     if (!isNonEmptyString(program.canonicalId)) {
       this.logger.warn('Program missing canonical ID on upsert: %O', program);
       return;
@@ -167,11 +174,10 @@ export class ProgramDaoMinter {
     mediaSource: MediaSource,
     mediaLibrary: MediaSourceLibrary,
     movie: MediaSourceMovie,
-  ): NewMovieProgram {
+  ): NewProgramWithRelations<'movie'> {
     const programId = v4();
     const now = +dayjs();
-
-    return {
+    const newMovie = {
       uuid: programId,
       sourceType: movie.sourceType,
       externalKey: movie.externalKey,
@@ -191,55 +197,133 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: movie.canonicalId,
-      externalIds: seq.collect(movie.identifiers, (id) => {
-        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
-          return {
-            type: 'single',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-          } satisfies NewSingleOrMultiExternalId;
-        } else if (isValidMultiExternalIdType(id.type)) {
-          const isMediaSourceId = id.type === mediaSource.type;
-          // This stinks
-          const location = isMediaSourceId
-            ? find(movie.mediaItem?.locations, { sourceType: mediaSource.type })
-            : null;
-          return {
-            type: 'multi',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-            externalSourceId: mediaSource.name, // legacy
-            mediaSourceId: mediaSource.uuid, // new
-            // TODO
-            directFilePath: location?.path,
-            externalFilePath:
-              location?.type === 'remote' ? location.externalKey : null,
-            // externalFilePath
-          } satisfies NewSingleOrMultiExternalId;
-        }
+    } satisfies NewMovieProgram;
 
-        return;
-      }),
+    return {
+      program: newMovie,
+      externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
+      versions: this.mintVersions(programId, movie, now),
     };
+  }
+
+  mintVersions(
+    programId: string,
+    item: TerminalProgram,
+    now: number = +dayjs(),
+  ) {
+    const versions: NewProgramVersion[] = [];
+    if (item.mediaItem) {
+      const versionId = v4();
+      const streams = item.mediaItem.streams.map((stream) => {
+        return {
+          codec: stream.codec,
+          index: stream.index,
+          profile: stream.profile,
+          programVersionId: versionId,
+          streamKind: stream.streamType,
+          uuid: v4(),
+          bitsPerSample: stream.bitDepth,
+          channels: stream.channels,
+          // TODO: color
+          default: booleanToNumber(stream.default ?? false),
+          //TODO: forced: stream.forced
+          language: stream.languageCodeISO6392,
+          pixelFormat: stream.pixelFormat,
+          title: stream.title,
+        } satisfies NewProgramMediaStream;
+      });
+
+      const version: NewProgramVersion = {
+        uuid: versionId,
+        createdAt: now,
+        updatedAt: now,
+        programId,
+        displayAspectRatio: item.mediaItem.displayAspectRatio,
+        duration: item.mediaItem.duration,
+        frameRate: match(item.mediaItem.frameRate)
+          .with(P.string, (str) => str)
+          .with(P.number, (num) => num.toString())
+          .with(P.nullish, (nil) => nil)
+          .exhaustive(),
+        sampleAspectRatio: item.mediaItem.sampleAspectRatio,
+        height: item.mediaItem.resolution?.heightPx,
+        width: item.mediaItem.resolution?.widthPx,
+        mediaStreams: streams,
+        chapters: item.mediaItem.chapters?.map((chapter) => {
+          return {
+            index: chapter.index,
+            programVersionId: versionId,
+            chapterType: chapter.chapterType,
+            uuid: v4(),
+            title: chapter.title,
+            startTime: chapter.startTime,
+            endTime: chapter.endTime,
+          };
+        }),
+        // TODO: scanKind: movie.mediaItem.
+      };
+
+      versions.push(version);
+    }
+
+    return versions;
+  }
+
+  mintExternalIdsNew(
+    programId: string,
+    item: ProgramLike,
+    mediaSource: MediaSource,
+    now: number = +dayjs(),
+  ) {
+    return seq.collect(item.identifiers, (id) => {
+      if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        return {
+          type: 'single',
+          externalKey: id.id,
+          programUuid: programId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies NewSingleOrMultiExternalId;
+      } else if (isValidMultiExternalIdType(id.type)) {
+        const isMediaSourceId = id.type === mediaSource.type;
+        // This stinks
+        const location =
+          isMediaSourceId && isTerminalItemType(item)
+            ? find(item.mediaItem?.locations, { sourceType: mediaSource.type })
+            : null;
+        return {
+          type: 'multi',
+          externalKey: id.id,
+          programUuid: programId,
+          sourceType: id.type,
+          uuid: v4(),
+          createdAt: now,
+          updatedAt: now,
+          externalSourceId: mediaSource.name, // legacy
+          mediaSourceId: mediaSource.uuid, // new
+          // TODO
+          directFilePath: location?.path,
+          externalFilePath:
+            location?.type === 'remote' ? location.externalKey : null,
+          // externalFilePath
+        } satisfies NewSingleOrMultiExternalId;
+      }
+
+      return;
+    });
   }
 
   mintEpisode(
     mediaSource: MediaSource,
     mediaLibrary: MediaSourceLibrary,
     episode: MediaSourceEpisode,
-  ): NewEpisodeProgram {
+  ): NewProgramWithRelations<'episode'> {
     const programId = v4();
     const now = +dayjs();
 
-    return {
+    const newEpisode = {
       uuid: programId,
       sourceType: episode.sourceType,
       externalKey: episode.externalKey,
@@ -259,45 +343,18 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: episode.canonicalId,
-      externalIds: seq.collect(episode.identifiers, (id) => {
-        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
-          return {
-            type: 'single',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-          } satisfies NewSingleOrMultiExternalId;
-        } else if (isValidMultiExternalIdType(id.type)) {
-          const isMediaSourceId = id.type === mediaSource.type;
-          // This stinks
-          const location = isMediaSourceId
-            ? find(episode.mediaItem?.locations, {
-                sourceType: mediaSource.type,
-              })
-            : null;
-          return {
-            type: 'multi',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-            externalSourceId: mediaSource.name, // legacy
-            mediaSourceId: mediaSource.uuid, // new
-            // TODO
-            directFilePath: location?.path,
-            externalFilePath:
-              location?.type === 'remote' ? location.externalKey : null,
-            // externalFilePath
-          } satisfies NewSingleOrMultiExternalId;
-        }
+      episode: episode.episodeNumber,
+    } satisfies NewEpisodeProgram;
 
-        return;
-      }),
+    return {
+      program: newEpisode,
+      externalIds: this.mintExternalIdsNew(
+        programId,
+        episode,
+        mediaSource,
+        now,
+      ),
+      versions: this.mintVersions(programId, episode, now),
     };
   }
 
@@ -305,11 +362,11 @@ export class ProgramDaoMinter {
     mediaSource: MediaSource,
     mediaLibrary: MediaSourceLibrary,
     track: MediaSourceMusicTrack,
-  ): NewMusicTrack {
+  ): NewProgramWithRelations<'track'> {
     const programId = v4();
     const now = +dayjs();
 
-    return {
+    const newTrack = {
       uuid: programId,
       sourceType: track.sourceType,
       externalKey: track.externalKey,
@@ -329,45 +386,12 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: track.canonicalId,
-      externalIds: seq.collect(track.identifiers, (id) => {
-        if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
-          return {
-            type: 'single',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-          } satisfies NewSingleOrMultiExternalId;
-        } else if (isValidMultiExternalIdType(id.type)) {
-          const isMediaSourceId = id.type === mediaSource.type;
-          // This stinks
-          const location = isMediaSourceId
-            ? find(track.mediaItem?.locations, {
-                sourceType: mediaSource.type,
-              })
-            : null;
-          return {
-            type: 'multi',
-            externalKey: id.id,
-            programUuid: programId,
-            sourceType: id.type,
-            uuid: v4(),
-            createdAt: now,
-            updatedAt: now,
-            externalSourceId: mediaSource.name, // legacy
-            mediaSourceId: mediaSource.uuid, // new
-            // TODO
-            directFilePath: location?.path,
-            externalFilePath:
-              location?.type === 'remote' ? location.externalKey : null,
-            // externalFilePath
-          } satisfies NewSingleOrMultiExternalId;
-        }
+    } satisfies NewMusicTrack;
 
-        return;
-      }),
+    return {
+      program: newTrack,
+      externalIds: this.mintExternalIdsNew(programId, track, mediaSource, now),
+      versions: this.mintVersions(programId, track, now),
     };
   }
 
@@ -491,7 +515,7 @@ export class ProgramDaoMinter {
     mediaSource: MediaSource,
     mediaLibrary: MediaSourceLibrary,
     plexTrack: PlexMusicTrack,
-  ): NewRawProgram {
+  ): NewProgramDao {
     const file = first(first(plexTrack.Media)?.Part ?? []);
     return {
       uuid: v4(),

@@ -35,6 +35,7 @@ import Migration1748345299_AddMoreProgramTypes from './db/Migration1748345299_Ad
 import Migration1756312561_InitialAdvancedTranscodeConfig from './db/Migration1756312561_InitialAdvancedTranscodeConfig.ts';
 import Migration1756381281_AddLibraries from './db/Migration1756381281_AddLibraries.ts';
 import Migration1757704591_AddProgramMediaSourceIndex from './db/Migration1757704591_AddProgramMediaSourceIndex.ts';
+import Migration1758203109_AddProgramMedia from './db/Migration1758203109_AddProgramMedia.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -117,6 +118,7 @@ export class DirectMigrationProvider implements MigrationProvider {
             Migration1756312561_InitialAdvancedTranscodeConfig,
           migration1756381281: Migration1756381281_AddLibraries,
           migration1757704591: Migration1757704591_AddProgramMediaSourceIndex,
+          migration1758203109: Migration1758203109_AddProgramMedia,
         },
         wrapWithTransaction,
       ),

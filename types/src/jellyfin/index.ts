@@ -206,10 +206,10 @@ export const JellyfinSortOrder = z.enum(['Ascending', 'Descending']);
 const ChapterInfo = z
   .object({
     StartPositionTicks: z.number().int(),
-    Name: z.string().nullable().optional(),
-    ImagePath: z.string().nullable().optional(),
-    ImageDateModified: z.string().datetime({ offset: true }),
-    ImageTag: z.string().nullable().optional(),
+    Name: z.string().nullish(),
+    ImagePath: z.string().nullish(),
+    ImageDateModified: z.iso.datetime({ offset: true }),
+    ImageTag: z.string().nullish(),
   })
   .partial();
 

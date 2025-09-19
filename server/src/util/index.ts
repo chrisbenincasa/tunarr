@@ -609,3 +609,13 @@ export function programExternalIdString(
 ) {
   return createExternalId(p.sourceType, p.mediaSourceId, p.externalKey);
 }
+
+export function unzip<T, U>(tups: [T, U][]): [T[], U[]] {
+  const left: T[] = [];
+  const right: U[] = [];
+  for (const [t, u] of tups) {
+    left.push(t);
+    right.push(u);
+  }
+  return [left, right];
+}

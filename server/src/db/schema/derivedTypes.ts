@@ -1,14 +1,26 @@
 import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import type { MarkNonNullable } from '@/types/util.js';
+import type { MarkNonNullable, Nullable } from '@/types/util.js';
+import type { Insertable } from 'kysely';
 import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
 import type { Channel, ChannelFillerShow } from './Channel.ts';
 import type { FillerShow } from './FillerShow.ts';
 import type {
   MediaSource,
   MediaSourceLibrary,
+  MediaSourceLibraryOrm,
   MediaSourceType,
 } from './MediaSource.ts';
-import type { NewProgramDao, ProgramDao, ProgramType } from './Program.ts';
+import type {
+  NewProgramDao,
+  ProgramDao,
+  ProgramOrm,
+  ProgramType,
+} from './Program.ts';
+import type {
+  ProgramChapter,
+  ProgramChapterOrm,
+  ProgramChapterTable,
+} from './ProgramChapter.ts';
 import type {
   MinimalProgramExternalId,
   NewSingleOrMultiExternalId,
@@ -22,7 +34,27 @@ import type {
   NewSingleOrMultiProgramGroupingExternalId,
   ProgramGroupingExternalId,
 } from './ProgramGroupingExternalId.ts';
+import type {
+  NewProgramMediaStream,
+  ProgramMediaStream,
+  ProgramMediaStreamOrm,
+} from './ProgramMediaStream.ts';
+import type {
+  NewProgramVersionDao,
+  ProgramVersion,
+  ProgramVersionOrm,
+} from './ProgramVersion.ts';
 import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
+
+export type ProgramVersionWithRelations = ProgramVersion & {
+  mediaStreams?: ProgramMediaStream[];
+  chapters?: ProgramChapter[];
+};
+
+export type ProgramVersionOrmWithRelations = ProgramVersionOrm & {
+  mediaStreams?: ProgramMediaStreamOrm[];
+  chapters?: ProgramChapterOrm[];
+};
 
 export type ProgramWithRelations = ProgramDao & {
   tvShow?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
@@ -31,11 +63,24 @@ export type ProgramWithRelations = ProgramDao & {
   trackAlbum?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
   // Require minimum data from externalId
   externalIds?: MinimalProgramExternalId[];
+  versions?: ProgramVersionWithRelations[];
+  mediaLibrary?: Nullable<MediaSourceLibrary>;
+};
+
+export type ProgramWithRelationsOrm = ProgramOrm & {
+  show?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  season?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  artist?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  album?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  // Require minimum data from externalId
+  externalIds?: MinimalProgramExternalId[];
+  versions?: ProgramVersionOrmWithRelations[];
+  mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
 };
 
 export type SpecificProgramGroupingType<
   Typ extends ProgramGroupingType,
-  ProgramGroupingT = ProgramGrouping,
+  ProgramGroupingT extends { type: ProgramGroupingType } = ProgramGrouping,
 > = StrictOmit<ProgramGroupingT, 'type'> & { type: Typ };
 
 export type SpecificProgramType<
@@ -106,29 +151,33 @@ export type ProgramWithExternalIds = ProgramDao & {
   externalIds: MinimalProgramExternalId[];
 };
 
+export type NewProgramVersion = NewProgramVersionDao & {
+  mediaStreams: NewProgramMediaStream[];
+  chapters?: Insertable<ProgramChapterTable>[];
+};
+
+export type NewProgramWithRelations<Type extends ProgramType = ProgramType> = {
+  program: SpecificProgramType<Type, NewProgramDao>;
+  externalIds: NewSingleOrMultiExternalId[];
+  versions: NewProgramVersion[];
+};
+
 export type NewProgramWithExternalIds = NewProgramDao & {
   externalIds: NewSingleOrMultiExternalId[];
 };
 
-export type NewMovieProgram = SpecificProgramType<'movie', NewProgramDao> & {
-  externalIds: NewSingleOrMultiExternalId[];
-};
+export type NewMovieProgram = SpecificProgramType<'movie', NewProgramDao>;
 
-export type NewEpisodeProgram = SpecificProgramType<
-  'episode',
-  NewProgramDao
-> & {
-  externalIds: NewSingleOrMultiExternalId[];
-};
+export type NewEpisodeProgram = SpecificProgramType<'episode', NewProgramDao>;
 
 export type ProgramGroupingWithExternalIds = ProgramGrouping & {
   externalIds: ProgramGroupingExternalId[];
 };
 
-type SpecificSubtype<BaseType, Value extends BaseType['type']> = StrictOmit<
-  BaseType,
-  'type'
-> & { type: Value };
+type SpecificSubtype<
+  BaseType extends { type: string },
+  Value extends BaseType['type'],
+> = StrictOmit<BaseType, 'type'> & { type: Value };
 
 export type TvSeasonWithExternalIds = SpecificSubtype<
   ProgramGroupingWithExternalIds,
@@ -188,9 +237,8 @@ export type NewMusicAlbum = SpecificProgramGroupingType<
   NewProgramGrouping
 > &
   WithNewGroupingExternalIds;
-export type NewMusicTrack = SpecificProgramType<'track', NewProgramDao> & {
-  externalIds: NewSingleOrMultiExternalId[];
-};
+
+export type NewMusicTrack = SpecificProgramType<'track', NewProgramDao>;
 
 export type MediaSourceWithLibraries = MediaSource & {
   libraries: MediaSourceLibrary[];

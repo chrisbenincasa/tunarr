@@ -631,13 +631,11 @@ export class ChannelDB implements IChannelDB {
             priority: pref.priority,
           }) satisfies NewChannelSubtitlePreference,
       );
-      console.log(updateReq.subtitlePreferences);
       await tx
         .deleteFrom('channelSubtitlePreferences')
         .where('channelSubtitlePreferences.channelId', '=', channel.uuid)
         .executeTakeFirstOrThrow();
       if (subtitlePreferences) {
-        console.log('inserting subtitle');
         await tx
           .insertInto('channelSubtitlePreferences')
           .values(subtitlePreferences)
