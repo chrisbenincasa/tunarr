@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.22.4](https://github.com/chrisbenincasa/tunarr/compare/v0.22.3...v0.22.4) (2025-09-19)
+
+
+### Bug Fixes
+
+* do not send fractional millis to ffmpeg stream seek ([b588137](https://github.com/chrisbenincasa/tunarr/commit/b5881379682f436c3f590cc913217d4f9759218c)), closes [#1378](https://github.com/chrisbenincasa/tunarr/issues/1378)
+* ensure PremiereDate is selected for both Jellyfin and Emby ([335c0a0](https://github.com/chrisbenincasa/tunarr/commit/335c0a069b4c2b077a67561b9fcc95bb0c84937f)), closes [#1389](https://github.com/chrisbenincasa/tunarr/issues/1389)
+* **ui:** allow saving transcode config when audio format is copy ([a98bc32](https://github.com/chrisbenincasa/tunarr/commit/a98bc329cd4c9f2c32cca8a9cc656e871735fd31)), closes [#1387](https://github.com/chrisbenincasa/tunarr/issues/1387)
+
 ## [0.22.3](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.22.3) (2025-09-16)
 
 
