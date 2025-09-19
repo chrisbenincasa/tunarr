@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.23.0-alpha.8](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.7...v0.23.0-alpha.8) (2025-09-19)
+
+
+### Features
+
+* save program media versions to DB ([#1379](https://github.com/chrisbenincasa/tunarr/issues/1379)) ([b7b9d91](https://github.com/chrisbenincasa/tunarr/commit/b7b9d914c2c94cdb49dc6dbb200d41db960f3bfc))
+* support for syncing / scanning Other Video libraries in Plex/Jellyfin ([1ea6e8a](https://github.com/chrisbenincasa/tunarr/commit/1ea6e8a1970a8ead827579550748532306fea41b))
+
+
+### Bug Fixes
+
+* allow querying of other/music video types in UI ([dd494fc](https://github.com/chrisbenincasa/tunarr/commit/dd494fc6836739d2f2a8f48e03374900070794df))
+* fix non-synced item enumeration when adding programming ([5a8acb7](https://github.com/chrisbenincasa/tunarr/commit/5a8acb75962999d5d7812a1381062957f7dfa306))
+* **search:** make various stream metadata params filterable ([f5590f4](https://github.com/chrisbenincasa/tunarr/commit/f5590f4c7a2cc07b74b9dc15bc7664638858f3bb))
+
 ## [0.23.0-alpha.7](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.6...v0.23.0-alpha.7) (2025-09-17)
 
 
