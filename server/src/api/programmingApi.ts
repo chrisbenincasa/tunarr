@@ -21,7 +21,7 @@ import {
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
-import type { ProgramGrouping } from '@tunarr/types';
+import type { OtherVideo, ProgramGrouping } from '@tunarr/types';
 import {
   tag,
   type Episode,
@@ -228,6 +228,22 @@ function convertProgramSearchResult(
           canonicalId: program.canonicalId!,
           trackNumber: doc.index ?? 0,
         }) satisfies MusicTrack,
+    )
+    .with(
+      {
+        type: 'other_video',
+      },
+      (video) =>
+        ({
+          ...video,
+          ...base,
+          identifiers,
+          uuid,
+          originalTitle: null,
+          year,
+          releaseDate,
+          canonicalId: program.canonicalId!,
+        }) satisfies OtherVideo,
     )
     .otherwise(() => null);
 

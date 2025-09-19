@@ -375,6 +375,7 @@ export const PlexMovieSchema = BasePlexMediaSchema.extend({
   editionTitle: z.string().optional(),
   studio: z.string().optional(),
   type: z.literal('movie'),
+  subtype: z.string().optional(),
   title: z.string(),
   titleSort: z.string().optional(),
   contentRating: z.string().optional(),

@@ -8,8 +8,12 @@ import type { Canonicalizer } from './Canonicalizer.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
 import { JellyfinItemCanonicalizer } from './JellyfinItemCanonicalizer.ts';
 import { PlexMediaCanonicalizer } from './PlexMediaCanonicalizers.ts';
+import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
+import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
+import { EmbyMediaSourceTvShowScanner } from './scanner/EmbyMediaSourceTvShowScanner.ts';
 import { JellyfinMediaSourceMovieScanner } from './scanner/JellyfinMediaSourceMovieScanner.ts';
 import { JellyfinMediaSourceMusicScanner } from './scanner/JellyfinMediaSourceMusicScanner.ts';
+import { JellyfinMediaSourceOtherVideoScanner } from './scanner/JellyfinMediaSourceOtherVideoScanner.ts';
 import { JellyfinMediaSourceTvShowScanner } from './scanner/JellyfinMediaSourceTvShowScanner.ts';
 import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourceMovieLibraryScanner.ts';
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
@@ -22,6 +26,7 @@ import type {
 import type { GenericMediaSourceTvShowLibraryScanner } from './scanner/MediaSourceTvShowLibraryScanner.ts';
 import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScanner.ts';
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
+import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
 import { PlexMediaSourceTvShowScanner } from './scanner/PlexMediaSourceTvShowScanner.ts';
 
 export const ServicesModule = new ContainerModule((bind) => {
@@ -41,6 +46,9 @@ export const ServicesModule = new ContainerModule((bind) => {
   bind<JellyfinMediaSourceMovieScanner>(KEYS.MediaSourceMovieLibraryScanner)
     .to(JellyfinMediaSourceMovieScanner)
     .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceMovieScanner>(KEYS.MediaSourceMovieLibraryScanner)
+    .to(EmbyMediaSourceMovieScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
 
   bind<PlexMediaSourceTvShowScanner>(KEYS.MediaSourceTvShowLibraryScanner)
     .to(PlexMediaSourceTvShowScanner)
@@ -48,12 +56,29 @@ export const ServicesModule = new ContainerModule((bind) => {
   bind<JellyfinMediaSourceTvShowScanner>(KEYS.MediaSourceTvShowLibraryScanner)
     .to(JellyfinMediaSourceTvShowScanner)
     .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceTvShowScanner>(KEYS.MediaSourceTvShowLibraryScanner)
+    .to(EmbyMediaSourceTvShowScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
 
   bind<PlexMediaSourceMusicScanner>(KEYS.MediaSourceMusicLibraryScanner)
     .to(PlexMediaSourceMusicScanner)
     .whenTargetNamed(MediaSourceType.Plex);
   bind<JellyfinMediaSourceMusicScanner>(KEYS.MediaSourceMusicLibraryScanner)
     .to(JellyfinMediaSourceMusicScanner)
+    .whenTargetNamed(MediaSourceType.Jellyfin);
+  bind<EmbyMediaSourceMusicScanner>(KEYS.MediaSourceMusicLibraryScanner)
+    .to(EmbyMediaSourceMusicScanner)
+    .whenTargetNamed(MediaSourceType.Emby);
+
+  bind<PlexMediaSourceOtherVideoScanner>(
+    KEYS.MediaSourceOtherVideoLibraryScanner,
+  )
+    .to(PlexMediaSourceOtherVideoScanner)
+    .whenTargetNamed(MediaSourceType.Plex);
+  bind<JellyfinMediaSourceOtherVideoScanner>(
+    KEYS.MediaSourceOtherVideoLibraryScanner,
+  )
+    .to(JellyfinMediaSourceOtherVideoScanner)
     .whenTargetNamed(MediaSourceType.Jellyfin);
 
   bind<GenericMediaSourceScannerFactory>(
@@ -78,8 +103,12 @@ export const ServicesModule = new ContainerModule((bind) => {
           KEYS.MediaSourceMusicLibraryScanner,
           sourceType,
         );
-      case 'music_videos':
       case 'other_videos':
+        return ctx.container.getNamed<GenericMediaSourceMovieLibraryScanner>(
+          KEYS.MediaSourceOtherVideoLibraryScanner,
+          sourceType,
+        );
+      case 'music_videos':
         throw new Error('No binding set for library type ' + libraryType);
     }
   });

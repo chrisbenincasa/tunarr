@@ -104,12 +104,14 @@ import type {
   PlexEpisode,
   PlexItem,
   PlexMovie,
+  PlexOtherVideo,
   PlexSeason,
   PlexShow,
   PlexTrack,
 } from '../../types/Media.js';
 import { Result } from '../../types/result.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
+import iterators from '../../util/iterator.ts';
 import type { ApiClientOptions } from '../BaseApiClient.js';
 import { QueryError, type QueryResult } from '../BaseApiClient.js';
 import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
@@ -262,7 +264,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     libraryId: string,
     pageSize: number = 50,
   ): AsyncIterable<PlexMovie> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       libraryId,
       PlexMovieMediaContainerResponseSchema,
       (movie, library) => this.plexMovieInjection(movie, library),
@@ -274,7 +276,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     libraryId: string,
     pageSize: number = 50,
   ): AsyncGenerator<PlexShow> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       libraryId,
       MakePlexMediaContainerResponseSchema(PlexTvShowSchema),
       (show, library) => this.plexShowInjection(show, library),
@@ -283,7 +285,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   }
 
   getShowSeasons(tvShowKey: string, pageSize: number = 50) {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       tvShowKey,
       MakePlexMediaContainerResponseSchema(PlexTvSeasonSchema),
       (season, library) => this.plexSeasonInjection(season, library),
@@ -296,7 +298,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     tvSeasonKey: string,
     pageSize: number = 50,
   ): AsyncIterable<PlexEpisode> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       tvSeasonKey,
       MakePlexMediaContainerResponseSchema(PlexEpisodeSchema),
       (ep, library) => this.plexEpisodeInjection(ep, library),
@@ -309,7 +311,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     libraryId: string,
     pageSize: number = 50,
   ): AsyncIterable<PlexArtist> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       libraryId,
       MakePlexMediaContainerResponseSchema(PlexMusicArtistSchema),
       (artist, library) => this.plexMusicArtistInjection(artist, library),
@@ -321,7 +323,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     artistKey: string,
     pageSize: number = 50,
   ): AsyncIterable<PlexAlbum> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       artistKey,
       MakePlexMediaContainerResponseSchema(PlexMusicAlbumSchema),
       (album, library) => this.plexAlbumInjection(album, library),
@@ -334,7 +336,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     albumKey: string,
     pageSize: number = 50,
   ): AsyncIterable<PlexTrack> {
-    return this.getLibraryContents(
+    return this.iterateChildItems(
       albumKey,
       MakePlexMediaContainerResponseSchema(PlexMusicTrackSchema),
       (track, library) => this.plexTrackInjection(track, library),
@@ -356,7 +358,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     );
   }
 
-  private async *getLibraryContents<
+  private async *iterateChildItems<
     OutType,
     ItemType extends PlexMediaNoCollectionOrPlaylist,
   >(
@@ -625,6 +627,22 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     );
   }
 
+  async getVideo(key: string): Promise<QueryResult<PlexOtherVideo>> {
+    return this.getMediaOfType(
+      key,
+      PlexMediaNoCollectionPlaylistResponse,
+      (video, library) => {
+        if (video.type !== 'movie' || video.subtype !== 'clip') {
+          return this.makeErrorResult(
+            'generic_request_error',
+            `Got unexpected Plex item of type ${video.type} (subtype = ${video.type === 'movie' ? video.subtype : 'none'})`,
+          );
+        }
+        return this.plexOtherVideoInjection(video, library);
+      },
+    );
+  }
+
   async getShow(externalKey: string): Promise<QueryResult<PlexShow>> {
     return this.getMediaOfType(
       externalKey,
@@ -766,8 +784,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         size: items.length,
       };
     });
-
-    // return result.map((response) => this.setCanonicalIdOnResponse(response));
   }
 
   async getItemChildren(
@@ -819,6 +835,22 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         ),
       );
     });
+  }
+
+  getOtherVideosLibraryContents(
+    parentId: string,
+  ): AsyncIterable<PlexOtherVideo> {
+    const generator = this.iterateChildItems(
+      parentId,
+      PlexMediaNoCollectionPlaylistResponse,
+      (item, lib) => {
+        if (item.type !== 'movie' || item.subtype !== 'clip') {
+          return Result.success(null);
+        }
+        return this.plexOtherVideoInjection(item, lib);
+      },
+    );
+    return iterators.compact(generator);
   }
 
   private convertPlexResponse(
@@ -1435,6 +1467,86 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           type: 'plex-guid',
         },
         ...seq.collect(plexMovie.Guid, (guid) => {
+          const parsed = parsePlexGuid(guid.id);
+          if (!parsed) return;
+          return {
+            id: parsed.externalKey,
+            type: parsed.sourceType,
+          };
+        }),
+      ],
+    });
+  }
+
+  private plexOtherVideoInjection(
+    plexClip: ApiPlexMovie,
+    mediaLibrary: MediaSourceLibrary,
+  ): Result<PlexOtherVideo> {
+    if (isNil(plexClip.duration) || plexClip.duration <= 0) {
+      return Result.forError(
+        new Error(
+          `Plex movie ID = ${plexClip.ratingKey} has invalid duration.`,
+        ),
+      );
+    }
+
+    if (isNil(plexClip.Media) || isEmpty(plexClip.Media)) {
+      return Result.forError(
+        new Error(`Plex movie ID = ${plexClip.ratingKey} has no Media streams`),
+      );
+    }
+
+    const actors =
+      plexClip.Role?.map(({ tag, role }) => ({ name: tag, role })) ?? [];
+    const directors =
+      plexClip.Director?.map(({ tag }) => ({ name: tag })) ?? [];
+    const writers = plexClip.Writer?.map(({ tag }) => ({ name: tag })) ?? [];
+    const studios = isNonEmptyString(plexClip.studio)
+      ? [{ name: plexClip.studio }]
+      : [];
+
+    return Result.success({
+      uuid: v4(),
+      type: ProgramType.OtherVideo,
+      canonicalId: this.canonicalizer.getCanonicalId(plexClip),
+      mediaSourceId: this.options.mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      externalLibraryId: mediaLibrary.externalKey,
+      sourceType: MediaSourceType.Plex,
+      externalKey: plexClip.ratingKey,
+      title: plexClip.title,
+      originalTitle: null,
+      year: plexClip.year ?? null,
+      releaseDate: plexClip.originallyAvailableAt
+        ? +dayjs(plexClip.originallyAvailableAt, 'YYYY-MM-DD')
+        : null,
+      releaseDateString: plexClip.originallyAvailableAt ?? null,
+      mediaItem: plexMediaStreamsInject(plexClip.ratingKey, plexClip).getOrElse(
+        () => emptyMediaItem(plexClip),
+      ),
+      duration: plexClip.duration,
+      actors,
+      directors,
+      writers,
+      studios,
+      genres: plexClip.Genre?.map(({ tag }) => ({ name: tag })) ?? [],
+      summary: plexClip.summary ?? null,
+      plot: null,
+      tagline: plexClip.tagline ?? null,
+      rating: plexClip.contentRating ?? null,
+      tags: [],
+      externalId: plexClip.ratingKey,
+      identifiers: [
+        {
+          id: plexClip.ratingKey,
+          type: 'plex',
+          sourceId: this.options.mediaSource.uuid,
+        },
+        {
+          id: plexClip.guid,
+          type: 'plex-guid',
+        },
+        ...seq.collect(plexClip.Guid, (guid) => {
           const parsed = parsePlexGuid(guid.id);
           if (!parsed) return;
           return {

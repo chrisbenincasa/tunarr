@@ -35,6 +35,7 @@ import {
   MediaSourceEpisode,
   MediaSourceMovie,
   MediaSourceMusicTrack,
+  MediaSourceOtherVideo,
 } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Maybe } from '../../types/util.ts';
@@ -51,6 +52,7 @@ import {
   NewEpisodeProgram,
   NewMovieProgram,
   NewMusicTrack,
+  NewOtherVideoProgram,
   NewProgramVersion,
   NewProgramWithExternalIds,
   NewProgramWithRelations,
@@ -181,7 +183,9 @@ export class ProgramDaoMinter {
       uuid: programId,
       sourceType: movie.sourceType,
       externalKey: movie.externalKey,
-      originalAirDate: dayjs(movie.releaseDate)?.format(),
+      originalAirDate: movie.releaseDate
+        ? dayjs(movie.releaseDate)?.format()
+        : null,
       duration: movie.duration,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
@@ -327,7 +331,9 @@ export class ProgramDaoMinter {
       uuid: programId,
       sourceType: episode.sourceType,
       externalKey: episode.externalKey,
-      originalAirDate: dayjs(episode.releaseDate).format(),
+      originalAirDate: episode.releaseDate
+        ? dayjs(episode.releaseDate).format()
+        : null,
       duration: episode.duration,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
@@ -370,7 +376,9 @@ export class ProgramDaoMinter {
       uuid: programId,
       sourceType: track.sourceType,
       externalKey: track.externalKey,
-      originalAirDate: dayjs(track.releaseDate)?.format(),
+      originalAirDate: track.releaseDate
+        ? dayjs(track.releaseDate)?.format()
+        : null,
       duration: track.duration,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
@@ -392,6 +400,44 @@ export class ProgramDaoMinter {
       program: newTrack,
       externalIds: this.mintExternalIdsNew(programId, track, mediaSource, now),
       versions: this.mintVersions(programId, track, now),
+    };
+  }
+
+  mintOtherVideo(
+    mediaSource: MediaSource,
+    mediaLibrary: MediaSourceLibrary,
+    video: MediaSourceOtherVideo,
+  ): NewProgramWithRelations<'other_video'> {
+    const programId = v4();
+    const now = +dayjs();
+    const newVideo = {
+      uuid: programId,
+      sourceType: video.sourceType,
+      externalKey: video.externalKey,
+      originalAirDate: video.releaseDate
+        ? dayjs(video.releaseDate)?.format()
+        : null,
+      duration: video.duration,
+      // filePath: file?.file ?? null,
+      externalSourceId: mediaSource.name,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      // plexRatingKey: plexMovie.ratingKey,
+      // plexFilePath: file?.key ?? null,
+      // rating: movie.rating,
+      // summary: movie.summary,
+      title: video.title,
+      type: ProgramType.OtherVideo,
+      year: video.year,
+      createdAt: now,
+      updatedAt: now,
+      canonicalId: video.canonicalId,
+    } satisfies NewOtherVideoProgram;
+
+    return {
+      program: newVideo,
+      externalIds: this.mintExternalIdsNew(programId, video, mediaSource, now),
+      versions: this.mintVersions(programId, video, now),
     };
   }
 

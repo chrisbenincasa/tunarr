@@ -70,7 +70,7 @@ export class SaveJellyfinProgramExternalIdsTask extends Task {
       return;
     }
 
-    const metadataResult = await api.getItem(chosenId.externalKey);
+    const metadataResult = await api.getRawItem(chosenId.externalKey);
 
     if (metadataResult.isFailure()) {
       this.logger.error(

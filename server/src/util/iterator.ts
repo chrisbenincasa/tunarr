@@ -1,3 +1,5 @@
+import type { Nilable } from '../types/util.ts';
+
 async function* map<T, U>(
   it: AsyncIterable<T>,
   fn: (i: T) => U,
@@ -13,6 +15,14 @@ async function* flatMap<T, U>(
 ) {
   for await (const i of it) {
     yield* fn(i);
+  }
+}
+
+async function* compact<T>(it: AsyncIterable<Nilable<T>>): AsyncIterable<T> {
+  for await (const i of it) {
+    if (i) {
+      yield i;
+    }
   }
 }
 
@@ -71,6 +81,7 @@ const iterators = {
   flatMap,
   take,
   chain,
+  compact,
 };
 
 export default iterators;

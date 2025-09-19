@@ -26,6 +26,7 @@ import { retag, tag } from '@tunarr/types';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
+import { MarkRequired } from 'ts-essentials';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import { withLibraries } from './mediaSourceQueryHelpers.ts';
@@ -297,11 +298,24 @@ export class MediaSourceDB {
           .execute();
       }
 
-      if (updates.updatedLibraries.length) {
-        // TODO;
+      if (updates.updatedLibraries.length > 0) {
+        // await tx.updateTable('mediaSourceLibrary').set(({eb}) => {
+        //   return reduce(updates.updatedLibraries, (builder, lib) => {
+        //     builder.when('mediaSourceLibrary.uuid', '=', lib.uuid).then({
+
+        //     })
+        //   }, eb.case() as unknown as CaseWhenBuilder<DB, 'mediaSourceLibrary', unknown, number>).end()
+        // }).execute()
+        for (const update of updates.updatedLibraries) {
+          await tx
+            .updateTable('mediaSourceLibrary')
+            .set(update)
+            .where('uuid', '=', update.uuid)
+            .executeTakeFirstOrThrow();
+        }
       }
 
-      if (updates.deletedLibraries.length) {
+      if (updates.deletedLibraries.length > 0) {
         await tx
           .deleteFrom('mediaSourceLibrary')
           .where(
@@ -464,6 +478,6 @@ export class MediaSourceDB {
 
 export type MediaSourceLibrariesUpdate = {
   addedLibraries: NewMediaSourceLibrary[];
-  updatedLibraries: MediaSourceLibraryUpdate[];
+  updatedLibraries: MarkRequired<MediaSourceLibraryUpdate, 'uuid'>[];
   deletedLibraries: MediaSourceLibrary[];
 };

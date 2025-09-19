@@ -167,6 +167,10 @@ export type NewProgramWithExternalIds = NewProgramDao & {
 };
 
 export type NewMovieProgram = SpecificProgramType<'movie', NewProgramDao>;
+export type NewOtherVideoProgram = SpecificProgramType<
+  'other_video',
+  NewProgramDao
+>;
 
 export type NewEpisodeProgram = SpecificProgramType<'episode', NewProgramDao>;
 

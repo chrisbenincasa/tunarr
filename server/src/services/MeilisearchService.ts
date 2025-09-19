@@ -42,6 +42,7 @@ import {
   MusicArtist,
   MusicTrack,
   MusicTrackWithAncestors,
+  OtherVideo,
   Season,
   SeasonWithShow,
   Show,
@@ -581,6 +582,19 @@ export class MeilisearchService implements ISearchService {
       );
   }
 
+  async indexOtherVideo(programs: (OtherVideo & HasMediaSourceAndLibraryId)[]) {
+    if (isEmpty(programs)) {
+      return;
+    }
+
+    await this.client()
+      .index<ProgramSearchDocument>(ProgramsIndex.name)
+      .addDocumentsInBatches(
+        programs.map((p) => this.convertProgramToSearchDocument(p)),
+        100,
+      );
+  }
+
   async indexShow(show: Show & HasMediaSourceAndLibraryId) {
     const externalIds = show.identifiers.map((eid) => ({
       id: eid.id,
@@ -1056,7 +1070,7 @@ export class MeilisearchService implements ISearchService {
   }
 
   private convertProgramToSearchDocument<
-    ProgramT extends (Movie | Episode | MusicTrack) &
+    ProgramT extends (Movie | Episode | MusicTrack | OtherVideo) &
       HasMediaSourceAndLibraryId,
   >(
     program: ProgramT,
@@ -1109,6 +1123,7 @@ export class MeilisearchService implements ISearchService {
         summary = program.summary;
         break;
       case 'track':
+      case 'other_video':
         summary = null;
         break;
     }
@@ -1122,6 +1137,7 @@ export class MeilisearchService implements ISearchService {
         rating = program.season?.show?.rating ?? null;
         break;
       case 'track':
+      case 'other_video':
         rating = null;
         break;
     }

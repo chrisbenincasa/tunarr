@@ -295,6 +295,8 @@ export type MediaSourceMusicTrack<
   TrackT extends MusicTrack<ArtistT, AlbumT> = MusicTrack<ArtistT, AlbumT>,
 > = TrackT & HasMediaSourceInfo;
 
+export type MediaSourceOtherVideo = OtherVideo & HasMediaSourceInfo;
+
 type PlexMixin = HasMediaSourceInfo & {
   sourceType: typeof MediaSourceType.Plex;
 };
@@ -306,6 +308,7 @@ export type PlexEpisode = Episode<PlexShow, PlexSeason> & PlexMixin;
 export type PlexArtist = MusicArtist & PlexMixin;
 export type PlexAlbum = MusicAlbum<PlexArtist> & PlexMixin;
 export type PlexTrack = MusicTrack<PlexArtist, PlexAlbum> & PlexMixin;
+export type PlexOtherVideo = OtherVideo & PlexMixin;
 
 export type PlexItem =
   | PlexMovie
@@ -314,7 +317,8 @@ export type PlexItem =
   | PlexEpisode
   | PlexArtist
   | PlexAlbum
-  | PlexTrack;
+  | PlexTrack
+  | PlexOtherVideo;
 
 interface JellyfinMixin extends HasMediaSourceInfo {
   sourceType: typeof MediaSourceType.Jellyfin;

@@ -7,6 +7,7 @@ import { v4 } from 'uuid';
 import { MediaSourceDB } from '../db/mediaSourceDB.js';
 import type {
   MediaLibraryType,
+  MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from '../db/schema/MediaSource.ts';
 import { MediaSourceId } from '../db/schema/base.ts';
@@ -14,7 +15,7 @@ import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
-import { isDefined } from '../util/index.ts';
+import { groupByUniq, isDefined } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { booleanToNumber } from '../util/sqliteUtil.ts';
 
@@ -86,16 +87,17 @@ export class MediaSourceLibraryRefresher {
     const plexLibraries = plexLibrariesResult
       .get()
       .MediaContainer.Directory.filter((lib) =>
-        isDefined(this.plexLibraryTypeToTunarrType(lib.type)),
+        isDefined(this.plexLibraryTypeToTunarrType(lib)),
       );
     const plexLibraryKeys = new Set(plexLibraries.map((lib) => lib.key));
     const existingLibraries = new Set(
       mediaSource.libraries.map((lib) => lib.externalKey),
     );
+    const incomingLibrariesById = groupByUniq(plexLibraries, (lib) => lib.key);
 
     const newLibraries = plexLibraryKeys.difference(existingLibraries);
     const removedLibraries = existingLibraries.difference(plexLibraryKeys);
-    // const updatedLibraries = plexLibraryKeys.intersection(existingLibraries);
+    const updatedLibraries = plexLibraryKeys.intersection(existingLibraries);
 
     const librariesToAdd: NewMediaSourceLibrary[] = [];
     for (const newLibraryKey of newLibraries) {
@@ -111,7 +113,7 @@ export class MediaSourceLibraryRefresher {
         mediaSourceId: mediaSource.uuid,
         externalKey: plexLibrary.key,
         // Checked above
-        mediaType: this.plexLibraryTypeToTunarrType(plexLibrary.type)!,
+        mediaType: this.plexLibraryTypeToTunarrType(plexLibrary)!,
         uuid: v4(),
         enabled: booleanToNumber(false),
         name: plexLibrary.title,
@@ -122,12 +124,19 @@ export class MediaSourceLibraryRefresher {
       removedLibraries.has(existing.externalKey),
     );
 
-    // nothing really to update yet
-    // const librariesToUpdate = mediaSource.libraries.filter(existing => updatedLibraries.has(existing.externalKey)).map(existing => {
-    //   return {
-
-    //   } satisfies MediaSourceLibraryUpdate
-    // })
+    const librariesToUpdate = mediaSource.libraries
+      .filter((existing) => updatedLibraries.has(existing.externalKey))
+      .map((existing) => {
+        const updatedApiLibrary = incomingLibrariesById[existing.externalKey];
+        return {
+          externalKey: existing.externalKey,
+          name: updatedApiLibrary?.title ?? existing.name,
+          mediaType: updatedApiLibrary
+            ? this.plexLibraryTypeToTunarrType(updatedApiLibrary)
+            : existing.mediaType,
+          uuid: existing.uuid,
+        } satisfies MediaSourceLibraryUpdate;
+      });
 
     this.logger.debug(
       'Found %d new Plex libraries, %d removed libraries for media source %s',
@@ -139,16 +148,17 @@ export class MediaSourceLibraryRefresher {
     await this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
       deletedLibraries: librariesToRemove,
-      updatedLibraries: [],
+      updatedLibraries: librariesToUpdate,
     });
   }
 
   private plexLibraryTypeToTunarrType(
-    plexLibraryType: PlexLibrarySection['type'],
+    plexLibrary: PlexLibrarySection,
   ): Maybe<MediaLibraryType> {
-    switch (plexLibraryType) {
+    switch (plexLibrary.type) {
       case 'movie':
-        return 'movies';
+        // Other video plex libraries have type=movie but a tv.plex.agents.none agent, AFAICT.
+        return plexLibrary.agent.includes('none') ? 'other_videos' : 'movies';
       case 'show':
         return 'shows';
       case 'artist':

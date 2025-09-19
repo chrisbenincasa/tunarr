@@ -165,7 +165,7 @@ export class JellyfinItemFinder {
     }
 
     // If we can locate the item on JF, there is no problem.
-    const existingItem = await jfClient.getItem(program.externalKey);
+    const existingItem = await jfClient.getRawItem(program.externalKey);
     if (existingItem.isSuccess() && isDefined(existingItem.get())) {
       this.logger.error(
         existingItem,

@@ -349,7 +349,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     converter: (item: SpecificJellyfinType<ItemTypeT>) => Nullable<OutType>,
     extraFields: JellyfinItemFields[] = [],
   ): Promise<QueryResult<OutType>> {
-    return this.getItem(itemId, itemType, extraFields).then((result) => {
+    return this.getRawItem(itemId, itemType, extraFields).then((result) => {
       return result.flatMap((item) => {
         if (!item) {
           return this.makeErrorResult(
@@ -372,26 +372,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           ),
         );
       });
-    });
-  }
-
-  async getItem<ItemTypeT extends JellyfinItemKind>(
-    itemId: string,
-    itemType: ItemTypeT | null = null,
-    extraFields: JellyfinItemFields[] = [],
-  ): Promise<QueryResult<Maybe<ApiJellyfinItem>>> {
-    const result = await this.getRawItems(
-      null,
-      itemType ? [itemType] : null,
-      ['MediaStreams', 'MediaSources', ...extraFields],
-      { offset: 0, limit: 1 },
-      {
-        ids: [itemId],
-      },
-    );
-
-    return result.mapPure((data) => {
-      return find(data.Items, (item) => item.Id === itemId);
     });
   }
 
@@ -426,6 +406,41 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         size: out.length,
         offset: data.StartIndex ?? undefined,
       };
+    });
+  }
+
+  async getItem<ItemTypeT extends JellyfinItemKind>(
+    itemId: string,
+    itemType: ItemTypeT | null = null,
+    extraFields: JellyfinItemFields[] = [],
+  ): Promise<QueryResult<Maybe<JellyfinItem>>> {
+    const item = await this.getRawItem(itemId, itemType, extraFields);
+    return item.mapPure((data) => {
+      if (!data) {
+        return;
+      }
+
+      return this.jelllyfinApiItemInjection(data) ?? undefined;
+    });
+  }
+
+  async getRawItem<ItemTypeT extends JellyfinItemKind>(
+    itemId: string,
+    itemType: ItemTypeT | null = null,
+    extraFields: JellyfinItemFields[] = [],
+  ): Promise<QueryResult<Maybe<ApiJellyfinItem>>> {
+    const result = await this.getRawItems(
+      null,
+      itemType ? [itemType] : null,
+      ['MediaStreams', 'MediaSources', ...extraFields],
+      { offset: 0, limit: 1 },
+      {
+        ids: [itemId],
+      },
+    );
+
+    return result.mapPure((data) => {
+      return find(data.Items, (item) => item.Id === itemId);
     });
   }
 
@@ -535,6 +550,20 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       parentId,
       'Movie',
       (movie) => this.jellyfinApiMovieInjection(movie),
+      [],
+      {},
+      pageSize,
+    );
+  }
+
+  getOtherVideoLibraryContents(
+    parentId: string,
+    pageSize: number = 50,
+  ): AsyncIterable<JellyfinOtherVideo> {
+    return this.getChildContents(
+      parentId,
+      'Video',
+      (video) => this.jellyfinApiOtherVideoInjection(video),
       [],
       {},
       pageSize,

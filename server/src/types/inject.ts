@@ -66,6 +66,9 @@ const KEYS = {
     'MediaSourceTvShowLibraryScanner',
   ),
   MediaSourceMusicLibraryScanner: Symbol.for('MediaSourceMusicLibraryScanner'),
+  MediaSourceOtherVideoLibraryScanner: Symbol.for(
+    'MediaSourceOtherVideoLibraryScanner',
+  ),
   MediaSourceLibraryScanner: Symbol.for('MediaSourceLibraryScanner'),
 
   // Tasks
