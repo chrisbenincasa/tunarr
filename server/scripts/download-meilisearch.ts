@@ -7,7 +7,9 @@ import { dirname } from 'node:path';
 import stream from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { format } from 'node:util';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { Nullable } from '../src/types/util.ts';
 import { fileExists } from '../src/util/fsUtil.ts';
@@ -142,7 +144,7 @@ export async function grabMeilisearch(
       meilisearchPlatform: 'linux',
       meilisearchArch: 'aarch64',
     }))
-    .with(['darwin', 'x64'], () => ({
+    .with(['darwin', P.union('x64', 'x86_64')], () => ({
       meilisearchPlatform: 'macos',
       meilisearchArch: 'amd64',
     }))
@@ -187,5 +189,29 @@ export async function grabMeilisearch(
 }
 
 if (process.argv[1] === import.meta.filename) {
-  await grabMeilisearch(os.platform(), os.arch(), process.argv?.[2]);
+  const args = await yargs(hideBin(process.argv))
+    .scriptName('tunarr-download-meilisearch')
+    .option('platform', {
+      type: 'string',
+      default: os.platform(),
+    })
+    .option('arch', {
+      type: 'string',
+      default: os.arch(),
+    })
+    .option('outPath', {
+      type: 'string',
+    })
+    .parseAsync();
+
+  console.info(
+    'Grabbing meilisearch for platform %s and arch %s',
+    args.platform,
+    args.arch,
+  );
+  await grabMeilisearch(
+    args.platform as NodeJS.Platform,
+    args.arch,
+    args.outPath,
+  );
 }
