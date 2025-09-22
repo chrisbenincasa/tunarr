@@ -9,8 +9,8 @@ import { useCallback } from 'react';
 import type { StrictOmit } from 'ts-essentials';
 import {
   getApiMediaLibrariesByLibraryIdOptions,
-  getApiMediaLibrariesByLibraryIdStatusOptions,
   getApiMediaSourcesByIdLibrariesQueryKey,
+  getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions,
   getApiMediaSourcesQueryKey,
   postApiMediaSourcesByIdLibrariesByLibraryIdScanMutation,
   putApiMediaSourcesByIdLibrariesByLibraryIdMutation,
@@ -158,19 +158,60 @@ export const useUpdateLibraryMutation = () => {
 };
 
 export const useLibraryScanState = (
+  mediaSourceId: string,
   libraryId: string,
   enabled: boolean,
   interval: number = 5000,
 ) => {
   return useQuery({
-    ...getApiMediaLibrariesByLibraryIdStatusOptions({
+    ...getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions({
       path: {
+        mediaSourceId,
         libraryId,
       },
     }),
     refetchInterval: interval,
     staleTime: 0,
     enabled,
+  });
+};
+
+export const useScanMediaSourceMutation = () => {
+  const updateQueryCachedLibraries = useUpdateQueryCachedLibraries();
+
+  return useMutation({
+    ...postApiMediaSourcesByIdLibrariesByLibraryIdScanMutation(),
+    onMutate: async (
+      args: Options<PostApiMediaSourcesByIdLibrariesByLibraryIdScanData>,
+    ) => {
+      return updateQueryCachedLibraries.onMutate(
+        args.path.id,
+        args.path.libraryId,
+        (lib) => ({
+          ...lib,
+          isLocked: true,
+        }),
+      );
+    },
+    onError: (err, args, context) => {
+      console.error(err);
+      updateQueryCachedLibraries.onError(
+        args.path.id,
+        context?.prevLibraries,
+        context?.prevMediaSources,
+      );
+    },
+    onSettled: (_data, _err, args) =>
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: getApiMediaSourcesByIdLibrariesQueryKey({
+            path: { id: args.path.id },
+          }),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: getApiMediaSourcesQueryKey(),
+        }),
+      ]),
   });
 };
 

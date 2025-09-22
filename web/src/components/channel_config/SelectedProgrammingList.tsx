@@ -1,20 +1,12 @@
-import EmbyLogo from '@/assets/emby.svg';
-import JellyfinLogo from '@/assets/jellyfin.svg';
-import PlexLogo from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import type {
-  EmbySelectedMedia,
-  ImportedLibrarySelectedMedia,
+  ExternalSourceSelectedMedia,
+  LocalSourceSelectedMedia,
 } from '@/store/programmingSelector/store.ts';
-import {
-  type JellyfinSelectedMedia,
-  type PlexSelectedMedia,
-  type SelectedMedia,
-} from '@/store/programmingSelector/store.ts';
+import { type SelectedMedia } from '@/store/programmingSelector/store.ts';
 import { KeyboardArrowRight, Close as RemoveIcon } from '@mui/icons-material';
 import {
-  Box,
   ClickAwayListener,
   Drawer,
   IconButton,
@@ -32,12 +24,13 @@ import pluralize from 'pluralize';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import { useWindowSize } from 'usehooks-ts';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
 import { unwrapNil } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import useStore from '../../store/index.ts';
 import { type KnownMedia } from '../../store/programmingSelector/KnownMedia.ts';
 import { removeSelectedMedia } from '../../store/programmingSelector/actions.ts';
+import { NetworkIcon } from '../util/NetworkIcon.tsx';
 
 type Props = {
   selectAllEnabled?: boolean;
@@ -58,32 +51,16 @@ const ImportedProgramListItem = ({
   listChildProps,
   mediaSourcesById,
 }: SelectedProgramListItemProps<
-  | PlexSelectedMedia
-  | JellyfinSelectedMedia
-  | EmbySelectedMedia
-  | ImportedLibrarySelectedMedia
+  LocalSourceSelectedMedia | ExternalSourceSelectedMedia
 >) => {
   const media = knownMedia.getMediaOfType(
     selected.mediaSource.id,
     selected.id,
-    selected.type === 'imported' ? selected.mediaSource.type : selected.type,
+    selected.mediaSource.type,
   );
 
   if (!media) {
     return;
-  }
-
-  let icon: string | undefined;
-  switch (mediaSourcesById[selected.mediaSource.id].type) {
-    case 'plex':
-      icon = PlexLogo;
-      break;
-    case 'jellyfin':
-      icon = JellyfinLogo;
-      break;
-    case 'emby':
-      icon = EmbyLogo;
-      break;
   }
 
   let secondary: ReactNode = null;
@@ -99,6 +76,8 @@ const ImportedProgramListItem = ({
       break;
     case 'movie':
       secondary = `Movie${media.year ? ', ' + media.year : ''}`;
+      break;
+    default:
       break;
   }
   // if (media.Type === 'CollectionFolder') {
@@ -134,7 +113,11 @@ const ImportedProgramListItem = ({
         placement="left"
         title={mediaSourcesById[selected.mediaSource.id]?.name ?? ''}
       >
-        <Box component="img" src={icon} width={30} sx={{ pr: 1 }} />
+        <NetworkIcon
+          network={mediaSourcesById[selected.mediaSource.id].type}
+          width={30}
+          sx={{ pr: 1 }}
+        />
       </Tooltip>
       <ListItemText primary={media?.title ?? ''} secondary={secondary} />
       <ListItemIcon sx={{ minWidth: 40 }}>
@@ -180,7 +163,7 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
-      case Imported:
+      case Local:
         return `${item.type}.${item.mediaSource.id}.${item.id}`;
       case 'custom-show':
         return `custom_${item.customShowId}_${index}`;
@@ -193,7 +176,7 @@ export default function SelectedProgrammingList({
       case Plex:
       case Jellyfin:
       case Emby:
-      case Imported:
+      case Local:
         return (
           <ImportedProgramListItem
             knownMedia={knownMedia}

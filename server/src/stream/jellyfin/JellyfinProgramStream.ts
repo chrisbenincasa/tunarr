@@ -1,7 +1,7 @@
 import { isJellyfinBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { type MediaSourceDB } from '@/db/mediaSourceDB.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { type FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { type OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { StreamOptions } from '@/ffmpeg/ffmpegBase.js';
@@ -17,6 +17,7 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { type interfaces } from 'inversify';
 import { isNil, isNull, isUndefined } from 'lodash-es';
+import { format } from 'node:util';
 import { type FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
 import { type JellyfinStreamDetails } from './JellyfinStreamDetails.js';
 
@@ -62,16 +63,29 @@ export class JellyfinProgramStream extends ProgramStream {
       );
     }
 
+    const jellyfinExternalInfo = lineupItem.program.externalIds.find(
+      (eid) => eid.sourceType === MediaSourceType.Jellyfin,
+    );
+
+    if (!jellyfinExternalInfo) {
+      return Result.forError(
+        new Error(
+          format(
+            'Could not find Jellyfin external info for program ID %s',
+            lineupItem.program.uuid,
+          ),
+        ),
+      );
+    }
+
     const server = await this.mediaSourceDB.findByType(
       MediaSourceType.Jellyfin,
-      lineupItem.externalSourceId,
+      lineupItem.program.mediaSourceId,
     );
 
     if (isNil(server)) {
       return Result.forError(
-        new Error(
-          `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
-        ),
+        new Error(`Unable to find Jellyfin server specified by program.`),
       );
     }
 
@@ -86,10 +100,7 @@ export class JellyfinProgramStream extends ProgramStream {
 
     const stream = await jellyfinStreamDetails.getStream({
       server,
-      lineupItem: {
-        ...lineupItem,
-        externalFilePath: lineupItem.plexFilePath ?? undefined,
-      },
+      lineupItem: lineupItem.program,
     });
     if (isNull(stream)) {
       return Result.forError(
@@ -103,9 +114,7 @@ export class JellyfinProgramStream extends ProgramStream {
 
     const streamStats = stream.streamDetails;
     if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration
-        ? dayjs.duration(lineupItem.streamDuration)
-        : undefined;
+      streamStats.duration = dayjs.duration(lineupItem.streamDuration);
     }
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);

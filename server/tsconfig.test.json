@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "lib": [
+            "ESNext",
+            "DOM" // We have to declare this so vitest doesn't explode
+        ],
+    },
+    "include": [
+        "./src/**/*.ts",
+        "./scripts/**/*.ts",
+        "./tests/**/*.ts",
+    ],
+    "exclude": [
+        "./src/**/*.ignore.ts",
+        "./streams/**/*.ts"
+    ]
+}

@@ -1,9 +1,9 @@
+import { MediaSourceType } from '@/db/schema/base.js';
 import { inject, injectable, interfaces } from 'inversify';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { WrappedError } from '../../types/errors.ts';
@@ -84,7 +84,7 @@ export class JellyfinMediaSourceOtherVideoScanner extends MediaSourceOtherVideoS
       if (!item) {
         return Result.failure(
           WrappedError.forMessage(
-            `Could not find Jellyfin item id ${incomingVideo.externalKey}`,
+            `Could not find Jellyfin item id ${incomingVideo.externalId}`,
           ),
         );
       } else if (item.type !== 'other_video') {

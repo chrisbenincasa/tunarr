@@ -23,7 +23,7 @@ export const ChannelSubtitlePreferences = sqliteTable(
     ...commonSubtitlePreferenceCols,
     channelId: text()
       .notNull()
-      .references(() => Channel.uuid),
+      .references(() => Channel.uuid, { onDelete: 'cascade' }),
   },
   (table) => [
     index('channel_priority_index').on(table.channelId, table.priority),
@@ -44,7 +44,7 @@ export const CustomShowSubtitlePreferences = sqliteTable(
     ...commonSubtitlePreferenceCols,
     customShowId: text()
       .notNull()
-      .references(() => CustomShow.uuid),
+      .references(() => CustomShow.uuid, { onDelete: 'cascade' }),
   },
   (table) => [
     index('custom_show_priority_index').on(table.customShowId, table.priority),

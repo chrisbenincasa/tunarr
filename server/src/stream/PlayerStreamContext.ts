@@ -42,7 +42,6 @@ export class PlayerContext {
         type: 'error',
         duration,
         streamDuration: duration,
-        title: 'Error',
         error,
         programBeginMs: +dayjs(),
       },

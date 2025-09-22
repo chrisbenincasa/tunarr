@@ -11,16 +11,16 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkNotNilable } from '../../types/util.ts';
+import { Artwork } from './Artwork.ts';
 import type { MediaSourceName } from './base.ts';
-import { type MediaSourceId } from './base.ts';
+import { MediaSourceTypes, type MediaSourceId } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import {
-  MediaSource,
-  MediaSourceLibrary,
-  MediaSourceTypes,
-} from './MediaSource.ts';
+import { LocalMediaFolder } from './LocalMediaFolder.ts';
+import { LocalMediaSourcePath } from './LocalMediaSourcePath.ts';
+import { MediaSource, MediaSourceLibrary } from './MediaSource.ts';
 import { ProgramExternalId } from './ProgramExternalId.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
+import { ProgramSubtitles } from './ProgramSubtitles.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
 
 export const ProgramTypes = [
@@ -61,6 +61,8 @@ export const Program = sqliteTable(
       })
       .$type<MediaSourceId>(),
     libraryId: text().references(() => MediaSourceLibrary.uuid),
+    localMediaFolderId: text().references(() => LocalMediaFolder.uuid),
+    localMediaSourcePathId: text().references(() => LocalMediaSourcePath.uuid),
     filePath: text(),
     grandparentExternalKey: text(),
     icon: text(),
@@ -137,6 +139,16 @@ export const ProgramRelations = relations(Program, ({ many, one }) => ({
     references: [MediaSourceLibrary.uuid],
   }),
   externalIds: many(ProgramExternalId),
+  localMediaFolder: one(LocalMediaFolder, {
+    fields: [Program.localMediaFolderId],
+    references: [LocalMediaFolder.uuid],
+  }),
+  localMediaSourcePath: one(LocalMediaSourcePath, {
+    fields: [Program.localMediaSourcePathId],
+    references: [LocalMediaSourcePath.uuid],
+  }),
+  artwork: many(Artwork),
+  subtitles: many(ProgramSubtitles),
 }));
 
 export type ProgramTable = KyselifyBetter<typeof Program>;

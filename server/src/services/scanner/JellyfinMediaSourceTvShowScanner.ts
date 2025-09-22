@@ -1,4 +1,5 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
@@ -6,7 +7,6 @@ import { isNil } from 'lodash-es';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -69,14 +69,14 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
     show: JellyfinShow,
     context: ScanContext<JellyfinApiClient>,
   ): AsyncIterable<JellyfinSeason> {
-    return context.apiClient.getShowSeasons(show.externalKey);
+    return context.apiClient.getShowSeasons(show.externalId);
   }
 
   protected getSeasonEpisodes(
     season: JellyfinSeason,
     context: ScanContext<JellyfinApiClient>,
   ): AsyncIterable<JellyfinEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalKey);
+    return context.apiClient.getSeasonEpisodes(season.externalId);
   }
 
   protected getFullEpisodeMetadata(
@@ -84,12 +84,12 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
     context: ScanContext<JellyfinApiClient>,
   ): Promise<Result<JellyfinEpisode, WrappedError>> {
     return context.apiClient
-      .getEpisode(episodeT.externalKey)
+      .getEpisode(episodeT.externalId)
       .then((_) =>
         _.flatMap((ep) =>
           isNil(ep)
             ? Result.forError(
-                new Error(`Episode ID ${episodeT.externalKey} not found`),
+                new Error(`Episode ID ${episodeT.externalId} not found`),
               )
             : Result.success(ep),
         ),
@@ -113,7 +113,7 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
   protected getEntityExternalKey(
     show: JellyfinShow | JellyfinSeason | JellyfinEpisode,
   ): string {
-    return show.externalKey;
+    return show.externalId;
   }
 
   protected getLibrarySize(

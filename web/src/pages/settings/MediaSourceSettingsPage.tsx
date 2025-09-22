@@ -39,12 +39,15 @@ import { useSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
+import { DeleteConfirmationDialog } from '../../components/DeleteConfirmationDialog.tsx';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
 import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from '../../components/settings/media_source/JelllyfinServerEditDialog.tsx';
+import { LocalMediaEditDialog } from '../../components/settings/media_source/LocalMediaEditDialog.tsx';
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
 import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
 import {
+  deleteApiMediaSourcesByIdMutation,
   postApiMediaSourcesByIdLibrariesRefreshMutation,
   putApiPlexSettingsMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
@@ -69,6 +72,8 @@ export default function MediaSourceSettingsPage() {
   const [editingMediaSource, setEditingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
   const [editingMediaSourceLibraries, setEditingMediaSourceLibraries] =
+    useState<Nullable<MediaSourceSettings>>(null);
+  const [deletingMediaSource, setDeletingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
 
   const {
@@ -104,6 +109,15 @@ export default function MediaSourceSettingsPage() {
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Settings'),
+      });
+    },
+  });
+
+  const deleteMediaSourceMut = useMutation({
+    ...deleteApiMediaSourcesByIdMutation(),
+    onSuccess: () => {
+      return queryClient.invalidateQueries({
+        predicate: invalidateTaggedQueries('Media Source'),
       });
     },
   });
@@ -205,16 +219,16 @@ export default function MediaSourceSettingsPage() {
               <Refresh />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Edit Libraries" placement="top">
-            <IconButton
-              onClick={() => setEditingMediaSourceLibraries(row.original)}
-            >
-              <VideoLibrary />
-            </IconButton>
-          </Tooltip>
-          <IconButton
-          // onClick={() => setDeleteDialogOpen(true)}
-          >
+          {row.original.type !== 'local' && (
+            <Tooltip title="Edit Libraries" placement="top">
+              <IconButton
+                onClick={() => setEditingMediaSourceLibraries(row.original)}
+              >
+                <VideoLibrary />
+              </IconButton>
+            </Tooltip>
+          )}
+          <IconButton onClick={() => setDeletingMediaSource(row.original)}>
             <Delete />
           </IconButton>
         </>
@@ -426,10 +440,27 @@ export default function MediaSourceSettingsPage() {
             server={editingMediaSource}
           />
         )}
+        {editingMediaSource?.type === 'local' && (
+          <LocalMediaEditDialog
+            open
+            onClose={() => setEditingMediaSource(null)}
+            source={editingMediaSource}
+          />
+        )}
         <EditMediaSourceLibrariesDialog
           open={!!editingMediaSourceLibraries}
           mediaSource={editingMediaSourceLibraries}
           onClose={() => setEditingMediaSourceLibraries(null)}
+        />
+        <DeleteConfirmationDialog
+          open={!!deletingMediaSource}
+          onClose={() => setDeletingMediaSource(null)}
+          title={`Delete Media Source "${deletingMediaSource?.name}?"`}
+          onConfirm={() =>
+            deleteMediaSourceMut.mutate({
+              path: { id: deletingMediaSource!.id },
+            })
+          }
         />
       </Box>
     </Box>

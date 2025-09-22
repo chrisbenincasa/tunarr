@@ -3,6 +3,7 @@ import { type Maybe } from '@/types/util.ts';
 import type { Library, MediaSourceType, ProgramOrFolder } from '@tunarr/types';
 import {
   getChildCount,
+  isTerminalItemType,
   type EmbyServerSettings,
   type JellyfinServerSettings,
   type MediaSourceSettings,
@@ -14,18 +15,15 @@ import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
 import { groupBy, has, isArray, map, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import useStore from '..';
-import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
-import { Emby, Jellyfin, Plex } from '../../helpers/constants.ts';
+import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
 import {
   buildPlexFilterKey,
   buildPlexSortKey,
 } from '../../helpers/plexSearchUtil.ts';
 import { groupSelectedMedia } from '../../helpers/util';
 
-import type { PlexSelectedMedia } from './store';
+import type { ExternalSourceSelectedMedia } from './store';
 import {
-  type EmbySelectedMedia,
-  type JellyfinSelectedMedia,
   type MediaItems,
   type MediaSourceView,
   type SelectedMedia,
@@ -164,7 +162,8 @@ export const addPlexSelectedMedia = (
           id: m.externalId,
           childCount: isTerminalItemType(m) ? 0 : m.childCount,
           libraryId,
-        }) satisfies PlexSelectedMedia,
+          persisted: false,
+        }) satisfies ExternalSourceSelectedMedia,
     );
 
     state.selectedMedia = [...state.selectedMedia, ...newSelectedMedia];
@@ -182,7 +181,8 @@ export const addJellyfinSelectedMedia = (
         libraryId: m.libraryId,
         id: m.uuid,
         childCount: getChildCount(m) ?? 0,
-      } satisfies JellyfinSelectedMedia;
+        persisted: false,
+      } satisfies ExternalSourceSelectedMedia;
     });
 
     state.selectedMedia = [...state.selectedMedia, ...newMedia];
@@ -200,7 +200,8 @@ export const addEmbySelectedMedia = (
         libraryId: m.libraryId,
         id: m.uuid,
         childCount: getChildCount(m) ?? 0,
-      } satisfies EmbySelectedMedia;
+        persisted: false,
+      } satisfies ExternalSourceSelectedMedia;
     });
 
     state.selectedMedia = [...state.selectedMedia, ...newMedia];
@@ -227,14 +228,14 @@ export const removeMediaSourceSelectedMedia = (
       state.selectedMedia,
       (media: SelectedMedia) => {
         switch (media.type) {
-          case 'plex':
-          case 'jellyfin':
-          case 'emby':
+          case Plex:
+          case Jellyfin:
+          case Emby:
             return some(grouped[media.type], {
               id: media.id,
               mediaSourceId: media.mediaSource.id,
             });
-          case 'imported':
+          case Local:
           case 'custom-show':
             return false;
         }

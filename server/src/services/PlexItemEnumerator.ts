@@ -11,7 +11,7 @@ import {
 import type { PlexTerminalMedia } from '@tunarr/types/plex';
 import { flatten, flattenDeep, map, uniqBy } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import type { MediaSource } from '../db/schema/MediaSource.ts';
+import type { MediaSourceOrm } from '../db/schema/MediaSource.ts';
 import { asyncPool, unfurlPool } from '../util/asyncPool.ts';
 
 export type EnrichedPlexTerminalMedia = PlexTerminalMedia & {
@@ -24,7 +24,7 @@ export class PlexItemEnumerator {
   constructor(private plex: PlexApiClient) {}
 
   async enumerateItems(
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceOrm,
     initialItems: (ProgramOrFolder | Library)[],
   ) {
     this.#logger.debug(
@@ -38,7 +38,7 @@ export class PlexItemEnumerator {
   }
 
   async enumerateItem(
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceOrm,
     item: ProgramOrFolder | Library,
     parent?: ProgramOrFolder | Library,
     acc: TerminalProgram[] = [],

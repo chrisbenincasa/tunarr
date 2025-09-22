@@ -2,13 +2,20 @@ import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import type { MarkNonNullable, Nullable } from '@/types/util.js';
 import type { Insertable } from 'kysely';
 import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
-import type { Channel, ChannelFillerShow } from './Channel.ts';
+import type { Artwork, NewArtwork } from './Artwork.ts';
+import type { MediaSourceType } from './base.ts';
+import type { Channel, ChannelOrm } from './Channel.ts';
+import type { ChannelFillerShow } from './ChannelFillerShow.ts';
 import type { FillerShow } from './FillerShow.ts';
+import type {
+  LocalMediaSourcePath,
+  LocalMediaSourcePathOrm,
+} from './LocalMediaSourcePath.ts';
 import type {
   MediaSource,
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
-  MediaSourceType,
+  MediaSourceOrm,
 } from './MediaSource.ts';
 import type {
   NewProgramDao,
@@ -17,6 +24,7 @@ import type {
   ProgramType,
 } from './Program.ts';
 import type {
+  NewProgramChapterOrm,
   ProgramChapter,
   ProgramChapterOrm,
   ProgramChapterTable,
@@ -28,19 +36,31 @@ import type {
 import type {
   NewProgramGrouping,
   ProgramGrouping,
+  ProgramGroupingOrm,
   ProgramGroupingType,
 } from './ProgramGrouping.ts';
 import type {
   NewSingleOrMultiProgramGroupingExternalId,
   ProgramGroupingExternalId,
+  ProgramGroupingExternalIdOrm,
 } from './ProgramGroupingExternalId.ts';
 import type {
+  NewProgramMediaFile,
+  ProgramMediaFile,
+} from './ProgramMediaFile.ts';
+import type {
   NewProgramMediaStream,
+  NewProgramMediaStreamOrm,
   ProgramMediaStream,
   ProgramMediaStreamOrm,
 } from './ProgramMediaStream.ts';
 import type {
+  NewProgramSubtitles,
+  ProgramSubtitles,
+} from './ProgramSubtitles.ts';
+import type {
   NewProgramVersionDao,
+  NewProgramVersionOrm,
   ProgramVersion,
   ProgramVersionOrm,
 } from './ProgramVersion.ts';
@@ -53,7 +73,13 @@ export type ProgramVersionWithRelations = ProgramVersion & {
 
 export type ProgramVersionOrmWithRelations = ProgramVersionOrm & {
   mediaStreams?: ProgramMediaStreamOrm[];
+  mediaFiles?: ProgramMediaFile[];
   chapters?: ProgramChapterOrm[];
+};
+
+export type NewProgramVersionOrmWithRelations = NewProgramVersionOrm & {
+  mediaStreams?: NewProgramMediaStreamOrm[];
+  chapters?: NewProgramChapterOrm[];
 };
 
 export type ProgramWithRelations = ProgramDao & {
@@ -76,7 +102,18 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   externalIds?: MinimalProgramExternalId[];
   versions?: ProgramVersionOrmWithRelations[];
   mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
+  artwork?: Artwork[];
+  subtitles?: ProgramSubtitles[];
 };
+
+export type SpecificProgramOrmType<
+  Typ extends ProgramType,
+  ProgramT extends { type: ProgramType } = ProgramWithRelationsOrm,
+> = StrictOmit<ProgramT, 'type'> & { type: Typ };
+export type SpecificProgramSourceOrmType<
+  Typ extends MediaSourceType,
+  ProgramT extends { sourceType: MediaSourceType } = ProgramWithRelationsOrm,
+> = StrictOmit<ProgramT, 'sourceType'> & { sourceType: Typ };
 
 export type SpecificProgramGroupingType<
   Typ extends ProgramGroupingType,
@@ -119,6 +156,14 @@ export type ChannelWithRelations = Channel & {
   subtitlePreferences?: ChannelSubtitlePreferences[];
 };
 
+export type ChannelOrmWithRelations = ChannelOrm & {
+  programs?: ProgramWithRelationsOrm[];
+  fillerContent?: ProgramWithRelationsOrm[];
+  fillerShows?: ChannelFillerShow[];
+  transcodeConfig?: TranscodeConfig;
+  subtitlePreferences?: ChannelSubtitlePreferences[];
+};
+
 export type ChannelWithTranscodeConfig = MarkRequired<
   ChannelWithRelations,
   'transcodeConfig'
@@ -129,6 +174,11 @@ export type ChannelWithRequiredJoins<Joins extends keyof Channel> =
 
 export type ChannelWithPrograms = MarkRequired<
   ChannelWithRelations,
+  'programs'
+>;
+
+export type ChannelOrmWithPrograms = MarkRequired<
+  ChannelOrmWithRelations,
   'programs'
 >;
 
@@ -153,6 +203,7 @@ export type ProgramWithExternalIds = ProgramDao & {
 
 export type NewProgramVersion = NewProgramVersionDao & {
   mediaStreams: NewProgramMediaStream[];
+  mediaFiles: NewProgramMediaFile[];
   chapters?: Insertable<ProgramChapterTable>[];
 };
 
@@ -160,6 +211,8 @@ export type NewProgramWithRelations<Type extends ProgramType = ProgramType> = {
   program: SpecificProgramType<Type, NewProgramDao>;
   externalIds: NewSingleOrMultiExternalId[];
   versions: NewProgramVersion[];
+  artwork?: NewArtwork[];
+  subtitles?: NewProgramSubtitles[];
 };
 
 export type NewProgramWithExternalIds = NewProgramDao & {
@@ -176,6 +229,11 @@ export type NewEpisodeProgram = SpecificProgramType<'episode', NewProgramDao>;
 
 export type ProgramGroupingWithExternalIds = ProgramGrouping & {
   externalIds: ProgramGroupingExternalId[];
+};
+
+export type ProgramGroupingOrmWithRelations = ProgramGroupingOrm & {
+  externalIds: ProgramGroupingExternalIdOrm[];
+  artwork?: Artwork[];
 };
 
 type SpecificSubtype<
@@ -220,11 +278,16 @@ type WithNewGroupingExternalIds = {
 export type NewProgramGroupingWithExternalIds = NewProgramGrouping &
   WithNewGroupingExternalIds;
 
-export type NewTvShow = SpecificProgramGroupingType<
-  'show',
-  NewProgramGrouping
-> &
-  WithNewGroupingExternalIds;
+export type NewProgramGroupingWithRelations<
+  Typ extends ProgramGroupingType = ProgramGroupingType,
+> = {
+  programGrouping: SpecificProgramGroupingType<Typ, NewProgramGrouping>;
+  externalIds: NewSingleOrMultiProgramGroupingExternalId[];
+  artwork: NewArtwork[];
+};
+
+export type NewTvShow = SpecificProgramGroupingType<'show', NewProgramGrouping>;
+
 export type NewTvSeason = SpecificProgramGroupingType<
   'season',
   NewProgramGrouping
@@ -244,9 +307,16 @@ export type NewMusicAlbum = SpecificProgramGroupingType<
 
 export type NewMusicTrack = SpecificProgramType<'track', NewProgramDao>;
 
-export type MediaSourceWithLibraries = MediaSource & {
+export type MediaSourceWithLibrariesDirect = MediaSource & {
   libraries: MediaSourceLibrary[];
+  paths: LocalMediaSourcePath[];
 };
+
+export type MediaSourceWithLibraries = MediaSourceOrm & {
+  libraries: MediaSourceLibraryOrm[];
+  paths: LocalMediaSourcePathOrm[];
+};
+
 export type SpecificMediaSourceType<Typ extends MediaSourceType> = StrictOmit<
   MediaSourceWithLibraries,
   'type'

@@ -1,4 +1,4 @@
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
@@ -19,7 +19,7 @@ export const ProgramMediaStream = sqliteTable(
     uuid: text().primaryKey(),
     index: integer().notNull(),
     codec: text().notNull(),
-    profile: text().notNull(),
+    profile: text(), //.notNull(),
     streamKind: text({ enum: MediaStreamKind }).notNull(),
     title: text(),
 
@@ -59,3 +59,6 @@ export type ProgramMediaStreamTable = KyselifyBetter<typeof ProgramMediaStream>;
 export type ProgramMediaStream = Selectable<ProgramMediaStreamTable>;
 export type ProgramMediaStreamOrm = InferSelectModel<typeof ProgramMediaStream>;
 export type NewProgramMediaStream = Insertable<ProgramMediaStreamTable>;
+export type NewProgramMediaStreamOrm = InferInsertModel<
+  typeof ProgramMediaStream
+>;

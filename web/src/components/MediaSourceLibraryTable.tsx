@@ -5,7 +5,7 @@ import { Link as RouterLink } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import { capitalize, isEqual } from 'lodash-es';
+import { capitalize, isEqual, maxBy, some } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
@@ -28,13 +28,21 @@ type MediaSourceLibraryRow = MediaSourceLibrary & {
 };
 
 type ActionCellProps = {
+  mediaSource: MediaSourceSettings;
   library: MediaSourceLibraryRow;
 };
 
-const MediaSourceLibraryTableActionCell = ({ library }: ActionCellProps) => {
+const MediaSourceLibraryTableActionCell = ({
+  mediaSource,
+  library,
+}: ActionCellProps) => {
   const [isRefreshing, setIsRefreshing] = useState(library.isLocked);
   const refreshLibraryMutation = useScanLibraryMutation();
-  const scanStateQuery = useLibraryScanState(library.id, isRefreshing);
+  const scanStateQuery = useLibraryScanState(
+    mediaSource.id,
+    library.id,
+    isRefreshing,
+  );
   const prevScanState = usePrevious(scanStateQuery.data);
   const queryClient = useQueryClient();
 
@@ -101,10 +109,15 @@ const MediaSourceLibraryTableActionCell = ({ library }: ActionCellProps) => {
     scanStateQuery.data?.state,
   ]);
 
+  const link =
+    mediaSource.type === 'local'
+      ? (`/media_sources/${mediaSource.id}` as const)
+      : (`/library/${library.id}` as const);
+
   return (
     <>
       <Tooltip placement="top" title="View Library">
-        <IconButton component={RouterLink} to={`/library/${library.id}`}>
+        <IconButton component={RouterLink} to={link}>
           <VideoLibrary />
         </IconButton>
       </Tooltip>
@@ -203,15 +216,32 @@ export const MediaSourceLibraryTable = () => {
     ];
   }, [dayjs]);
 
-  const data = useMemo(
-    () =>
-      mediaSources
-        .flatMap((source) =>
-          source.libraries.map((lib) => ({ ...lib, mediaSource: source })),
-        )
-        .filter((lib) => lib.enabled),
-    [mediaSources],
-  );
+  const data = useMemo(() => {
+    const remoteLibraries = mediaSources
+      .filter((source) => source.type !== 'local')
+      .flatMap((source) =>
+        source.libraries.map((lib) => ({ ...lib, mediaSource: source })),
+      )
+      .filter((lib) => lib.enabled);
+    const localLibraries = mediaSources
+      .filter((source) => source.type === 'local')
+      .map((source) => {
+        return {
+          id: 'all',
+          enabled: true,
+          externalKey: '',
+          isLocked: some(source.libraries, (lib) => lib.isLocked),
+          mediaSource: source,
+          mediaType: source.mediaType,
+          type: 'local',
+          name: source.name,
+          lastScannedAt: maxBy(source.libraries, (lib) => lib.lastScannedAt)
+            ?.lastScannedAt,
+        } satisfies MediaSourceLibraryRow;
+      });
+
+    return [...remoteLibraries, ...localLibraries];
+  }, [mediaSources]);
 
   const table = useMaterialReactTable({
     data,
@@ -231,8 +261,11 @@ export const MediaSourceLibraryTable = () => {
         },
       },
     },
-    renderRowActions: ({ row: { original: library } }) => (
-      <MediaSourceLibraryTableActionCell library={library} />
+    renderRowActions: ({ row: { original } }) => (
+      <MediaSourceLibraryTableActionCell
+        mediaSource={original.mediaSource}
+        library={original}
+      />
     ),
     positionActionsColumn: 'last',
   });

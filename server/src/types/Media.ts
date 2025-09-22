@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { MediaSourceType } from '@/db/schema/base.js';
 import type { Folder } from '@tunarr/types';
 import type {
   Episode,
   ExternalIdType,
+  HasMediaSourceInfo,
   MediaItem,
   MediaStream,
   Movie,
@@ -14,16 +16,12 @@ import type {
   Season,
   Show,
 } from '@tunarr/types/schemas';
-import type dayjs from 'dayjs';
 import type z from 'zod';
-import type { MediaSourceType } from '../db/schema/MediaSource.ts';
-import type { ProgramType } from '../db/schema/Program.ts';
-import type { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
-import type { Nullable } from './util.ts';
 
 export interface NamedEntity {
   name: string;
   externalId?: string;
+  order?: number;
 }
 
 export type Actor = NamedEntity & {
@@ -46,25 +44,6 @@ export type MediaStreamType = MediaStreamTypes[keyof MediaStreamTypes];
 
 export type MediaStream = z.infer<typeof MediaStream>;
 
-// {
-//   // ID?
-//   index: number;
-//   codec: string;
-//   profile: string;
-//   streamType: MediaStreamType;
-//   languageCodeISO6392?: string;
-//   channels?: number; // Audio only
-//   title?: string; // ???
-//   default?: boolean;
-//   hasAttachedPicture?: boolean;
-//   pixelFormat?: string;
-//   bitDepth?: number;
-//   fileName?: string;
-//   mimeType?: string;
-//   // Is the stream selected based on the source preferences
-//   selected?: boolean;
-// }
-
 interface BaseMediaLocation {
   path: string;
 }
@@ -83,106 +62,19 @@ export type MediaLocation = LocalMediaLocation | MediaSourceMediaLocation;
 
 export type MediaItem = z.infer<typeof MediaItem>;
 
-// {
-//   streams: MediaStream[];
-//   durationMs: number;
-//   sampleAspectRatio: string;
-//   displayAspectRatio: string;
-//   frameRate?: string; // either number or fractional
-//   // TODO scan kind
-//   resolution?: Resolution;
-//   locations: MediaLocation[];
-// };
-
-export interface ItemBase {
-  // Assign an internal ID immediately.
-  uuid: string;
-  canonicalId: string;
-  type: ProgramType | ProgramGroupingType;
-  identifiers: Identifier[];
-  title: string;
-  tags: string[];
-  // ID of the library this item belongs to on the remote media source
-  externalLibraryId: string;
-}
-
-export interface Program extends ItemBase {
-  // metadata
-  type: ProgramType;
-  title: string;
-  originalTitle: Nullable<string>;
-  year: Nullable<number>;
-  releaseDate: Nullable<dayjs.Dayjs>;
-
-  // media
-  mediaItem: MediaItem;
-
-  // joins
-  actors: Actor[];
-  writers: Writer[];
-  directors: Director[];
-  genres: Genre[];
-  studios: Studio[];
-}
-
-export interface WithMediaSourceInfo {
-  mediaSourceId: string;
-  mediaLibraryId: string;
-}
-
 export interface Identifier {
   id: string;
   sourceId?: string;
   type: ExternalIdType;
 }
 
-// export interface Movie extends Program, WithSummaryMetadata {
-//   type: typeof ProgramType.Movie;
-//   rating: Nullable<string>;
-// }
-
 export type Movie = z.infer<typeof Movie>;
 
-// export interface Show extends ItemBase, WithSummaryMetadata {
-//   type: typeof ProgramGroupingType.Show;
-//   rating: Nullable<string>;
-//   year: Nullable<number>;
-//   releaseDate: Nullable<dayjs.Dayjs>;
-//   genres: Genre[];
-//   actors: Actor[];
-//   studios: Studio[];
-// }
-
 export type Show = z.infer<typeof Show>;
-
-// export interface Season<ShowT extends Show = Show>
-//   extends ItemBase,
-//     WithSummaryMetadata {
-//   type: typeof ProgramGroupingType.Season;
-//   summary: Nullable<string>;
-//   studios: Studio[];
-//   index: number;
-//   year: Nullable<number>;
-//   releaseDate: Nullable<dayjs.Dayjs>;
-
-//   // joins
-//   show?: ShowT;
-//   // episodes?: Episode[];
-// }
 
 export type Season<ShowT extends Show = Show> = z.infer<typeof Season> & {
   show?: ShowT;
 };
-
-// export interface Episode<
-//   ShowT extends Show = Show,
-//   SeasonT extends Season<ShowT> = Season<ShowT>,
-// > extends Program {
-//   type: typeof ProgramType.Episode;
-//   episodeNumber: number;
-//   summary: Nullable<string>;
-//   season?: SeasonT;
-// }
 
 export type Episode<
   ShowT extends Show = Show,
@@ -264,10 +156,7 @@ export type OtherVideo = z.infer<typeof OtherVideo>;
 
 export type AnyProgram = Movie | Episode;
 
-export type HasMediaSourceInfo = {
-  sourceType: MediaSourceType;
-  externalKey: string;
-};
+export type HasMediaSourceInfo = z.infer<typeof HasMediaSourceInfo>;
 
 export type HasMediaSourceAndLibraryId = {
   mediaSourceId: string;

@@ -1,10 +1,20 @@
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { MediaSourceLibrary, ProgramOrFolder } from '@tunarr/types';
+import type {
+  MediaSourceContentType,
+  MediaSourceLibrary,
+  MediaSourceSettings,
+  ProgramOrFolder,
+} from '@tunarr/types';
 import { type ProgramLike } from '@tunarr/types';
-import type { ProgramSearchResponse, SearchRequest } from '@tunarr/types/api';
+import type { SearchFilter } from '@tunarr/types/api';
+import {
+  type ProgramSearchResponse,
+  type SearchRequest,
+} from '@tunarr/types/api';
 import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
+import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
 import { getChildSearchFilter } from '../../hooks/useProgramSearch.ts';
@@ -25,15 +35,16 @@ import { ProgramGridItem } from './ProgramGridItem.tsx';
 import { ProgramListItem } from './ProgramListItem.tsx';
 
 type Props = {
-  library: MediaSourceLibrary;
+  mediaSource: MediaSourceSettings;
+  library?: MediaSourceLibrary;
   disableProgramSelection?: boolean;
   toggleOrSetSelectedProgramsDrawer?: (open: boolean) => void;
   depth?: number;
   parentContext?: ProgramOrFolder[];
 };
 
-function searchItemTypeFromLibraryType(
-  mediaType: MediaSourceLibrary['mediaType'],
+function searchItemTypeFromContentType(
+  mediaType: MediaSourceContentType,
 ): ProgramLike['type'] {
   switch (mediaType) {
     case 'movies':
@@ -49,7 +60,21 @@ function searchItemTypeFromLibraryType(
   }
 }
 
+function typeFilter(mediaType: MediaSourceContentType): SearchFilter {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'type',
+      name: 'Type',
+      op: '=',
+      type: 'string',
+      value: [searchItemTypeFromContentType(mediaType)],
+    },
+  };
+}
+
 export const LibraryProgramGrid = ({
+  mediaSource,
   library,
   disableProgramSelection,
   toggleOrSetSelectedProgramsDrawer,
@@ -70,34 +95,38 @@ export const LibraryProgramGrid = ({
       };
     }
 
+    const filter = match([searchRequest?.filter, mediaSource, library])
+      .returnType<SearchFilter>()
+      .with([P.select(P.nonNullable), P._, P._], (filter) => filter)
+      .with([P._, { mediaType: P.select(P.nonNullable) }, P.nullish], (typ) =>
+        typeFilter(typ),
+      )
+      .with([P._, P._, P.select(P.nonNullable)], ({ mediaType }) =>
+        typeFilter(mediaType),
+      )
+      .exhaustive();
+
     return {
       query: searchRequest?.query,
-      filter: searchRequest?.filter ?? {
-        type: 'value',
-        fieldSpec: {
-          key: 'type',
-          name: 'Type',
-          op: '=',
-          type: 'string',
-          value: [searchItemTypeFromLibraryType(library.mediaType)],
-        },
-      },
+      filter,
       restrictSeachTo: searchRequest?.restrictSearchTo,
     };
   }, [
     currentParentContext,
-    library.mediaType,
+    library,
+    mediaSource,
     searchRequest?.filter,
     searchRequest?.query,
     searchRequest?.restrictSearchTo,
   ]);
 
   const search = useInfiniteQuery({
-    queryKey: ['programs', 'search', query, library.id],
+    queryKey: ['programs', 'search', query, mediaSource.id, library?.id],
     queryFn: async ({ pageParam }) => {
       const { data } = await postApiProgramsSearch({
         body: {
-          libraryId: library.id,
+          mediaSourceId: mediaSource.id,
+          libraryId: library?.id,
           query: query,
           limit: 45,
           page: pageParam,
@@ -141,9 +170,9 @@ export const LibraryProgramGrid = ({
     });
 
     if (!isEmpty(d)) {
-      addKnownMediaForServer(library.mediaSource.id, d!);
+      addKnownMediaForServer(mediaSource.id, d!);
     }
-  }, [library.mediaSource.id, search.data?.pages]);
+  }, [mediaSource.id, search.data?.pages]);
 
   const renderGridItem = (gridItemProps: GridItemProps<ProgramOrFolder>) => {
     return (
@@ -162,12 +191,13 @@ export const LibraryProgramGrid = ({
         <LibraryProgramGrid
           {...props}
           parentContext={props.parent ? [props.parent] : []}
+          mediaSource={mediaSource}
           library={library}
           disableProgramSelection={disableProgramSelection}
         />
       );
     },
-    [library, disableProgramSelection],
+    [mediaSource, library, disableProgramSelection],
   );
 
   const totalHits = search.data?.pages?.[0].totalHits;
@@ -176,7 +206,11 @@ export const LibraryProgramGrid = ({
     <Box>
       {depth === 0 && (
         <>
-          <SearchBuilder library={library} onSearch={handleSearchChange} />
+          <SearchBuilder
+            mediaSource={mediaSource}
+            library={library}
+            onSearch={handleSearchChange}
+          />
           {!disableProgramSelection && toggleOrSetSelectedProgramsDrawer && (
             <SelectedProgrammingActions
               toggleOrSetSelectedProgramsDrawer={

@@ -11,3 +11,17 @@ export function withLibraries(eb: ExpressionBuilder<DB, 'mediaSource'>) {
       .select(MediaSourceLibraryColumns),
   ).as('libraries');
 }
+
+export function withPaths(eb: ExpressionBuilder<DB, 'mediaSource'>) {
+  return jsonArrayFrom(
+    eb
+      .selectFrom('localMediaSourcePath')
+      .whereRef('localMediaSourcePath.mediaSourceId', '=', 'mediaSource.uuid')
+      .select([
+        'localMediaSourcePath.uuid',
+        'localMediaSourcePath.path',
+        'localMediaSourcePath.lastScannedAt',
+        'localMediaSourcePath.mediaSourceId',
+      ]),
+  ).as('paths');
+}

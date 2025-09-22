@@ -1,7 +1,7 @@
+import type { MediaSourceType } from '@/db/schema/base.js';
 import crypto from 'node:crypto';
 import path from 'path';
 import { match, P } from 'ts-pattern';
-import type { MediaSourceType } from '../db/schema/MediaSource.ts';
 import type { SubtitleStreamDetails } from '../stream/types.ts';
 import type { Nullable } from '../types/util.ts';
 

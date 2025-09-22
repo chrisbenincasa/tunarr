@@ -123,3 +123,23 @@ export type ChannelOfflineSettings = z.infer<
 
 export type MediaSourceId = Tag<string, 'mediaSourceId'>;
 export type MediaSourceName = Tag<string, 'mediaSourceName'>;
+export const MediaSourceTypes = ['plex', 'jellyfin', 'emby', 'local'] as const;
+export const MediaLibraryTypes = [
+  'movies',
+  'shows',
+  'music_videos',
+  'other_videos',
+  'tracks',
+] as const;
+
+export type MediaSourceType = TupleToUnion<typeof MediaSourceTypes>;
+type MediaSourceMap = {
+  [k in Capitalize<(typeof MediaSourceTypes)[number]>]: Uncapitalize<k>;
+};
+
+export const MediaSourceType: MediaSourceMap = {
+  Plex: 'plex',
+  Jellyfin: 'jellyfin',
+  Emby: 'emby',
+  Local: 'local',
+} as const;

@@ -105,18 +105,20 @@ export const FfmpegSettingsSchema = z.object({
   enableSubtitleExtraction: z.boolean().optional().default(false),
 });
 
-export const MediaSourceType = z.enum(['plex', 'jellyfin', 'emby']);
+export const MediaSourceType = z.enum(['plex', 'jellyfin', 'emby', 'local']);
+
+export const MediaSourceContentType = z.enum([
+  'movies',
+  'shows',
+  'music_videos',
+  'other_videos',
+  'tracks',
+]);
 
 const BaseMediaSourceLibrarySchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
-  mediaType: z.enum([
-    'movies',
-    'shows',
-    'tracks',
-    'other_videos',
-    'music_videos',
-  ]),
+  mediaType: MediaSourceContentType,
   lastScannedAt: z.number().optional(),
   externalKey: z.string(),
   type: MediaSourceType,
@@ -127,7 +129,14 @@ const BaseMediaSourceLibrarySchema = z.object({
 export const MediaSourceLibrarySchema = z.object({
   ...BaseMediaSourceLibrarySchema.shape,
   get mediaSource() {
-    return BaseMediaSourceSettingsSchema;
+    return z
+      .discriminatedUnion('type', [
+        PlexServerSettingsSchema.omit({ libraries: true }),
+        JellyfinServerSettingsSchema.omit({ libraries: true }),
+        EmbyServerSettingsSchema.omit({ libraries: true }),
+        LocalMediaSourceSchema.omit({ libraries: true, paths: true }),
+      ])
+      .optional();
   },
 });
 
@@ -160,10 +169,20 @@ export const EmbyServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
   type: z.literal('emby'),
 });
 
+export const LocalMediaSourceSchema = z
+  .object({
+    ...BaseMediaSourceSettingsSchema.shape,
+    type: z.literal('local'),
+    mediaType: MediaSourceContentType,
+    paths: z.array(z.string().min(1)).nonempty(),
+  })
+  .omit({ accessToken: true, userId: true, username: true, uri: true });
+
 export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema,
   JellyfinServerSettingsSchema,
   EmbyServerSettingsSchema,
+  LocalMediaSourceSchema,
 ]);
 
 export const PlexStreamSettingsSchema = z.object({

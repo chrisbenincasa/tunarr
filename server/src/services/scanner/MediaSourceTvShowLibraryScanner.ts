@@ -3,7 +3,7 @@ import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingM
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
 import type {
@@ -29,7 +29,7 @@ export type GenericMediaSourceTvShowLibraryScanner<
     SeasonT
   >,
 > = MediaSourceTvShowLibraryScanner<
-  MediaSourceType,
+  RemoteMediaSourceType,
   MediaSourceApiClient,
   ShowT,
   SeasonT,
@@ -37,7 +37,7 @@ export type GenericMediaSourceTvShowLibraryScanner<
 >;
 
 export abstract class MediaSourceTvShowLibraryScanner<
-  MediaSourceTypeT extends MediaSourceType,
+  MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
   ShowT extends MediaSourceShow,
   SeasonT extends MediaSourceSeason<ShowT>,
@@ -80,7 +80,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
         return;
       }
 
-      seenShows.add(show.externalKey);
+      seenShows.add(show.externalId);
       const processedAmount = round(seenShows.size / totalSize, 2) * 100.0;
       // const canonicalId = this.getCanonicalId(show);
 
@@ -90,14 +90,16 @@ export abstract class MediaSourceTvShowLibraryScanner<
       );
 
       // Get full metadata?
-      const dao = this.programGroupingMinter.mintForMediaSourceShow(
-        mediaSource,
-        library,
-        show,
-      );
+      const groupingAndRelations =
+        this.programGroupingMinter.mintForMediaSourceShow(
+          mediaSource,
+          library,
+          show,
+        );
+      groupingAndRelations.programGrouping.libraryId = context.library.uuid;
 
       const upsertResult = await Result.attemptAsync(() =>
-        this.programDB.getOrInsertProgramGrouping(dao, {
+        this.programDB.upsertProgramGrouping(groupingAndRelations, {
           externalKey: this.getEntityExternalKey(show),
           externalSourceId: mediaSource.uuid,
           sourceType: this.mediaSourceType,
@@ -153,16 +155,16 @@ export abstract class MediaSourceTvShowLibraryScanner<
           return;
         }
 
-        const dao = this.programGroupingMinter.mintSeason(
+        const seasonAndRelations = this.programGroupingMinter.mintSeason(
           mediaSource,
           library,
           season,
         );
-        dao.libraryId = scanContext.library.uuid;
-        dao.showUuid = show.uuid;
+        seasonAndRelations.programGrouping.libraryId = scanContext.library.uuid;
+        seasonAndRelations.programGrouping.showUuid = show.uuid;
 
         const upsertResult = await Result.attemptAsync(() =>
-          this.programDB.getOrInsertProgramGrouping(dao, {
+          this.programDB.upsertProgramGrouping(seasonAndRelations, {
             externalKey: this.getEntityExternalKey(season),
             externalSourceId: mediaSource.uuid,
             sourceType: this.mediaSourceType,

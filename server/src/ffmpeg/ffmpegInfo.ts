@@ -2,7 +2,10 @@ import { FfprobeMediaInfoSchema } from '@/types/ffmpeg.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Nullable } from '@/types/util.js';
-import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
+import {
+  ChildProcessHelper,
+  GetStdoutOptions,
+} from '@/util/ChildProcessHelper.js';
 import { cacheGetOrSet } from '@/util/cache.js';
 import dayjs from '@/util/dayjs.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
@@ -303,18 +306,21 @@ export class FfmpegInfo {
     );
   }
 
-  async probeFile(path: string) {
-    const output = await this.getFfprobeStdout([
-      '-hide_banner',
-      '-print_format',
-      'json',
-      '-show_format',
-      '-show_chapters',
-      '-show_streams',
-      '-analyzeduration',
-      '30',
-      `${path}`,
-    ]);
+  async probeFile(path: string, timeout?: number) {
+    const output = await this.getFfprobeStdout(
+      [
+        '-hide_banner',
+        '-print_format',
+        'json',
+        '-show_format',
+        '-show_chapters',
+        '-show_streams',
+        '-analyzeduration',
+        '30',
+        `${path}`,
+      ],
+      { timeout, swallowError: false },
+    );
 
     const result = await FfprobeMediaInfoSchema.safeParseAsync(
       JSON.parse(output),
@@ -335,32 +341,24 @@ export class FfmpegInfo {
 
   private getFfmpegStdout(
     args: string[],
-    swallowError: boolean = false,
+    opts: GetStdoutOptions = { swallowError: false },
   ): Promise<string> {
-    return this.getStdout(this.ffmpegPath, args, swallowError);
+    return this.getStdout(this.ffmpegPath, args, opts);
   }
 
   private getFfprobeStdout(
     args: string[],
-    swallowError: boolean = false,
+    opts: GetStdoutOptions = { swallowError: false },
   ): Promise<string> {
-    return this.getStdout(this.ffprobePath, args, swallowError);
+    return this.getStdout(this.ffprobePath, args, opts);
   }
 
   private getStdout(
     executable: string,
     args: string[],
-    swallowError: boolean = false,
-    env?: NodeJS.ProcessEnv,
-    isPath: boolean = true,
+    opts?: GetStdoutOptions,
   ): Promise<string> {
-    return new ChildProcessHelper().getStdout(
-      executable,
-      args,
-      swallowError,
-      env,
-      isPath,
-    );
+    return new ChildProcessHelper().getStdout(executable, args, opts);
   }
 
   private cacheKey(key: keyof typeof CacheKeys): string {

@@ -30,22 +30,36 @@ export class ScanLibrariesTask extends Task {
 
     // Very simple impl - we can probably fan out by source
     for (const source of allSources) {
-      for (const library of source.libraries) {
-        if (!library.enabled) {
-          this.logger.debug('Skipping disabled library: %O', library);
-          continue;
-        }
-
-        const scheduled = await this.coordinator.add({
-          libraryId: library.uuid,
+      if (source.type === 'local') {
+        const scheduled = await this.coordinator.addLocal({
+          mediaSourceId: source.uuid,
           forceScan: false,
         });
 
         if (!scheduled) {
           this.logger.warn(
-            'Unable to schedule library ID %s for scanning',
-            library.uuid,
+            'Unable to schedule local media source ID %s for scanning',
+            source.uuid,
           );
+        }
+      } else {
+        for (const library of source.libraries) {
+          if (!library.enabled) {
+            this.logger.debug('Skipping disabled library: %O', library);
+            continue;
+          }
+
+          const scheduled = await this.coordinator.add({
+            libraryId: library.uuid,
+            forceScan: false,
+          });
+
+          if (!scheduled) {
+            this.logger.warn(
+              'Unable to schedule library ID %s for scanning',
+              library.uuid,
+            );
+          }
         }
       }
     }

@@ -6,11 +6,13 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { ProgramOrFolder } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
 import { map } from 'lodash-es';
 import type { MouseEvent } from 'react';
 import { Fragment, useCallback } from 'react';
 import { match } from 'ts-pattern';
+import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
 import { typedProperty } from '../../helpers/util.ts';
 import {
   addSelectedMedia,
@@ -20,7 +22,7 @@ import {
   useCurrentMediaSource,
   useSelectedMedia,
 } from '../../store/programmingSelector/selectors.ts';
-import { extractSubtitle, isTerminalItemType } from './ProgramGridItem.tsx';
+import { ProgramSubtitle } from './extractSubtitle.tsx';
 
 export interface ProgramListItemProps {
   item: ProgramOrFolder;
@@ -59,39 +61,42 @@ export const ProgramListItem = ({
         ]);
       } else {
         match(item)
-          .with({ sourceType: 'plex' }, (plex) =>
+          .with({ sourceType: Plex }, (plex) =>
             addSelectedMedia({
-              type: 'plex',
+              type: Plex,
               mediaSource: selectedServer!,
               id: plex.uuid,
               libraryId: plex.libraryId,
+              persisted: false,
             }),
           )
-          .with({ sourceType: 'jellyfin' }, (jf) =>
+          .with({ sourceType: Jellyfin }, (jf) =>
             addSelectedMedia({
-              type: 'jellyfin',
+              type: Jellyfin,
               mediaSource: selectedServer!,
               id: jf.uuid,
               libraryId: jf.libraryId,
+              persisted: false,
             }),
           )
-          .with({ sourceType: 'emby' }, (emby) =>
+          .with({ sourceType: Emby }, (emby) =>
             addSelectedMedia({
-              type: 'emby',
+              type: Emby,
               mediaSource: selectedServer!,
               id: emby.uuid,
               libraryId: emby.libraryId,
+              persisted: false,
+            }),
+          )
+          .with({ sourceType: Local }, (local) =>
+            addSelectedMedia({
+              type: Local,
+              mediaSource: selectedServer!,
+              id: local.uuid,
+              persisted: true,
             }),
           )
           .exhaustive();
-        // const libraryKey =
-        //   selectedLibrary?.view.type === 'library'
-        //     ? selectedLibrary.view.library.key
-        //     : null;
-        // const libraryId = selectedServer?.libraries.find(
-        //   (lib) => lib.externalKey === libraryKey,
-        // )?.id;
-        // addPlexSelectedMedia(selectedServer!, libraryId ?? '', [item]);
       }
     },
     [item, selectedServer, selectedMediaIds],
@@ -115,7 +120,7 @@ export const ProgramListItem = ({
           )}
           <ListItemText
             primary={item.title}
-            secondary={extractSubtitle(item)}
+            secondary={ProgramSubtitle(item)}
           />
           {!disableSelection && (
             <Button

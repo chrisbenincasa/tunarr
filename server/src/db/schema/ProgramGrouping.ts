@@ -1,4 +1,5 @@
 import { type TupleToUnion } from '@tunarr/types';
+import type { InferSelectModel } from 'drizzle-orm';
 import { inArray, relations } from 'drizzle-orm';
 import {
   type AnySQLiteColumn,
@@ -10,10 +11,14 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkRequiredNotNull } from '../../types/util.ts';
+import { Artwork } from './Artwork.ts';
+import type { MediaSourceId } from './base.ts';
+import { MediaSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import { MediaSourceLibrary } from './MediaSource.ts';
+import { MediaSource, MediaSourceLibrary } from './MediaSource.ts';
 import { Program } from './Program.ts';
 import type { ProgramGroupingTable as RawProgramGrouping } from './ProgramGrouping.ts';
+import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
 
 export const ProgramGroupingType = {
   Show: 'show',
@@ -47,6 +52,13 @@ export const ProgramGrouping = sqliteTable(
     artistUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid),
     showUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid),
     libraryId: text().references(() => MediaSourceLibrary.uuid),
+    sourceType: text({ enum: MediaSourceTypes }),
+    externalKey: text(),
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, {
+        onDelete: 'cascade',
+      })
+      .$type<MediaSourceId>(),
   },
   (table) => [
     index('program_grouping_show_uuid_index').on(table.showUuid),
@@ -72,6 +84,20 @@ export const ProgramGroupingRelations = relations(
       relationName: 'show',
     }),
     children: many(Program),
+    externalIds: many(ProgramGroupingExternalId),
+    artwork: many(Artwork),
+    library: one(MediaSourceLibrary, {
+      fields: [ProgramGrouping.libraryId],
+      references: [MediaSourceLibrary.uuid],
+    }),
+    mediaSource: one(MediaSource, {
+      fields: [ProgramGrouping.mediaSourceId],
+      references: [MediaSource.uuid],
+    }),
+    // localMediaSourcePath: one(LocalMediaSourcePath, {
+    //   fields: [ProgramGrouping.mediaSourcePathId],
+    //   references: [LocalMediaSourcePath.uuid],
+    // }),
   }),
 );
 
@@ -79,9 +105,10 @@ export type ProgramGroupingTable = KyselifyBetter<typeof ProgramGrouping>;
 export type ProgramGrouping = Selectable<ProgramGroupingTable>;
 export type NewProgramGrouping = MarkRequiredNotNull<
   Insertable<ProgramGroupingTable>,
-  'canonicalId' | 'libraryId'
+  'canonicalId' | 'libraryId' | 'mediaSourceId' | 'sourceType' | 'externalKey'
 >;
 export type ProgramGroupingUpdate = Updateable<ProgramGroupingTable>;
+export type ProgramGroupingOrm = InferSelectModel<typeof ProgramGrouping>;
 
 const ProgramGroupingKeys: (keyof RawProgramGrouping)[] = [
   'artistUuid',
@@ -96,10 +123,8 @@ const ProgramGroupingKeys: (keyof RawProgramGrouping)[] = [
   'uuid',
   'year',
 ];
-// TODO move this definition to the ProgramGrouping DAO file
 
-export const AllProgramGroupingFields: ProgramGroupingFields =
-  ProgramGroupingKeys.map((key) => `programGrouping.${key}` as const);
+// TODO move this definition to the ProgramGrouping DAO file
 
 export const AllProgramGroupingFieldsAliased = <Alias extends string>(
   alias: Alias,

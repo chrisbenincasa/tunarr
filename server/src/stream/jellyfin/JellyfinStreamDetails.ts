@@ -1,4 +1,4 @@
-import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { StreamLineupProgram } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
@@ -10,6 +10,7 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { seq } from '@tunarr/shared/util';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
+import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import {
   attempt,
@@ -26,7 +27,11 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceType } from '../../db/schema/base.js';
+import {
+  MediaSourceWithLibraries,
+  SpecificProgramSourceOrmType,
+} from '../../db/schema/derivedTypes.js';
 import { JellyfinT } from '../../types/internal.ts';
 import {
   ifDefined,
@@ -75,7 +80,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
 
   private async getStreamInternal(
     mediaSource: MediaSourceWithLibraries,
-    item: SpecificMinimalContentStreamLineupItem<JellyfinT>,
+    program: SpecificProgramSourceOrmType<JellyfinT, StreamLineupProgram>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -87,7 +92,9 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         mediaSource,
       );
 
-    const itemMetadataResult = await this.jellyfin.getRawItem(item.externalKey);
+    const itemMetadataResult = await this.jellyfin.getRawItem(
+      program.externalKey,
+    );
 
     if (itemMetadataResult.isFailure()) {
       this.logger.error(
@@ -102,16 +109,16 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     if (!itemMetadata) {
       this.logger.error(
         'Jellyfin item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
-        item.externalKey,
+        program.externalKey,
       );
       const newExternalId =
-        await this.jellyfinItemFinder.findForProgramAndUpdate(item.programId);
+        await this.jellyfinItemFinder.findForProgramAndUpdate(program.uuid);
 
       if (newExternalId) {
         return this.getStreamInternal(
           mediaSource,
           {
-            ...item,
+            ...program,
             ...newExternalId,
           },
           depth + 1,
@@ -121,7 +128,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       return null;
     }
 
-    const details = await this.getItemStreamDetails(item, itemMetadata);
+    const details = await this.getItemStreamDetails(program, itemMetadata);
 
     if (isNull(details)) {
       return null;
@@ -156,7 +163,11 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         path: filePath,
       };
     } else {
-      const path = details.serverPath ?? item.externalFilePath;
+      const path =
+        details.serverPath ??
+        program.externalIds.find(
+          (eid) => eid.sourceType === MediaSourceType.Jellyfin,
+        )?.externalFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
           `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
@@ -180,7 +191,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
   }
 
   private async getItemStreamDetails(
-    item: SpecificMinimalContentStreamLineupItem<JellyfinT>,
+    item: SpecificProgramSourceOrmType<JellyfinT, StreamLineupProgram>,
     media: JellyfinItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
@@ -229,7 +240,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
           ifDefined(videoStream.Index, (streamIndex) => {
             const index = streamIndex - externalStreamCount;
             if (index >= 0) {
-              return index.toString();
+              return index;
             }
             return;
           }) ?? undefined,
@@ -261,7 +272,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
             ifDefined(audioStream.Index, (streamIndex) => {
               const index = streamIndex - externalStreamCount;
               if (index >= 0) {
-                return index.toString();
+                return index;
               }
               return;
             }) ?? undefined,
@@ -351,6 +362,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
         ? subtitleStreamDetails
         : undefined,
+      duration: dayjs.duration(item.duration),
     };
 
     if (audioOnly) {

@@ -92,6 +92,62 @@
       "when": 1758202985051,
       "tag": "0012_yielding_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1758570626876,
+      "tag": "0013_silent_the_anarchist",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1758730320080,
+      "tag": "0014_gray_mongu",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1758902968801,
+      "tag": "0015_cuddly_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1759165197234,
+      "tag": "0016_wealthy_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1759518549214,
+      "tag": "0017_glossy_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1760129193146,
+      "tag": "0018_lumpy_rick_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1760213205081,
+      "tag": "0019_purple_thanos",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1760455660607,
+      "tag": "0020_whole_the_hand",
+      "breakpoints": true
     }
   ]
 }

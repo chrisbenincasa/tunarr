@@ -5,8 +5,8 @@ import type { Channel } from '../../db/schema/Channel.ts';
 import type { ProgramDao } from '../../db/schema/Program.ts';
 import { ProgramTypes } from '../../db/schema/Program.ts';
 import type { MinimalProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
-import type { MediaSourceName } from '../../db/schema/base.ts';
-import { type MediaSourceId } from '../../db/schema/base.ts';
+import type { MediaSourceName } from '../../db/schema/base.js';
+import { type MediaSourceId } from '../../db/schema/base.js';
 import type { ProgramWithExternalIds } from '../../db/schema/derivedTypes.js';
 
 export function createChannel(overrides?: Partial<Channel>): Channel {

@@ -2,33 +2,27 @@
 // but contain a bit more context and are used during an
 // active streaming session
 
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { tag } from '@tunarr/types';
-import { ContentProgramTypeSchema } from '@tunarr/types/schemas';
-import type { StrictOmit } from 'ts-essentials';
-import { z } from 'zod/v4';
+import type { MarkRequired, StrictOmit } from 'ts-essentials';
 import type { EmbyT, JellyfinT } from '../../types/internal.ts';
-import type { MediaSourceId } from '../schema/base.ts';
+import type { MarkNotNilable } from '../../types/util.ts';
+import { MediaSourceType } from '../schema/base.js';
+import type {
+  ProgramWithRelationsOrm,
+  SpecificProgramSourceOrmType,
+} from '../schema/derivedTypes.ts';
 import type { ProgramType } from '../schema/Program.ts';
 
-const baseStreamLineupItemSchema = z.object({
-  streamDuration: z
-    .number()
-    .nonnegative()
-    .describe('The amount of time left in the stream'),
-  // beginningOffset: z.number().nonnegative().optional(),
-  title: z.string().optional(),
-  startOffset: z
-    .number()
-    .nonnegative()
-    .optional()
-    .describe('How far into the stream item'),
-  programBeginMs: z
-    .number()
-    .nonnegative()
-    .describe('The time the stream item started'),
-  duration: z.number().nonnegative().describe('The whole duration of the item'),
-});
+type BaseStreamLineupItem = {
+  streamDuration: number;
+  startOffset?: number;
+  programBeginMs: number;
+  duration: number;
+};
+
+export type StreamLineupProgram = MarkNotNilable<
+  MarkRequired<ProgramWithRelationsOrm, 'externalIds'>,
+  'mediaSourceId'
+>;
 
 export function isOfflineLineupItem(
   item: StreamLineupItem,
@@ -59,7 +53,7 @@ export function isPlexBackedLineupItem(
 ): item is PlexBackedStreamLineupItem {
   return (
     isContentBackedLineupItem(item) &&
-    item.externalSource === MediaSourceType.Plex
+    item.program.sourceType === MediaSourceType.Plex
   );
 }
 
@@ -68,7 +62,7 @@ export function isJellyfinBackedLineupItem(
 ): item is SpecificSourceContentBackedStreamLineupItem<JellyfinT> {
   return (
     isContentBackedLineupItem(item) &&
-    item.externalSource === MediaSourceType.Jellyfin
+    item.program.sourceType === MediaSourceType.Jellyfin
   );
 }
 
@@ -77,7 +71,7 @@ export function isEmnyBackedLineupItem(
 ): item is SpecificSourceContentBackedStreamLineupItem<EmbyT> {
   return (
     isContentBackedLineupItem(item) &&
-    item.externalSource === MediaSourceType.Emby
+    item.program.sourceType === MediaSourceType.Emby
   );
 }
 
@@ -97,8 +91,8 @@ export type MinimalContentStreamLineupItem = {
 
 export type SpecificSourceContentBackedStreamLineupItem<
   Typ extends MediaSourceType,
-> = StrictOmit<ContentBackedStreamLineupItem, 'externalSource'> & {
-  externalSource: Typ;
+> = StrictOmit<ContentBackedStreamLineupItem, 'program'> & {
+  program: SpecificProgramSourceOrmType<Typ, StreamLineupProgram>;
 };
 
 export type PlexBackedStreamLineupItem =
@@ -110,93 +104,47 @@ export type SpecificMinimalContentStreamLineupItem<
   externalSource: Typ;
 };
 
-export type MinimalPlexBackedStreamLineupItem =
-  SpecificMinimalContentStreamLineupItem<typeof MediaSourceType.Plex>;
-
-export const OfflineStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
-  type: z.literal('offline'),
-});
-
-export type OfflineStreamLineupItem = z.infer<
-  typeof OfflineStreamLineupItemSchema
+export type MinimalPlexBackedStreamLineupItem = SpecificProgramSourceOrmType<
+  typeof MediaSourceType.Plex,
+  StreamLineupProgram
 >;
 
-const BaseContentBackedStreamLineupItemSchema =
-  baseStreamLineupItemSchema.extend({
-    // ID in the program DB table
-    programId: z.uuid(),
-    // These are taken from the Program DB entity
-    plexFilePath: z.string().optional(),
-    externalSourceId: z.string().transform((s) => tag<MediaSourceId>(s)),
-    filePath: z.string().optional(),
-    externalKey: z.string(),
-    programType: ContentProgramTypeSchema,
-    externalSource: z.enum(MediaSourceType),
-    infiniteLoop: z.boolean(),
-    contentDuration: z.number().describe('The duration of the content itself'),
-  });
+export type OfflineStreamLineupItem = BaseStreamLineupItem & {
+  type: 'offline';
+  duration: number;
+};
 
-const CommercialStreamLineupItemSchema =
-  BaseContentBackedStreamLineupItemSchema.extend({
-    type: z.literal('commercial'),
-    fillerId: z.string(),
-  });
+type BaseContentBackedStreamLineupItem = BaseStreamLineupItem & {
+  program: StreamLineupProgram;
+  infiniteLoop: boolean;
+};
 
-export type CommercialStreamLineupItem = z.infer<
-  typeof CommercialStreamLineupItemSchema
->;
+export type CommercialStreamLineupItem = BaseContentBackedStreamLineupItem & {
+  type: 'commercial';
+  fillerId: string;
+};
 
-const ProgramStreamLineupItemSchema =
-  BaseContentBackedStreamLineupItemSchema.extend({
-    type: z.literal('program'),
-  }).required({ title: true });
+export type ProgramStreamLineupItem = BaseContentBackedStreamLineupItem & {
+  type: 'program';
+};
 
-export type ProgramStreamLineupItem = z.infer<
-  typeof ProgramStreamLineupItemSchema
->;
+export type RedirectStreamLineupItem = BaseStreamLineupItem & {
+  type: 'redirect';
+  channel: string;
+  duration: number;
+};
 
-export const RedirectStreamLineupItemSchema = baseStreamLineupItemSchema.extend(
-  {
-    type: z.literal('redirect'),
-    channel: z.string().uuid(),
-    duration: z.number().positive(),
-  },
-);
+export type ErrorStreamLineupItem = BaseStreamLineupItem & {
+  type: 'error';
+  error: Error | string | boolean;
+};
 
-export const ErrorStreamLineupItemSchema = baseStreamLineupItemSchema.extend({
-  type: z.literal('error'),
-  error: z.instanceof(Error).or(z.string()).or(z.boolean()),
-});
-
-export type RedirectStreamLineupItem = z.infer<
-  typeof RedirectStreamLineupItemSchema
->;
-
-export const StreamLineupItemSchema = z.discriminatedUnion('type', [
-  ProgramStreamLineupItemSchema,
-  CommercialStreamLineupItemSchema,
-  OfflineStreamLineupItemSchema,
-  RedirectStreamLineupItemSchema,
-  ErrorStreamLineupItemSchema,
-]);
-
-export type StreamLineupItem = z.infer<typeof StreamLineupItemSchema>;
-
-// Subset of StreamLineupItem that only includes valid lineup.json item
-// types with additional details + error type.
-// This is still a little messy because we have a lot of very similar
-// versions of the same type flying around -- a remnant of the untyped
-// nature of the original DTV -- this can slowly be unraveled and/or
-// consolidated as we rewrite pieces of the streaming pipeline.
-export const EnrichedLineupItemSchema = z.discriminatedUnion('type', [
-  ProgramStreamLineupItemSchema,
-  CommercialStreamLineupItemSchema,
-  OfflineStreamLineupItemSchema,
-  RedirectStreamLineupItemSchema,
-  ErrorStreamLineupItemSchema,
-]);
-
-export type EnrichedLineupItem = z.infer<typeof EnrichedLineupItemSchema>;
+export type StreamLineupItem =
+  | ProgramStreamLineupItem
+  | CommercialStreamLineupItem
+  | OfflineStreamLineupItem
+  | RedirectStreamLineupItem
+  | ErrorStreamLineupItem;
 
 export function createOfflineStreamLineupItem(
   duration: number,

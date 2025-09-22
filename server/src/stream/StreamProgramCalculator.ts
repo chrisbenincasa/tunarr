@@ -1,6 +1,5 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { Channel } from '@/db/schema/Channel.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
@@ -11,11 +10,10 @@ import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { first, isEmpty, isNil, isNull } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
-  EnrichedLineupItem,
+  ProgramStreamLineupItem,
   StreamLineupItem,
   createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
@@ -25,14 +23,14 @@ import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
-import { isNonEmptyString, nullToUndefined } from '../util/index.js';
+import { isNonEmptyString } from '../util/index.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
 const SLACK = constants.SLACK;
 
 // Figure out this type later...
 export type ProgramAndTimeElapsed = {
-  program: EnrichedLineupItem;
+  program: StreamLineupItem;
   timeElapsed: number;
   programIndex: number;
 };
@@ -130,7 +128,6 @@ export class StreamProgramCalculator {
       if (redirectChannels.includes(currentProgram.program.channel)) {
         await this.channelCache.recordPlayback(channelContext.uuid, startTime, {
           type: 'error',
-          title: 'Error',
           error:
             'Recursive channel redirect found: ' + redirectChannels.join(', '),
           duration: 60_000,
@@ -160,32 +157,32 @@ export class StreamProgramCalculator {
       }
 
       channelContext = newChannelAndLineup.channel;
-      lineupItem = this.channelCache.getCurrentLineupItem(
-        channelContext.uuid,
+      // lineupItem = this.channelCache.getCurrentLineupItem(
+      //   channelContext.uuid,
+      //   req.startTime,
+      // );
+
+      // if (lineupItem) {
+      //   const newItemEndTime = lineupItem.programBeginMs + lineupItem.duration;
+      //   if (newItemEndTime < endTimeMs) {
+      //     streamDuration = newItemEndTime - req.startTime;
+      //   }
+
+      //   break;
+      // } else {
+      // }
+      currentProgram = await this.getCurrentProgramAndTimeElapsed(
         req.startTime,
+        channelContext,
+        newChannelAndLineup.lineup,
       );
 
-      if (lineupItem) {
-        const newItemEndTime = lineupItem.programBeginMs + lineupItem.duration;
-        if (newItemEndTime < endTimeMs) {
-          streamDuration = newItemEndTime - req.startTime;
-        }
-
-        break;
-      } else {
-        currentProgram = await this.getCurrentProgramAndTimeElapsed(
-          req.startTime,
-          channelContext,
-          newChannelAndLineup.lineup,
-        );
-
-        const timeLeft =
-          currentProgram.program.duration - currentProgram.timeElapsed;
-        const newEndTime = req.startTime + timeLeft;
-        if (newEndTime < endTimeMs) {
-          streamDuration = newEndTime - req.startTime;
-          currentProgram.program.streamDuration = streamDuration;
-        }
+      const timeLeft =
+        currentProgram.program.duration - currentProgram.timeElapsed;
+      const newEndTime = req.startTime + timeLeft;
+      if (newEndTime < endTimeMs) {
+        streamDuration = newEndTime - req.startTime;
+        currentProgram.program.streamDuration = streamDuration;
       }
     }
 
@@ -221,9 +218,6 @@ export class StreamProgramCalculator {
         //it's pointless to show the offline screen for such a short time, might as well
         //skip to the next program
         const dt = currentProgram.program.duration - currentProgram.timeElapsed;
-        for (let i = 0; i < redirectChannels.length; i++) {
-          await this.channelCache.clearPlayback(redirectChannels[i]);
-        }
 
         this.logger.debug(
           'Too little time before the filler ends, skip to next slot',
@@ -239,12 +233,6 @@ export class StreamProgramCalculator {
           "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
         this.logger.error(msg);
         return Result.forError(new Error(msg));
-      }
-
-      if (currentProgram.program.type === 'redirect') {
-        return Result.forError(
-          new Error('Unable to resolve program redirects'),
-        );
       }
 
       lineupItem = await this.createLineupItem(
@@ -381,7 +369,7 @@ export class StreamProgramCalculator {
     const streamDuration = nextOffset - currOffset - elapsed;
 
     const lineupItem = channelLineup.items[currentProgramIndex];
-    let program: EnrichedLineupItem;
+    let program: StreamLineupItem;
     switch (lineupItem.type) {
       case 'content': {
         // Defer program lookup
@@ -393,65 +381,55 @@ export class StreamProgramCalculator {
           streamDuration,
         };
 
-        if (backingItem) {
-          // Will play this item on the first found server... unsure if that is
-          // what we want
-          const externalInfo = backingItem.externalIds.find(
-            (eid) =>
-              eid.sourceType === ProgramExternalIdType.PLEX ||
-              eid.sourceType === ProgramExternalIdType.JELLYFIN ||
-              eid.sourceType === ProgramExternalIdType.EMBY,
-          );
+        if (backingItem && isNonEmptyString(backingItem.mediaSourceId)) {
+          const mediaSourceId = backingItem.mediaSourceId;
+          // const mediaSourceType = match(externalInfo.sourceType)
+          //   .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
+          //   .with(
+          //     ProgramExternalIdType.JELLYFIN,
+          //     () => MediaSourceType.Jellyfin,
+          //   )
+          //   .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
+          //   .otherwise(() => null);
+          // if (!mediaSourceType) {
+          //   throw new Error('Impossible');
+          // }
 
-          if (externalInfo && isNonEmptyString(externalInfo.mediaSourceId)) {
-            const mediaSourceType = match(externalInfo.sourceType)
-              .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
-              .with(
-                ProgramExternalIdType.JELLYFIN,
-                () => MediaSourceType.Jellyfin,
-              )
-              .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
-              .otherwise(() => null);
-            if (!mediaSourceType) {
-              throw new Error('Impossible');
-            }
+          const baseItem = {
+            // externalSource: backingItem.sourceType,
+            // plexFilePath: nullToUndefined(externalInfo?.externalFilePath),
+            // externalKey: externalInfo.externalKey,
+            // filePath: nullToUndefined(externalInfo?.directFilePath),
+            // externalSourceId: backingItem.mediaSourceId,
+            // contentDuration: backingItem.duration,
+            duration: lineupItem.durationMs,
+            // programId: backingItem.uuid,
+            // title: backingItem.title,
+            // programType: backingItem.type,
+            program: { ...backingItem, mediaSourceId },
+            programBeginMs: timestamp - timeElapsed,
+            streamDuration,
+          };
 
-            const baseItem = {
-              externalSource: mediaSourceType,
-              plexFilePath: nullToUndefined(externalInfo.externalFilePath),
-              externalKey: externalInfo.externalKey,
-              filePath: nullToUndefined(externalInfo.directFilePath),
-              externalSourceId: externalInfo.mediaSourceId,
-              contentDuration: backingItem.duration,
-              duration: lineupItem.durationMs,
-              programId: backingItem.uuid,
-              title: backingItem.title,
-              // id: backingItem.uuid,
-              programType: backingItem.type,
-              programBeginMs: timestamp - timeElapsed,
-              streamDuration,
-            };
-
-            if (isNonEmptyString(lineupItem.fillerListId)) {
-              program = {
-                ...baseItem,
-                type: 'commercial',
-                fillerId: lineupItem.fillerListId,
-                infiniteLoop: backingItem.duration < streamDuration,
-              };
-            } else {
-              program = {
-                ...baseItem,
-                type: 'program',
-                infiniteLoop: false,
-              };
-            }
+          if (isNonEmptyString(lineupItem.fillerListId)) {
+            program = {
+              ...baseItem,
+              type: 'commercial',
+              fillerId: lineupItem.fillerListId,
+              infiniteLoop: backingItem.duration < streamDuration,
+            } satisfies CommercialStreamLineupItem;
           } else {
-            this.logger.warn(
-              'Found a backing item, but could not find external ID info!! %O',
-              backingItem,
-            );
+            program = {
+              ...baseItem,
+              type: 'program',
+              infiniteLoop: false,
+            } satisfies ProgramStreamLineupItem;
           }
+        } else if (backingItem) {
+          this.logger.error(
+            'Found a backing item with id %s, but it had no mediaSourceId, which is very bad! This is a bug.',
+            backingItem.uuid,
+          );
         }
         break;
       }
@@ -503,7 +481,7 @@ export class StreamProgramCalculator {
     if (program.type === 'error') {
       return {
         type: 'error',
-        title: 'Error',
+        // title: 'Error',
         error: program.error,
         streamDuration,
         duration: streamDuration,
@@ -553,6 +531,17 @@ export class StreamProgramCalculator {
       }
 
       if (!isNil(filler)) {
+        // TODO: This stinks right now, but re-materialize the program
+        // to get the shiny new type.
+        const fillerProgram = await this.programDB.getProgramById(filler.uuid);
+        if (!fillerProgram) {
+          throw new Error(`Expected program with ID ${filler.uuid}`);
+        } else if (!isNonEmptyString(fillerProgram.mediaSourceId)) {
+          throw new Error(
+            `Expected program with media source ID when querying program ID ${filler.uuid}`,
+          );
+        }
+        const mediaSourceId = fillerProgram.mediaSourceId;
         let fillerstart = 0;
         // If we have a special, push it on the lineup
         if (isSpecial) {
@@ -576,7 +565,6 @@ export class StreamProgramCalculator {
           !isEmpty(externalInfos) &&
           isNonEmptyString(first(externalInfos)?.mediaSourceId)
         ) {
-          const externalInfo = first(externalInfos)!;
           streamDuration = Math.max(
             1,
             Math.min(filler.duration - fillerstart, streamDuration),
@@ -586,21 +574,25 @@ export class StreamProgramCalculator {
           return {
             // just add the video, starting at 0, playing the entire duration
             type: 'commercial',
-            title: filler.title,
-            filePath: nullToUndefined(externalInfo.directFilePath),
-            externalKey: externalInfo.externalKey,
-            externalSource:
-              externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
-                ? MediaSourceType.Jellyfin
-                : MediaSourceType.Plex,
+            program: {
+              ...fillerProgram,
+              mediaSourceId,
+            },
+            // title: filler.title,
+            // filePath: nullToUndefined(externalInfo.directFilePath),
+            // externalKey: externalInfo.externalKey,
+            // externalSource:
+            //   externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
+            //     ? MediaSourceType.Jellyfin
+            //     : MediaSourceType.Plex,
             startOffset,
             streamDuration,
-            contentDuration: filler.duration,
+            // contentDuration: filler.duration,
             duration: program.duration,
-            programId: filler.uuid,
-            externalSourceId: externalInfo.mediaSourceId!,
-            plexFilePath: nullToUndefined(externalInfo.externalFilePath),
-            programType: filler.type,
+            // programId: filler.uuid,
+            // externalSourceId: externalInfo.mediaSourceId!,
+            // plexFilePath: nullToUndefined(externalInfo.externalFilePath),
+            // programType: filler.type,
             programBeginMs: program.programBeginMs,
             fillerId: filler.uuid,
             infiniteLoop: filler.duration < streamDuration,
@@ -615,7 +607,6 @@ export class StreamProgramCalculator {
       //it would be better to start playing the content.
       return {
         type: 'offline',
-        title: 'Channel Offline',
         streamDuration,
         // beginningOffset,
         duration: streamDuration,

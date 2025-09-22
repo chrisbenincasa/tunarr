@@ -13,7 +13,7 @@ export const TvShowNfo = z.object({
   thumb: z.array(NfoThumb).optional(),
   season: z.coerce.number().optional(),
   episode: z.coerce.number().optional(),
-  mpaa: z.string().optional(),
+  mpaa: z.string().optional().catch(undefined),
   uniqueid: z.array(NfoUniqueId),
   genre: z.array(z.string()).optional(),
   country: z.array(z.string()).optional(),
@@ -27,9 +27,12 @@ export const TvShowNfo = z.object({
   credits: z.array(z.string()).optional(),
   director: z.array(z.string()).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional(),
-  actor: z.array(NfoActor),
+  enddate: z.string().optional(), // yyyy-mm-dd
+  studio: z.string().optional().catch(undefined),
+  actor: z.array(NfoActor).optional(),
 });
+
+export type TvShowNfo = z.infer<typeof TvShowNfo>;
 
 const TvShowNfoContainer = z.object({
   tvshow: TvShowNfo,
@@ -41,6 +44,9 @@ const ArrayTags = [
   'tvshow.genre',
   'tvshow.country',
   'tvshow.fileinfo',
+  'tvshow.thumb',
+  'tvshow.tag',
+  'tvshow.actor',
 ];
 
 export class TvShowNfoParser extends BaseNfoParser<typeof TvShowNfoContainer> {

@@ -37,25 +37,20 @@ export const DebugPlexApiRouter: RouterPluginAsyncCallback = async (
 
       if (!program) {
         return res.status(400).send('No program');
+      } else if (!program.mediaSourceId) {
+        return res.status(400).send('No media source ID');
+      } else if (program.sourceType !== 'plex') {
+        return res.status(400).send('Not a plex item');
       }
 
-      const contentProgram =
-        req.serverCtx.programConverter.programDaoToContentProgram(program);
-
-      if (!contentProgram) {
-        return res.status(500).send();
-      }
+      const mediaSourceId = program.mediaSourceId;
 
       const streamDetails = await container.get(PlexStreamDetails).getStream({
         server: mediaSource,
         lineupItem: {
-          ...contentProgram,
-          programId: contentProgram.id,
-          externalKey: req.query.key,
-          programType: contentProgram.subtype,
-          externalSource: 'plex',
-          duration: contentProgram.duration,
-          externalFilePath: contentProgram.serverFilePath,
+          ...program,
+          sourceType: 'plex',
+          mediaSourceId,
         },
       });
 

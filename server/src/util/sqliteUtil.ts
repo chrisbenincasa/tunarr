@@ -1,6 +1,7 @@
 import { isNil } from 'lodash-es';
+import type { Nilable } from '../types/util.ts';
 
-export function booleanToNumber(b: boolean): number {
+export function booleanToNumber(b: Nilable<boolean>): number {
   return b ? 1 : 0;
 }
 

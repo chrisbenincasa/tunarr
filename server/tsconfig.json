@@ -4,7 +4,6 @@
         "module": "NodeNext",
         "lib": [
             "ESNext",
-            "DOM" // We have to declare this so vitest doesn't explode
         ],
         "moduleResolution": "nodenext",
         "resolveJsonModule": true,
@@ -44,7 +43,6 @@
     "include": [
         "./src/**/*.ts",
         "./scripts/**/*.ts",
-        "./tests/**/*.ts",
     ],
     "exclude": [
         "./src/**/*.ignore.ts",

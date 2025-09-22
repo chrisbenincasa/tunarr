@@ -1,33 +1,22 @@
 import { InMemoryCachedDbAdapter } from '@/db/json/InMemoryCachedDbAdapter.js';
 import { SchemaBackedDbAdapter } from '@/db/json/SchemaBackedJsonDBAdapter.js';
 import { GlobalOptions } from '@/globals.js';
-import { isDefined } from '@/util/index.js';
-import constants from '@tunarr/shared/constants';
 import { inject, injectable } from 'inversify';
-import { isNil, isUndefined } from 'lodash-es';
+import { isUndefined } from 'lodash-es';
 import { Low } from 'lowdb';
 import { join } from 'node:path';
 import { z } from 'zod/v4';
 import {
   StreamLineupItem,
-  StreamLineupItemSchema,
   isCommercialLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { KEYS } from '../types/inject.ts';
 
-const SLACK = constants.SLACK;
-
-const streamPlayCacheItemSchema = z.object({
-  timestamp: z.number(),
-  lineupItem: StreamLineupItemSchema,
-});
-type StreamPlayCacheItem = z.infer<typeof streamPlayCacheItemSchema>;
-
 const channelCacheSchema = z.object({
-  streamPlayCache: z.record(z.string(), streamPlayCacheItemSchema).default({}),
   fillerPlayTimeCache: z.record(z.string(), z.number()).default({}),
   programPlayTimeCache: z.record(z.string(), z.number()).default({}),
+  version: z.number().optional(),
 });
 
 type ChannelCacheSchema = z.infer<typeof channelCacheSchema>;
@@ -50,7 +39,6 @@ export class PersistentChannelCache {
         ),
       ),
       {
-        streamPlayCache: {},
         fillerPlayTimeCache: {},
         programPlayTimeCache: {},
       },
@@ -59,22 +47,6 @@ export class PersistentChannelCache {
 
   async init() {
     return this.#db.read();
-  }
-
-  getStreamPlayItem(channelId: string): StreamPlayCacheItem | undefined {
-    return this.#db.data.streamPlayCache[channelId];
-  }
-
-  setStreamPlayItem(channelId: string, item: StreamPlayCacheItem) {
-    return this.#db.update(({ streamPlayCache }) => {
-      streamPlayCache[channelId] = item;
-    });
-  }
-
-  clearStreamPlayItem(channelId: string) {
-    return this.#db.update(({ streamPlayCache }) => {
-      delete streamPlayCache[channelId];
-    });
   }
 
   getProgramPlayTime(id: string): number | undefined {
@@ -105,49 +77,6 @@ export class ChannelCache implements IStreamLineupCache {
     private persistentChannelCache: PersistentChannelCache,
   ) {}
 
-  getCurrentLineupItem(
-    channelId: string,
-    timeNow: number,
-  ): StreamLineupItem | undefined {
-    const recorded = this.persistentChannelCache.getStreamPlayItem(channelId);
-    if (isUndefined(recorded)) {
-      return;
-    }
-    const lineupItem = { ...recorded.lineupItem };
-    const timeSinceRecorded = timeNow - recorded.timestamp;
-    let remainingTime = lineupItem.duration - (lineupItem.startOffset ?? 0);
-    if (!isUndefined(lineupItem.streamDuration)) {
-      remainingTime = Math.min(remainingTime, lineupItem.streamDuration);
-    }
-
-    if (
-      timeSinceRecorded <= SLACK &&
-      timeSinceRecorded + SLACK < remainingTime
-    ) {
-      //closed the stream and opened it again let's not lose seconds for
-      //no reason
-      const originalT0 = recorded.timestamp;
-      if (timeNow - originalT0 <= SLACK) {
-        return lineupItem;
-      }
-    }
-
-    if (isDefined(lineupItem.startOffset)) {
-      lineupItem.startOffset += timeSinceRecorded;
-    }
-    if (!isNil(lineupItem.streamDuration)) {
-      lineupItem.streamDuration -= timeSinceRecorded;
-      if (lineupItem.streamDuration < SLACK) {
-        //let's not waste time playing some loose seconds
-        return;
-      }
-    }
-    if ((lineupItem.startOffset ?? 0) + SLACK > lineupItem.duration) {
-      return;
-    }
-    return lineupItem;
-  }
-
   private getKey(channelId: string, programId: string) {
     return `${channelId}|${programId}`;
   }
@@ -165,7 +94,7 @@ export class ChannelCache implements IStreamLineupCache {
     }
 
     if (lineupItem.type === 'program') {
-      const key = this.getKey(channelId, lineupItem.programId);
+      const key = this.getKey(channelId, lineupItem.program.uuid);
       await this.persistentChannelCache.setProgramPlayTime(key, t0 + remaining);
     }
 
@@ -199,14 +128,6 @@ export class ChannelCache implements IStreamLineupCache {
     lineupItem: StreamLineupItem,
   ) {
     await this.recordProgramPlayTime(channelId, lineupItem, t0);
-    await this.persistentChannelCache.setStreamPlayItem(channelId, {
-      timestamp: t0,
-      lineupItem: lineupItem,
-    });
-  }
-
-  async clearPlayback(channelId: string) {
-    return await this.persistentChannelCache.clearStreamPlayItem(channelId);
   }
 
   // Is this necessary??

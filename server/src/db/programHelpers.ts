@@ -23,7 +23,8 @@ export function createPendingProgramIndexMap(
         isContentProgram(p) &&
         isNonEmptyString(p.externalSourceId) &&
         isNonEmptyString(p.externalSourceType) &&
-        isNonEmptyString(p.externalKey)
+        isNonEmptyString(p.externalKey) &&
+        p.externalSourceType !== 'local'
       ) {
         acc[
           createExternalId(

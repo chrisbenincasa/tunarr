@@ -12,20 +12,26 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { result } from 'lodash-es';
-import { getApiProgramsByIdOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import type { ProgramLike } from '@tunarr/types';
+import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
+import {
+  getApiProgramGroupingsByIdOptions,
+  getApiProgramsByIdOptions,
+} from '../../generated/@tanstack/react-query.gen.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   programId: string;
+  programType: ProgramLike['type'];
 };
 
 export const NewProgramDetailsDialog = ({
   onClose,
   open,
   programId,
+  programType,
 }: Props) => {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
@@ -37,8 +43,22 @@ export const NewProgramDetailsDialog = ({
         id: programId,
       },
     }),
-    enabled: open,
+    enabled: open && isTerminalItemType(programType),
   });
+
+  const parentQuery = useQuery({
+    ...getApiProgramGroupingsByIdOptions({
+      path: {
+        id: programId,
+      },
+    }),
+    enabled:
+      open &&
+      !isTerminalItemType(programType) &&
+      !isStructuralItemType(programType),
+  });
+
+  const isLoading = parentQuery.isLoading || query.isLoading;
 
   return (
     <Dialog
@@ -48,7 +68,7 @@ export const NewProgramDetailsDialog = ({
       fullWidth
       onClose={() => onClose()}
     >
-      {query.isLoading ? (
+      {isLoading ? (
         <Skeleton>
           <DialogTitle />
         </Skeleton>
@@ -57,13 +77,14 @@ export const NewProgramDetailsDialog = ({
           variant="h4"
           sx={{ display: 'flex', alignItems: 'center' }}
         >
-          <Box sx={{ flex: 1 }}>{query.data?.title} </Box>
+          <Box sx={{ flex: 1 }}>
+            {query.data?.title ?? parentQuery.data?.title}{' '}
+          </Box>
           <IconButton
             edge="start"
             color="inherit"
             onClick={() => onClose()}
             aria-label="close"
-            // sx={{ position: 'absolute', top: 10, right: 10 }}
             size="large"
           >
             <Close />
@@ -73,21 +94,27 @@ export const NewProgramDetailsDialog = ({
 
       <DialogContent>
         {/* <ProgramStreamDetails programId={item.uuid} /> */}
-        {query.isLoading && <LinearProgress />}
+        {isLoading && <LinearProgress />}
         <Box sx={{ maxHeight: '70vh' }}>
-          {query.data && (
+          {(query.data || parentQuery.data) && (
             <>
               <Button
                 onClick={() =>
-                  copy(JSON.stringify(result, undefined, 2)).catch((e) =>
-                    console.error(e),
-                  )
+                  copy(
+                    JSON.stringify(
+                      query.data ?? parentQuery.data,
+                      undefined,
+                      2,
+                    ),
+                  ).catch((e) => console.error(e))
                 }
                 startIcon={<CopyAll />}
               >
                 Copy to Clipboard
               </Button>
-              <pre>{JSON.stringify(query.data, undefined, 4)}</pre>
+              <pre>
+                {JSON.stringify(query.data ?? parentQuery.data, undefined, 4)}
+              </pre>
             </>
           )}
         </Box>

@@ -13,16 +13,19 @@ export const NfoThumb = z.object({
   // ]),
   '@_aspect': z.string(),
 });
+
 export const NfoUniqueId = z.object({
   '#text': z.coerce.string(),
-  '@_type': z.enum(['imdb', 'tmdb', 'tvdb']),
+  '@_type': z.string(), //z.enum(['imdb', 'tmdb', 'tvdb']),
   '@_default': z.stringbool().optional(),
 });
+
 const NfoAudioStream = z.object({
   codec: z.string(),
   language: z.string(),
   channels: z.number(),
 });
+
 const NfoVideoStream = z.object({
   codec: z.string(),
   aspect: z.number(),
@@ -32,9 +35,11 @@ const NfoVideoStream = z.object({
   stereomode: z.string().optional(),
   hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']),
 });
+
 const NfoSubtitleStream = z.object({
   language: z.string(),
 });
+
 export const NfoFileInfo = z.object({
   streamdetails: z.object({
     video: NfoVideoStream,
@@ -42,9 +47,12 @@ export const NfoFileInfo = z.object({
     subtitle: z.array(NfoSubtitleStream).or(NfoSubtitleStream).optional(),
   }),
 });
+
 export const NfoActor = z.object({
   name: z.string(),
   role: z.string(),
-  order: z.number(),
+  order: z.number().optional(),
   thumb: z.string().optional(),
 });
+
+export type NfoActor = z.infer<typeof NfoActor>;

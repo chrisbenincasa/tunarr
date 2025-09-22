@@ -25,6 +25,9 @@ const DBModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<Kysely<DB>>>(KEYS.DatabaseFactory).toAutoFactory(
     KEYS.Database,
   );
+  bind<interfaces.Factory<DrizzleDBAccess>>(
+    KEYS.DrizzleDatabaseFactory,
+  ).toAutoFactory(KEYS.DrizzleDB);
   bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
 
   bind(ProgramDaoMinter).toSelf();

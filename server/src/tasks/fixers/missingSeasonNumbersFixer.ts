@@ -1,8 +1,8 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { withProgramGroupingExternalIds } from '@/db/programQueryHelpers.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { DB } from '@/db/schema/db.js';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';

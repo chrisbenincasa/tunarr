@@ -10,7 +10,7 @@ export const TvEpisodeNfo = z.object({
   outline: z.string().optional(),
   tagline: z.string().optional(),
   plot: z.string().optional(),
-  thumb: z.array(NfoThumb).optional(),
+  thumb: z.array(NfoThumb).optional().catch([]),
   season: z.coerce.number().optional(),
   episode: z.coerce.number().optional(),
   mpaa: z.string().optional(),
@@ -28,8 +28,8 @@ export const TvEpisodeNfo = z.object({
   director: z.array(z.string()).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   aired: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional(),
-  actor: z.array(NfoActor),
+  studio: z.string().optional().catch(undefined),
+  actor: z.array(NfoActor).optional(),
 });
 
 const TvEpisodeNfoContainer = z.object({
@@ -44,6 +44,9 @@ const ArrayTags = [
   'episodedetails.country',
   'episodedetails.thumb',
   'episodedetails.fileinfo',
+  'episodedetails.thumb',
+  'episodedetails.tag',
+  'episodedetails.actor',
 ];
 
 export class TvEpisodeNfoParser extends BaseNfoParser<

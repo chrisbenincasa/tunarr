@@ -16,6 +16,7 @@ const KEYS = {
   Database: Symbol.for('Database'),
   DrizzleDB: Symbol.for('DrizzleDB'),
   DatabaseFactory: Symbol.for('DatabaseFactory'),
+  DrizzleDatabaseFactory: Symbol.for('DrizzleDatabaseFactory'),
   ChannelDB: Symbol.for('ChannelDB'),
   ProgramDB: Symbol.for('ProgramDB'),
   FillerListDB: Symbol.for('FillerListDB'),
@@ -53,6 +54,8 @@ const KEYS = {
   PlexCanonicalizer: Symbol.for('PlexCanonicalizer'),
   JellyfinCanonicalizer: Symbol.for('JellyfinCanonicalizer'),
   EmbyCanonicalizer: Symbol.for('EmbyCanonicalizer'),
+  LocalFolderCanonicalizer: Symbol.for('LocalFolderCanonicalizer'),
+  LocalMediaCanonicalizer: Symbol.for('LocalMediaCanonicalizer'),
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 
   FillerPicker: Symbol.for('FillerPicker'),
@@ -70,6 +73,7 @@ const KEYS = {
     'MediaSourceOtherVideoLibraryScanner',
   ),
   MediaSourceLibraryScanner: Symbol.for('MediaSourceLibraryScanner'),
+  LocalMediaSourceScanner: Symbol.for('LocalMediaSourceScanner'),
 
   // Tasks
   StartupTasks: Symbol.for('StartupTasks'),

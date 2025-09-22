@@ -3,41 +3,41 @@ import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
 import type {
   MediaLibraryType,
-  MediaSource,
-  MediaSourceLibrary,
-  MediaSourceType,
+  MediaSourceLibraryOrm,
+  MediaSourceOrm,
+  RemoteMediaSourceType,
 } from '../../db/schema/MediaSource.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
 export type ScanRequest = {
-  library: MediaSourceLibrary;
+  library: MediaSourceLibraryOrm;
   force?: boolean;
 };
 
 export type ScanContext<ApiClientTypeT> = {
-  library: MediaSourceLibrary;
-  mediaSource: MediaSource;
+  library: MediaSourceLibraryOrm;
+  mediaSource: MediaSourceOrm;
   apiClient: ApiClientTypeT;
   force: boolean;
 };
 
-type RunState = 'unknown' | 'starting' | 'running' | 'canceled';
+export type RunState = 'unknown' | 'starting' | 'running' | 'canceled';
 
 export type GenericMediaSourceScanner = MediaSourceScanner<
   MediaLibraryType,
-  MediaSourceType,
+  RemoteMediaSourceType,
   unknown
 >;
 
 export type GenericMediaSourceScannerFactory = (
-  sourceType: MediaSourceType,
+  sourceType: RemoteMediaSourceType,
   libraryType: MediaLibraryType,
 ) => GenericMediaSourceScanner;
 
 export abstract class MediaSourceScanner<
   MediaLibraryTypeT extends MediaLibraryType,
-  MediaSourceTypeT extends MediaSourceType,
+  MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT,
 > {
   #state: Map<string, RunState> = new Map();

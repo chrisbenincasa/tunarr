@@ -104,6 +104,10 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       return;
     }
 
+    if (program.externalSourceType === 'local') {
+      return `${backendUri}/api/programs/${program?.grandparent?.id}/artwork/fanart`;
+    }
+
     const id =
       program.subtype === 'movie' ||
       program.subtype === 'music_video' ||

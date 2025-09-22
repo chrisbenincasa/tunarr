@@ -214,7 +214,7 @@ function calculateScaledSize(
   videoStream: VideoStreamDetails,
 ) {
   const { widthPx: targetW, heightPx: targetH } = config.resolution;
-  const [width, height] = videoStream.sampleAspectRatio
+  const [width, height] = (videoStream.sampleAspectRatio ?? '1:1')
     .split(':')
     .map((i) => parseInt(i));
   const sarSize: Resolution = { widthPx: width, heightPx: height };

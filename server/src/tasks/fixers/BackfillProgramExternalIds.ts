@@ -26,8 +26,8 @@ import {
 } from 'lodash-es';
 import { v4 } from 'uuid';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { withLibraries } from '../../db/mediaSourceQueryHelpers.ts';
-import { MediaSourceName } from '../../db/schema/base.ts';
+import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { MediaSourceName } from '../../db/schema/base.js';
 import { DB } from '../../db/schema/db.ts';
 import { Timer } from '../../util/Timer.ts';
 import {
@@ -47,6 +47,7 @@ export class BackfillProgramExternalIds extends Fixer {
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {
     super();
     this.timer = new Timer(this.logger);
@@ -112,16 +113,12 @@ export class BackfillProgramExternalIds extends Fixer {
         keys(plexConnections),
       );
 
-      const serverSettings = await this.db
-        .selectFrom('mediaSource')
-        .selectAll()
-        .select(withLibraries)
-        .where(
-          'name',
-          'in',
-          missingServers.map((name) => tag<MediaSourceName>(name)),
-        )
-        .execute();
+      const missingNames = missingServers.map((name) =>
+        tag<MediaSourceName>(name),
+      );
+      const serverSettings = await this.mediaSourceDB
+        .getAll()
+        .then((_) => _.filter((ms) => missingNames.includes(ms.name)));
 
       for (const server of serverSettings) {
         plexConnections[server.name] =

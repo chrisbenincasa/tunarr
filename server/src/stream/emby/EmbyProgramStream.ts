@@ -1,7 +1,7 @@
 import { isEmnyBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { type MediaSourceDB } from '@/db/mediaSourceDB.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { type FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { type OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { StreamOptions } from '@/ffmpeg/ffmpegBase.js';
@@ -64,14 +64,12 @@ export class EmbyProgramStream extends ProgramStream {
 
     const server = await this.mediaSourceDB.findByType(
       MediaSourceType.Emby,
-      lineupItem.externalSourceId,
+      lineupItem.program.mediaSourceId,
     );
 
     if (isNil(server)) {
       return Result.forError(
-        new Error(
-          `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
-        ),
+        new Error(`Unable to find Emby server specified by program.`),
       );
     }
 
@@ -86,10 +84,7 @@ export class EmbyProgramStream extends ProgramStream {
 
     const stream = await streamDetails.getStream({
       server,
-      lineupItem: {
-        ...lineupItem,
-        externalFilePath: lineupItem.plexFilePath ?? undefined,
-      },
+      lineupItem: lineupItem.program,
     });
     if (isNull(stream)) {
       return Result.forError(
@@ -103,9 +98,7 @@ export class EmbyProgramStream extends ProgramStream {
 
     const streamStats = stream.streamDetails;
     if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration
-        ? dayjs.duration(lineupItem.streamDuration)
-        : undefined;
+      streamStats.duration = dayjs.duration(lineupItem.streamDuration);
     }
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);

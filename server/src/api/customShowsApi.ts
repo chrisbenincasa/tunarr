@@ -70,7 +70,10 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: customShow.uuid,
         name: customShow.name,
         contentCount: customShow.customShowContent.length,
-        totalDuration: sumBy(customShow.customShowContent, (c) => c.duration),
+        totalDuration: sumBy(
+          customShow.customShowContent,
+          (c) => c.duration ?? 0,
+        ),
       });
     },
   );
@@ -102,7 +105,10 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
         id: customShow.uuid,
         name: customShow.name,
         contentCount: customShow.customShowContent.length,
-        totalDuration: sumBy(customShow.customShowContent, (c) => c.duration),
+        totalDuration: sumBy(
+          customShow.customShowContent,
+          (c) => c.duration ?? 0,
+        ),
       });
     },
   );

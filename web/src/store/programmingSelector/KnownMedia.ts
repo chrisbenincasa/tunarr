@@ -1,6 +1,6 @@
 import { seq } from '@tunarr/shared/util';
 import type { MediaSourceType } from '@tunarr/types';
-import type { Imported } from '../../types/MediaSource';
+import { Jellyfin, Plex } from '../../helpers/constants.ts';
 import type { ContentHierarchyMap, KnownMediaMap, MediaItems } from './store';
 
 /**
@@ -25,7 +25,7 @@ export class KnownMedia {
     return this.getMediaForSourceId(sourceId)[itemId];
   }
 
-  getMediaOfType<MediaItemType extends MediaSourceType | Imported>(
+  getMediaOfType<MediaItemType extends MediaSourceType>(
     sourceId: string,
     itemId: string,
     type: MediaItemType,
@@ -43,11 +43,11 @@ export class KnownMedia {
   }
 
   getPlexMedia(sourceId: string, itemId: string) {
-    return this.getMediaOfType(sourceId, itemId, 'plex');
+    return this.getMediaOfType(sourceId, itemId, Plex);
   }
 
   getJellyfinMedia(sourceId: string, itemId: string) {
-    return this.getMediaOfType(sourceId, itemId, 'jellyfin');
+    return this.getMediaOfType(sourceId, itemId, Jellyfin);
   }
 
   getChildren(sourceId: string, parentId: string) {

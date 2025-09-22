@@ -160,6 +160,7 @@ const TasksModule = new ContainerModule((bind) => {
         ctx.container.get<MediaSourceDB>(MediaSourceDB),
         ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
         ctx.container.get<GlobalOptions>(KEYS.GlobalOptions),
+        ctx.container.get<IProgramDB>(KEYS.ProgramDB),
         req,
       ),
   );

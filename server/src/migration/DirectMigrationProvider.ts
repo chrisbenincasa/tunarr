@@ -36,6 +36,14 @@ import Migration1756312561_InitialAdvancedTranscodeConfig from './db/Migration17
 import Migration1756381281_AddLibraries from './db/Migration1756381281_AddLibraries.ts';
 import Migration1757704591_AddProgramMediaSourceIndex from './db/Migration1757704591_AddProgramMediaSourceIndex.ts';
 import Migration1758203109_AddProgramMedia from './db/Migration1758203109_AddProgramMedia.ts';
+import Migration1758570688_AddLocalLibraries from './db/Migration1758570688_AddLocalLibraries.ts';
+import Migration1758732083_FixLocalLibraryPath from './db/Migration1758732083_FixLocalLibraryPath.ts';
+import Migration1758903045_FixLocalLibraryPathAgain from './db/Migration1758903045_FixLocalLibraryPathAgain.ts';
+import Migration1759170884_AddArtworkAndMore from './db/Migration1759170884_AddArtworkAndMore.ts';
+import Migration1759518565_AddProgramSubtitles from './db/Migration1759518565_AddProgramSubtitles.ts';
+import Migration1760129429_AddProgramGroupingSourceType from './db/Migration1760129429_AddProgramGroupingSourceType.ts';
+import Migration1760213210_AddMoreProgramGroupingFields from './db/Migration1760213210_AddMoreProgramGroupingFields.ts';
+import Migration1760455673_UpdateForeignKeyCasacades from './db/Migration1760455673_UpdateForeignKeyCasacades.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -119,6 +127,21 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1756381281: Migration1756381281_AddLibraries,
           migration1757704591: Migration1757704591_AddProgramMediaSourceIndex,
           migration1758203109: Migration1758203109_AddProgramMedia,
+          migration1758570688: Migration1758570688_AddLocalLibraries,
+          migration1758732083_FixLocalLibraryPath:
+            Migration1758732083_FixLocalLibraryPath,
+          migration1758903045_FixLocalLibraryPathAgain:
+            Migration1758903045_FixLocalLibraryPathAgain,
+          migration1759170884_AddArtworkAndMore:
+            Migration1759170884_AddArtworkAndMore,
+          migration1759518565_AddProgramSubtitles:
+            Migration1759518565_AddProgramSubtitles,
+          migration1760129429_AddProgramGroupingSourceType:
+            Migration1760129429_AddProgramGroupingSourceType,
+          migration1760213210_AddMoreProgramGroupingFields:
+            Migration1760213210_AddMoreProgramGroupingFields,
+          migration1760455673_UpdateForeignKeyCasacades:
+            Migration1760455673_UpdateForeignKeyCasacades,
         },
         wrapWithTransaction,
       ),

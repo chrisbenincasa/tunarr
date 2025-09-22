@@ -1,10 +1,6 @@
-import { useSettings } from '@/store/settings/selectors.ts';
-import { createExternalId } from '@tunarr/shared';
-import type { Library, ProgramOrFolder } from '@tunarr/types';
-import { getChildItemType, tag } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { isTerminalItemType } from '@tunarr/types';
 import { isEqual } from 'lodash-es';
-import pluralize from 'pluralize';
-import type { JSX } from 'react';
 import {
   forwardRef,
   memo,
@@ -12,51 +8,12 @@ import {
   useMemo,
   type ForwardedRef,
 } from 'react';
-import { match, P } from 'ts-pattern';
-import { isNonEmptyString, prettyItemDuration } from '../../helpers/util.ts';
+import { useThumbnailUrl } from '../../hooks/useThumbnailUrl.ts';
 import { useCurrentMediaSource } from '../../store/programmingSelector/selectors.ts';
 import type { GridItemMetadata } from '../channel_config/MediaGridItem.tsx';
 import { MediaGridItem } from '../channel_config/MediaGridItem.tsx';
 import type { GridItemProps } from '../channel_config/MediaItemGrid.tsx';
-
-export function isTerminalItemType(program: ProgramOrFolder | Library) {
-  return (
-    program.type === 'movie' ||
-    program.type === 'music_video' ||
-    program.type === 'episode' ||
-    program.type === 'track' ||
-    program.type === 'other_video'
-  );
-}
-
-export const extractSubtitle = (program: ProgramOrFolder) =>
-  match(program)
-    .returnType<JSX.Element | null>()
-    .with(
-      {
-        type: P.union(
-          'movie',
-          'episode',
-          'track',
-          'music_video',
-          'other_video',
-        ),
-      },
-      (terminal) => <span>{prettyItemDuration(terminal.duration)}</span>,
-    )
-    .with({ childCount: P.nullish }, () => null)
-    .with({ childCount: P.select() }, (childCount, grouping) => {
-      return (
-        <span>{`${childCount} ${pluralize(
-          getChildItemType(grouping.type),
-          childCount,
-        )}`}</span>
-      );
-    })
-    .otherwise((v) => {
-      console.warn(v);
-      return null;
-    });
+import { ProgramSubtitle } from './extractSubtitle.tsx';
 
 export const ProgramGridItem = memo(
   forwardRef(
@@ -71,7 +28,6 @@ export const ProgramGridItem = memo(
         disableSelection,
         persisted = false,
       } = props;
-      const settings = useSettings();
       const currentServer = useCurrentMediaSource();
 
       const isMusicItem = useCallback(
@@ -93,55 +49,33 @@ export const ProgramGridItem = memo(
         moveModalToItem();
       }, [moveModalToItem]);
 
-      const thumbnailUrlFunc = useCallback(
-        (item: ProgramOrFolder) => {
-          const idToUse = item.externalId;
-
-          if (!idToUse) {
-            return null;
-          }
-
-          const query = new URLSearchParams({
-            mode: 'proxy',
-            asset: 'image',
-            id: createExternalId(
-              item.sourceType,
-              tag(item.mediaSourceId),
-              idToUse,
-            ),
-            // Commenting this out for now as temporary solution for image loading issue
-            // thumbOptions: JSON.stringify({ width: 480, height: 720 }),
-            cache: import.meta.env.PROD ? 'true' : 'false',
-          });
-
-          return `${
-            settings.backendUri
-          }/api/metadata/external?${query.toString()}`;
-        },
-        [settings.backendUri],
-      );
-
-      const thumbnailUrl =
-        item.type === 'folder' || item.type === 'playlist'
-          ? ''
-          : (thumbnailUrlFunc(item) ?? '');
+      const thumbnailUrlFunc = useThumbnailUrl();
 
       const metadata = useMemo(
         () =>
           ({
             itemId: item.uuid,
-            hasThumbnail: isNonEmptyString(thumbnailUrl),
+            itemType: item.type,
             childCount: null,
             mayHaveChildren: !isTerminalItemType(item),
             title: item.title,
-            subtitle: extractSubtitle(item),
-            thumbnailUrl,
-            selectedMedia: {
-              type: props.item.sourceType,
-              id: item.uuid,
-              mediaSource: currentServer!,
-              libraryId: item.libraryId,
-            },
+            subtitle: ProgramSubtitle(item),
+            thumbnailUrl: thumbnailUrlFunc(item),
+            selectedMedia:
+              props.item.sourceType === 'local'
+                ? {
+                    type: props.item.sourceType,
+                    id: item.uuid,
+                    mediaSource: currentServer!,
+                    persisted: true,
+                  }
+                : {
+                    type: props.item.sourceType,
+                    id: item.uuid,
+                    mediaSource: currentServer!,
+                    libraryId: item.libraryId,
+                    persisted: !!props.persisted,
+                  },
             aspectRatio: isMusicItem(item)
               ? 'square'
               : isEpisode(item)
@@ -158,7 +92,8 @@ export const ProgramGridItem = memo(
           item,
           persisted,
           props.item.sourceType,
-          thumbnailUrl,
+          props.persisted,
+          thumbnailUrlFunc,
         ],
       );
 

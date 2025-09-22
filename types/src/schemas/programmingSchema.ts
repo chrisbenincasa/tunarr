@@ -14,6 +14,7 @@ import { ResolutionSchema } from './miscSchemas.js';
 import { MediaSourceType } from './settingsSchemas.js';
 import {
   ChannelIconSchema,
+  ContentProgramTypeSchema,
   ExternalIdSchema,
   ExternalIdSourceType,
 } from './utilSchemas.js';
@@ -27,7 +28,7 @@ export const ProgramTypeSchema = z.union([
   z.literal('flex'),
 ]);
 
-export const ExternalSourceTypeSchema = z.enum(['plex', 'jellyfin', 'emby']);
+export const SourceTypeSchema = z.enum(['plex', 'jellyfin', 'emby', 'local']);
 
 export const ProgramSchema = z.object({
   artistName: z.string().optional(),
@@ -54,7 +55,7 @@ export const ProgramSchema = z.object({
   serverKey: z.string().optional(),
   showIcon: z.string().optional(),
   showTitle: z.string().optional(), // Unclear if this is necessary
-  sourceType: ExternalSourceTypeSchema,
+  sourceType: SourceTypeSchema,
   summary: z.string().optional(), // Not present on offline type
   title: z.string().optional(),
   type: ProgramTypeSchema,
@@ -118,14 +119,6 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   duration: z.number().min(0),
 });
 
-export const ContentProgramTypeSchema = z.enum([
-  'movie',
-  'episode',
-  'track',
-  'music_video',
-  'other_video',
-]);
-
 export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
 
 const BaseContentProgramParentSchema = z.object({
@@ -136,7 +129,6 @@ const BaseContentProgramParentSchema = z.object({
   // Index of this parent relative to its grandparent
   // e.g. season number
   index: z.coerce.number().nonnegative().optional().catch(undefined),
-  // externalIds: z.array(ExternalIdSchema).default([]),
   guids: z.array(z.string()).optional(),
   year: z.number().nonnegative().optional().catch(undefined),
   externalKey: z.string().optional(),
@@ -210,7 +202,7 @@ export const ContentProgramSchema = CondensedContentProgramSchema.extend({
     MusicArtistContentProgramSchema,
   ).optional(),
   // External source metadata
-  externalSourceType: ExternalSourceTypeSchema,
+  externalSourceType: SourceTypeSchema,
   externalSourceName: z.string(),
   externalSourceId: z.string(),
   libraryId: z.string().optional(),
@@ -312,7 +304,11 @@ const NamedEntity = z.object({
   name: z.string(),
 });
 
-const ActorSchema = NamedEntity;
+const ActorSchema = z.object({
+  ...NamedEntity.shape,
+  order: z.number().nullish(),
+  role: z.string().nullish(),
+});
 const WriterSchema = NamedEntity;
 const DirectorSchema = NamedEntity;
 const GenreSchema = NamedEntity;
@@ -338,7 +334,7 @@ export const IdentifierSchema = z.object({
 const BaseItem = z.object({
   uuid: z.uuid(),
   canonicalId: z.string(),
-  sourceType: ExternalSourceTypeSchema,
+  sourceType: SourceTypeSchema,
   externalLibraryId: z.string(),
   externalId: z
     .string()
@@ -353,6 +349,7 @@ const BaseItem = z.object({
   ]),
   identifiers: z.array(IdentifierSchema),
   title: z.string(),
+  sortTitle: z.string(),
   tags: z.array(z.string()),
   ...HasMediaSourceAndLibraryId.shape,
 });
@@ -392,34 +389,66 @@ export const MediaStreamType = z.enum([
 export const MediaStream = z.object({
   index: z.number(),
   codec: z.string(),
-  profile: z.string(),
+  profile: z.string().nullish(),
   streamType: MediaStreamType,
-  languageCodeISO6392: z.string().nullish(),
-  // TODO: consider breaking stream out to a union for each subtype
-  channels: z.number().nullish(),
   title: z.string().nullish(),
-  default: z.boolean().nullish(),
   hasAttachedPicture: z.boolean().nullish(),
-  pixelFormat: z.string().nullish(),
-  bitDepth: z.number().nullish(),
   fileName: z.string().nullish(),
   mimeType: z.string().nullish(),
-  selected: z.boolean().nullish(),
+
+  // Video
   frameRate: z.string().or(z.number()).nullish(),
+  pixelFormat: z.string().nullish(),
+  bitDepth: z.number().nullish(),
+  colorRange: z.string().nullish(),
+  colorSpace: z.string().nullish(),
+  colorTransfer: z.string().nullish(),
+  colorPrimaries: z.string().nullish(),
+
+  // Audio
+  // TODO: consider breaking stream out to a union for each subtype
+  channels: z.number().nullish(),
+
+  // Subtitles
+  sdh: z.boolean().nullish(),
+
+  // Audio or Subtitles
+  languageCodeISO6392: z.string().nullish(),
+  selected: z.boolean().nullish(),
+  default: z.boolean().nullish(),
+  forced: z.boolean().nullish(),
 });
+
+export const MediaSubtitlesType = z.enum(['embedded', 'sidecar']);
+
+export const MediaSubtitles = z.object({
+  subtitleType: MediaSubtitlesType,
+  title: z.string().nullish(),
+  streamIndex: z.number().nullish(),
+  codec: z.string(),
+  default: z.boolean().nullish(),
+  forced: z.boolean().nullish(),
+  sdh: z.boolean().nullish(),
+  language: z.string(),
+  path: z.string().nullish(),
+});
+
+export const MediaArtwork = z.object({});
 
 export const MediaItem = z.object({
   streams: z.array(MediaStream),
   duration: z.number().nonnegative(),
-  sampleAspectRatio: z.string(),
-  displayAspectRatio: z.string(),
+  sampleAspectRatio: z.string().nullish(),
+  displayAspectRatio: z.string().nullish(),
   frameRate: z.number().or(z.string()).nullish(),
   resolution: ResolutionSchema.nullish(),
   locations: z.array(MediaLocation),
   chapters: z.array(MediaChapter).nullish(),
+  scanKind: z.enum(['unknown', 'progressive', 'interlaced']).nullish(),
 });
 
-const BaseProgram = BaseItem.extend({
+const BaseProgram = z.object({
+  ...BaseItem.shape,
   type: ContentProgramTypeSchema,
   title: z.string(),
   originalTitle: z.string().nullable(),
@@ -433,12 +462,27 @@ const BaseProgram = BaseItem.extend({
   genres: z.array(GenreSchema).optional(),
   studios: z.array(StudioSchema).optional(),
   duration: z.number(),
+  externalSubtitles: z.array(MediaSubtitles).nullish(),
 });
 
-export const Movie = BaseProgram.extend({
+export const Movie = z.object({
+  ...BaseProgram.shape,
+  ...WithSummaryMetadata.shape,
   type: z.literal('movie'),
   rating: z.string().nullable(),
-}).and(WithSummaryMetadata);
+});
+
+const MetadataOmitMask = {
+  mediaItem: true,
+  mediaSourceId: true,
+  libraryId: true,
+  externalLibraryId: true,
+  canonicalId: true,
+  duration: true,
+  externalId: true,
+} as const;
+
+export const MovieMetadata = Movie.omit(MetadataOmitMask);
 
 const BaseProgramGrouping = z.object({
   ...BaseItem.shape,
@@ -450,7 +494,8 @@ const BaseProgramGrouping = z.object({
   grandchildCount: z.number().nonnegative().optional(),
 });
 
-export const Show = BaseProgramGrouping.extend({
+export const Show = z.object({
+  ...BaseProgramGrouping.shape,
   type: z.literal('show'),
   genres: z.array(GenreSchema),
   actors: z.array(ActorSchema),
@@ -461,7 +506,8 @@ export const Show = BaseProgramGrouping.extend({
   year: z.number().positive().nullable(),
 });
 
-export const Season = BaseProgramGrouping.extend({
+export const Season = z.object({
+  ...BaseProgramGrouping.shape,
   type: z.literal('season'),
   studios: z.array(StudioSchema),
   index: z.number().nonnegative(),
@@ -471,9 +517,13 @@ export const Season = BaseProgramGrouping.extend({
   show: Show.optional(),
 });
 
+export const ShowMetadata = Show.omit(MetadataOmitMask);
+export const SeasonMetadata = Season.omit(MetadataOmitMask);
+
 export const ShowWithSeason = Season.required({ show: true });
 
-export const Episode = BaseProgram.extend({
+export const Episode = z.object({
+  ...BaseProgram.shape,
   type: z.literal('episode'),
   episodeNumber: z.number().nonnegative(),
   releaseDate: z.number().nullable(),
@@ -481,6 +531,8 @@ export const Episode = BaseProgram.extend({
   summary: z.string().nullable(),
   season: Season.optional(),
 });
+
+export const EpisodeMetadata = Episode.omit(MetadataOmitMask);
 
 export const EpisodeWithHierarchy = z.object({
   ...Episode.shape,
@@ -522,9 +574,9 @@ export const OtherVideo = BaseProgram.extend({
   type: z.literal('other_video'),
 });
 
-const HasMediaSourceInfo = z.object({
+export const HasMediaSourceInfo = z.object({
   sourceType: MediaSourceType,
-  externalKey: z.string(),
+  externalId: z.string(),
 });
 
 const PlexMixin = HasMediaSourceInfo.extend({
@@ -536,7 +588,7 @@ const PlexMovie = Movie.and(PlexMixin);
 export type PlexMovie = z.infer<typeof PlexMovie>;
 
 export const BaseStructuralGrouping = z.object({
-  sourceType: ExternalSourceTypeSchema,
+  sourceType: SourceTypeSchema,
   uuid: z.uuid(),
   title: z.string(),
   childCount: z.number().optional(),

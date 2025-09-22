@@ -2,7 +2,7 @@ import { head, round } from 'lodash-es';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
 import type { HasMediaSourceInfo, OtherVideo } from '../../types/Media.ts';
@@ -16,10 +16,14 @@ import { MediaSourceScanner } from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceOtherVideoLibraryScanner<
   MovieT extends OtherVideo = OtherVideo,
-> = MediaSourceOtherVideoScanner<MediaSourceType, MediaSourceApiClient, MovieT>;
+> = MediaSourceOtherVideoScanner<
+  RemoteMediaSourceType,
+  MediaSourceApiClient,
+  MovieT
+>;
 
 export abstract class MediaSourceOtherVideoScanner<
-  MediaSourceTypeT extends MediaSourceType,
+  MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
   OtherVideoTypeT extends OtherVideo,
 > extends MediaSourceScanner<'other_videos', MediaSourceTypeT, ApiClientTypeT> {

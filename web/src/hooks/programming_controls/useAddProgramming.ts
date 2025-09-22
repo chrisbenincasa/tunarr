@@ -2,7 +2,7 @@ import { enumerateJellyfinItem } from '@/hooks/jellyfin/jellyfinHookUtil.ts';
 import { useKnownMedia } from '@/store/programmingSelector/selectors.ts';
 import { flattenDeep, map } from 'lodash-es';
 import { type MouseEventHandler, useCallback, useState } from 'react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import { getApiProgramsByIdDescendants } from '../../generated/sdk.gen.ts';
 import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import { enumerateEmbyItem2 } from '../../helpers/embyUtil.ts';
@@ -29,7 +29,7 @@ export const useAddSelectedItems = () => {
       sequentialPromises(selectedMedia, (selectedMedia) =>
         match(selectedMedia)
           .returnType<Promise<AddedMedia[]>>()
-          .with({ type: Plex }, async (selected) => {
+          .with({ type: Plex, persisted: false }, async (selected) => {
             const media = knownMedia.getMediaOfType(
               selected.mediaSource.id,
               selected.id,
@@ -45,7 +45,7 @@ export const useAddSelectedItems = () => {
               (item) => ({ media: item, type: Plex }) satisfies AddedPlexMedia,
             );
           })
-          .with({ type: Jellyfin }, async (selected) => {
+          .with({ type: Jellyfin, persisted: false }, async (selected) => {
             const media = knownMedia.getMediaOfType(
               selected.mediaSource.id,
               selected.id,
@@ -63,7 +63,7 @@ export const useAddSelectedItems = () => {
 
             return map(items, (item) => ({ media: item, type: Jellyfin }));
           })
-          .with({ type: Emby }, async (selected) => {
+          .with({ type: Emby, persisted: false }, async (selected) => {
             const media = knownMedia.getMediaOfType(
               selected.mediaSource.id,
               selected.id,
@@ -81,11 +81,21 @@ export const useAddSelectedItems = () => {
 
             return map(items, (item) => ({ media: item, type: Emby }));
           })
-          .with({ type: Imported }, async (selected) => {
+          .with({ type: 'custom-show' }, (selected) => {
+            return Promise.resolve(
+              map(selected.programs, (p) => ({
+                type: 'custom-show',
+                customShowId: selected.customShowId,
+                totalDuration: selected.totalDuration,
+                program: p,
+              })),
+            );
+          })
+          .with({ type: P.select() }, async (typ, selected) => {
             const media = knownMedia.getMediaOfType(
               selected.mediaSource.id,
               selected.id,
-              Imported,
+              typ,
             );
 
             if (!media) {
@@ -104,16 +114,6 @@ export const useAddSelectedItems = () => {
               media: program,
               type: Imported,
             }));
-          })
-          .with({ type: 'custom-show' }, (selected) => {
-            return Promise.resolve(
-              map(selected.programs, (p) => ({
-                type: 'custom-show',
-                customShowId: selected.customShowId,
-                totalDuration: selected.totalDuration,
-                program: p,
-              })),
-            );
           })
           .exhaustive(),
       )

@@ -525,6 +525,11 @@ export function parseIntOrNull(s: string): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
+export function parseFloatOrNull(s: string): number | null {
+  const parsed = parseFloat(s);
+  return isNaN(parsed) ? null : parsed;
+}
+
 export function isLinux() {
   return process.platform === 'linux';
 }
@@ -607,7 +612,11 @@ export function inTuple<Arr extends readonly string[], S extends string>(
 export function programExternalIdString(
   p: MarkNonNullable<ProgramDao, 'mediaSourceId'> | NewProgramDao,
 ) {
-  return createExternalId(p.sourceType, p.mediaSourceId, p.externalKey);
+  if (p.sourceType === 'local') {
+    return p.externalKey; // This should never hit, but if it does externalKey will point to the file path.
+  } else {
+    return createExternalId(p.sourceType, p.mediaSourceId, p.externalKey);
+  }
 }
 
 export function unzip<T, U>(tups: [T, U][]): [T[], U[]] {

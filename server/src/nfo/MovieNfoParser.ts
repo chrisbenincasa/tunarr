@@ -6,13 +6,13 @@ export const MovieNfo = z.object({
   title: z.string(),
   originaltitle: z.string().optional(),
   sorttitle: z.string().optional(),
-  userrating: z.number().optional(),
+  userrating: z.coerce.number().optional(),
   outline: z.string().optional(),
   tagline: z.string().optional(),
   plot: z.string().optional(),
-  runtime: z.number().optional(), // mins
+  runtime: z.coerce.number().optional(), // mins
   thumb: z.array(NfoThumb).optional(),
-  mpaa: z.string().optional(),
+  mpaa: z.string().optional().catch(undefined),
   uniqueid: z.array(NfoUniqueId),
   genre: z.array(z.string()).optional(),
   country: z.array(z.string()).optional(),
@@ -26,9 +26,9 @@ export const MovieNfo = z.object({
   credits: z.array(z.string()).optional(),
   director: z.array(z.string()).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
-  studio: z.string().optional(),
-  fileinfo: z.array(NfoFileInfo),
-  actor: z.array(NfoActor),
+  studio: z.string().optional().catch(undefined),
+  fileinfo: z.array(NfoFileInfo).optional(),
+  actor: z.array(NfoActor).optional(),
 });
 
 export type MovieNfo = z.infer<typeof MovieNfo>;
@@ -43,6 +43,10 @@ const ArrayTags = [
   'movie.genre',
   'movie.country',
   'movie.fileinfo',
+  'movie.thumb',
+  'movie.tag',
+  'movie.fileinfo',
+  'movie.actor',
 ];
 
 export class MovieNfoParser extends BaseNfoParser<typeof MovieNfoContainer> {

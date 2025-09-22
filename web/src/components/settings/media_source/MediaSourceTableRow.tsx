@@ -6,10 +6,11 @@ import { capitalize, isNull, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { match } from 'ts-pattern';
 import { getApiMediaSourcesByIdStatusOptions } from '../../../generated/@tanstack/react-query.gen.ts';
-import { Emby, Jellyfin, Plex } from '../../../helpers/constants.ts';
+import { Emby, Jellyfin, Local, Plex } from '../../../helpers/constants.ts';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
 import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
+import { LocalMediaEditDialog } from './LocalMediaEditDialog.tsx';
 import { MediaSourceDeleteDialog } from './MediaSourceDeleteDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
 
@@ -53,6 +54,13 @@ export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
           server={emby}
         />
       ))
+      .with({ type: Local }, (local) => (
+        <LocalMediaEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          source={local}
+        />
+      ))
       .exhaustive();
   };
 
@@ -62,9 +70,13 @@ export function MediaSourceTableRow({ server }: MediaSourceTableRowProps) {
         <TableCell>{capitalize(server.type)}</TableCell>
         <TableCell width="1%">{server.name}</TableCell>
         <TableCell width="60%">
-          <Link href={server.uri} target={'_blank'}>
-            {server.uri}
-          </Link>
+          {server.type === 'local' ? (
+            '-'
+          ) : (
+            <Link href={server.uri} target={'_blank'}>
+              {server.uri}
+            </Link>
+          )}
         </TableCell>
         <TableCell align="center">
           {backendStatusLoading ? (

@@ -4,7 +4,6 @@ import { z } from 'zod/v4';
 
 const BaseFfprobeMediaStreamSchema = z.object({
   index: z.number(),
-  codec_name: z.string(),
   codec_long_name: z.string().optional(),
   profile: z.string().optional(),
   tags: z.record(z.string(), z.string()).optional(),
@@ -12,15 +11,14 @@ const BaseFfprobeMediaStreamSchema = z.object({
 
 export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('video'),
-  // codec_type: z.enum(['video', 'audio', 'subtitle']).catch('video'),
-  // codec_tag_string
+  codec_name: z.string(),
   width: z.number(),
   height: z.number(),
   coded_width: z.number(),
   coded_height: z.number(),
   has_b_frames: z.number().optional(),
   sample_aspect_ratio: z.string().optional(),
-  display_aspect_ratio: z.string(),
+  display_aspect_ratio: z.string().optional(),
   pix_fmt: z.string().optional(),
   level: z.number().optional(),
   color_range: z.string().optional(),
@@ -37,7 +35,7 @@ export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   avg_frame_rate: z.string().transform(parsePossibleFractionToFloat).optional(),
   time_base: z.string().optional(),
   start_pts: z.number().optional(),
-  duration_ts: z.number(), // millis
+  duration_ts: z.number().optional(), // millis
   bit_rate: z.coerce.number().optional(),
   bits_per_raw_sample: z.coerce.number().optional(),
 });
@@ -46,6 +44,7 @@ export type FfprobeVideoStream = z.infer<typeof FfprobeVideoStreamSchema>;
 
 export const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('audio'),
+  codec_name: z.string(),
   sample_fmt: z.string().optional(),
   sample_rate: z.string().or(z.coerce.number()).optional(),
   channels: z.number().optional(),
@@ -63,6 +62,7 @@ export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 
 export const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
+  codec_name: z.string(),
   disposition: z
     .object({
       default: z.number().optional(),
@@ -88,6 +88,12 @@ export const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
     .optional(),
 });
 
+export const FfprobeAttachmentStreamSchema =
+  BaseFfprobeMediaStreamSchema.extend({
+    codec_type: z.literal('attachment'),
+    codec_name: z.string().optional(),
+  });
+
 export type FfprobeSubtitleStream = z.infer<typeof FfprobeSubtitleStreamSchema>;
 
 function parsePossibleFractionToFloat(s: string) {
@@ -107,6 +113,7 @@ export const FfprobeMediaStreamSchema = z.discriminatedUnion('codec_type', [
   FfprobeVideoStreamSchema,
   FfprobeAudioStreamSchema,
   FfprobeSubtitleStreamSchema,
+  FfprobeAttachmentStreamSchema,
 ]);
 
 export const FfprobeMediaFormatSchema = z.object({
@@ -114,8 +121,8 @@ export const FfprobeMediaFormatSchema = z.object({
   nb_streams: z.number(),
   format_name: z.string(),
   format_long_name: z.string().optional(),
-  start_time: z.string(),
-  duration: z.coerce.number(),
+  start_time: z.string().optional(),
+  duration: z.coerce.number(), // Seconds
   size: z.coerce.number(),
   bit_rate: z.coerce.number(),
   probe_score: z.number().optional(),

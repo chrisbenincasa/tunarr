@@ -5,16 +5,14 @@ import { Json } from '@/types/schemas.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { inject, injectable, interfaces } from 'inversify';
-import { JSONPath } from 'jsonpath-plus';
-import { findIndex, first, identity, isArray, sortBy } from 'lodash-es';
-import assert from 'node:assert';
+import { findIndex, isArray } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { container } from '../../container.ts';
 import { CurrentLineupSchemaVersion } from '../../db/derived_types/Lineup.ts';
 import { FileSystemService } from '../../services/FileSystemService.ts';
-import { Nilable } from '../../types/util.ts';
 import { parseIntOrNull } from '../../util/index.ts';
+import { getFirstValue } from '../../util/json.ts';
+import { JsonFileMigrator } from '../JsonFileMigrator.ts';
 import { ChannelLineupMigration } from './ChannelLineupMigration.ts';
 import { SlotProgrammingMigration } from './SlotProgrammingMigration.ts';
 import { SlotShowIdMigration } from './SlotShowIdMigration.ts';
@@ -31,7 +29,9 @@ const MigrationSteps: interfaces.ServiceIdentifier<
  * One-way migrations for lineup JSON files.
  */
 @injectable()
-export class ChannelLineupMigrator {
+export class ChannelLineupMigrator extends JsonFileMigrator<
+  ChannelLineupMigration<number, number>
+> {
   #migrationPipeline: ChannelLineupMigration<number, number>[];
 
   constructor(
@@ -39,21 +39,7 @@ export class ChannelLineupMigrator {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {
-    const allSteps = sortBy(
-      MigrationSteps.map((step) => container.get(step)),
-      ({ from }) => from,
-    );
-    for (let i = 0; i < allSteps.length; i++) {
-      if (i === 0) {
-        assert(allSteps[i].from === 1);
-      } else {
-        const prevStep = allSteps[i - 1];
-        const thisStep = allSteps[i];
-        assert(prevStep.to === thisStep.from);
-      }
-    }
-
-    this.#migrationPipeline = allSteps;
+    super(MigrationSteps);
   }
 
   async run() {
@@ -140,18 +126,4 @@ export class ChannelLineupMigrator {
       );
     }
   }
-}
-
-function getFirstValue<Output = unknown>(
-  path: string,
-  json: Json,
-  map: (input: unknown) => Output = identity,
-): Nilable<Output> {
-  const res = JSONPath<unknown>({ path, json });
-  if (isArray(res)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const f = first(res);
-    return f ? map(f) : null;
-  }
-  return;
 }

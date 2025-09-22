@@ -1,0 +1,3 @@
+ALTER TABLE `program_grouping` ADD `source_type` text;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `unique_program_grouping_multiple_external_id_media_source` ON `program_grouping_external_id` (`group_uuid`,`source_type`,`media_source_id`) WHERE `media_source_id is not null`;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `unique_program_grouping_single_external_id_media_source` ON `program_grouping_external_id` (`group_uuid`,`source_type`,`media_source_id`) WHERE `media_source_id is null`;

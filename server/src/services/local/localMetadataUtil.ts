@@ -1,0 +1,88 @@
+import { isNonEmptyString, seq } from '@tunarr/shared/util';
+import { isNull, last, orderBy } from 'lodash-es';
+import { basename, extname } from 'node:path';
+import type { NfoActor } from '../../nfo/NfoSchemas.ts';
+import type { Actor, NamedEntity } from '../../types/Media.ts';
+import type { Nilable } from '../../types/util.ts';
+import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
+
+// Match things like S01, season 01, Season1, S1
+// but not things like S01E03 or "blah blah blah 02"
+const SeasonNameRegex = /s(?:eason)?\s?(\d+)(?![e\d])/i;
+const SeasonAndEpisodeNameRegex = /s(?:eason)?\s?(\d+)((?:(e\d+)+(e?\d+-?))+)/i;
+
+export function extractSeasonNumberFromFolder(folderName: string) {
+  folderName = basename(folderName);
+  const folderNameNum = parseIntOrNull(folderName);
+  if (!isNull(folderNameNum)) {
+    return folderNameNum;
+  }
+
+  const matches = folderName.match(SeasonNameRegex);
+  if (matches && matches.length > 1) {
+    const seasonNumber = parseIntOrNull(matches[1]);
+    if (!isNull(seasonNumber)) {
+      return seasonNumber;
+    }
+  }
+
+  const lastPart = last(folderName.split(' '));
+  const parsed = lastPart ? parseIntOrNull(lastPart) : null;
+  if (!isNull(parsed)) {
+    return parsed;
+  }
+
+  if (folderName.toLocaleLowerCase().endsWith('specials')) {
+    return 0;
+  }
+
+  return null;
+}
+
+export function extractSeasonAndEpisodeNumber(fileName: string) {
+  fileName = basename(fileName, extname(fileName));
+  const matches = fileName.match(SeasonAndEpisodeNameRegex);
+  if (matches && matches.length > 2) {
+    const season = parseIntOrNull(matches[1]);
+    if (isNull(season)) {
+      return;
+    }
+
+    const epMatches = seq.collect(
+      Array.from(matches[2].matchAll(/(\d+)/g)),
+      ([n]) => parseIntOrNull(n),
+    );
+    if (!isNonEmptyArray(epMatches)) {
+      return;
+    }
+
+    return {
+      season,
+      episodes: epMatches,
+    };
+  }
+
+  return;
+}
+
+export function mapNfoToNamedEntity(names: Nilable<string[]>) {
+  return seq.collect(names?.filter(isNonEmptyString), (name) => {
+    return {
+      name,
+    } satisfies NamedEntity;
+  });
+}
+
+export function mapNfoActors(actors: Nilable<NfoActor[]>) {
+  return orderBy(
+    seq.collect(actors, (actor, index) => {
+      return {
+        name: actor.name,
+        role: actor.role,
+        order: actor.order ?? index,
+      } satisfies Actor;
+    }),
+    (a) => a.order,
+    'asc',
+  );
+}

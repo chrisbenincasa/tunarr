@@ -1,10 +1,14 @@
-import type { Library, ProgramOrFolder, TerminalProgram } from '@tunarr/types';
+import {
+  isTerminalItemType,
+  type Library,
+  type ProgramOrFolder,
+  type TerminalProgram,
+} from '@tunarr/types';
 import { type EmbyItem, type EmbyItemKind } from '@tunarr/types/emby';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { isTerminalItemType } from '../components/library/ProgramGridItem.tsx';
 import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../generated/sdk.gen.ts';
 import type { Nullable } from '../types/util.ts';
 import { JellyfinTerminalTypes } from './jellyfinUtil.ts';

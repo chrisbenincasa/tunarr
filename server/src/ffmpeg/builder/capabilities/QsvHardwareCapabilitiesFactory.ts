@@ -51,8 +51,6 @@ export class QsvHardwareCapabilitiesFactory
     const output = await new ChildProcessHelper().getStdout(
       this.ffmpegSettings.ffmpegExecutablePath,
       ['-hide_banner', '-help', 'decoder=h264_qsv'],
-      false,
-      {},
     );
 
     const nonEmptyLines = reject(map(drop(split(output, '\n'), 1), trim), (s) =>

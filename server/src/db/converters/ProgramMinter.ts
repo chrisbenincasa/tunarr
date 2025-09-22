@@ -6,6 +6,7 @@ import type {
 } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  Episode,
   isTerminalItemType,
   ProgramLike,
   tag,
@@ -32,7 +33,6 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { Canonicalizer } from '../../services/Canonicalizer.ts';
 import {
-  MediaSourceEpisode,
   MediaSourceMovie,
   MediaSourceMusicTrack,
   MediaSourceOtherVideo,
@@ -43,11 +43,16 @@ import { parsePlexGuid } from '../../util/externalIds.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
-import { MediaSource, MediaSourceLibrary } from '../schema/MediaSource.ts';
+import {
+  MediaSourceLibraryOrm,
+  MediaSourceOrm,
+} from '../schema/MediaSource.ts';
 import type { NewProgramDao } from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
+import { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
 import { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
-import { MediaSourceId, MediaSourceName } from '../schema/base.ts';
+import { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
+import { MediaSourceId, MediaSourceName } from '../schema/base.js';
 import {
   NewEpisodeProgram,
   NewMovieProgram,
@@ -57,16 +62,6 @@ import {
   NewProgramWithExternalIds,
   NewProgramWithRelations,
 } from '../schema/derivedTypes.js';
-
-// type MovieMintRequest =
-//   | { sourceType: 'plex'; program: PlexMovie }
-//   | { sourceType: 'jellyfin'; program: SpecificJellyfinType<'Movie'> }
-//   | { sourceType: 'emby'; program: SpecificEmbyType<'Movie'> };
-
-// type EpisodeMintRequest =
-//   | { sourceType: 'plex'; program: PlexEpisode }
-//   | { sourceType: 'jellyfin'; program: SpecificJellyfinType<'Episode'> }
-//   | { sourceType: 'emby'; program: SpecificEmbyType<'Episode'> };
 
 /**
  * Generates Program DB entities for Plex media
@@ -121,8 +116,8 @@ export class ProgramDaoMinter {
   }
 
   mint(
-    mediaSource: MediaSource,
-    library: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    library: MediaSourceLibraryOrm,
     program: ContentProgramOriginalProgram,
   ): NewProgramWithExternalIds {
     const ret = match(program)
@@ -173,20 +168,20 @@ export class ProgramDaoMinter {
   }
 
   mintMovie(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     movie: MediaSourceMovie,
+    now: number = +dayjs(),
   ): NewProgramWithRelations<'movie'> {
     const programId = v4();
-    const now = +dayjs();
     const newMovie = {
       uuid: programId,
       sourceType: movie.sourceType,
-      externalKey: movie.externalKey,
+      externalKey: movie.externalId,
       originalAirDate: movie.releaseDate
         ? dayjs(movie.releaseDate)?.format()
         : null,
-      duration: movie.duration,
+      duration: movie.duration ?? 0,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
       mediaSourceId: mediaSource.uuid,
@@ -207,6 +202,7 @@ export class ProgramDaoMinter {
       program: newMovie,
       externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
       versions: this.mintVersions(programId, movie, now),
+      subtitles: this.mintSubtitles(programId, movie),
     };
   }
 
@@ -237,37 +233,48 @@ export class ProgramDaoMinter {
         } satisfies NewProgramMediaStream;
       });
 
-      const version: NewProgramVersion = {
-        uuid: versionId,
-        createdAt: now,
-        updatedAt: now,
-        programId,
-        displayAspectRatio: item.mediaItem.displayAspectRatio,
-        duration: item.mediaItem.duration,
-        frameRate: match(item.mediaItem.frameRate)
-          .with(P.string, (str) => str)
-          .with(P.number, (num) => num.toString())
-          .with(P.nullish, (nil) => nil)
-          .exhaustive(),
-        sampleAspectRatio: item.mediaItem.sampleAspectRatio,
-        height: item.mediaItem.resolution?.heightPx,
-        width: item.mediaItem.resolution?.widthPx,
-        mediaStreams: streams,
-        chapters: item.mediaItem.chapters?.map((chapter) => {
-          return {
-            index: chapter.index,
-            programVersionId: versionId,
-            chapterType: chapter.chapterType,
-            uuid: v4(),
-            title: chapter.title,
-            startTime: chapter.startTime,
-            endTime: chapter.endTime,
-          };
-        }),
-        // TODO: scanKind: movie.mediaItem.
-      };
+      const files = item.mediaItem.locations.map((loc) => {
+        return {
+          path: loc.path,
+          programVersionId: versionId,
+          uuid: v4(),
+        } satisfies NewProgramMediaFile;
+      });
 
-      versions.push(version);
+      if (item.mediaItem.resolution) {
+        const version: NewProgramVersion = {
+          uuid: versionId,
+          createdAt: now,
+          updatedAt: now,
+          programId,
+          displayAspectRatio: item.mediaItem.displayAspectRatio,
+          duration: item.mediaItem.duration,
+          frameRate: match(item.mediaItem.frameRate)
+            .with(P.string, (str) => str)
+            .with(P.number, (num) => num.toString())
+            .with(P.nullish, (nil) => nil)
+            .exhaustive(),
+          sampleAspectRatio: item.mediaItem.sampleAspectRatio,
+          height: item.mediaItem.resolution?.heightPx,
+          width: item.mediaItem.resolution?.widthPx,
+          mediaStreams: streams,
+          mediaFiles: files,
+          chapters: item.mediaItem.chapters?.map((chapter) => {
+            return {
+              index: chapter.index,
+              programVersionId: versionId,
+              chapterType: chapter.chapterType,
+              uuid: v4(),
+              title: chapter.title,
+              startTime: chapter.startTime,
+              endTime: chapter.endTime,
+            };
+          }),
+          scanKind: item.mediaItem.scanKind ?? 'unknown',
+        };
+
+        versions.push(version);
+      }
     }
 
     return versions;
@@ -276,7 +283,7 @@ export class ProgramDaoMinter {
   mintExternalIdsNew(
     programId: string,
     item: ProgramLike,
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceOrm,
     now: number = +dayjs(),
   ) {
     return seq.collect(item.identifiers, (id) => {
@@ -319,22 +326,73 @@ export class ProgramDaoMinter {
     });
   }
 
+  mintSubtitles(
+    programId: string,
+    item: TerminalProgram,
+  ): NewProgramSubtitles[] {
+    const subtitleStreams =
+      item.mediaItem?.streams.filter(
+        (s) =>
+          s.streamType === 'subtitles' || s.streamType === 'external_subtitles',
+      ) ?? [];
+    const additionalSubtitles = item.externalSubtitles ?? [];
+
+    const now = dayjs().toDate();
+    const mappedStreams = subtitleStreams.map((subtitle) => {
+      return {
+        uuid: v4(),
+        programId,
+        createdAt: now,
+        updatedAt: now, // Do we need to use mtime?
+        language: subtitle.languageCodeISO6392 ?? 'unknown',
+        subtitleType:
+          subtitle.streamType === 'subtitles' ? 'embedded' : 'sidecar',
+        default: subtitle.default ?? false,
+        forced: subtitle.forced ?? false,
+        path: subtitle.fileName,
+        sdh: subtitle.sdh ?? false,
+        streamIndex:
+          subtitle.streamType === 'external_subtitles' ? null : subtitle.index,
+        codec: subtitle.codec,
+      } satisfies NewProgramSubtitles;
+    });
+
+    const mappedAdditional = additionalSubtitles.map((subtitle) => {
+      return {
+        codec: subtitle.codec,
+        createdAt: now,
+        updatedAt: now, // Do we need to use mtime?
+        language: subtitle.language,
+        subtitleType: subtitle.subtitleType,
+        default: subtitle.default ?? false,
+        forced: subtitle.forced ?? false,
+        path: subtitle.path,
+        sdh: subtitle.sdh ?? false,
+        streamIndex: subtitle.streamIndex,
+        uuid: v4(),
+        programId,
+      } satisfies NewProgramSubtitles;
+    });
+
+    return [...mappedStreams, ...mappedAdditional];
+  }
+
   mintEpisode(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
-    episode: MediaSourceEpisode,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
+    episode: Episode,
+    now: number = +dayjs(),
   ): NewProgramWithRelations<'episode'> {
     const programId = v4();
-    const now = +dayjs();
 
     const newEpisode = {
       uuid: programId,
       sourceType: episode.sourceType,
-      externalKey: episode.externalKey,
+      externalKey: episode.externalId,
       originalAirDate: episode.releaseDate
         ? dayjs(episode.releaseDate).format()
         : null,
-      duration: episode.duration,
+      duration: episode.duration ?? 0,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
       mediaSourceId: mediaSource.uuid,
@@ -365,21 +423,21 @@ export class ProgramDaoMinter {
   }
 
   mintMusicTrack(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     track: MediaSourceMusicTrack,
+    now: number = +dayjs(),
   ): NewProgramWithRelations<'track'> {
     const programId = v4();
-    const now = +dayjs();
 
     const newTrack = {
       uuid: programId,
       sourceType: track.sourceType,
-      externalKey: track.externalKey,
+      externalKey: track.externalId,
       originalAirDate: track.releaseDate
         ? dayjs(track.releaseDate)?.format()
         : null,
-      duration: track.duration,
+      duration: track.duration ?? 0,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
       mediaSourceId: mediaSource.uuid,
@@ -404,8 +462,8 @@ export class ProgramDaoMinter {
   }
 
   mintOtherVideo(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     video: MediaSourceOtherVideo,
   ): NewProgramWithRelations<'other_video'> {
     const programId = v4();
@@ -413,11 +471,11 @@ export class ProgramDaoMinter {
     const newVideo = {
       uuid: programId,
       sourceType: video.sourceType,
-      externalKey: video.externalKey,
+      externalKey: video.externalId,
       originalAirDate: video.releaseDate
         ? dayjs(video.releaseDate)?.format()
         : null,
-      duration: video.duration,
+      duration: video.duration ?? 0,
       // filePath: file?.file ?? null,
       externalSourceId: mediaSource.name,
       mediaSourceId: mediaSource.uuid,
@@ -442,8 +500,8 @@ export class ProgramDaoMinter {
   }
 
   private mintProgramForPlexMovie(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     plexMovie: ApiPlexMovie,
   ): NewProgramDao {
     const file = first(first(plexMovie.Media)?.Part ?? []);
@@ -471,7 +529,7 @@ export class ProgramDaoMinter {
   }
 
   private mintProgramForJellyfinItem(
-    mediaSource: MediaSource,
+    mediaSource: MediaSourceOrm,
     item: Omit<JellyfinItem, 'Type'> & {
       Type: 'Movie' | 'Episode' | 'Audio' | 'Video' | 'MusicVideo' | 'Trailer';
     },
@@ -523,8 +581,8 @@ export class ProgramDaoMinter {
   }
 
   private mintProgramForPlexEpisode(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     plexEpisode: PlexEpisode,
   ): NewProgramDao {
     const file = first(first(plexEpisode.Media)?.Part ?? []);
@@ -558,8 +616,8 @@ export class ProgramDaoMinter {
   }
 
   private mintProgramForPlexTrack(
-    mediaSource: MediaSource,
-    mediaLibrary: MediaSourceLibrary,
+    mediaSource: MediaSourceOrm,
+    mediaLibrary: MediaSourceLibraryOrm,
     plexTrack: PlexMusicTrack,
   ): NewProgramDao {
     const file = first(first(plexTrack.Media)?.Part ?? []);
@@ -608,6 +666,7 @@ export class ProgramDaoMinter {
       .with({ externalSourceType: 'emby' }, () =>
         this.mintEmbyExternalIds(serverName, serverId, programId, program),
       )
+      .with({ externalSourceType: 'local' }, () => [])
       .exhaustive();
   }
 

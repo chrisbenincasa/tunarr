@@ -10,7 +10,7 @@ import type {
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from '../db/schema/MediaSource.ts';
-import { MediaSourceId } from '../db/schema/base.ts';
+import { MediaSourceId } from '../db/schema/base.js';
 import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { KEYS } from '../types/inject.ts';
@@ -64,6 +64,7 @@ export class MediaSourceLibraryRefresher {
       case 'emby':
         await this.handleEmby(source);
         break;
+      case 'local':
     }
 
     return;
@@ -147,7 +148,7 @@ export class MediaSourceLibraryRefresher {
 
     await this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove,
+      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: librariesToUpdate,
     });
   }
@@ -251,7 +252,7 @@ export class MediaSourceLibraryRefresher {
 
     await this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove,
+      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: [],
     });
   }
@@ -329,7 +330,7 @@ export class MediaSourceLibraryRefresher {
 
     await this.mediaSourceDB.updateLibraries({
       addedLibraries: librariesToAdd,
-      deletedLibraries: librariesToRemove,
+      deletedLibraries: librariesToRemove.map(({ uuid }) => uuid),
       updatedLibraries: [],
     });
   }

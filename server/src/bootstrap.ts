@@ -1,3 +1,5 @@
+import languages from '@cospired/i18n-iso-languages';
+import en from '@cospired/i18n-iso-languages/langs/en.json' with { type: 'json' };
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { DeepPartial } from 'ts-essentials';
@@ -46,6 +48,8 @@ export async function bootstrapTunarr(
   opts: GlobalOptions = globalOptions(),
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
+  languages.registerLocale(en);
+
   const hasTunarrDb = await fileExists(opts.databaseDirectory);
   if (!hasTunarrDb) {
     RootLogger.info(

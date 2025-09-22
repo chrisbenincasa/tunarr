@@ -7,10 +7,10 @@ import type {
 import dayjs from 'dayjs';
 import {
   chunk,
+  differenceWith,
   first,
   isEmpty,
   isNil,
-  isUndefined,
   keys,
   map,
   mapValues,
@@ -22,20 +22,22 @@ import { v4 } from 'uuid';
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { retag, tag } from '@tunarr/types';
+import { tag } from '@tunarr/types';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
-import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { MarkRequired } from 'ts-essentials';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
-import { withLibraries } from './mediaSourceQueryHelpers.ts';
 import {
   withProgramChannels,
   withProgramCustomShows,
   withProgramFillerShows,
 } from './programQueryHelpers.ts';
-import { MediaSourceId, MediaSourceName } from './schema/base.ts';
+import {
+  MediaSourceId,
+  MediaSourceName,
+  MediaSourceType,
+} from './schema/base.js';
 import { DB } from './schema/db.ts';
 import {
   EmbyMediaSource,
@@ -43,12 +45,10 @@ import {
   MediaSourceWithLibraries,
   PlexMediaSource,
 } from './schema/derivedTypes.js';
+import { DrizzleDBAccess } from './schema/index.ts';
 import {
-  MediaSource,
-  MediaSourceFields,
-  MediaSourceLibrary,
   MediaSourceLibraryUpdate,
-  MediaSourceType,
+  MediaSourceOrm,
   MediaSourceUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSource.ts';
@@ -76,47 +76,40 @@ export class MediaSourceDB {
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.MediaSourceLibraryRefresher)
     private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
+    @inject(KEYS.DrizzleDB)
+    private drizzleDB: DrizzleDBAccess,
   ) {}
 
   async getAll(): Promise<MediaSourceWithLibraries[]> {
-    return this.db
-      .selectFrom('mediaSource')
-      .select(withLibraries)
-      .selectAll()
-      .execute();
+    return this.drizzleDB.query.mediaSource.findMany({
+      with: {
+        libraries: true,
+        paths: true,
+      },
+    });
   }
 
   async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithLibraries>> {
-    return this.db
-      .selectFrom('mediaSource')
-      .select(withLibraries)
-      .selectAll()
-      .where('mediaSource.uuid', '=', id)
-      .executeTakeFirst();
+    return this.drizzleDB.query.mediaSource.findFirst({
+      where: (ms, { eq }) => eq(ms.uuid, id),
+      with: {
+        libraries: true,
+        paths: true,
+      },
+    });
   }
 
   async getLibrary(id: string) {
-    return (
-      this.db
-        .selectFrom('mediaSourceLibrary')
-        .where('uuid', '=', id)
-        .select((eb) =>
-          jsonObjectFrom(
-            eb
-              .selectFrom('mediaSource')
-              .whereRef(
-                'mediaSource.uuid',
-                '=',
-                'mediaSourceLibrary.mediaSourceId',
-              )
-              .select(MediaSourceFields),
-          ).as('mediaSource'),
-        )
-        .selectAll()
-        // Should be safe before of referential integrity of foreign keys
-        .$narrowType<{ mediaSource: MediaSource }>()
-        .executeTakeFirst()
-    );
+    return this.drizzleDB.query.mediaSourceLibrary.findFirst({
+      where: (lib, { eq }) => eq(lib.uuid, id),
+      with: {
+        mediaSource: {
+          with: {
+            paths: true,
+          },
+        },
+      },
+    });
   }
 
   async findByType(
@@ -140,15 +133,19 @@ export class MediaSourceDB {
     type: MediaSourceType,
     nameOrId?: MediaSourceId,
   ): Promise<MediaSourceWithLibraries[] | Maybe<MediaSourceWithLibraries>> {
-    const found = await this.db
-      .selectFrom('mediaSource')
-      .selectAll()
-      .select(withLibraries)
-      .where('mediaSource.type', '=', type)
-      .$if(isNonEmptyString(nameOrId), (qb) =>
-        qb.where('mediaSource.uuid', '=', retag<MediaSourceId>(nameOrId!)),
-      )
-      .execute();
+    const found = await this.drizzleDB.query.mediaSource.findMany({
+      where: (ms, { eq, and }) => {
+        if (isNonEmptyString(nameOrId)) {
+          return and(eq(ms.type, type), eq(ms.uuid, nameOrId));
+        } else {
+          return eq(ms.type, type);
+        }
+      },
+      with: {
+        libraries: true,
+        paths: true,
+      },
+    });
 
     if (isNonEmptyString(nameOrId)) {
       return first(found);
@@ -189,39 +186,96 @@ export class MediaSourceDB {
     return { deletedServer };
   }
 
-  async updateMediaSource(server: UpdateMediaSourceRequest) {
-    const id = server.id;
+  async updateMediaSource(updateReq: UpdateMediaSourceRequest) {
+    const id = tag<MediaSourceId>(updateReq.id);
 
-    const mediaSource = await this.getById(tag(id));
+    const mediaSource = await this.getById(id);
 
     if (isNil(mediaSource)) {
       throw new Error("Server doesn't exist.");
     }
 
-    const sendGuideUpdates =
-      server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
-    const sendChannelUpdates =
-      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
+    if (updateReq.type === 'local') {
+      await this.db.transaction().execute(async (tx) => {
+        await tx
+          .updateTable('mediaSource')
+          .set({
+            mediaType: updateReq.mediaType,
+            name: tag<MediaSourceName>(updateReq.name),
+          })
+          .where('mediaSource.uuid', '=', id)
+          .executeTakeFirstOrThrow();
 
-    await this.db
-      .updateTable('mediaSource')
-      .set({
-        name: tag<MediaSourceName>(server.name),
-        uri: trimEnd(server.uri, '/'),
-        accessToken: server.accessToken,
-        sendGuideUpdates: booleanToNumber(sendGuideUpdates),
-        sendChannelUpdates: booleanToNumber(sendChannelUpdates),
-        updatedAt: +dayjs(),
-        // This allows clearing the values
-        userId: server.userId,
-        username: server.username,
-      } satisfies MediaSourceUpdate)
-      .where('uuid', '=', tag<MediaSourceId>(server.id))
-      // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-      // .limit(1)
-      .executeTakeFirst();
+        const newPaths = differenceWith(
+          updateReq.paths,
+          mediaSource.libraries,
+          (incomingPath, { externalKey }) => incomingPath === externalKey,
+        );
+        const deletePaths = differenceWith(
+          mediaSource.libraries,
+          updateReq.paths,
+          ({ externalKey }, incomingPath) => externalKey === incomingPath,
+        ).map(({ externalKey }) => externalKey);
 
-    this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
+        if (deletePaths.length > 0) {
+          await tx
+            .deleteFrom('mediaSourceLibrary')
+            .where(
+              'mediaSourceLibrary.mediaSourceId',
+              '=',
+              tag<MediaSourceId>(updateReq.id),
+            )
+            .where('mediaSourceLibrary.externalKey', 'in', deletePaths)
+            .executeTakeFirstOrThrow();
+        }
+
+        if (newPaths.length > 0) {
+          await tx
+            .insertInto('mediaSourceLibrary')
+            .values(
+              newPaths.map((path) => ({
+                externalKey: path,
+                mediaSourceId: mediaSource.uuid,
+                mediaType: updateReq.mediaType,
+                name: path,
+                uuid: v4(),
+                enabled: booleanToNumber(true),
+                lastScannedAt: null,
+              })),
+            )
+            .executeTakeFirstOrThrow();
+        }
+      });
+    } else {
+      const sendGuideUpdates =
+        updateReq.type === 'plex'
+          ? (updateReq.sendGuideUpdates ?? false)
+          : false;
+      const sendChannelUpdates =
+        updateReq.type === 'plex'
+          ? (updateReq.sendChannelUpdates ?? false)
+          : false;
+
+      await this.db
+        .updateTable('mediaSource')
+        .set({
+          name: tag<MediaSourceName>(updateReq.name),
+          uri: trimEnd(updateReq.uri, '/'),
+          accessToken: updateReq.accessToken,
+          sendGuideUpdates: booleanToNumber(sendGuideUpdates),
+          sendChannelUpdates: booleanToNumber(sendChannelUpdates),
+          updatedAt: +dayjs(),
+          // This allows clearing the values
+          userId: updateReq.userId,
+          username: updateReq.username,
+        } satisfies MediaSourceUpdate)
+        .where('uuid', '=', tag<MediaSourceId>(updateReq.id))
+        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
+        // .limit(1)
+        .executeTakeFirstOrThrow();
+
+      this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
+    }
 
     const report = await this.fixupProgramReferences(
       tag(id),
@@ -251,13 +305,18 @@ export class MediaSourceDB {
   }
 
   async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
-    const name = tag<MediaSourceName>(
-      isUndefined(server.name) ? 'plex' : server.name,
-    );
+    const name = tag<MediaSourceName>(server.name);
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
     const sendChannelUpdates =
       server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
+
+    if (server.type === 'local' && isEmpty(server.paths)) {
+      throw new Error(
+        'Must have at least one path specified for a local media source',
+      );
+    }
+
     const index = await this.db
       .selectFrom('mediaSource')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
@@ -265,24 +324,60 @@ export class MediaSourceDB {
       .then((_) => _?.count ?? 0);
 
     const now = +dayjs();
-    const newServer = await this.db
-      .insertInto('mediaSource')
-      .values({
-        ...server,
-        uuid: tag<MediaSourceId>(v4()),
-        name,
-        uri: trimEnd(server.uri, '/'),
-        sendChannelUpdates: sendChannelUpdates ? 1 : 0,
-        sendGuideUpdates: sendGuideUpdates ? 1 : 0,
-        createdAt: now,
-        updatedAt: now,
-        index,
-        type: server.type,
-        userId: isNonEmptyString(server.userId) ? server.userId : null,
-        username: isNonEmptyString(server.username) ? server.username : null,
-      })
-      .returning('uuid')
-      .executeTakeFirstOrThrow();
+    const newServer = await this.db.transaction().execute(async (tx) => {
+      const newServer = await tx
+        .insertInto('mediaSource')
+        .values({
+          // ...server,
+          uuid: tag<MediaSourceId>(v4()),
+          name,
+          uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
+          sendChannelUpdates: sendChannelUpdates ? 1 : 0,
+          sendGuideUpdates: sendGuideUpdates ? 1 : 0,
+          createdAt: now,
+          updatedAt: now,
+          index,
+          type: server.type,
+          userId:
+            server.type === 'local'
+              ? null
+              : isNonEmptyString(server.userId)
+                ? server.userId
+                : null,
+          username:
+            server.type === 'local'
+              ? null
+              : isNonEmptyString(server.username)
+                ? server.username
+                : null,
+          accessToken: server.type === 'local' ? '' : server.accessToken,
+          mediaType: server.type === 'local' ? server.mediaType : null,
+        })
+        .returning('uuid')
+        .executeTakeFirstOrThrow();
+
+      if (server.type === 'local') {
+        await tx
+          .insertInto('mediaSourceLibrary')
+          .values(
+            server.paths.map(
+              (path) =>
+                ({
+                  externalKey: path,
+                  mediaSourceId: newServer.uuid,
+                  mediaType: server.mediaType,
+                  name: path,
+                  uuid: v4(),
+                  enabled: booleanToNumber(true),
+                  lastScannedAt: null,
+                }) satisfies NewMediaSourceLibrary,
+            ),
+          )
+          .executeTakeFirstOrThrow();
+      }
+
+      return newServer;
+    });
 
     await this.mediaSourceLibraryRefresher().refreshMediaSource(newServer.uuid);
 
@@ -299,13 +394,6 @@ export class MediaSourceDB {
       }
 
       if (updates.updatedLibraries.length > 0) {
-        // await tx.updateTable('mediaSourceLibrary').set(({eb}) => {
-        //   return reduce(updates.updatedLibraries, (builder, lib) => {
-        //     builder.when('mediaSourceLibrary.uuid', '=', lib.uuid).then({
-
-        //     })
-        //   }, eb.case() as unknown as CaseWhenBuilder<DB, 'mediaSourceLibrary', unknown, number>).end()
-        // }).execute()
         for (const update of updates.updatedLibraries) {
           await tx
             .updateTable('mediaSourceLibrary')
@@ -318,11 +406,7 @@ export class MediaSourceDB {
       if (updates.deletedLibraries.length > 0) {
         await tx
           .deleteFrom('mediaSourceLibrary')
-          .where(
-            'uuid',
-            'in',
-            updates.deletedLibraries.map((lib) => lib.uuid),
-          )
+          .where('uuid', 'in', updates.deletedLibraries)
           .execute();
       }
     });
@@ -357,7 +441,7 @@ export class MediaSourceDB {
   private async fixupProgramReferences(
     serverId: MediaSourceId,
     serverType: MediaSourceType,
-    newServer?: MediaSource,
+    newServer?: MediaSourceOrm,
   ) {
     // TODO: We need to update this to:
     // 1. handle different source types
@@ -479,5 +563,5 @@ export class MediaSourceDB {
 export type MediaSourceLibrariesUpdate = {
   addedLibraries: NewMediaSourceLibrary[];
   updatedLibraries: MarkRequired<MediaSourceLibraryUpdate, 'uuid'>[];
-  deletedLibraries: MediaSourceLibrary[];
+  deletedLibraries: string[];
 };

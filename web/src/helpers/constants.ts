@@ -60,6 +60,7 @@ export const Plex = 'plex';
 export const Jellyfin = 'jellyfin';
 export const Emby = 'emby';
 export const Imported = 'imported';
+export const Local = 'local';
 export const Playlists = 'playlists';
 export const Library = 'library';
 export const defaultRandomSlotSchedule: RandomSlotSchedule = {

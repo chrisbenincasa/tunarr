@@ -6,10 +6,17 @@ import type {
 } from '@/types/ffmpeg.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
-import { isNonEmptyArray, isNonEmptyString } from '@/util/index.js';
+import {
+  isNonEmptyArray,
+  isNonEmptyString,
+  parseFloatOrNull,
+} from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
+import { MediaChapter } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { filter, find, isEmpty, map } from 'lodash-es';
+import { filter, find, isEmpty, isNull, map, orderBy } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
+import { LanguageService } from '../services/LanguageService.ts';
 import { StreamDetailsFetcher } from './StreamDetailsFetcher.ts';
 import type {
   AudioStreamDetails,
@@ -27,7 +34,10 @@ type FfprobeStreamDetailsRequest = {
 export class FfprobeStreamDetails
   implements StreamDetailsFetcher<FfprobeStreamDetailsRequest>
 {
-  constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
+  constructor(
+    @inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo,
+    @inject(LanguageService) private languageService: LanguageService,
+  ) {}
 
   async getStream({
     path,
@@ -45,6 +55,9 @@ export class FfprobeStreamDetails
 
     let videoDetails: Maybe<VideoStreamDetails>;
     if (videoStream) {
+      const displayAspectRatio =
+        videoStream.display_aspect_ratio ??
+        `${videoStream.coded_width / videoStream.coded_height}`;
       videoDetails = {
         sampleAspectRatio: isNonEmptyString(videoStream?.sample_aspect_ratio)
           ? videoStream.sample_aspect_ratio
@@ -58,19 +71,23 @@ export class FfprobeStreamDetails
         width: videoStream.width,
         height: videoStream.height,
         framerate: videoStream.r_frame_rate ?? undefined,
-        displayAspectRatio: videoStream.display_aspect_ratio,
+        displayAspectRatio,
         // chapters
         anamorphic: extractIsAnamorphic(
           videoStream.width,
           videoStream.height,
-          videoStream.display_aspect_ratio,
+          displayAspectRatio,
         ),
         pixelFormat: videoStream.pix_fmt,
         bitDepth: videoStream.bits_per_raw_sample,
         bitrate: videoStream.bit_rate,
         codec: videoStream.codec_name,
         profile: videoStream.profile?.toLowerCase(),
-        streamIndex: videoStream.index?.toString() ?? '0',
+        streamIndex: videoStream.index,
+        colorPrimaries: videoStream.color_primaries,
+        colorRange: videoStream.color_range,
+        colorSpace: videoStream.color_space,
+        colorTransfer: videoStream.color_transfer,
       } satisfies VideoStreamDetails;
     }
 
@@ -80,12 +97,19 @@ export class FfprobeStreamDetails
         (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
       ),
       (audioStream) => {
+        const lang = audioStream.tags?.['language'];
         return {
           bitrate: audioStream.bit_rate ?? undefined,
           channels: audioStream.channels,
           codec: audioStream.codec_name,
-          index: audioStream.index.toFixed(),
-          language: audioStream.tags?.['language'],
+          index: audioStream.index,
+          language:
+            lang && LanguageService.isValidLanguageCode(lang)
+              ? lang
+              : undefined,
+          languageCodeISO6392: lang
+            ? this.languageService.getAlpha3TCode(lang)
+            : undefined,
           profile: audioStream.profile,
         } satisfies AudioStreamDetails;
       },
@@ -98,6 +122,7 @@ export class FfprobeStreamDetails
           stream.codec_type === 'subtitle',
       ),
       (stream) => {
+        const lang = stream.tags?.['language'];
         return {
           type: 'embedded',
           codec: stream.codec_name,
@@ -105,6 +130,10 @@ export class FfprobeStreamDetails
           default: stream.disposition?.default === 1,
           forced: stream.disposition?.forced === 1,
           sdh: stream.disposition?.hearing_impaired === 1,
+          language:
+            lang && LanguageService.isValidLanguageCode(lang)
+              ? lang
+              : undefined,
         } satisfies SubtitleStreamDetails;
       },
     );
@@ -119,6 +148,26 @@ export class FfprobeStreamDetails
           ? subtitleStreamDetails
           : undefined,
         duration: dayjs.duration({ seconds: probeResult.format.duration }),
+        chapters: seq.collect(
+          orderBy(probeResult.chapters, (c) => c.start, 'asc'),
+          (chapter, index) => {
+            const startSeconds = parseFloatOrNull(chapter.start_time);
+            const endSeconds = parseFloatOrNull(chapter.end_time);
+            if (isNull(startSeconds) || isNull(endSeconds)) {
+              return;
+            }
+
+            return {
+              chapterType: 'chapter',
+              index,
+              startTime: dayjs
+                .duration({ seconds: startSeconds })
+                .asMilliseconds(),
+              endTime: dayjs.duration({ seconds: endSeconds }).asMilliseconds(),
+              title: chapter?.tags?.['title'],
+            } satisfies MediaChapter;
+          },
+        ),
       },
       streamSource: path.startsWith('http')
         ? new HttpStreamSource(path)

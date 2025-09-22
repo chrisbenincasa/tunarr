@@ -1,12 +1,13 @@
 import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
-import { serverOptions } from '@/globals.js';
+import { globalOptions, serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
+import fpStatic from '@fastify/static';
 import { VersionApiResponseSchema } from '@tunarr/types/api';
 import { fileTypeFromStream } from 'file-type';
 import { isEmpty } from 'lodash-es';
@@ -48,6 +49,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   await fastify
+    .register(fpStatic, {
+      root: globalOptions().databaseDirectory,
+      serve: false,
+      decorateReply: true,
+    })
     .register(tasksApiRouter)
     .register(channelsApi)
     .register(customShowsApiV2)

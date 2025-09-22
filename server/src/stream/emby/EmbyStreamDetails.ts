@@ -1,4 +1,4 @@
-import type { SpecificMinimalContentStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { StreamLineupProgram } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
@@ -8,6 +8,7 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { seq } from '@tunarr/shared/util';
 import { type EmbyItem } from '@tunarr/types/emby';
+import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import {
   attempt,
@@ -27,7 +28,11 @@ import {
   trimStart,
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceType } from '../../db/schema/base.ts';
+import {
+  MediaSourceWithLibraries,
+  SpecificProgramSourceOrmType,
+} from '../../db/schema/derivedTypes.js';
 import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { EmbyT } from '../../types/internal.ts';
 import {
@@ -74,7 +79,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
 
   private async getStreamInternal(
     mediaSource: MediaSourceWithLibraries,
-    item: SpecificMinimalContentStreamLineupItem<EmbyT>,
+    program: SpecificProgramSourceOrmType<EmbyT, StreamLineupProgram>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
@@ -86,7 +91,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         mediaSource,
       );
 
-    const itemMetadataResult = await this.emby.getItem(item.externalKey);
+    const itemMetadataResult = await this.emby.getItem(program.externalKey);
 
     if (itemMetadataResult.isFailure()) {
       this.logger.error(itemMetadataResult, 'Error getting Emby stream');
@@ -98,7 +103,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
     if (isUndefined(itemMetadata)) {
       this.logger.error(
         'Emby item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
-        item.externalKey,
+        program.externalKey,
       );
       // const newExternalId =
       //   await this.jellyfinItemFinder.findForProgramAndUpdate(item.programId);
@@ -117,7 +122,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       return null;
     }
 
-    const details = await this.getItemStreamDetails(item, itemMetadata);
+    const details = await this.getItemStreamDetails(program, itemMetadata);
 
     if (isNull(details)) {
       return null;
@@ -152,7 +157,11 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         path: filePath,
       };
     } else {
-      const path = details.serverPath ?? item.externalFilePath;
+      const path =
+        details.serverPath ??
+        program.externalIds.find(
+          (eid) => eid.sourceType === MediaSourceType.Emby,
+        )?.externalFilePath;
       if (isNonEmptyString(path)) {
         streamSource = new HttpStreamSource(
           `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
@@ -173,7 +182,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
   }
 
   private async getItemStreamDetails(
-    item: SpecificMinimalContentStreamLineupItem<EmbyT>,
+    item: SpecificProgramSourceOrmType<EmbyT, StreamLineupProgram>,
     media: EmbyItem,
   ): Promise<Nullable<StreamDetails>> {
     const firstMediaSource = first(media.MediaSources);
@@ -222,7 +231,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
           ifDefined(videoStream.Index, (streamIndex) => {
             const index = streamIndex - externalStreamCount;
             if (index >= 0) {
-              return index.toString();
+              return index;
             }
             return;
           }) ?? undefined,
@@ -254,7 +263,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
             ifDefined(audioStream.Index, (streamIndex) => {
               const index = streamIndex - externalStreamCount;
               if (index >= 0) {
-                return index.toString();
+                return index;
               }
               return;
             }) ?? undefined,
@@ -344,6 +353,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
         ? subtitleStreamDetails
         : undefined,
+      duration: dayjs.duration(item.duration),
     };
 
     if (audioOnly) {

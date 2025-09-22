@@ -1,10 +1,11 @@
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { nullToUndefined } from '@/util/index.js';
+import { nullToUndefined, run } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { seq } from '@tunarr/shared/util';
+import type { LocalMediaSource } from '@tunarr/types';
 import {
   tag,
   type MediaSourceLibrary,
@@ -25,12 +26,12 @@ import {
 } from '@tunarr/types/api';
 import {
   ContentProgramSchema,
-  ExternalSourceTypeSchema,
   MediaSourceLibrarySchema,
   MediaSourceSettingsSchema,
 } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
 import { isEmpty, isError, isNil, isNull } from 'lodash-es';
-import type { MarkOptional } from 'ts-essentials';
+import type { MarkOptional, StrictExtract } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
@@ -40,6 +41,7 @@ import { EntityMutex } from '../services/EntityMutex.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
+import { fileExists } from '../util/fsUtil.ts';
 
 export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -79,6 +81,41 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
+    '/media-sources/:mediaSourceId',
+    {
+      schema: {
+        tags: ['Media Source'],
+        params: z.object({
+          mediaSourceId: z.uuid(),
+        }),
+        response: {
+          200: MediaSourceSettingsSchema,
+          404: z.void(),
+          500: z.string(),
+        },
+      },
+    },
+    async (req, res) => {
+      try {
+        const source = await req.serverCtx.mediaSourceDB.getById(
+          tag(req.params.mediaSourceId),
+        );
+        if (!source) {
+          return res.status(404).send();
+        }
+        const entityLocker = container.get<EntityMutex>(EntityMutex);
+
+        const dto = convertToApiMediaSource(entityLocker, source);
+
+        return res.send(dto);
+      } catch (err) {
+        logger.error(err);
+        return res.status(500).send('error');
+      }
+    },
+  );
+
+  fastify.get(
     '/media-sources/:id/libraries',
     {
       schema: {
@@ -86,6 +123,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         params: BasicIdParamSchema,
         response: {
           200: z.array(MediaSourceLibrarySchema),
+          400: z.void(),
           404: z.void(),
           500: z.string(),
         },
@@ -100,6 +138,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         return res.status(404).send();
       }
 
+      if (mediaSource.type === 'local') {
+        return res.status(400).send();
+      }
+
       const entityLocker = container.get<EntityMutex>(EntityMutex);
       const apiMediaSource = convertToApiMediaSource(entityLocker, mediaSource);
       if (isNull(apiMediaSource)) {
@@ -108,20 +150,28 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           .send('Invalid media source type: ' + mediaSource.type);
       }
 
-      return res.send(
-        mediaSource.libraries.map(
-          (library) =>
-            ({
-              ...library,
-              id: library.uuid,
-              type: mediaSource.type,
-              enabled: numberToBoolean(library.enabled),
-              lastScannedAt: nullToUndefined(library.lastScannedAt),
-              isLocked: entityLocker.isLibraryLocked(library),
-              mediaSource: apiMediaSource,
-            }) satisfies MediaSourceLibrary,
-        ),
+      const libraries = mediaSource.libraries.map(
+        (library) =>
+          ({
+            ...library,
+            id: library.uuid,
+            type: mediaSource.type,
+            enabled: library.enabled,
+            lastScannedAt: library.lastScannedAt
+              ? +dayjs(library.lastScannedAt)
+              : undefined,
+            isLocked:
+              entityLocker.isLibraryLocked(library) ||
+              entityLocker.isMediaSourceLocked(mediaSource),
+            mediaSource: apiMediaSource,
+          }) satisfies MediaSourceLibrary,
       );
+
+      // const localLibraries = mediaSource.paths.map(path => ({
+      //   id: path.
+      // } satisfies MediaSourceLibrary))
+
+      return res.send(libraries);
     },
   );
 
@@ -136,7 +186,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         body: UpdateMediaSourceLibraryRequest,
         response: {
           200: MediaSourceLibrarySchema,
-          404: z.void(),
+          400: z.string(),
+          404: z.string(),
           500: z.string(),
         },
       },
@@ -147,7 +198,15 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       );
 
       if (!mediaSource) {
-        return res.status(404).send();
+        return res
+          .status(404)
+          .send(`Media source with ID ${req.params.id} not found`);
+      }
+
+      if (mediaSource.type === 'local') {
+        return res
+          .status(400)
+          .send('Local media sources do not support libraries.');
       }
 
       const entityLocker = container.get(EntityMutex);
@@ -184,7 +243,9 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         type: mediaSource.type,
         enabled: numberToBoolean(updatedLibrary.enabled),
         lastScannedAt: nullToUndefined(updatedLibrary.lastScannedAt),
-        isLocked: entityLocker.isLibraryLocked(updatedLibrary),
+        isLocked:
+          entityLocker.isLibraryLocked(updatedLibrary) ||
+          entityLocker.isMediaSourceLocked(mediaSource),
         mediaSource: apiMediaSource,
       });
     },
@@ -218,19 +279,18 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       const entityLocker = container.get<EntityMutex>(EntityMutex);
 
       return res.send({
-        ...library,
+        // ...library,
         id: library.uuid,
         type: library.mediaSource.type,
-        enabled: numberToBoolean(library.enabled),
-        lastScannedAt: nullToUndefined(library.lastScannedAt),
-        isLocked: entityLocker.isLibraryLocked(library),
-        mediaSource: convertToApiMediaSource(
-          entityLocker,
-          library.mediaSource,
-        )!,
-        // TODO this is dumb
-      } satisfies MediaSourceLibrary & {
-        mediaSource: MediaSourceSettings;
+        enabled: library.enabled,
+        lastScannedAt: library.lastScannedAt?.valueOf(),
+        isLocked:
+          entityLocker.isLibraryLocked(library) ||
+          entityLocker.isMediaSourceLocked(library.mediaSource),
+        name: library.name,
+        mediaType: library.mediaType,
+        externalKey: library.externalKey,
+        mediaSource: convertToApiMediaSource(entityLocker, library.mediaSource),
       });
     },
   );
@@ -275,14 +335,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
-    '/media-libraries/:libraryId/status',
+    '/media-sources/:mediaSourceId/:libraryId/status',
     {
       schema: {
         params: z.object({
+          mediaSourceId: z.string(),
           libraryId: z.string(),
         }),
         response: {
           200: ScanProgressSchema,
+          404: z.void(),
         },
       },
     },
@@ -290,8 +352,27 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
       const progressService = container.get<MediaSourceProgressService>(
         MediaSourceProgressService,
       );
+      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+        tag(req.params.mediaSourceId),
+      );
 
-      const progress = progressService.getScanProgress(req.params.libraryId);
+      if (!mediaSource) {
+        return res.status(404).send();
+      }
+
+      if (req.params.libraryId !== 'all') {
+        const lib = mediaSource.libraries.find(
+          (lib) => lib.uuid === req.params.libraryId,
+        );
+        if (!lib) {
+          return res.status(404).send();
+        }
+      }
+
+      const progress =
+        req.params.libraryId === 'all'
+          ? progressService.getScanProgress(req.params.mediaSourceId)
+          : progressService.getScanProgress(req.params.libraryId);
 
       const response = match(progress)
         .returnType<ScanProgress>()
@@ -339,6 +420,35 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.post(
+    '/media-sources/:id/scan',
+    {
+      schema: {
+        tags: ['Media Source'],
+        params: BasicIdParamSchema.extend({
+          libraryId: z.string(),
+        }),
+        querystring: z.object({
+          forceScan: TruthyQueryParam.optional(),
+        }),
+        response: {
+          202: z.void(),
+          404: z.void(),
+          501: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+        tag(req.params.id),
+      );
+
+      if (!mediaSource) {
+        return res.status(404).send();
+      }
+    },
+  );
+
+  fastify.post(
     '/media-sources/:id/libraries/:libraryId/scan',
     {
       schema: {
@@ -377,16 +487,29 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         return res.status(501);
       }
 
-      for (const library of libraries) {
-        const result = await req.serverCtx.mediaSourceScanCoordinator.add({
-          libraryId: library.uuid,
+      if (mediaSource.type === 'local') {
+        const result = await req.serverCtx.mediaSourceScanCoordinator.addLocal({
           forceScan: !!req.query.forceScan,
+          mediaSourceId: mediaSource.uuid,
         });
         if (!result) {
           logger.error(
-            'Unable to schedule library ID %s for scanning',
-            library.uuid,
+            'Unable to schedule local media source ID %s for scanning',
+            mediaSource.uuid,
           );
+        }
+      } else {
+        for (const library of libraries) {
+          const result = await req.serverCtx.mediaSourceScanCoordinator.add({
+            libraryId: library.uuid,
+            forceScan: !!req.query.forceScan,
+          });
+          if (!result) {
+            logger.error(
+              'Unable to schedule library ID %s for scanning',
+              library.uuid,
+            );
+          }
         }
       }
 
@@ -420,6 +543,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         }
 
         const healthyPromise = match(server)
+          .returnType<Promise<MediaSourceStatus>>()
           .with({ type: 'plex' }, async (server) => {
             return (
               await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
@@ -440,6 +564,21 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 server,
               )
             ).ping();
+          })
+          .with({ type: 'local' }, async (source) => {
+            // TODO: Check all paths.
+            let ok = true;
+            for (const mediaPath of source.paths) {
+              ok &&= await fileExists(mediaPath.path);
+              if (!ok) {
+                break;
+              }
+            }
+            if (ok) {
+              return { healthy: true };
+            } else {
+              return { healthy: false, status: 'unreachable' };
+            }
           })
           .exhaustive();
 
@@ -465,13 +604,20 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     {
       schema: {
         tags: ['Media Source'],
-        body: z.object({
-          name: z.string().optional(),
-          accessToken: z.string(),
-          uri: z.string(),
-          type: ExternalSourceTypeSchema,
-          username: z.string().optional(),
-        }),
+        body: z
+          .object({
+            name: z.string().optional(),
+            accessToken: z.string(),
+            uri: z.string(),
+            type: z.enum(['plex', 'jellyfin', 'emby']),
+            username: z.string().optional(),
+          })
+          .or(
+            z.object({
+              type: z.literal('local'),
+              paths: z.string().array().nonempty(),
+            }),
+          ),
         response: {
           200: MediaSourceStatusSchema,
           404: z.void(),
@@ -493,6 +639,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 name: tag(req.body.name ?? 'unknown'),
                 uuid: tag(v4()),
                 libraries: [],
+                paths: [],
+                mediaType: null,
               },
             });
 
@@ -510,6 +658,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 name: tag(req.body.name ?? 'unknown'),
                 uuid: tag(v4()),
                 libraries: [],
+                paths: [],
+                mediaType: null,
               },
             });
 
@@ -527,11 +677,31 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 name: tag(req.body.name ?? 'unknown'),
                 uuid: tag(v4()),
                 libraries: [],
+                paths: [],
+                mediaType: null,
               },
             });
 
           healthyPromise = emby.ping();
           break;
+        }
+        case 'local': {
+          // TODO: Check all paths.
+          const paths = req.body.paths;
+          healthyPromise = run<Promise<MediaSourceStatus>>(async () => {
+            let ok = true;
+            for (const mediaPath of paths) {
+              ok &&= await fileExists(mediaPath);
+              if (!ok) {
+                break;
+              }
+            }
+            if (ok) {
+              return { healthy: true };
+            } else {
+              return { healthy: false, status: 'unreachable' };
+            }
+          });
         }
       }
 
@@ -717,10 +887,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   // TODO put this in its own class.
   function convertToApiMediaSource(
     entityLocker: EntityMutex,
-    source: MarkOptional<MediaSourceWithLibraries, 'libraries'>,
-  ): MediaSourceSettings | null {
+    source: MarkOptional<MediaSourceWithLibraries, 'libraries' | 'paths'>,
+  ): MediaSourceSettings {
     return match(source)
-      .returnType<MediaSourceSettings | null>()
+      .returnType<MediaSourceSettings>()
       .with(
         { type: P.union('plex', 'jellyfin', 'emby') },
         (source) =>
@@ -732,20 +902,53 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             name: source.name,
             accessToken: source.accessToken,
             clientIdentifier: nullToUndefined(source.clientIdentifier),
-            sendChannelUpdates: numberToBoolean(source.sendChannelUpdates),
-            sendGuideUpdates: numberToBoolean(source.sendGuideUpdates),
+            sendChannelUpdates: source.sendChannelUpdates ?? false,
+            sendGuideUpdates: source.sendGuideUpdates ?? false,
             libraries: (source.libraries ?? []).map((library) => ({
-              ...library,
               id: library.uuid,
               type: source.type,
-              enabled: numberToBoolean(library.enabled),
-              lastScannedAt: nullToUndefined(library.lastScannedAt),
-              isLocked: entityLocker.isLibraryLocked(library),
+              enabled: library.enabled,
+              lastScannedAt: nullToUndefined(library.lastScannedAt)?.valueOf(),
+              isLocked:
+                entityLocker.isLibraryLocked(library) ||
+                entityLocker.isMediaSourceLocked(source),
+              name: library.name,
+              externalKey: library.externalKey,
+              mediaType: library.mediaType,
             })),
             userId: source.userId,
             username: source.username,
-          }) satisfies MediaSourceSettings,
+          }) satisfies StrictExtract<
+            MediaSourceSettings,
+            { type: 'plex' | 'jellyfin' | 'emby' }
+          >,
       )
-      .otherwise(() => null);
+      .with(
+        { type: 'local', mediaType: P.nonNullable },
+        (source) =>
+          ({
+            id: source.uuid,
+            type: source.type,
+            name: source.name,
+            mediaType: source.mediaType,
+            paths: source.libraries?.map((path) => path.externalKey) ?? [],
+            libraries: (source.libraries ?? []).map((library) => ({
+              id: library.uuid,
+              type: source.type,
+              enabled: library.enabled,
+              lastScannedAt: nullToUndefined(library.lastScannedAt)?.valueOf(),
+              isLocked:
+                entityLocker.isLibraryLocked(library) ||
+                entityLocker.isMediaSourceLocked(source),
+              name: library.name,
+              externalKey: library.externalKey,
+              mediaType: library.mediaType,
+            })),
+          }) satisfies LocalMediaSource,
+      )
+      .otherwise(() => {
+        logger.error('Encountered invalid media source: %O', source);
+        throw new Error('Invalid media source: ' + JSON.stringify(source));
+      });
   }
 };

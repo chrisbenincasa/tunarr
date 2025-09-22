@@ -59,11 +59,14 @@ export class ApiProgramMinter {
   }
 
   private static mintForMovie(movie: Movie): ContentProgram {
-    const id = createExternalId(
-      movie.sourceType,
-      tag(movie.mediaSourceId),
-      movie.externalId,
-    );
+    const id =
+      movie.sourceType === 'local'
+        ? movie.uuid
+        : createExternalId(
+            movie.sourceType,
+            tag(movie.mediaSourceId),
+            movie.externalId,
+          );
     return {
       type: 'content',
       externalSourceType: movie.sourceType,
@@ -86,11 +89,14 @@ export class ApiProgramMinter {
   }
 
   private static mintForMusicVideo(musicVideo: MusicVideo): ContentProgram {
-    const id = createExternalId(
-      musicVideo.sourceType,
-      tag(musicVideo.mediaSourceId),
-      musicVideo.externalId,
-    );
+    const id =
+      musicVideo.sourceType === 'local'
+        ? musicVideo.uuid
+        : createExternalId(
+            musicVideo.sourceType,
+            tag(musicVideo.mediaSourceId),
+            musicVideo.externalId,
+          );
     return {
       type: 'content',
       externalSourceType: musicVideo.sourceType,
@@ -113,11 +119,14 @@ export class ApiProgramMinter {
   }
 
   private static mintForOtherVideo(otherVideo: OtherVideo): ContentProgram {
-    const id = createExternalId(
-      otherVideo.sourceType,
-      tag(otherVideo.mediaSourceId),
-      otherVideo.externalId,
-    );
+    const id =
+      otherVideo.sourceType === 'local'
+        ? otherVideo.uuid
+        : createExternalId(
+            otherVideo.sourceType,
+            tag(otherVideo.mediaSourceId),
+            otherVideo.externalId,
+          );
     return {
       type: 'content',
       externalSourceType: otherVideo.sourceType,
@@ -140,11 +149,14 @@ export class ApiProgramMinter {
   }
 
   private static mintForEpisode(episode: EpisodeWithHierarchy): ContentProgram {
-    const id = createExternalId(
-      episode.sourceType,
-      tag(episode.mediaSourceId),
-      episode.externalId,
-    );
+    const id =
+      episode.sourceType === 'local'
+        ? episode.uuid
+        : createExternalId(
+            episode.sourceType,
+            tag(episode.mediaSourceId),
+            episode.externalId,
+          );
 
     const season = episode.season;
     const show = season.show;
@@ -200,11 +212,14 @@ export class ApiProgramMinter {
   }
 
   private static mintForTrack(track: MusicTrackWithHierarchy): ContentProgram {
-    const id = createExternalId(
-      track.sourceType,
-      tag(track.mediaSourceId),
-      track.externalId,
-    );
+    const id =
+      track.sourceType === 'local'
+        ? track.uuid
+        : createExternalId(
+            track.sourceType,
+            tag(track.mediaSourceId),
+            track.externalId,
+          );
 
     const album = track.album;
     const artist = album.artist;

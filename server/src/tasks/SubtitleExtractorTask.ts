@@ -7,8 +7,8 @@ import { isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { dirname, extname } from 'node:path';
 import { tmpName } from 'tmp-promise';
-import { MinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
@@ -79,6 +79,7 @@ export class SubtitleExtractorTask extends Task {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     private request: SubtitleExtractorTaskRequest,
   ) {
     super(logger);
@@ -160,9 +161,13 @@ export class SubtitleExtractorTask extends Task {
     program: ContentGuideProgram,
     mediaSource: MediaSourceWithLibraries,
   ) {
+    const dbProgram = await this.programDB.getProgramById(program.id);
+    if (!dbProgram) {
+      return;
+    }
     const stream = await this.streamDetailsFetcher.getStream({
       server: mediaSource,
-      lineupItem: contentGuideProgramToLineupItem(program),
+      lineupItem: { ...dbProgram, mediaSourceId: mediaSource.uuid },
     });
 
     if (!stream) {
@@ -269,10 +274,11 @@ export class SubtitleExtractorTask extends Task {
           `${stream.streamSource.path}`,
           ...subtitleOutputArgs,
         ],
-        false,
-        {},
-        true,
-        300_000,
+        {
+          swallowError: false,
+          isPath: true,
+          timeout: 500_000,
+        },
       );
     });
 
@@ -293,17 +299,4 @@ export class SubtitleExtractorTask extends Task {
       }
     }
   }
-}
-
-// TODO: we're gonna sort these types out soon
-function contentGuideProgramToLineupItem(
-  program: ContentGuideProgram,
-): MinimalContentStreamLineupItem {
-  return {
-    ...program,
-    programId: program.id,
-    programType: program.subtype,
-    externalSource: program.externalSourceType,
-    externalFilePath: program.serverFilePath,
-  };
 }

@@ -1,7 +1,14 @@
 import { Box } from '@mui/material';
-import { type MediaSourceSettings, type ProgramOrFolder } from '@tunarr/types';
-import { PagedResult } from '@tunarr/types/api';
-import { JellyfinItemKind, JellyfinItemSortBy } from '@tunarr/types/jellyfin';
+import {
+  isTerminalItemType,
+  type MediaSourceSettings,
+  type ProgramOrFolder,
+} from '@tunarr/types';
+import type { PagedResult } from '@tunarr/types/api';
+import type {
+  JellyfinItemKind,
+  JellyfinItemSortBy,
+} from '@tunarr/types/jellyfin';
 import { isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -16,10 +23,7 @@ import useStore from '../../../store/index.ts';
 import type { JellyfinMediaSourceView } from '../../../store/programmingSelector/store.ts';
 import type { Nullable } from '../../../types/util.ts';
 import { LibraryListViewBreadcrumbs } from '../../library/LibraryListViewBreadcrumbs.tsx';
-import {
-  isTerminalItemType,
-  ProgramGridItem,
-} from '../../library/ProgramGridItem.tsx';
+import { ProgramGridItem } from '../../library/ProgramGridItem.tsx';
 import { ProgramListItem } from '../../library/ProgramListItem.tsx';
 import type { GridItemProps, NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid } from '../MediaItemGrid.tsx';

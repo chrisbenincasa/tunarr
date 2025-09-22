@@ -62,21 +62,21 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     show: PlexShow,
     context: ScanContext<PlexApiClient>,
   ): AsyncIterable<PlexSeason> {
-    return context.apiClient.getShowSeasons(show.externalKey);
+    return context.apiClient.getShowSeasons(show.externalId);
   }
 
   protected getSeasonEpisodes(
     season: PlexSeason,
     context: ScanContext<PlexApiClient>,
   ): AsyncIterable<PlexEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalKey);
+    return context.apiClient.getSeasonEpisodes(season.externalId);
   }
 
   protected getFullEpisodeMetadata(
     episodeT: PlexEpisode,
     context: ScanContext<PlexApiClient>,
   ): Promise<Result<PlexEpisode, WrappedError>> {
-    return context.apiClient.getEpisode(episodeT.externalKey);
+    return context.apiClient.getEpisode(episodeT.externalId);
   }
 
   protected getApiClient(
@@ -90,7 +90,7 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   protected getEntityExternalKey(
     item: PlexShow | PlexSeason | PlexEpisode,
   ): string {
-    return item.externalKey;
+    return item.externalId;
   }
 
   protected getLibrarySize(
