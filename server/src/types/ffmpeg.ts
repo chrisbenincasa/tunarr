@@ -113,7 +113,7 @@ export const FfprobeMediaFormatSchema = z.object({
   filename: z.string().optional(),
   nb_streams: z.number(),
   format_name: z.string(),
-  format_long_name: z.string(),
+  format_long_name: z.string().optional(),
   start_time: z.string(),
   duration: z.coerce.number(),
   size: z.coerce.number(),
