@@ -32,7 +32,8 @@ const AudioFormats: DropdownOption<SupportedTranscodeAudioOutputFormats>[] = [
 ] as const;
 
 export const TranscodeConfigAudioSettingsForm = () => {
-  const { control } = useFormContext<TranscodeConfig>();
+  const { control, watch } = useFormContext<TranscodeConfig>();
+  const encoder = watch('audioFormat');
 
   return (
     <Stack gap={2}>
@@ -65,6 +66,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
             id: 'audio-bitrate',
             label: 'Audio Bitrate',
             fullWidth: true,
+            disabled: encoder === 'copy',
+            helperText:
+              encoder === 'copy'
+                ? 'Bitrate cannot be changed when copying input audio'
+                : null,
             InputProps: {
               endAdornment: (
                 <InputAdornment position="end">kbps</InputAdornment>
@@ -80,6 +86,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
             id: 'audio-buffer-size',
             label: 'Audio Buffer Size',
             fullWidth: true,
+            disabled: encoder === 'copy',
+            helperText:
+              encoder === 'copy'
+                ? 'Buffer size cannot be changed when copying input audio'
+                : null,
             InputProps: {
               endAdornment: <InputAdornment position="end">kb</InputAdornment>,
             },
@@ -123,6 +134,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
           id: 'audio-sample-rate',
           label: 'Audio Sample Rate',
           fullWidth: true,
+          disabled: encoder === 'copy',
+          helperText:
+            encoder === 'copy'
+              ? 'Sample rate cannot be changed when copying input audio'
+              : null,
           sx: { my: 1 },
           InputProps: {
             endAdornment: <InputAdornment position="end">kHz</InputAdornment>,

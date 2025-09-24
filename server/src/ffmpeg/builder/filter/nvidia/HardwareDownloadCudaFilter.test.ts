@@ -9,14 +9,29 @@ import { FrameDataLocation, FrameSize } from '../../types.ts';
 import { HardwareDownloadCudaFilter } from './HardwareDownloadCudaFilter.ts';
 
 describe('HardwareDownloadCudaFilter', () => {
+  test('empty if current frame is not on hardware', () => {
+    const currentState = new FrameState({
+      isAnamorphic: false,
+      paddedSize: FrameSize.withDimensions(1920, 1080),
+      scaledSize: FrameSize.withDimensions(1920, 1080),
+      frameDataLocation: FrameDataLocation.Software,
+    });
+    const filter = new HardwareDownloadCudaFilter(currentState, null);
+
+    expect(filter.filter).to.eq('');
+
+    const nextState = filter.nextState(currentState);
+    expect(nextState).toBe(currentState);
+  });
+
   test('currentFormat=null', () => {
-    const filter = new HardwareDownloadCudaFilter(null, null);
     const currentState = new FrameState({
       isAnamorphic: false,
       paddedSize: FrameSize.withDimensions(1920, 1080),
       scaledSize: FrameSize.withDimensions(1920, 1080),
       frameDataLocation: FrameDataLocation.Hardware,
     });
+    const filter = new HardwareDownloadCudaFilter(currentState, null);
 
     expect(filter.filter).to.eq('hwdownload');
 
@@ -39,10 +54,7 @@ describe('HardwareDownloadCudaFilter', () => {
       pixelFormat: new PixelFormatNv12(underlyingPixelFormat),
     });
 
-    const filter = new HardwareDownloadCudaFilter(
-      currentState.pixelFormat,
-      null,
-    );
+    const filter = new HardwareDownloadCudaFilter(currentState, null);
 
     expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv420p');
 
@@ -67,10 +79,7 @@ describe('HardwareDownloadCudaFilter', () => {
       pixelFormat: new PixelFormatNv12(underlyingPixelFormat),
     });
 
-    const filter = new HardwareDownloadCudaFilter(
-      currentState.pixelFormat,
-      targetFormat,
-    );
+    const filter = new HardwareDownloadCudaFilter(currentState, targetFormat);
 
     expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv444p');
 
@@ -94,10 +103,7 @@ describe('HardwareDownloadCudaFilter', () => {
       pixelFormat: new PixelFormatCuda(targetFormat),
     });
 
-    const filter = new HardwareDownloadCudaFilter(
-      currentState.pixelFormat,
-      targetFormat,
-    );
+    const filter = new HardwareDownloadCudaFilter(currentState, targetFormat);
 
     expect(filter.filter).to.eq('hwdownload,format=yuv420p');
 
@@ -123,10 +129,7 @@ describe('HardwareDownloadCudaFilter', () => {
       ),
     });
 
-    const filter = new HardwareDownloadCudaFilter(
-      currentState.pixelFormat,
-      targetFormat,
-    );
+    const filter = new HardwareDownloadCudaFilter(currentState, targetFormat);
 
     expect(filter.filter).to.eq('hwdownload,format=nv12,format=yuv420p');
 

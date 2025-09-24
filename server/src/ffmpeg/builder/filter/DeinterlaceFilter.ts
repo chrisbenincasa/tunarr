@@ -23,7 +23,10 @@ export class DeinterlaceFilter extends FilterOption {
   }
 
   private generateFilter(): string {
-    const filter = this.ffmpegState.softwareDeinterlaceFilter;
+    const filter =
+      this.ffmpegState.softwareDeinterlaceFilter === 'none'
+        ? 'yadif=1'
+        : this.ffmpegState.softwareDeinterlaceFilter;
     if (this.currentState.frameDataLocation === 'hardware') {
       return `hwdownload,${filter}`;
     }

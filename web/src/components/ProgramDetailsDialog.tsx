@@ -22,9 +22,10 @@ import type { DeepRequired } from 'ts-essentials';
 import { isNonEmptyString } from '../helpers/util';
 import { ProgramMetadataDialogContent } from './ProgramMetadataDialogContent.tsx';
 import { ProgramStreamDetails } from './ProgramStreamDetails.tsx';
+import { RawProgramDetails } from './RawProgramDetails.tsx';
 import { TabPanel } from './TabPanel.tsx';
 
-const Panels = ['metadata', 'stream_details'] as const;
+const Panels = ['metadata', 'stream_details', 'program_details'] as const;
 type Panels = TupleToUnion<typeof Panels>;
 type PanelVisibility = {
   [K in Panels]?: boolean;
@@ -52,6 +53,7 @@ const formattedTitle = forProgramType({
 const DefaultPanelVisibility: DeepRequired<PanelVisibility> = {
   metadata: true,
   stream_details: true,
+  program_details: true,
 };
 
 export default function ProgramDetailsDialog({
@@ -76,6 +78,19 @@ export default function ProgramDetailsDialog({
     setTab(defaultPanel);
     onClose();
   }, [defaultPanel, onClose]);
+
+  const programId = useMemo(() => {
+    switch (program?.type) {
+      case 'content':
+        return program.id;
+      case 'custom':
+        return program.program?.id;
+      case 'filler':
+        return program.program?.id;
+      default:
+        return null;
+    }
+  }, [program]);
 
   return (
     program && (
@@ -115,6 +130,10 @@ export default function ProgramDetailsDialog({
                 }
               />
             )}
+            <Tab
+              label="Program Info"
+              disabled={!program.persisted || !programId}
+            />
           </Tabs>
           <TabPanel index={'metadata'} value={tab}>
             <ProgramMetadataDialogContent
@@ -132,6 +151,19 @@ export default function ProgramDetailsDialog({
               >
                 <Suspense fallback={<LinearProgress />}>
                   <ProgramStreamDetails programId={program.id} />
+                </Suspense>
+              </ErrorBoundary>
+            ) : null}
+          </TabPanel>
+          <TabPanel index={'program_details'} value={tab}>
+            {programId && isNonEmptyString(programId) ? (
+              <ErrorBoundary
+                fallback={
+                  <>Failed to load item details! Check logs for details</>
+                }
+              >
+                <Suspense fallback={<LinearProgress />}>
+                  <RawProgramDetails programId={programId} />
                 </Suspense>
               </ErrorBoundary>
             ) : null}

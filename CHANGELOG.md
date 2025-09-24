@@ -97,6 +97,42 @@
 * allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
 * **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
+## [0.22.5](https://github.com/chrisbenincasa/tunarr/compare/v0.22.4...v0.22.5) (2025-09-23)
+
+
+### Bug Fixes
+
+* **streaming:** do not apply hwdownload filter in cuda pipeline if not on hardware ([5726d6e](https://github.com/chrisbenincasa/tunarr/commit/5726d6ecf89eea051c1babf621fe89f8b6c0aad4))
+* treat ffprobe format_long_name as optional ([c656d24](https://github.com/chrisbenincasa/tunarr/commit/c656d24c7ae4f1efdccb34deabb755bea7d1c01d))
+
+## [0.22.4](https://github.com/chrisbenincasa/tunarr/compare/v0.22.3...v0.22.4) (2025-09-19)
+
+
+### Bug Fixes
+
+* do not send fractional millis to ffmpeg stream seek ([b588137](https://github.com/chrisbenincasa/tunarr/commit/b5881379682f436c3f590cc913217d4f9759218c)), closes [#1378](https://github.com/chrisbenincasa/tunarr/issues/1378)
+* ensure PremiereDate is selected for both Jellyfin and Emby ([335c0a0](https://github.com/chrisbenincasa/tunarr/commit/335c0a069b4c2b077a67561b9fcc95bb0c84937f)), closes [#1389](https://github.com/chrisbenincasa/tunarr/issues/1389)
+* **ui:** allow saving transcode config when audio format is copy ([a98bc32](https://github.com/chrisbenincasa/tunarr/commit/a98bc329cd4c9f2c32cca8a9cc656e871735fd31)), closes [#1387](https://github.com/chrisbenincasa/tunarr/issues/1387)
+
+## [0.22.3](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.22.3) (2025-09-16)
+
+
+### Bug Fixes
+
+* allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
+* correct set the isDefault bit on new transcode configs ([180841c](https://github.com/chrisbenincasa/tunarr/commit/180841c1b931d35e693a6bbd0886f819b318db28))
+* **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
+* **streaming:** do not apply apad when audio encoder is copy ([92bce8a](https://github.com/chrisbenincasa/tunarr/commit/92bce8ac2c159b3f8f20ddec9503edcd82f57558)), closes [#1311](https://github.com/chrisbenincasa/tunarr/issues/1311)
+* **streaming:** fallback to yadif=1 when configured software deinterlace is none ([3a5e69d](https://github.com/chrisbenincasa/tunarr/commit/3a5e69d925468662347ac338763a695fd51ab16b))
+* **ui:** add missing BackupForm file erroneously left out ([67b97b0](https://github.com/chrisbenincasa/tunarr/commit/67b97b05d97f1f20aa9ce0164a235ae13ce7f09b))
+* **ui:** disable various audio stream forms when encoder is set to copy ([2aa12c3](https://github.com/chrisbenincasa/tunarr/commit/2aa12c34e514e2c5faaa927290435ed955f068b3))
+* **ui:** properly handle keyboard input for backup time picker ([39a6d70](https://github.com/chrisbenincasa/tunarr/commit/39a6d70efd483c721086c5e4d9d177e12c4278a7)), closes [#1361](https://github.com/chrisbenincasa/tunarr/issues/1361)
+
+
+### UI Changes
+
+* hide missing season/associations health checks ([59265a8](https://github.com/chrisbenincasa/tunarr/commit/59265a8b2666ffbcc217b33f8daba75e4a175355))
+
 ## [0.22.2](https://github.com/chrisbenincasa/tunarr/compare/v0.22.1...v0.22.2) (2025-09-07)
 
 

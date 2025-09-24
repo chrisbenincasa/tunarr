@@ -14,13 +14,21 @@ export class HardwareDownloadCudaFilter extends FilterOption {
   private outPixelFormat: Nullable<PixelFormat> = null;
 
   constructor(
-    private currentPixelFormat: Nullable<PixelFormat>,
+    private currentState: FrameState,
     private targetPixelFormat: Nullable<PixelFormat>,
   ) {
     super();
   }
 
+  private get currentPixelFormat() {
+    return this.currentState.pixelFormat;
+  }
+
   get filter() {
+    if (this.currentState.frameDataLocation !== FrameDataLocation.Hardware) {
+      return '';
+    }
+
     let f = 'hwdownload';
     if (this.currentPixelFormat) {
       let currentFmt = this.currentPixelFormat;

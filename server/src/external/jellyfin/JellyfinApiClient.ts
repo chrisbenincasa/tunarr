@@ -101,12 +101,13 @@ const RequiredLibraryFields = [
   'Taglines',
   'Studios',
   'People',
-  'OfficialRating',
   'ProviderIds',
   'Chapters',
+  'PremiereDate',
+  'OfficialRating',
   'MediaStreams',
   'MediaSources',
-] satisfies JellyfinItemFields[];
+];
 
 function getJellyfinAuthorization(
   apiKey: Maybe<string>,

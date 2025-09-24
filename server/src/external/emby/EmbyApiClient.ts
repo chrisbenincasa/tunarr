@@ -90,16 +90,17 @@ import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
 const RequiredLibraryFields = [
   'Path',
   'Genres',
-  'Tags',
+  // 'Tags',
   'DateCreated',
-  'Etag',
+  // 'Etag',
   'Overview',
   'Taglines',
   'Studios',
   'People',
-  'OfficialRating',
+  // 'OfficialRating',
   'ProviderIds',
   'Chapters',
+  'PremiereDate',
 ];
 
 function getEmbyAuthorization(apiKey: Maybe<string>, clientId: Maybe<string>) {
@@ -186,7 +187,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
 
       if (!errorExpected) {
         LoggerFactory.root.error(
-          { error, caller: EmbyApiClient.name },
+          { error: error as unknown, caller: EmbyApiClient.name },
           'Error retrieving Emby self user',
         );
       }

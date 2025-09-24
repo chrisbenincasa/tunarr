@@ -250,7 +250,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       needsSoftwareWatermarkOverlay
     ) {
       const hwDownloadFilter = new HardwareDownloadCudaFilter(
-        currentState.pixelFormat,
+        currentState,
         null,
       );
 
@@ -449,7 +449,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       currentState.frameDataLocation === FrameDataLocation.Hardware
     ) {
       const hwDownloadFilter = new HardwareDownloadCudaFilter(
-        currentState.pixelFormat,
+        currentState,
         null,
       );
       currentState = hwDownloadFilter.nextState(currentState);
@@ -472,7 +472,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       }
 
       const hwDownloadFilter = new HardwareDownloadCudaFilter(
-        currentState.pixelFormat,
+        currentState,
         desiredFormat,
       );
       currentState = hwDownloadFilter.nextState(currentState);
@@ -634,7 +634,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
         if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
           currentState = this.addFilterToVideoChain(
             currentState,
-            new HardwareDownloadCudaFilter(currentState.pixelFormat, null),
+            new HardwareDownloadCudaFilter(currentState, null),
           );
           this.videoInputSource.frameDataLocation = FrameDataLocation.Software;
         }

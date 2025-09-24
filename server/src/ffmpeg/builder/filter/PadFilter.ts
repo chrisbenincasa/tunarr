@@ -24,7 +24,7 @@ export class PadFilter extends FilterOption {
     this.desiredPaddedSize = desiredState.paddedSize;
     this.hwDownloadFilter =
       decoderHwAccelMode === HardwareAccelerationMode.Cuda
-        ? new HardwareDownloadCudaFilter(this.currentState.pixelFormat, null)
+        ? new HardwareDownloadCudaFilter(this.currentState, null)
         : new HardwareDownloadFilter(this.currentState);
     this.filter = this.generateFilter();
   }

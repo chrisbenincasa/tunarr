@@ -73,7 +73,7 @@ export class TranscodeConfigDB {
       normalizeFrameRate: booleanToNumber(config.normalizeFrameRate),
       deinterlaceVideo: booleanToNumber(config.deinterlaceVideo),
       disableChannelOverlay: booleanToNumber(config.disableChannelOverlay),
-      isDefault: booleanToNumber(config.disableChannelOverlay),
+      isDefault: booleanToNumber(config.isDefault),
       disableHardwareDecoder: booleanToNumber(config.disableHardwareDecoder),
       disableHardwareEncoding: booleanToNumber(config.disableHardwareEncoding),
       disableHardwareFilters: booleanToNumber(config.disableHardwareFilters),
