@@ -18,6 +18,7 @@ import { isUndefined } from 'lodash-es';
 import type { DeepReadonly, NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import { numberToBoolean } from '../util/sqliteUtil.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
@@ -505,6 +506,12 @@ export class FfmpegStreamFactory extends IFFMPEG {
       encoderThreadCount: this.transcodeConfig.threadCount,
       vaapiDevice: this.getVaapiDevice(),
       vaapiDriver: this.getVaapiDriver(),
+      disableHardwareDecoding:
+        numberToBoolean(this.transcodeConfig.disableHardwareDecoder) ?? false,
+      disableHardwareEncoding:
+        numberToBoolean(this.transcodeConfig.disableHardwareEncoding) ?? false,
+      disableHardwareFilters:
+        numberToBoolean(this.transcodeConfig.disableHardwareFilters) ?? false,
     };
 
     const pipeline = builder.build(
