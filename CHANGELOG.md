@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.5](https://github.com/chrisbenincasa/tunarr/compare/v0.22.4...v0.22.5) (2025-09-23)
+
+
+### Bug Fixes
+
+* **streaming:** do not apply hwdownload filter in cuda pipeline if not on hardware ([5726d6e](https://github.com/chrisbenincasa/tunarr/commit/5726d6ecf89eea051c1babf621fe89f8b6c0aad4))
+* treat ffprobe format_long_name as optional ([c656d24](https://github.com/chrisbenincasa/tunarr/commit/c656d24c7ae4f1efdccb34deabb755bea7d1c01d))
+
 ## [0.22.4](https://github.com/chrisbenincasa/tunarr/compare/v0.22.3...v0.22.4) (2025-09-19)
 
 
