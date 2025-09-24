@@ -17,6 +17,7 @@ import { JellyfinMediaSourceOtherVideoScanner } from './scanner/JellyfinMediaSou
 import { JellyfinMediaSourceTvShowScanner } from './scanner/JellyfinMediaSourceTvShowScanner.ts';
 import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourceMovieLibraryScanner.ts';
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
+import type { GenericMediaSourceOtherVideoLibraryScanner } from './scanner/MediaSourceOtherVideoScanner.ts';
 import { MediaSourceProgressService } from './scanner/MediaSourceProgressService.ts';
 import { MediaSourceScanCoordinator } from './scanner/MediaSourceScanCoordinator.ts';
 import type {
@@ -104,7 +105,7 @@ export const ServicesModule = new ContainerModule((bind) => {
           sourceType,
         );
       case 'other_videos':
-        return ctx.container.getNamed<GenericMediaSourceMovieLibraryScanner>(
+        return ctx.container.getNamed<GenericMediaSourceOtherVideoLibraryScanner>(
           KEYS.MediaSourceOtherVideoLibraryScanner,
           sourceType,
         );

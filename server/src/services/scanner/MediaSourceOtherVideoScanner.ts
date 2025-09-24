@@ -14,6 +14,10 @@ import type { MediaSourceProgressService } from './MediaSourceProgressService.ts
 import type { ScanContext } from './MediaSourceScanner.ts';
 import { MediaSourceScanner } from './MediaSourceScanner.ts';
 
+export type GenericMediaSourceOtherVideoLibraryScanner<
+  MovieT extends OtherVideo = OtherVideo,
+> = MediaSourceOtherVideoScanner<MediaSourceType, MediaSourceApiClient, MovieT>;
+
 export abstract class MediaSourceOtherVideoScanner<
   MediaSourceTypeT extends MediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
