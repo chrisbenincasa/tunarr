@@ -335,6 +335,19 @@ export default function ProgramDetailsDialog({
     }
   }
 
+  const programId = useMemo(() => {
+    switch (program?.type) {
+      case 'content':
+        return program.id;
+      case 'custom':
+        return program.program?.id;
+      case 'filler':
+        return program.program?.id;
+      default:
+        return null;
+    }
+  }, [program]);
+
   return (
     program && (
       <Dialog
@@ -370,11 +383,7 @@ export default function ProgramDetailsDialog({
             />
             <Tab
               label="Program Info"
-              disabled={
-                program.type === 'redirect' ||
-                program.type === 'flex' ||
-                !program.persisted
-              }
+              disabled={!program.persisted || !programId}
             />
           </Tabs>
           <TabPanel index={0} value={tab}>
@@ -467,16 +476,14 @@ export default function ProgramDetailsDialog({
             ) : null}
           </TabPanel>
           <TabPanel index={2} value={tab}>
-            {program.type === 'content' &&
-            program.persisted &&
-            isNonEmptyString(program.id) ? (
+            {programId && isNonEmptyString(programId) ? (
               <ErrorBoundary
                 fallback={
                   <>Failed to load item details! Check logs for details</>
                 }
               >
                 <Suspense fallback={<LinearProgress />}>
-                  <RawProgramDetails programId={program.id} />
+                  <RawProgramDetails programId={programId} />
                 </Suspense>
               </ErrorBoundary>
             ) : null}
