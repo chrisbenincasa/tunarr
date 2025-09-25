@@ -467,7 +467,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.isSubtitleTextContext()) {
+    if (this.context.hasSubtitleTextContext()) {
       this.videoInputSource.addOption(new CopyTimestampInputOption());
       currentState = this.addFilterToVideoChain(
         currentState,
@@ -479,7 +479,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       );
     }
 
-    if (this.context.isSubtitleOverlay()) {
+    if (this.context.hasSubtitleOverlay()) {
       const fmt = new PixelFormatYuva420P();
       this.subtitleInputSource.filterSteps.push(new PixelFormatFilter(fmt));
       const desiredPixelFmt = this.desiredState.pixelFormat?.unwrap();

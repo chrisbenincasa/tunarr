@@ -46,7 +46,7 @@ export class NvidiaScaler {
         desiredState.paddedSize,
       );
     } else {
-      const hasOverlay = hasWatermark || context.isSubtitleOverlay();
+      const hasOverlay = hasWatermark || context.hasSubtitleOverlay();
       const isHardwareDecodeAndSoftwareEncode =
         ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
         ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;

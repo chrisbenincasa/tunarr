@@ -172,14 +172,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     // TODO: Make vaapi driver a union
     const forceSoftwareOverlay =
       this.context.pipelineOptions?.disableHardwareFilters ||
-      (this.context.hasWatermark && this.context.isSubtitleOverlay()) ||
+      (this.context.hasWatermark && this.context.hasSubtitleOverlay()) ||
       ffmpegState.vaapiDriver === 'radeonsi';
 
     currentState.forceSoftwareOverlay = forceSoftwareOverlay;
 
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
-      this.context.isSubtitleOverlay() &&
+      this.context.hasSubtitleOverlay() &&
       !forceSoftwareOverlay
     ) {
       const filter = new HardwareUploadVaapiFilter(true);
@@ -187,7 +187,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.frameDataLocation = FrameDataLocation.Hardware;
     } else if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
-      (!this.context.isSubtitleOverlay() || forceSoftwareOverlay) &&
+      (!this.context.hasSubtitleOverlay() || forceSoftwareOverlay) &&
       this.context.hasWatermark
     ) {
       // download for watermark (or forced software subtitle)
@@ -403,7 +403,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.isSubtitleTextContext()) {
+    if (this.context.hasSubtitleTextContext()) {
       this.videoInputSource.addOption(new CopyTimestampInputOption());
       currentState = this.addFilterToVideoChain(
         currentState,
@@ -415,7 +415,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       );
     }
 
-    if (this.context.isSubtitleOverlay()) {
+    if (this.context.hasSubtitleOverlay()) {
       this.subtitleInputSource.addFilter(new VaapiSubtitlePixelFormatFilter());
       const needsScale = this.videoInputSource.hasAnyFilterStep([
         ScaleVaapiFilter,

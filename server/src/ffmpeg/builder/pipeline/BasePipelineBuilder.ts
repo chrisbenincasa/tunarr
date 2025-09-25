@@ -158,10 +158,7 @@ export class PipelineBuilderContext {
     merge(this, props);
   }
 
-  isSubtitleOverlay(): this is MarkRequired<
-    PipelineBuilderContext,
-    'subtitleStream'
-  > {
+  hasSubtitleOverlay() {
     return (
       (this.subtitleStream?.isImageBased &&
         this.subtitleStream?.method === SubtitleMethods.Burn) ??
@@ -169,10 +166,7 @@ export class PipelineBuilderContext {
     );
   }
 
-  isSubtitleTextContext(): this is MarkRequired<
-    PipelineBuilderContext,
-    'subtitleStream'
-  > {
+  hasSubtitleTextContext() {
     return (
       (this.subtitleStream &&
         !this.subtitleStream.isImageBased &&
@@ -705,7 +699,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.audioInputSource?.addOption(option);
       this.videoInputSource.addOption(option);
 
-      if (this.context.isSubtitleTextContext()) {
+      if (this.context.hasSubtitleTextContext()) {
         this.pipelineSteps.push(new StreamSeekFilter(this.ffmpegState.start));
       }
     }
