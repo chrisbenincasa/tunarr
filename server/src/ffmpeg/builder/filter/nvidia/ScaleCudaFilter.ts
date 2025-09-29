@@ -2,16 +2,22 @@ import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty } from 'lodash-es';
+import type { Maybe } from '../../../../types/util.ts';
 import type {
   PixelFormat,
   ValidPixelFormatName,
 } from '../../format/PixelFormat.ts';
 import { PixelFormats } from '../../format/PixelFormat.ts';
+import { HardwareUploadCudaFilter } from './HardwareUploadCudaFilter.ts';
 
 export class ScaleCudaFilter extends FilterOption {
   public filter: string;
   readonly affectsFrameState: boolean = true;
+
+  private uploadFilter: Maybe<HardwareUploadCudaFilter>;
+  private changedPixelFormat = false;
 
   static supportedPixelFormats: ValidPixelFormatName[] = [
     PixelFormats.YUV420P,
@@ -45,7 +51,8 @@ export class ScaleCudaFilter extends FilterOption {
   }
 
   nextState(currentState: FrameState): FrameState {
-    let nextState = currentState.update({
+    let nextState = this.uploadFilter?.nextState(currentState) ?? currentState;
+    nextState = currentState.update({
       scaledSize: this.scaledSize,
       paddedSize: this.scaledSize,
       frameDataLocation: FrameDataLocation.Hardware,
@@ -54,7 +61,7 @@ export class ScaleCudaFilter extends FilterOption {
     });
 
     const targetPixelFormat = this.supportedPixelFormat;
-    if (targetPixelFormat) {
+    if (targetPixelFormat && this.changedPixelFormat) {
       nextState = nextState.update({
         pixelFormat: targetPixelFormat,
       });
@@ -69,6 +76,7 @@ export class ScaleCudaFilter extends FilterOption {
     if (this.currentState.scaledSize.equals(this.scaledSize)) {
       const targetPixelFormat = this.supportedPixelFormat;
       if (targetPixelFormat) {
+        this.changedPixelFormat = true;
         const passthrough = this.passthrough ? ':passthrough=1' : '';
         scale = `${this.filterName}=format=${targetPixelFormat.name}${passthrough}`;
       }
@@ -83,6 +91,7 @@ export class ScaleCudaFilter extends FilterOption {
       let format = '';
       const targetPixelFormat = this.supportedPixelFormat;
       if (targetPixelFormat) {
+        this.changedPixelFormat = true;
         format = `:format=${targetPixelFormat.name}`;
       }
 
@@ -99,9 +108,14 @@ export class ScaleCudaFilter extends FilterOption {
       return scale;
     }
 
-    return this.currentState.frameDataLocation === FrameDataLocation.Hardware
-      ? scale
-      : `hwupload_cuda,${scale}`;
+    const filters = [scale];
+    if (this.currentState.frameDataLocation === FrameDataLocation.Software) {
+      this.uploadFilter = new HardwareUploadCudaFilter(this.currentState);
+      console.log('apply upload filter');
+      filters.unshift(this.uploadFilter.filter);
+    }
+
+    return filters.filter((f) => isNonEmptyString(f)).join(',');
   }
 
   private get supportedPixelFormat() {

@@ -579,24 +579,25 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
     const frameSize = FrameSize.fromResolution(this.transcodeConfig.resolution);
 
+    let scaledSize: Maybe<FrameSize>;
     let errorInput: VideoInputSource;
     switch (this.transcodeConfig.errorScreen) {
-      case 'pic':
+      case 'pic': {
+        const stream = StillImageStream.create({
+          index: 0,
+          frameSize: FrameSize.create({ width: 1920, height: 1080 }),
+        });
+        scaledSize = stream.squarePixelFrameSize(
+          FrameSize.fromResolution(this.transcodeConfig.resolution),
+        );
         errorInput = VideoInputSource.withStream(
           new HttpStreamSource(
             makeLocalUrl('/images/generic-error-screen.png'),
           ),
-          VideoStream.create({
-            inputKind: 'stillimage',
-            codec: 'unknown',
-            frameSize: FrameSize.create({ width: 1920, height: 1080 }),
-            index: 0,
-            sampleAspectRatio: '1:1',
-            displayAspectRatio: '1:1',
-            pixelFormat: PixelFormatUnknown(),
-          }),
+          stream,
         );
         break;
+      }
       case 'blank':
         throw new Error('');
       case 'testsrc':
@@ -664,7 +665,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
       }),
       new FrameState({
         isAnamorphic: false,
-        scaledSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
+        scaledSize:
+          scaledSize ??
+          FrameSize.fromResolution(this.transcodeConfig.resolution),
         paddedSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
         videoBitrate: playbackParams.videoBitrate,
         videoBufferSize: playbackParams.videoBufferSize,

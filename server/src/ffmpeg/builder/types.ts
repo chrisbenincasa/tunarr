@@ -67,6 +67,7 @@ export class FrameSize {
   public static SevenTwenty = FrameSize.withDimensions(1280, 720);
   public static FHD = FrameSize.withDimensions(1920, 1080);
   public static FourK = FrameSize.withDimensions(3840, 2160);
+  public static SVGA43 = FrameSize.withDimensions(800, 600);
 }
 
 export enum RateControlMode {

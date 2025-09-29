@@ -1,7 +1,8 @@
 import type { ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isEmpty, isNull, merge } from 'lodash-es';
 import type { AnyFunction, MarkOptional, StrictOmit } from 'ts-essentials';
-import type { PixelFormat } from './format/PixelFormat.ts';
+import { VideoFormats } from './constants.ts';
+import { PixelFormatUnknown, type PixelFormat } from './format/PixelFormat.ts';
 import type { DataProps, StreamKind } from './types.ts';
 import { FrameSize } from './types.ts';
 
@@ -128,15 +129,17 @@ export class VideoStream implements MediaStream {
   }
 }
 
-type StillImageStreamFields = StrictOmit<
-  DataProps<StillImageStream>,
-  | 'codec'
-  | 'kind'
-  | 'pixelFormat'
-  | 'isAnamorphic'
-  | 'sampleAspectRatio'
-  | 'displayAspectRatio'
-  | 'inputKind'
+type StillImageStreamFields = MarkOptional<
+  StrictOmit<
+    DataProps<StillImageStream>,
+    | 'codec'
+    | 'kind'
+    | 'isAnamorphic'
+    | 'sampleAspectRatio'
+    | 'displayAspectRatio'
+    | 'inputKind'
+  >,
+  'pixelFormat'
 >;
 
 export class StillImageStream extends VideoStream {
@@ -144,11 +147,11 @@ export class StillImageStream extends VideoStream {
 
   private constructor(fields: StillImageStreamFields) {
     super({
-      ...fields,
-      codec: '',
+      codec: VideoFormats.Undetermined,
       sampleAspectRatio: '1:1',
       displayAspectRatio: '1:1',
-      pixelFormat: null,
+      ...fields,
+      pixelFormat: fields.pixelFormat ?? PixelFormatUnknown(),
     });
   }
 
