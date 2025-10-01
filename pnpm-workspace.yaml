@@ -3,3 +3,11 @@ packages:
   - web
   - types
   - shared
+
+catalog:
+  dayjs: ^1.11.10
+  eslint: 9.17.0
+  lodash-es: ^4.17.21
+  random-js: 2.1.0
+  typescript: 5.7.3
+  zod: ^4.0.17

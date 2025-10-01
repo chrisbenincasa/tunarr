@@ -8,38 +8,38 @@
   "author": "chrisbenincasa",
   "type": "module",
   "scripts": {
-    "bundle": "tsup",
-    "build": "tsup --dts",
+    "bundle": "tsc",
+    "build": "tsc --declaration",
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./dist/",
-    "dev": "tsup --dts --watch",
+    "dev": "tsc --declaration --watch",
     "test": "vitest --run"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "default": "./dist/constants/index.js"
+      "types": "./dist/src/util/constants.d.ts",
+      "default": "./dist/src/util/constants.js"
     },
     "./util": {
-      "types": "./dist/util/index.d.ts",
-      "default": "./dist/util/index.js"
+      "types": "./dist/src/util/index.d.ts",
+      "default": "./dist/src/util/index.js"
     },
     "./types": {
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/src/types/index.d.ts"
     }
   },
   "main": "index.ts",
   "dependencies": {
     "@tunarr/types": "workspace:*",
-    "dayjs": "^1.11.10",
-    "lodash-es": "^4.17.21",
-    "random-js": "2.1.0",
+    "dayjs": "catalog:",
+    "lodash-es": "catalog:",
+    "random-js": "catalog:",
     "tslib": "^2.6.2",
-    "zod": "^4.0.17"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@rollup/plugin-swc": "^0.4.0",
@@ -49,7 +49,7 @@
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.1",
     "tsup": "^8.0.2",
-    "typescript": "^5.3.3",
+    "typescript": "catalog:",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {

@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    zod:
+      specifier: ^4.0.17
+      version: 4.0.17
+
 overrides:
   eslint: 9.17.0
   '@types/node': 22.10.7
@@ -401,7 +407,7 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       zod:
-        specifier: ^4.0.17
+        specifier: 'catalog:'
         version: 4.0.17
     devDependencies:
       '@rollup/plugin-swc':
@@ -435,7 +441,7 @@ importers:
   types:
     dependencies:
       zod:
-        specifier: ^4.0.17
+        specifier: 'catalog:'
         version: 4.0.17
     devDependencies:
       '@microsoft/api-extractor':
@@ -586,7 +592,7 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^4.0.17
+        specifier: 'catalog:'
         version: 4.0.17
       zustand:
         specifier: ^4.4.6
@@ -4086,7 +4092,7 @@ packages:
       '@types/sql.js': '*'
       '@vercel/postgres': '>=0.8.0'
       '@xata.io/client': '*'
-      better-sqlite3: 9.4.5
+      better-sqlite3: '>=7'
       bun-types: '*'
       expo-sqlite: '>=14.0.0'
       knex: '*'
