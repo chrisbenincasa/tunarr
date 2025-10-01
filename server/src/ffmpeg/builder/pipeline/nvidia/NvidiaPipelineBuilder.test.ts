@@ -2,17 +2,24 @@ import { FileStreamSource } from '../../../../stream/types.ts';
 import { LoggerFactory } from '../../../../util/logging/LoggerFactory.ts';
 import { FfmpegCapabilities } from '../../capabilities/FfmpegCapabilities.ts';
 import { NvidiaHardwareCapabilities } from '../../capabilities/NvidiaHardwareCapabilities.ts';
+import { VideoFormats } from '../../constants.ts';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
-import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
+import {
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '../../format/PixelFormat.ts';
+import { AudioInputSource } from '../../input/AudioInputSource.ts';
 import { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
 import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
 import {
+  AudioStream,
   EmbeddedSubtitleStream,
   StillImageStream,
   SubtitleMethods,
   VideoStream,
 } from '../../MediaStream.ts';
+import { AudioState } from '../../state/AudioState.ts';
 import {
   DefaultPipelineOptions,
   FfmpegState,
@@ -361,6 +368,104 @@ describe('NvidiaPipelineBuilder', () => {
       null,
       watermark,
       null,
+    );
+
+    const state = FfmpegState.create({
+      version: {
+        versionString: 'n7.0.2-15-g0458a86656-20240904',
+        majorVersion: 7,
+        minorVersion: 0,
+        patchVersion: 2,
+        isUnknown: false,
+      },
+      // start: +dayjs.duration(0),
+    });
+
+    const out = builder.build(
+      state,
+      new FrameState({
+        isAnamorphic: false,
+        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatYuv420P(),
+        deinterlace: false,
+      }),
+      DefaultPipelineOptions,
+    );
+
+    await new Promise((resolve, reject) => {
+      LoggerFactory.root.flush((err) => {
+        if (err) reject(err);
+        resolve(void 0);
+      });
+    });
+
+    console.log(out.getCommandArgs().join(' '));
+  });
+
+  test('always hwupload before applying scale_cuda=format when padding', async () => {
+    const capabilities = new NvidiaHardwareCapabilities('RTX 2080 Ti', 75);
+    const binaryCapabilities = new FfmpegCapabilities(
+      new Set(),
+      new Map(),
+      new Set(),
+    );
+
+    const videoSource = new FileStreamSource('/path/to/video.mkv');
+
+    const video = VideoInputSource.withStream(
+      videoSource,
+      VideoStream.create({
+        codec: VideoFormats.Hevc,
+        profile: 'main 10',
+        displayAspectRatio: '2',
+        frameSize: FrameSize.withDimensions(1920, 818),
+        index: 0,
+        pixelFormat: new PixelFormatYuv420P10Le(),
+        sampleAspectRatio: '1:1',
+      }),
+    );
+
+    const watermark = new WatermarkInputSource(
+      new FileStreamSource('/path/to/watermark.jpg'),
+      StillImageStream.create({
+        frameSize: FrameSize.withDimensions(800, 600),
+        index: 0,
+      }),
+      {
+        duration: 0,
+        enabled: true,
+        horizontalMargin: 5,
+        opacity: 100,
+        position: 'bottom-right',
+        verticalMargin: 5,
+        width: 10,
+      },
+    );
+
+    const builder = new NvidiaPipelineBuilder(
+      capabilities,
+      binaryCapabilities,
+      video,
+      new AudioInputSource(
+        videoSource,
+        [AudioStream.create({ channels: 6, codec: 'dca', index: 1 })],
+        AudioState.create({
+          audioBitrate: 192_000,
+          audioBufferSize: 50_000,
+          audioChannels: 2,
+          audioEncoder: 'aac',
+          audioSampleRate: 48_000,
+          audioDuration: 1852180,
+        }),
+      ),
+      null,
+      watermark,
+      new SubtitlesInputSource(
+        videoSource,
+        [new EmbeddedSubtitleStream('pgs', 2, SubtitleMethods.Burn)],
+        SubtitleMethods.Burn,
+      ),
     );
 
     const state = FfmpegState.create({
