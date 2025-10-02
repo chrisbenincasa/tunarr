@@ -6,6 +6,15 @@ settings:
 
 catalogs:
   default:
+    dayjs:
+      specifier: ^1.11.10
+      version: 1.11.10
+    lodash-es:
+      specifier: ^4.17.21
+      version: 4.17.21
+    random-js:
+      specifier: 2.1.0
+      version: 2.1.0
     zod:
       specifier: ^4.0.17
       version: 4.0.17
@@ -392,13 +401,13 @@ importers:
         specifier: workspace:*
         version: link:../types
       dayjs:
-        specifier: ^1.11.10
+        specifier: 'catalog:'
         version: 1.11.10
       lodash-es:
-        specifier: ^4.17.21
+        specifier: 'catalog:'
         version: 4.17.21
       random-js:
-        specifier: 2.1.0
+        specifier: 'catalog:'
         version: 2.1.0
       ts-pattern:
         specifier: ^5.4.0
@@ -526,7 +535,7 @@ importers:
         specifier: ^0.5.2
         version: 0.5.2
       dayjs:
-        specifier: ^1.11.10
+        specifier: 'catalog:'
         version: 1.11.10
       hls.js:
         specifier: ^1.4.12
@@ -535,7 +544,7 @@ importers:
         specifier: ^10.0.3
         version: 10.0.3
       lodash-es:
-        specifier: ^4.17.21
+        specifier: 'catalog:'
         version: 4.17.21
       material-react-table:
         specifier: ^3.2.1
