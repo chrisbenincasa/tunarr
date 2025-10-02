@@ -1,11 +1,13 @@
 import { HardwareAccelerationMode } from '../../../../db/schema/TranscodeConfig.ts';
 import { isNonEmptyString } from '../../../../util/index.ts';
 import type { FilterOption } from '../../filter/FilterOption.ts';
+import { HardwareUploadCudaFilter } from '../../filter/nvidia/HardwareUploadCudaFilter.ts';
 import { ScaleCudaFilter } from '../../filter/nvidia/ScaleCudaFilter.ts';
 import { ScaleFilter } from '../../filter/ScaleFilter.ts';
 import { PixelFormatNv12 } from '../../format/PixelFormat.ts';
 import type { VideoInputSource } from '../../input/VideoInputSource.ts';
 import type { FrameState } from '../../state/FrameState.ts';
+import { FrameDataLocation } from '../../types.ts';
 import type { PipelineBuilderContext } from '../BasePipelineBuilder.ts';
 
 export class NvidiaScaler {
@@ -46,7 +48,7 @@ export class NvidiaScaler {
         desiredState.paddedSize,
       );
     } else {
-      const hasOverlay = hasWatermark || context.isSubtitleOverlay();
+      const hasOverlay = hasWatermark || context.hasSubtitleOverlay();
       const isHardwareDecodeAndSoftwareEncode =
         ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
         ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;
@@ -59,6 +61,13 @@ export class NvidiaScaler {
             ? new PixelFormatNv12(desiredState.pixelFormat)
             : null
           : null;
+      if (currentState.frameDataLocation === FrameDataLocation.Software) {
+        const hwupload = new HardwareUploadCudaFilter(currentState);
+        if (isNonEmptyString(hwupload.filter)) {
+          videoInputSource.filterSteps.push(hwupload);
+          currentState = hwupload.nextState(currentState);
+        }
+      }
       scaleStep = new ScaleCudaFilter(
         currentState.update({
           pixelFormat: outPixelFormat,

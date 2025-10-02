@@ -4,6 +4,21 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    dayjs:
+      specifier: ^1.11.14
+      version: 1.11.14
+    lodash-es:
+      specifier: ^4.17.21
+      version: 4.17.21
+    random-js:
+      specifier: 2.1.0
+      version: 2.1.0
+    zod:
+      specifier: ^4.1.5
+      version: 4.1.5
+
 overrides:
   eslint: 9.17.0
   '@types/node': 22.10.7
@@ -401,13 +416,13 @@ importers:
         specifier: ^11.0.3
         version: 11.0.3
       dayjs:
-        specifier: ^1.11.14
+        specifier: 'catalog:'
         version: 1.11.14
       lodash-es:
-        specifier: ^4.17.21
+        specifier: 'catalog:'
         version: 4.17.21
       random-js:
-        specifier: 2.1.0
+        specifier: 'catalog:'
         version: 2.1.0
       ts-pattern:
         specifier: ^5.4.0
@@ -416,8 +431,8 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       zod:
-        specifier: ^4.0.17
-        version: 4.0.17
+        specifier: 'catalog:'
+        version: 4.1.5
     devDependencies:
       '@rollup/plugin-swc':
         specifier: ^0.4.0
@@ -450,7 +465,7 @@ importers:
   types:
     dependencies:
       zod:
-        specifier: ^4.1.5
+        specifier: 'catalog:'
         version: 4.1.5
     devDependencies:
       '@microsoft/api-extractor':
@@ -538,7 +553,7 @@ importers:
         specifier: ^0.5.2
         version: 0.5.2
       dayjs:
-        specifier: ^1.11.14
+        specifier: 'catalog:'
         version: 1.11.14
       hls.js:
         specifier: ^1.4.12
@@ -547,7 +562,7 @@ importers:
         specifier: ^10.0.3
         version: 10.0.3
       lodash-es:
-        specifier: ^4.17.21
+        specifier: 'catalog:'
         version: 4.17.21
       material-react-table:
         specifier: ^3.2.1
@@ -604,7 +619,7 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^4.1.5
+        specifier: 'catalog:'
         version: 4.1.5
       zustand:
         specifier: ^4.4.6
@@ -8583,9 +8598,6 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  zod@4.0.17:
-    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
 
   zod@4.1.5:
     resolution: {integrity: sha512-rcUUZqlLJgBC33IT3PNMgsCq6TzLQEG/Ei/KTCU0PedSWRMAXoOUN+4t/0H+Q8bdnLPdqUYnvboJT0bn/229qg==}
@@ -17212,8 +17224,6 @@ snapshots:
   zod@3.24.1: {}
 
   zod@3.25.76: {}
-
-  zod@4.0.17: {}
 
   zod@4.1.5: {}
 

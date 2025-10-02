@@ -44,7 +44,7 @@ import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import { resetLineup } from '../../store/channelEditor/actions';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 
 dayjs.extend(duration);
 

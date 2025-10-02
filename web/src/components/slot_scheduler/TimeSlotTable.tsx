@@ -5,7 +5,7 @@ import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useSchedu
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import {
   Box,
-  BoxProps,
+  type BoxProps,
   Dialog,
   DialogTitle,
   IconButton,

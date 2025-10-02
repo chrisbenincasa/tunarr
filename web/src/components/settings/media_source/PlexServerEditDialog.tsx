@@ -90,7 +90,7 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
     if (open) {
       reset(server ?? emptyDefaults);
     }
-  }, [open, reset]);
+  }, [open, reset, server]);
 
   const updatePlexServerMutation = useMutation({
     mutationFn: async (newOrUpdatedServer: PlexServerSettingsForm) => {

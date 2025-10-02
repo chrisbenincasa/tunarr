@@ -6,6 +6,7 @@ export interface Equatable<T> {
 
 export const PixelFormats = {
   ARGB: 'argb',
+  RGBA: 'rgba',
   YUV420P: 'yuv420p',
   YUVA420P: 'yuva420p',
   YUV420P10LE: 'yuv420p10le',
@@ -108,6 +109,11 @@ export function PixelFormatUnknown(bitDepth: number = 8): BasePixelFormat {
       return;
     }
   })();
+}
+
+export class PixelFormatRgba extends SoftwarePixelFormat {
+  readonly name = PixelFormats.RGBA;
+  readonly bitDepth: number = 8; // Shrug
 }
 
 export class PixelFormatYuv420P extends SoftwarePixelFormat {

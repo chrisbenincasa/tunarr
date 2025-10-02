@@ -10,8 +10,6 @@ import fastify, { FastifySchema } from 'fastify';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import fp from 'fastify-plugin';
 import fastifyPrintRoutes from 'fastify-print-routes';
-import fs from 'node:fs/promises';
-
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   jsonSchemaTransform,
@@ -30,6 +28,7 @@ import {
   values,
 } from 'lodash-es';
 import schedule from 'node-schedule';
+import fs from 'node:fs/promises';
 import path, { dirname } from 'node:path';
 import 'reflect-metadata';
 import { z } from 'zod/v4';

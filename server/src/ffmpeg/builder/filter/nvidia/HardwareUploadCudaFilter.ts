@@ -23,7 +23,11 @@ export class HardwareUploadCudaFilter extends FilterOption {
       return '';
     } else {
       let fmtPart = '';
-      if (this.currentState.pixelFormat?.name === PixelFormats.Unknown) {
+      console.log(this.currentState);
+      if (
+        !this.currentState.pixelFormat ||
+        this.currentState.pixelFormat.name === PixelFormats.Unknown
+      ) {
         const bitDepth = this.currentState.bitDepth;
         this.changedPixelFormat =
           bitDepth === 10

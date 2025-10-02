@@ -42,6 +42,7 @@ import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
+import { NvidiaCropBottomBitstreamFilter } from '../../filter/nvidia/NvidiaCropBottomBitstreamFilter.ts';
 import { OverlaySubtitleCudaFilter } from '../../filter/nvidia/OverlaySubtitleCudaFilter.ts';
 import { ScaleNppFilter } from '../../filter/nvidia/ScaleNppFilter.ts';
 import { SubtitleScaleNppFilter } from '../../filter/nvidia/SubtitleScaleNppFilter.ts';
@@ -188,7 +189,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (
       currentState.bitDepth === 8 &&
-      (this.watermarkInputSource || this.context.isSubtitleOverlay())
+      (this.watermarkInputSource || this.context.hasSubtitleOverlay())
     ) {
       this.logger.trace(
         'checking for pixel format for overlay: %O',
@@ -231,9 +232,9 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
       currentState.bitDepth === 8 &&
-      !this.context.isSubtitleTextContext() &&
+      !this.context.hasSubtitleTextContext() &&
       !this.context.pipelineOptions.disableHardwareFilters &&
-      (this.context.isSubtitleOverlay() ||
+      (this.context.hasSubtitleOverlay() ||
         (this.context.hasWatermark && !needsSoftwareWatermarkOverlay))
     ) {
       const filter = new HardwareUploadCudaFilter(currentState);
@@ -260,7 +261,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       // and now the video stream, since that's where we're going to overlay
       // the watermark
       if (
-        this.context.isSubtitleOverlay() &&
+        this.context.hasSubtitleOverlay() &&
         this.subtitleOverlayFilterChain.length > 0
       ) {
         // Watermark will get overlaid on top of the video+sub stream
@@ -277,7 +278,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       currentState = hwUpload.nextState(currentState);
 
       if (
-        this.context.isSubtitleOverlay() &&
+        this.context.hasSubtitleOverlay() &&
         this.subtitleOverlayFilterChain.length > 0
       ) {
         this.subtitleOverlayFilterChain.push(hwUpload);
@@ -318,6 +319,23 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.setPixelFormat(currentState);
 
+    if (
+      this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
+      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Cuda &&
+      (this.context.videoStream.frameSize.equals(
+        this.desiredState.scaledSize,
+      ) ||
+        (this.context.hasSubtitleOverlay() &&
+          this.desiredState.paddedSize.equals(this.desiredState.scaledSize) &&
+          (this.context.hasSubtitleOverlay() || this.context.hasWatermark)))
+    ) {
+      this.pipelineSteps.push(
+        new NvidiaCropBottomBitstreamFilter(
+          this.desiredState.videoFormat,
+          this.desiredState.paddedSize,
+        ),
+      );
+    }
     this.context.filterChain.videoFilterSteps =
       this.videoInputSource.filterSteps;
   }
@@ -364,7 +382,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       );
     } else {
       const hasOverlay =
-        this.context.hasWatermark || this.context.isSubtitleOverlay();
+        this.context.hasWatermark || this.context.hasSubtitleOverlay();
       const isHardwareDecodeAndSoftwareEncode =
         this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
         this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None;
@@ -526,7 +544,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.isSubtitleTextContext()) {
+    if (this.context.hasSubtitleTextContext()) {
       this.videoInputSource.addOption(new CopyTimestampInputOption());
 
       const cuvidDecoder = this.videoInputSource.getInputOption(NvidiaDecoder);
@@ -555,7 +573,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.isSubtitleOverlay()) {
+    if (this.context.hasSubtitleOverlay()) {
       this.subtitleInputSource.filterSteps.push(
         new PixelFormatFilter(new PixelFormatYuva420P()),
       );

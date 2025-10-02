@@ -74,7 +74,6 @@ export class SchemaBackedDbAdapter<T extends z.ZodTypeAny>
     }
 
     // eslint can't seem to handle this but TS compiler gets it right.
-
     return parseResult.data;
   }
 

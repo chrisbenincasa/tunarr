@@ -4,7 +4,6 @@
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
-    "bundle": "tsc --declaration",
     "build": "tsc --declaration ",
     "clean": "rimraf ./build/",
     "dev": "tsc --declaration --watch",
@@ -22,14 +21,14 @@
     "@microsoft/api-extractor": "^7.43.0",
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",
-    "eslint": "9.17.0",
+    "eslint": "catalog:",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "typed-openapi": "^0.10.1",
-    "typescript": "5.4.3"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "zod": "^4.1.5"
+    "zod": "catalog:"
   },
   "exports": {
     ".": {

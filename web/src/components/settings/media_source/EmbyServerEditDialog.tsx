@@ -95,7 +95,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
     if (open) {
       reset(server ?? emptyDefaults);
     }
-  }, [reset, open]);
+  }, [reset, open, server]);
 
   // These are updated in a watch callback, so we debounce them
   // along with the details we use to check server status. Otherwise

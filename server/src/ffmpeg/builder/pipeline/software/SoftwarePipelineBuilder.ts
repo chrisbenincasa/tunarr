@@ -245,12 +245,12 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       return currentState;
     }
 
-    if (this.context.isSubtitleTextContext()) {
+    if (this.context.hasSubtitleTextContext()) {
       this.videoInputSource.addOption(new CopyTimestampInputOption());
       const filter = new SubtitleFilter(this.subtitleInputSource);
       currentState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
-    } else if (this.context.isSubtitleOverlay()) {
+    } else if (this.context.hasSubtitleOverlay()) {
       const hasScaleOrPad = this.videoInputSource.filterSteps.some(
         (step) => step instanceof ScaleFilter || step instanceof PadFilter,
       );

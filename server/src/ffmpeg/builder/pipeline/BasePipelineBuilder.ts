@@ -158,7 +158,7 @@ export class PipelineBuilderContext {
     merge(this, props);
   }
 
-  isSubtitleOverlay(): boolean {
+  hasSubtitleOverlay() {
     return (
       (this.subtitleStream?.isImageBased &&
         this.subtitleStream?.method === SubtitleMethods.Burn) ??
@@ -166,7 +166,7 @@ export class PipelineBuilderContext {
     );
   }
 
-  isSubtitleTextContext(): boolean {
+  hasSubtitleTextContext() {
     return (
       (this.subtitleStream &&
         !this.subtitleStream.isImageBased &&
@@ -346,7 +346,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new NoStatsOption(),
       new LogLevelOption(ffmpegState.logLevel),
       new StandardFormatFlags(),
-
       NoDemuxDecodeDelayOutputOption(),
       ClosedGopOutputOption(),
     ];
@@ -360,6 +359,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.pipelineSteps.push(movFlags);
 
     // TODO BFrames
+    if (isNull(this.nullableVideoInputSource)) {
+      throw new Error('FFmpeg pipeline currently requires a video input');
+    }
 
     if (this.concatInputSource) {
       this.concatInputSource.addOptions(
@@ -369,14 +371,11 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.pipelineSteps.push(NoAutoScaleOutputOption());
     }
 
+    this.setSceneDetect();
     this.setStreamSeek();
 
     if (this.ffmpegState.duration && +this.ffmpegState.duration > 0) {
       this.pipelineSteps.push(TimeLimitOutputOption(this.ffmpegState.duration));
-    }
-
-    if (isNull(this.nullableVideoInputSource)) {
-      throw new Error('FFmpeg pipeline currently requires a video input');
     }
 
     if (
@@ -695,13 +694,31 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.context.ffmpegState.encoderHwAccelMode = 'none';
   }
 
+  protected setSceneDetect() {
+    if (!isVideoPipelineContext(this.context)) {
+      return;
+    }
+
+    // Explicitly set -sc_threshold to a crazy amount for mpeg2 or when decoding with videotoolbox (mpeg2 doesn't support)
+    if (
+      this.context.videoStream.codec === VideoFormats.Mpeg2Video ||
+      this.desiredState.videoFormat === VideoFormats.Mpeg2Video ||
+      this.ffmpegState.decoderHwAccelMode ===
+        HardwareAccelerationMode.Videotoolbox
+    ) {
+      this.pipelineSteps.push(NoSceneDetectOutputOption(1_000_000_000));
+    } else {
+      this.pipelineSteps.push(NoSceneDetectOutputOption(0));
+    }
+  }
+
   protected setStreamSeek() {
     if (this.ffmpegState.start && +this.ffmpegState.start > 0) {
       const option = new StreamSeekInputOption(this.ffmpegState.start);
       this.audioInputSource?.addOption(option);
       this.videoInputSource.addOption(option);
 
-      if (this.context.isSubtitleTextContext()) {
+      if (this.context.hasSubtitleTextContext()) {
         this.pipelineSteps.push(new StreamSeekFilter(this.ffmpegState.start));
       }
     }

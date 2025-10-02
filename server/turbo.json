@@ -2,19 +2,13 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
-    "build": {
-      "outputs": ["build/**"]
-    },
+    "build": {},
     "typecheck": {
       "dependsOn": ["^build"]
     },
-    "generate-db-cache": {
-      "dependsOn": ["^bundle"],
-      "outputs": ["temp/metadata.json"]
-    },
     "bundle": {
       "inputs": ["./scripts/bundle.ts", "./src/**"],
-      "dependsOn": ["^build", "^bundle", "@tunarr/web#bundle"],
+      "dependsOn": ["^build", "@tunarr/web#bundle"],
       "outputs": ["dist/**"]
     },
     "build-dev": {
@@ -22,7 +16,7 @@
     },
     "make-bin": {
       "cache": false,
-      "dependsOn": ["bundle"],
+      "dependsOn": ["@tunarr/web#bundle", "bundle"],
       "outputs": ["bin/**"]
     },
     "lint-staged": {},
@@ -30,6 +24,7 @@
       "dependsOn": ["lint-staged"]
     },
     "dev": {
+      "dependsOn": ["@tunarr/shared#build"],
       "persistent": true,
       "cache": false,
       "interruptible": true
