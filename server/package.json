@@ -16,6 +16,7 @@
     "debug": "dotenv -e .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-wait ./src",
     "dev": "dotenv -e .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "kysely": "dotenv -e .env.development -- kysely",
     "make-bin": "dotenv -- tsx scripts/make-bin.ts",
     "preinstall": "npx only-allow pnpm",

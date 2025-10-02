@@ -2,7 +2,7 @@ import { Close, Refresh } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-import { StrictOmit } from 'ts-essentials';
+import type { StrictOmit } from 'ts-essentials';
 import { getApiVersionOptions } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useVersion = (

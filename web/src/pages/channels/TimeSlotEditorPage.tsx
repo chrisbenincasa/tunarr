@@ -62,7 +62,7 @@ import { toggle } from '../../helpers/util.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
-import { Maybe } from '../../types/util.ts';
+import type { Maybe } from '../../types/util.ts';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

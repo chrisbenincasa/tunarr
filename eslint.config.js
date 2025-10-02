@@ -10,6 +10,7 @@ import tseslint, { parser } from 'typescript-eslint';
 export default tseslint.config(
   {
     ignores: [
+      'eslint.config.js',
       '**/.tsup/*',
       '**/dist/*',
       '**/build/*',
@@ -18,7 +19,10 @@ export default tseslint.config(
       '**/*.ignore.ts',
       '**/*.test.ts', // Ignore test files for now, until we fix up tsconfig files
       '**/generated/*', // Ignore all generated code
+      'server/esbuild/*',
       'server/src/web/*',
+      'server/src/testing/*',
+      'server/cjs-shim.ts',
       'release.config.mjs',
     ],
   },
