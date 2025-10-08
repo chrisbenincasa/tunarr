@@ -1,6 +1,11 @@
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { CustomProgram } from '@tunarr/types';
+import { createExternalId } from '@tunarr/shared';
+import {
+  CustomProgram,
+  isContentProgram,
+  isCustomProgram,
+} from '@tunarr/types';
 import {
   CreateCustomShowRequest,
   UpdateCustomShowRequest,
@@ -8,7 +13,7 @@ import {
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { chunk, filter, isNil, map } from 'lodash-es';
+import { chunk, filter, isNil, map, orderBy } from 'lodash-es';
 import { v4 } from 'uuid';
 import { ProgramDB } from './ProgramDB.ts';
 import { ProgramConverter } from './converters/ProgramConverter.ts';
@@ -71,53 +76,75 @@ export class CustomShowDB {
       return null;
     }
 
-    if (updateRequest.programs) {
-      const programIndexById = createPendingProgramIndexMap(
-        updateRequest.programs,
-      );
-
-      const persisted = filter(
-        updateRequest.programs,
-        (p) => p.persisted && isNonEmptyString(p.id),
-      );
+    if (updateRequest.programs && updateRequest.programs.length > 0) {
+      const newProgramIndexesById: Record<string, number[]> = {};
+      for (let i = 0; i < updateRequest.programs.length; i++) {
+        const program = updateRequest.programs[i];
+        if (
+          (program.persisted || isCustomProgram(program)) &&
+          isNonEmptyString(program.id)
+        ) {
+          newProgramIndexesById[program.id] ??= [];
+          newProgramIndexesById[program.id].push(i);
+        } else if (isContentProgram(program)) {
+          const key = createExternalId(
+            program.externalSourceType,
+            program.externalSourceId,
+            program.externalKey,
+          );
+          newProgramIndexesById[key] ??= [];
+          newProgramIndexesById[key].push(i);
+        }
+      }
 
       const upsertedPrograms = await this.programDB.upsertContentPrograms(
         updateRequest.programs,
       );
 
-      const persistedCustomShowContent = map(
-        persisted,
-        (p) =>
-          ({
-            customShowUuid: show.uuid,
-            contentUuid: p.id!,
-            index: programIndexById[p.id!],
-          }) satisfies NewCustomShowContent,
-      );
-
-      const newCustomShowContent = map(
-        upsertedPrograms,
-        (p) =>
-          ({
-            customShowUuid: show.uuid,
-            contentUuid: p.uuid,
-            index: programIndexById[programExternalIdString(p)],
-          }) satisfies NewCustomShowContent,
-      );
+      const allNewCustomContent = orderBy(
+        upsertedPrograms.flatMap((program) => {
+          const externalId = createExternalId(
+            program.sourceType,
+            program.mediaSourceId,
+            program.externalKey,
+          );
+          const indexes =
+            newProgramIndexesById[program.uuid] ??
+            newProgramIndexesById[externalId];
+          if (!indexes) {
+            console.log(program.uuid, externalId);
+            return [];
+          }
+          console.log(indexes);
+          return indexes.map(
+            (index) =>
+              ({
+                customShowUuid: show.uuid,
+                contentUuid: program.uuid,
+                index,
+              }) satisfies NewCustomShowContent,
+          );
+        }),
+        (csc) => csc.index,
+        'asc',
+      ).map((csc, idx) => {
+        csc.index = idx;
+        return csc;
+      });
 
       await this.db.transaction().execute(async (tx) => {
-        await tx
-          .deleteFrom('customShowContent')
-          .where('customShowContent.customShowUuid', '=', show.uuid)
-          .execute();
-        await Promise.all(
-          chunk(
-            [...persistedCustomShowContent, ...newCustomShowContent],
-            1_000,
-          ).map((csc) =>
-            tx.insertInto('customShowContent').values(csc).execute(),
-          ),
-        );
+        if (allNewCustomContent.length > 0) {
+          await tx
+            .deleteFrom('customShowContent')
+            .where('customShowContent.customShowUuid', '=', show.uuid)
+            .execute();
+          for (const contentChunk of chunk(allNewCustomContent, 1_000)) {
+            await tx
+              .insertInto('customShowContent')
+              .values(contentChunk)
+              .execute();
+          }
+        }
       });
     }
 
@@ -125,8 +152,7 @@ export class CustomShowDB {
       await this.db
         .updateTable('customShow')
         .where('uuid', '=', show.uuid)
-        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-        // .limit(1)
+        .limit(1)
         .set({ name: updateRequest.name })
         .execute();
     }
