@@ -41,6 +41,7 @@ import Migration1758732083_FixLocalLibraryPath from './db/Migration1758732083_Fi
 import Migration1758903045_FixLocalLibraryPathAgain from './db/Migration1758903045_FixLocalLibraryPathAgain.ts';
 import Migration1759170884_AddArtworkAndMore from './db/Migration1759170884_AddArtworkAndMore.ts';
 import Migration1759518565_AddProgramSubtitles from './db/Migration1759518565_AddProgramSubtitles.ts';
+import Migration1759797475_FixCustomShowContentKey from './db/Migration1759797475_FixCustomShowContentKey.ts';
 import Migration1760129429_AddProgramGroupingSourceType from './db/Migration1760129429_AddProgramGroupingSourceType.ts';
 import Migration1760213210_AddMoreProgramGroupingFields from './db/Migration1760213210_AddMoreProgramGroupingFields.ts';
 import Migration1760455673_UpdateForeignKeyCasacades from './db/Migration1760455673_UpdateForeignKeyCasacades.ts';
@@ -183,6 +184,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1767374284: makeKyselyMigrationFromSqlFile(
             './sql/0036_smooth_vanisher.sql',
           ),
+          migration1759797475: Migration1759797475_FixCustomShowContentKey,
         },
         wrapWithTransaction,
       ),
