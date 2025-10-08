@@ -83,9 +83,7 @@ export const BatchLookupExternalProgrammingSchema = z.object({
 
 export const CreateCustomShowRequestSchema = z.object({
   name: z.string(),
-  programs: z.array(
-    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
-  ),
+  programs: z.array(ContentProgramSchema),
 });
 
 export type CreateCustomShowRequest = z.infer<
