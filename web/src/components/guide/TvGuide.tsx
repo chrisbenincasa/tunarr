@@ -186,6 +186,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       index: number,
       lineup: TvGuideProgram[],
     ) => {
+      console.log(program);
       const title = match(program)
         .with(
           { type: 'content', grandparent: { title: P.nonNullable } },
@@ -209,15 +210,25 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
               ',',
             ),
         )
+        .with({ type: 'content', subtype: 'episode' }, (p) => {
+          const epTitle = p.title;
+          console.log(p);
+          if (isUndefined(p.parent?.index) || isUndefined(p.index)) {
+            return epTitle;
+          }
+          const season = p.parent.index.toString().padStart(2, '0');
+          const epIndex = p.index.toString().padStart(2, '0');
+          return `S${season}E${epIndex} - ${epTitle}`;
+        })
+        .with({ type: 'content', subtype: 'movie' }, (p) =>
+          compact([p.date ? dayjs(p.date).year() : null]).join(','),
+        )
+        .with({ type: 'content' }, (p) => p.title)
         .with(
           { type: 'custom', program: P.nonNullable },
           ({ program }) => program.title,
         )
         .with({ type: 'custom' }, () => '')
-        .with({ type: 'content', subtype: 'movie' }, (p) =>
-          compact([p.date ? dayjs(p.date).year() : null]).join(','),
-        )
-        .with({ type: 'content' }, (p) => p.title)
         .otherwise(() => '');
 
       const key = `${title}_${program.start}_${program.stop}`;
