@@ -1,10 +1,19 @@
 import type { BreadcrumbsProps } from '@mui/material';
-import { Link, Breadcrumbs as MUIBreadcrumbs, Typography } from '@mui/material';
+import {
+  Link,
+  Breadcrumbs as MUIBreadcrumbs,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { Link as RouterLink, useLocation } from '@tanstack/react-router';
 import { isEmpty, map, reject } from 'lodash-es';
 import { useGetRouteDetails } from '../hooks/useRouteName.ts';
 
 export default function Breadcrumbs(props: BreadcrumbsProps) {
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+
   const { sx = { mb: 2 }, separator = '›', ...restProps } = props;
 
   const location = useLocation();
@@ -14,6 +23,7 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
     (part) => part === 'web',
   );
   const getRoute = useGetRouteDetails();
+  const MAX_LENGTH = smallViewport ? 20 : 50;
 
   return (
     <>
@@ -32,15 +42,19 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
             return null;
           }
 
+          const trimmedText =
+            route.name.substring(0, MAX_LENGTH) +
+            (route.name.length + 3 >= MAX_LENGTH ? '...' : '');
+
           // Don't link the last item in a breadcrumb because you are on that page
           // Don't display crumbs for pages that aren't excplicely defined in useRouteNames hook
           return isLast || !route?.isLink ? (
             <Typography color="text.primary" key={to}>
-              {route.name ?? ''}
+              {trimmedText ?? ''}
             </Typography>
           ) : (
             <Link component={RouterLink} to={to} key={to}>
-              {route.name}
+              {trimmedText}
             </Link>
           );
         })}

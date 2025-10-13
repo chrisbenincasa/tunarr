@@ -19,12 +19,17 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
       <Typography variant="h3" mb={2}>
         Settings
       </Typography>
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: [1, 2] }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={currentTab}
             variant="scrollable"
             allowScrollButtonsMobile
+            sx={{
+              '& .MuiTabs-scrollButtons.Mui-disabled': {
+                opacity: 0.2,
+              },
+            }}
           >
             <Tab
               label="General"
@@ -65,7 +70,7 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
           </Tabs>
         </Box>
 
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: [1, 3] }}>
           <Suspense fallback={<LinearProgress />}>
             <Outlet />
           </Suspense>
