@@ -224,7 +224,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             mb: ['56px', 4],
             px: [undefined, 5],
             pb: [4, undefined],
-            maxWidth: 'calc(100vw - 80px)',
+            maxWidth: 'calc(100vw - 25px)',
           }}
         >
           {version?.ffmpeg === 'unknown' ? (

@@ -6,7 +6,9 @@ import {
   Stack,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { Link } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -24,23 +26,27 @@ export const ChannelSummaryPage = () => {
     data: { channel },
   } = useChannelAndProgramming(channelId);
 
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Stack spacing={2}>
       <Breadcrumbs />
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box>
           {isNonEmptyString(channel.icon.path) ? (
-            <Box component="img" width={132} src={channel.icon.path} />
+            <Box component="img" width={[32, 132]} src={channel.icon.path} />
           ) : (
-            <TunarrLogo style={{ width: '132px' }} />
+            <TunarrLogo style={{ width: smallViewport ? '32px' : '132px' }} />
           )}
         </Box>
 
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h3">{channel.name}</Typography>
+          <Typography variant="h4">{channel.name}</Typography>
           <Typography variant="subtitle1">Channel #{channel.number}</Typography>
         </Box>
-
+      </Stack>
+      <Stack direction="row" spacing={1} justifyContent="right">
         <Tooltip title="Edit" placement="top">
           <IconButton component={Link} from={Route.fullPath} to="./edit">
             <Settings />

@@ -138,8 +138,15 @@ export function EditFillerListForm({
         <Divider />
 
         <Box>
-          <Stack direction="row" sx={{ alignItems: 'center', mb: 2 }} gap={2}>
-            <Typography variant="h6" sx={{ flex: 1 }}>
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap' }}
+            gap={2}
+          >
+            <Typography
+              variant="h6"
+              sx={{ flex: 1, flexBasis: ['100%', 'auto'] }}
+            >
               Programming
             </Typography>
             <Button

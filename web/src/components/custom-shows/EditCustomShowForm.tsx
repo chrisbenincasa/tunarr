@@ -127,11 +127,19 @@ export function EditCustomShowsForm({
         />
         <Divider />
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ flex: 1 }}>
-              Programming
-            </Typography>
-            <Stack direction="row" spacing={2}>
+          <Box>
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap' }}
+              gap={2}
+            >
+              <Typography
+                variant="h6"
+                sx={{ flex: 1, flexBasis: ['100%', 'auto'] }}
+              >
+                Programming
+              </Typography>
+
               <CustomShowSortToolsMenu />
               {customShowProgrammingChanged && (
                 <Tooltip title="Reset programming to most recently saved state">

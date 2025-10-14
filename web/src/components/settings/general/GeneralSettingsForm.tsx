@@ -223,7 +223,9 @@ export function GeneralSettingsForm({
             rules={{ validate: { isValidUrl: (s) => isValidUrl(s, true) } }}
             render={({ field, fieldState: { error } }) => (
               <TextField
-                fullWidth
+                sx={{
+                  width: ['100%', '50%'],
+                }}
                 label="Tunarr Backend URL"
                 slotProps={{
                   input: {
@@ -251,7 +253,11 @@ export function GeneralSettingsForm({
           />
         </Box>
         <Box>
-          <FormControl sx={{ width: '50%' }}>
+          <FormControl
+            sx={{
+              width: ['100%', '50%'],
+            }}
+          >
             <InputLabel id="log-level-label">Log Level</InputLabel>
             <Controller
               name="logLevel"
@@ -291,7 +297,11 @@ export function GeneralSettingsForm({
             Caching
           </Typography>
           <Box>
-            <FormControl sx={{ width: '50%' }}>
+            <FormControl
+              sx={{
+                width: ['100%', '50%'],
+              }}
+            >
               <FormControlLabel
                 control={
                   <Controller

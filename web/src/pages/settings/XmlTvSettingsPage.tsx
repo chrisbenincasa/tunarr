@@ -111,7 +111,7 @@ export default function XmlTvSettingsPage() {
           )}
         />
       </FormControl>
-      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }} sx={{ mt: 2 }}>
+      <Stack spacing={2} direction={{ sm: 'column', md: 'row' }} sx={{ my: 2 }}>
         <NumericFormControllerText
           control={control}
           name="programmingHours"
@@ -120,6 +120,7 @@ export default function XmlTvSettingsPage() {
             id: 'epg-hours',
             label: 'EPG (Hours)',
             helperText: 'Number of hours to include in the XMLTV file',
+            sx: { mb: 2 },
           }}
         />
         <NumericFormControllerText
