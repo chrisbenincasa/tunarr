@@ -66,21 +66,21 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
     show: JellyfinMusicArtist,
     context: ScanContext<JellyfinApiClient>,
   ): AsyncIterable<JellyfinMusicAlbum> {
-    return context.apiClient.getArtistAlbums(show.externalKey, 50);
+    return context.apiClient.getArtistAlbums(show.externalId, 50);
   }
 
   protected getAlbumTracks(
     season: JellyfinMusicAlbum,
     context: ScanContext<JellyfinApiClient>,
   ): AsyncIterable<JellyfinMusicTrack> {
-    return context.apiClient.getAlbumTracks(season.externalKey, 50);
+    return context.apiClient.getAlbumTracks(season.externalId, 50);
   }
 
   protected getFullTrackMetadata(
     episodeT: JellyfinMusicTrack,
     context: ScanContext<JellyfinApiClient>,
   ): Promise<Result<JellyfinMusicTrack, WrappedError>> {
-    return context.apiClient.getMusicTrack(episodeT.externalKey);
+    return context.apiClient.getMusicTrack(episodeT.externalId);
   }
 
   protected getApiClient(
@@ -94,7 +94,7 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
   protected getEntityExternalKey(
     show: JellyfinMusicArtist | JellyfinMusicAlbum | JellyfinMusicTrack,
   ): string {
-    return show.externalKey;
+    return show.externalId;
   }
 
   protected getLibrarySize(

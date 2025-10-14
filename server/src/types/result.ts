@@ -4,7 +4,13 @@ import { WrappedError } from './errors.ts';
 import type { Nullable } from './util.ts';
 import { type Maybe } from './util.ts';
 
+declare const resultTypeSym: unique symbol;
+
 export abstract class Result<T, E extends WrappedError = WrappedError> {
+  declare readonly _: {
+    successType: T;
+  };
+
   protected _data: T | undefined;
   protected _error: E | undefined;
 
@@ -47,6 +53,12 @@ export abstract class Result<T, E extends WrappedError = WrappedError> {
   forEach(f: (t: T) => void): void {
     if (this.isSuccess()) {
       f(this._data!);
+    }
+  }
+
+  ifError(f: (t: E) => void): void {
+    if (this.isFailure()) {
+      f(this.error);
     }
   }
 
@@ -190,6 +202,25 @@ export abstract class Result<T, E extends WrappedError = WrappedError> {
       return Result.failure(err);
     }
     return Result.success(v);
+  }
+
+  static all<T extends readonly Result<unknown>[] | []>(
+    results: T,
+  ): Result<{ -readonly [P in keyof T]: T[P]['_']['successType'] }> {
+    const out: unknown[] = [];
+    for (const r of results) {
+      if (r.isSuccess()) {
+        out.push(r.get());
+      } else {
+        return r as Result<{
+          -readonly [P in keyof T]: T[P]['_']['successType'];
+        }>;
+      }
+    }
+
+    return Result.success(out) as Result<{
+      -readonly [P in keyof T]: T[P]['_']['successType'];
+    }>;
   }
 }
 

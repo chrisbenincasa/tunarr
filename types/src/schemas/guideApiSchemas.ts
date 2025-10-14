@@ -18,7 +18,7 @@ const BaseGuideProgramSchema = z.object({
 
 export const ContentGuideProgramSchema = ContentProgramSchema.required({
   id: true,
-}).merge(BaseGuideProgramSchema);
+}).extend(BaseGuideProgramSchema.shape);
 
 export const CustomGuideProgramSchema = CustomProgramSchema.merge(
   BaseGuideProgramSchema,

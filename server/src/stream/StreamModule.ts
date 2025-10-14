@@ -24,6 +24,7 @@ import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
 import { KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
+import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { FFmpegFactory } from '../ffmpeg/FFmpegModule.ts';
 import { FillerPicker } from '../services/FillerPicker.ts';
@@ -35,6 +36,7 @@ import type { ProgramStreamFactory } from './ProgramStreamFactory.ts';
 import { ExternalStreamDetailsFetcherFactory } from './StreamDetailsFetcher.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
+import { LocalProgramStream } from './local/LocalProgramStream.ts';
 
 export type OfflineStreamFactoryType = interfaces.MultiFactory<
   ProgramStream,
@@ -108,6 +110,23 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
     },
   ).whenTargetNamed('emby');
 
+  bindFactoryFunc<ProgramStreamFactory>(
+    bind,
+    KEYS.ProgramStreamFactory,
+    (ctx) => {
+      return (playerContext: PlayerContext, outputFormat: OutputFormat) => {
+        return new LocalProgramStream(
+          ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
+          ctx.container.get(CacheImageService),
+          ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
+          ctx.container.get<IProgramDB>(KEYS.ProgramDB),
+          playerContext,
+          outputFormat,
+        );
+      };
+    },
+  ).whenTargetNamed('local');
+
   bind<OfflineStreamFactoryType>(KEYS.ProgramStreamFactory)
     .toFactory<ProgramStream, [boolean], [PlayerContext, OutputFormat]>(
       (ctx) => {
@@ -134,7 +153,7 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
           case 'commercial': {
             return ctx.container.getNamed<ProgramStreamFactory>(
               KEYS.ProgramStreamFactory,
-              playerContext.lineupItem.externalSource,
+              playerContext.lineupItem.program.sourceType,
             )(playerContext, outputFormat);
           }
           case 'offline':

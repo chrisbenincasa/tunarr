@@ -67,7 +67,7 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
     { apiClient }: ScanContext<JellyfinApiClient>,
     apiMovie: JellyfinMovie,
   ): Promise<Result<JellyfinMovie>> {
-    const fullMetadataResult = await apiClient.getMovie(apiMovie.externalKey);
+    const fullMetadataResult = await apiClient.getMovie(apiMovie.externalId);
 
     if (fullMetadataResult.isFailure()) {
       throw fullMetadataResult.error;
@@ -75,7 +75,7 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
 
     return fullMetadataResult.map((fullMovie) => {
       if (!fullMovie) {
-        throw new Error(`Movie (ID = ${apiMovie.externalKey}) not found`);
+        throw new Error(`Movie (ID = ${apiMovie.externalId}) not found`);
       }
 
       return fullMovie;
@@ -96,6 +96,6 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
   }
 
   protected getExternalKey(entity: JellyfinMovie): string {
-    return entity.externalKey;
+    return entity.externalId;
   }
 }

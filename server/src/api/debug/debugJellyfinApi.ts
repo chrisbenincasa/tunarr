@@ -1,4 +1,5 @@
 import { container } from '@/container.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { JellyfinItemFinder } from '@/external/jellyfin/JellyfinItemFinder.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -7,7 +8,6 @@ import { tag } from '@tunarr/types';
 import { isNil } from 'lodash-es';
 import { v4 } from 'uuid';
 import { z } from 'zod/v4';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import type { MediaSourceApiClientFactory } from '../../external/MediaSourceApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 
@@ -40,6 +40,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           username: null,
           libraries: [],
           type: 'jellyfin',
+          mediaType: null,
+          paths: [],
         },
       });
 
@@ -78,6 +80,8 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           username: null,
           libraries: [],
           type: 'jellyfin',
+          mediaType: null,
+          paths: [],
         },
       });
 

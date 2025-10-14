@@ -6,6 +6,7 @@ import type { Maybe } from '@/types/util.ts';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getApiPlexByMediaSourceIdFiltersOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { Plex } from '../../helpers/constants.ts';
 
 export const usePlexFilters = (serverId: Maybe<string>, plexKey: string) => {
   const query = useQuery({
@@ -42,8 +43,7 @@ export const usePlexFilters = (serverId: Maybe<string>, plexKey: string) => {
 // Like usePlexFilters, but uses the selected server and library from
 // local state.
 export const useSelectedLibraryPlexFilters = () => {
-  const [selectedServer, selectedLibrary] =
-    useCurrentMediaSourceAndView('plex');
+  const [selectedServer, selectedLibrary] = useCurrentMediaSourceAndView(Plex);
   return usePlexFilters(
     selectedServer?.id,
     selectedLibrary?.view.type === 'library'

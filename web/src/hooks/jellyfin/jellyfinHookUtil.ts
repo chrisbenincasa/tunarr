@@ -1,8 +1,12 @@
 import { JellyfinTerminalTypes } from '@/helpers/jellyfinUtil';
-import type { Library, ProgramOrFolder, TerminalProgram } from '@tunarr/types';
+import {
+  isTerminalItemType,
+  type Library,
+  type ProgramOrFolder,
+  type TerminalProgram,
+} from '@tunarr/types';
 import { type JellyfinItem } from '@tunarr/types/jellyfin';
 import { flattenDeep } from 'lodash-es';
-import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
 import { getJellyfinLibraryItems } from '../../generated/sdk.gen.ts';
 import type { Nullable } from '../../types/util.ts';
 

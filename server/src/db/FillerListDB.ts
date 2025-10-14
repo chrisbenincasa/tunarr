@@ -40,11 +40,9 @@ import {
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
-import { ChannelFillerShow } from './schema/Channel.ts';
-import type {
-  NewFillerShow,
-  NewFillerShowContent,
-} from './schema/FillerShow.ts';
+import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
+import type { NewFillerShow } from './schema/FillerShow.ts';
+import type { NewFillerShowContent } from './schema/FillerShowContent.ts';
 import { DB } from './schema/db.ts';
 import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
 

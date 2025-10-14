@@ -3,7 +3,7 @@ import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingM
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
 import type {
@@ -30,7 +30,7 @@ export type GenericMediaSourceMusicLibraryScanner<
     AlbumT
   >,
 > = MediaSourceMusicArtistScanner<
-  MediaSourceType,
+  RemoteMediaSourceType,
   MediaSourceApiClient,
   ArtistT,
   AlbumT,
@@ -38,7 +38,7 @@ export type GenericMediaSourceMusicLibraryScanner<
 >;
 
 export abstract class MediaSourceMusicArtistScanner<
-  MediaSourceTypeT extends MediaSourceType,
+  MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
   ArtistT extends MediaSourceMusicArtist,
   AlbumT extends MediaSourceMusicAlbum<ArtistT>,
@@ -79,7 +79,7 @@ export abstract class MediaSourceMusicArtistScanner<
         return;
       }
 
-      seenShows.add(artist.externalKey);
+      seenShows.add(artist.externalId);
       const processedAmount = round(seenShows.size / totalSize, 2) * 100.0;
       // const canonicalId = this.getCanonicalId(show);
 
@@ -96,7 +96,7 @@ export abstract class MediaSourceMusicArtistScanner<
       );
 
       const upsertResult = await Result.attemptAsync(() =>
-        this.programDB.getOrInsertProgramGrouping(dao, {
+        this.programDB.upsertProgramGrouping(dao, {
           externalKey: this.getEntityExternalKey(artist),
           externalSourceId: mediaSource.uuid,
           sourceType: this.mediaSourceType,
@@ -160,11 +160,11 @@ export abstract class MediaSourceMusicArtistScanner<
           library,
           album,
         );
-        dao.libraryId = scanContext.library.uuid;
-        dao.showUuid = artist.uuid;
+        dao.programGrouping.libraryId = scanContext.library.uuid;
+        dao.programGrouping.showUuid = artist.uuid;
 
         const upsertResult = await Result.attemptAsync(() =>
-          this.programDB.getOrInsertProgramGrouping(dao, {
+          this.programDB.upsertProgramGrouping(dao, {
             externalKey: this.getEntityExternalKey(album),
             externalSourceId: mediaSource.uuid,
             sourceType: this.mediaSourceType,

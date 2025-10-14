@@ -1,4 +1,4 @@
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { EmbyApiClient } from '@/external/emby/EmbyApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
 import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';

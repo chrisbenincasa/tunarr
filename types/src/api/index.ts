@@ -25,6 +25,7 @@ import {
   BackupSettingsSchema,
   EmbyServerSettingsSchema,
   JellyfinServerSettingsSchema,
+  LocalMediaSourceSchema,
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
@@ -191,6 +192,7 @@ export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
   }).omit({ libraries: true }),
   JellyfinServerSettingsSchema.omit({ libraries: true }),
   EmbyServerSettingsSchema.omit({ libraries: true }),
+  LocalMediaSourceSchema.omit({ libraries: true }),
 ]);
 
 export type UpdateMediaSourceRequest = z.infer<
@@ -217,6 +219,7 @@ export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
   }).omit({ id: true, libraries: true }),
   JellyfinServerSettingsSchema.omit({ id: true, libraries: true }),
   EmbyServerSettingsSchema.omit({ id: true, libraries: true }),
+  LocalMediaSourceSchema.omit({ id: true, libraries: true }),
 ]);
 
 export type InsertMediaSourceRequest = z.infer<
@@ -395,6 +398,7 @@ export const UpdateMediaSourceLibraryRequest = z.object({
 export const ProgramSearchRequest = z.object({
   query: SearchRequestSchema,
   restrictSeachTo: z.array(z.string()).optional(),
+  mediaSourceId: z.string().optional(),
   libraryId: z.string().optional(), // Limit search to a specific library
   page: z.number().optional(),
   limit: z.number().optional(),

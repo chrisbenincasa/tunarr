@@ -14,8 +14,8 @@ export abstract class WrappedError extends Error {
     })();
   }
 
-  static forMessage(msg: string): WrappedError {
-    return this.fromError(new Error(msg));
+  static forMessage(msg: string, cause?: Error): WrappedError {
+    return this.fromError(new Error(msg, cause));
   }
 
   nodeErrorCode(): NodeJS.ErrnoException['code'] {

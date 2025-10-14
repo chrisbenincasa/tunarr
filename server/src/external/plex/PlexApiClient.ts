@@ -1,3 +1,4 @@
+import { MediaSourceType } from '@/db/schema/base.js';
 import type { Nilable, Nullable } from '@/types/util.js';
 import { type Maybe } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
@@ -89,8 +90,7 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import type { z } from 'zod/v4';
 import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
-import type { MediaSourceLibrary } from '../../db/schema/MediaSource.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { MediaSourceLibraryOrm } from '../../db/schema/MediaSource.ts';
 import { ProgramType, ProgramTypes } from '../../db/schema/Program.js';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.js';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
@@ -112,6 +112,7 @@ import type {
 import { Result } from '../../types/result.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
 import iterators from '../../util/iterator.ts';
+import { titleToSortTitle } from '../../util/programs.ts';
 import type { ApiClientOptions } from '../BaseApiClient.js';
 import { QueryError, type QueryResult } from '../BaseApiClient.js';
 import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
@@ -366,7 +367,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     schema: z.ZodType<PlexMetadataResponse<ItemType>>,
     converter: (
       item: ItemType,
-      libraryId: MediaSourceLibrary,
+      libraryId: MediaSourceLibraryOrm,
     ) => Result<OutType>,
     pageSize: number = 50,
     key: string = `/library/sections/${libraryId}/all`,
@@ -659,7 +660,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     schema: z.ZodType<PlexMetadataResponse<ItemType>>,
     converter: (
       plexItem: ItemType,
-      library: MediaSourceLibrary,
+      library: MediaSourceLibraryOrm,
     ) => Result<OutType>,
   ): Promise<QueryResult<OutType>> {
     const queryResult = await this.getItemMetadataInternal(externalKey, schema);
@@ -678,7 +679,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   private findLibraryFromPlexMedia(
     media: PlexMediaNoCollectionOrPlaylist,
     libraryId?: string,
-  ): QueryResult<MediaSourceLibrary> {
+  ): QueryResult<MediaSourceLibraryOrm> {
     libraryId ??= media.librarySectionID?.toString();
     if (!isNonEmptyString(libraryId)) {
       return this.makeErrorResult(
@@ -1094,7 +1095,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexShowInjection(
     plexShow: ApiPlexTvShow,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexShow> {
     return Result.success({
       uuid: v4(),
@@ -1103,7 +1104,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexShow.ratingKey,
       title: plexShow.title,
       type: ProgramGroupingType.Show,
       year: plexShow.year ?? null,
@@ -1145,12 +1145,13 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       externalId: plexShow.ratingKey,
       childCount: plexShow.childCount,
       grandchildCount: plexShow.leafCount,
+      sortTitle: titleToSortTitle(plexShow.title),
     } satisfies PlexShow);
   }
 
   private plexSeasonInjection(
     plexSeason: ApiPlexTvSeason,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexSeason> {
     return Result.success({
       uuid: v4(),
@@ -1159,8 +1160,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexSeason.ratingKey,
       title: plexSeason.title,
+      sortTitle: titleToSortTitle(plexSeason.title),
       type: ProgramGroupingType.Season,
       index: plexSeason.index,
       releaseDate: null,
@@ -1196,8 +1197,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       childCount: plexSeason.leafCount,
       show: plexSeason.parentRatingKey
         ? ({
+            sortTitle: plexSeason.parentTitle
+              ? titleToSortTitle(plexSeason.parentTitle)
+              : '',
             externalId: plexSeason.parentRatingKey,
-            externalKey: plexSeason.parentRatingKey,
             externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexSeason.parentRatingKey
@@ -1239,7 +1242,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexEpisodeInjection(
     plexEpisode: ApiPlexEpisode,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexEpisode> {
     if (isNil(plexEpisode.duration) || plexEpisode.duration <= 0) {
       return Result.forError(
@@ -1271,8 +1274,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       externalLibraryId: mediaLibrary.externalKey,
       type: ProgramType.Episode,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexEpisode.ratingKey,
       title: plexEpisode.title,
+      sortTitle: titleToSortTitle(plexEpisode.title),
       originalTitle: null,
       year: null,
       summary: plexEpisode.summary ?? null,
@@ -1315,7 +1318,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       season: plexEpisode.parentRatingKey
         ? {
             externalId: plexEpisode.parentRatingKey,
-            externalKey: plexEpisode.parentRatingKey,
             externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexEpisode.parentRatingKey
@@ -1341,6 +1343,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             studios: [],
             sourceType: 'plex',
             title: plexEpisode.parentTitle ?? '',
+            sortTitle: plexEpisode.parentTitle
+              ? titleToSortTitle(plexEpisode.parentTitle)
+              : '',
             summary: null,
             tagline: null,
             tags: [],
@@ -1351,7 +1356,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             show: plexEpisode.grandparentRatingKey
               ? ({
                   externalId: plexEpisode.grandparentRatingKey,
-                  externalKey: plexEpisode.grandparentRatingKey,
                   externalLibraryId: mediaLibrary.externalKey,
                   identifiers: compact([
                     plexEpisode.grandparentRatingKey
@@ -1376,6 +1380,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
                   studios: [],
                   sourceType: 'plex',
                   title: plexEpisode.grandparentTitle ?? '',
+                  sortTitle: plexEpisode.grandparentTitle
+                    ? titleToSortTitle(plexEpisode.grandparentTitle)
+                    : '',
                   summary: null,
                   tagline: null,
                   tags: [],
@@ -1397,7 +1404,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexMovieInjection(
     plexMovie: ApiPlexMovie,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexMovie> {
     if (isNil(plexMovie.duration) || plexMovie.duration <= 0) {
       return Result.forError(
@@ -1432,8 +1439,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexMovie.ratingKey,
       title: plexMovie.title,
+      sortTitle: titleToSortTitle(plexMovie.title),
       originalTitle: null,
       year: plexMovie.year ?? null,
       releaseDate: plexMovie.originallyAvailableAt
@@ -1480,7 +1487,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexOtherVideoInjection(
     plexClip: ApiPlexMovie,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexOtherVideo> {
     if (isNil(plexClip.duration) || plexClip.duration <= 0) {
       return Result.forError(
@@ -1515,6 +1522,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       sourceType: MediaSourceType.Plex,
       externalKey: plexClip.ratingKey,
       title: plexClip.title,
+      sortTitle: titleToSortTitle(plexClip.title),
       originalTitle: null,
       year: plexClip.year ?? null,
       releaseDate: plexClip.originallyAvailableAt
@@ -1560,7 +1568,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexMusicArtistInjection(
     plexArtist: ApiPlexMusicArtist,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexArtist> {
     return Result.success({
       uuid: v4(),
@@ -1569,8 +1577,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexArtist.ratingKey,
       title: plexArtist.title,
+      sortTitle: titleToSortTitle(plexArtist.title),
       type: ProgramGroupingType.Artist,
       tagline: null,
       genres: plexJoinItemInject(plexArtist.Genre),
@@ -1602,7 +1610,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexAlbumInjection(
     plexAlbum: ApiPlexMusicAlbum,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexAlbum> {
     return Result.success({
       uuid: v4(),
@@ -1611,8 +1619,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexAlbum.ratingKey,
       title: plexAlbum.title,
+      sortTitle: titleToSortTitle(plexAlbum.title),
       type: ProgramGroupingType.Album,
       index: plexAlbum.index,
       genres: plexJoinItemInject(plexAlbum.Genre),
@@ -1653,7 +1661,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
   private plexTrackInjection(
     plexTrack: ApiPlexMusicTrack,
-    mediaLibrary: MediaSourceLibrary,
+    mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexTrack, WrappedError> {
     if (isNil(plexTrack.duration) || plexTrack.duration <= 0) {
       return Result.forError(
@@ -1679,8 +1687,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       externalLibraryId: mediaLibrary.externalKey,
       type: ProgramType.Track,
       sourceType: MediaSourceType.Plex,
-      externalKey: plexTrack.ratingKey,
       title: plexTrack.title,
+      sortTitle: titleToSortTitle(plexTrack.title),
       originalTitle: null,
       year: plexTrack.parentYear ?? null,
       duration: plexTrack.duration ?? 0,
@@ -1722,7 +1730,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       album: plexTrack.parentRatingKey
         ? {
             externalId: plexTrack.parentRatingKey,
-            externalKey: plexTrack.parentRatingKey,
             externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexTrack.parentRatingKey
@@ -1748,6 +1755,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             studios: [],
             sourceType: 'plex',
             title: plexTrack.parentTitle ?? '',
+            sortTitle: plexTrack.parentTitle
+              ? titleToSortTitle(plexTrack.parentTitle)
+              : '',
             summary: null,
             tagline: null,
             tags: [],
@@ -1758,7 +1768,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             artist: plexTrack.grandparentRatingKey
               ? ({
                   externalId: plexTrack.grandparentRatingKey,
-                  externalKey: plexTrack.grandparentRatingKey,
                   externalLibraryId: mediaLibrary.externalKey,
                   identifiers: compact([
                     plexTrack.grandparentRatingKey
@@ -1780,6 +1789,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
                   plot: null,
                   sourceType: 'plex',
                   title: plexTrack.grandparentTitle ?? '',
+                  sortTitle: plexTrack.grandparentTitle
+                    ? titleToSortTitle(plexTrack.grandparentTitle)
+                    : '',
                   summary: null,
                   tagline: null,
                   tags: [],

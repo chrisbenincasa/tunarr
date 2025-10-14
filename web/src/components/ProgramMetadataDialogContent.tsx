@@ -264,7 +264,7 @@ export const ProgramMetadataDialogContent = ({
           }
 
           let key = p.uniqueId;
-          if (p.subtype === 'track') {
+          if (p.subtype === 'track' && p.externalSourceType !== 'local') {
             if (isNonEmptyString(p.parent?.externalKey)) {
               key = createExternalId(
                 p.externalSourceType,
@@ -285,7 +285,7 @@ export const ProgramMetadataDialogContent = ({
     () =>
       forProgramType({
         content: (p) =>
-          p.id && p.persisted
+          p.id && p.persisted && p.externalSourceType !== 'local'
             ? `${settings.backendUri}/api/programs/${p.id}/external-link`
             : null,
       }),

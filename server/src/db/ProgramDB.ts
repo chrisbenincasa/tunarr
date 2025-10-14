@@ -1,9 +1,8 @@
 import type {
-  GetOrInsertResult,
   IProgramDB,
   ProgramGroupingChildCounts,
   ProgramGroupingExternalIdLookup,
-  ProgramUpsertRequest,
+  UpsertResult,
   WithChannelIdFilter,
 } from '@/db/interfaces/IProgramDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -32,6 +31,7 @@ import {
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import {
   CaseWhenBuilder,
@@ -43,6 +43,7 @@ import {
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
+  compact,
   concat,
   difference,
   filter,
@@ -52,6 +53,7 @@ import {
   forEach,
   groupBy,
   head,
+  isArray,
   isEmpty,
   isNil,
   isNull,
@@ -69,13 +71,18 @@ import {
   uniq,
   uniqBy,
 } from 'lodash-es';
-import { Dictionary, MarkOptional, MarkRequired } from 'ts-essentials';
+import {
+  Dictionary,
+  MarkOptional,
+  MarkRequired,
+  StrictExclude,
+} from 'ts-essentials';
+import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { typedProperty } from '../types/path.ts';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import {
   flatMapAsyncSeq,
-  groupByFunc,
   groupByUniq,
   groupByUniqProp,
   isDefined,
@@ -96,7 +103,7 @@ import {
 import { PageParams } from './interfaces/IChannelDB.ts';
 import {
   AllProgramFields,
-  AllProgramJoins,
+  AllProgramGroupingFields,
   ProgramUpsertFields,
   selectProgramsBuilder,
   withProgramByExternalId,
@@ -107,7 +114,8 @@ import {
   withTvSeason,
   withTvShow,
 } from './programQueryHelpers.ts';
-import { MediaSourceType } from './schema/MediaSource.ts';
+import { Artwork, NewArtwork } from './schema/Artwork.ts';
+import { RemoteMediaSourceType } from './schema/MediaSource.ts';
 import {
   NewProgramDao,
   ProgramDao,
@@ -120,12 +128,11 @@ import {
   NewProgramExternalId,
   NewSingleOrMultiExternalId,
   ProgramExternalId,
-  ProgramExternalIdKeys,
   toInsertableProgramExternalId,
 } from './schema/ProgramExternalId.ts';
 import {
-  AllProgramGroupingFields,
   NewProgramGrouping,
+  ProgramGrouping,
   ProgramGroupingType,
   ProgramGroupingUpdate,
 } from './schema/ProgramGrouping.ts';
@@ -137,21 +144,36 @@ import {
   toInsertableProgramGroupingExternalId,
 } from './schema/ProgramGroupingExternalId.ts';
 import {
+  NewProgramMediaFile,
+  ProgramMediaFile,
+} from './schema/ProgramMediaFile.ts';
+import {
   NewProgramMediaStream,
   ProgramMediaStream,
 } from './schema/ProgramMediaStream.ts';
+import {
+  NewProgramSubtitles,
+  ProgramSubtitles,
+} from './schema/ProgramSubtitles.ts';
 import { ProgramVersion } from './schema/ProgramVersion.ts';
-import { MediaSourceId, MediaSourceName } from './schema/base.ts';
+import {
+  MediaSourceId,
+  MediaSourceName,
+  MediaSourceType,
+} from './schema/base.js';
 import { DB } from './schema/db.ts';
 import type {
   MusicAlbumWithExternalIds,
-  NewProgramGroupingWithExternalIds,
+  NewProgramGroupingWithRelations,
   NewProgramVersion,
+  NewProgramWithRelations,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
+  ProgramWithRelationsOrm,
   TvSeasonWithExternalIds,
 } from './schema/derivedTypes.ts';
+import { DrizzleDBAccess } from './schema/index.ts';
 
 type MintedNewProgramInfo = {
   program: NewProgramDao;
@@ -197,17 +219,28 @@ export class ProgramDB implements IProgramDB {
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.ProgramDaoMinterFactory)
     private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {
     this.timer = new Timer(this.logger);
   }
 
-  async getProgramById(id: string) {
-    return this.db
-      .selectFrom('program')
-      .selectAll()
-      .select((eb) => withProgramExternalIds(eb, ProgramExternalIdKeys))
-      .where('program.uuid', '=', id)
-      .executeTakeFirst();
+  async getProgramById(
+    id: string,
+  ): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>> {
+    return this.drizzleDB.query.program.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: {
+        externalIds: true,
+        artwork: true,
+        subtitles: true,
+        versions: {
+          with: {
+            mediaStreams: true,
+            mediaFiles: true,
+          },
+        },
+      },
+    });
   }
 
   async getProgramExternalIds(
@@ -248,6 +281,28 @@ export class ProgramDB implements IProgramDB {
   async getProgramsByIds(
     ids: string[],
     batchSize: number = 500,
+  ): Promise<ProgramWithRelationsOrm[]> {
+    const results: ProgramWithRelationsOrm[] = [];
+    for (const idChunk of chunk(ids, batchSize)) {
+      const res = await this.drizzleDB.query.program.findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+        with: {
+          album: true,
+          artist: true,
+          season: true,
+          show: true,
+          externalIds: true,
+          artwork: true,
+        },
+      });
+      results.push(...res);
+    }
+    return results;
+  }
+
+  async getProgramsByIdsOld(
+    ids: string[],
+    batchSize: number = 500,
   ): Promise<ProgramWithRelations[]> {
     const results: ProgramWithRelations[] = [];
     for (const idChunk of chunk(ids, batchSize)) {
@@ -267,12 +322,13 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getProgramGrouping(id: string) {
-    return this.db
-      .selectFrom('programGrouping')
-      .selectAll()
-      .select(withProgramGroupingExternalIds)
-      .where('uuid', '=', id)
-      .executeTakeFirst();
+    return this.drizzleDB.query.programGrouping.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: {
+        externalIds: true,
+        artwork: true,
+      },
+    });
   }
 
   async getProgramGroupings(ids: string[]) {
@@ -462,13 +518,14 @@ export class ProgramDB implements IProgramDB {
             )
             .executeTakeFirstOrThrow(),
           baseQuery
-            .selectAll()
+            .selectAll('programGrouping')
             .orderBy(childType === 'season' ? 'title asc' : 'year asc')
             .select(withProgramGroupingExternalIds)
             .$if(!!params && params.limit >= 0, (eb) =>
               eb.offset(params.offset),
             )
             .$if(!!params && params.limit >= 0, (eb) => eb.limit(params.limit))
+            .$narrowType<ProgramGroupingWithExternalIds[]>()
             .execute(),
         ]);
 
@@ -532,39 +589,39 @@ export class ProgramDB implements IProgramDB {
     chunkSize: number = 200,
   ) {
     const allIds = [...ids];
-    const programs: ProgramWithRelations[] = [];
+    const programs: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[] = [];
     for (const idChunk of chunk(allIds, chunkSize)) {
-      programs.push(
-        ...(await this.db
-          .selectFrom('programExternalId')
-          .select((eb) =>
-            withProgramByExternalId(eb, { joins: AllProgramJoins }),
-          )
-          .where((eb) =>
-            eb.or(
-              map(idChunk, ([ps, es, ek]) =>
-                eb.and([
-                  eb('programExternalId.externalKey', '=', ek),
-                  eb('programExternalId.mediaSourceId', '=', es),
-                  eb(
-                    'programExternalId.sourceType',
-                    '=',
-                    programSourceTypeFromString(ps)!,
-                  ),
-                ]),
-              ),
+      const results = await this.drizzleDB.query.programExternalId.findMany({
+        where: (fields, { or, and, eq }) => {
+          const ands = idChunk.map(([ps, es, ek]) =>
+            and(
+              eq(fields.externalKey, ek),
+              eq(fields.sourceType, programSourceTypeFromString(ps)!),
+              eq(fields.mediaSourceId, es),
             ),
-          )
-          .execute()
-          .then((_) => seq.collect(_, (eid) => eid.program))),
-      );
+          );
+          return or(...ands);
+        },
+        with: {
+          program: {
+            with: {
+              album: true,
+              artist: true,
+              season: true,
+              show: true,
+              externalIds: true,
+            },
+          },
+        },
+      });
+      programs.push(...seq.collect(results, (r) => r.program));
     }
 
     return programs;
   }
 
   async lookupByMediaSource(
-    sourceType: MediaSourceType,
+    sourceType: RemoteMediaSourceType,
     sourceId: MediaSourceId,
     programType: Maybe<ProgramType>,
     chunkSize: number = 200,
@@ -888,10 +945,19 @@ export class ProgramDB implements IProgramDB {
     return upsertedPrograms;
   }
 
+  upsertPrograms(
+    request: NewProgramWithRelations,
+  ): Promise<ProgramWithExternalIds>;
+  upsertPrograms(
+    programs: NewProgramWithRelations[],
+    programUpsertBatchSize?: number,
+  ): Promise<ProgramWithExternalIds[]>;
   async upsertPrograms(
-    requests: ProgramUpsertRequest[],
+    requests: NewProgramWithRelations | NewProgramWithRelations[],
     programUpsertBatchSize: number = 100,
-  ) {
+  ): Promise<ProgramWithExternalIds | ProgramWithExternalIds[]> {
+    const wasSingleRequest = !isArray(requests);
+    requests = isArray(requests) ? requests : [requests];
     if (isEmpty(requests)) {
       return [];
     }
@@ -901,19 +967,12 @@ export class ProgramDB implements IProgramDB {
     // Group related items by canonicalId because the UUID we get back
     // from the upsert may not be the one we generated (if an existing entry)
     // already exists
-    const externalIdsByProgramCanonicalId = groupByFunc(
+    const requestsByCanonicalId = groupByUniq(
       requests,
       ({ program }) => program.canonicalId,
-      (program) => program.externalIds,
     );
 
-    const programVersionsByCanonicalId = groupByFunc(
-      requests,
-      ({ program }) => program.canonicalId,
-      (request) => request.versions,
-    );
-
-    return await Promise.all(
+    const result = await Promise.all(
       chunk(requests, programUpsertBatchSize).map(async (c) => {
         const chunkResult = await db.transaction().execute((tx) =>
           tx
@@ -936,27 +995,42 @@ export class ProgramDB implements IProgramDB {
         );
 
         const allExternalIds = flatten(c.map((program) => program.externalIds));
+        const versionsToInsert: NewProgramVersion[] = [];
+        const artworkToInsert: NewArtwork[] = [];
+        const subtitlesToInsert: NewProgramSubtitles[] = [];
         for (const program of chunkResult) {
           const key = program.canonicalId;
-          const eids = externalIdsByProgramCanonicalId[key] ?? [];
+          const request: Maybe<NewProgramWithRelations> =
+            requestsByCanonicalId[key];
+          const eids = request?.externalIds ?? [];
           for (const eid of eids) {
             eid.programUuid = program.uuid;
+          }
+
+          for (const version of request?.versions ?? []) {
+            version.programId = program.uuid;
+            versionsToInsert.push(version);
+          }
+
+          for (const art of request?.artwork ?? []) {
+            art.programId = program.uuid;
+            artworkToInsert.push(art);
+          }
+
+          for (const subtitle of request?.subtitles ?? []) {
+            subtitle.programId = program.uuid;
+            subtitlesToInsert.push(subtitle);
           }
         }
 
         const externalIdsByProgramId =
           await this.upsertProgramExternalIds(allExternalIds);
 
-        const versionsToInsert: NewProgramVersion[] = [];
-        for (const program of chunkResult) {
-          for (const version of programVersionsByCanonicalId[
-            program.canonicalId
-          ] ?? []) {
-            version.programId = program.uuid;
-            versionsToInsert.push(version);
-          }
-        }
         await this.upsertProgramVersions(versionsToInsert);
+
+        await this.upsertArtwork(artworkToInsert);
+
+        await this.upsertSubtitles(subtitlesToInsert);
 
         return chunkResult.map(
           (upsertedProgram) =>
@@ -967,6 +1041,12 @@ export class ProgramDB implements IProgramDB {
         );
       }),
     ).then(flatten);
+
+    if (wasSingleRequest) {
+      return head(result)!;
+    } else {
+      return result;
+    }
   }
 
   private async upsertProgramVersions(versions: NewProgramVersion[]) {
@@ -991,19 +1071,23 @@ export class ProgramDB implements IProgramDB {
           .insertInto('programVersion')
           .values(
             versionBatch.map((version) =>
-              omit(version, ['chapters', 'mediaStreams']),
+              omit(version, ['chapters', 'mediaStreams', 'mediaFiles']),
             ),
           )
           .returningAll()
           .execute();
 
         await Promise.all([
-          this.upsertProgramMediaStreams(
+          await this.upsertProgramMediaStreams(
             versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
             tx,
           ),
-          this.upsertProgramChapters(
+          await this.upsertProgramChapters(
             versionBatch.flatMap(({ chapters }) => chapters ?? []),
+            tx,
+          ),
+          await this.upsertProgramMediaFiles(
+            versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
             tx,
           ),
         ]);
@@ -1063,6 +1147,207 @@ export class ProgramDB implements IProgramDB {
       );
     }
     return inserted;
+  }
+
+  private async upsertProgramMediaFiles(
+    files: NewProgramMediaFile[],
+    tx: Kysely<DB> = this.db,
+  ) {
+    if (files.length === 0) {
+      this.logger.warn('No media files passed for version');
+      return [];
+    }
+
+    const byVersionId = groupBy(files, (stream) => stream.programVersionId);
+    const inserted: ProgramMediaFile[] = [];
+    for (const batch of chunk(Object.entries(byVersionId), 50)) {
+      const [_, files] = unzip(batch);
+      // TODO: Do we need to delete first?
+      // await tx.deleteFrom('programMediaStream').where('programVersionId', 'in', versionIds).executeTakeFirstOrThrow();
+      inserted.push(
+        ...(await tx
+          .insertInto('programMediaFile')
+          .values(flatten(files))
+          .returningAll()
+          .execute()),
+      );
+    }
+    return inserted;
+  }
+
+  private async upsertArtwork(artwork: NewArtwork[]) {
+    if (artwork.length === 0) {
+      return;
+    }
+
+    const programArt = groupBy(
+      artwork.filter((art) => isNonEmptyString(art.programId)),
+      (art) => art.programId,
+    );
+    const groupArt = groupBy(
+      artwork.filter((art) => isNonEmptyString(art.groupingId)),
+      (art) => art.groupingId,
+    );
+
+    return await this.drizzleDB.transaction(async (tx) => {
+      for (const batch of chunk(keys(programArt), 50)) {
+        await tx.delete(Artwork).where(inArray(Artwork.programId, batch));
+      }
+      for (const batch of chunk(keys(groupArt), 50)) {
+        await tx.delete(Artwork).where(inArray(Artwork.groupingId, batch));
+      }
+      const inserted: Artwork[] = [];
+      for (const batch of chunk(artwork, 50)) {
+        const batchResult = await this.drizzleDB
+          .insert(Artwork)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: Artwork.uuid,
+            set: {
+              cachePath: sql`excluded.cache_path`,
+              groupingId: sql`excluded.grouping_id`,
+              programId: sql`excluded.program_id`,
+              updatedAt: sql`excluded.updated_at`,
+              sourcePath: sql`excluded.source_path`,
+            },
+          })
+          .returning();
+        inserted.push(...batchResult);
+      }
+      return inserted;
+    });
+  }
+
+  private async upsertSubtitles(subtitles: NewProgramSubtitles[]) {
+    if (subtitles.length === 0) {
+      return;
+    }
+
+    const grouped = groupBy(subtitles, (sub) => sub.programId);
+    for (const [programId, programSubtitles] of Object.entries(grouped)) {
+      const existingSubsForProgram =
+        await this.drizzleDB.query.programSubtitles.findMany({
+          where: (fields, { eq }) => eq(fields.programId, programId),
+        });
+
+      // Embedded subtitles are unique by stream index
+      // Sidecar are unique by path.
+      const [existingEmbedded, _] = partition(
+        existingSubsForProgram,
+        (sub) => !isNil(sub.streamIndex),
+      );
+      const [incomingEmbedded, incomingExternal] = partition(
+        programSubtitles,
+        (sub) => !isNil(sub.streamIndex),
+      );
+
+      const existingIndexes = new Set(
+        seq.collect(existingEmbedded, (sub) => sub.streamIndex),
+      );
+      const incomingIndexes = new Set(
+        seq.collect(incomingEmbedded, (sub) => sub.streamIndex),
+      );
+
+      const newIndexes = incomingIndexes.difference(existingIndexes);
+      const removedIndexes = existingIndexes.difference(newIndexes);
+      const updatedIndexes = incomingIndexes.difference(
+        newIndexes.union(removedIndexes),
+      );
+
+      const inserts = incomingEmbedded.filter((s) =>
+        newIndexes.has(s.streamIndex!),
+      );
+      const removes = existingEmbedded.filter((s) =>
+        removedIndexes.has(s.streamIndex!),
+      );
+
+      const updates: ProgramSubtitles[] = [];
+      for (const updatedIndex of updatedIndexes.values()) {
+        const incoming = incomingEmbedded.find(
+          (s) => s.streamIndex === updatedIndex,
+        );
+        const existing = existingEmbedded.find(
+          (s) => s.streamIndex === updatedIndex,
+        );
+        if (!existing || !incoming) {
+          continue; // Shouldn't happen
+        }
+
+        if (existing.isExtracted) {
+          const needsExtraction =
+            existing.subtitleType !== incoming.subtitleType ||
+            existing.codec !== incoming.subtitleType ||
+            existing.language !== incoming.language ||
+            existing.forced !== incoming.forced ||
+            existing.sdh !== incoming.sdh ||
+            existing.default !== incoming.default;
+          if (needsExtraction) {
+            existing.isExtracted = false;
+            existing.path = incoming.path ?? null;
+          } else if (
+            isNonEmptyString(incoming.path) &&
+            existing.path !== incoming.path
+          ) {
+            existing.isExtracted = false;
+            existing.path = incoming.path;
+          }
+        }
+
+        existing.codec = incoming.codec;
+        existing.language = incoming.language;
+        existing.subtitleType = incoming.subtitleType;
+        existing.updatedAt = incoming.updatedAt;
+        if (isDefined(incoming.default)) {
+          existing.default = incoming.default;
+        }
+
+        if (isDefined(incoming.sdh)) {
+          existing.sdh = incoming.sdh;
+        }
+
+        if (isDefined(incoming.forced)) {
+          existing.forced = incoming.forced;
+        }
+
+        updates.push(existing);
+      }
+
+      await this.drizzleDB.transaction(async (tx) => {
+        if (inserts.length > 0) {
+          await tx.insert(ProgramSubtitles).values(inserts);
+        }
+        if (removes.length > 0) {
+          await tx.delete(ProgramSubtitles).where(
+            inArray(
+              ProgramSubtitles.uuid,
+              removes.map((s) => s.uuid),
+            ),
+          );
+        }
+
+        if (updates.length > 0) {
+          for (const update of updates) {
+            await tx
+              .update(ProgramSubtitles)
+              .set(update)
+              .where(eq(ProgramSubtitles.uuid, update.uuid));
+          }
+        }
+
+        await tx
+          .delete(ProgramSubtitles)
+          .where(
+            and(
+              eq(ProgramSubtitles.subtitleType, 'sidecar'),
+              eq(ProgramSubtitles.programId, programId),
+            ),
+          );
+
+        if (incomingExternal.length > 0) {
+          await tx.insert(ProgramSubtitles).values(incomingExternal);
+        }
+      });
+    }
   }
 
   async upsertProgramExternalIds(
@@ -1234,7 +1519,7 @@ export class ProgramDB implements IProgramDB {
   async getProgramGroupingCanonicalIds(
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,
-    sourceType: MediaSourceType,
+    sourceType: StrictExclude<MediaSourceType, 'local'>,
   ) {
     return this.db
       .selectFrom('programGrouping')
@@ -1287,11 +1572,12 @@ export class ProgramDB implements IProgramDB {
       .execute();
   }
 
-  async getOrInsertProgramGrouping(
-    dao: NewProgramGroupingWithExternalIds,
+  async upsertProgramGrouping(
+    newGroupingAndRelations: NewProgramGroupingWithRelations,
     externalId: ProgramGroupingExternalIdLookup,
     forceUpdate: boolean = false,
-  ): Promise<GetOrInsertResult<ProgramGroupingWithExternalIds>> {
+  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>> {
+    const { programGrouping: dao, externalIds } = newGroupingAndRelations;
     const existing = await this.getProgramGroupingByExternalId(externalId);
     if (existing) {
       let wasUpdated = false;
@@ -1307,14 +1593,18 @@ export class ProgramDB implements IProgramDB {
         forceUpdate || differentVersion || missingAssociation;
       if (shouldUpdate) {
         dao.uuid = existing.uuid;
-        dao.externalIds.forEach((externalId) => {
+        externalIds.forEach((externalId) => {
           externalId.groupUuid = existing.uuid;
         });
         await this.db.transaction().execute(async (tx) => {
-          await this.updateProgramGrouping(dao, existing, tx);
+          await this.updateProgramGrouping(
+            newGroupingAndRelations,
+            existing,
+            tx,
+          );
           await this.updateProgramGroupingExternalIds(
             existing.externalIds,
-            dao.externalIds,
+            externalIds,
             tx,
           );
         });
@@ -1335,16 +1625,15 @@ export class ProgramDB implements IProgramDB {
         .values(omit(dao, 'externalIds'))
         .returningAll()
         .executeTakeFirstOrThrow();
-      const externalIds: ProgramGroupingExternalId[] = [];
-      if (dao.externalIds.length > 0) {
-        externalIds.push(
+      const insertedExternalIds: ProgramGroupingExternalId[] = [];
+      if (insertedExternalIds.length > 0) {
+        insertedExternalIds.push(
           ...(await tx
             .insertInto('programGroupingExternalId')
             .values(
-              dao.externalIds.map((eid) => ({
-                ...omit(eid, 'type'),
-                groupUuid: grouping.uuid,
-              })),
+              externalIds.map((eid) =>
+                this.singleOrMultiProgramGroupingExternalIdToDao(eid),
+              ),
             )
             .returningAll()
             .execute()),
@@ -1355,14 +1644,173 @@ export class ProgramDB implements IProgramDB {
         wasUpdated: false,
         entity: {
           ...grouping,
-          externalIds,
+          externalIds: insertedExternalIds,
         } satisfies ProgramGroupingWithExternalIds,
       };
     });
   }
 
+  async upsertLocalProgramGrouping(
+    newGroupingAndRelations: NewProgramGroupingWithRelations,
+    libraryId: string,
+  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>> {
+    const incomingYear = newGroupingAndRelations.programGrouping.year;
+    const existingGrouping =
+      await this.drizzleDB.query.programGrouping.findFirst({
+        where: (fields, { eq, and, isNull }) => {
+          const parentClause = match(newGroupingAndRelations.programGrouping)
+            .with({ type: 'season', showUuid: P.nonNullable }, (season) =>
+              compact([
+                eq(fields.showUuid, season.showUuid),
+                season.index ? eq(fields.index, season.index) : null,
+              ]),
+            )
+            .with({ type: 'album', artistUuid: P.nonNullable }, (album) => [
+              eq(fields.artistUuid, album.artistUuid),
+            ])
+            .otherwise(() => []);
+          return and(
+            eq(fields.libraryId, libraryId),
+            eq(fields.title, newGroupingAndRelations.programGrouping.title),
+            eq(fields.type, newGroupingAndRelations.programGrouping.type),
+            eq(fields.sourceType, 'local'),
+            isNil(incomingYear)
+              ? isNull(fields.year)
+              : eq(fields.year, incomingYear),
+            ...parentClause,
+          );
+        },
+        with: {
+          externalIds: true,
+        },
+      });
+
+    if (existingGrouping) {
+      newGroupingAndRelations.programGrouping.uuid = existingGrouping.uuid;
+      newGroupingAndRelations.externalIds.forEach((eid) => {
+        eid.groupUuid = existingGrouping.uuid;
+      });
+      newGroupingAndRelations.artwork.forEach((art) => {
+        art.groupingId = existingGrouping.uuid;
+      });
+
+      const [grouping, externalIds] = await this.drizzleDB.transaction(
+        async (tx) => {
+          const grouping = head(
+            await tx
+              .update(ProgramGrouping)
+              .set(
+                omit(newGroupingAndRelations.programGrouping, [
+                  'uuid',
+                  'createdAt',
+                ]),
+              )
+              .where(eq(ProgramGrouping.uuid, existingGrouping.uuid))
+              .returning(),
+          )!;
+          await tx
+            .delete(ProgramGroupingExternalId)
+            .where(
+              eq(ProgramGroupingExternalId.groupUuid, existingGrouping.uuid),
+            );
+          const externalIds =
+            newGroupingAndRelations.externalIds.length > 0
+              ? await tx
+                  .insert(ProgramGroupingExternalId)
+                  .values(newGroupingAndRelations.externalIds)
+                  .returning()
+              : [];
+          return [grouping, externalIds];
+        },
+      );
+
+      newGroupingAndRelations.artwork.forEach((art) => {
+        art.groupingId = grouping.uuid;
+      });
+
+      await this.upsertArtwork(newGroupingAndRelations.artwork);
+
+      return {
+        entity: {
+          ...grouping,
+          externalIds,
+        },
+        wasInserted: false,
+        wasUpdated: true,
+      };
+    }
+
+    const [grouping, externalIds] = await this.drizzleDB.transaction(
+      async (tx) => {
+        const grouping = head(
+          await tx
+            .insert(ProgramGrouping)
+            .values(newGroupingAndRelations.programGrouping)
+            .returning(),
+        )!;
+        let externalIds: ProgramGroupingExternalId[] = [];
+        if (newGroupingAndRelations.externalIds.length > 0) {
+          newGroupingAndRelations.externalIds.forEach((eid) => {
+            eid.groupUuid = grouping.uuid;
+          });
+          externalIds = await tx
+            .insert(ProgramGroupingExternalId)
+            .values(newGroupingAndRelations.externalIds)
+            .returning();
+        }
+        return [grouping, externalIds];
+      },
+    );
+
+    newGroupingAndRelations.artwork.forEach((art) => {
+      art.groupingId = grouping.uuid;
+    });
+
+    await this.upsertArtwork(newGroupingAndRelations.artwork);
+
+    return {
+      entity: {
+        ...grouping,
+        externalIds,
+      },
+      wasInserted: true,
+      wasUpdated: false,
+    };
+  }
+
+  private singleOrMultiProgramGroupingExternalIdToDao(
+    externalId: NewSingleOrMultiProgramGroupingExternalId,
+  ): NewProgramGroupingExternalId {
+    switch (externalId.type) {
+      case 'single':
+        return {
+          externalKey: externalId.externalKey,
+          groupUuid: externalId.groupUuid,
+          sourceType: externalId.sourceType,
+          uuid: externalId.uuid,
+          createdAt: externalId.createdAt,
+          externalFilePath: externalId.externalFilePath,
+          libraryId: externalId.libraryId,
+          updatedAt: externalId.updatedAt,
+        };
+      case 'multi':
+        return {
+          externalKey: externalId.externalKey,
+          groupUuid: externalId.groupUuid,
+          sourceType: externalId.sourceType,
+          uuid: externalId.uuid,
+          createdAt: externalId.createdAt,
+          externalFilePath: externalId.externalFilePath,
+          externalSourceId: externalId.externalSourceId,
+          libraryId: externalId.libraryId,
+          mediaSourceId: externalId.mediaSourceId,
+          updatedAt: externalId.updatedAt,
+        };
+    }
+  }
+
   private async updateProgramGrouping(
-    incoming: NewProgramGroupingWithExternalIds,
+    { programGrouping: incoming }: NewProgramGroupingWithRelations,
     existing: ProgramGroupingWithExternalIds,
     tx: Kysely<DB> = this.db,
   ) {
@@ -1533,33 +1981,56 @@ export class ProgramDB implements IProgramDB {
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
   ) {
-    return this.db
-      .selectFrom('program')
-      .$if(isUndefined(groupTypeHint), (qb) =>
-        qb.where((eb) =>
-          eb.or([
-            eb('program.tvShowUuid', '=', groupId),
-            eb('program.albumUuid', '=', groupId),
-            eb('program.seasonUuid', '=', groupId),
-            eb('program.artistUuid', '=', groupId),
-          ]),
-        ),
-      )
-      .$if(isDefined(groupTypeHint), (qb) => {
-        switch (groupTypeHint!) {
-          case 'show':
-            return qb.where('program.tvShowUuid', '=', groupId);
-          case 'season':
-            return qb.where('program.seasonUuid', '=', groupId);
-          case 'artist':
-            return qb.where('program.artistUuid', '=', groupId);
-          case 'album':
-            return qb.where('program.albumUuid', '=', groupId);
+    return this.drizzleDB.query.program.findMany({
+      where: (fields, { or, eq }) => {
+        if (groupTypeHint) {
+          switch (groupTypeHint) {
+            case 'show':
+              return eq(fields.tvShowUuid, groupId);
+            case 'season':
+              return eq(fields.seasonUuid, groupId);
+            case 'artist':
+              return eq(fields.artistUuid, groupId);
+            case 'album':
+              return eq(fields.albumUuid, groupId);
+          }
+        } else {
+          return or(
+            eq(fields.albumUuid, groupId),
+            eq(fields.artistUuid, groupId),
+            eq(fields.tvShowUuid, groupId),
+            eq(fields.seasonUuid, groupId),
+          );
         }
-      })
-      .selectAll()
-      .select(withProgramExternalIds)
-      .execute();
+      },
+      with: {
+        album:
+          isUndefined(groupTypeHint) ||
+          groupTypeHint === 'album' ||
+          groupTypeHint === 'artist'
+            ? true
+            : undefined,
+        artist:
+          isUndefined(groupTypeHint) ||
+          groupTypeHint === 'album' ||
+          groupTypeHint === 'artist'
+            ? true
+            : undefined,
+        season:
+          isUndefined(groupTypeHint) ||
+          groupTypeHint === 'show' ||
+          groupTypeHint === 'season'
+            ? true
+            : undefined,
+        show:
+          isUndefined(groupTypeHint) ||
+          groupTypeHint === 'show' ||
+          groupTypeHint === 'season'
+            ? true
+            : undefined,
+        externalIds: true,
+      },
+    });
   }
 
   private async handleProgramGroupings(
@@ -1691,30 +2162,17 @@ export class ProgramDB implements IProgramDB {
     const existingGroupings = await this.timer.timeAsync(
       `selecting grouping external ids (${allGroupingKeys.length})`,
       () =>
-        this.db
-          .selectFrom('programGroupingExternalId')
-          .where((eb) => {
-            return eb.and([
-              eb('programGroupingExternalId.sourceType', '=', mediaSourceType),
-              eb('programGroupingExternalId.mediaSourceId', '=', mediaSourceId),
-              eb(
-                'programGroupingExternalId.externalKey',
-                'in',
-                allGroupingKeys,
-              ),
-            ]);
-          })
-          .innerJoin(
-            'programGrouping',
-            'programGroupingExternalId.groupUuid',
-            'programGrouping.uuid',
-          )
-          .selectAll()
-          .groupBy([
-            'programGroupingExternalId.externalKey',
-            'programGrouping.uuid',
-          ])
-          .execute(),
+        this.drizzleDB.query.programGroupingExternalId.findMany({
+          where: (fields, { eq, and, inArray }) =>
+            and(
+              eq(fields.sourceType, mediaSourceType),
+              eq(fields.mediaSourceId, mediaSourceId),
+              inArray(fields.externalKey, allGroupingKeys),
+            ),
+          with: {
+            grouping: true,
+          },
+        }),
     );
 
     const foundGroupingRatingKeys = map(existingGroupings, 'externalKey');

@@ -1,5 +1,12 @@
 export const SettingsJsonFilename = 'settings.json';
 export const CacheFolderName = 'cache';
 export const SubtitlesCacheFolderName = 'subtitles';
+export const PosterCacheFolderName = 'posters';
+export const BannerCacheFolderName = 'banners';
+export const FanartCacheFolderName = 'fanart';
+export const LandscapeCacheFolderName = 'landscapes';
+export const LogoCacheFolderName = 'logos';
+export const ThumbnailCacheFolderName = 'thumbs';
+export const WatermarkCacheFolderName = 'watermarks';
 export const ImagesFolderName = 'images';
 export const ChannelLineupsFolderName = 'channel-lineups';

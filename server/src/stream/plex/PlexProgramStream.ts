@@ -1,7 +1,7 @@
 import { isPlexBackedLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
@@ -67,13 +67,13 @@ export class PlexProgramStream extends ProgramStream {
 
     const server = await this.mediaSourceDB.findByType(
       MediaSourceType.Plex,
-      lineupItem.externalSourceId,
+      lineupItem.program.mediaSourceId,
     );
 
     if (isNil(server)) {
       return Result.forError(
         new Error(
-          `Unable to find server "${lineupItem.externalSourceId}" specified by program.`,
+          `Unable to find server "${lineupItem.program.mediaSourceId}" specified by program.`,
         ),
       );
     }
@@ -94,10 +94,7 @@ export class PlexProgramStream extends ProgramStream {
 
     const stream = await plexStreamDetails.getStream({
       server,
-      lineupItem: {
-        ...lineupItem,
-        externalFilePath: lineupItem.plexFilePath,
-      },
+      lineupItem: lineupItem.program,
     });
     if (isNull(stream)) {
       return Result.forError(
@@ -112,9 +109,7 @@ export class PlexProgramStream extends ProgramStream {
 
     const streamStats = stream.streamDetails;
     if (streamStats) {
-      streamStats.duration = lineupItem.streamDuration
-        ? dayjs.duration(lineupItem.streamDuration)
-        : undefined;
+      streamStats.duration = dayjs.duration(lineupItem.streamDuration);
     }
 
     const start = dayjs.duration(lineupItem.startOffset ?? 0);
@@ -146,7 +141,7 @@ export class PlexProgramStream extends ProgramStream {
         {
           channelNumber: this.context.sourceChannel.number,
           duration: lineupItem.duration,
-          ratingKey: lineupItem.externalKey,
+          ratingKey: lineupItem.program.externalKey,
           startTime: lineupItem.startOffset ?? 0,
         },
         v4(),

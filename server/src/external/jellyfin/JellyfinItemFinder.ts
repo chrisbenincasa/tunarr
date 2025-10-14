@@ -1,6 +1,7 @@
 import { ProgramDaoMinter } from '@/db/converters/ProgramMinter.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { ProgramType } from '@/db/schema/Program.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import type { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
@@ -24,8 +25,7 @@ import {
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
-import { MediaSourceId } from '../../db/schema/base.ts';
+import { MediaSourceId } from '../../db/schema/base.js';
 import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 

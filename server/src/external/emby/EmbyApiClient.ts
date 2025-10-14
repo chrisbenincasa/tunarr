@@ -80,6 +80,7 @@ import type {
   NamedEntity,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { titleToSortTitle } from '../../util/programs.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -898,6 +899,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(movie),
       title: movie.Name!,
+      sortTitle: titleToSortTitle(movie.Name ?? ''),
       originalTitle: movie.OriginalTitle ?? null,
       year: movie.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -924,7 +926,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: movie.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'movie',
-      externalKey: movie.Id,
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         movie,
@@ -1064,6 +1065,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       externalId: series.Id,
       canonicalId: this.canonicalizer.getCanonicalId(series),
       title: series.Name!,
+      sortTitle: titleToSortTitle(series.Name ?? ''),
       // originalTitle: series.OriginalTitle ?? null,
       year: series.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1092,7 +1094,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: series.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'show',
-      externalKey: series.Id,
       // mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         series,
@@ -1112,6 +1113,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       externalId: season.Id,
       canonicalId: this.canonicalizer.getCanonicalId(season),
       title: season.Name!,
+      sortTitle: titleToSortTitle(season.Name ?? ''),
       // originalTitle: season.OriginalTitle ?? null,
       year: season.ProductionYear ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
@@ -1140,7 +1142,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: season.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'season',
-      externalKey: season.Id,
       // mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         season,
@@ -1186,6 +1187,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       externalId: episode.Id,
       canonicalId: this.canonicalizer.getCanonicalId(episode),
       title: episode.Name!,
+      sortTitle: titleToSortTitle(episode.Name ?? ''),
       originalTitle: episode.OriginalTitle ?? null,
       year: episode.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1215,7 +1217,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: episode.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'episode',
-      externalKey: episode.Id,
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         episode,
@@ -1229,8 +1230,8 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   private embyApiMusicArtistInjection(artist: ApiEmbyMusicArtist) {
     return {
       title: artist.Name ?? '',
+      sortTitle: titleToSortTitle(artist.Name ?? ''),
       canonicalId: this.canonicalizer.getCanonicalId(artist),
-      externalKey: artist.Id,
       genres:
         artist.Genres?.map((genre) => ({
           name: genre,
@@ -1259,8 +1260,8 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       type: 'album',
       externalId: album.Id,
       title: album.Name ?? '',
+      sortTitle: titleToSortTitle(album.Name ?? ''),
       canonicalId: this.canonicalizer.getCanonicalId(album),
-      externalKey: album.Id,
       genres:
         album.Genres?.map((genre) => ({
           name: genre,
@@ -1312,9 +1313,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(track),
       title: track.Name ?? '',
+      sortTitle: titleToSortTitle(track.Name ?? ''),
       actors: [],
       directors: [],
-      externalKey: track.Id,
       genres: [],
       tags: track.Tags?.filter(isNonEmptyString) ?? [],
       year: track.ProductionYear ?? null,
@@ -1378,6 +1379,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(video),
       title: video.Name!,
+      sortTitle: titleToSortTitle(video.Name ?? ''),
       originalTitle: video.OriginalTitle ?? null,
       year: video.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1404,7 +1406,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
       // summary: null,
       type: 'music_video',
-      externalKey: video.Id,
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         video,
@@ -1447,6 +1448,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(video),
       title: video.Name!,
+      sortTitle: titleToSortTitle(video.Name ?? ''),
       originalTitle: video.OriginalTitle ?? null,
       year: video.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1473,7 +1475,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
       // summary: null,
       type: 'other_video',
-      externalKey: video.Id,
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
         video,

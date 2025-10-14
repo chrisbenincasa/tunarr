@@ -13,11 +13,13 @@ export class VainfoProcessHelper {
       new ChildProcessHelper().getStdout(
         'vainfo',
         ['--display', display, '--device', vaapiDevice, '-a'],
-        swallowError,
-        isNonEmptyString(vaapiDriver)
-          ? { LIBVA_DRIVER_NAME: vaapiDriver }
-          : undefined,
-        swallowError,
+        {
+          swallowError,
+          env: isNonEmptyString(vaapiDriver)
+            ? { LIBVA_DRIVER_NAME: vaapiDriver }
+            : undefined,
+          isPath: false,
+        },
       ),
     );
   }

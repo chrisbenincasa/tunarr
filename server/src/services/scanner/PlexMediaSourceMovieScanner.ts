@@ -1,4 +1,5 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
@@ -6,7 +7,6 @@ import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { PlexMovie } from '../../types/Media.ts';
@@ -75,7 +75,7 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     { apiClient }: ScanContext<PlexApiClient>,
     incomingMovie: PlexMovie,
   ): Promise<Result<PlexMovie>> {
-    return apiClient.getMovie(incomingMovie.externalKey);
+    return apiClient.getMovie(incomingMovie.externalId);
   }
 
   protected getCanonicalId(entity: PlexMovie): string {
@@ -83,6 +83,6 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
   }
 
   protected getExternalKey(entity: PlexMovie): string {
-    return entity.externalKey;
+    return entity.externalId;
   }
 }

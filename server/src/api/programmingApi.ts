@@ -1,14 +1,11 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type {
-  MediaSource,
-  MediaSourceLibrary,
+  MediaSourceLibraryOrm,
+  MediaSourceOrm,
 } from '@/db/schema/MediaSource.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import type { ProgramGrouping as ProgramGroupingDao } from '@/db/schema/ProgramGrouping.js';
-import {
-  AllProgramGroupingFields,
-  ProgramGroupingType,
-} from '@/db/schema/ProgramGrouping.js';
+import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
@@ -42,6 +39,7 @@ import {
 } from '@tunarr/types/api';
 import {
   ContentProgramSchema,
+  ProgramGroupingSchema,
   TerminalProgramSchema,
 } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';
@@ -58,6 +56,7 @@ import {
   isUndefined,
   map,
   omitBy,
+  trimStart,
   values,
 } from 'lodash-es';
 import type stream from 'node:stream';
@@ -69,13 +68,19 @@ import {
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
-import { AllProgramFields } from '../db/programQueryHelpers.ts';
-import type { MediaSourceId } from '../db/schema/base.ts';
+import {
+  AllProgramFields,
+  AllProgramGroupingFields,
+} from '../db/programQueryHelpers.ts';
+import type { Artwork } from '../db/schema/Artwork.ts';
+import { ArtworkTypes } from '../db/schema/Artwork.ts';
+import type { MediaSourceId } from '../db/schema/base.js';
 import type {
   MediaSourceWithLibraries,
-  ProgramWithRelations,
+  ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.js';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
+import { globalOptions } from '../globals.ts';
 import type {
   ProgramGroupingSearchDocument,
   ProgramSearchDocument,
@@ -127,19 +132,19 @@ function isProgramGroupingDocument(
 
 function convertProgramSearchResult(
   doc: TerminalProgramSearchDocument,
-  program: ProgramWithRelations,
+  program: ProgramWithRelationsOrm,
   mediaSource: MediaSourceWithLibraries,
-  mediaLibrary: MediaSourceLibrary,
+  mediaLibrary: MediaSourceLibraryOrm,
 ): TerminalProgram {
   if (!program.canonicalId) {
-    throw new Error('');
+    throw new Error('Program did not have a canonical ID');
   }
 
   const externalId = doc.externalIds.find(
     (eid) => eid.source === mediaSource.type,
   )?.id;
-  if (!externalId) {
-    throw new Error('');
+  if (!externalId && program.sourceType !== 'local') {
+    throw new Error('No external Id found');
   }
 
   const base = {
@@ -150,8 +155,9 @@ function convertProgramSearchResult(
     releaseDateString: doc.originalReleaseDate
       ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
       : null,
-    externalId,
+    externalId: externalId ?? program.externalKey,
     sourceType: mediaSource.type,
+    sortTitle: '',
   };
 
   const identifiers = doc.externalIds.map((eid) => ({
@@ -188,6 +194,7 @@ function convertProgramSearchResult(
           identifiers,
           episodeNumber: ep.index ?? 0,
           canonicalId: program.canonicalId!,
+          sortTitle: '',
           // mediaItem: {
           //   displayAspectRatio: '',
           //   duration: doc.duration,
@@ -248,7 +255,10 @@ function convertProgramSearchResult(
     .otherwise(() => null);
 
   if (!result) {
-    throw new Error('');
+    throw new Error(
+      'Could not convert program result for incoming document: ' +
+        JSON.stringify(doc),
+    );
   }
 
   return result;
@@ -259,10 +269,10 @@ function convertProgramGroupingSearchResult(
   grouping: ProgramGroupingDao,
   childCounts: Maybe<ProgramGroupingChildCounts>,
   mediaSource: MediaSourceWithLibraries,
-  mediaLibrary: MediaSourceLibrary,
+  mediaLibrary: MediaSourceLibraryOrm,
 ) {
   if (!grouping.canonicalId) {
-    throw new Error('');
+    throw new Error(`No canonical id for grouping ${grouping.uuid}`);
   }
 
   const childCount = childCounts?.childCount;
@@ -282,11 +292,13 @@ function convertProgramGroupingSearchResult(
   const externalId = doc.externalIds.find(
     (eid) => eid.source === mediaSource.type,
   )?.id;
-  if (!externalId) {
+
+  if (!externalId && mediaSource.type !== 'local') {
     throw new Error('');
   }
 
   const base = {
+    sortTitle: '',
     mediaSourceId: mediaSource.uuid,
     libraryId: mediaLibrary.uuid,
     externalLibraryId: mediaLibrary.externalKey,
@@ -294,7 +306,7 @@ function convertProgramGroupingSearchResult(
     releaseDateString: doc.originalReleaseDate
       ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
       : null,
-    externalId,
+    externalId: externalId ?? grouping.externalKey ?? '',
     sourceType: mediaSource.type,
   };
 
@@ -390,6 +402,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           offset: req.body.page ?? 1,
           limit: req.body.limit ?? 20,
         },
+        mediaSourceId: req.body.mediaSourceId,
         libraryId: req.body.libraryId,
         // TODO not a great cast...
         restrictSearchTo: req.body.query
@@ -426,6 +439,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.serverCtx.programDB.getProgramGroupings(groupingIds),
         req.serverCtx.programDB.getProgramGroupingChildCounts(groupingIds),
       ]);
+
+      console.log(groupings, groupingIds);
 
       const results = seq.collect(result.hits, (program) => {
         const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
@@ -495,7 +510,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         if (program) {
           return res.send(
             compact([
-              req.serverCtx.programConverter.convertProgramWithExternalIds(
+              req.serverCtx.programConverter.programOrmToContentProgram(
                 program,
               ),
             ]),
@@ -512,7 +527,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
       const apiPrograms = seq.collect(programs, (program) =>
-        req.serverCtx.programConverter.convertProgramWithExternalIds(program),
+        req.serverCtx.programConverter.programOrmToContentProgram(program),
       );
 
       return res.send(apiPrograms);
@@ -528,7 +543,8 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         querystring: z.object({
           facetQuery: z.string().optional(),
-          libraryId: z.string().uuid().optional(),
+          mediaSourceId: z.uuid().optional(),
+          libraryId: z.uuid().optional(),
         }),
         response: {
           200: z.object({
@@ -543,6 +559,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         {
           facetQuery: req.query.facetQuery,
           facetName: req.params.facetName,
+          mediaSourceId: req.query.mediaSourceId,
           libraryId: req.query.libraryId,
         },
       );
@@ -627,6 +644,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             with: {
               mediaStreams: true,
               chapters: true,
+              mediaFiles: true,
             },
           },
         },
@@ -650,6 +668,126 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
+    '/program_groupings/:id',
+    {
+      schema: {
+        tags: ['Programs'],
+        params: BasicIdParamSchema,
+        response: {
+          200: ProgramGroupingSchema,
+          404: z.void(),
+          500: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const db = container.get<DrizzleDBAccess>(KEYS.DrizzleDB);
+      const dbRes = await db.query.programGrouping.findFirst({
+        where: (program, { eq }) => eq(program.uuid, req.params.id),
+        with: {
+          show: true,
+          artist: true,
+          externalIds: true,
+          artwork: true,
+        },
+      });
+
+      if (!dbRes) {
+        return res.status(404).send();
+      }
+
+      const groupingCounts =
+        await req.serverCtx.programDB.getProgramGroupingChildCounts([
+          dbRes.uuid,
+        ]);
+
+      const searchDoc = await req.serverCtx.searchService.getProgram(
+        dbRes.uuid,
+      );
+      if (!searchDoc || !isProgramGroupingDocument(searchDoc)) {
+        return res.status(404).send();
+      }
+
+      const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
+      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+        tag(mediaSourceId),
+      );
+      if (!mediaSource) {
+        return;
+      }
+      const libraryId = decodeCaseSensitiveId(searchDoc.libraryId);
+      const library = await req.serverCtx.mediaSourceDB.getLibrary(libraryId);
+      if (!library) {
+        return;
+      }
+
+      if (dbRes.canonicalId) {
+        const converted = convertProgramGroupingSearchResult(
+          searchDoc,
+          dbRes,
+          groupingCounts[dbRes.uuid],
+          mediaSource,
+          library,
+        );
+
+        if (!converted) {
+          return res.status(404).send();
+        }
+
+        return res.send(converted);
+      }
+    },
+  );
+
+  fastify.get(
+    '/programs/:id/artwork/:artworkType',
+    {
+      schema: {
+        produces: ['image/jpeg', 'image/png'],
+        params: z.object({
+          id: z.uuid(),
+          // TODO: use API schema
+          artworkType: z.enum(ArtworkTypes),
+        }),
+        response: {
+          200: z.any(),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      let program: Maybe<{ artwork?: Artwork[] }> =
+        await req.serverCtx.programDB.getProgramById(req.params.id);
+
+      if (!program) {
+        program = await req.serverCtx.programDB.getProgramGrouping(
+          req.params.id,
+        );
+        if (!program) {
+          return res.status(404).send();
+        }
+      }
+
+      const art = program.artwork?.find(
+        (art) => art.artworkType === req.params.artworkType,
+      );
+      if (!art) {
+        return res.status(404).send();
+      }
+
+      const path = req.serverCtx.imageCache.getImagePath(
+        art.cachePath,
+        art.artworkType,
+      );
+
+      return res.sendFile(
+        trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
+        { contentType: true },
+      );
+    },
+  );
+
+  fastify.get(
     '/programs/:id/stream_details',
     {
       schema: {
@@ -669,6 +807,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           .status(404)
           .send('Program has no associated media source ID');
       }
+      const mediaSourceId = program.mediaSourceId;
 
       const server = await req.serverCtx.mediaSourceDB.findByType(
         program.sourceType,
@@ -690,15 +829,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           ExternalStreamDetailsFetcherFactory,
         )
         .getStream({
-          lineupItem: {
-            externalKey: program.externalKey,
-            externalSource: program.sourceType,
-            externalSourceId: program.mediaSourceId ?? program.externalSourceId,
-            duration: program.duration,
-            externalFilePath: program.plexFilePath ?? undefined,
-            programId: program.uuid,
-            programType: program.type,
-          },
+          lineupItem: { ...program, mediaSourceId },
           server,
         });
 
@@ -844,7 +975,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send('ID not found');
       }
 
-      const handleResult = async (mediaSource: MediaSource, result: string) => {
+      const handleResult = async (
+        mediaSource: MediaSourceOrm,
+        result: string,
+      ) => {
         if (req.query.method === 'proxy') {
           try {
             logger.debug('Proxying response to %s', result);
@@ -1144,7 +1278,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       const converted =
-        req.serverCtx.programConverter.programDaoToContentProgram(program);
+        req.serverCtx.programConverter.programOrmToContentProgram(program);
 
       if (!converted) {
         return res
@@ -1185,7 +1319,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send(
         groupByUniq(
           seq.collect(results, (p) =>
-            req.serverCtx.programConverter.programDaoToContentProgram(p),
+            req.serverCtx.programConverter.programOrmToContentProgram(p),
           ),
           (p) => p.id,
         ),

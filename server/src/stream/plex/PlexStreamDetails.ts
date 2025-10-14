@@ -27,6 +27,7 @@ import {
   isPlexMusicTrack,
   isTerminalItem,
 } from '@tunarr/types/plex';
+import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import {
   filter,
@@ -45,6 +46,7 @@ import {
 } from 'lodash-es';
 import { container } from '../../container.ts';
 import { MinimalPlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
+import { MediaSourceType } from '../../db/schema/base.js';
 import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
 import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
@@ -90,32 +92,40 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
 
   private async getStreamInternal(
     server: PlexMediaSource,
-    item: MinimalPlexBackedStreamLineupItem,
+    program: MinimalPlexBackedStreamLineupItem,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
     if (depth > 1) {
       return null;
     }
 
+    const plexExternalInfo = program.externalIds.find(
+      (eid) => eid.sourceType === MediaSourceType.Plex,
+    );
+    if (!plexExternalInfo) {
+      this.logger.error(
+        'Could not find Plex external info for program ID %s',
+        program.uuid,
+      );
+      return null;
+    }
+
     const plexApiClient =
       await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(server);
 
-    const expectedItemType = item.programType;
+    const expectedItemType = program.type;
     const itemMetadataResult = await plexApiClient.getItemMetadata(
-      item.externalKey,
+      program.externalKey,
     );
 
     if (itemMetadataResult.isFailure()) {
       if (itemMetadataResult.error.type === 'not_found') {
         this.logger.debug(
           'Could not find item %s in Plex. Rating key may have changed. Attempting to update.',
-          item.externalKey,
-        );
-        const externalIds = await this.programDB.getProgramExternalIds(
-          item.programId,
+          program.externalKey,
         );
         const plexGuid = find(
-          externalIds,
+          program.externalIds,
           (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
         )?.externalKey;
         if (isNonEmptyString(plexGuid)) {
@@ -142,12 +152,12 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
               const newRatingKey = metadata.ratingKey;
               this.logger.debug(
                 'Updating program %s with new Plex rating key %s',
-                item.programId,
+                program.uuid,
                 newRatingKey,
               );
 
               await this.programDB.updateProgramPlexRatingKey(
-                item.programId,
+                program.uuid,
                 server.name,
                 { externalKey: newRatingKey },
               );
@@ -156,10 +166,10 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
                 isTerminalItem(metadata) &&
                 isDefined(metadata.duration) &&
                 metadata.duration > 0 &&
-                metadata.duration !== item.duration
+                metadata.duration !== program.duration
               ) {
                 await this.programDB.updateProgramDuration(
-                  item.programId,
+                  program.uuid,
                   metadata.duration,
                 );
 
@@ -168,7 +178,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
                     ReconcileProgramDurationsTask.KEY,
                   )({
                     type: 'program',
-                    programId: item.programId,
+                    programId: program.uuid,
                   });
 
                 GlobalScheduler.runTask(task);
@@ -177,7 +187,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
               return this.getStreamInternal(
                 server,
                 {
-                  ...item,
+                  ...program,
                   externalKey: newRatingKey,
                 },
                 depth + 1,
@@ -206,14 +216,14 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       this.logger.warn(
         'Got unexpected item type %s from Plex (ID = %s) when starting stream. Expected item type %s',
         itemMetadata.type,
-        item.externalKey,
+        program.externalKey,
         expectedItemType,
       );
       return null;
     }
 
     const details = await this.getItemStreamDetails(
-      item,
+      program,
       itemMetadata,
       plexApiClient,
     );
@@ -224,11 +234,11 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
 
     if (
       isNonEmptyString(details.serverPath) &&
-      details.serverPath !== item.externalFilePath
+      details.serverPath !== plexExternalInfo.externalFilePath
     ) {
       this.programDB
-        .updateProgramPlexRatingKey(item.programId, server.uuid, {
-          externalKey: item.externalKey,
+        .updateProgramPlexRatingKey(program.uuid, server.uuid, {
+          externalKey: program.externalKey,
           externalFilePath: details.serverPath,
           directFilePath: details.directFilePath ?? null,
         })
@@ -236,7 +246,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
           this.logger.error(
             err,
             'Error while updating Plex file path for program %s',
-            item.programId,
+            program.uuid,
           );
         });
     }
@@ -278,7 +288,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
           path: filePath,
         };
       } else {
-        let path = details.serverPath ?? item.externalFilePath;
+        let path = details.serverPath ?? plexExternalInfo.externalFilePath;
         this.logger.debug(
           'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
           path,
@@ -365,7 +375,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         bitrate: videoStream.bitrate,
         codec: videoStream.codec,
         profile: videoStream.profile?.toLowerCase(),
-        streamIndex: videoStream.index?.toString() ?? '0',
+        streamIndex: videoStream.index,
       } satisfies VideoStreamDetails;
     }
 
@@ -385,7 +395,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
           bitrate: audioStream.bitrate,
           channels: audioStream.channels,
           codec: audioStream.codec,
-          index: audioStream.index?.toString() ?? 'a', // Fallback for legacy pipeline
+          index: audioStream.index,
           // Use the "selected" bit over the "default" if it exists
           // In plex, selected signifies that the user's preferences would choose
           // this stream over others, even if it is not the default
@@ -469,6 +479,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
         ? subtitleStreamDetails
         : undefined,
+      duration: dayjs.duration(item.duration),
     };
 
     if (

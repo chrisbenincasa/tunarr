@@ -5,7 +5,7 @@ import type {
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,
-} from '../../db/schema/base.ts';
+} from '../../db/schema/base.js';
 
 interface CurrentProgramExternalIdTable
   extends WithUuid,

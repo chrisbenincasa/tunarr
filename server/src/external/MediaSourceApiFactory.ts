@@ -1,6 +1,6 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import type { MediaSource } from '@/db/schema/MediaSource.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
+import type { MediaSource, MediaSourceOrm } from '@/db/schema/MediaSource.js';
 import type { Maybe } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import type { FindChild } from '@tunarr/types';
@@ -9,7 +9,7 @@ import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { forEach, isBoolean, isEmpty, isNil } from 'lodash-es';
 import NodeCache from 'node-cache';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
-import { MediaSourceId } from '../db/schema/base.ts';
+import { MediaSourceId } from '../db/schema/base.js';
 import { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
@@ -126,19 +126,10 @@ export class MediaSourceApiFactory {
   getPlexApiClientForMediaSource(
     mediaSource: MediaSourceWithLibraries,
   ): Promise<PlexApiClient> {
-    // const opts = mediaSourceToApiOptions(mediaSource);
     return this.getPlexApiClient({ mediaSource });
   }
 
   getPlexApiClient(opts: ApiClientOptions): Promise<PlexApiClient> {
-    // const key = `${opts.url}|${opts.accessToken}`;
-    // const client = await cacheGetOrSet(MediaSourceApiFactory.cache, key, () => {
-    //   return Promise.resolve(
-    //     ,
-    //   );
-    // });
-    // client.setApiClientOptions(opts);
-    // return client;
     return Promise.resolve(
       this.plexApiClientFactory({
         ...opts,
@@ -187,7 +178,7 @@ export class MediaSourceApiFactory {
     );
   }
 
-  deleteCachedClient(mediaSource: MediaSource) {
+  deleteCachedClient(mediaSource: MediaSourceOrm) {
     const key = this.getCacheKeyForMediaSource(mediaSource);
     return MediaSourceApiFactory.cache.del(key) === 1;
   }
@@ -224,7 +215,9 @@ export class MediaSourceApiFactory {
     return `${type}|${uri}|${accessToken}`;
   }
 
-  private getCacheKeyForMediaSource(mediaSource: MediaSource): string {
+  private getCacheKeyForMediaSource(
+    mediaSource: MediaSource | MediaSourceOrm,
+  ): string {
     return this.getCacheKey(
       mediaSource.type,
       mediaSource.uri,

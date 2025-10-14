@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
-import { ProgramOrFolder, type MediaSourceSettings } from '@tunarr/types';
-import { PagedResult } from '@tunarr/types/api';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { isTerminalItemType, type MediaSourceSettings } from '@tunarr/types';
+import type { PagedResult } from '@tunarr/types/api';
 import type { EmbyItemKind, EmbyItemSortBy } from '@tunarr/types/emby';
 import { isEmpty, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -12,10 +13,7 @@ import { useInfiniteEmbyLibraryItems } from '../../../hooks/emby/useEmbyApi.ts';
 import useStore from '../../../store/index.ts';
 import type { EmbyMediaSourceView } from '../../../store/programmingSelector/store.ts';
 import { LibraryListViewBreadcrumbs } from '../../library/LibraryListViewBreadcrumbs.tsx';
-import {
-  isTerminalItemType,
-  ProgramGridItem,
-} from '../../library/ProgramGridItem.tsx';
+import { ProgramGridItem } from '../../library/ProgramGridItem.tsx';
 import { ProgramListItem } from '../../library/ProgramListItem.tsx';
 import type { GridItemProps, NestedGridProps } from '../MediaItemGrid.tsx';
 import { MediaItemGrid } from '../MediaItemGrid.tsx';

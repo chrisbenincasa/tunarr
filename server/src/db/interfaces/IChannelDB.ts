@@ -8,7 +8,7 @@ import type { Channel } from '@/db/schema/Channel.js';
 import type { ProgramDao } from '@/db/schema/Program.js';
 import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
-  ChannelWithPrograms,
+  ChannelOrmWithRelations,
   ChannelWithRelations,
   MusicArtistWithExternalIds,
   ProgramWithRelations,
@@ -57,7 +57,7 @@ export interface IChannelDB {
   getChannelAndPrograms(
     uuid: string,
     typeFilter?: ContentProgramType,
-  ): Promise<ChannelWithPrograms | undefined>;
+  ): Promise<Maybe<MarkRequired<ChannelOrmWithRelations, 'programs'>>>;
 
   getChannelTvShows(
     id: string,

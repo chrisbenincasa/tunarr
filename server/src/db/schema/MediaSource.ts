@@ -4,24 +4,18 @@ import { inArray, relations } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Updateable } from 'kysely';
 import { type Insertable, type Selectable } from 'kysely';
-import type { MediaSourceName } from './base.ts';
-import { type MediaSourceId } from './base.ts';
+import type { StrictExclude } from 'ts-essentials';
+import type { MediaSourceName, MediaSourceType } from './base.ts';
+import {
+  MediaLibraryTypes,
+  MediaSourceTypes,
+  type MediaSourceId,
+} from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
+import { LocalMediaSourcePath } from './LocalMediaSourcePath.ts';
 import { Program } from './Program.ts';
 
-export const MediaSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
-
-export type MediaSourceType = TupleToUnion<typeof MediaSourceTypes>;
-
-type MediaSourceMap = {
-  [k in Capitalize<(typeof MediaSourceTypes)[number]>]: Uncapitalize<k>;
-};
-
-export const MediaSourceType: MediaSourceMap = {
-  Plex: 'plex',
-  Jellyfin: 'jellyfin',
-  Emby: 'emby',
-} as const;
+export type RemoteMediaSourceType = StrictExclude<MediaSourceType, 'local'>;
 
 export const MediaSource = sqliteTable(
   'media_source',
@@ -39,6 +33,7 @@ export const MediaSource = sqliteTable(
     uri: text().notNull(),
     username: text(),
     userId: text(),
+    mediaType: text({ enum: MediaLibraryTypes }), // Only present for local media sources
   },
   (table) => [
     check(
@@ -51,6 +46,7 @@ export const MediaSource = sqliteTable(
 export const MediaSourceRelations = relations(MediaSource, ({ many }) => ({
   libraries: many(MediaSourceLibrary),
   programs: many(Program),
+  paths: many(LocalMediaSourcePath),
 }));
 
 export const MediaSourceFields: (keyof MediaSourceTable)[] = [
@@ -71,16 +67,9 @@ export const MediaSourceFields: (keyof MediaSourceTable)[] = [
 
 export type MediaSourceTable = KyselifyBetter<typeof MediaSource>;
 export type MediaSource = Selectable<MediaSourceTable>;
+export type MediaSourceOrm = InferSelectModel<typeof MediaSource>;
 export type NewMediaSource = Insertable<MediaSourceTable>;
 export type MediaSourceUpdate = Updateable<MediaSourceTable>;
-
-export const MediaLibraryTypes = [
-  'movies',
-  'shows',
-  'music_videos',
-  'other_videos',
-  'tracks',
-] as const;
 
 export type MediaLibraryType = TupleToUnion<typeof MediaLibraryTypes>;
 
@@ -110,7 +99,7 @@ export const MediaSourceLibraryRelations = relations(
   MediaSourceLibrary,
   ({ one, many }) => ({
     programs: many(Program),
-    one: one(MediaSource, {
+    mediaSource: one(MediaSource, {
       fields: [MediaSourceLibrary.mediaSourceId],
       references: [MediaSource.uuid],
     }),

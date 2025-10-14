@@ -1,8 +1,11 @@
-import { SpecificMediaSourceType } from '@/db/schema/derivedTypes.js';
+import { MediaSourceType } from '@/db/schema/base.js';
+import {
+  SpecificMediaSourceType,
+  SpecificProgramSourceOrmType,
+} from '@/db/schema/derivedTypes.js';
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
-import type { SpecificMinimalContentStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
-import { MediaSourceType } from '../db/schema/MediaSource.js';
+import type { StreamLineupProgram } from '../db/derived_types/StreamLineup.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Nullable } from '../types/util.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
@@ -13,7 +16,7 @@ import type { ProgramStreamResult } from './types.ts';
 export type StreamFetchRequest<Typ extends MediaSourceType = MediaSourceType> =
   {
     server: SpecificMediaSourceType<Typ>;
-    lineupItem: SpecificMinimalContentStreamLineupItem<Typ>;
+    lineupItem: SpecificProgramSourceOrmType<Typ, StreamLineupProgram>;
   };
 
 export interface StreamDetailsFetcher<RequestType> {
@@ -62,7 +65,7 @@ function isPlexStreamFetch(
 ): streamFetch is StreamFetchRequest<typeof MediaSourceType.Plex> {
   return (
     streamFetch.server.type === MediaSourceType.Plex &&
-    streamFetch.lineupItem.externalSource === MediaSourceType.Plex
+    streamFetch.lineupItem.sourceType === MediaSourceType.Plex
   );
 }
 
@@ -71,7 +74,7 @@ function isJellyfinStreamFetch(
 ): streamFetch is StreamFetchRequest<typeof MediaSourceType.Jellyfin> {
   return (
     streamFetch.server.type === MediaSourceType.Jellyfin &&
-    streamFetch.lineupItem.externalSource === MediaSourceType.Jellyfin
+    streamFetch.lineupItem.sourceType === MediaSourceType.Jellyfin
   );
 }
 
@@ -80,6 +83,6 @@ function isEmbyStreamFetch(
 ): streamFetch is StreamFetchRequest<typeof MediaSourceType.Emby> {
   return (
     streamFetch.server.type === MediaSourceType.Emby &&
-    streamFetch.lineupItem.externalSource === MediaSourceType.Emby
+    streamFetch.lineupItem.sourceType === MediaSourceType.Emby
   );
 }

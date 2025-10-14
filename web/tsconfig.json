@@ -36,6 +36,7 @@
     "src/components/slot_scheduler/RandomSlotFormContext.tsx",
     "./src/components/slot_scheduler/TimeSlotFormContext.tsx",
     "./src/providers/DayjsContext.tsx",
+    "./src/components/library/extractSubtitle.tsx",
   ],
   "include": [
     "./src/**/*.ts",

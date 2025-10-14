@@ -1,10 +1,12 @@
-import { inArray } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
+import { inArray, relations, sql } from 'drizzle-orm';
 import {
   check,
   index,
   integer,
   sqliteTable,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable } from 'kysely';
 import { omit } from 'lodash-es';
@@ -47,7 +49,27 @@ export const ProgramGroupingExternalId = sqliteTable(
       'source_type_check',
       inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
     ),
+    uniqueIndex('unique_program_grouping_multiple_external_id_media_source')
+      .on(table.groupUuid, table.sourceType, table.mediaSourceId)
+      .where(sql`\`media_source_id is not null\``),
+    uniqueIndex('unique_program_grouping_single_external_id_media_source')
+      .on(table.groupUuid, table.sourceType, table.mediaSourceId)
+      .where(sql`\`media_source_id is null\``),
   ],
+);
+
+export const ProgramGroupingExternalIdRelations = relations(
+  ProgramGroupingExternalId,
+  ({ one }) => ({
+    grouping: one(ProgramGrouping, {
+      fields: [ProgramGroupingExternalId.groupUuid],
+      references: [ProgramGrouping.uuid],
+    }),
+    library: one(MediaSourceLibrary, {
+      fields: [ProgramGroupingExternalId.libraryId],
+      references: [MediaSourceLibrary.uuid],
+    }),
+  }),
 );
 
 export type ProgramGroupingExternalIdTable = KyselifyBetter<
@@ -67,6 +89,9 @@ export type NewSingleOrMultiProgramGroupingExternalId =
       Insertable<ProgramGroupingExternalIdTable>,
       'externalSourceId' | 'mediaSourceId'
     > & { type: 'multi' });
+export type ProgramGroupingExternalIdOrm = InferSelectModel<
+  typeof ProgramGroupingExternalId
+>;
 
 export function toInsertableProgramGroupingExternalId(
   eid: NewProgramGroupingExternalId | NewSingleOrMultiProgramGroupingExternalId,

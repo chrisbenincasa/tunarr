@@ -1,7 +1,8 @@
+import type { InferSelectModel } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 import {
   getTableConfig,
   integer,
-  primaryKey,
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core';
@@ -13,10 +14,10 @@ import {
   type ChannelTranscodingSettings,
   type ChannelWatermark,
 } from './base.ts';
-import { CustomShow } from './CustomShow.ts';
-import { FillerShow } from './FillerShow.ts';
+import { ChannelCustomShow } from './ChannelCustomShow.ts';
+import { ChannelFillerShow } from './ChannelFillerShow.ts';
+import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
-import { Program } from './Program.ts';
 
 export const Channel = sqliteTable('channel', {
   uuid: text().primaryKey(),
@@ -57,75 +58,10 @@ export const AllChannelTableKeys: ChannelFields = ChannelTableKeys.map(
 export type Channel = Selectable<ChannelTable>;
 export type NewChannel = Insertable<ChannelTable>;
 export type ChannelUpdate = Updateable<ChannelTable>;
+export type ChannelOrm = InferSelectModel<typeof Channel>;
 
-export const ChannelFillerShow = sqliteTable(
-  'channel_filler_show',
-  {
-    channelUuid: text()
-      .notNull()
-      .references(() => Channel.uuid, { onDelete: 'cascade' }),
-    fillerShowUuid: text()
-      .notNull()
-      .references(() => FillerShow.uuid, { onDelete: 'cascade' }),
-    cooldown: integer().notNull(),
-    weight: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.channelUuid, table.fillerShowUuid] }),
-  ],
-);
-
-export type ChannelFillerShowTable = KyselifyBetter<typeof ChannelFillerShow>;
-export type ChannelFillerShow = Selectable<ChannelFillerShowTable>;
-export type NewChannelFillerShow = Insertable<ChannelFillerShowTable>;
-
-export const ChannelFallback = sqliteTable(
-  'channel_custom_show',
-  {
-    channelUuid: text()
-      .notNull()
-      .references(() => Channel.uuid, { onDelete: 'cascade' }),
-    programUuid: text()
-      .notNull()
-      .references(() => Program.uuid, { onDelete: 'cascade' }),
-  },
-  (table) => [primaryKey({ columns: [table.channelUuid, table.programUuid] })],
-);
-
-export type ChannelFallbackTable = KyselifyBetter<typeof ChannelFallback>;
-export type ChannelFallback = Selectable<ChannelFallbackTable>;
-
-export const ChannelCustomShow = sqliteTable(
-  'channel_custom_show',
-  {
-    channelUuid: text()
-      .notNull()
-      .references(() => Channel.uuid, { onDelete: 'cascade' }),
-    customShowUuid: text()
-      .notNull()
-      .references(() => CustomShow.uuid, { onDelete: 'cascade' }),
-  },
-  (table) => [
-    primaryKey({ columns: [table.channelUuid, table.customShowUuid] }),
-  ],
-);
-
-export type ChannelCustomShowsTable = KyselifyBetter<typeof ChannelCustomShow>;
-export type ChannelCustomShows = Selectable<ChannelCustomShowsTable>;
-
-export const ChannelPrograms = sqliteTable(
-  'channel_programs',
-  {
-    channelUuid: text()
-      .notNull()
-      .references(() => Channel.uuid, { onDelete: 'cascade' }),
-    programUuid: text()
-      .notNull()
-      .references(() => Program.uuid, { onDelete: 'cascade' }),
-  },
-  (table) => [primaryKey({ columns: [table.channelUuid, table.programUuid] })],
-);
-
-export type ChannelProgramsTable = KyselifyBetter<typeof ChannelPrograms>;
-export type ChannelPrograms = Selectable<ChannelProgramsTable>;
-export type NewChannelProgram = Insertable<ChannelProgramsTable>;
+export const ChannelRelations = relations(Channel, ({ many }) => ({
+  channelPrograms: many(ChannelPrograms),
+  channelCustomShows: many(ChannelCustomShow),
+  channelFillerShow: many(ChannelFillerShow),
+}));

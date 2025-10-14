@@ -1,4 +1,4 @@
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { mediaSourceParamsSchema, TruthyQueryParam } from '@/types/schemas.js';
 import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';

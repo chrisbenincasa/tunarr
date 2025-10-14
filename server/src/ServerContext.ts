@@ -14,12 +14,14 @@ import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
 import { DB } from './db/schema/db.ts';
+import { DrizzleDBAccess } from './db/schema/index.ts';
 import { MediaSourceApiFactory } from './external/MediaSourceApiFactory.ts';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { EventService } from './services/EventService.ts';
 import { FileCacheService } from './services/FileCacheService.ts';
 import { HdhrService } from './services/HDHRService.ts';
 import { HealthCheckService } from './services/HealthCheckService.js';
+import { ImageCache } from './services/ImageCache.ts';
 import { M3uService } from './services/M3UService.ts';
 import { MediaSourceLibraryRefresher } from './services/MediaSourceLibraryRefresher.ts';
 import { MeilisearchService } from './services/MeilisearchService.ts';
@@ -70,6 +72,9 @@ export class ServerContext {
   @inject(KEYS.DatabaseFactory)
   public readonly databaseFactory!: interfaces.AutoFactory<Kysely<DB>>;
 
+  @inject(KEYS.DrizzleDatabaseFactory)
+  public readonly drizzleFactory!: interfaces.AutoFactory<DrizzleDBAccess>;
+
   @inject(KEYS.WorkerPool)
   public readonly workerPool: IWorkerPool;
 
@@ -77,10 +82,13 @@ export class ServerContext {
   public readonly searchService!: MeilisearchService;
 
   @inject(MediaSourceScanCoordinator)
-  public readonly mediaSourceScanCoordinator: MediaSourceScanCoordinator;
+  public readonly mediaSourceScanCoordinator!: MediaSourceScanCoordinator;
 
   @inject(MediaSourceLibraryRefresher)
-  public readonly mediaSourceLibraryRefresher: MediaSourceLibraryRefresher;
+  public readonly mediaSourceLibraryRefresher!: MediaSourceLibraryRefresher;
+
+  @inject(ImageCache)
+  public readonly imageCache!: ImageCache;
 }
 
 export class ServerRequestContext {

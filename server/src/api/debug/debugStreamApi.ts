@@ -1,10 +1,8 @@
 import { container } from '@/container.js';
-import type { ProgramStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import type { Channel } from '@/db/schema/Channel.js';
 import { AllChannelTableKeys } from '@/db/schema/Channel.js';
-import { MediaSourceType } from '@/db/schema/MediaSource.js';
-import type { ProgramDao } from '@/db/schema/Program.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
 import { AllTranscodeConfigColumns } from '@/db/schema/TranscodeConfig.js';
@@ -17,7 +15,9 @@ import dayjs from '@/util/dayjs.js';
 import { jsonObjectFrom } from 'kysely/helpers/sqlite';
 import { isNumber, isUndefined, nth, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
+import type { MarkRequired } from 'ts-essentials';
 import { z } from 'zod/v4';
+import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 
@@ -142,13 +142,17 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
 
   fastify.get('/streams/random', async (req, res) => {
     const program = await req.serverCtx
-      .databaseFactory()
-      .selectFrom('program')
-      .orderBy((ob) => ob.fn('random'))
-      .where('type', '=', ProgramType.Episode)
-      .limit(1)
-      .selectAll()
-      .executeTakeFirstOrThrow();
+      .drizzleFactory()
+      .query.program.findFirst({
+        where: (fields, ops) => ops.eq(fields.type, ProgramType.Episode),
+        orderBy: (_, { sql }) => sql`random()`,
+        with: {
+          externalIds: true,
+        },
+      });
+    if (!program) {
+      return res.status(404).send();
+    }
 
     const channels = await req.serverCtx
       .databaseFactory()
@@ -279,12 +283,23 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
   );
 
   async function initStream(
-    program: ProgramDao,
+    program: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>,
     channel: Channel,
     transcodeConfig: TranscodeConfig,
     startTime: number = 0,
   ) {
-    const lineupItem = createStreamItemFromProgram(program);
+    if (!program.mediaSourceId) {
+      throw new Error('');
+    }
+    const mediaSourceId = program.mediaSourceId;
+    const lineupItem: StreamLineupItem = {
+      type: 'program',
+      program: { ...program, mediaSourceId },
+      duration: program.duration,
+      infiniteLoop: false,
+      programBeginMs: +dayjs(),
+      streamDuration: program.duration,
+    };
     lineupItem.startOffset = startTime;
     const ctx = new PlayerContext(
       lineupItem,
@@ -308,23 +323,3 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     return out;
   }
 };
-
-function createStreamItemFromProgram(
-  program: ProgramDao,
-): ProgramStreamLineupItem {
-  return {
-    ...program,
-    type: 'program',
-    programType: program.type,
-    programId: program.uuid,
-    // HACK
-    externalSource: z.nativeEnum(MediaSourceType).parse(program.sourceType),
-    plexFilePath: program.plexFilePath ?? undefined,
-    filePath: program.filePath ?? undefined,
-    programBeginMs: +dayjs(),
-    contentDuration: program.duration,
-    streamDuration: program.duration,
-    infiniteLoop: false,
-    externalSourceId: program.mediaSourceId!,
-  };
-}

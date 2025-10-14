@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type {
   ContentProgramParent,
+  MultiExternalId,
   MusicArtistContentProgram,
   TvShowContentProgram,
 } from '@tunarr/types';
@@ -20,7 +21,7 @@ import {
   getApiProgramsByIdChildren,
 } from '../../generated/sdk.gen.ts';
 import { isNonEmptyString, prettyItemDuration } from '../../helpers/util.ts';
-import { useSettings } from '../../store/settings/selectors.ts';
+import { useThumbnailUrl } from '../../hooks/useThumbnailUrl.ts';
 import type { GridItemMetadata } from '../channel_config/MediaGridItem.tsx';
 import { MediaGridItem } from '../channel_config/MediaGridItem.tsx';
 import type { GridItemProps } from '../channel_config/MediaItemGrid.tsx';
@@ -49,7 +50,7 @@ const GridItemImpl = forwardRef(
     { item: program, index, depth }: GridItemProps<ContentProgram>,
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
-    const { backendUri } = useSettings();
+    const thumbnailUrlFunc = useThumbnailUrl();
     const metadata = useMemo(() => {
       const year =
         program.year ??
@@ -62,22 +63,31 @@ const GridItemImpl = forwardRef(
               ? 'landscape'
               : 'portrait',
         childCount: null,
-        hasThumbnail: true,
         isPlaylist: false,
         itemId: program.id!,
         subtitle: `${prettyItemDuration(program.duration)}${year ? ` (${year})` : ''}`,
-        thumbnailUrl: `${backendUri}/api/programs/${program.id}/thumb`,
+        thumbnailUrl: thumbnailUrlFunc({
+          sourceType: program.externalSourceType,
+          externalId: program.externalKey,
+          mediaSourceId: program.externalSourceId,
+          type: program.subtype,
+          uuid: program.id!,
+        }),
         title: program.title,
         persisted: true,
+        itemType: program.subtype,
       } satisfies GridItemMetadata;
     }, [
-      backendUri,
       program.date,
       program.duration,
+      program.externalKey,
+      program.externalSourceId,
+      program.externalSourceType,
       program.id,
       program.subtype,
       program.title,
       program.year,
+      thumbnailUrlFunc,
     ]);
 
     return (
@@ -109,25 +119,44 @@ const ParentGridItemImpl = forwardRef(
     }: GridItemProps<ContentProgramParent>,
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
-    const { backendUri } = useSettings();
+    const thumbnailUrlFunc = useThumbnailUrl();
     const metadata = useMemo(() => {
       const year = program.year;
+      const externalId = program.externalIds.find(
+        (eid): eid is MultiExternalId =>
+          eid.source === 'plex' ||
+          eid.source === 'jellyfin' ||
+          eid.source === 'emby',
+      );
       return {
         aspectRatio:
           program.type === 'artist' || program.type === 'album'
             ? 'square'
             : 'portrait',
         childCount: 1,
-        hasThumbnail: true,
         isPlaylist: false,
         itemId: program.id!,
         subtitle: year ? (program.year?.toString() ?? null) : null,
-        thumbnailUrl: `${backendUri}/api/programs/${program.id}/thumb`,
+        thumbnailUrl: thumbnailUrlFunc({
+          externalId: externalId?.id ?? '',
+          mediaSourceId: externalId?.sourceId ?? '',
+          sourceType: externalId?.source ?? 'local',
+          type: program.type,
+          uuid: program.id!,
+        }),
         title: program.title ?? '',
         mayHaveChildren: true,
         persisted: true,
+        itemType: program.type,
       } satisfies GridItemMetadata;
-    }, [backendUri, program.id, program.title, program.type, program.year]);
+    }, [
+      program.externalIds,
+      program.id,
+      program.title,
+      program.type,
+      program.year,
+      thumbnailUrlFunc,
+    ]);
 
     const externalSourceType = useMemo(
       () =>

@@ -13,6 +13,7 @@ import {
   ExternalId,
   FlexProgram,
   Identifier,
+  MediaItem,
   MediaStream,
   MusicAlbumContentProgram,
   MusicArtistContentProgram,
@@ -33,7 +34,9 @@ import { find, first, isNil, omitBy, orderBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
 import { DeepNullable, DeepPartial, MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import { MarkNonNullable, Nullable } from '../../types/util.ts';
+import { MediaLocation } from '../../types/Media.ts';
+import { MarkNonNullable } from '../../types/util.ts';
+import { titleToSortTitle } from '../../util/programs.ts';
 import {
   LineupItem,
   OfflineItem,
@@ -117,26 +120,6 @@ export class ProgramConverter {
     return null;
   }
 
-  convertProgramWithExternalIds(
-    program: MarkNonNullable<
-      MarkRequired<ProgramWithRelations, 'externalIds'>,
-      'mediaSourceId'
-    >,
-  ): MarkRequired<ContentProgram, 'id'>;
-  convertProgramWithExternalIds(
-    program: MarkRequired<ProgramWithRelations, 'externalIds'>,
-  ): MarkRequired<ContentProgram, 'id'> | null;
-  convertProgramWithExternalIds(
-    program:
-      | MarkRequired<ProgramWithRelations, 'externalIds'>
-      | MarkRequired<
-          MarkNonNullable<ProgramWithRelations, 'mediaSourceId'>,
-          'externalIds'
-        >,
-  ): Nullable<MarkRequired<ContentProgram, 'id'>> {
-    return this.programDaoToContentProgram(program);
-  }
-
   programDaoToTerminalProgram(
     program: ProgramWithRelationsOrm,
   ): TerminalProgram | null {
@@ -155,6 +138,7 @@ export class ProgramConverter {
 
     const base = {
       ...program,
+      sortTitle: titleToSortTitle(program.title),
       type: program.type,
       mediaSourceId: untag(program.mediaSourceId),
       canonicalId: program.canonicalId,
@@ -234,8 +218,15 @@ export class ProgramConverter {
           ],
           ['asc', 'asc'],
         ),
-        locations: [],
-      };
+        locations:
+          version.mediaFiles?.map(
+            (file) =>
+              ({
+                type: 'local',
+                path: file.path,
+              }) satisfies MediaLocation,
+          ) ?? [],
+      } satisfies MediaItem;
     }
 
     return typed;
@@ -346,6 +337,137 @@ export class ProgramConverter {
         artistId: nullToUndefined(
           program.trackArtist?.uuid ?? program.artistUuid,
         ),
+        // HACK: Tracks save their index under the episode field
+        index: nullToUndefined(program.episode),
+      };
+    }
+
+    return {
+      persisted: true, // Explicit since we're dealing with db loaded entities
+      uniqueId: program.uuid,
+      summary: nullToUndefined(program.summary),
+      date: nullToUndefined(program.originalAirDate),
+      rating: nullToUndefined(program.rating),
+      icon: nullToUndefined(program.icon),
+      title: program.title,
+      duration: program.duration,
+      type: 'content',
+      id: program.uuid,
+      subtype: program.type,
+      externalIds: seq.collect(program.externalIds ?? externalIds, (eid) =>
+        this.toExternalId(eid),
+      ),
+      externalKey: program.externalKey,
+      externalSourceId: program.mediaSourceId,
+      externalSourceName: program.externalSourceId,
+      externalSourceType: program.sourceType,
+      canonicalId: nullToUndefined(program.canonicalId),
+      ...omitBy(extraFields, isNil),
+    };
+  }
+
+  // TEMP during migrations
+  programOrmToContentProgram(
+    program: MarkNonNullable<ProgramWithRelationsOrm, 'mediaSourceId'>,
+    externalIds?: MinimalProgramExternalId[],
+  ): MarkRequired<ContentProgram, 'id'>;
+  programOrmToContentProgram(
+    program: ProgramWithRelationsOrm,
+    externalIds?: MinimalProgramExternalId[],
+  ): MarkRequired<ContentProgram, 'id'> | null;
+  programOrmToContentProgram(
+    program:
+      | ProgramWithRelationsOrm
+      | MarkNonNullable<ProgramWithRelationsOrm, 'mediaSourceId'>,
+    externalIds: MinimalProgramExternalId[] = program.externalIds ?? [],
+  ): MarkRequired<ContentProgram, 'id'> | null {
+    if (!program.mediaSourceId) {
+      return null;
+    }
+
+    let extraFields: Partial<ContentProgram> = {};
+    if (program.type === ProgramType.Episode) {
+      extraFields = {
+        ...extraFields,
+        icon: nullToUndefined(program.episodeIcon ?? program.showIcon),
+        showId: nullToUndefined(program.show?.uuid ?? program.tvShowUuid),
+        seasonId: nullToUndefined(program.season?.uuid ?? program.seasonUuid),
+        // Fallback to the denormalized field, for now
+        seasonNumber: nullToUndefined(
+          program.season?.index ?? program.seasonNumber,
+        ),
+        episodeNumber: nullToUndefined(program.episode),
+        title: program.title,
+        parent: {
+          type: 'season',
+          id: nullToUndefined(program.season?.uuid ?? program.seasonUuid),
+          index: nullToUndefined(program.season?.index),
+          title: nullToUndefined(program.season?.title ?? program.showTitle),
+          year: nullToUndefined(program.season?.year),
+          externalKey: nullToUndefined(
+            find(
+              program.season?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          externalIds: seq.collect(program.season?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        grandparent: {
+          type: 'show',
+          id: nullToUndefined(program.show?.uuid ?? program.tvShowUuid),
+          index: nullToUndefined(program.show?.index),
+          title: nullToUndefined(program.show?.title),
+          externalKey: nullToUndefined(
+            find(
+              program.show?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.show?.year),
+          externalIds: seq.collect(program.show?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        index: nullToUndefined(program.episode),
+      };
+    } else if (program.type === ProgramType.Track.toString()) {
+      extraFields = {
+        parent: {
+          type: 'album',
+          id: nullToUndefined(program.album?.uuid ?? program.albumUuid),
+          index: nullToUndefined(program.album?.index),
+          title: nullToUndefined(program.albumName ?? program.album?.title),
+          externalKey: nullToUndefined(
+            find(
+              program.album?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.album?.year),
+          externalIds: seq.collect(program.album?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        grandparent: {
+          type: 'artist',
+          id: nullToUndefined(program.artist?.uuid ?? program.artistUuid),
+          index: nullToUndefined(program.artist?.index),
+          title: nullToUndefined(program.artist?.title),
+          externalKey: nullToUndefined(
+            find(
+              program.artist?.externalIds ?? [],
+              (eid) => eid.externalSourceId === program.externalSourceId,
+            )?.externalKey,
+          ),
+          year: nullToUndefined(program.artist?.year),
+          externalIds: seq.collect(program.artist?.externalIds, (eid) =>
+            this.toGroupingExternalId(eid),
+          ),
+        },
+        albumId: nullToUndefined(program.album?.uuid ?? program.albumUuid),
+        artistId: nullToUndefined(program.artist?.uuid ?? program.artistUuid),
         // HACK: Tracks save their index under the episode field
         index: nullToUndefined(program.episode),
       };

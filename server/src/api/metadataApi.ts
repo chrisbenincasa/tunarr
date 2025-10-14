@@ -23,7 +23,7 @@ import {
   ProgramSourceType,
   programSourceTypeFromString,
 } from '../db/custom_types/ProgramSourceType.ts';
-import type { MediaSourceId } from '../db/schema/base.ts';
+import type { MediaSourceId } from '../db/schema/base.js';
 import { getServerContext } from '../ServerContext.ts';
 
 const externalIdSchema = z

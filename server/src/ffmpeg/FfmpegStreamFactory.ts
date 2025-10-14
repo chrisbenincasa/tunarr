@@ -314,9 +314,9 @@ export class FfmpegStreamFactory extends IFFMPEG {
     if (streamDetails.videoDetails) {
       const [videoStreamDetails] = streamDetails.videoDetails;
 
-      const streamIndex = isNonEmptyString(videoStreamDetails.streamIndex)
-        ? parseInt(videoStreamDetails.streamIndex)
-        : 0;
+      const streamIndex = isUndefined(videoStreamDetails.streamIndex)
+        ? 0
+        : videoStreamDetails.streamIndex;
 
       let pixelFormat: Maybe<PixelFormat>;
       if (videoStreamDetails.pixelFormat) {

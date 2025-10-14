@@ -132,3 +132,10 @@ export const ScheduleSchema = z.discriminatedUnion('type', [
   CronScheduleSchema,
   EveryScheduleSchema,
 ]);
+export const ContentProgramTypeSchema = z.enum([
+  'movie',
+  'episode',
+  'track',
+  'music_video',
+  'other_video',
+]);

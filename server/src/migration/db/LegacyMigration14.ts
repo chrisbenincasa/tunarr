@@ -1,4 +1,4 @@
-import type { MediaSourceType } from '@/db/schema/MediaSource.js';
+import type { MediaSourceType } from '@/db/schema/base.js';
 import type { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import type { Kysely } from 'kysely';
 import { CompiledQuery, sql } from 'kysely';
@@ -7,7 +7,7 @@ import type {
   WithCreatedAt,
   WithUpdatedAt,
   WithUuid,
-} from '../../db/schema/base.ts';
+} from '../../db/schema/base.js';
 
 interface ProgramGroupingInMigration
   extends WithUuid,

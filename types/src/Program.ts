@@ -2,6 +2,7 @@ import type z from 'zod/v4';
 import type {
   Collection,
   Episode,
+  EpisodeMetadata,
   EpisodeWithHierarchy,
   FillerProgramSchema,
   Folder,
@@ -12,7 +13,9 @@ import type {
   MediaChapter,
   MediaItem,
   MediaStream,
+  MediaSubtitles,
   Movie,
+  MovieMetadata,
   MusicAlbum,
   MusicAlbumContentProgramSchema,
   MusicArtist,
@@ -24,7 +27,9 @@ import type {
   Playlist,
   ProgramGroupingSchema,
   Season,
+  SeasonMetadata,
   Show,
+  ShowMetadata,
   StructuralProgramGroupingSchema,
   TerminalProgramSchema,
   TvSeasonContentProgramSchema,
@@ -161,6 +166,13 @@ export type Library = z.infer<typeof Library>;
 export type MediaStream = z.infer<typeof MediaStream>;
 export type MediaItem = z.infer<typeof MediaItem>;
 export type MediaChapter = z.infer<typeof MediaChapter>;
+export type MediaSubtitles = z.infer<typeof MediaSubtitles>;
+
+// Metadata
+export type MovieMetadata = z.infer<typeof MovieMetadata>;
+export type EpisodeMetadata = z.infer<typeof EpisodeMetadata>;
+export type SeasonMetadata = z.infer<typeof SeasonMetadata>;
+export type ShowMetadata = z.infer<typeof ShowMetadata>;
 
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,
@@ -208,23 +220,39 @@ export function getChildCount(input: ProgramOrFolder): number | undefined {
   }
 }
 
-export function isTerminalItemType(program: ProgramOrFolder | Library) {
+export function isTerminalItemType(
+  type: string,
+): type is TerminalProgram['type'];
+export function isTerminalItemType(
+  program: ProgramOrFolder | Library,
+): program is TerminalProgram;
+export function isTerminalItemType(
+  program: ProgramOrFolder | Library | string,
+): boolean {
+  const type = typeof program === 'string' ? program : program.type;
   return (
-    program.type === 'movie' ||
-    program.type === 'music_video' ||
-    program.type === 'episode' ||
-    program.type === 'track' ||
-    program.type === 'other_video'
+    type === 'movie' ||
+    type === 'music_video' ||
+    type === 'episode' ||
+    type === 'track' ||
+    type === 'other_video'
   );
 }
 
 export function isStructuralItemType(
+  type: string,
+): type is StructuralProgramGrouping['type'];
+export function isStructuralItemType(
   program: ProgramOrFolder | Library,
-): program is StructuralProgramGrouping {
+): program is StructuralProgramGrouping;
+export function isStructuralItemType(
+  program: ProgramOrFolder | Library | string,
+): boolean {
+  const type = typeof program === 'string' ? program : program.type;
   return (
-    program.type === 'folder' ||
-    program.type === 'collection' ||
-    program.type === 'playlist' ||
-    program.type === 'library'
+    type === 'folder' ||
+    type === 'collection' ||
+    type === 'playlist' ||
+    type === 'library'
   );
 }

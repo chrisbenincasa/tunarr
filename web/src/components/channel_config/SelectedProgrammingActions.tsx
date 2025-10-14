@@ -1,7 +1,10 @@
 import { useDirectPlexSearch } from '@/hooks/plex/usePlexSearch.ts';
 import { useAddSelectedItems } from '@/hooks/programming_controls/useAddProgramming.ts';
 import { useCurrentMediaSourceAndView } from '@/store/programmingSelector/selectors.ts';
-import type { EmbyMediaSourceView } from '@/store/programmingSelector/store.ts';
+import type {
+  EmbyMediaSourceView,
+  SelectedMedia,
+} from '@/store/programmingSelector/store.ts';
 import { type JellyfinMediaSourceView } from '@/store/programmingSelector/store.ts';
 import { AddCircle, CheckBoxOutlined, Grading } from '@mui/icons-material';
 import {
@@ -18,7 +21,7 @@ import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { useCallback, useState } from 'react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import {
   getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems,
   getJellyfinLibraryItems,
@@ -80,19 +83,37 @@ export default function SelectedProgrammingActions({
       setSelectAllLoading(true);
       let prom: Promise<void>;
 
-      if (selectedLibrary.type === Imported) {
+      if (
+        selectedLibrary.type === Imported ||
+        selectedServer.type === 'local'
+      ) {
         prom = enumerateSyncedItems(
-          selectedLibrary.view.id,
+          selectedServer.id,
+          selectedLibrary.type === Imported ? selectedLibrary.view.id : null,
           currentSearchRequest,
         ).then((res) => {
-          addSelectedMedia(
-            res.map((program) => ({
-              type: program.sourceType,
-              id: program.uuid,
-              mediaSource: selectedServer,
-              libraryId: selectedLibrary.view.id,
-            })),
+          const selectedMedia = res.map((program) =>
+            match(program)
+              .returnType<SelectedMedia>()
+              .with({ sourceType: 'local' }, () => ({
+                type: 'local',
+                id: program.uuid,
+                persisted: true,
+                mediaSource: selectedServer,
+              }))
+              .with({ sourceType: P._ }, (other) => ({
+                type: other.sourceType,
+                id: program.uuid,
+                persisted: true,
+                mediaSource: selectedServer,
+                libraryId:
+                  selectedLibrary.type === Imported
+                    ? selectedLibrary.view.id
+                    : '',
+              }))
+              .exhaustive(),
           );
+          addSelectedMedia(selectedMedia);
           addKnownMediaForServer(selectedServer.id, res);
         });
       } else {
@@ -186,7 +207,15 @@ export default function SelectedProgrammingActions({
         })
         .finally(() => setSelectAllLoading(false));
     }
-  }, [selectedServer, selectedLibrary, currentSearchRequest]);
+  }, [
+    selectedServer,
+    selectedLibrary,
+    removeAllItems,
+    currentSearchRequest,
+    directPlexSearchFn,
+    currentGenre,
+    snackbar,
+  ]);
 
   const darkMode = useIsDarkMode();
 

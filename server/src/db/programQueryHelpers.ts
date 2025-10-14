@@ -1,3 +1,4 @@
+import { seq } from '@tunarr/shared/util';
 import { type TupleToUnion } from '@tunarr/types';
 import type {
   CaseWhenBuilder,
@@ -9,7 +10,15 @@ import type {
   UpdateResult,
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { identity, isBoolean, isEmpty, keys, merge, reduce } from 'lodash-es';
+import {
+  identity,
+  isBoolean,
+  isEmpty,
+  isUndefined,
+  keys,
+  merge,
+  reduce,
+} from 'lodash-es';
 import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import type { Replace } from '../types/util.ts';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
@@ -20,9 +29,12 @@ import type {
 import { ProgramType } from './schema/Program.ts';
 import type { ProgramExternalId } from './schema/ProgramExternalId.ts';
 import { ProgramExternalIdFieldsWithAlias } from './schema/ProgramExternalId.ts';
-import type { ProgramGroupingFields } from './schema/ProgramGrouping.ts';
+import type {
+  ProgramGrouping,
+  ProgramGroupingFields,
+  ProgramGroupingUpdate,
+} from './schema/ProgramGrouping.ts';
 import {
-  AllProgramGroupingFields,
   AllProgramGroupingFieldsAliased,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
@@ -308,6 +320,8 @@ export const AllProgramFields = [
   'program.sourceType',
   'program.tvShowUuid',
   'program.mediaSourceId',
+  'program.localMediaFolderId',
+  'program.localMediaSourcePathId',
 ] as const;
 
 type ProgramUpsertFields = StrictExclude<
@@ -318,11 +332,10 @@ type ProgramUpsertFields = StrictExclude<
 const ProgramUpsertIgnoreFields = [
   'program.uuid',
   'program.createdAt',
-  'program.tvShowUuid',
-  'program.albumUuid',
-  'program.artistUuid',
-  'program.seasonUuid',
-  // 'program.libraryId',
+  // 'program.tvShowUuid',
+  // 'program.albumUuid',
+  // 'program.artistUuid',
+  // 'program.seasonUuid',
 ] as const;
 
 type KnownProgramUpsertFields = StrictExclude<
@@ -342,6 +355,69 @@ export const ProgramUpsertFields: ProgramUpsertFields[] =
         'excluded'
       >,
   );
+
+type ProgramGroupingField = `programGrouping.${keyof ProgramGrouping}`;
+type ProgramGroupingUpsertFields = StrictExclude<
+  Replace<ProgramGroupingField, 'programGrouping', 'excluded'>,
+  'excluded.uuid' | 'excluded.createdAt'
+>;
+
+export const AllProgramGroupingFields = [
+  'programGrouping.uuid',
+  'programGrouping.canonicalId',
+  'programGrouping.createdAt',
+  'programGrouping.updatedAt',
+  'programGrouping.icon',
+  'programGrouping.index',
+  'programGrouping.summary',
+  'programGrouping.title',
+  'programGrouping.type',
+  'programGrouping.year',
+  'programGrouping.artistUuid',
+  'programGrouping.showUuid',
+  'programGrouping.libraryId',
+  'programGrouping.sourceType',
+  'programGrouping.mediaSourceId',
+  'programGrouping.externalKey',
+] as const;
+
+const ProgramGroupingUpsertIgnoreFields = [
+  'programGrouping.uuid',
+  'programGrouping.createdAt',
+] as const;
+
+type KnownProgramGroupingUpsertFields = StrictExclude<
+  TupleToUnion<typeof AllProgramGroupingFields>,
+  TupleToUnion<typeof ProgramGroupingUpsertIgnoreFields>
+>;
+
+export function getProgramGroupingUpsertFields(
+  update: ProgramGroupingUpdate,
+): ProgramGroupingUpsertFields[] {
+  const withoutExcluded = AllProgramGroupingFields.filter(
+    (f): f is KnownProgramGroupingUpsertFields => {
+      return !(
+        ProgramGroupingUpsertIgnoreFields as ReadonlyArray<ProgramGroupingField>
+      ).includes(f);
+    },
+  );
+
+  return seq.collect(withoutExcluded, (field) => {
+    const name = field.replace('programGrouping.', '') as Replace<
+      KnownProgramGroupingUpsertFields,
+      'programGrouping.',
+      ''
+    >;
+    if (isUndefined(update[name])) {
+      return;
+    }
+    return `excluded.${name}` as Replace<
+      typeof field,
+      'programGrouping',
+      'excluded'
+    >;
+  });
+}
 
 export type WithProgramsOptions = {
   joins?: Partial<ProgramJoins>;

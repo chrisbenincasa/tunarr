@@ -140,10 +140,10 @@ export class SubtitleStreamPicker {
     const cacheFolder = this.getCacheFolder();
     const filePath = getSubtitleCacheFilePath(
       {
-        id: lineupItem.programId,
-        externalKey: lineupItem.externalKey,
-        externalSourceId: lineupItem.externalSourceId,
-        externalSourceType: lineupItem.externalSource,
+        id: lineupItem.program.uuid,
+        externalKey: lineupItem.program.externalKey,
+        externalSourceId: lineupItem.program.mediaSourceId,
+        externalSourceType: lineupItem.program.sourceType,
       },
       stream,
     );

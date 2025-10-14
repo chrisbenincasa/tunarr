@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { search as tunarrSearch } from '@tunarr/shared/util';
-import type { MediaSourceLibrary } from '@tunarr/types';
+import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { SearchFilterValueNode, SearchRequest } from '@tunarr/types/api';
 import { type SearchFilter } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
@@ -30,7 +30,8 @@ import { SearchGroupNode } from './SearchGroupNode.tsx';
 import { SearchValueNode } from './SearchValueNode.tsx';
 
 type SearchBuilderProps = {
-  library: MediaSourceLibrary;
+  mediaSource: MediaSourceSettings;
+  library?: MediaSourceLibrary;
   onSearch: (query: SearchRequest) => void;
 };
 
@@ -45,7 +46,11 @@ const defaultValueNode: SearchFilterValueNode = {
   },
 };
 
-export function SearchBuilder({ library, onSearch }: SearchBuilderProps) {
+export function SearchBuilder({
+  mediaSource,
+  library,
+  onSearch,
+}: SearchBuilderProps) {
   const [searchRestrictEl, setSearchRestrictEl] =
     useState<Nullable<HTMLElement>>(null);
   const [searchRestrctState, setSearchRestrictState] = useState<
@@ -186,7 +191,11 @@ export function SearchBuilder({ library, onSearch }: SearchBuilderProps) {
                             onClose={() => setSearchRestrictEl(null)}
                             searchFields={searchRestrctState}
                             onSearchFieldsChanged={setSearchRestrictState}
-                            libraryType={library.mediaType}
+                            libraryType={
+                              mediaSource.type === 'local'
+                                ? mediaSource.mediaType
+                                : library?.mediaType
+                            }
                           />
                         </InputAdornment>
                         <InputAdornment position="end">

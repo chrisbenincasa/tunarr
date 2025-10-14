@@ -14,7 +14,6 @@ import { Readable } from 'node:stream';
 import PQueue from 'p-queue';
 import { TypedEventEmitter } from '../types/eventEmitter.ts';
 import { KEYS } from '../types/inject.ts';
-import type { Maybe } from '../types/util.ts';
 import { LastNBytesStream } from './LastNBytesStream.ts';
 import { Logger, LoggerFactory } from './logging/LoggerFactory.ts';
 
@@ -123,6 +122,13 @@ export class ChildProcessWrapper extends ITypedEventEmitter {
   }
 }
 
+export type GetStdoutOptions = {
+  swallowError?: boolean;
+  env?: NodeJS.ProcessEnv;
+  isPath?: boolean;
+  timeout?: number;
+};
+
 @injectable()
 export class ChildProcessHelper {
   private execQueue = new PQueue({ concurrency: 3 });
@@ -137,11 +143,9 @@ export class ChildProcessHelper {
   getStdout(
     executable: string,
     args: string[],
-    swallowError: boolean = false,
-    env?: NodeJS.ProcessEnv,
-    isPath: boolean = true,
-    timeout: Maybe<number> = undefined,
+    opts: GetStdoutOptions = { swallowError: false, isPath: true },
   ): Promise<string> {
+    const { timeout, env, swallowError, isPath } = opts;
     return this.execQueue.add(
       async () => {
         const sanitizedPath = sanitizeForExec(executable);

@@ -1027,7 +1027,7 @@ export class TVGuideService {
     );
 
     const materializedPrograms = groupByUniqProp(
-      await this.programDB.getProgramsByIds(programIds),
+      await this.programDB.getProgramsByIdsOld(programIds),
       'uuid',
     );
 

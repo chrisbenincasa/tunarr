@@ -1,11 +1,6 @@
 import type { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 
 export interface IStreamLineupCache {
-  getCurrentLineupItem(
-    channelId: string,
-    timeNow: number,
-  ): StreamLineupItem | undefined;
-
   getProgramLastPlayTime(channelId: string, programId: string): number;
 
   getFillerLastPlayTime(channelId: string, fillerId: string): number;
@@ -17,6 +12,4 @@ export interface IStreamLineupCache {
   ): Promise<void>;
 
   clear(): void;
-
-  clearPlayback(channelId: string): Promise<void>;
 }

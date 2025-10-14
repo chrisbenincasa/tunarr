@@ -1,8 +1,9 @@
+import type { MediaChapter } from '@tunarr/types';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { Dictionary, NonEmptyArray } from 'ts-essentials';
 
 export type StreamDetails = {
-  duration?: Duration;
+  duration: Duration;
   // This is the total bitrate
   bitrate?: number;
 
@@ -15,6 +16,7 @@ export type StreamDetails = {
   placeholderImage?: StreamSource;
   serverPath?: string;
   directFilePath?: string;
+  chapters?: MediaChapter[];
 };
 
 export type VideoStreamDetails = {
@@ -22,22 +24,26 @@ export type VideoStreamDetails = {
   profile?: string;
   width: number;
   height: number;
-  framerate?: number;
+  framerate?: number | string;
   scanType?: 'interlaced' | 'progressive' | 'unknown';
   pixelFormat?: string;
   bitDepth?: number;
-  streamIndex?: string;
-  sampleAspectRatio: string;
+  streamIndex?: number;
+  sampleAspectRatio?: string;
   displayAspectRatio: string;
   anamorphic?: boolean;
   bitrate?: number;
   isAttachedPic?: boolean;
+  colorRange?: string;
+  colorSpace?: string;
+  colorTransfer?: string;
+  colorPrimaries?: string;
 };
 
 export type AudioStreamDetails = {
   channels?: number;
   codec?: string;
-  index?: string;
+  index?: number;
   bitrate?: number;
   profile?: string;
   default?: boolean;
@@ -60,6 +66,7 @@ export type SubtitleStreamDetails = {
   default: boolean;
   forced: boolean;
   sdh: boolean;
+  language?: string;
   languageCodeISO6391?: string;
   languageCodeISO6392?: string;
   path?: string; // For external

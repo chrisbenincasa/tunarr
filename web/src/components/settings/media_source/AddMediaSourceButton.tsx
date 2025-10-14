@@ -2,7 +2,7 @@ import EmbyIcon from '@/assets/emby.svg?react';
 import JellyfinIcon from '@/assets/jellyfin.svg?react';
 import PlexIcon from '@/assets/plex.svg?react';
 import { usePlexLogin } from '@/hooks/plex/usePlexLogin.tsx';
-import { Add } from '@mui/icons-material';
+import { Add, Computer } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -18,6 +18,7 @@ import { isNull } from 'lodash-es';
 import { useState } from 'react';
 import { EmbyServerEditDialog } from './EmbyServerEditDialog.tsx';
 import { JellyfinServerEditDialog } from './JelllyfinServerEditDialog.tsx';
+import { LocalMediaEditDialog } from './LocalMediaEditDialog.tsx';
 import { PlexServerEditDialog } from './PlexServerEditDialog.tsx';
 
 type Props = {
@@ -31,6 +32,7 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
   const [plexEditDialogOpen, setPlexEditDialogOpen] = useState(false);
   const [jellyfinEditDialogOpen, setJellyfinEditDialogOpen] = useState(false);
   const [embyEditDialogOpen, setEmbyEditDialogOpen] = useState(false);
+  const [localEditDialogOpen, setLocalEditDialogOpen] = useState(false);
   const discoverPlexServers = usePlexLogin();
 
   const open = !isNull(manualAddPopoverRef);
@@ -60,6 +62,9 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
         break;
       case 'emby':
         setEmbyEditDialogOpen(true);
+        break;
+      case 'local':
+        setLocalEditDialogOpen(true);
         break;
     }
     closeManualAddButtonMenu();
@@ -122,6 +127,12 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
           </ListItemIcon>
           <ListItemText>Emby</ListItemText>
         </MenuItem>
+        <MenuItem onClick={() => handleOpenMediaSourceDialog('local')}>
+          <ListItemIcon>
+            <Computer />
+          </ListItemIcon>
+          <ListItemText>Local</ListItemText>
+        </MenuItem>
       </Menu>
       <PlexServerEditDialog
         open={plexEditDialogOpen}
@@ -134,6 +145,10 @@ export function AddMediaSourceButton({ ButtonProps }: Props) {
       <EmbyServerEditDialog
         open={embyEditDialogOpen}
         onClose={() => setEmbyEditDialogOpen(false)}
+      />
+      <LocalMediaEditDialog
+        open={localEditDialogOpen}
+        onClose={() => setLocalEditDialogOpen(false)}
       />
     </Box>
   );

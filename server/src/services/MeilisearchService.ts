@@ -14,7 +14,13 @@ import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
-import { EnqueuedTaskObject, MeiliSearch, Settings, Task } from 'meilisearch';
+import {
+  EnqueuedTaskObject,
+  MeiliSearch,
+  MeiliSearchApiError,
+  Settings,
+  Task,
+} from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import net from 'node:net';
@@ -288,6 +294,7 @@ type SearchRequest<
   filter?: SearchFilter | null;
   restrictSearchTo?: Path<DocumentType>[];
   facets?: TargetIndex['filterable'][number][] | null;
+  mediaSourceId?: string | null;
   libraryId?: string | null;
   paging: {
     offset: number;
@@ -299,6 +306,7 @@ export type FacetSearchRequest = {
   facetName: string;
   facetQuery?: string;
   filter?: SearchFilter;
+  mediaSourceId?: string;
   libraryId?: string;
 };
 
@@ -567,6 +575,19 @@ export class MeilisearchService implements ISearchService {
     }
 
     await Promise.all(processes);
+  }
+
+  async getProgram(id: string) {
+    try {
+      return await this.#client
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .getDocument(id);
+    } catch (e) {
+      if (e instanceof MeiliSearchApiError && e.response.status === 404) {
+        return Promise.resolve(undefined);
+      }
+      throw e;
+    }
   }
 
   async indexMovie(programs: (Movie & HasMediaSourceAndLibraryId)[]) {
@@ -930,6 +951,18 @@ export class MeilisearchService implements ISearchService {
       }
     }
 
+    if (
+      isNonEmptyString(request.mediaSourceId) &&
+      index.filterable.includes('mediaSourceId')
+    ) {
+      const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
+      if (isNonEmptyString(filter)) {
+        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+      } else {
+        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
+      }
+    }
+
     const req = {
       filter,
       page: request.paging?.offset,
@@ -970,6 +1003,18 @@ export class MeilisearchService implements ISearchService {
         filter += ` AND libraryId = "${encodedLibraryId}"`;
       } else {
         filter = `libraryId = "${encodedLibraryId}"`;
+      }
+    }
+
+    if (
+      isNonEmptyString(request.mediaSourceId) &&
+      index.filterable.includes('mediaSourceId')
+    ) {
+      const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
+      if (isNonEmptyString(filter)) {
+        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
+      } else {
+        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
       }
     }
 
@@ -1144,7 +1189,7 @@ export class MeilisearchService implements ISearchService {
 
     return {
       id: program.uuid,
-      duration: program.duration,
+      duration: program.duration ?? null,
       externalIds: validEids,
       externalIdsMerged: mergedExternalIds,
       originalReleaseDate: Result.attempt(() => dayjs(program.releaseDate))

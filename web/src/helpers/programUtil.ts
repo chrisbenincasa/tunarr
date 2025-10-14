@@ -47,14 +47,16 @@ export function getProgramGroupingKey(program: ChannelProgram): string {
 }
 
 export async function enumerateSyncedItems(
-  libraryId: string,
+  mediaSourceId: string,
+  libraryId: Nullable<string>,
   searchRequest: Nullable<SearchRequest>,
 ) {
   const results: ProgramOrFolder[] = [];
   const loop = async (page: number = 1): Promise<ProgramOrFolder[]> => {
     const result = await postApiProgramsSearch({
       body: {
-        libraryId,
+        mediaSourceId,
+        libraryId: libraryId ?? undefined,
         query: {
           query: searchRequest?.query,
           filter: searchRequest?.filter,

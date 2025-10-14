@@ -1,4 +1,5 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
+import { MediaSourceType } from '@/db/schema/base.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
 import { inject, injectable, interfaces } from 'inversify';
@@ -6,7 +7,6 @@ import { isNil } from 'lodash-es';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceType } from '../../db/schema/MediaSource.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -65,14 +65,14 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     show: EmbyShow,
     context: ScanContext<EmbyApiClient>,
   ): AsyncIterable<EmbySeason> {
-    return context.apiClient.getShowSeasons(show.externalKey);
+    return context.apiClient.getShowSeasons(show.externalId);
   }
 
   protected getSeasonEpisodes(
     season: EmbySeason,
     context: ScanContext<EmbyApiClient>,
   ): AsyncIterable<EmbyEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalKey);
+    return context.apiClient.getSeasonEpisodes(season.externalId);
   }
 
   protected getFullEpisodeMetadata(
@@ -80,12 +80,12 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     context: ScanContext<EmbyApiClient>,
   ): Promise<Result<EmbyEpisode, WrappedError>> {
     return context.apiClient
-      .getEpisode(episodeT.externalKey)
+      .getEpisode(episodeT.externalId)
       .then((_) =>
         _.flatMap((ep) =>
           isNil(ep)
             ? Result.forError(
-                new Error(`Episode ID ${episodeT.externalKey} not found`),
+                new Error(`Episode ID ${episodeT.externalId} not found`),
               )
             : Result.success(ep),
         ),
@@ -109,7 +109,7 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   protected getEntityExternalKey(
     show: EmbyShow | EmbySeason | EmbyEpisode,
   ): string {
-    return show.externalKey;
+    return show.externalId;
   }
 
   protected getLibrarySize(

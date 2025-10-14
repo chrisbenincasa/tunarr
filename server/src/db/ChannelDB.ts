@@ -41,7 +41,6 @@ import {
   filter,
   forEach,
   groupBy,
-  identity,
   isEmpty,
   isNil,
   isNull,
@@ -100,6 +99,7 @@ import {
 import { SchemaBackedDbAdapter } from './json/SchemaBackedJsonDBAdapter.ts';
 import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
+  AllProgramGroupingFields,
   withFallbackPrograms,
   withMusicArtistAlbums,
   withProgramExternalIds,
@@ -112,15 +112,15 @@ import {
   withTvShowSeasons,
 } from './programQueryHelpers.ts';
 import {
+  Channel,
   ChannelUpdate,
   NewChannel,
-  NewChannelFillerShow,
-  NewChannelProgram,
   Channel as RawChannel,
 } from './schema/Channel.ts';
+import { NewChannelFillerShow } from './schema/ChannelFillerShow.ts';
+import { NewChannelProgram } from './schema/ChannelPrograms.ts';
 import { ProgramType } from './schema/Program.ts';
 import {
-  AllProgramGroupingFields,
   MinimalProgramGroupingFields,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
@@ -130,12 +130,14 @@ import {
 } from './schema/SubtitlePreferences.ts';
 import { DB } from './schema/db.ts';
 import {
+  ChannelOrmWithRelations,
   ChannelWithPrograms,
   ChannelWithRelations,
   MusicArtistWithExternalIds,
   ProgramWithRelations,
   TvShowWithExternalIds,
 } from './schema/derivedTypes.js';
+import { DrizzleDBAccess } from './schema/index.ts';
 
 // We use this to chunk super huge channel / program relation updates because
 // of the way that mikro-orm generates these (e.g. "delete from XYZ where () or () ...").
@@ -235,6 +237,7 @@ export class ChannelDB implements IChannelDB {
     @inject(KEYS.WorkerPoolFactory)
     private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
+    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {}
 
   async channelExists(channelId: string) {
@@ -251,10 +254,28 @@ export class ChannelDB implements IChannelDB {
     id: string | number,
     includeFiller: true,
   ): Promise<Maybe<MarkRequired<ChannelWithRelations, 'fillerShows'>>>;
-  getChannel(
+  async getChannel(
     id: string | number,
     includeFiller: boolean = false,
   ): Promise<Maybe<ChannelWithRelations>> {
+    // return this.drizzleDB.query.channels.findFirst({
+    //   where: (fields, { eq }) => {
+    //     if (isString(id)) {
+    //       return eq(fields.uuid, id);
+    //     } else {
+    //       return eq(fields.number, id);
+    //     }
+    //   },
+    //   with: {
+    //     channelFillerShow: includeFiller
+    //       ? {
+    //           with: {
+    //             filler: true,
+    //           },
+    //         }
+    //       : undefined,
+    //   },
+    // });
     return this.db
       .selectFrom('channel')
       .$if(isString(id), (eb) => eb.where('channel.uuid', '=', id as string))
@@ -282,9 +303,43 @@ export class ChannelDB implements IChannelDB {
     return ChannelQueryBuilder.createForIdOrNumber(this.db, id);
   }
 
-  getChannelAndPrograms(
+  async getChannelAndPrograms(
     uuid: string,
-    typeFilter?: ContentProgramType,
+  ): Promise<Maybe<MarkRequired<ChannelOrmWithRelations, 'programs'>>> {
+    const channelsAndPrograms = await this.drizzleDB.query.channels.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, uuid),
+      with: {
+        channelPrograms: {
+          with: {
+            program: {
+              with: {
+                show: true,
+                season: true,
+                artist: true,
+                album: true,
+                externalIds: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: (fields, { asc }) => asc(fields.number),
+    });
+
+    if (channelsAndPrograms) {
+      return {
+        ...channelsAndPrograms,
+        programs: channelsAndPrograms.channelPrograms.map(
+          ({ program }) => program,
+        ),
+      } satisfies MarkRequired<ChannelOrmWithRelations, 'programs'>;
+    }
+
+    return;
+  }
+
+  async getChannelAndProgramsOld(
+    uuid: string,
   ): Promise<ChannelWithPrograms | undefined> {
     return this.db
       .selectFrom('channel')
@@ -296,41 +351,35 @@ export class ChannelDB implements IChannelDB {
         'channelPrograms.channelUuid',
       )
       .select((eb) =>
-        withPrograms(
-          eb,
-          {
-            joins: {
-              customShows: true,
-              tvShow: [
-                'programGrouping.uuid',
-                'programGrouping.title',
-                'programGrouping.summary',
-                'programGrouping.type',
-              ],
-              tvSeason: [
-                'programGrouping.uuid',
-                'programGrouping.title',
-                'programGrouping.summary',
-                'programGrouping.type',
-              ],
-              trackArtist: [
-                'programGrouping.uuid',
-                'programGrouping.title',
-                'programGrouping.summary',
-                'programGrouping.type',
-              ],
-              trackAlbum: [
-                'programGrouping.uuid',
-                'programGrouping.title',
-                'programGrouping.summary',
-                'programGrouping.type',
-              ],
-            },
+        withPrograms(eb, {
+          joins: {
+            customShows: true,
+            tvShow: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            tvSeason: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            trackArtist: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
+            trackAlbum: [
+              'programGrouping.uuid',
+              'programGrouping.title',
+              'programGrouping.summary',
+              'programGrouping.type',
+            ],
           },
-          typeFilter
-            ? (eb) => eb.where('program.type', '=', typeFilter)
-            : identity,
-        ),
+        }),
       )
       .groupBy('channel.uuid')
       .orderBy('channel.number asc')
@@ -839,7 +888,7 @@ export class ChannelDB implements IChannelDB {
     }
   }
 
-  getAllChannels(pageParams?: PageParams) {
+  getAllChannels(pageParams?: PageParams): Promise<Channel[]> {
     return this.db
       .selectFrom('channel')
       .selectAll()
@@ -1266,7 +1315,7 @@ export class ChannelDB implements IChannelDB {
 
   async loadChannelAndLineup(
     channelId: string,
-  ): Promise<{ channel: RawChannel; lineup: Lineup } | null> {
+  ): Promise<{ channel: Channel; lineup: Lineup } | null> {
     const channel = await this.getChannel(channelId);
     if (isNil(channel)) {
       return null;
@@ -1281,7 +1330,7 @@ export class ChannelDB implements IChannelDB {
   async loadChannelWithProgamsAndLineup(
     channelId: string,
   ): Promise<{ channel: ChannelWithPrograms; lineup: Lineup } | null> {
-    const channel = await this.getChannelAndPrograms(channelId);
+    const channel = await this.getChannelAndProgramsOld(channelId);
     if (isNil(channel)) {
       return null;
     }
@@ -1302,7 +1351,7 @@ export class ChannelDB implements IChannelDB {
     offset: number = 0,
     limit: number = -1,
   ): Promise<ChannelProgramming | null> {
-    const channel = await this.getChannelAndPrograms(channelId);
+    const channel = await this.getChannelAndProgramsOld(channelId);
     if (isNil(channel)) {
       return null;
     }
@@ -1668,7 +1717,7 @@ export class ChannelDB implements IChannelDB {
   }
 
   private async buildCondensedLineup(
-    channel: RawChannel,
+    channel: Channel,
     dbProgramIds: Set<string>,
     lineup: LineupItem[],
   ): Promise<{ lineup: CondensedChannelProgram[]; offsets: number[] }> {

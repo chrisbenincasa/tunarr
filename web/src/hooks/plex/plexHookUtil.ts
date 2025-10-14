@@ -1,15 +1,15 @@
-import type {
-  Library,
-  MediaSourceSettings,
-  ProgramOrFolder,
-  TerminalProgram,
+import {
+  isTerminalItemType,
+  type Library,
+  type MediaSourceSettings,
+  type ProgramOrFolder,
+  type TerminalProgram,
 } from '@tunarr/types';
 import type {
   PlexLibrarySections,
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import { match, P } from 'ts-pattern';
-import { isTerminalItemType } from '../../components/library/ProgramGridItem.tsx';
 import { getApiPlexByMediaSourceIdItemsByItemIdChildren } from '../../generated/sdk.gen.ts';
 
 export type PlexPathMappings = [

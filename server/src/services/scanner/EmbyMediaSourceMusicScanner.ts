@@ -66,21 +66,21 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     show: EmbyMusicArtist,
     context: ScanContext<EmbyApiClient>,
   ): AsyncIterable<EmbyMusicAlbum> {
-    return context.apiClient.getArtistAlbums(show.externalKey, 50);
+    return context.apiClient.getArtistAlbums(show.externalId, 50);
   }
 
   protected getAlbumTracks(
     season: EmbyMusicAlbum,
     context: ScanContext<EmbyApiClient>,
   ): AsyncIterable<EmbyMusicTrack> {
-    return context.apiClient.getAlbumTracks(season.externalKey, 50);
+    return context.apiClient.getAlbumTracks(season.externalId, 50);
   }
 
   protected getFullTrackMetadata(
     episodeT: EmbyMusicTrack,
     context: ScanContext<EmbyApiClient>,
   ): Promise<Result<EmbyMusicTrack, WrappedError>> {
-    return context.apiClient.getMusicTrack(episodeT.externalKey);
+    return context.apiClient.getMusicTrack(episodeT.externalId);
   }
 
   protected getApiClient(
@@ -94,7 +94,7 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   protected getEntityExternalKey(
     show: EmbyMusicArtist | EmbyMusicAlbum | EmbyMusicTrack,
   ): string {
-    return show.externalKey;
+    return show.externalId;
   }
 
   protected getLibrarySize(

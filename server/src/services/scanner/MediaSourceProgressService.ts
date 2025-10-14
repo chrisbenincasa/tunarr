@@ -83,6 +83,8 @@ export class MediaSourceProgressService extends Emitter {
   }
 
   getScanProgress(libraryId: string): ScanState {
-    return this.#scanDetails.get(libraryId) ?? notScanningState;
+    const x = this.#scanDetails.get(libraryId);
+    console.log('hey you', libraryId, x, this.#scanDetails);
+    return x ?? notScanningState;
   }
 }

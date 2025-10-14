@@ -115,9 +115,10 @@ export class NvidiaGpuDetectionHelper {
           'null',
           '-',
         ],
-        true,
-        {},
-        true,
+        {
+          swallowError: true,
+          isPath: true,
+        },
       );
 
       const lines = reject(

@@ -50,6 +50,7 @@ import { LoadChannelCacheStartupTask } from './services/startup/LoadChannelCache
 import { ScheduleJobsStartupTask } from './services/startup/ScheduleJobsStartupTask.ts';
 import { SeedFfmpegInfoCache } from './services/startup/SeedFfmpegInfoCache.ts';
 import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevicesStartupTask.ts';
+import { StreamCacheMigratorStartupTask } from './services/startup/StreamCacheMigratorStartupTask.ts';
 import { ChannelCache } from './stream/ChannelCache.ts';
 import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
@@ -142,6 +143,7 @@ const RootModule = new ContainerModule((bind) => {
   bind(KEYS.StartupTask).to(FixerRunner).inSingletonScope();
   bind(KEYS.StartupTask).to(GenerateGuideStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(LoadChannelCacheStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask).to(StreamCacheMigratorStartupTask).inSingletonScope();
 
   if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);

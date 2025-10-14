@@ -21,6 +21,9 @@ import {
   lighten,
   useTheme,
 } from '@mui/material';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { isStructuralItemType } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
 import type { ForwardedRef, MouseEvent } from 'react';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
@@ -30,8 +33,8 @@ import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
 import useStore from '../../store/index.ts';
 import type {
   EmbySelectedMedia,
-  ImportedLibrarySelectedMedia,
   JellyfinSelectedMedia,
+  LocalLibrarySelectedMedia,
   PlexSelectedMedia,
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
@@ -40,16 +43,16 @@ import { NewProgramDetailsDialog } from '../programs/NewProgramDetailsDialog.tsx
 export type GridItemMetadata = {
   itemId: string;
   isPlaylist: boolean;
-  hasThumbnail: boolean;
   childCount: number | null;
   mayHaveChildren?: boolean;
   aspectRatio: 'portrait' | 'landscape' | 'square';
   title: string;
   subtitle: JSX.Element | string | null;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   selectedMedia?: SelectedMedia;
   isFolder?: boolean;
   persisted: boolean;
+  itemType: ProgramOrFolder['type'];
 };
 
 type Props<ItemTypeT> = {
@@ -83,9 +86,9 @@ const MediaGridItemInner = <ItemTypeT,>(
   const {
     item,
     metadata: {
-      hasThumbnail,
       thumbnailUrl,
       itemId,
+      itemType,
       selectedMedia: selectedMediaItem,
       aspectRatio,
       title,
@@ -103,6 +106,8 @@ const MediaGridItemInner = <ItemTypeT,>(
     disablePadding = false,
   } = props;
 
+  const hasThumbnail = isNonEmptyString(thumbnailUrl);
+
   const [imageLoaded, setImageLoaded] = useState<
     'loading' | 'success' | 'error'
   >('loading');
@@ -117,7 +122,7 @@ const MediaGridItemInner = <ItemTypeT,>(
           | PlexSelectedMedia
           | JellyfinSelectedMedia
           | EmbySelectedMedia
-          | ImportedLibrarySelectedMedia => p.type !== 'custom-show',
+          | LocalLibrarySelectedMedia => p.type !== 'custom-show',
       ),
     ),
   );
@@ -223,7 +228,7 @@ const MediaGridItemInner = <ItemTypeT,>(
             onClick={(e) => (hasChildren ? handleClick() : toggleItemSelect(e))}
             ref={ref}
           >
-            {persisted && !hasChildren && (
+            {persisted && !isStructuralItemType(itemType) && (
               <InfoSharp
                 inheritViewBox
                 onClick={(e) => showInfo(e)}
@@ -342,11 +347,12 @@ const MediaGridItemInner = <ItemTypeT,>(
           </ImageListItem>
         </div>
       </Fade>
-      {!hasChildren && persisted && (
+      {persisted && !isStructuralItemType(itemType) && (
         <NewProgramDetailsDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           programId={itemId}
+          programType={itemType}
         />
       )}
     </>

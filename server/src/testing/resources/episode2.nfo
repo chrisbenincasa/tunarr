@@ -1,0 +1,31 @@
+<episodedetails>
+  <title>Afternoon Delight</title>
+  <season>2</season>
+  <episode>6</episode>
+  <aired>2004-12-19</aired>
+  <plot>Gob stages mass firings after being inadvertently roasted at the Bluth Company Christmas party. Michael is forced to rebuild the Banana Stand, and Buster plays hooky from the Army at an arcade game.</plot>
+  <uniqueid type="tvdb" default="true">75861</uniqueid>
+  <uniqueid type="sonarr">19265</uniqueid>
+  <watched>false</watched>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <aspect>1.7777778</aspect>
+        <bitrate>0</bitrate>
+        <codec>AVC</codec>
+        <framerate>23.976023976023976023976023976</framerate>
+        <height>720</height>
+        <scantype>Progressive</scantype>
+        <width>1280</width>
+        <duration>21.95555</duration>
+        <durationinseconds>1317</durationinseconds>
+      </video>
+      <audio>
+        <bitrate>0</bitrate>
+        <channels>2</channels>
+        <codec>AAC</codec>
+        <language>eng</language>
+      </audio>
+    </streamdetails>
+  </fileinfo>
+</episodedetails>

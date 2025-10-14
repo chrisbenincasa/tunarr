@@ -10,7 +10,7 @@ type Props = {
   onClose: () => void;
   searchFields: ReadonlySet<SearchRestrictKeys>;
   onSearchFieldsChanged: (newFields: ReadonlySet<SearchRestrictKeys>) => void;
-  libraryType: MediaSourceLibrary['mediaType'];
+  libraryType?: MediaSourceLibrary['mediaType'];
 };
 
 type SearchRestrictOption = {
@@ -57,7 +57,8 @@ export const SearchFieldRestrictMenu = ({
   const searchRestrictOptions = useMemo(() => {
     return SearchRestrictOptions.filter(
       (opt) =>
-        opt.libraryTypes === 'all' || opt.libraryTypes.includes(libraryType),
+        opt.libraryTypes === 'all' ||
+        (libraryType && opt.libraryTypes.includes(libraryType)),
     );
   }, [libraryType]);
 

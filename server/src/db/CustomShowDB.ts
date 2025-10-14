@@ -18,10 +18,8 @@ import {
   AllProgramJoins,
   withCustomShowPrograms,
 } from './programQueryHelpers.ts';
-import type {
-  NewCustomShow,
-  NewCustomShowContent,
-} from './schema/CustomShow.ts';
+import type { NewCustomShow } from './schema/CustomShow.ts';
+import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
 
 @injectable()

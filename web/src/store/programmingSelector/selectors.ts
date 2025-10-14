@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import useStore from '..';
 import { Plex } from '../../helpers/constants.ts';
 import { KnownMedia } from './KnownMedia';
+import type { LocalMediaSourceView } from './store';
 import {
   type CustomShowView,
   type EmbyMediaSourceView,
@@ -38,6 +39,7 @@ type SourceTypeToLibrary = [
   ['jellyfin', JellyfinMediaSourceView],
   ['emby', EmbyMediaSourceView],
   ['custom-show', CustomShowView],
+  ['local', LocalMediaSourceView],
 ];
 
 export function useCurrentMediaSourceView<

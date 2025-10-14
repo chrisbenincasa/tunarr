@@ -3,7 +3,7 @@ import type { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceType } from '../../db/schema/MediaSource.ts';
+import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
 import { isMovieProgram } from '../../db/schema/schemaTypeGuards.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
@@ -19,13 +19,13 @@ import { MediaSourceScanner } from './MediaSourceScanner.ts';
 export type GenericMediaSourceMovieLibraryScanner<
   MovieT extends Movie = Movie,
 > = MediaSourceMovieLibraryScanner<
-  MediaSourceType,
+  RemoteMediaSourceType,
   MediaSourceApiClient,
   MovieT
 >;
 
 export abstract class MediaSourceMovieLibraryScanner<
-  MediaSourceTypeT extends MediaSourceType,
+  MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT extends MediaSourceApiClient,
   MovieT extends Movie = ApiClientTypeT extends MediaSourceApiClient<
     infer ProgramMapType,
@@ -111,20 +111,17 @@ export abstract class MediaSourceMovieLibraryScanner<
       }
 
       const result = await this.scanMovie(context, movie).then((result) =>
-        result.flatMapAsync((fullApiMovie) => {
-          return Result.attemptAsync(() => {
+        result.flatMapAsync((movieItem) => {
+          return Result.attemptAsync(async () => {
             const minted = this.programMinter.mintMovie(
               mediaSource,
               library,
-              fullApiMovie,
+              movieItem,
             );
 
-            return this.programDB
-              .upsertPrograms([minted])
-              .then((_) => _.filter(isMovieProgram))
-              .then(
-                (upsertedMovies) => [fullApiMovie, upsertedMovies] as const,
-              );
+            const upsertResult = await this.programDB.upsertPrograms([minted]);
+            const upsertedMovies = upsertResult.filter(isMovieProgram);
+            return [movieItem, upsertedMovies] as const;
           });
         }),
       );
@@ -139,8 +136,8 @@ export abstract class MediaSourceMovieLibraryScanner<
         continue;
       }
 
-      const [fullApiMovie, upsertedDbMovies] = result.get();
-      const dbMovie = head(upsertedDbMovies);
+      const [movieItem, movieDao] = result.get();
+      const dbMovie = head(movieDao);
       if (dbMovie) {
         this.logger.debug(
           'Upserted movie %s (ID = %s)',
@@ -150,7 +147,7 @@ export abstract class MediaSourceMovieLibraryScanner<
 
         await this.searchService.indexMovie([
           {
-            ...fullApiMovie,
+            ...movieItem,
             uuid: dbMovie.uuid,
             mediaSourceId: mediaSource.uuid,
             libraryId: library.uuid,

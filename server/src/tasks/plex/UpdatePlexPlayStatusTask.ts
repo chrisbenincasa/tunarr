@@ -1,4 +1,4 @@
-import type { MediaSource } from '@/db/schema/MediaSource.js';
+import type { MediaSourceOrm } from '@/db/schema/MediaSource.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task } from '@/tasks/Task.js';
@@ -35,7 +35,7 @@ const StaticPlexHeaders = {
 };
 
 export type UpdatePlexPlayStatusScheduledTaskFactory = (
-  plexServer: MediaSource,
+  plexServer: MediaSourceOrm,
   request: UpdatePlexPlayStatusScheduleRequest,
   sessionId: string,
 ) => UpdatePlexPlayStatusScheduledTask;

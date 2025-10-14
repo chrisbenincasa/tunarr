@@ -93,13 +93,9 @@ export class SystemDevicesService {
           const processHelper = new ChildProcessHelper();
           const vaInfoPath = first(
             (
-              await processHelper.getStdout(
-                'which',
-                ['vainfo'],
-                false,
-                undefined,
-                false,
-              )
+              await processHelper.getStdout('which', ['vainfo'], {
+                isPath: false,
+              })
             )
               .split('\n')
               .map(trim),

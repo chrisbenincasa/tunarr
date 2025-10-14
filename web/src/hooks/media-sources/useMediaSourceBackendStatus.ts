@@ -1,6 +1,6 @@
 import { isNonEmptyString, isValidUrl } from '@/helpers/util';
 import { useQuery } from '@tanstack/react-query';
-import type { MediaSourceSettings } from '@tunarr/types';
+import type { RemoteMediaSourceSettings } from '@tunarr/types';
 import type { MarkOptional } from 'ts-essentials';
 import {
   getApiMediaSourcesByIdStatusOptions,
@@ -14,7 +14,7 @@ export const useMediaSourceBackendStatus = (
     uri,
     accessToken,
   }: MarkOptional<
-    Pick<MediaSourceSettings, 'id' | 'type' | 'accessToken' | 'uri'>,
+    Pick<RemoteMediaSourceSettings, 'id' | 'type' | 'accessToken' | 'uri'>,
     'id'
   >,
   enabled: boolean = true,

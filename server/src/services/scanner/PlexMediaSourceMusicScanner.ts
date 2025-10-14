@@ -62,21 +62,21 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     show: PlexArtist,
     context: ScanContext<PlexApiClient>,
   ): AsyncIterable<PlexAlbum> {
-    return context.apiClient.getArtistAlbums(show.externalKey);
+    return context.apiClient.getArtistAlbums(show.externalId);
   }
 
   protected getAlbumTracks(
     season: PlexAlbum,
     context: ScanContext<PlexApiClient>,
   ): AsyncIterable<PlexTrack> {
-    return context.apiClient.getAlbumTracks(season.externalKey);
+    return context.apiClient.getAlbumTracks(season.externalId);
   }
 
   protected getFullTrackMetadata(
     episodeT: PlexTrack,
     context: ScanContext<PlexApiClient>,
   ): Promise<Result<PlexTrack, WrappedError>> {
-    return context.apiClient.getMusicTrack(episodeT.externalKey);
+    return context.apiClient.getMusicTrack(episodeT.externalId);
   }
 
   protected getApiClient(
@@ -90,7 +90,7 @@ export class PlexMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   protected getEntityExternalKey(
     show: PlexArtist | PlexAlbum | PlexTrack,
   ): string {
-    return show.externalKey;
+    return show.externalId;
   }
 
   protected getLibrarySize(

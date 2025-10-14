@@ -84,6 +84,7 @@ import type {
   NamedEntity,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
+import { titleToSortTitle } from '../../util/programs.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -965,6 +966,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(movie),
       title: movie.Name!,
+      sortTitle: titleToSortTitle(movie.Name!),
       originalTitle: movie.OriginalTitle ?? null,
       year: movie.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -991,7 +993,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: movie.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'movie',
-      externalKey: movie.Id,
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         movie,
@@ -1162,6 +1163,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       externalId: series.Id,
       canonicalId: this.canonicalizer.getCanonicalId(series),
       title: series.Name!,
+      sortTitle: titleToSortTitle(series.Name!),
       // originalTitle: series.OriginalTitle ?? null,
       year: series.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1190,7 +1192,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: series.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'show',
-      externalKey: series.Id,
       // mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         series,
@@ -1212,6 +1213,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       externalId: season.Id,
       canonicalId: this.canonicalizer.getCanonicalId(season),
       title: season.Name!,
+      sortTitle: titleToSortTitle(season.Name!),
       // originalTitle: season.OriginalTitle ?? null,
       year: season.ProductionYear ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
@@ -1240,7 +1242,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: season.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'season',
-      externalKey: season.Id,
       // mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         season,
@@ -1286,6 +1287,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       externalId: episode.Id,
       canonicalId: this.canonicalizer.getCanonicalId(episode),
       title: episode.Name!,
+      sortTitle: titleToSortTitle(episode.Name!),
       originalTitle: episode.OriginalTitle ?? null,
       year: episode.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1315,7 +1317,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: episode.Tags?.filter(isNonEmptyString) ?? [],
       summary: null,
       type: 'episode',
-      externalKey: episode.Id,
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         episode,
@@ -1330,7 +1331,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     return {
       title: artist.Name ?? '',
       canonicalId: this.canonicalizer.getCanonicalId(artist),
-      externalKey: artist.Id,
       genres:
         artist.Genres?.map((genre) => ({
           name: genre,
@@ -1351,6 +1351,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: artist.ChildCount ?? undefined,
       externalId: artist.Id,
+      sortTitle: titleToSortTitle(artist.Name ?? ''),
     } satisfies JellyfinMusicArtist;
   }
 
@@ -1361,8 +1362,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       type: 'album',
       externalId: album.Id,
       title: album.Name ?? '',
+      sortTitle: titleToSortTitle(album.Name!),
       canonicalId: this.canonicalizer.getCanonicalId(album),
-      externalKey: album.Id,
       genres:
         album.Genres?.map((genre) => ({
           name: genre,
@@ -1414,9 +1415,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(track),
       title: track.Name ?? '',
+      sortTitle: titleToSortTitle(track.Name!),
       actors: [],
       directors: [],
-      externalKey: track.Id,
       genres: [],
       tags: track.Tags?.filter(isNonEmptyString) ?? [],
       year: track.ProductionYear ?? null,
@@ -1483,6 +1484,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(video),
       title: video.Name!,
+      sortTitle: titleToSortTitle(video.Name!),
       originalTitle: video.OriginalTitle ?? null,
       year: video.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1509,7 +1511,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
       // summary: null,
       type: 'music_video',
-      externalKey: video.Id,
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         video,
@@ -1555,6 +1556,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(video),
       title: video.Name!,
+      sortTitle: titleToSortTitle(video.Name!),
       originalTitle: video.OriginalTitle ?? null,
       year: video.ProductionYear ?? null,
       releaseDate: isError(parsedReleaseDate)
@@ -1581,7 +1583,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
       // summary: null,
       type: 'other_video',
-      externalKey: video.Id,
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
         video,

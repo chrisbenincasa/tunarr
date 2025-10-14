@@ -1,3 +1,4 @@
+import { MediaSourceType } from '@/db/schema/base.js';
 import { tag, type Library } from '@tunarr/types';
 import { PagedResult } from '@tunarr/types/api';
 import {
@@ -16,7 +17,6 @@ import { isNil } from 'lodash-es';
 import { z } from 'zod/v4';
 import type { PageParams } from '../db/interfaces/IChannelDB.ts';
 import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
-import { MediaSourceType } from '../db/schema/MediaSource.ts';
 import { ServerRequestContext } from '../ServerContext.ts';
 import { mediaSourceParamsSchema } from '../types/schemas.ts';
 import type {

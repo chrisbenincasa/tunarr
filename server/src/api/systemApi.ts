@@ -240,13 +240,10 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
           ),
         (
           await Result.attemptAsync(() =>
-            new ChildProcessHelper().getStdout(
-              'nvidia-smi',
-              [],
-              true,
-              {},
-              false,
-            ),
+            new ChildProcessHelper().getStdout('nvidia-smi', [], {
+              swallowError: true,
+              isPath: false,
+            }),
           )
         ).either(identity, (err) => err.message),
       ]);

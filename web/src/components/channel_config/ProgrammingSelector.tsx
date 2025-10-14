@@ -13,10 +13,16 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/api';
 import { capitalize, find, isEmpty, isUndefined, map, some } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
-import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
+import {
+  Emby,
+  Imported,
+  Jellyfin,
+  Local,
+  Plex,
+} from '../../helpers/constants.ts';
 import { useMediaSourceLibraries } from '../../hooks/media-sources/useMediaSourceLibraries.ts';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
@@ -61,7 +67,8 @@ export const ProgrammingSelector = ({
 
   const { data: libraries, isLoading: librariesLoading } =
     useMediaSourceLibraries(selectedServer?.id ?? '', {
-      enabled: isNonEmptyString(selectedServer?.id),
+      enabled:
+        isNonEmptyString(selectedServer?.id) && selectedServer.type !== 'local',
     });
 
   useEffect(() => {
@@ -103,6 +110,7 @@ export const ProgrammingSelector = ({
 
   const renderMediaSourcePrograms = () => {
     const noSyncedLibraries =
+      selectedServer?.type !== 'local' &&
       useSyncedSources &&
       !librariesLoading &&
       !some(libraries, (lib) => lib.enabled && !!lib.lastScannedAt);
@@ -121,6 +129,20 @@ export const ProgrammingSelector = ({
           </Link>{' '}
           page.
         </Alert>
+      );
+    }
+
+    if (selectedServer?.type === 'local') {
+      return (
+        <Box sx={{ mt: 2 }}>
+          <LibraryProgramGrid
+            mediaSource={selectedServer}
+            disableProgramSelection={false}
+            toggleOrSetSelectedProgramsDrawer={
+              toggleOrSetSelectedProgramsDrawer
+            }
+          />
+        </Box>
       );
     }
 
@@ -162,6 +184,7 @@ export const ProgrammingSelector = ({
           return (
             <Box sx={{ mt: 2 }}>
               <LibraryProgramGrid
+                mediaSource={selectedServer!}
                 library={{
                   ...selectedLibrary.view,
                   mediaSource: selectedServer!,
@@ -220,6 +243,8 @@ export const ProgrammingSelector = ({
       case Emby: {
         return <EmbyLibrarySelector initialLibraryId={initialLibraryId} />;
       }
+      case Local:
+        return null;
     }
   };
 
@@ -264,15 +289,17 @@ export const ProgrammingSelector = ({
           )}
 
           {renderLibraryChoices()}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useSyncedSources}
-                onChange={(_, v) => setUseSyncedSources(v)}
-              />
-            }
-            label="Show only synced"
-          />
+          {selectedServer?.type !== 'local' && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useSyncedSources}
+                  onChange={(_, v) => setUseSyncedSources(v)}
+                />
+              }
+              label="Show only synced"
+            />
+          )}
           <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
       </Box>

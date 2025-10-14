@@ -5,7 +5,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { EmbyT } from '../../types/internal.ts';
@@ -67,7 +67,7 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
     { apiClient }: ScanContext<EmbyApiClient>,
     apiMovie: EmbyMovie,
   ): Promise<Result<EmbyMovie>> {
-    const fullMetadataResult = await apiClient.getMovie(apiMovie.externalKey);
+    const fullMetadataResult = await apiClient.getMovie(apiMovie.externalId);
 
     if (fullMetadataResult.isFailure()) {
       throw fullMetadataResult.error;
@@ -75,7 +75,7 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
 
     return fullMetadataResult.map((fullMovie) => {
       if (!fullMovie) {
-        throw new Error(`Movie (ID = ${apiMovie.externalKey}) not found`);
+        throw new Error(`Movie (ID = ${apiMovie.externalId}) not found`);
       }
 
       return fullMovie;
@@ -96,6 +96,6 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
   }
 
   protected getExternalKey(entity: EmbyMovie): string {
-    return entity.externalKey;
+    return entity.externalId;
   }
 }
