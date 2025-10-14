@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.22.6](https://github.com/chrisbenincasa/tunarr/compare/v0.22.5...v0.22.6) (2025-10-08)
+
+
+### Bug Fixes
+
+* add subtitle and description to xmltv ([f056790](https://github.com/chrisbenincasa/tunarr/commit/f0567902d2bb89963c8040ea3712bec72384347b))
+* **streaming:** convert to proper pixel format before cuda upload + scale ([091e7bd](https://github.com/chrisbenincasa/tunarr/commit/091e7bd290bcc25114db6b789db9b86decebbd0d))
+* **streaming:** do not set sc_threshold to 0 for mpeg2video out ([949efda](https://github.com/chrisbenincasa/tunarr/commit/949efda0ff028a0888c3aa52e294e9ae11a6a49f))
+* **streaming:** properly pass disable hw decode/encode/filter to pipeline ([70b3757](https://github.com/chrisbenincasa/tunarr/commit/70b37577fd13c2a322a1cdac81e2639a6550f225))
+* **streaming:** use bitstream filter in CUDA pipeline to workaround green line ([ff61f62](https://github.com/chrisbenincasa/tunarr/commit/ff61f62286e49245bc86f21f2252feabd614bcf1)), closes [#1390](https://github.com/chrisbenincasa/tunarr/issues/1390)
+* **ui:** allow viewing stream details of custom / filler programs ([af87a17](https://github.com/chrisbenincasa/tunarr/commit/af87a17b43bdc4d567a1f130d784f0c25cea5f36))
+
+
+### UI Changes
+
+* add season/episode to Tunarr guide page ([eeb3f6d](https://github.com/chrisbenincasa/tunarr/commit/eeb3f6dcec9cc4bcc0c3179a2eabc991ce14b3c0)), closes [#1398](https://github.com/chrisbenincasa/tunarr/issues/1398)
+
 ## [0.22.5](https://github.com/chrisbenincasa/tunarr/compare/v0.22.4...v0.22.5) (2025-09-23)
 
 
