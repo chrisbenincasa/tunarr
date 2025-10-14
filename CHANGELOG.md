@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.23.0-alpha.9](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.8...v0.23.0-alpha.9) (2025-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406))
+
+### Features
+
+* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406)) ([a748408](https://github.com/chrisbenincasa/tunarr/commit/a748408fcc5f727f88dc9ea836a2f5ecba7f3aa8))
+
+
+### Bug Fixes
+
+* fix meilisearch grabber script to accept x64/x86_64 args for mac download ([415121e](https://github.com/chrisbenincasa/tunarr/commit/415121e5962a1e7fec86f2a84a64c6a1aa227130))
+* **streaming:** convert to proper pixel format before cuda upload + scale ([091e7bd](https://github.com/chrisbenincasa/tunarr/commit/091e7bd290bcc25114db6b789db9b86decebbd0d))
+* **streaming:** do not apply hwdownload filter in cuda pipeline if not on hardware ([5726d6e](https://github.com/chrisbenincasa/tunarr/commit/5726d6ecf89eea051c1babf621fe89f8b6c0aad4))
+* **streaming:** do not set sc_threshold to 0 for mpeg2video out ([949efda](https://github.com/chrisbenincasa/tunarr/commit/949efda0ff028a0888c3aa52e294e9ae11a6a49f))
+* **streaming:** properly pass disable hw decode/encode/filter to pipeline ([70b3757](https://github.com/chrisbenincasa/tunarr/commit/70b37577fd13c2a322a1cdac81e2639a6550f225))
+* **streaming:** use bitstream filter in CUDA pipeline to workaround green line ([ff61f62](https://github.com/chrisbenincasa/tunarr/commit/ff61f62286e49245bc86f21f2252feabd614bcf1)), closes [#1390](https://github.com/chrisbenincasa/tunarr/issues/1390)
+* treat ffprobe format_long_name as optional ([c656d24](https://github.com/chrisbenincasa/tunarr/commit/c656d24c7ae4f1efdccb34deabb755bea7d1c01d))
+* **ui:** allow viewing stream details of custom / filler programs ([af87a17](https://github.com/chrisbenincasa/tunarr/commit/af87a17b43bdc4d567a1f130d784f0c25cea5f36))
+* use proper generic other_video scanning type for inject ([e44d55d](https://github.com/chrisbenincasa/tunarr/commit/e44d55d84048cbcc7e7b21161d7264f4a46627c6))
+
+
+### UI Changes
+
+* cleaning up some mobile styling ([#1405](https://github.com/chrisbenincasa/tunarr/issues/1405)) ([9a79146](https://github.com/chrisbenincasa/tunarr/commit/9a791467df48c44367ac6d6244d6e6932f6e0764))
+
 ## [0.23.0-alpha.8](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.7...v0.23.0-alpha.8) (2025-09-19)
 
 
