@@ -145,12 +145,12 @@ export class XmlTvWriter {
     }
 
     if (program.type === 'content' && isNonEmptyString(program.summary)) {
-      partial.desc = [{ _value: program.summary }];
+      partial.desc = [{ _value: escape(program.summary) }];
     } else if (
       program.type === 'custom' &&
       isNonEmptyString(program.program?.summary)
     ) {
-      partial.desc = [{ _value: program.program.summary }];
+      partial.desc = [{ _value: escape(program.program.summary) }];
     }
 
     if (isContentProgram(program)) {
