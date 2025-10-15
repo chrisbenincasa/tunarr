@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.8](https://github.com/chrisbenincasa/tunarr/compare/v0.22.7...v0.22.8) (2025-10-15)
+
+
+### Bug Fixes
+
+* do not let stream cache hard fail streams ([e5e5b15](https://github.com/chrisbenincasa/tunarr/commit/e5e5b1510660149ebd6404ba6bc87ad6b500403a))
+
 ## [0.22.7](https://github.com/chrisbenincasa/tunarr/compare/v0.22.6...v0.22.7) (2025-10-15)
 
 
