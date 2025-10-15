@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.7](https://github.com/chrisbenincasa/tunarr/compare/v0.22.6...v0.22.7) (2025-10-15)
+
+
+### Bug Fixes
+
+* ensure program summaries are escaped for xml ([9f3cad5](https://github.com/chrisbenincasa/tunarr/commit/9f3cad52c959864a7c4863ea1167f2ebb852fb42))
+* handle some weird cases of expected exit in ffmpeg ([8106d34](https://github.com/chrisbenincasa/tunarr/commit/8106d3491affef35a95ca93e210a15d4de71f74f))
+* **streaming:** apply sc_threshold after hw accel is decided ([1037ca3](https://github.com/chrisbenincasa/tunarr/commit/1037ca30ed30a30c330d447815799546582ac12b))
+* **streaming:** fix audio only streams for vaapi ([c0691cc](https://github.com/chrisbenincasa/tunarr/commit/c0691ccb03dd8f5ef3fa7b4cf3c83a14d304d965)), closes [#1365](https://github.com/chrisbenincasa/tunarr/issues/1365)
+
 ## [0.22.6](https://github.com/chrisbenincasa/tunarr/compare/v0.22.5...v0.22.6) (2025-10-08)
 
 
