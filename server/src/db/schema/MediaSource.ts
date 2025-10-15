@@ -13,6 +13,8 @@ import {
 } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { LocalMediaSourcePath } from './LocalMediaSourcePath.ts';
+import { MediaSourceLibrary } from './MediaSourceLibrary.ts';
+import { MediaSourceLibraryReplacePath } from './MediaSourceLibraryReplacePath.ts';
 import { Program } from './Program.ts';
 
 export type RemoteMediaSourceType = StrictExclude<MediaSourceType, 'local'>;
@@ -29,6 +31,7 @@ export const MediaSource = sqliteTable(
     name: text().notNull().$type<MediaSourceName>(),
     sendChannelUpdates: integer({ mode: 'boolean' }).default(false),
     sendGuideUpdates: integer({ mode: 'boolean' }).default(false),
+    // sendPlayStatusUpdates: integer({ mode: 'boolean' }).default(false),
     type: text({ enum: MediaSourceTypes }).notNull(),
     uri: text().notNull(),
     username: text(),
@@ -47,6 +50,7 @@ export const MediaSourceRelations = relations(MediaSource, ({ many }) => ({
   libraries: many(MediaSourceLibrary),
   programs: many(Program),
   paths: many(LocalMediaSourcePath),
+  replacePaths: many(MediaSourceLibraryReplacePath),
 }));
 
 export const MediaSourceFields: (keyof MediaSourceTable)[] = [
@@ -72,64 +76,3 @@ export type NewMediaSource = Insertable<MediaSourceTable>;
 export type MediaSourceUpdate = Updateable<MediaSourceTable>;
 
 export type MediaLibraryType = TupleToUnion<typeof MediaLibraryTypes>;
-
-export const MediaSourceLibrary = sqliteTable(
-  'media_source_library',
-  {
-    uuid: text().primaryKey().notNull(),
-    name: text().notNull(),
-    mediaType: text({ enum: MediaLibraryTypes }).notNull(),
-    mediaSourceId: text()
-      .references(() => MediaSource.uuid, { onDelete: 'cascade' })
-      .notNull()
-      .$type<MediaSourceId>(),
-    lastScannedAt: integer({ mode: 'timestamp_ms' }),
-    externalKey: text().notNull(),
-    enabled: integer({ mode: 'boolean' }).default(false).notNull(),
-  },
-  (table) => [
-    check(
-      'media_type_check',
-      inArray(table.mediaType, table.mediaType.enumValues).inlineParams(),
-    ),
-  ],
-);
-
-export const MediaSourceLibraryRelations = relations(
-  MediaSourceLibrary,
-  ({ one, many }) => ({
-    programs: many(Program),
-    mediaSource: one(MediaSource, {
-      fields: [MediaSourceLibrary.mediaSourceId],
-      references: [MediaSource.uuid],
-    }),
-  }),
-);
-
-export const MediaSourceLibraryColumns: (keyof MediaSourceLibraryTable)[] = [
-  'enabled',
-  'externalKey',
-  'lastScannedAt',
-  'mediaSourceId',
-  'mediaType',
-  'uuid',
-  'name',
-];
-
-export type MediaSourceLibraryTable = KyselifyBetter<typeof MediaSourceLibrary>;
-export type MediaSourceLibrary = Selectable<MediaSourceLibraryTable>;
-export type MediaSourceLibraryOrm = InferSelectModel<typeof MediaSourceLibrary>;
-export type NewMediaSourceLibrary = Insertable<MediaSourceLibraryTable>;
-export type MediaSourceLibraryUpdate = Updateable<MediaSourceLibraryTable>;
-
-export const MediaSourceLibraryReplacePath = sqliteTable(
-  'media_source_library_replace_path',
-  {
-    uuid: text().primaryKey().notNull(),
-    serverPath: text().notNull(),
-    localPath: text().notNull(),
-    mediaSourceId: text()
-      .notNull()
-      .references(() => MediaSource.uuid, { onDelete: 'cascade' }),
-  },
-);

@@ -11,7 +11,7 @@ import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { EmbyEpisode, EmbySeason, EmbyShow } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -93,7 +93,7 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<EmbyApiClient> {
     return this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
       mediaSource,

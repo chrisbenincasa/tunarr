@@ -6,7 +6,7 @@ import { run } from '@/util/index.js';
 import dayjs from 'dayjs';
 import { RecurrenceRule } from 'node-schedule';
 import { v4 } from 'uuid';
-import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 
 type UpdateJellyfinPlayStatusScheduleRequest = {
   first: boolean;
@@ -31,7 +31,7 @@ export class UpdateJellyfinPlayStatusScheduledTask extends ScheduledTask {
   private start = dayjs();
 
   constructor(
-    private jellyfinServer: MediaSourceWithLibraries,
+    private jellyfinServer: MediaSourceWithRelations,
     private request: UpdateJellyfinPlayStatusScheduleRequest,
     private mediaSourceApiFactory: MediaSourceApiFactory,
     public sessionId: string = v4(),
@@ -109,7 +109,7 @@ class UpdateJellyfinPlayStatusTask extends Task {
   }
 
   constructor(
-    private jellyfinServer: MediaSourceWithLibraries,
+    private jellyfinServer: MediaSourceWithRelations,
     private request: UpdateJellyfinPlayStatusInvocation,
     private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {

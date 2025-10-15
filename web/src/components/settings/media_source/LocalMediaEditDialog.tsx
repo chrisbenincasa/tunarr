@@ -18,6 +18,7 @@ import {
   Select,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { isNonEmptyString, prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { LocalMediaSource } from '@tunarr/types';
@@ -25,6 +26,7 @@ import { MediaSourceContentType } from '@tunarr/types/schemas';
 import { useDebounce } from '@uidotdev/usehooks';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
+import pluralize from 'pluralize';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -115,6 +117,7 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
               mediaType: values.mediaType,
               name: values.name,
               paths: values.paths,
+              pathReplacements: [],
             },
           },
           {
@@ -131,6 +134,7 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
               mediaType: values.mediaType,
               name: values.name,
               paths: values.paths,
+              pathReplacements: [],
             },
           },
           {
@@ -260,6 +264,7 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
                 fullWidth
                 value={currentPath}
                 onChange={(e) => setCurrentPath(e.target.value)}
+                helperText="A root path to scan for media. Local sources can search many different paths."
                 slotProps={{
                   input: {
                     spellCheck: false,
@@ -281,6 +286,9 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
             </Stack>
             <Divider />
             <Box>
+              <Typography variant="h6">
+                {pluralize('Path', paths.length)}
+              </Typography>
               <List sx={{ pl: 1, py: 0 }}>
                 {paths.map((path) => (
                   <ListItem

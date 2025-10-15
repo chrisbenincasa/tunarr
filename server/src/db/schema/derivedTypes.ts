@@ -11,12 +11,12 @@ import type {
   LocalMediaSourcePath,
   LocalMediaSourcePathOrm,
 } from './LocalMediaSourcePath.ts';
+import type { MediaSource, MediaSourceOrm } from './MediaSource.ts';
 import type {
-  MediaSource,
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
-  MediaSourceOrm,
-} from './MediaSource.ts';
+} from './MediaSourceLibrary.ts';
+import type { MediaSourceLibraryReplacePath } from './MediaSourceLibraryReplacePath.ts';
 import type {
   NewProgramDao,
   ProgramDao,
@@ -312,13 +312,14 @@ export type MediaSourceWithLibrariesDirect = MediaSource & {
   paths: LocalMediaSourcePath[];
 };
 
-export type MediaSourceWithLibraries = MediaSourceOrm & {
+export type MediaSourceWithRelations = MediaSourceOrm & {
   libraries: MediaSourceLibraryOrm[];
   paths: LocalMediaSourcePathOrm[];
+  replacePaths: MediaSourceLibraryReplacePath[];
 };
 
 export type SpecificMediaSourceType<Typ extends MediaSourceType> = StrictOmit<
-  MediaSourceWithLibraries,
+  MediaSourceWithRelations,
   'type'
 > & {
   type: Typ;

@@ -5,7 +5,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.ts';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { EmbyT } from '../../types/internal.ts';
@@ -49,7 +49,7 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<EmbyApiClient> {
     return this.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
       mediaSource,

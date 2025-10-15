@@ -15,6 +15,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -31,7 +32,7 @@ import type { PlexServerSettings } from '@tunarr/types';
 import { isUndefined } from 'lodash-es';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { MarkOptional, StrictOmit } from 'ts-essentials';
 import { useDebounceValue } from 'usehooks-ts';
 import { getApiMediaSourcesQueryKey } from '../../../generated/@tanstack/react-query.gen.ts';
@@ -39,6 +40,8 @@ import {
   postApiMediaSources,
   putApiMediaSourcesById,
 } from '../../../generated/sdk.gen.ts';
+import { NetworkIcon } from '../../util/NetworkIcon.tsx';
+import { EditPathReplacementsForm } from './EditPathReplacementsForm.tsx';
 
 type Props = {
   open: boolean;
@@ -61,6 +64,7 @@ const emptyDefaults: PlexServerSettingsForm = {
   type: 'plex',
   userId: '',
   username: '',
+  pathReplacements: [],
 };
 
 export function PlexServerEditDialog({ open, onClose, server }: Props) {
@@ -68,23 +72,26 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
 
   const [showAccessToken, setShowAccessToken] = useState(false);
 
-  const title = server ? `Editing "${server.name}"` : 'New Plex Server';
+  const title = server
+    ? `Editing Plex Server "${server.name}"`
+    : 'New Plex Server';
 
   const handleClose = () => {
     setShowAccessToken(false);
     onClose();
   };
 
+  const form = useForm<PlexServerSettingsForm>({
+    mode: 'onChange',
+    defaultValues: server ?? emptyDefaults,
+  });
   const {
     control,
     watch,
     reset,
     formState: { isDirty, isValid, defaultValues },
     handleSubmit,
-  } = useForm<PlexServerSettingsForm>({
-    mode: 'onChange',
-    defaultValues: server ?? emptyDefaults,
-  });
+  } = form;
 
   useEffect(() => {
     if (open) {
@@ -174,7 +181,11 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
       onSubmit={onSubmit}
       onClose={() => onClose()}
     >
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle sx={{ pb: 0 }}>
+        <Box sx={{ display: 'inline-flex', gap: 0.5 }}>
+          <NetworkIcon width={20} network="plex" /> <span>{title}</span>
+        </Box>
+      </DialogTitle>
       <DialogContent sx={{ p: 2 }}>
         <Box>
           <Stack sx={{ py: 2 }} spacing={2}>
@@ -303,6 +314,13 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                 />
               )}
             />
+            <Divider />
+            <Box>
+              <FormProvider {...form}>
+                <EditPathReplacementsForm />
+              </FormProvider>
+            </Box>
+            <Divider />
             <Box sx={{ display: 'flex' }}>
               <FormControl sx={{ flexGrow: 0.5 }}>
                 <FormControlLabel

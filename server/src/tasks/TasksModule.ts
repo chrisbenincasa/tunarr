@@ -16,7 +16,7 @@ import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { type IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import type { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
@@ -132,7 +132,7 @@ const TasksModule = new ContainerModule((bind) => {
     UpdatePlexPlayStatusScheduledTask.KEY,
     (ctx) =>
       (
-        plexServer: MediaSourceWithLibraries,
+        plexServer: MediaSourceWithRelations,
         request: UpdatePlexPlayStatusScheduleRequest,
         sessionId: string,
       ) =>

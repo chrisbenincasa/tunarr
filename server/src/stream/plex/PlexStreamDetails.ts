@@ -1,11 +1,10 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { PlexMediaSource } from '@/db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe, Nullable } from '@/types/util.js';
+import { Maybe, Nilable, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import {
   attempt,
@@ -39,7 +38,6 @@ import {
   isUndefined,
   map,
   maxBy,
-  replace,
   round,
   sortBy,
   trimEnd,
@@ -52,6 +50,7 @@ import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurat
 import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { PlexT } from '../../types/internal.ts';
 import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../PathCalculator.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
@@ -76,7 +75,6 @@ import {
 export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
@@ -251,70 +249,69 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         });
     }
 
-    const streamSettings = this.settings.plexSettings();
-
-    let streamSource: StreamSource;
     const filePath =
       details.directFilePath ?? first(first(itemMetadata.Media)?.Part)?.file;
-    if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
-      const replacedPath = isNonEmptyString(streamSettings.pathReplace)
-        ? replace(
-            filePath,
-            streamSettings.pathReplace,
-            streamSettings.pathReplaceWith,
-          )
-        : filePath;
-      this.logger.debug(
-        'Plex server %s configured to use "direct" streaming. Attempting to load program from disk. Plex-reported path %s. Path after replace: %s',
-        server.name,
-        filePath,
-        replacedPath,
-      );
-      streamSource = {
-        type: 'file',
-        path: replacedPath,
-      };
-    } else {
-      const existsAtPath =
-        isNonEmptyString(filePath) && (await fileExists(filePath));
-      if (existsAtPath) {
-        this.logger.debug(
-          'Plex server %s configured for "network" streaming, but found file located at %s. Using file on disk.',
-          server.name,
-          filePath,
-        );
-        streamSource = {
-          type: 'file',
-          path: filePath,
-        };
-      } else {
-        let path = details.serverPath ?? plexExternalInfo.externalFilePath;
-        this.logger.debug(
-          'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
-          path,
-        );
-
-        if (isNonEmptyString(path)) {
-          path = path.startsWith('/') ? path : `/${path}`;
-
-          streamSource = new HttpStreamSource(
-            `${trimEnd(server.uri, '/')}${path}?X-Plex-Token=${
-              server.accessToken
-            }`,
-          );
-          // streamUrl = this.getPlexTranscodeStreamUrl(
-          //   `/library/metadata/${item.externalKey}`,
-          // );
-        } else {
-          throw new Error('Could not resolve stream URL');
-        }
-      }
-    }
+    const streamSource = await this.getStreamSource(
+      server,
+      filePath,
+      details.serverPath ?? plexExternalInfo.externalFilePath,
+    );
 
     return {
       streamSource,
       streamDetails: details,
     };
+  }
+
+  private async getStreamSource(
+    server: PlexMediaSource,
+    potentialFilePath: Nilable<string>,
+    serverPath: Nilable<string>,
+  ): Promise<StreamSource> {
+    if (isNonEmptyString(potentialFilePath)) {
+      if (await fileExists(potentialFilePath)) {
+        this.logger.debug(
+          'Found item locally at path reported by server, playing from disk. Path: %s',
+          potentialFilePath,
+        );
+        return {
+          type: 'file',
+          path: potentialFilePath,
+        };
+      } else {
+        const replacedPath = await PathCalculator.findFirstValidPath(
+          potentialFilePath,
+          server.replacePaths,
+        );
+        if (replacedPath) {
+          this.logger.debug(
+            'Found valid path replacement, playing from disk. Original path: "%s" Replace path: "%s',
+            potentialFilePath,
+            replacedPath,
+          );
+          return {
+            type: 'file',
+            path: replacedPath,
+          };
+        }
+      }
+    }
+
+    if (isNonEmptyString(serverPath)) {
+      serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
+      this.logger.debug(
+        'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
+        serverPath,
+      );
+
+      return new HttpStreamSource(
+        `${trimEnd(server.uri, '/')}${serverPath}?X-Plex-Token=${
+          server.accessToken
+        }`,
+      );
+    } else {
+      throw new Error('Could not resolve stream URL');
+    }
   }
 
   private async getItemStreamDetails(

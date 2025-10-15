@@ -5,7 +5,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -80,7 +80,7 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {
     return this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
       mediaSource,

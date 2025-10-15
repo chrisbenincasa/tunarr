@@ -15,7 +15,8 @@ import type { MarkNotNilable } from '../../types/util.ts';
 import type { MediaSourceId, MediaSourceName } from './base.ts';
 import { ProgramExternalIdSourceTypes } from './base.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
-import { MediaSource, MediaSourceLibrary } from './MediaSource.ts';
+import { MediaSource } from './MediaSource.ts';
+import { MediaSourceLibrary } from './MediaSourceLibrary.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
 export const ProgramGroupingExternalId = sqliteTable(

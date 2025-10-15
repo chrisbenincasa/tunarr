@@ -11,7 +11,7 @@ import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { HttpReconnectOptions } from '../ffmpeg/builder/options/input/HttpReconnectOptions.ts';
 import { GlobalOptions } from '../globals.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
@@ -159,7 +159,7 @@ export class SubtitleExtractorTask extends Task {
 
   private async handleProgram(
     program: ContentGuideProgram,
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ) {
     const dbProgram = await this.programDB.getProgramById(program.id);
     if (!dbProgram) {

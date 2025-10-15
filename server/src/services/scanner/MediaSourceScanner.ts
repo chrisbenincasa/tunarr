@@ -1,9 +1,9 @@
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
 import dayjs from 'dayjs';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import type {
   MediaLibraryType,
-  MediaSourceLibraryOrm,
   MediaSourceOrm,
   RemoteMediaSourceType,
 } from '../../db/schema/MediaSource.ts';
@@ -99,7 +99,7 @@ export abstract class MediaSourceScanner<
   ): Promise<void>;
 
   protected abstract getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<ApiClientTypeT>;
 
   protected abstract getLibrarySize(

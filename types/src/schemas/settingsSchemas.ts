@@ -142,6 +142,11 @@ export const MediaSourceLibrarySchema = z.object({
 
 export const MediaSourceId = z.string().brand<'mediaSourceId'>();
 
+export const MediaSourcePathReplacement = z.object({
+  serverPath: z.string(),
+  localPath: z.string(),
+});
+
 const BaseMediaSourceSettingsSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -150,6 +155,7 @@ const BaseMediaSourceSettingsSchema = z.object({
   userId: z.string().nullable(),
   username: z.string().nullable(),
   libraries: z.array(BaseMediaSourceLibrarySchema),
+  pathReplacements: z.array(MediaSourcePathReplacement),
 });
 
 export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({

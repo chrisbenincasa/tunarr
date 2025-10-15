@@ -17,13 +17,13 @@ import { has, isError, isString } from 'lodash-es';
 import PQueue from 'p-queue';
 import type { StrictOmit } from 'ts-essentials';
 import { z } from 'zod/v4';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { WrappedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 
 export type ApiClientOptions = {
   mediaSource: StrictOmit<
-    MediaSourceWithLibraries,
+    MediaSourceWithRelations,
     | 'createdAt'
     | 'updatedAt'
     | 'clientIdentifier'
@@ -221,8 +221,8 @@ export abstract class BaseApiClient<
             'API client response error: path: %s, status %d, params: %O, data: %O, headers: %O',
             error.config?.url ?? '',
             status,
-            error.config?.params ?? {},
-            error.response.data,
+            (error.config?.params as unknown) ?? {},
+            error.response.data as unknown as object,
             headers,
           );
         } else if (error.request) {

@@ -23,6 +23,7 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { tag } from '@tunarr/types';
+import { inArray } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { MarkRequired } from 'ts-essentials';
@@ -42,16 +43,16 @@ import { DB } from './schema/db.ts';
 import {
   EmbyMediaSource,
   JellyfinMediaSource,
-  MediaSourceWithLibraries,
+  MediaSourceWithRelations,
   PlexMediaSource,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
+import { MediaSourceOrm, MediaSourceUpdate } from './schema/MediaSource.ts';
 import {
   MediaSourceLibraryUpdate,
-  MediaSourceOrm,
-  MediaSourceUpdate,
   NewMediaSourceLibrary,
-} from './schema/MediaSource.ts';
+} from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 
 type Report = {
   type: 'channel' | 'custom-show' | 'filler';
@@ -80,21 +81,23 @@ export class MediaSourceDB {
     private drizzleDB: DrizzleDBAccess,
   ) {}
 
-  async getAll(): Promise<MediaSourceWithLibraries[]> {
+  async getAll(): Promise<MediaSourceWithRelations[]> {
     return this.drizzleDB.query.mediaSource.findMany({
       with: {
         libraries: true,
         paths: true,
+        replacePaths: true,
       },
     });
   }
 
-  async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithLibraries>> {
+  async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithRelations>> {
     return this.drizzleDB.query.mediaSource.findFirst({
       where: (ms, { eq }) => eq(ms.uuid, id),
       with: {
         libraries: true,
         paths: true,
+        replacePaths: true,
       },
     });
   }
@@ -127,12 +130,12 @@ export class MediaSourceDB {
   async findByType(
     type: MediaSourceType,
     nameOrId: MediaSourceId,
-  ): Promise<MediaSourceWithLibraries | undefined>;
-  async findByType(type: MediaSourceType): Promise<MediaSourceWithLibraries[]>;
+  ): Promise<MediaSourceWithRelations | undefined>;
+  async findByType(type: MediaSourceType): Promise<MediaSourceWithRelations[]>;
   async findByType(
     type: MediaSourceType,
     nameOrId?: MediaSourceId,
-  ): Promise<MediaSourceWithLibraries[] | Maybe<MediaSourceWithLibraries>> {
+  ): Promise<MediaSourceWithRelations[] | Maybe<MediaSourceWithRelations>> {
     const found = await this.drizzleDB.query.mediaSource.findMany({
       where: (ms, { eq, and }) => {
         if (isNonEmptyString(nameOrId)) {
@@ -144,6 +147,7 @@ export class MediaSourceDB {
       with: {
         libraries: true,
         paths: true,
+        replacePaths: true,
       },
     });
 
@@ -273,6 +277,52 @@ export class MediaSourceDB {
         // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
         // .limit(1)
         .executeTakeFirstOrThrow();
+
+      await this.drizzleDB.transaction(async (tx) => {
+        const existing = await tx.query.mediaSourceLibraryReplacePath.findMany({
+          where: (fields, { eq }) => eq(fields.mediaSourceId, updateReq.id),
+        });
+
+        const newPaths = differenceWith(
+          updateReq.pathReplacements,
+          existing,
+          (existing, incoming) => {
+            return (
+              existing.localPath !== incoming.localPath &&
+              existing.serverPath !== incoming.serverPath
+            );
+          },
+        );
+        const removedPaths = differenceWith(
+          existing,
+          updateReq.pathReplacements,
+          (existing, incoming) => {
+            return (
+              existing.localPath !== incoming.localPath &&
+              existing.serverPath !== incoming.serverPath
+            );
+          },
+        );
+
+        if (removedPaths.length > 0) {
+          await tx.delete(MediaSourceLibraryReplacePath).where(
+            inArray(
+              MediaSourceLibraryReplacePath.uuid,
+              removedPaths.map(({ uuid }) => uuid),
+            ),
+          );
+        }
+
+        if (newPaths.length > 0) {
+          await tx.insert(MediaSourceLibraryReplacePath).values(
+            newPaths.map((newPath) => ({
+              ...newPath,
+              uuid: v4(),
+              mediaSourceId: updateReq.id,
+            })),
+          );
+        }
+      });
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
     }
