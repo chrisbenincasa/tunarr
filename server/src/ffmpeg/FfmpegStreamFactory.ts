@@ -534,7 +534,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         paddedSize, // TODO
         videoBitrate: playbackParams.videoBitrate,
         videoBufferSize: playbackParams.videoBufferSize,
-        pixelFormat: playbackParams.pixelFormat, //match(), TODO: Make this customizable...
+        pixelFormat: playbackParams.pixelFormat ?? new PixelFormatYuv420P(), //match(), TODO: Make this customizable...
         bitDepth: 8, // TODO: Make this customizable
         frameRate: playbackParams.frameRate,
         videoTrackTimescale: playbackParams.videoTrackTimeScale,

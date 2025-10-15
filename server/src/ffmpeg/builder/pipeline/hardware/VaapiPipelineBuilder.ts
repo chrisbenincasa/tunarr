@@ -285,6 +285,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         }
       }
 
+      let needsVaapiSetFormat = true;
       if (currentState.pixelFormat?.name !== pixelFormat.name) {
         // Pixel formats
         if (
@@ -296,15 +297,14 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
         if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
           steps.push(new VaapiFormatFilter(pixelFormat));
+          needsVaapiSetFormat = false;
+        } else if (
+          this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Vaapi
+        ) {
+          steps.push(new PixelFormatFilter(pixelFormat));
+          needsVaapiSetFormat = false;
         } else {
-          if (
-            this.ffmpegState.encoderHwAccelMode ===
-            HardwareAccelerationMode.Vaapi
-          ) {
-            steps.push(new PixelFormatFilter(pixelFormat));
-          } else {
-            this.pipelineSteps.push(new PixelFormatOutputOption(pixelFormat));
-          }
+          this.pipelineSteps.push(new PixelFormatOutputOption(pixelFormat));
         }
       }
 
@@ -313,14 +313,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
           HardwareAccelerationMode.Vaapi &&
         currentState.frameDataLocation === FrameDataLocation.Software
       ) {
-        // Figure this out... it consistently sets false and doesn't work
-        // const setFormat = every(
-        //   steps,
-        //   (step) =>
-        //     !(step instanceof VaapiFormatFilter) &&
-        //     !(step instanceof PixelFormatFilter),
-        // );
-        steps.push(new HardwareUploadVaapiFilter(true, 64));
+        steps.push(new HardwareUploadVaapiFilter(needsVaapiSetFormat, 64));
       }
     }
 
