@@ -31,6 +31,7 @@
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
     "@uidotdev/usehooks": "^2.4.1",
+    "@xyflow/react": "^12.8.6",
     "axios": "^1.11.0",
     "bowser": "^2.11.0",
     "color": "^5.0.0",

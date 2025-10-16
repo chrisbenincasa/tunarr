@@ -30,6 +30,7 @@ import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg';
 import { Route as MediasourcesMediaSourceIdImport } from './routes/media_sources/$mediaSourceId';
 import { Route as LibraryFillersImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows';
+import { Route as DebugFlowImport } from './routes/debug/flow';
 import { Route as ChannelsTestImport } from './routes/channels/test';
 import { Route as ChannelsNewImport } from './routes/channels/new';
 import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId';
@@ -145,6 +146,11 @@ const LibraryFillersRoute = LibraryFillersImport.update({
 
 const LibraryCustomShowsRoute = LibraryCustomShowsImport.update({
   path: '/library/custom-shows',
+  getParentRoute: () => rootRoute,
+} as any);
+
+const DebugFlowRoute = DebugFlowImport.update({
+  path: '/debug/flow',
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -320,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/channels/test';
       fullPath: '/channels/test';
       preLoaderRoute: typeof ChannelsTestImport;
+      parentRoute: typeof rootRoute;
+    };
+    '/debug/flow': {
+      id: '/debug/flow';
+      path: '/debug/flow';
+      fullPath: '/debug/flow';
+      preLoaderRoute: typeof DebugFlowImport;
       parentRoute: typeof rootRoute;
     };
     '/library/custom-shows': {
@@ -566,6 +579,7 @@ export const routeTree = rootRoute.addChildren({
   ChannelsChannelIdRoute,
   ChannelsNewRoute,
   ChannelsTestRoute,
+  DebugFlowRoute,
   LibraryCustomShowsRoute,
   LibraryFillersRoute,
   MediasourcesMediaSourceIdRoute,
@@ -604,6 +618,7 @@ export const routeTree = rootRoute.addChildren({
         "/channels/$channelId",
         "/channels/new",
         "/channels/test",
+        "/debug/flow",
         "/library/custom-shows",
         "/library/fillers",
         "/media_sources/$mediaSourceId",
@@ -664,6 +679,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/channels/test": {
       "filePath": "channels/test.tsx"
+    },
+    "/debug/flow": {
+      "filePath": "debug/flow.tsx"
     },
     "/library/custom-shows": {
       "filePath": "library/custom-shows.tsx"
