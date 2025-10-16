@@ -1626,7 +1626,7 @@ export class ProgramDB implements IProgramDB {
         .returningAll()
         .executeTakeFirstOrThrow();
       const insertedExternalIds: ProgramGroupingExternalId[] = [];
-      if (insertedExternalIds.length > 0) {
+      if (externalIds.length > 0) {
         insertedExternalIds.push(
           ...(await tx
             .insertInto('programGroupingExternalId')

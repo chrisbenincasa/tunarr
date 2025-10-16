@@ -94,7 +94,11 @@ export class MediaSourceScanCoordinator {
     }
   }
 
-  async add({ libraryId, forceScan }: ScanRequest): Promise<boolean> {
+  async add({
+    libraryId,
+    forceScan,
+    pathFilter,
+  }: ScanRequest): Promise<boolean> {
     const library = await this.mediaSourceDB.getLibrary(libraryId);
 
     if (!library) {
@@ -125,7 +129,7 @@ export class MediaSourceScanCoordinator {
       MediaSourceScanCoordinator.queue
         .add(async () => {
           try {
-            await scanner.scan({ library, force: forceScan });
+            await scanner.scan({ library, force: forceScan, pathFilter });
           } finally {
             releaser();
           }
@@ -156,6 +160,7 @@ export class MediaSourceScanCoordinator {
 type ScanRequest = {
   libraryId: string;
   forceScan: boolean;
+  pathFilter?: string;
 };
 
 type LocalScanRequest = {

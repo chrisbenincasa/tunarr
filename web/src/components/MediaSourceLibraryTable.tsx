@@ -5,17 +5,15 @@ import { Link as RouterLink } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import { usePrevious } from '@uidotdev/usehooks';
-import { capitalize, isEqual, maxBy, some } from 'lodash-es';
+import { capitalize, maxBy, some } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  getApiMediaLibrariesByLibraryIdQueryKey,
-  getApiMediaSourcesQueryKey,
-} from '../generated/@tanstack/react-query.gen.ts';
+import { getApiMediaLibrariesByLibraryIdQueryKey } from '../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
 import {
   useLibraryScanState,
   useScanLibraryMutation,
@@ -84,21 +82,7 @@ const MediaSourceLibraryTableActionCell = ({
       setIsRefreshing(false);
       queryClient
         .invalidateQueries({
-          predicate(query) {
-            if (isEqual(query.queryKey, getApiMediaSourcesQueryKey())) {
-              return true;
-            }
-
-            if (query.queryKey?.[0]) {
-              // This sucks.
-              const key = query.queryKey[0] as any;
-              if (key['tags'] === 'Media Source') {
-                return true;
-              }
-            }
-
-            return false;
-          },
+          predicate: invalidateTaggedQueries('Media Source'),
         })
         .catch(console.error);
     }
@@ -112,7 +96,7 @@ const MediaSourceLibraryTableActionCell = ({
   const link =
     mediaSource.type === 'local'
       ? (`/media_sources/${mediaSource.id}` as const)
-      : (`/library/${library.id}` as const);
+      : (`/media_sources/${mediaSource.id}/libraries/${library.id}` as const);
 
   return (
     <>

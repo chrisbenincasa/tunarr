@@ -389,4 +389,41 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send(scanRes);
     },
   );
+
+  fastify.get(
+    '/debug/media_sources/:mediaSourceId/libraries/:libraryId/scan',
+    {
+      schema: {
+        params: z.object({
+          mediaSourceId: z.uuid(),
+          libraryId: z.uuid(),
+        }),
+        querystring: z.object({
+          pathFilter: z.string().optional(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+        tag(req.params.mediaSourceId),
+      );
+      if (!mediaSource) {
+        return res.status(404).send();
+      }
+      const library = mediaSource.libraries.find(
+        (lib) => lib.uuid === req.params.libraryId,
+      );
+      console.log(mediaSource.libraries);
+      if (!library) {
+        return res.status(404).send('Library not found');
+      }
+      const scanRes = await req.serverCtx.mediaSourceScanCoordinator.add({
+        forceScan: true,
+        libraryId: req.params.libraryId,
+        pathFilter: req.query.pathFilter,
+      });
+
+      return res.send(scanRes);
+    },
+  );
 };

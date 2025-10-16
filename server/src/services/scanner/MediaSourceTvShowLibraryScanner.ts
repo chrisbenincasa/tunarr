@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { round } from 'lodash-es';
 import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -62,7 +63,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
   ): Promise<void> {
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
-    const { library, mediaSource } = context;
+    const { library, mediaSource, pathFilter } = context;
     // const existingShows = this.programDB.getProgramGroupingCanonicalIds(
     //   library.uuid,
     //   ProgramGroupingType.Show,
@@ -78,6 +79,10 @@ export abstract class MediaSourceTvShowLibraryScanner<
     )) {
       if (this.state(library.uuid) === 'canceled') {
         return;
+      }
+
+      if (isNonEmptyString(pathFilter) && show.externalId !== pathFilter) {
+        continue;
       }
 
       seenShows.add(show.externalId);
@@ -105,6 +110,8 @@ export abstract class MediaSourceTvShowLibraryScanner<
           sourceType: this.mediaSourceType,
         }),
       );
+
+      console.log(groupingAndRelations, upsertResult);
 
       if (upsertResult.isFailure()) {
         this.logger.warn(upsertResult.error);
@@ -236,7 +243,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
         );
 
         const upsertResult = await fullMetadataResult.flatMapAsync(
-          (fullEpisode) => {
+          async (fullEpisode) => {
             const episodeWithJoins = {
               ...fullEpisode,
               season,
@@ -253,15 +260,13 @@ export abstract class MediaSourceTvShowLibraryScanner<
             dao.program.tvShowUuid = show.uuid;
             dao.program.seasonUuid = season.uuid;
 
-            return Result.attemptAsync(() =>
-              this.programDB.upsertPrograms([dao]),
-            ).then((_) =>
-              _.mapAsync(([inserted]) =>
-                this.searchService.indexEpisodes([
-                  { ...episodeWithJoins, uuid: inserted.uuid },
-                ]),
-              ),
-            );
+            return Result.attemptAsync(async () => {
+              const [inserted] = await this.programDB.upsertPrograms([dao]);
+              this.logger.debug('Upserted episode ID %s', inserted.uuid);
+              await this.searchService.indexEpisodes([
+                { ...episodeWithJoins, uuid: inserted.uuid },
+              ]);
+            });
           },
         );
 

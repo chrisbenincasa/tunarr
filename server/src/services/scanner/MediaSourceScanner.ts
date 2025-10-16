@@ -13,6 +13,7 @@ import type { Logger } from '../../util/logging/LoggerFactory.ts';
 export type ScanRequest = {
   library: MediaSourceLibraryOrm;
   force?: boolean;
+  pathFilter?: string;
 };
 
 export type ScanContext<ApiClientTypeT> = {
@@ -20,6 +21,7 @@ export type ScanContext<ApiClientTypeT> = {
   mediaSource: MediaSourceOrm;
   apiClient: ApiClientTypeT;
   force: boolean;
+  pathFilter?: string;
 };
 
 export type RunState = 'unknown' | 'starting' | 'running' | 'canceled';
@@ -49,7 +51,7 @@ export abstract class MediaSourceScanner<
     protected mediaSourceDB: MediaSourceDB,
   ) {}
 
-  async scan({ library, force }: ScanRequest) {
+  async scan({ library, force, pathFilter }: ScanRequest) {
     this.#state.set(library.uuid, 'starting');
 
     this.#state.set(library.uuid, 'running');
@@ -74,6 +76,7 @@ export abstract class MediaSourceScanner<
         mediaSource,
         force: force ?? false,
         apiClient: await this.getApiClient(mediaSource),
+        pathFilter,
       });
 
       await this.mediaSourceDB.setLibraryLastScannedTime(library.uuid, dayjs());
