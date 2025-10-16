@@ -32,6 +32,7 @@ import { plexApiRouter } from './plexApi.ts';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
+import { settingsApi } from './settingsApi.ts';
 import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
@@ -71,7 +72,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(plexApiRouter)
     .register(jellyfinApiRouter)
     .register(sessionApiRouter)
-    .register(embyApiRouter);
+    .register(embyApiRouter)
+    .register(settingsApi);
 
   fastify.get(
     '/version',

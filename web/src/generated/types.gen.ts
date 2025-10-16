@@ -15301,6 +15301,27 @@ export type GetApiDebugMediaSourcesByMediaSourceIdScanResponses = {
   200: unknown;
 };
 
+export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData =
+  {
+    body?: never;
+    path: {
+      mediaSourceId: string;
+      libraryId: string;
+    };
+    query?: {
+      pathFilter?: string;
+    };
+    url: '/api/debug/media_sources/{mediaSourceId}/libraries/{libraryId}/scan';
+  };
+
+export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses =
+  {
+    /**
+     * Default Response
+     */
+    200: unknown;
+  };
+
 export type GetApiMediaSourcesData = {
   body?: never;
   path?: never;
@@ -24170,6 +24191,46 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
 
 export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponse =
   GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses[keyof GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses];
+
+export type GetApiSettingsMediaSourceData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/api/settings/media-source';
+};
+
+export type GetApiSettingsMediaSourceResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rescanIntervalHours: number;
+  };
+};
+
+export type GetApiSettingsMediaSourceResponse =
+  GetApiSettingsMediaSourceResponses[keyof GetApiSettingsMediaSourceResponses];
+
+export type PutApiSettingsMediaSourceData = {
+  body?: {
+    rescanIntervalHours?: number;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/settings/media-source';
+};
+
+export type PutApiSettingsMediaSourceResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rescanIntervalHours: number;
+  };
+};
+
+export type PutApiSettingsMediaSourceResponse =
+  PutApiSettingsMediaSourceResponses[keyof PutApiSettingsMediaSourceResponses];
 
 export type GetApiVersionData = {
   body?: never;

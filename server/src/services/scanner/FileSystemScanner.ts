@@ -1,4 +1,4 @@
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';

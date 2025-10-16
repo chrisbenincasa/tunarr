@@ -1,6 +1,6 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import type { MediaSourceOrm } from '@/db/schema/MediaSource.js';
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import { ProgramType } from '@/db/schema/Program.js';
 import type { ProgramGrouping as ProgramGroupingDao } from '@/db/schema/ProgramGrouping.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';

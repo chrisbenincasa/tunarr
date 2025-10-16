@@ -1,7 +1,7 @@
 import {
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
-} from '@/db/schema/MediaSourceLibrary.ts';
+} from '@/db/schema/MediaSourceLibrary.js';
 import { inject, injectable } from 'inversify';
 import { MediaSource, MediaSourceOrm } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';

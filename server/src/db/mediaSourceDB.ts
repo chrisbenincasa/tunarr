@@ -109,6 +109,7 @@ export class MediaSourceDB {
         mediaSource: {
           with: {
             paths: true,
+            replacePaths: true,
           },
         },
       },

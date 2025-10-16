@@ -175,6 +175,8 @@ import type {
   GetApiDebugSubprocessRestartResponses,
   GetApiDebugMediaSourcesByMediaSourceIdScanData,
   GetApiDebugMediaSourcesByMediaSourceIdScanResponses,
+  GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData,
+  GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses,
   GetApiMediaSourcesData,
   GetApiMediaSourcesResponses,
   GetApiMediaSourcesErrors,
@@ -340,6 +342,10 @@ import type {
   GetApiEmbyByMediaSourceIdUserLibrariesResponses,
   GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData,
   GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses,
+  GetApiSettingsMediaSourceData,
+  GetApiSettingsMediaSourceResponses,
+  PutApiSettingsMediaSourceData,
+  PutApiSettingsMediaSourceResponses,
   GetApiVersionData,
   GetApiVersionResponses,
   GetApiVersionErrors,
@@ -1487,6 +1493,24 @@ export const getApiDebugMediaSourcesByMediaSourceIdScan = <
   });
 };
 
+export const getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScan = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<
+    GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData,
+    ThrowOnError
+  >,
+) => {
+  return (options.client ?? _heyApiClient).get<
+    GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses,
+    unknown,
+    ThrowOnError
+  >({
+    url: '/api/debug/media_sources/{mediaSourceId}/libraries/{libraryId}/scan',
+    ...options,
+  });
+};
+
 export const getApiMediaSources = <ThrowOnError extends boolean = false>(
   options?: Options<GetApiMediaSourcesData, ThrowOnError>,
 ) => {
@@ -2543,6 +2567,38 @@ export const getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems = <
     responseType: 'json',
     url: '/api/emby/{mediaSourceId}/libraries/{libraryId}/items',
     ...options,
+  });
+};
+
+export const getApiSettingsMediaSource = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiSettingsMediaSourceData, ThrowOnError>,
+) => {
+  return (options?.client ?? _heyApiClient).get<
+    GetApiSettingsMediaSourceResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: 'json',
+    url: '/api/settings/media-source',
+    ...options,
+  });
+};
+
+export const putApiSettingsMediaSource = <ThrowOnError extends boolean = false>(
+  options?: Options<PutApiSettingsMediaSourceData, ThrowOnError>,
+) => {
+  return (options?.client ?? _heyApiClient).put<
+    PutApiSettingsMediaSourceResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseType: 'json',
+    url: '/api/settings/media-source',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 

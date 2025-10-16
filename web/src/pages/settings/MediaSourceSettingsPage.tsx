@@ -1,22 +1,24 @@
-import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 
-import {
-  useMediaSources,
-  usePlexStreamSettings,
-} from '@/hooks/settingsHooks.ts';
+import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import { Delete, Edit, Refresh, VideoLibrary } from '@mui/icons-material';
 import {
   Box,
+  Button,
+  Divider,
   IconButton,
   Link,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { MediaSourceSettings, PlexStreamSettings } from '@tunarr/types';
-import { defaultPlexStreamSettings } from '@tunarr/types';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import type { MediaSourceSettings } from '@tunarr/types';
+import type { GlobalMediaSourceSettings } from '@tunarr/types/schemas';
 import { capitalize } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
@@ -24,8 +26,7 @@ import {
   useMaterialReactTable,
 } from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useState } from 'react';
-import type { SubmitHandler } from 'react-hook-form';
+import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { DeleteConfirmationDialog } from '../../components/DeleteConfirmationDialog.tsx';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
@@ -34,21 +35,21 @@ import { JellyfinServerEditDialog } from '../../components/settings/media_source
 import { LocalMediaEditDialog } from '../../components/settings/media_source/LocalMediaEditDialog.tsx';
 import { MediaSourceHealthyTableCell } from '../../components/settings/media_source/MediaSourceHealthyTableCell.tsx';
 import { PlexServerEditDialog } from '../../components/settings/media_source/PlexServerEditDialog.tsx';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import {
   deleteApiMediaSourcesByIdMutation,
+  getApiSettingsMediaSourceOptions,
   postApiMediaSourcesByIdLibrariesRefreshMutation,
-  putApiPlexSettingsMutation,
+  putApiSettingsMediaSourceMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export default function MediaSourceSettingsPage() {
-  const serverQuery = useMediaSources();
-  const { data: servers, error: serversError } = serverQuery;
-
-  const { data: streamSettings, error: streamsError } = usePlexStreamSettings();
-
-  const snackbar = useSnackbar();
+  const { data: servers } = useMediaSources();
+  const { data: mediaSourceSettings } = useSuspenseQuery(
+    getApiSettingsMediaSourceOptions(),
+  );
 
   const [editingMediaSource, setEditingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
@@ -57,38 +58,7 @@ export default function MediaSourceSettingsPage() {
   const [deletingMediaSource, setDeletingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
 
-  const {
-    reset,
-    formState: { isDirty },
-    watch,
-    handleSubmit,
-  } = useForm<PlexStreamSettings>({
-    defaultValues: defaultPlexStreamSettings,
-    mode: 'onBlur',
-  });
-
-  useEffect(() => {
-    if (streamSettings) {
-      reset({
-        ...streamSettings,
-      });
-    }
-  }, [streamSettings, reset]);
-
   const queryClient = useQueryClient();
-
-  const updatePlexStreamingSettingsMutation = useMutation({
-    ...putApiPlexSettingsMutation(),
-    onSuccess: (data) => {
-      snackbar.enqueueSnackbar('Settings Saved!', {
-        variant: 'success',
-      });
-      reset(data, { keepValues: true });
-      return queryClient.invalidateQueries({
-        predicate: invalidateTaggedQueries('Settings'),
-      });
-    },
-  });
 
   const deleteMediaSourceMut = useMutation({
     ...deleteApiMediaSourcesByIdMutation(),
@@ -107,16 +77,6 @@ export default function MediaSourceSettingsPage() {
       });
     },
   });
-
-  const updatePlexStreamSettings: SubmitHandler<PlexStreamSettings> = (
-    streamSettings,
-  ) => {
-    updatePlexStreamingSettingsMutation.mutate({
-      body: {
-        ...streamSettings,
-      },
-    });
-  };
 
   const columns = useMemo<MRT_ColumnDef<MediaSourceSettings>[]>(() => {
     return [
@@ -219,15 +179,52 @@ export default function MediaSourceSettingsPage() {
     positionActionsColumn: 'last',
   });
 
-  // This is messy, lets consider getting rid of combine, it probably isnt useful here
-  if (serversError || streamsError) {
-    return <h1>Error: {(serversError ?? streamsError)!.message}</h1>;
-  }
+  const snackbar = useSnackbar();
+
+  const settingsForm = useForm<GlobalMediaSourceSettings>({
+    defaultValues: mediaSourceSettings,
+  });
+
+  const updateMediaSourceSettingsMut = useMutation({
+    ...putApiSettingsMediaSourceMutation(),
+    onSuccess: (returned) => {
+      settingsForm.reset(returned);
+      snackbar.enqueueSnackbar({
+        variant: 'success',
+        message: 'Successfully updated Media Source settings.',
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+      snackbar.enqueueSnackbar({
+        variant: 'error',
+        message:
+          'Failed to update Media Source settings. Please check server and browser logs for details.',
+      });
+    },
+  });
+
+  const onSubmit = useCallback(
+    (data: GlobalMediaSourceSettings) => {
+      updateMediaSourceSettingsMut.mutate({
+        body: data,
+      });
+    },
+    [updateMediaSourceSettingsMut],
+  );
+
+  const onError = useCallback(() => {
+    snackbar.enqueueSnackbar({
+      variant: 'error',
+      message:
+        'There was an error submitting the request to update Media Source settings. Please check the form and try again',
+    });
+  }, [snackbar]);
 
   return (
-    <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
-      <Box>
-        <Box mb={2}>
+    <>
+      <Stack divider={<Divider />} gap={2}>
+        <Box>
           <Stack
             spacing={1}
             direction="row"
@@ -257,51 +254,77 @@ export default function MediaSourceSettingsPage() {
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
           <MaterialReactTable table={table} />
         </Box>
-        <UnsavedNavigationAlert isDirty={isDirty} />
-        {editingMediaSource?.type === 'plex' && (
-          <PlexServerEditDialog
-            open
-            onClose={() => setEditingMediaSource(null)}
-            server={editingMediaSource}
-          />
-        )}
-        {editingMediaSource?.type === 'jellyfin' && (
-          <JellyfinServerEditDialog
-            open
-            onClose={() => setEditingMediaSource(null)}
-            server={editingMediaSource}
-          />
-        )}
-        {editingMediaSource?.type === 'emby' && (
-          <EmbyServerEditDialog
-            open
-            onClose={() => setEditingMediaSource(null)}
-            server={editingMediaSource}
-          />
-        )}
-        {editingMediaSource?.type === 'local' && (
-          <LocalMediaEditDialog
-            open
-            onClose={() => setEditingMediaSource(null)}
-            source={editingMediaSource}
-          />
-        )}
-        <EditMediaSourceLibrariesDialog
-          open={!!editingMediaSourceLibraries}
-          mediaSource={editingMediaSourceLibraries}
-          onClose={() => setEditingMediaSourceLibraries(null)}
+        <Box
+          component="form"
+          onSubmit={settingsForm.handleSubmit(onSubmit, onError)}
+        >
+          <Stack gap={2}>
+            <Typography variant="h5">Scanner Settings</Typography>
+            <NumericFormControllerText
+              control={settingsForm.control}
+              name="rescanIntervalHours"
+              prettyFieldName="Rescan Interval (hours)"
+              TextFieldProps={{
+                label: 'Rescan Interval (hours)',
+                helperText:
+                  'How frequently libraries should be scanned (starting from midnight).',
+              }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!settingsForm.formState.isDirty}
+              >
+                Save
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
+      </Stack>
+      {editingMediaSource?.type === 'plex' && (
+        <PlexServerEditDialog
+          open
+          onClose={() => setEditingMediaSource(null)}
+          server={editingMediaSource}
         />
-        <DeleteConfirmationDialog
-          open={!!deletingMediaSource}
-          onClose={() => setDeletingMediaSource(null)}
-          title={`Delete Media Source "${deletingMediaSource?.name}?"`}
-          onConfirm={() =>
-            deleteMediaSourceMut.mutate({
-              path: { id: deletingMediaSource!.id },
-            })
-          }
+      )}
+      {editingMediaSource?.type === 'jellyfin' && (
+        <JellyfinServerEditDialog
+          open
+          onClose={() => setEditingMediaSource(null)}
+          server={editingMediaSource}
         />
-      </Box>
-    </Box>
+      )}
+      {editingMediaSource?.type === 'emby' && (
+        <EmbyServerEditDialog
+          open
+          onClose={() => setEditingMediaSource(null)}
+          server={editingMediaSource}
+        />
+      )}
+      {editingMediaSource?.type === 'local' && (
+        <LocalMediaEditDialog
+          open
+          onClose={() => setEditingMediaSource(null)}
+          source={editingMediaSource}
+        />
+      )}
+      <EditMediaSourceLibrariesDialog
+        open={!!editingMediaSourceLibraries}
+        mediaSource={editingMediaSourceLibraries}
+        onClose={() => setEditingMediaSourceLibraries(null)}
+      />
+      <DeleteConfirmationDialog
+        open={!!deletingMediaSource}
+        onClose={() => setDeletingMediaSource(null)}
+        title={`Delete Media Source "${deletingMediaSource?.name}?"`}
+        onConfirm={() =>
+          deleteMediaSourceMut.mutate({
+            path: { id: deletingMediaSource!.id },
+          })
+        }
+      />
+    </>
   );
 }

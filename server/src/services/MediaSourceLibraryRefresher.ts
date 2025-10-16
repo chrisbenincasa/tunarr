@@ -1,7 +1,7 @@
 import type {
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
-} from '@/db/schema/MediaSourceLibrary.ts';
+} from '@/db/schema/MediaSourceLibrary.js';
 import { EmbyItem } from '@tunarr/types/emby';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexLibrarySection } from '@tunarr/types/plex';

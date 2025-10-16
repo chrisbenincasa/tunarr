@@ -72,6 +72,7 @@ import {
   getApiDebugSubprocessStatus,
   getApiDebugSubprocessRestart,
   getApiDebugMediaSourcesByMediaSourceIdScan,
+  getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScan,
   getApiMediaSources,
   postApiMediaSources,
   getApiMediaSourcesByMediaSourceId,
@@ -138,6 +139,8 @@ import {
   postApiEmbyLogin,
   getApiEmbyByMediaSourceIdUserLibraries,
   getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems,
+  getApiSettingsMediaSource,
+  putApiSettingsMediaSource,
   getApiVersion,
   getApiFfmpegInfo,
   postApiUploadImage,
@@ -250,6 +253,7 @@ import type {
   GetApiDebugSubprocessStatusData,
   GetApiDebugSubprocessRestartData,
   GetApiDebugMediaSourcesByMediaSourceIdScanData,
+  GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData,
   GetApiMediaSourcesData,
   PostApiMediaSourcesData,
   PostApiMediaSourcesError,
@@ -351,6 +355,9 @@ import type {
   GetApiEmbyByMediaSourceIdUserLibrariesData,
   GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData,
   GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponse,
+  GetApiSettingsMediaSourceData,
+  PutApiSettingsMediaSourceData,
+  PutApiSettingsMediaSourceResponse,
   GetApiVersionData,
   GetApiFfmpegInfoData,
   PostApiUploadImageData,
@@ -2639,6 +2646,37 @@ export const getApiDebugMediaSourcesByMediaSourceIdScanOptions = (
   });
 };
 
+export const getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanQueryKey =
+  (
+    options: Options<GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData>,
+  ) =>
+    createQueryKey(
+      'getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScan',
+      options,
+    );
+
+export const getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanOptions =
+  (
+    options: Options<GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData>,
+  ) => {
+    return queryOptions({
+      queryFn: async ({ queryKey, signal }) => {
+        const { data } =
+          await getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScan({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true,
+          });
+        return data;
+      },
+      queryKey:
+        getApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanQueryKey(
+          options,
+        ),
+    });
+  };
+
 export const getApiMediaSourcesQueryKey = (
   options?: Options<GetApiMediaSourcesData>,
 ) => createQueryKey('getApiMediaSources', options, false, ['Media Source']);
@@ -4791,6 +4829,51 @@ export const getApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsInfiniteOptions =
       },
     );
   };
+
+export const getApiSettingsMediaSourceQueryKey = (
+  options?: Options<GetApiSettingsMediaSourceData>,
+) => createQueryKey('getApiSettingsMediaSource', options, false, ['Settings']);
+
+export const getApiSettingsMediaSourceOptions = (
+  options?: Options<GetApiSettingsMediaSourceData>,
+) => {
+  return queryOptions({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getApiSettingsMediaSource({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getApiSettingsMediaSourceQueryKey(options),
+  });
+};
+
+export const putApiSettingsMediaSourceMutation = (
+  options?: Partial<Options<PutApiSettingsMediaSourceData>>,
+): UseMutationOptions<
+  PutApiSettingsMediaSourceResponse,
+  AxiosError<DefaultError>,
+  Options<PutApiSettingsMediaSourceData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PutApiSettingsMediaSourceResponse,
+    AxiosError<DefaultError>,
+    Options<PutApiSettingsMediaSourceData>
+  > = {
+    mutationFn: async (localOptions) => {
+      const { data } = await putApiSettingsMediaSource({
+        ...options,
+        ...localOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
 
 export const getApiVersionQueryKey = (options?: Options<GetApiVersionData>) =>
   createQueryKey('getApiVersion', options, false, ['System']);

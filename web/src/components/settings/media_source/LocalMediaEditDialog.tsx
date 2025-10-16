@@ -55,6 +55,7 @@ const emptyDefaults = () =>
     name: '',
     paths: [],
     mediaType: 'movies',
+    pathReplacements: [],
   }) satisfies LocalMediaSourceForm;
 
 export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {

@@ -1,4 +1,4 @@
-import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import dayjs from 'dayjs';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';

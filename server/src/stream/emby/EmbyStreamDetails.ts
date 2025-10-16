@@ -1,5 +1,4 @@
 import type { StreamLineupProgram } from '@/db/derived_types/StreamLineup.js';
-import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe, Nilable, Nullable } from '@/types/util.js';
@@ -63,7 +62,6 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(ExternalSubtitleDownloader)

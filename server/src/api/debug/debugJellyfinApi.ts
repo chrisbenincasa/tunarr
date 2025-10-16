@@ -42,6 +42,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           type: 'jellyfin',
           mediaType: null,
           paths: [],
+          replacePaths: [],
         },
       });
 
@@ -82,6 +83,7 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
           type: 'jellyfin',
           mediaType: null,
           paths: [],
+          replacePaths: [],
         },
       });
 
@@ -135,9 +137,17 @@ export const DebugJellyfinApiRouter: RouterPluginAsyncCallback = async (
         return res.status(400).send();
       }
 
+      const mediaSource = (await req.serverCtx.mediaSourceDB.getById(
+        library.mediaSource.uuid,
+      ))!;
+
       const jfClient =
         await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
-          { ...library.mediaSource, libraries: [library] },
+          {
+            ...library.mediaSource,
+            libraries: [library],
+            replacePaths: mediaSource.replacePaths,
+          },
         );
 
       switch (library.mediaType) {
