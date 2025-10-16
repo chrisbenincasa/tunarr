@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.11](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.10...v0.23.0-alpha.11) (2025-10-16)
+
+
+### Features
+
+* allow basic configuration of library scan interval ([b3af495](https://github.com/chrisbenincasa/tunarr/commit/b3af495cfa01aa3f6de6a62f77da36b4247fe44d))
+
 ## [0.23.0-alpha.10](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.9...v0.23.0-alpha.10) (2025-10-16)
 
 
