@@ -111,8 +111,6 @@ export abstract class MediaSourceTvShowLibraryScanner<
         }),
       );
 
-      console.log(groupingAndRelations, upsertResult);
-
       if (upsertResult.isFailure()) {
         this.logger.warn(upsertResult.error);
         continue;

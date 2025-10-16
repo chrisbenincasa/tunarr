@@ -438,8 +438,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.serverCtx.programDB.getProgramGroupingChildCounts(groupingIds),
       ]);
 
-      console.log(groupings, groupingIds);
-
       const results = seq.collect(result.hits, (program) => {
         const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
         const mediaSource = allMediaSourcesById[mediaSourceId];
