@@ -50,6 +50,7 @@ export const usePlexLogin = () => {
               userId: null,
               username: null,
               type: 'plex',
+              pathReplacements: [],
             },
           }),
         );

@@ -1,3 +1,4 @@
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
 import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -12,11 +13,8 @@ import type {
   ArtworkType,
   NewArtwork,
 } from '../../db/schema/Artwork.ts';
-import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.ts';
-import type {
-  MediaLibraryType,
-  MediaSourceLibraryOrm,
-} from '../../db/schema/MediaSource.ts';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import type { MediaLibraryType } from '../../db/schema/MediaSource.ts';
 import type { ProgramOrm } from '../../db/schema/Program.ts';
 import type { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { Result } from '../../types/result.js';
@@ -29,7 +27,7 @@ import { KnownImageFileExtensions } from './constants.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 
 export type LocalScanRequest = {
-  mediaSource: MediaSourceWithLibraries;
+  mediaSource: MediaSourceWithRelations;
   force?: boolean;
   pathFilter?: string;
 };
@@ -378,7 +376,7 @@ export abstract class FileSystemScanner {
 }
 
 export type LocalScanContext = {
-  mediaSource: MediaSourceWithLibraries;
+  mediaSource: MediaSourceWithRelations;
   library: MediaSourceLibraryOrm;
   force: boolean;
   percentMin: number;

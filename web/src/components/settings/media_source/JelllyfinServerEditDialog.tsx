@@ -31,7 +31,7 @@ import { type JellyfinServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
@@ -39,6 +39,7 @@ import {
   useCreateMediaSource,
   useUpdateMediaSource,
 } from '../../../hooks/media-sources/mediaSourceHooks.ts';
+import { EditPathReplacementsForm } from './EditPathReplacementsForm.tsx';
 
 type Props = {
   open: boolean;
@@ -61,6 +62,7 @@ const emptyDefaults: JellyfinServerSettingsForm = {
   username: '',
   password: '',
   userId: '',
+  pathReplacements: [],
 };
 
 export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
@@ -75,6 +77,10 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     onClose();
   };
 
+  const form = useForm<JellyfinServerSettingsForm>({
+    mode: 'onChange',
+    defaultValues: server ?? emptyDefaults,
+  });
   const {
     control,
     watch,
@@ -84,10 +90,7 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
     setError,
     clearErrors,
     getValues,
-  } = useForm<JellyfinServerSettingsForm>({
-    mode: 'onChange',
-    defaultValues: server ?? emptyDefaults,
-  });
+  } = form;
 
   useEffect(() => {
     if (open) {
@@ -483,6 +486,13 @@ export function JellyfinServerEditDialog({ open, onClose, server }: Props) {
                 </FormControl>
               )}
             />
+            <Divider />
+            <Box>
+              <FormProvider {...form}>
+                <EditPathReplacementsForm />
+              </FormProvider>
+            </Box>
+            <Divider />
           </Stack>
         </Box>
       </DialogContent>

@@ -2,7 +2,7 @@ import type { StreamLineupProgram } from '@/db/derived_types/StreamLineup.js';
 import { type ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { KEYS } from '@/types/inject.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import type { Maybe, Nilable, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -21,16 +21,14 @@ import {
   isUndefined,
   map,
   orderBy,
-  replace,
   sortBy,
   takeWhile,
   trimEnd,
-  trimStart,
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
 import { MediaSourceType } from '../../db/schema/base.ts';
 import {
-  MediaSourceWithLibraries,
+  MediaSourceWithRelations,
   SpecificProgramSourceOrmType,
 } from '../../db/schema/derivedTypes.js';
 import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
@@ -43,6 +41,7 @@ import {
   nullToUndefined,
 } from '../../util/index.ts';
 import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../PathCalculator.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
@@ -78,7 +77,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
   }
 
   private async getStreamInternal(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
     program: SpecificProgramSourceOrmType<EmbyT, StreamLineupProgram>,
     depth: number = 0,
   ): Promise<Nullable<ProgramStreamResult>> {
@@ -128,57 +127,73 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       return null;
     }
 
-    const streamSettings = this.settings.plexSettings();
-
-    let streamSource: StreamSource;
     const filePath =
       details.directFilePath ?? first(itemMetadata?.MediaSources)?.Path;
-    if (streamSettings.streamPath === 'direct' && isNonEmptyString(filePath)) {
-      const replacedPath = isNonEmptyString(streamSettings.pathReplace)
-        ? replace(
-            filePath,
-            streamSettings.pathReplace,
-            streamSettings.pathReplaceWith,
-          )
-        : filePath;
-      streamSource = {
-        type: 'file',
-        path: replacedPath,
-      };
-      this.logger.debug(
-        'Emby server %s configured to use "direct" streaming. Attempting to load program from disk. Reported path %s. Path after replace: %s',
-        mediaSource.name,
-        filePath,
-        replacedPath,
-      );
-    } else if (isNonEmptyString(filePath) && (await fileExists(filePath))) {
-      streamSource = {
-        type: 'file',
-        path: filePath,
-      };
-    } else {
-      const path =
-        details.serverPath ??
-        program.externalIds.find(
-          (eid) => eid.sourceType === MediaSourceType.Emby,
-        )?.externalFilePath;
-      if (isNonEmptyString(path)) {
-        streamSource = new HttpStreamSource(
-          `${trimEnd(mediaSource.uri, '/')}/Videos/${trimStart(
-            path,
-            '/',
-          )}/stream?static=true&X-Emby-Token=${mediaSource.accessToken}`,
-        );
-        console.log(streamSource);
-      } else {
-        throw new Error('Could not resolve stream URL');
-      }
-    }
+    const serverPath =
+      details.serverPath ??
+      program.externalIds.find((eid) => eid.sourceType === MediaSourceType.Emby)
+        ?.externalFilePath;
+    const streamSource: StreamSource = await this.getStreamSource(
+      mediaSource,
+      filePath,
+      serverPath,
+    );
 
     return {
       streamSource,
       streamDetails: details,
     };
+  }
+
+  private async getStreamSource(
+    server: MediaSourceWithRelations,
+    potentialFilePath: Nilable<string>,
+    serverPath: Nilable<string>,
+  ): Promise<StreamSource> {
+    if (isNonEmptyString(potentialFilePath)) {
+      if (await fileExists(potentialFilePath)) {
+        this.logger.debug(
+          'Found item locally at path reported by server, playing from disk. Path: %s',
+          potentialFilePath,
+        );
+        return {
+          type: 'file',
+          path: potentialFilePath,
+        };
+      } else {
+        const replacedPath = await PathCalculator.findFirstValidPath(
+          potentialFilePath,
+          server.replacePaths,
+        );
+        if (replacedPath) {
+          this.logger.debug(
+            'Found valid path replacement, playing from disk. Original path: "%s" Replace path: "%s',
+            potentialFilePath,
+            replacedPath,
+          );
+          return {
+            type: 'file',
+            path: replacedPath,
+          };
+        }
+      }
+    }
+
+    if (isNonEmptyString(serverPath)) {
+      serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
+      this.logger.debug(
+        'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
+        serverPath,
+      );
+
+      return new HttpStreamSource(
+        `${trimEnd(server.uri, '/')}${serverPath}?X-Plex-Token=${
+          server.accessToken
+        }`,
+      );
+    } else {
+      throw new Error('Could not resolve stream URL');
+    }
   }
 
   private async getItemStreamDetails(

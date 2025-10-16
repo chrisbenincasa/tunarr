@@ -31,7 +31,7 @@ import { type EmbyServerSettings } from '@tunarr/types';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { type MarkOptional } from 'ts-essentials';
 import { useDebounceCallback, useDebounceValue } from 'usehooks-ts';
@@ -41,6 +41,7 @@ import {
 } from '../../../generated/sdk.gen.ts';
 import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { embyLogin } from '../../../hooks/emby/useEmbyLogin.ts';
+import { EditPathReplacementsForm } from './EditPathReplacementsForm.tsx';
 
 type Props = {
   open: boolean;
@@ -63,6 +64,7 @@ const emptyDefaults: EmbyServerSettingsForm = {
   username: '',
   password: '',
   userId: '',
+  pathReplacements: [],
 };
 
 export function EmbyServerEditDialog({ open, onClose, server }: Props) {
@@ -78,6 +80,10 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
     onClose();
   };
 
+  const form = useForm<EmbyServerSettingsForm>({
+    mode: 'onChange',
+    defaultValues: server ?? emptyDefaults,
+  });
   const {
     control,
     watch,
@@ -87,10 +93,7 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
     setError,
     clearErrors,
     getValues,
-  } = useForm<EmbyServerSettingsForm>({
-    mode: 'onChange',
-    defaultValues: server ?? emptyDefaults,
-  });
+  } = form;
 
   useEffect(() => {
     if (open) {
@@ -460,6 +463,13 @@ export function EmbyServerEditDialog({ open, onClose, server }: Props) {
                 </FormControl>
               )}
             />
+            <Divider />
+            <Box>
+              <FormProvider {...form}>
+                <EditPathReplacementsForm />
+              </FormProvider>
+            </Box>
+            <Divider />
           </Stack>
         </Box>
       </DialogContent>

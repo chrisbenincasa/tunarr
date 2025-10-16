@@ -1,4 +1,5 @@
 import { MediaSourceType } from '@/db/schema/base.js';
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
 import type { Nilable, Nullable } from '@/types/util.js';
 import { type Maybe } from '@/types/util.js';
 import { getChannelId } from '@/util/channels.js';
@@ -90,7 +91,6 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import type { z } from 'zod/v4';
 import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
-import type { MediaSourceLibraryOrm } from '../../db/schema/MediaSource.ts';
 import { ProgramType, ProgramTypes } from '../../db/schema/Program.js';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.js';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';

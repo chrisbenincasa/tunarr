@@ -1,9 +1,6 @@
 import UnsavedNavigationAlert from '@/components/settings/UnsavedNavigationAlert.tsx';
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
-import {
-  CheckboxFormController,
-  TypedController,
-} from '@/components/util/TypedController.tsx';
+
 import {
   useMediaSources,
   usePlexStreamSettings,
@@ -11,25 +8,16 @@ import {
 import { Delete, Edit, Refresh, VideoLibrary } from '@mui/icons-material';
 import {
   Box,
-  Button,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  Grid,
   IconButton,
-  InputLabel,
   Link,
-  MenuItem,
-  Select,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MediaSourceSettings, PlexStreamSettings } from '@tunarr/types';
 import { defaultPlexStreamSettings } from '@tunarr/types';
-import { capitalize, isEqual } from 'lodash-es';
+import { capitalize } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
@@ -38,7 +26,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { DeleteConfirmationDialog } from '../../components/DeleteConfirmationDialog.tsx';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
 import { EmbyServerEditDialog } from '../../components/settings/media_source/EmbyServerEditDialog.tsx';
@@ -54,14 +42,7 @@ import {
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import type { Nullable } from '../../types/util.ts';
 
-const supportedPaths = [
-  { value: 'network', string: 'Network' },
-  { value: 'direct', string: 'Direct' },
-];
-
 export default function MediaSourceSettingsPage() {
-  const [restoreTunarrDefaults, setRestoreTunarrDefaults] = useState(false);
-
   const serverQuery = useMediaSources();
   const { data: servers, error: serversError } = serverQuery;
 
@@ -78,16 +59,13 @@ export default function MediaSourceSettingsPage() {
 
   const {
     reset,
-    control,
-    formState: { isDirty, isValid, isSubmitting, defaultValues },
+    formState: { isDirty },
     watch,
     handleSubmit,
   } = useForm<PlexStreamSettings>({
     defaultValues: defaultPlexStreamSettings,
     mode: 'onBlur',
   });
-
-  const streamPath = watch('streamPath');
 
   useEffect(() => {
     if (streamSettings) {
@@ -105,7 +83,6 @@ export default function MediaSourceSettingsPage() {
       snackbar.enqueueSnackbar('Settings Saved!', {
         variant: 'success',
       });
-      setRestoreTunarrDefaults(false);
       reset(data, { keepValues: true });
       return queryClient.invalidateQueries({
         predicate: invalidateTaggedQueries('Settings'),
@@ -160,11 +137,14 @@ export default function MediaSourceSettingsPage() {
       {
         header: 'URL',
         accessorKey: 'uri',
-        Cell: ({ cell }) => (
-          <Link href={cell.getValue<string>()} target="_blank">
-            {cell.getValue<string>()}
-          </Link>
-        ),
+        Cell: ({ cell, row }) =>
+          row.original.type === 'local' ? (
+            '-'
+          ) : (
+            <Link href={cell.getValue<string>()} target="_blank">
+              {cell.getValue<string>()}
+            </Link>
+          ),
         grow: true,
       },
       {
@@ -206,27 +186,29 @@ export default function MediaSourceSettingsPage() {
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Refresh Libraries" placement="top">
-            <IconButton
-              onClick={() =>
-                refreshLibrariesMutation.mutate({
-                  path: {
-                    id: row.original.id,
-                  },
-                })
-              }
-            >
-              <Refresh />
-            </IconButton>
-          </Tooltip>
           {row.original.type !== 'local' && (
-            <Tooltip title="Edit Libraries" placement="top">
-              <IconButton
-                onClick={() => setEditingMediaSourceLibraries(row.original)}
-              >
-                <VideoLibrary />
-              </IconButton>
-            </Tooltip>
+            <>
+              <Tooltip title="Refresh Libraries" placement="top">
+                <IconButton
+                  onClick={() =>
+                    refreshLibrariesMutation.mutate({
+                      path: {
+                        id: row.original.id,
+                      },
+                    })
+                  }
+                >
+                  <Refresh />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Edit Libraries" placement="top">
+                <IconButton
+                  onClick={() => setEditingMediaSourceLibraries(row.original)}
+                >
+                  <VideoLibrary />
+                </IconButton>
+              </Tooltip>
+            </>
           )}
           <IconButton onClick={() => setDeletingMediaSource(row.original)}>
             <Delete />
@@ -242,47 +224,6 @@ export default function MediaSourceSettingsPage() {
     return <h1>Error: {(serversError ?? streamsError)!.message}</h1>;
   }
 
-  const renderPathReplacements = () => {
-    return (
-      <>
-        <Typography component="h6" sx={{ my: 2 }}>
-          Path Replacements
-        </Typography>
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <Controller
-                control={control}
-                name="pathReplace"
-                render={({ field }) => (
-                  <TextField
-                    id="original-path-replace"
-                    label="Original Plex path to replace"
-                    {...field}
-                  />
-                )}
-              />
-            </FormControl>
-
-            <FormControl fullWidth sx={{ my: 1 }}>
-              <Controller
-                control={control}
-                name="pathReplaceWith"
-                render={({ field }) => (
-                  <TextField
-                    id="new-path-replace-with"
-                    label="Replace Plex path with"
-                    {...field}
-                  />
-                )}
-              />
-            </FormControl>
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
-
   return (
     <Box component="form" onSubmit={handleSubmit(updatePlexStreamSettings)}>
       <Box>
@@ -294,7 +235,7 @@ export default function MediaSourceSettingsPage() {
             sx={{ flexWrap: 'wrap' }}
           >
             <Typography
-              variant="h6"
+              variant="h5"
               sx={(theme) => ({
                 flexGrow: 1,
                 [theme.breakpoints.down('sm')]: {
@@ -306,119 +247,17 @@ export default function MediaSourceSettingsPage() {
             </Typography>
             <AddMediaSourceButton />
             <Box sx={{ flexBasis: '100%', width: 0 }}></Box>
-            <Typography variant="caption" sx={{ width: '60%' }}>
-              Add sources of content for your channels.
+            <Typography sx={{ width: '60%' }}>
+              Media Sources are where Tunarr sources your content. Media can
+              come from your filesystem or a remote server, like Plex or
+              Jellyfin. At leat one Media Source is necessary to create channels
+              and play media in Tunarr.
             </Typography>
           </Stack>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 1 }}></Box>
           <MaterialReactTable table={table} />
         </Box>
-        <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
-          Streaming Options
-        </Typography>
-
-        <Grid flex="1 0 50%" container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel id="stream-path-label">Stream Path</InputLabel>
-              <TypedController
-                control={control}
-                name="streamPath"
-                render={({ field }) => (
-                  <Select
-                    labelId="stream-path-label"
-                    id="stream-path"
-                    label="Stream Path"
-                    {...field}
-                  >
-                    {supportedPaths.map((path) => (
-                      <MenuItem key={path.value} value={path.value}>
-                        {path.string}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-              <FormHelperText>
-                <strong>Network</strong>: This option will initialize the stream
-                over the network, e.g. stream from the Plex server
-                <br />
-                <strong>Direct</strong>: This option attempts to open the file
-                from the filesystem, using the file path provided by Plex. This
-                path can be normalized for Tunarr using a find/replace string
-                combination
-              </FormHelperText>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth>
-              <FormControlLabel
-                control={
-                  <CheckboxFormController
-                    control={control}
-                    name="updatePlayStatus"
-                  />
-                }
-                label="Send play status to Media Source"
-              />
-              <FormHelperText>
-                Note: This affects the "continue watching" section of the media
-                source.
-              </FormHelperText>
-            </FormControl>
-          </Grid>
-        </Grid>
-        <Box sx={{ display: 'block', p: 2 }}>
-          {streamPath === 'direct' ? renderPathReplacements() : null}
-        </Box>
         <UnsavedNavigationAlert isDirty={isDirty} />
-        <Stack spacing={2} direction="row" sx={{ mt: 2 }}>
-          <Stack
-            spacing={2}
-            direction="row"
-            justifyContent="left"
-            sx={{ mt: 2, flexGrow: 1 }}
-          >
-            {!isEqual(defaultValues, defaultPlexStreamSettings) && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  reset(defaultPlexStreamSettings);
-                  setRestoreTunarrDefaults(true);
-                }}
-              >
-                Restore Default Settings
-              </Button>
-            )}
-          </Stack>
-          <Stack
-            spacing={2}
-            direction="row"
-            justifyContent="right"
-            sx={{ mt: 2 }}
-          >
-            {isDirty && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  reset(streamSettings);
-                  setRestoreTunarrDefaults(false);
-                }}
-              >
-                Reset Changes
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              disabled={
-                !isValid || isSubmitting || (!isDirty && !restoreTunarrDefaults)
-              }
-              type="submit"
-            >
-              Save
-            </Button>
-          </Stack>
-        </Stack>
         {editingMediaSource?.type === 'plex' && (
           <PlexServerEditDialog
             open

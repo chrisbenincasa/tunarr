@@ -12,7 +12,7 @@ import type { DynamicContentConfigPlexSource } from '@tunarr/types/api';
 import { map } from 'lodash-es';
 import type { IChannelDB } from '../../db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.js';
-import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { PlexItemEnumerator } from '../PlexItemEnumerator.js';
 import { ContentSourceUpdater } from './ContentSourceUpdater.js';
 
@@ -22,7 +22,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
   });
   #timer = new Timer(this.#logger);
   #plex: PlexApiClient;
-  #mediaSource: MediaSourceWithLibraries;
+  #mediaSource: MediaSourceWithRelations;
 
   constructor(
     private channelDB: IChannelDB,

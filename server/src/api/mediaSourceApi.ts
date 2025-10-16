@@ -36,7 +36,7 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
 import { container } from '../container.ts';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { EntityMutex } from '../services/EntityMutex.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
@@ -641,6 +641,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 libraries: [],
                 paths: [],
                 mediaType: null,
+                replacePaths: [],
               },
             });
 
@@ -660,6 +661,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 libraries: [],
                 paths: [],
                 mediaType: null,
+                replacePaths: [],
               },
             });
 
@@ -679,6 +681,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
                 libraries: [],
                 paths: [],
                 mediaType: null,
+                replacePaths: [],
               },
             });
 
@@ -756,7 +759,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             .runNow(true)
             .catch(console.error);
         } catch (e) {
-          logger.error('Unable to update guide after lineup update %O', e);
+          logger.error(e, 'Unable to update guide after lineup update %O');
         }
 
         return res.send();
@@ -887,7 +890,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
   // TODO put this in its own class.
   function convertToApiMediaSource(
     entityLocker: EntityMutex,
-    source: MarkOptional<MediaSourceWithLibraries, 'libraries' | 'paths'>,
+    source: MarkOptional<MediaSourceWithRelations, 'libraries' | 'paths'>,
   ): MediaSourceSettings {
     return match(source)
       .returnType<MediaSourceSettings>()
@@ -918,6 +921,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             })),
             userId: source.userId,
             username: source.username,
+            pathReplacements: source.replacePaths.map((replace) => ({
+              localPath: replace.localPath,
+              serverPath: replace.serverPath,
+            })),
           }) satisfies StrictExtract<
             MediaSourceSettings,
             { type: 'plex' | 'jellyfin' | 'emby' }
@@ -944,6 +951,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               externalKey: library.externalKey,
               mediaType: library.mediaType,
             })),
+            // N/A for local media sources
+            pathReplacements: [],
           }) satisfies LocalMediaSource,
       )
       .otherwise(() => {

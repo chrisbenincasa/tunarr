@@ -10,10 +10,8 @@ import type { FillerShowTable } from './FillerShow.js';
 import type { FillerShowContentTable } from './FillerShowContent.ts';
 import type { LocalMediaFolderTable } from './LocalMediaFolder.ts';
 import type { LocalMediaSourcePathTable } from './LocalMediaSourcePath.ts';
-import type {
-  MediaSourceLibraryTable,
-  MediaSourceTable,
-} from './MediaSource.ts';
+import type { MediaSourceTable } from './MediaSource.ts';
+import type { MediaSourceLibraryTable } from './MediaSourceLibrary.ts';
 import type { MikroOrmMigrationsTable } from './MikroOrmMigrations.js';
 import type { ProgramTable } from './Program.ts';
 import type { ProgramChapterTable } from './ProgramChapter.ts';

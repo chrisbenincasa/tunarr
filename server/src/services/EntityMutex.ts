@@ -1,10 +1,9 @@
-import { inject, injectable } from 'inversify';
 import {
-  MediaSource,
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
-  MediaSourceOrm,
-} from '../db/schema/MediaSource.ts';
+} from '@/db/schema/MediaSourceLibrary.ts';
+import { inject, injectable } from 'inversify';
+import { MediaSource, MediaSourceOrm } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
 import { MutexMap } from '../util/mutexMap.ts';
 

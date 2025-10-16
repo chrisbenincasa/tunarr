@@ -31,12 +31,15 @@ import {
   LocalMediaSourcePath,
   LocalMediaSourcePathRelations,
 } from './LocalMediaSourcePath.ts';
+import { MediaSource, MediaSourceRelations } from './MediaSource.ts';
 import {
-  MediaSource,
   MediaSourceLibrary,
   MediaSourceLibraryRelations,
-  MediaSourceRelations,
-} from './MediaSource.ts';
+} from './MediaSourceLibrary.ts';
+import {
+  MediaSourceLibraryReplacePath,
+  MediaSourceLibraryReplacePathRelations,
+} from './MediaSourceLibraryReplacePath.ts';
 import { Program, ProgramRelations } from './Program.ts';
 import { ProgramChapter, ProgramChapterRelations } from './ProgramChapter.ts';
 import {
@@ -102,6 +105,9 @@ export const schema = {
   mediaSourceRelations: MediaSourceRelations,
   mediaSourceLibrary: MediaSourceLibrary,
   mediaSourceLibraryRelations: MediaSourceLibraryRelations,
+  mediaSourceLibraryReplacePath: MediaSourceLibraryReplacePath,
+  mediaSourceLibraryReplacePathRelations:
+    MediaSourceLibraryReplacePathRelations,
   localMediaSourcePath: LocalMediaSourcePath,
   localMediaSourcePathRelations: LocalMediaSourcePathRelations,
   localMediaFolder: LocalMediaFolder,

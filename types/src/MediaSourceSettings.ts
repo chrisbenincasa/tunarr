@@ -3,6 +3,7 @@ import type {
   LocalMediaSourceSchema,
   MediaSourceContentType,
   MediaSourceLibrarySchema,
+  MediaSourcePathReplacement,
 } from './schemas/settingsSchemas.js';
 import {
   type EmbyServerSettingsSchema,
@@ -41,3 +42,7 @@ export const defaultPlexStreamSettings = PlexStreamSettingsSchema.parse({});
 
 export const defaultGlobalMediaSourceSettings =
   GlobalMediaSourceSettingsSchema.parse({});
+
+export type MediaSourcePathReplacement = z.infer<
+  typeof MediaSourcePathReplacement
+>;

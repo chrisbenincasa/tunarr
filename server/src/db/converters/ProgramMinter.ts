@@ -43,10 +43,8 @@ import { parsePlexGuid } from '../../util/externalIds.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
-import {
-  MediaSourceLibraryOrm,
-  MediaSourceOrm,
-} from '../schema/MediaSource.ts';
+import { MediaSourceOrm } from '../schema/MediaSource.ts';
+import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from '../schema/Program.ts';
 import { ProgramType } from '../schema/Program.ts';
 import { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';

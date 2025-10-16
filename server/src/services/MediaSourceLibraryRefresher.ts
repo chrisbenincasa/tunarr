@@ -1,3 +1,7 @@
+import type {
+  MediaSourceLibraryUpdate,
+  NewMediaSourceLibrary,
+} from '@/db/schema/MediaSourceLibrary.ts';
 import { EmbyItem } from '@tunarr/types/emby';
 import { JellyfinItem } from '@tunarr/types/jellyfin';
 import { PlexLibrarySection } from '@tunarr/types/plex';
@@ -5,13 +9,9 @@ import { inject, injectable } from 'inversify';
 import { isString } from 'lodash-es';
 import { v4 } from 'uuid';
 import { MediaSourceDB } from '../db/mediaSourceDB.js';
-import type {
-  MediaLibraryType,
-  MediaSourceLibraryUpdate,
-  NewMediaSourceLibrary,
-} from '../db/schema/MediaSource.ts';
 import { MediaSourceId } from '../db/schema/base.js';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
+import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.js';
 import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
@@ -39,9 +39,9 @@ export class MediaSourceLibraryRefresher {
   }
 
   async refreshMediaSource(
-    idOrSource: MediaSourceWithLibraries | MediaSourceId,
+    idOrSource: MediaSourceWithRelations | MediaSourceId,
   ) {
-    let source: MediaSourceWithLibraries;
+    let source: MediaSourceWithRelations;
     if (isString(idOrSource)) {
       const maybeSource = await this.mediaSourceDB.getById(idOrSource);
       if (!maybeSource) {
@@ -70,7 +70,7 @@ export class MediaSourceLibraryRefresher {
     return;
   }
 
-  private async handlePlex(mediaSource: MediaSourceWithLibraries) {
+  private async handlePlex(mediaSource: MediaSourceWithRelations) {
     const client =
       await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
         mediaSource,
@@ -169,7 +169,7 @@ export class MediaSourceLibraryRefresher {
     }
   }
 
-  private async handleJellyfin(mediaSource: MediaSourceWithLibraries) {
+  private async handleJellyfin(mediaSource: MediaSourceWithRelations) {
     const client =
       await this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
         mediaSource,
@@ -257,7 +257,7 @@ export class MediaSourceLibraryRefresher {
     });
   }
 
-  private async handleEmby(mediaSource: MediaSourceWithLibraries) {
+  private async handleEmby(mediaSource: MediaSourceWithRelations) {
     if (mediaSource.type !== 'emby') {
       return;
     }

@@ -5,7 +5,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { KEYS } from '../../types/inject.ts';
 import { JellyfinT } from '../../types/internal.ts';
@@ -49,7 +49,7 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<JellyfinApiClient> {
     return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
       mediaSource,

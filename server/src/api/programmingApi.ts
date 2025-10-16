@@ -1,8 +1,6 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type {
-  MediaSourceLibraryOrm,
-  MediaSourceOrm,
-} from '@/db/schema/MediaSource.js';
+import type { MediaSourceOrm } from '@/db/schema/MediaSource.js';
+import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.ts';
 import { ProgramType } from '@/db/schema/Program.js';
 import type { ProgramGrouping as ProgramGroupingDao } from '@/db/schema/ProgramGrouping.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
@@ -76,7 +74,7 @@ import type { Artwork } from '../db/schema/Artwork.ts';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import type { MediaSourceId } from '../db/schema/base.js';
 import type {
-  MediaSourceWithLibraries,
+  MediaSourceWithRelations,
   ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.js';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
@@ -133,7 +131,7 @@ function isProgramGroupingDocument(
 function convertProgramSearchResult(
   doc: TerminalProgramSearchDocument,
   program: ProgramWithRelationsOrm,
-  mediaSource: MediaSourceWithLibraries,
+  mediaSource: MediaSourceWithRelations,
   mediaLibrary: MediaSourceLibraryOrm,
 ): TerminalProgram {
   if (!program.canonicalId) {
@@ -268,7 +266,7 @@ function convertProgramGroupingSearchResult(
   doc: ProgramGroupingSearchDocument,
   grouping: ProgramGroupingDao,
   childCounts: Maybe<ProgramGroupingChildCounts>,
-  mediaSource: MediaSourceWithLibraries,
+  mediaSource: MediaSourceWithRelations,
   mediaLibrary: MediaSourceLibraryOrm,
 ) {
   if (!grouping.canonicalId) {

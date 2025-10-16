@@ -14,7 +14,7 @@ import { ItemOrFolder, Library as LibrarySchema } from '@tunarr/types/schemas';
 import type { FastifyReply } from 'fastify/types/reply.js';
 import { isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { ServerRequestContext } from '../ServerContext.ts';
 import type {
   RouterPluginCallback,
@@ -246,7 +246,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
   >(
     req: Req,
     res: FastifyReply,
-    cb: (m: MediaSourceWithLibraries) => Promise<FastifyReply>,
+    cb: (m: MediaSourceWithRelations) => Promise<FastifyReply>,
   ) {
     const mediaSource = await req.serverCtx.mediaSourceDB.getById(
       tag(req.params.mediaSourceId),
@@ -274,7 +274,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
 async function addTunarrLibraryIdsToResponse(
   response: Library[],
-  mediaSource: MediaSourceWithLibraries,
+  mediaSource: MediaSourceWithRelations,
   attempts: number = 1,
 ) {
   if (attempts > 2) {

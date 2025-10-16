@@ -25,10 +25,8 @@ import {
 import type { Nilable, Nullable } from '../../types/util.ts';
 import { MediaSourceId, MediaSourceName } from '../schema/base.js';
 import { NewProgramGroupingWithRelations } from '../schema/derivedTypes.js';
-import {
-  MediaSourceLibraryOrm,
-  MediaSourceOrm,
-} from '../schema/MediaSource.ts';
+import { MediaSourceOrm } from '../schema/MediaSource.ts';
+import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import {
   ProgramGroupingType,
   type NewProgramGrouping,

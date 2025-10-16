@@ -11,7 +11,7 @@ import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts'
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import {
   JellyfinEpisode,
   JellyfinSeason,
@@ -97,7 +97,7 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<JellyfinApiClient> {
     return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
       mediaSource,

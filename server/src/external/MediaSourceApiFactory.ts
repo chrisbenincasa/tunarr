@@ -10,7 +10,7 @@ import { forEach, isBoolean, isEmpty, isNil } from 'lodash-es';
 import NodeCache from 'node-cache';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceId } from '../db/schema/base.js';
-import { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
@@ -64,7 +64,7 @@ export class MediaSourceApiFactory {
     });
   }
 
-  getJellyfinApiClientForMediaSource(mediaSource: MediaSourceWithLibraries) {
+  getJellyfinApiClientForMediaSource(mediaSource: MediaSourceWithRelations) {
     return this.getJellyfinApiClient({ mediaSource });
   }
 
@@ -74,7 +74,7 @@ export class MediaSourceApiFactory {
     return Promise.resolve(client);
   }
 
-  getEmbyApiClientForMediaSource(mediaSource: MediaSourceWithLibraries) {
+  getEmbyApiClientForMediaSource(mediaSource: MediaSourceWithRelations) {
     return this.getEmbyApiClient({ mediaSource });
   }
 
@@ -124,7 +124,7 @@ export class MediaSourceApiFactory {
   }
 
   getPlexApiClientForMediaSource(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {
     return this.getPlexApiClient({ mediaSource });
   }
@@ -189,7 +189,7 @@ export class MediaSourceApiFactory {
   >(
     type: X,
     name: MediaSourceId,
-    factory: (opts: MediaSourceWithLibraries) => ApiClient,
+    factory: (opts: MediaSourceWithRelations) => ApiClient,
   ): Promise<Maybe<ApiClient>> {
     const key = `${type}|${name}`;
     return cacheGetOrSet<Maybe<ApiClient>>(

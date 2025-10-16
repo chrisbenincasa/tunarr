@@ -16,7 +16,7 @@ import type { FastifyReply } from 'fastify/types/reply.js';
 import { isNil } from 'lodash-es';
 import { z } from 'zod/v4';
 import type { PageParams } from '../db/interfaces/IChannelDB.ts';
-import type { MediaSourceWithLibraries } from '../db/schema/derivedTypes.js';
+import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { ServerRequestContext } from '../ServerContext.ts';
 import { mediaSourceParamsSchema } from '../types/schemas.ts';
 import type {
@@ -355,7 +355,7 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
   >(
     req: Req,
     res: FastifyReply,
-    cb: (m: MediaSourceWithLibraries) => Promise<FastifyReply>,
+    cb: (m: MediaSourceWithRelations) => Promise<FastifyReply>,
   ) {
     const mediaSource = await req.serverCtx.mediaSourceDB.getById(
       tag(req.params.mediaSourceId),
@@ -381,7 +381,7 @@ export const plexApiRouter: RouterPluginAsyncCallback = async (fastify, _) => {
 
 async function addTunarrLibraryIdsToResponse(
   response: Library[],
-  mediaSource: MediaSourceWithLibraries,
+  mediaSource: MediaSourceWithRelations,
   attempts: number = 1,
 ) {
   if (attempts > 2) {

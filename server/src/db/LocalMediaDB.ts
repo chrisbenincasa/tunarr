@@ -13,7 +13,7 @@ import {
   LocalMediaFolderOrm,
   NewLocalMediaFolderOrm,
 } from './schema/LocalMediaFolder.ts';
-import { MediaSourceLibraryOrm } from './schema/MediaSource.ts';
+import { MediaSourceLibraryOrm } from './schema/MediaSourceLibrary.ts';
 import { ProgramType } from './schema/Program.ts';
 
 @injectable()

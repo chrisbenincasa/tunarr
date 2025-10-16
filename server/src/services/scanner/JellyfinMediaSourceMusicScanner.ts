@@ -3,7 +3,7 @@ import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.js';
+import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { WrappedError } from '../../types/errors.ts';
@@ -84,7 +84,7 @@ export class JellyfinMediaSourceMusicScanner extends MediaSourceMusicArtistScann
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<JellyfinApiClient> {
     return this.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
       mediaSource,

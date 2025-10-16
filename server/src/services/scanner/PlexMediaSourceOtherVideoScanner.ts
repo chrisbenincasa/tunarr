@@ -3,7 +3,7 @@ import { inject, injectable, interfaces } from 'inversify';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceWithLibraries } from '../../db/schema/derivedTypes.ts';
+import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import type { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
@@ -56,7 +56,7 @@ export class PlexMediaSourceOtherVideoScanner extends MediaSourceOtherVideoScann
   }
 
   protected getApiClient(
-    mediaSource: MediaSourceWithLibraries,
+    mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {
     return this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
       mediaSource,
