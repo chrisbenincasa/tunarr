@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0-alpha.10](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.9...v0.23.0-alpha.10) (2025-10-16)
+
+
+### Features
+
+* allow configuring path replacements per-server ([#1412](https://github.com/chrisbenincasa/tunarr/issues/1412)) ([8a0b8b8](https://github.com/chrisbenincasa/tunarr/commit/8a0b8b831ea9b7c7f42a7764c18919ee521947e2))
+
+
+### Bug Fixes
+
+* properly upsert program grouping external ids ([8462143](https://github.com/chrisbenincasa/tunarr/commit/8462143c23c2353452c546f1209d322a4f7d8877))
+
 ## [0.23.0-alpha.9](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.8...v0.23.0-alpha.9) (2025-10-14)
 
 
