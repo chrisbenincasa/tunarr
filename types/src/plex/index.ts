@@ -67,7 +67,13 @@ export type PlexMediaContainer<
   [K in MetadataKey]?: MetadataType[];
 };
 
-export const PlexMediaTypeSchema = z.enum(['movie', 'show', 'artist', 'photo']);
+export const PlexMediaTypeSchema = z.enum([
+  'movie',
+  'show',
+  'artist',
+  'photo',
+  'track',
+]);
 
 export const PlexLibrarySectionSchema = z.object({
   allowSync: z.boolean(),

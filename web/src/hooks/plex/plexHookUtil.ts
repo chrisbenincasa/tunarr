@@ -52,6 +52,8 @@ export const enumeratePlexItem = async (
   } else {
     if (item.type === 'season' && parent?.type === 'show') {
       item.show = parent;
+    } else if (item.type === 'album' && parent?.type === 'artist') {
+      item.artist = parent;
     }
 
     return getApiPlexByMediaSourceIdItemsByItemIdChildren({

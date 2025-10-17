@@ -1833,7 +1833,7 @@ function emptyMediaItem(item: PlexTerminalMedia): Maybe<MediaItem> {
     duration,
     sampleAspectRatio: '',
     streams: [],
-    resolution: { widthPx: media.width!, heightPx: media.height! },
+    resolution: { widthPx: media.width ?? 0, heightPx: media.height ?? 0 },
     locations: [
       {
         externalKey: part.key,
@@ -2037,5 +2037,5 @@ function plexMediaStreamsInject(
       },
     ],
     chapters,
-  });
+  } satisfies MediaItem);
 }
