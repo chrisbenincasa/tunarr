@@ -126,10 +126,7 @@ export abstract class MediaSourceMusicArtistScanner<
         continue;
       }
 
-      const scanSeasonsResult = await this.scanSeasons(
-        persistedArtist,
-        context,
-      );
+      const scanSeasonsResult = await this.scanAlbums(persistedArtist, context);
 
       if (scanSeasonsResult.isFailure()) {
         this.logger.warn(scanSeasonsResult.error);
@@ -141,7 +138,7 @@ export abstract class MediaSourceMusicArtistScanner<
     this.mediaSourceProgressService.scanEnded(library.uuid);
   }
 
-  protected async scanSeasons(
+  protected async scanAlbums(
     artist: ArtistT,
     scanContext: ScanContext<ApiClientTypeT>,
   ): Promise<Result<void>> {
@@ -160,8 +157,7 @@ export abstract class MediaSourceMusicArtistScanner<
           library,
           album,
         );
-        dao.programGrouping.libraryId = scanContext.library.uuid;
-        dao.programGrouping.showUuid = artist.uuid;
+        dao.programGrouping.artistUuid = artist.uuid;
 
         const upsertResult = await Result.attemptAsync(() =>
           this.programDB.upsertProgramGrouping(dao, {
@@ -249,8 +245,10 @@ export abstract class MediaSourceMusicArtistScanner<
               trackWithJoins,
             );
 
-            dao.program.tvShowUuid = artist.uuid;
-            dao.program.seasonUuid = album.uuid;
+            dao.program.tvShowUuid = null;
+            dao.program.seasonUuid = null;
+            dao.program.artistUuid = artist.uuid;
+            dao.program.albumUuid = album.uuid;
 
             return Result.attemptAsync(() =>
               this.programDB.upsertPrograms([dao]),
