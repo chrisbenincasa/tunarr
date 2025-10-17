@@ -1,26 +1,24 @@
 import { Delete } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
-import { useState } from 'react';
 import { useRemoveAllProgramming } from '../../hooks/programming_controls/useRemoveAllProgramming';
 import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates';
 import { useRemoveFlex } from '../../hooks/programming_controls/useRemoveFlex';
 import { useRemoveSpecials } from '../../hooks/programming_controls/useRemoveSpecials';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
-import { RemoveShowsModal } from '../programming_controls/RemoveShowsModal';
 
 type DeleteOptionsProps = {
   onClose: () => void;
+  removeShowsModalOpen: (open: boolean) => void;
 };
 
 export function ChannelProgrammingDeleteOptions({
   onClose,
+  removeShowsModalOpen,
 }: DeleteOptionsProps) {
   const removeDuplicatePrograms = useRemoveDuplicates();
   const removeFlex = useRemoveFlex();
   const removeAllProgramming = useRemoveAllProgramming();
   const removeSpecials = useRemoveSpecials();
-
-  const [removeShowsModalOpen, setRemoveShowsModalOpen] = useState(false);
 
   const handleClose = () => {
     onClose();
@@ -86,8 +84,10 @@ export function ChannelProgrammingDeleteOptions({
       >
         <MenuItem
           disableRipple
-          onClick={() => {
-            setRemoveShowsModalOpen(true);
+          onClick={(event) => {
+            event.stopPropagation();
+            removeShowsModalOpen(true);
+            handleClose();
           }}
         >
           <Delete />
@@ -110,13 +110,6 @@ export function ChannelProgrammingDeleteOptions({
           Clear Schedule
         </MenuItem>
       </ElevatedTooltip>
-      <RemoveShowsModal
-        open={removeShowsModalOpen}
-        onClose={() => {
-          setRemoveShowsModalOpen(false);
-          handleClose();
-        }}
-      />
     </>
   );
 }

@@ -3,7 +3,7 @@ import { LibraryBrowser } from '../../../components/library/LibraryBrowser.tsx';
 import { MediaSourceLibraryQueryOpts } from '../../../hooks/media-sources/mediaSourceLibraryHooks.ts';
 
 export const Route = createFileRoute(
-  '/media_sources_/$mediaSourceId/libraries_/$libraryId',
+  '/media_sources/$mediaSourceId/libraries/$libraryId',
 )({
   component: MediaSourceBrowserPage,
   loader: ({ context, params: { libraryId } }) => {

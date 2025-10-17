@@ -3,8 +3,9 @@ import {
   Construction as OrganizeIcon,
 } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { StyledMenu } from '../base/StyledMenu.tsx';
+import { RemoveShowsModal } from '../programming_controls/RemoveShowsModal.tsx';
 import { ChannelProgrammingDeleteOptions } from './ChannelProgrammingDeleteOptions';
 import { ChannelProgrammingOrganizeOptions } from './ChannelProgrammingOrganizeOptions';
 
@@ -17,6 +18,7 @@ export function ChannelProgrammingTools() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+  const [removeShowsModalOpen, setRemoveShowsModalOpen] = React.useState(false);
 
   return (
     <>
@@ -39,8 +41,17 @@ export function ChannelProgrammingTools() {
         onClose={handleClose}
       >
         <ChannelProgrammingOrganizeOptions onClose={() => handleClose()} />
-        <ChannelProgrammingDeleteOptions onClose={() => handleClose()} />
+        <ChannelProgrammingDeleteOptions
+          onClose={() => handleClose()}
+          removeShowsModalOpen={setRemoveShowsModalOpen}
+        />
       </StyledMenu>
+      <RemoveShowsModal
+        open={removeShowsModalOpen}
+        onClose={() => {
+          setRemoveShowsModalOpen(false);
+        }}
+      />
     </>
   );
 }

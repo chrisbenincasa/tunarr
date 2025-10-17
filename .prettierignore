@@ -19,3 +19,5 @@ server/temp
 **/.tsup
 
 *.html
+
+web/src/generated/*
