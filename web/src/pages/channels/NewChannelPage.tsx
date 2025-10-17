@@ -1,5 +1,5 @@
 import { EditChannelForm } from '@/components/channel_config/EditChannelForm';
-import { Route } from '@/routes/channels/new';
+import { Route } from '@/routes/channels_/new';
 import { Typography } from '@mui/material';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 

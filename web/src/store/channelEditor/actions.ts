@@ -35,6 +35,13 @@ import type { State } from '../index.ts';
 import useStore from '../index.ts';
 import { initialChannelEditorState } from './store.ts';
 
+export const setCurrentEntityType = (
+  t?: 'channel' | 'custom-show' | 'filler',
+) =>
+  useStore.setState((state) => {
+    state.currentEntityType = t;
+  });
+
 export const resetChannelEditorState = () =>
   useStore.setState((state) => {
     const newState = {

@@ -8,6 +8,12 @@ import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { UIChannelProgramWithOffset } from '../types/index.ts';
 import { type UIIndex } from '../types/index.ts';
+import type { Maybe } from '../types/util.ts';
+import type {
+  ChannelEditorState,
+  CustomShowEditor,
+  FillerListEditor,
+} from './channelEditor/store.ts';
 import useStore, { type State } from './index.ts';
 
 export const materializeProgramList = (
@@ -58,22 +64,24 @@ export const materializedProgramListSelector = ({
   return materializeProgramList(programList, programLookup);
 };
 
+function channelEditorSelector(s: State) {
+  const editor = s.channelEditor;
+  return {
+    ...editor,
+    programList: materializeProgramList(
+      editor.programList,
+      editor.programLookup,
+    ),
+    originalProgramList: materializeProgramList(
+      editor.originalProgramList,
+      editor.programLookup,
+    ),
+  };
+}
+
 // Selects the channel editor but also materializes the program list array
 export const useChannelEditor = () => {
-  return useStore((s) => {
-    const editor = s.channelEditor;
-    return {
-      ...editor,
-      programList: materializeProgramList(
-        editor.programList,
-        editor.programLookup,
-      ),
-      originalProgramList: materializeProgramList(
-        editor.originalProgramList,
-        editor.programLookup,
-      ),
-    };
-  });
+  return useStore(channelEditorSelector);
 };
 
 export const useChannelEditorLazy = () => {
@@ -138,3 +146,21 @@ export const useFillerListEditor = () => {
 
 export const useStoreProgramLookup = () =>
   useStore((s) => s.channelEditor.programLookup);
+
+export const useCurrentEditorState = (): Maybe<
+  ChannelEditorState | CustomShowEditor | FillerListEditor
+> => {
+  return useStore((s) => {
+    if (!s.currentEntityType) {
+      return;
+    }
+    switch (s.currentEntityType) {
+      case 'custom-show':
+        return s.customShowEditor;
+      case 'channel':
+        return s.channelEditor;
+      case 'filler':
+        return s.fillerListEditor;
+    }
+  });
+};

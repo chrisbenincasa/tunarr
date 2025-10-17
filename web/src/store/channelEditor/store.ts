@@ -19,8 +19,8 @@ export type HasId = { id: string };
 
 // Represents a program listing in the editor
 export interface ProgrammingEditorState<
-  EntityType extends HasId,
-  ProgramType extends CondensedChannelProgram,
+  EntityType extends HasId = HasId,
+  ProgramType extends CondensedChannelProgram = CondensedChannelProgram,
 > {
   // Original state of the working entity. Used to reset state
   originalEntity?: EntityType;
@@ -54,13 +54,16 @@ export type FillerListEditor = ProgrammingEditorState<
   ContentProgram | CustomProgram
 >;
 
+export type CustomShowEditor = ProgrammingEditorState<
+  CustomShow,
+  UIContentProgram // Custom shows contain content only
+>;
+
 export interface EditorsState {
   channelEditor: ChannelEditorState;
-  customShowEditor: ProgrammingEditorState<
-    CustomShow,
-    UIContentProgram // Custom shows contain content only
-  >;
+  customShowEditor: CustomShowEditor;
   fillerListEditor: FillerListEditor;
+  currentEntityType?: 'channel' | 'custom-show' | 'filler';
 }
 
 export const initialChannelEditorState: EditorsState = {
