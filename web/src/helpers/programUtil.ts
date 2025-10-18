@@ -26,24 +26,29 @@ function getGrandparentExternalId(program: ContentProgram) {
 }
 
 export function getProgramGroupingKey(program: ChannelProgram): string {
-  return match(program)
-    .with(
-      {
-        type: 'content',
-        subtype: P.select(P.union('movie', 'music_video', 'other_video')),
-      },
-      (typ) => typ,
-    )
-    .with({ type: 'content' }, (program) => {
-      const grandparentId =
-        program.grandparent?.id ?? getGrandparentExternalId(program);
-      return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
-    })
-    .with({ type: 'custom' }, (program) => `custom.${program.customShowId}`)
-    .with({ type: 'redirect' }, (program) => `redirect.${program.channel}`)
-    .with({ type: 'flex' }, () => 'flex')
-    .with({ type: 'filler' }, (program) => `filler.${program.fillerListId}`)
-    .exhaustive();
+  return (
+    match(program)
+      .with(
+        {
+          type: 'content',
+          subtype: P.select(P.union('movie', 'music_video', 'other_video')),
+        },
+        (typ) => typ,
+      )
+      .with({ type: 'content' }, (program) => {
+        const grandparentId =
+          program.grandparent?.id ?? getGrandparentExternalId(program);
+        return `${program.subtype === 'episode' ? 'show' : 'artist'}.${grandparentId}`;
+      })
+      // .with({type: 'content', persisted: false}, program => {
+      //   const grandparentId = program.grandparent
+      // })
+      .with({ type: 'custom' }, (program) => `custom.${program.customShowId}`)
+      .with({ type: 'redirect' }, (program) => `redirect.${program.channel}`)
+      .with({ type: 'flex' }, () => 'flex')
+      .with({ type: 'filler' }, (program) => `filler.${program.fillerListId}`)
+      .exhaustive()
+  );
 }
 
 export async function enumerateSyncedItems(

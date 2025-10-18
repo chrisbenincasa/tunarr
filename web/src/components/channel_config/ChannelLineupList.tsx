@@ -69,6 +69,7 @@ export type CommonProps = {
   showProgramCount?: boolean;
   showProgramStartTime?: boolean;
   listEmptyMessage?: React.ReactNode;
+  listRef?: React.MutableRefObject<HTMLDivElement | null>;
 };
 
 type DirectPassedProgramProps = {
@@ -527,7 +528,7 @@ export default function ChannelLineupList(props: Props) {
             </Typography>
           </Box>
         )}
-        <Box>
+        <Box ref={props.listRef}>
           {virtualListProps ? (
             <FixedSizeList
               {...virtualListProps}

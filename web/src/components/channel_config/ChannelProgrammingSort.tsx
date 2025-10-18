@@ -14,12 +14,14 @@ import { useAlphaSort } from '../../hooks/programming_controls/useAlphaSort.ts';
 import { useBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
 import { useCyclicShuffle } from '../../hooks/programming_controls/useCyclicShuffle.ts';
 import { useEpisodeNumberSort } from '../../hooks/programming_controls/useEpisodeNumberSort.ts';
-import { useRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
+import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
 import { strings } from '../../strings.ts';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu.tsx';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
+import type { ShuffleGroupingValue } from '../programming_controls/ShuffleProgrammingModal.tsx';
+import { ShuffleProgrammingModal } from '../programming_controls/ShuffleProgrammingModal.tsx';
 
 type SortOption =
   | 'random'
@@ -38,9 +40,13 @@ export function ChannelProgrammingSort() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [addBlockShuffleModalOpen, setAddBlockShuffleModalOpen] =
     useState(false);
+  const [shuffleProgrammingModalOpen, setShuffleProgrammingModalOpen] =
+    useState(false);
   const open = Boolean(anchorEl);
 
-  const randomSort = useRandomSort();
+  const [shuffleType, setShuffleType] = useState<ShuffleGroupingValue>('none');
+
+  const shuffler = useProgramShuffle();
   const alphaSort = useAlphaSort();
   const releaseDateSort = useReleaseDateSort();
   const cyclicShuffle = useCyclicShuffle();
@@ -68,8 +74,11 @@ export function ChannelProgrammingSort() {
           </Button>
         )}
         {sort === 'random' && (
-          <Button startIcon={<ShuffleIcon />} onClick={() => randomSort()}>
-            Random
+          <Button
+            startIcon={<ShuffleIcon />}
+            onClick={() => shuffler(shuffleType)}
+          >
+            Random{shuffleType === 'show' ? ' (by show)' : ''}
           </Button>
         )}
         {sort === 'cyclic' && (
@@ -137,12 +146,12 @@ export function ChannelProgrammingSort() {
           <MenuItem
             disableRipple
             onClick={() => {
-              randomSort();
               setSort('random');
+              setShuffleProgrammingModalOpen(true);
               handleClose();
             }}
           >
-            <ShuffleIcon /> Random
+            <ShuffleIcon /> Random&hellip;
           </MenuItem>
         </ElevatedTooltip>
 
@@ -161,6 +170,23 @@ export function ChannelProgrammingSort() {
           >
             <CyclicIcon />
             Cyclic Shuffle
+          </MenuItem>
+        </ElevatedTooltip>
+        <ElevatedTooltip
+          elevation={5}
+          title={strings.BLOCK_SHUFFLE_TOOLTIP}
+          placement="right"
+        >
+          <MenuItem
+            disableRipple
+            onClick={() => {
+              setAddBlockShuffleModalOpen(true);
+              setSort('block');
+              handleClose();
+            }}
+          >
+            <BlockShuffleIcon />
+            Block Shuffle
           </MenuItem>
         </ElevatedTooltip>
 
@@ -216,29 +242,18 @@ export function ChannelProgrammingSort() {
             Sort TV Shows
           </MenuItem>
         </ElevatedTooltip>
-        <ElevatedTooltip
-          elevation={5}
-          title={strings.BLOCK_SHUFFLE_TOOLTIP}
-          placement="right"
-        >
-          <MenuItem
-            disableRipple
-            onClick={() => {
-              setAddBlockShuffleModalOpen(true);
-              setSort('block');
-              handleClose();
-            }}
-          >
-            <BlockShuffleIcon />
-            Block Shuffle
-          </MenuItem>
-        </ElevatedTooltip>
       </StyledMenu>
       <AddBlockShuffleModal
         open={addBlockShuffleModalOpen}
         onClose={() => setAddBlockShuffleModalOpen(false)}
         blockShuffle={blockShuffle}
         canUsePerfectSync={canUsePerfectSync}
+      />
+      <ShuffleProgrammingModal
+        open={shuffleProgrammingModalOpen}
+        onClose={() => setShuffleProgrammingModalOpen(false)}
+        shuffleType={shuffleType}
+        onShuffleTypeChange={setShuffleType}
       />
     </>
   );

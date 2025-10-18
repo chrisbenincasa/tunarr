@@ -1,26 +1,26 @@
 import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
-import { addMediaToCurrentFillerList } from '@/store/fillerListEditor/action';
+import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
-import { noop } from 'ts-essentials';
-import { ProgrammingSelectionContext } from '../../context/ProgrammingSelectionContext.ts';
+import { noop } from 'lodash-es';
+import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
-export const Route = createFileRoute('/library/fillers/new/programming')({
-  component: FillerProgrammingSelectorPage,
+export const Route = createFileRoute('/library/custom-shows/new/programming')({
+  component: CustomShowProgrammingSelectorPage,
 });
 
-function FillerProgrammingSelectorPage() {
+function CustomShowProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
   return (
     <ProgrammingSelectionContext.Provider
       value={{
-        onAddSelectedMedia: addMediaToCurrentFillerList,
+        onAddSelectedMedia: addMediaToCurrentCustomShow,
         onAddMediaSuccess: () => {
           navigate({ to: '..' }).catch(console.error);
         },
+        entityType: 'custom-show',
         onMediaSourceChange: noop,
         onLibraryChange: noop,
         onSearchChange: noop,
-        entityType: 'filler-list',
       }}
     >
       <ProgrammingSelectorPage />

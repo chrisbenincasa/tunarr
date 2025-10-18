@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useCustomShowBlockShuffle } from '../../hooks/programming_controls/useBlockShuffle.ts';
-import { useCustomShowRandomSort } from '../../hooks/programming_controls/useRandomSort.ts';
+import { useProgramShuffle } from '../../hooks/programming_controls/useRandomSort.ts';
 import { useCustomShowReleaseDateSort } from '../../hooks/programming_controls/useReleaseDateSort.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
 import { useCustomShowEditor } from '../../store/selectors.ts';
@@ -23,6 +23,10 @@ import { strings } from '../../strings.ts';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu.tsx';
 import AddBlockShuffleModal from '../programming_controls/AddBlockShuffleModal.tsx';
+import {
+  ShuffleProgrammingModal,
+  type ShuffleGroupingValue,
+} from '../programming_controls/ShuffleProgrammingModal.tsx';
 
 type OrdereredSort<T extends string> = `${T}-asc` | `${T}-desc`;
 type PossibleSorts = 'random' | OrdereredSort<'release'> | 'block';
@@ -34,6 +38,8 @@ export const CustomShowSortToolsMenu = () => {
   const [selectedSort, setSelectedSort] = useState<PossibleSorts | null>(null);
   const [addBlockShuffleModalOpen, setAddBlockShuffleModalOpen] =
     useState(false);
+  const [shuffleProgrammingModalOpen, setShuffleProgrammingModalOpen] =
+    useState(false);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -42,10 +48,10 @@ export const CustomShowSortToolsMenu = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const randomSort = useCustomShowRandomSort();
+  const [shuffleType, setShuffleType] = useState<ShuffleGroupingValue>('none');
   const { blockShuffle, canUsePerfectSync } = useCustomShowBlockShuffle();
   const releaseDateSort = useCustomShowReleaseDateSort();
+  const shuffler = useProgramShuffle();
 
   const renderCurrentSortButton = () => {
     if (!selectedSort) {
@@ -69,8 +75,8 @@ export const CustomShowSortToolsMenu = () => {
     switch (selectedSort) {
       case 'random':
         button.unshift(
-          <Button startIcon={<Shuffle />} onClick={() => randomSort()}>
-            Random
+          <Button startIcon={<Shuffle />} onClick={() => shuffler(shuffleType)}>
+            Random{shuffleType === 'show' ? ' (by show)' : ''}
           </Button>,
         );
         break;
@@ -126,15 +132,15 @@ export const CustomShowSortToolsMenu = () => {
           <MenuItem
             disableRipple
             onClick={() => {
-              randomSort();
               setSelectedSort('random');
+              setShuffleProgrammingModalOpen(true);
               handleClose();
             }}
           >
             <ListItemIcon>
               <Shuffle />
             </ListItemIcon>
-            <ListItemText>Random</ListItemText>
+            <ListItemText>Random&hellip;</ListItemText>
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
@@ -200,6 +206,12 @@ export const CustomShowSortToolsMenu = () => {
         onClose={() => setAddBlockShuffleModalOpen(false)}
         blockShuffle={blockShuffle}
         canUsePerfectSync={canUsePerfectSync}
+      />
+      <ShuffleProgrammingModal
+        open={shuffleProgrammingModalOpen}
+        onClose={() => setShuffleProgrammingModalOpen(false)}
+        shuffleType={shuffleType}
+        onShuffleTypeChange={setShuffleType}
       />
     </>
   );

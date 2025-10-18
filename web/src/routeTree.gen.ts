@@ -18,7 +18,7 @@ import { Route as GuideImport } from './routes/guide';
 import { Route as IndexImport } from './routes/index';
 import { Route as SystemIndexImport } from './routes/system/index';
 import { Route as LibraryIndexImport } from './routes/library/index';
-import { Route as ChannelsIndexImport } from './routes/channels/index';
+import { Route as ChannelsIndexImport } from './routes/channels_/index';
 import { Route as SystemLogsImport } from './routes/system/logs';
 import { Route as SystemDebugImport } from './routes/system/debug';
 import { Route as SettingsXmltvImport } from './routes/settings/xmltv';
@@ -27,24 +27,29 @@ import { Route as SettingsSourcesImport } from './routes/settings/sources';
 import { Route as SettingsHdhrImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralImport } from './routes/settings/general';
 import { Route as SettingsFfmpegImport } from './routes/settings/ffmpeg';
-import { Route as MediasourcesMediaSourceIdImport } from './routes/media_sources/$mediaSourceId';
 import { Route as LibraryFillersImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsImport } from './routes/library/custom-shows';
-import { Route as ChannelsTestImport } from './routes/channels/test';
-import { Route as ChannelsNewImport } from './routes/channels/new';
-import { Route as ChannelsChannelIdImport } from './routes/channels/$channelId';
+import { Route as ChannelsTestImport } from './routes/channels_/test';
+import { Route as ChannelsNewImport } from './routes/channels_/new';
+import { Route as ChannelsChannelIdRouteImport } from './routes/channels_/$channelId/route';
+import { Route as MediasourcesMediaSourceIdIndexImport } from './routes/media_sources_/$mediaSourceId/index';
+import { Route as ChannelsChannelIdIndexImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewImport } from './routes/settings/ffmpeg_/new';
 import { Route as SettingsFfmpegConfigIdImport } from './routes/settings/ffmpeg_/$configId';
-import { Route as LibraryFillersNewImport } from './routes/library/fillers_.new';
-import { Route as LibraryCustomShowsNewImport } from './routes/library/custom-shows_.new';
 import { Route as ChannelsChannelIdWatchImport } from './routes/channels_/$channelId/watch';
+import { Route as LibraryFillersNewRouteImport } from './routes/library/fillers_/new/route';
+import { Route as LibraryFillersFillerIdRouteImport } from './routes/library/fillers_/$fillerId/route';
+import { Route as LibraryCustomShowsNewRouteImport } from './routes/library/custom-shows_/new/route';
+import { Route as LibraryCustomShowsShowIdRouteImport } from './routes/library/custom-shows_/$showId/route';
+import { Route as LibraryFillersNewIndexImport } from './routes/library/fillers_/new/index';
+import { Route as LibraryCustomShowsNewIndexImport } from './routes/library/custom-shows_/new/index';
 import { Route as ChannelsChannelIdProgrammingIndexImport } from './routes/channels_/$channelId/programming/index';
 import { Route as ChannelsChannelIdEditIndexImport } from './routes/channels_/$channelId/edit/index';
 import { Route as MediasourcesMediaSourceIdLibrariesLibraryIdImport } from './routes/media_sources_/$mediaSourceId/libraries_.$libraryId';
-import { Route as LibraryFillersNewProgrammingImport } from './routes/library/fillers_.new_.programming';
+import { Route as LibraryFillersNewProgrammingImport } from './routes/library/fillers_/new/programming';
 import { Route as LibraryFillersFillerIdProgrammingImport } from './routes/library/fillers_/$fillerId/programming';
 import { Route as LibraryFillersFillerIdEditImport } from './routes/library/fillers_/$fillerId/edit';
-import { Route as LibraryCustomShowsNewProgrammingImport } from './routes/library/custom-shows_.new_.programming';
+import { Route as LibraryCustomShowsNewProgrammingImport } from './routes/library/custom-shows_/new/programming';
 import { Route as LibraryCustomShowsShowIdProgrammingImport } from './routes/library/custom-shows_/$showId/programming';
 import { Route as LibraryCustomShowsShowIdEditImport } from './routes/library/custom-shows_/$showId/edit';
 import { Route as ChannelsChannelIdProgrammingTimeSlotEditorImport } from './routes/channels_/$channelId/programming/time-slot-editor';
@@ -133,11 +138,6 @@ const SettingsFfmpegRoute = SettingsFfmpegImport.update({
   getParentRoute: () => SettingsRoute,
 } as any);
 
-const MediasourcesMediaSourceIdRoute = MediasourcesMediaSourceIdImport.update({
-  path: '/media_sources/$mediaSourceId',
-  getParentRoute: () => rootRoute,
-} as any);
-
 const LibraryFillersRoute = LibraryFillersImport.update({
   path: '/library/fillers',
   getParentRoute: () => rootRoute,
@@ -158,9 +158,20 @@ const ChannelsNewRoute = ChannelsNewImport.update({
   getParentRoute: () => rootRoute,
 } as any);
 
-const ChannelsChannelIdRoute = ChannelsChannelIdImport.update({
+const ChannelsChannelIdRouteRoute = ChannelsChannelIdRouteImport.update({
   path: '/channels/$channelId',
   getParentRoute: () => rootRoute,
+} as any);
+
+const MediasourcesMediaSourceIdIndexRoute =
+  MediasourcesMediaSourceIdIndexImport.update({
+    path: '/media_sources/$mediaSourceId/',
+    getParentRoute: () => rootRoute,
+  } as any);
+
+const ChannelsChannelIdIndexRoute = ChannelsChannelIdIndexImport.update({
+  path: '/',
+  getParentRoute: () => ChannelsChannelIdRouteRoute,
 } as any);
 
 const SettingsFfmpegNewRoute = SettingsFfmpegNewImport.update({
@@ -173,31 +184,57 @@ const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdImport.update({
   getParentRoute: () => SettingsRoute,
 } as any);
 
-const LibraryFillersNewRoute = LibraryFillersNewImport.update({
+const ChannelsChannelIdWatchRoute = ChannelsChannelIdWatchImport.update({
+  path: '/watch',
+  getParentRoute: () => ChannelsChannelIdRouteRoute,
+} as any);
+
+const LibraryFillersNewRouteRoute = LibraryFillersNewRouteImport.update({
   path: '/library/fillers/new',
   getParentRoute: () => rootRoute,
 } as any);
 
-const LibraryCustomShowsNewRoute = LibraryCustomShowsNewImport.update({
-  path: '/library/custom-shows/new',
-  getParentRoute: () => rootRoute,
+const LibraryFillersFillerIdRouteRoute =
+  LibraryFillersFillerIdRouteImport.update({
+    path: '/library/fillers/$fillerId',
+    getParentRoute: () => rootRoute,
+  } as any);
+
+const LibraryCustomShowsNewRouteRoute = LibraryCustomShowsNewRouteImport.update(
+  {
+    path: '/library/custom-shows/new',
+    getParentRoute: () => rootRoute,
+  } as any,
+);
+
+const LibraryCustomShowsShowIdRouteRoute =
+  LibraryCustomShowsShowIdRouteImport.update({
+    path: '/library/custom-shows/$showId',
+    getParentRoute: () => rootRoute,
+  } as any);
+
+const LibraryFillersNewIndexRoute = LibraryFillersNewIndexImport.update({
+  path: '/',
+  getParentRoute: () => LibraryFillersNewRouteRoute,
 } as any);
 
-const ChannelsChannelIdWatchRoute = ChannelsChannelIdWatchImport.update({
-  path: '/channels/$channelId/watch',
-  getParentRoute: () => rootRoute,
-} as any);
+const LibraryCustomShowsNewIndexRoute = LibraryCustomShowsNewIndexImport.update(
+  {
+    path: '/',
+    getParentRoute: () => LibraryCustomShowsNewRouteRoute,
+  } as any,
+);
 
 const ChannelsChannelIdProgrammingIndexRoute =
   ChannelsChannelIdProgrammingIndexImport.update({
-    path: '/channels/$channelId/programming/',
-    getParentRoute: () => rootRoute,
+    path: '/programming/',
+    getParentRoute: () => ChannelsChannelIdRouteRoute,
   } as any);
 
 const ChannelsChannelIdEditIndexRoute = ChannelsChannelIdEditIndexImport.update(
   {
-    path: '/channels/$channelId/edit/',
-    getParentRoute: () => rootRoute,
+    path: '/edit/',
+    getParentRoute: () => ChannelsChannelIdRouteRoute,
   } as any,
 );
 
@@ -209,57 +246,57 @@ const MediasourcesMediaSourceIdLibrariesLibraryIdRoute =
 
 const LibraryFillersNewProgrammingRoute =
   LibraryFillersNewProgrammingImport.update({
-    path: '/library/fillers/new/programming',
-    getParentRoute: () => rootRoute,
+    path: '/programming',
+    getParentRoute: () => LibraryFillersNewRouteRoute,
   } as any);
 
 const LibraryFillersFillerIdProgrammingRoute =
   LibraryFillersFillerIdProgrammingImport.update({
-    path: '/library/fillers/$fillerId/programming',
-    getParentRoute: () => rootRoute,
+    path: '/programming',
+    getParentRoute: () => LibraryFillersFillerIdRouteRoute,
   } as any);
 
 const LibraryFillersFillerIdEditRoute = LibraryFillersFillerIdEditImport.update(
   {
-    path: '/library/fillers/$fillerId/edit',
-    getParentRoute: () => rootRoute,
+    path: '/edit',
+    getParentRoute: () => LibraryFillersFillerIdRouteRoute,
   } as any,
 );
 
 const LibraryCustomShowsNewProgrammingRoute =
   LibraryCustomShowsNewProgrammingImport.update({
-    path: '/library/custom-shows/new/programming',
-    getParentRoute: () => rootRoute,
+    path: '/programming',
+    getParentRoute: () => LibraryCustomShowsNewRouteRoute,
   } as any);
 
 const LibraryCustomShowsShowIdProgrammingRoute =
   LibraryCustomShowsShowIdProgrammingImport.update({
-    path: '/library/custom-shows/$showId/programming',
-    getParentRoute: () => rootRoute,
+    path: '/programming',
+    getParentRoute: () => LibraryCustomShowsShowIdRouteRoute,
   } as any);
 
 const LibraryCustomShowsShowIdEditRoute =
   LibraryCustomShowsShowIdEditImport.update({
-    path: '/library/custom-shows/$showId/edit',
-    getParentRoute: () => rootRoute,
+    path: '/edit',
+    getParentRoute: () => LibraryCustomShowsShowIdRouteRoute,
   } as any);
 
 const ChannelsChannelIdProgrammingTimeSlotEditorRoute =
   ChannelsChannelIdProgrammingTimeSlotEditorImport.update({
-    path: '/channels/$channelId/programming/time-slot-editor',
-    getParentRoute: () => rootRoute,
+    path: '/programming/time-slot-editor',
+    getParentRoute: () => ChannelsChannelIdRouteRoute,
   } as any);
 
 const ChannelsChannelIdProgrammingSlotEditorRoute =
   ChannelsChannelIdProgrammingSlotEditorImport.update({
-    path: '/channels/$channelId/programming/slot-editor',
-    getParentRoute: () => rootRoute,
+    path: '/programming/slot-editor',
+    getParentRoute: () => ChannelsChannelIdRouteRoute,
   } as any);
 
 const ChannelsChannelIdProgrammingAddRoute =
   ChannelsChannelIdProgrammingAddImport.update({
-    path: '/channels/$channelId/programming/add',
-    getParentRoute: () => rootRoute,
+    path: '/programming/add',
+    getParentRoute: () => ChannelsChannelIdRouteRoute,
   } as any);
 
 // Populate the FileRoutesByPath interface
@@ -305,7 +342,7 @@ declare module '@tanstack/react-router' {
       id: '/channels/$channelId';
       path: '/channels/$channelId';
       fullPath: '/channels/$channelId';
-      preLoaderRoute: typeof ChannelsChannelIdImport;
+      preLoaderRoute: typeof ChannelsChannelIdRouteImport;
       parentRoute: typeof rootRoute;
     };
     '/channels/new': {
@@ -334,13 +371,6 @@ declare module '@tanstack/react-router' {
       path: '/library/fillers';
       fullPath: '/library/fillers';
       preLoaderRoute: typeof LibraryFillersImport;
-      parentRoute: typeof rootRoute;
-    };
-    '/media_sources/$mediaSourceId': {
-      id: '/media_sources/$mediaSourceId';
-      path: '/media_sources/$mediaSourceId';
-      fullPath: '/media_sources/$mediaSourceId';
-      preLoaderRoute: typeof MediasourcesMediaSourceIdImport;
       parentRoute: typeof rootRoute;
     };
     '/settings/ffmpeg': {
@@ -420,26 +450,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SystemIndexImport;
       parentRoute: typeof SystemImport;
     };
-    '/channels/$channelId/watch': {
-      id: '/channels/$channelId/watch';
-      path: '/channels/$channelId/watch';
-      fullPath: '/channels/$channelId/watch';
-      preLoaderRoute: typeof ChannelsChannelIdWatchImport;
+    '/library/custom-shows/$showId': {
+      id: '/library/custom-shows/$showId';
+      path: '/library/custom-shows/$showId';
+      fullPath: '/library/custom-shows/$showId';
+      preLoaderRoute: typeof LibraryCustomShowsShowIdRouteImport;
       parentRoute: typeof rootRoute;
     };
     '/library/custom-shows/new': {
       id: '/library/custom-shows/new';
       path: '/library/custom-shows/new';
       fullPath: '/library/custom-shows/new';
-      preLoaderRoute: typeof LibraryCustomShowsNewImport;
+      preLoaderRoute: typeof LibraryCustomShowsNewRouteImport;
+      parentRoute: typeof rootRoute;
+    };
+    '/library/fillers/$fillerId': {
+      id: '/library/fillers/$fillerId';
+      path: '/library/fillers/$fillerId';
+      fullPath: '/library/fillers/$fillerId';
+      preLoaderRoute: typeof LibraryFillersFillerIdRouteImport;
       parentRoute: typeof rootRoute;
     };
     '/library/fillers/new': {
       id: '/library/fillers/new';
       path: '/library/fillers/new';
       fullPath: '/library/fillers/new';
-      preLoaderRoute: typeof LibraryFillersNewImport;
+      preLoaderRoute: typeof LibraryFillersNewRouteImport;
       parentRoute: typeof rootRoute;
+    };
+    '/channels/$channelId/watch': {
+      id: '/channels/$channelId/watch';
+      path: '/watch';
+      fullPath: '/channels/$channelId/watch';
+      preLoaderRoute: typeof ChannelsChannelIdWatchImport;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
     };
     '/settings/ffmpeg/$configId': {
       id: '/settings/ffmpeg/$configId';
@@ -455,68 +499,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsFfmpegNewImport;
       parentRoute: typeof SettingsImport;
     };
+    '/channels/$channelId/': {
+      id: '/channels/$channelId/';
+      path: '/';
+      fullPath: '/channels/$channelId/';
+      preLoaderRoute: typeof ChannelsChannelIdIndexImport;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
+    };
+    '/media_sources/$mediaSourceId/': {
+      id: '/media_sources/$mediaSourceId/';
+      path: '/media_sources/$mediaSourceId';
+      fullPath: '/media_sources/$mediaSourceId';
+      preLoaderRoute: typeof MediasourcesMediaSourceIdIndexImport;
+      parentRoute: typeof rootRoute;
+    };
     '/channels/$channelId/programming/add': {
       id: '/channels/$channelId/programming/add';
-      path: '/channels/$channelId/programming/add';
+      path: '/programming/add';
       fullPath: '/channels/$channelId/programming/add';
       preLoaderRoute: typeof ChannelsChannelIdProgrammingAddImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
     };
     '/channels/$channelId/programming/slot-editor': {
       id: '/channels/$channelId/programming/slot-editor';
-      path: '/channels/$channelId/programming/slot-editor';
+      path: '/programming/slot-editor';
       fullPath: '/channels/$channelId/programming/slot-editor';
       preLoaderRoute: typeof ChannelsChannelIdProgrammingSlotEditorImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
     };
     '/channels/$channelId/programming/time-slot-editor': {
       id: '/channels/$channelId/programming/time-slot-editor';
-      path: '/channels/$channelId/programming/time-slot-editor';
+      path: '/programming/time-slot-editor';
       fullPath: '/channels/$channelId/programming/time-slot-editor';
       preLoaderRoute: typeof ChannelsChannelIdProgrammingTimeSlotEditorImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
     };
     '/library/custom-shows/$showId/edit': {
       id: '/library/custom-shows/$showId/edit';
-      path: '/library/custom-shows/$showId/edit';
+      path: '/edit';
       fullPath: '/library/custom-shows/$showId/edit';
       preLoaderRoute: typeof LibraryCustomShowsShowIdEditImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryCustomShowsShowIdRouteImport;
     };
     '/library/custom-shows/$showId/programming': {
       id: '/library/custom-shows/$showId/programming';
-      path: '/library/custom-shows/$showId/programming';
+      path: '/programming';
       fullPath: '/library/custom-shows/$showId/programming';
       preLoaderRoute: typeof LibraryCustomShowsShowIdProgrammingImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryCustomShowsShowIdRouteImport;
     };
     '/library/custom-shows/new/programming': {
       id: '/library/custom-shows/new/programming';
-      path: '/library/custom-shows/new/programming';
+      path: '/programming';
       fullPath: '/library/custom-shows/new/programming';
       preLoaderRoute: typeof LibraryCustomShowsNewProgrammingImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryCustomShowsNewRouteImport;
     };
     '/library/fillers/$fillerId/edit': {
       id: '/library/fillers/$fillerId/edit';
-      path: '/library/fillers/$fillerId/edit';
+      path: '/edit';
       fullPath: '/library/fillers/$fillerId/edit';
       preLoaderRoute: typeof LibraryFillersFillerIdEditImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryFillersFillerIdRouteImport;
     };
     '/library/fillers/$fillerId/programming': {
       id: '/library/fillers/$fillerId/programming';
-      path: '/library/fillers/$fillerId/programming';
+      path: '/programming';
       fullPath: '/library/fillers/$fillerId/programming';
       preLoaderRoute: typeof LibraryFillersFillerIdProgrammingImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryFillersFillerIdRouteImport;
     };
     '/library/fillers/new/programming': {
       id: '/library/fillers/new/programming';
-      path: '/library/fillers/new/programming';
+      path: '/programming';
       fullPath: '/library/fillers/new/programming';
       preLoaderRoute: typeof LibraryFillersNewProgrammingImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof LibraryFillersNewRouteImport;
     };
     '/media_sources/$mediaSourceId/libraries/$libraryId': {
       id: '/media_sources/$mediaSourceId/libraries/$libraryId';
@@ -527,17 +585,31 @@ declare module '@tanstack/react-router' {
     };
     '/channels/$channelId/edit/': {
       id: '/channels/$channelId/edit/';
-      path: '/channels/$channelId/edit';
+      path: '/edit';
       fullPath: '/channels/$channelId/edit';
       preLoaderRoute: typeof ChannelsChannelIdEditIndexImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
     };
     '/channels/$channelId/programming/': {
       id: '/channels/$channelId/programming/';
-      path: '/channels/$channelId/programming';
+      path: '/programming';
       fullPath: '/channels/$channelId/programming';
       preLoaderRoute: typeof ChannelsChannelIdProgrammingIndexImport;
-      parentRoute: typeof rootRoute;
+      parentRoute: typeof ChannelsChannelIdRouteImport;
+    };
+    '/library/custom-shows/new/': {
+      id: '/library/custom-shows/new/';
+      path: '/';
+      fullPath: '/library/custom-shows/new/';
+      preLoaderRoute: typeof LibraryCustomShowsNewIndexImport;
+      parentRoute: typeof LibraryCustomShowsNewRouteImport;
+    };
+    '/library/fillers/new/': {
+      id: '/library/fillers/new/';
+      path: '/';
+      fullPath: '/library/fillers/new/';
+      preLoaderRoute: typeof LibraryFillersNewIndexImport;
+      parentRoute: typeof LibraryFillersNewRouteImport;
     };
   }
 }
@@ -563,29 +635,41 @@ export const routeTree = rootRoute.addChildren({
     SystemIndexRoute,
   }),
   WelcomeRoute,
-  ChannelsChannelIdRoute,
+  ChannelsChannelIdRouteRoute: ChannelsChannelIdRouteRoute.addChildren({
+    ChannelsChannelIdWatchRoute,
+    ChannelsChannelIdIndexRoute,
+    ChannelsChannelIdProgrammingAddRoute,
+    ChannelsChannelIdProgrammingSlotEditorRoute,
+    ChannelsChannelIdProgrammingTimeSlotEditorRoute,
+    ChannelsChannelIdEditIndexRoute,
+    ChannelsChannelIdProgrammingIndexRoute,
+  }),
   ChannelsNewRoute,
   ChannelsTestRoute,
   LibraryCustomShowsRoute,
   LibraryFillersRoute,
-  MediasourcesMediaSourceIdRoute,
   ChannelsIndexRoute,
   LibraryIndexRoute,
-  ChannelsChannelIdWatchRoute,
-  LibraryCustomShowsNewRoute,
-  LibraryFillersNewRoute,
-  ChannelsChannelIdProgrammingAddRoute,
-  ChannelsChannelIdProgrammingSlotEditorRoute,
-  ChannelsChannelIdProgrammingTimeSlotEditorRoute,
-  LibraryCustomShowsShowIdEditRoute,
-  LibraryCustomShowsShowIdProgrammingRoute,
-  LibraryCustomShowsNewProgrammingRoute,
-  LibraryFillersFillerIdEditRoute,
-  LibraryFillersFillerIdProgrammingRoute,
-  LibraryFillersNewProgrammingRoute,
+  LibraryCustomShowsShowIdRouteRoute:
+    LibraryCustomShowsShowIdRouteRoute.addChildren({
+      LibraryCustomShowsShowIdEditRoute,
+      LibraryCustomShowsShowIdProgrammingRoute,
+    }),
+  LibraryCustomShowsNewRouteRoute: LibraryCustomShowsNewRouteRoute.addChildren({
+    LibraryCustomShowsNewProgrammingRoute,
+    LibraryCustomShowsNewIndexRoute,
+  }),
+  LibraryFillersFillerIdRouteRoute:
+    LibraryFillersFillerIdRouteRoute.addChildren({
+      LibraryFillersFillerIdEditRoute,
+      LibraryFillersFillerIdProgrammingRoute,
+    }),
+  LibraryFillersNewRouteRoute: LibraryFillersNewRouteRoute.addChildren({
+    LibraryFillersNewProgrammingRoute,
+    LibraryFillersNewIndexRoute,
+  }),
+  MediasourcesMediaSourceIdIndexRoute,
   MediasourcesMediaSourceIdLibrariesLibraryIdRoute,
-  ChannelsChannelIdEditIndexRoute,
-  ChannelsChannelIdProgrammingIndexRoute,
 });
 
 /* prettier-ignore-end */
@@ -606,24 +690,14 @@ export const routeTree = rootRoute.addChildren({
         "/channels/test",
         "/library/custom-shows",
         "/library/fillers",
-        "/media_sources/$mediaSourceId",
         "/channels/",
         "/library/",
-        "/channels/$channelId/watch",
+        "/library/custom-shows/$showId",
         "/library/custom-shows/new",
+        "/library/fillers/$fillerId",
         "/library/fillers/new",
-        "/channels/$channelId/programming/add",
-        "/channels/$channelId/programming/slot-editor",
-        "/channels/$channelId/programming/time-slot-editor",
-        "/library/custom-shows/$showId/edit",
-        "/library/custom-shows/$showId/programming",
-        "/library/custom-shows/new/programming",
-        "/library/fillers/$fillerId/edit",
-        "/library/fillers/$fillerId/programming",
-        "/library/fillers/new/programming",
-        "/media_sources/$mediaSourceId/libraries/$libraryId",
-        "/channels/$channelId/edit/",
-        "/channels/$channelId/programming/"
+        "/media_sources/$mediaSourceId/",
+        "/media_sources/$mediaSourceId/libraries/$libraryId"
       ]
     },
     "/": {
@@ -657,22 +731,28 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "welcome.tsx"
     },
     "/channels/$channelId": {
-      "filePath": "channels/$channelId.tsx"
+      "filePath": "channels_/$channelId/route.tsx",
+      "children": [
+        "/channels/$channelId/watch",
+        "/channels/$channelId/",
+        "/channels/$channelId/programming/add",
+        "/channels/$channelId/programming/slot-editor",
+        "/channels/$channelId/programming/time-slot-editor",
+        "/channels/$channelId/edit/",
+        "/channels/$channelId/programming/"
+      ]
     },
     "/channels/new": {
-      "filePath": "channels/new.tsx"
+      "filePath": "channels_/new.tsx"
     },
     "/channels/test": {
-      "filePath": "channels/test.tsx"
+      "filePath": "channels_/test.tsx"
     },
     "/library/custom-shows": {
       "filePath": "library/custom-shows.tsx"
     },
     "/library/fillers": {
       "filePath": "library/fillers.tsx"
-    },
-    "/media_sources/$mediaSourceId": {
-      "filePath": "media_sources/$mediaSourceId.tsx"
     },
     "/settings/ffmpeg": {
       "filePath": "settings/ffmpeg.tsx",
@@ -707,7 +787,7 @@ export const routeTree = rootRoute.addChildren({
       "parent": "/system"
     },
     "/channels/": {
-      "filePath": "channels/index.tsx"
+      "filePath": "channels_/index.tsx"
     },
     "/library/": {
       "filePath": "library/index.tsx"
@@ -716,14 +796,37 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "system/index.tsx",
       "parent": "/system"
     },
-    "/channels/$channelId/watch": {
-      "filePath": "channels_/$channelId/watch.tsx"
+    "/library/custom-shows/$showId": {
+      "filePath": "library/custom-shows_/$showId/route.tsx",
+      "children": [
+        "/library/custom-shows/$showId/edit",
+        "/library/custom-shows/$showId/programming"
+      ]
     },
     "/library/custom-shows/new": {
-      "filePath": "library/custom-shows_.new.tsx"
+      "filePath": "library/custom-shows_/new/route.tsx",
+      "children": [
+        "/library/custom-shows/new/programming",
+        "/library/custom-shows/new/"
+      ]
+    },
+    "/library/fillers/$fillerId": {
+      "filePath": "library/fillers_/$fillerId/route.tsx",
+      "children": [
+        "/library/fillers/$fillerId/edit",
+        "/library/fillers/$fillerId/programming"
+      ]
     },
     "/library/fillers/new": {
-      "filePath": "library/fillers_.new.tsx"
+      "filePath": "library/fillers_/new/route.tsx",
+      "children": [
+        "/library/fillers/new/programming",
+        "/library/fillers/new/"
+      ]
+    },
+    "/channels/$channelId/watch": {
+      "filePath": "channels_/$channelId/watch.tsx",
+      "parent": "/channels/$channelId"
     },
     "/settings/ffmpeg/$configId": {
       "filePath": "settings/ffmpeg_/$configId.tsx",
@@ -733,41 +836,67 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "settings/ffmpeg_/new.tsx",
       "parent": "/settings"
     },
+    "/channels/$channelId/": {
+      "filePath": "channels_/$channelId/index.tsx",
+      "parent": "/channels/$channelId"
+    },
+    "/media_sources/$mediaSourceId/": {
+      "filePath": "media_sources_/$mediaSourceId/index.tsx"
+    },
     "/channels/$channelId/programming/add": {
-      "filePath": "channels_/$channelId/programming/add.tsx"
+      "filePath": "channels_/$channelId/programming/add.tsx",
+      "parent": "/channels/$channelId"
     },
     "/channels/$channelId/programming/slot-editor": {
-      "filePath": "channels_/$channelId/programming/slot-editor.tsx"
+      "filePath": "channels_/$channelId/programming/slot-editor.tsx",
+      "parent": "/channels/$channelId"
     },
     "/channels/$channelId/programming/time-slot-editor": {
-      "filePath": "channels_/$channelId/programming/time-slot-editor.tsx"
+      "filePath": "channels_/$channelId/programming/time-slot-editor.tsx",
+      "parent": "/channels/$channelId"
     },
     "/library/custom-shows/$showId/edit": {
-      "filePath": "library/custom-shows_/$showId/edit.tsx"
+      "filePath": "library/custom-shows_/$showId/edit.tsx",
+      "parent": "/library/custom-shows/$showId"
     },
     "/library/custom-shows/$showId/programming": {
-      "filePath": "library/custom-shows_/$showId/programming.tsx"
+      "filePath": "library/custom-shows_/$showId/programming.tsx",
+      "parent": "/library/custom-shows/$showId"
     },
     "/library/custom-shows/new/programming": {
-      "filePath": "library/custom-shows_.new_.programming.tsx"
+      "filePath": "library/custom-shows_/new/programming.tsx",
+      "parent": "/library/custom-shows/new"
     },
     "/library/fillers/$fillerId/edit": {
-      "filePath": "library/fillers_/$fillerId/edit.tsx"
+      "filePath": "library/fillers_/$fillerId/edit.tsx",
+      "parent": "/library/fillers/$fillerId"
     },
     "/library/fillers/$fillerId/programming": {
-      "filePath": "library/fillers_/$fillerId/programming.tsx"
+      "filePath": "library/fillers_/$fillerId/programming.tsx",
+      "parent": "/library/fillers/$fillerId"
     },
     "/library/fillers/new/programming": {
-      "filePath": "library/fillers_.new_.programming.tsx"
+      "filePath": "library/fillers_/new/programming.tsx",
+      "parent": "/library/fillers/new"
     },
     "/media_sources/$mediaSourceId/libraries/$libraryId": {
       "filePath": "media_sources_/$mediaSourceId/libraries_.$libraryId.tsx"
     },
     "/channels/$channelId/edit/": {
-      "filePath": "channels_/$channelId/edit/index.tsx"
+      "filePath": "channels_/$channelId/edit/index.tsx",
+      "parent": "/channels/$channelId"
     },
     "/channels/$channelId/programming/": {
-      "filePath": "channels_/$channelId/programming/index.tsx"
+      "filePath": "channels_/$channelId/programming/index.tsx",
+      "parent": "/channels/$channelId"
+    },
+    "/library/custom-shows/new/": {
+      "filePath": "library/custom-shows_/new/index.tsx",
+      "parent": "/library/custom-shows/new"
+    },
+    "/library/fillers/new/": {
+      "filePath": "library/fillers_/new/index.tsx",
+      "parent": "/library/fillers/new"
     }
   }
 }

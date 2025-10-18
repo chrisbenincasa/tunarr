@@ -18,7 +18,7 @@ import { ChannelSummaryQuickStats } from '../../components/channels/ChannelSumma
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
-import { Route } from '../../routes/channels/$channelId.tsx';
+import { Route } from '../../routes/channels_/$channelId/index.tsx';
 
 export const ChannelSummaryPage = () => {
   const { channelId } = Route.useParams();

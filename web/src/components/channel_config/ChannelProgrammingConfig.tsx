@@ -165,6 +165,19 @@ export function ChannelProgrammingConfig() {
     });
   };
 
+  // const ref = useRef<HTMLDivElement | null>(null);
+  // const [listHeight, setListHeight] = useState(600);
+  // const windowSize = useWindowSize();
+
+  // useEffect(() => {
+  //   console.log(ref.current);
+  //   const rect = ref.current?.getBoundingClientRect();
+  //   if (rect && windowSize.height) {
+  //     console.log(rect.top, window.screenY);
+  //     setListHeight(windowSize.height - (rect.top + window.scrollY) - 50);
+  //   }
+  // }, [windowSize.height]);
+
   const renderView = () => {
     switch (view) {
       case 'list':
@@ -176,6 +189,7 @@ export function ChannelProgrammingConfig() {
               height: 600,
               itemSize: smallViewport ? 70 : 35,
             }}
+            // listRef={ref}
           />
         );
       case 'day':
