@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.23.0-alpha.12](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.11...v0.23.0-alpha.12) (2025-10-18)
+
+
+### Features
+
+* add ability to randomly sort by whole show ([#1415](https://github.com/chrisbenincasa/tunarr/issues/1415)) ([3fc743a](https://github.com/chrisbenincasa/tunarr/commit/3fc743ab9188defb1ad29ea59689a31882d1f14a))
+
+
+### Bug Fixes
+
+* fix adding music items for non-synced libraries ([7a1f6f0](https://github.com/chrisbenincasa/tunarr/commit/7a1f6f08219ec9a3e5492d03048e288f9a10243a))
+* fix db associations with scanned audio libraries ([ea2edc5](https://github.com/chrisbenincasa/tunarr/commit/ea2edc5403769a45340050053e8548f02183e450))
+
 ## [0.23.0-alpha.11](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.10...v0.23.0-alpha.11) (2025-10-16)
 
 
