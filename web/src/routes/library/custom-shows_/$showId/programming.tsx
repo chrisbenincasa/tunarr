@@ -6,7 +6,7 @@ import { noop } from 'ts-essentials';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
 export const Route = createFileRoute(
-  '/library/custom-shows/$showId/programming',
+  '/library/custom-shows_/$showId/programming',
 )({
   loader: preloadCustomShowAndProgramming,
   component: CustomShowProgrammingSelectorPage,

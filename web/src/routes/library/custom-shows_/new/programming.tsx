@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { noop } from 'lodash-es';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
-export const Route = createFileRoute('/library/custom-shows/new/programming')({
+export const Route = createFileRoute('/library/custom-shows_/new/programming')({
   component: CustomShowProgrammingSelectorPage,
 });
 

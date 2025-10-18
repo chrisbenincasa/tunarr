@@ -10,7 +10,7 @@ const watchPageSearchSchema = z.object({
     .catch(true),
 });
 
-export const Route = createFileRoute('/channels/$channelId/watch')({
+export const Route = createFileRoute('/channels_/$channelId/watch')({
   validateSearch: (s) => watchPageSearchSchema.parse(s),
   loader: ({ params: { channelId }, context: { queryClient } }) =>
     queryClient.ensureQueryData(channelQuery(channelId)),

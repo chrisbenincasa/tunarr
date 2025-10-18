@@ -4,7 +4,7 @@ import useStore from '@/store';
 import { setCurrentFillerList } from '@/store/fillerListEditor/action';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/library/fillers/new/')({
+export const Route = createFileRoute('/library/fillers_/new/')({
   loader: () => {
     const unsavedData = {
       fillerList: {

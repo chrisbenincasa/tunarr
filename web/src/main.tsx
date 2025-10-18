@@ -1,7 +1,5 @@
-import { routeTree } from '@/routeTree.gen';
 import languages from '@cospired/i18n-iso-languages';
 import en from '@cospired/i18n-iso-languages/langs/en.json';
-import { createRouter } from '@tanstack/react-router';
 import { ColorSpace, LCH, OKLCH, sRGB } from 'colorjs.io/fn';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en-gb';
@@ -12,20 +10,6 @@ import ReactDOM from 'react-dom/client';
 import { Tunarr } from './Tunarr.tsx';
 import './helpers/dayjs.ts';
 import './index.css';
-import { queryClient } from './queryClient.ts';
-
-// Create a new router instance
-export const router = createRouter({
-  routeTree,
-  context: { queryClient },
-});
-
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router;
-  }
-}
 
 ColorSpace.register(OKLCH);
 ColorSpace.register(LCH);

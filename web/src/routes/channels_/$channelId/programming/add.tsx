@@ -17,7 +17,7 @@ const channelProgrammingSchema = z.object({
   searchRequest: z.base64().optional().catch(undefined),
 });
 
-export const Route = createFileRoute('/channels/$channelId/programming/add')({
+export const Route = createFileRoute('/channels_/$channelId/programming/add')({
   validateSearch: (search) => channelProgrammingSchema.parse(search),
   loader: (args: ChannelArgs) =>
     preloadChannelAndProgramming(args).then(() => {
