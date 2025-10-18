@@ -6,31 +6,25 @@ import {
   VaapiProfileEntrypoint,
   VaapiProfiles,
 } from '../../capabilities/VaapiHardwareCapabilities.ts';
-import {
-  PixelFormatRgba,
-  PixelFormatYuv420P,
-} from '../../format/PixelFormat.ts';
-import { AudioInputSource } from '../../input/AudioInputSource.ts';
+import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
 import { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
 import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
 import {
-  AudioStream,
   EmbeddedSubtitleStream,
   StillImageStream,
   SubtitleMethods,
   VideoStream,
 } from '../../MediaStream.ts';
-import { AudioState } from '../../state/AudioState.ts';
 import {
   DefaultPipelineOptions,
   FfmpegState,
 } from '../../state/FfmpegState.ts';
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
-import { VaapiPipelineBuilder } from './VaapiPipelineBuilder.ts';
+import { QsvPipelineBuilder } from './QsvPipelineBuilder.ts';
 
-describe('VaapiPipelineBuilder', () => {
+describe('QsvPipelineBuilder', () => {
   test('should work', () => {
     const capabilities = new VaapiHardwareCapabilities([]);
     const binaryCapabilities = new FfmpegCapabilities(
@@ -67,10 +61,11 @@ describe('VaapiPipelineBuilder', () => {
       },
     );
 
-    const builder = new VaapiPipelineBuilder(
+    const builder = new QsvPipelineBuilder(
       capabilities,
       binaryCapabilities,
       video,
+      null,
       null,
       watermark,
       new SubtitlesInputSource(
@@ -78,7 +73,6 @@ describe('VaapiPipelineBuilder', () => {
         [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
         SubtitleMethods.Burn,
       ),
-      null,
     );
 
     const state = FfmpegState.create({
@@ -151,10 +145,11 @@ describe('VaapiPipelineBuilder', () => {
       },
     );
 
-    const builder = new VaapiPipelineBuilder(
+    const builder = new QsvPipelineBuilder(
       capabilities,
       binaryCapabilities,
       video,
+      null,
       null,
       watermark,
       new SubtitlesInputSource(
@@ -162,7 +157,6 @@ describe('VaapiPipelineBuilder', () => {
         [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
         SubtitleMethods.Burn,
       ),
-      null,
     );
 
     const state = FfmpegState.create({
@@ -237,18 +231,13 @@ describe('VaapiPipelineBuilder', () => {
       },
     );
 
-    const builder = new VaapiPipelineBuilder(
+    const builder = new QsvPipelineBuilder(
       capabilities,
       binaryCapabilities,
       video,
       null,
-      watermark,
-      // new SubtitlesInputSource(
-      //   new FileStreamSource('/path/to/video.mkv'),
-      //   [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
-      //   SubtitleMethods.Burn,
-      // ),
       null,
+      watermark,
       null,
     );
 
@@ -324,10 +313,11 @@ describe('VaapiPipelineBuilder', () => {
       },
     );
 
-    const builder = new VaapiPipelineBuilder(
+    const builder = new QsvPipelineBuilder(
       capabilities,
       binaryCapabilities,
       video,
+      null,
       null,
       watermark,
       new SubtitlesInputSource(
@@ -335,83 +325,6 @@ describe('VaapiPipelineBuilder', () => {
         [new EmbeddedSubtitleStream('pgs', 5, SubtitleMethods.Burn)],
         SubtitleMethods.Burn,
       ),
-      null,
-    );
-
-    const state = FfmpegState.create({
-      version: {
-        versionString: 'n7.0.2-15-g0458a86656-20240904',
-        majorVersion: 7,
-        minorVersion: 0,
-        patchVersion: 2,
-        isUnknown: false,
-      },
-      // start: +dayjs.duration(0),
-    });
-
-    const out = builder.build(
-      state,
-      new FrameState({
-        isAnamorphic: false,
-        scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
-        paddedSize: FrameSize.FHD,
-        pixelFormat: new PixelFormatYuv420P(),
-        videoFormat: 'h264',
-      }),
-      { ...DefaultPipelineOptions, disableHardwareFilters: true },
-    );
-
-    console.log(out.getCommandArgs().join(' '));
-  });
-
-  test('basic audio-only stream', () => {
-    const capabilities = new VaapiHardwareCapabilities([
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.H264Main,
-        VaapiEntrypoint.Decode,
-      ),
-      new VaapiProfileEntrypoint(
-        VaapiProfiles.H264Main,
-        VaapiEntrypoint.Encode,
-      ),
-    ]);
-    const binaryCapabilities = new FfmpegCapabilities(
-      new Set(),
-      new Map(),
-      new Set(),
-    );
-
-    const video = VideoInputSource.withStream(
-      new FileStreamSource('/path/to/image.png'),
-      StillImageStream.create({
-        frameSize: FrameSize.withDimensions(800, 600),
-        index: 0,
-        pixelFormat: new PixelFormatRgba(),
-      }),
-    );
-
-    const audio = AudioInputSource.withStream(
-      new FileStreamSource('/path/to/song.flac'),
-      AudioStream.create({
-        channels: 2,
-        codec: 'flac',
-        index: 0,
-      }),
-      AudioState.create({
-        audioBitrate: 192,
-        audioBufferSize: 192 * 2,
-        audioChannels: 2,
-      }),
-    );
-
-    const builder = new VaapiPipelineBuilder(
-      capabilities,
-      binaryCapabilities,
-      video,
-      audio,
-      null,
-      null,
-      null,
     );
 
     const state = FfmpegState.create({

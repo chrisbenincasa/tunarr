@@ -12,6 +12,7 @@ import {
 } from '../db/derived_types/StreamLineup.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { KEYS } from '../types/inject.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 
 const channelCacheSchema = z.object({
   fillerPlayTimeCache: z.record(z.string(), z.number()).default({}),
@@ -75,7 +76,14 @@ export class ChannelCache implements IStreamLineupCache {
   constructor(
     @inject(PersistentChannelCache)
     private persistentChannelCache: PersistentChannelCache,
+    @inject(KEYS.Logger) private logger: Logger,
   ) {}
+
+  getCurrentLineupItem(): StreamLineupItem | undefined {
+    // TODO: Remove this entirely. Just return undefined for now since this is essentially
+    // useless.
+    return;
+  }
 
   private getKey(channelId: string, programId: string) {
     return `${channelId}|${programId}`;
@@ -127,7 +135,24 @@ export class ChannelCache implements IStreamLineupCache {
     t0: number,
     lineupItem: StreamLineupItem,
   ) {
-    await this.recordProgramPlayTime(channelId, lineupItem, t0);
+    try {
+      await this.recordProgramPlayTime(channelId, lineupItem, t0);
+      // await this.persistentChannelCache.setStreamPlayItem(channelId, {
+      //   timestamp: t0,
+      //   lineupItem: lineupItem,
+      // });
+    } catch (e) {
+      this.logger.warn(
+        e,
+        'Error while setting stream cache for lineup item: %O at %d',
+        lineupItem,
+        t0,
+      );
+    }
+  }
+
+  async clearPlayback() {
+    // return await this.persistentChannelCache.clearStreamPlayItem(channelId);
   }
 
   // Is this necessary??

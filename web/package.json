@@ -31,7 +31,7 @@
     "@tunarr/shared": "workspace:*",
     "@tunarr/types": "workspace:*",
     "@uidotdev/usehooks": "^2.4.1",
-    "axios": "^1.11.0",
+    "axios": ">=1.12.0",
     "bowser": "^2.11.0",
     "color": "^5.0.0",
     "colorjs.io": "^0.5.2",
@@ -62,7 +62,6 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.80.16",
-    "@hey-api/vite-plugin": "^0.2.0",
     "@tanstack/react-table": "8.19.3",
     "@tanstack/router-cli": "^1.35.4",
     "@tanstack/router-devtools": "^1.36.0",

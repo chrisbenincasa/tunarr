@@ -38,12 +38,12 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import dayjs from 'dayjs';
 import { every, head, inRange, isNull, some } from 'lodash-es';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
+import { ResetPtsFilter } from '../../filter/ResetPtsFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
 import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
@@ -96,11 +96,6 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
         this.context.videoStream.codec === VideoFormats.Hevc) &&
       this.context.videoStream.pixelFormat?.bitDepth === 10
     ) {
-      canDecode = false;
-    }
-
-    // Use software decode when seeking with QSV to prevent some sync issues.
-    if (canDecode && +(this.ffmpegState.start ?? dayjs.duration(0)) > 0) {
       canDecode = false;
     }
 
@@ -165,6 +160,11 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     if (this.decoder) {
       currentState = this.decoder.nextState(currentState);
     }
+
+    currentState = this.addFilterToVideoChain(
+      currentState,
+      new ResetPtsFilter(),
+    );
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);

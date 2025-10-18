@@ -113,7 +113,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     this.#processHandle.stderr.pipe(bufferedOut);
 
     if (this.#processKilled) {
-      this.#logger.trace('Sending SIGKILL to ffmpeg');
+      this.#logger.debug('Sending SIGKILL to ffmpeg');
       this.#processHandle.kill('SIGKILL');
       return;
     }
@@ -132,7 +132,10 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       const expected =
         code === 0 ||
         (this.#processKilled &&
-          (code === null || signal === 'SIGTERM' || signal === 'SIGKILL')) ||
+          (code === null ||
+            code === 255 ||
+            signal === 'SIGTERM' ||
+            signal === 'SIGKILL')) ||
         (this.#processKilled && isWindows() && code === 1);
 
       this.#logger.info(
@@ -177,7 +180,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
           );
         });
 
-        if (code === 255) {
+        if (code === 255 && !this.#processKilled) {
           if (this.#processHandle) {
             return;
           }

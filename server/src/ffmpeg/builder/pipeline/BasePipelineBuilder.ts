@@ -371,7 +371,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.pipelineSteps.push(NoAutoScaleOutputOption());
     }
 
-    this.setSceneDetect();
     this.setStreamSeek();
 
     if (this.ffmpegState.duration && +this.ffmpegState.duration > 0) {
@@ -410,6 +409,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (isVideoPipelineContext(this.context)) {
       this.buildVideoPipeline();
     }
+
+    this.setSceneDetect();
 
     if (isNull(this.audioInputSource)) {
       this.context.pipelineSteps.push(new CopyAudioEncoder());
@@ -707,7 +708,9 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         HardwareAccelerationMode.Videotoolbox
     ) {
       this.pipelineSteps.push(NoSceneDetectOutputOption(1_000_000_000));
-    } else {
+    } else if (
+      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
+    ) {
       this.pipelineSteps.push(NoSceneDetectOutputOption(0));
     }
   }

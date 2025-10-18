@@ -158,6 +158,47 @@
 * allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
 * **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
+## [0.22.9](https://github.com/chrisbenincasa/tunarr/compare/v0.22.8...v0.22.9) (2025-10-18)
+
+
+### Bug Fixes
+
+* **streaming:** potential fix for QSV audio sync issues ([f5a96ae](https://github.com/chrisbenincasa/tunarr/commit/f5a96aef831b7212d5331aa24abdad885cac27c8))
+
+## [0.22.8](https://github.com/chrisbenincasa/tunarr/compare/v0.22.7...v0.22.8) (2025-10-15)
+
+
+### Bug Fixes
+
+* do not let stream cache hard fail streams ([e5e5b15](https://github.com/chrisbenincasa/tunarr/commit/e5e5b1510660149ebd6404ba6bc87ad6b500403a))
+
+## [0.22.7](https://github.com/chrisbenincasa/tunarr/compare/v0.22.6...v0.22.7) (2025-10-15)
+
+
+### Bug Fixes
+
+* ensure program summaries are escaped for xml ([9f3cad5](https://github.com/chrisbenincasa/tunarr/commit/9f3cad52c959864a7c4863ea1167f2ebb852fb42))
+* handle some weird cases of expected exit in ffmpeg ([8106d34](https://github.com/chrisbenincasa/tunarr/commit/8106d3491affef35a95ca93e210a15d4de71f74f))
+* **streaming:** apply sc_threshold after hw accel is decided ([1037ca3](https://github.com/chrisbenincasa/tunarr/commit/1037ca30ed30a30c330d447815799546582ac12b))
+* **streaming:** fix audio only streams for vaapi ([c0691cc](https://github.com/chrisbenincasa/tunarr/commit/c0691ccb03dd8f5ef3fa7b4cf3c83a14d304d965)), closes [#1365](https://github.com/chrisbenincasa/tunarr/issues/1365)
+
+## [0.22.6](https://github.com/chrisbenincasa/tunarr/compare/v0.22.5...v0.22.6) (2025-10-08)
+
+
+### Bug Fixes
+
+* add subtitle and description to xmltv ([f056790](https://github.com/chrisbenincasa/tunarr/commit/f0567902d2bb89963c8040ea3712bec72384347b))
+* **streaming:** convert to proper pixel format before cuda upload + scale ([091e7bd](https://github.com/chrisbenincasa/tunarr/commit/091e7bd290bcc25114db6b789db9b86decebbd0d))
+* **streaming:** do not set sc_threshold to 0 for mpeg2video out ([949efda](https://github.com/chrisbenincasa/tunarr/commit/949efda0ff028a0888c3aa52e294e9ae11a6a49f))
+* **streaming:** properly pass disable hw decode/encode/filter to pipeline ([70b3757](https://github.com/chrisbenincasa/tunarr/commit/70b37577fd13c2a322a1cdac81e2639a6550f225))
+* **streaming:** use bitstream filter in CUDA pipeline to workaround green line ([ff61f62](https://github.com/chrisbenincasa/tunarr/commit/ff61f62286e49245bc86f21f2252feabd614bcf1)), closes [#1390](https://github.com/chrisbenincasa/tunarr/issues/1390)
+* **ui:** allow viewing stream details of custom / filler programs ([af87a17](https://github.com/chrisbenincasa/tunarr/commit/af87a17b43bdc4d567a1f130d784f0c25cea5f36))
+
+
+### UI Changes
+
+* add season/episode to Tunarr guide page ([eeb3f6d](https://github.com/chrisbenincasa/tunarr/commit/eeb3f6dcec9cc4bcc0c3179a2eabc991ce14b3c0)), closes [#1398](https://github.com/chrisbenincasa/tunarr/issues/1398)
+
 ## [0.22.5](https://github.com/chrisbenincasa/tunarr/compare/v0.22.4...v0.22.5) (2025-09-23)
 
 

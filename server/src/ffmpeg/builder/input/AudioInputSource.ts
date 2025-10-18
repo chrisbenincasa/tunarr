@@ -20,6 +20,20 @@ export class AudioInputSource<
   ) {
     super(source, continuity);
   }
+
+  static withStream<StreamType extends AudioStream = AudioStream>(
+    source: StreamSource,
+    audioStream: StreamType,
+    desiredState: AudioState,
+    continuity: InputSourceContinuity = 'discrete',
+  ): AudioInputSource<StreamType> {
+    return new AudioInputSource(
+      source,
+      [audioStream],
+      desiredState,
+      continuity,
+    );
+  }
 }
 
 export class NullAudioInputSource extends AudioInputSource {

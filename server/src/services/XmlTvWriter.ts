@@ -9,13 +9,13 @@ import {
   type XmltvChannel,
   type XmltvProgramme,
 } from '@iptv/xmltv';
-import { TvGuideProgram, isContentProgram } from '@tunarr/types';
+import { isContentProgram, TvGuideProgram } from '@tunarr/types';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 const lock = new Mutex();
 
@@ -121,6 +121,17 @@ export class XmlTvWriter {
       .with({ type: 'redirect' }, (c) => `Redirect to Channel ${c.channel}`)
       .exhaustive();
 
+    const subTitle = match(program)
+      .with(
+        { type: 'content', subtype: P.union('track', 'episode') },
+        (p) => p.title,
+      )
+      .with(
+        { type: 'custom', program: { subtype: P.union('track', 'episode') } },
+        (p) => p.program?.title,
+      )
+      .otherwise(() => undefined);
+
     const partial: XmltvProgramme = {
       start: new Date(program.start),
       stop: new Date(program.stop),
@@ -128,6 +139,19 @@ export class XmlTvWriter {
       previouslyShown: {},
       channel: xmlChannelId,
     };
+
+    if (subTitle) {
+      partial.subTitle = [{ _value: escape(subTitle) }];
+    }
+
+    if (program.type === 'content' && isNonEmptyString(program.summary)) {
+      partial.desc = [{ _value: escape(program.summary) }];
+    } else if (
+      program.type === 'custom' &&
+      isNonEmptyString(program.program?.summary)
+    ) {
+      partial.desc = [{ _value: escape(program.program.summary) }];
+    }
 
     if (isContentProgram(program)) {
       // TODO: Use grouping mappings here.
