@@ -132,7 +132,7 @@ export const SlotFillerDialogPanel = () => {
               <Controller
                 control={control}
                 name={`filler.${idx}.types`}
-                rules={{ validate: { nonempty: (v) => v.length > 0 } }}
+                rules={{ validate: { nonempty: (v) => (v ?? []).length > 0 } }}
                 render={({ field }) => (
                   <ToggleButtonGroup
                     key={fillerField.id}

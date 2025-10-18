@@ -252,7 +252,7 @@ export default function ChannelTranscodingConfig() {
                         watermark?.width && !watermark?.fixedSize
                           ? `${watermark.width}%`
                           : null,
-                      opacity: opacity / 100,
+                      opacity: opacity ? opacity / 100 : 1.0,
                       [isBottom ? 'bottom' : 'top']:
                         `${watermark?.verticalMargin}%`,
                       [isRight ? 'right' : 'left']:
@@ -452,7 +452,7 @@ export default function ChannelTranscodingConfig() {
                     }}
                   />
                 </Grid>
-                {fadePeriod > 0 && (
+                {(fadePeriod ?? 0) > 0 && (
                   <Grid size={{ xs: 12, lg: 6 }}>
                     <FormControl fullWidth>
                       <FormControlLabel
