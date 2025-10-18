@@ -11,12 +11,14 @@ import { format } from 'node:util';
 import { rimraf } from 'rimraf';
 import * as tar from 'tar';
 import tmp from 'tmp-promise';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import serverPackage from '../package.json' with { type: 'json' };
 import { fileExists } from '../src/util/fsUtil.ts';
 import { grabMeilisearch } from './download-meilisearch.ts';
+
+const NODE_VERSION = '22.20.0';
 
 const betterSqlite3ReleaseFmt =
   'https://github.com/WiseLibs/better-sqlite3/releases/download/v%s/better-sqlite3-v%s-node-v%s-%s-%s.tar.gz';
@@ -121,7 +123,7 @@ for (const arch of args.target) {
       const betterSqliteDlStream = await retry(() => {
         const url = getBetterSqlite3DownloadUrl(
           serverPackage.dependencies['better-sqlite3'],
-          nodeAbi.getAbi('22.17.1', 'node'),
+          nodeAbi.getAbi(NODE_VERSION, 'node'),
           osString,
           archString,
         );
@@ -135,7 +137,7 @@ for (const arch of args.target) {
         .returnType<NodeJS.Platform>()
         .with('win', () => 'win32')
         .with('macos', () => 'darwin')
-        .with('linux', () => 'linux')
+        .with(P.union('linux', 'alpine'), () => 'linux')
         .otherwise(() => {
           throw new Error(`Unrecognized osString ${osString}`);
         });
@@ -202,7 +204,7 @@ for (const arch of args.target) {
         '-c',
         'pkg.config.json',
         '-t',
-        `node22.17.1-${arch}`,
+        `node${NODE_VERSION}-${arch}`,
         `${dir.path}/dist/bundle.cjs`,
         // Look into whether we want this sometimes...
         '--no-bytecode',

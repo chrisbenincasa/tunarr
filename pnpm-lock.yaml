@@ -335,7 +335,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7))
       '@yao-pkg/pkg':
-        specifier: ^6.6.0
+        specifier: ^6.9.0
         version: 6.9.0
       cross-env:
         specifier: ^7.0.3

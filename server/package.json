@@ -104,7 +104,7 @@
     "@types/uuid": "^9.0.8",
     "@types/yargs": "^17.0.33",
     "@vitest/coverage-v8": "^3.2.4",
-    "@yao-pkg/pkg": "^6.6.0",
+    "@yao-pkg/pkg": "^6.9.0",
     "cross-env": "^7.0.3",
     "del-cli": "^3.0.1",
     "dotenv-cli": "^7.4.4",
