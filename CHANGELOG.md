@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.14](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.13...v0.23.0-alpha.14) (2025-10-18)
+
+
+### Bug Fixes
+
+* fix binary release and bump node to 22.20.0 ([6475f85](https://github.com/chrisbenincasa/tunarr/commit/6475f8594d696efc0a1564bd4a14d043db3d999e))
+
 ## [0.23.0-alpha.13](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.12...v0.23.0-alpha.13) (2025-10-18)
 
 
