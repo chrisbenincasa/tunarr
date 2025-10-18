@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.9](https://github.com/chrisbenincasa/tunarr/compare/v0.22.8...v0.22.9) (2025-10-18)
+
+
+### Bug Fixes
+
+* **streaming:** potential fix for QSV audio sync issues ([f5a96ae](https://github.com/chrisbenincasa/tunarr/commit/f5a96aef831b7212d5331aa24abdad885cac27c8))
+
 ## [0.22.8](https://github.com/chrisbenincasa/tunarr/compare/v0.22.7...v0.22.8) (2025-10-15)
 
 
