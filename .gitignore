@@ -37,3 +37,5 @@ DerivedData/
 
 # This is generated at runtime for dev builds.
 tunarr-openapi.json
+
+web/.tanstack
