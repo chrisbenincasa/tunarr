@@ -163,6 +163,7 @@ export class MediaSourceLibraryRefresher {
       case 'show':
         return 'shows';
       case 'artist':
+      case 'track':
         return 'tracks';
       case 'photo':
         return;
