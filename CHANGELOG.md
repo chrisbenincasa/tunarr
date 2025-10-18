@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.13](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.12...v0.23.0-alpha.13) (2025-10-18)
+
+
+### Bug Fixes
+
+* fix build ([6e175df](https://github.com/chrisbenincasa/tunarr/commit/6e175df88973ca2940d1cfb7a340fcc6fb9e036d))
+
 ## [0.23.0-alpha.12](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.11...v0.23.0-alpha.12) (2025-10-18)
 
 
