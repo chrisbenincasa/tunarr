@@ -343,6 +343,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           }),
           // TODO: Change this
           400: z.string(),
+          500: z.string(),
         },
       },
     },

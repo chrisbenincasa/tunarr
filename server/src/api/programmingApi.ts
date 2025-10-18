@@ -184,6 +184,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: ProgramChildrenResult,
+          400: z.void(),
           404: z.void(),
         },
       },
@@ -475,6 +476,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           200: z.object({ url: z.string() }),
           302: z.void(),
           404: z.void(),
+          405: z.void(),
         },
       },
     },

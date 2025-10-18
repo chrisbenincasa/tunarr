@@ -247,6 +247,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: z.object({ id: z.string() }),
         response: {
           200: ChannelSchema,
+          404: z.void(),
+          500: z.void(),
         },
       },
     },

@@ -111,6 +111,7 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: ChannelSessionsResponseSchema,
+          201: z.void(),
           404: z.string(),
         },
       },

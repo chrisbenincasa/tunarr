@@ -142,6 +142,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
             name: z.string(),
             fileUrl: z.string(),
           }),
+          400: z.void(),
         },
       },
     },
