@@ -39,6 +39,7 @@ export const ShowSlotProgrammingForm = ({ programOptions }: Props) => {
       <Controller
         control={control}
         name="showId"
+        rules={{ required: true }}
         render={({ field }) => (
           <Autocomplete<ShowProgramOption & { label: string }>
             value={

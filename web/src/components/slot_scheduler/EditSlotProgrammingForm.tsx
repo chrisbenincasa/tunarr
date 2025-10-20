@@ -13,10 +13,11 @@ import {
 } from '@mui/material';
 import type { BaseSlot } from '@tunarr/types/api';
 import { filter, find, first, map, uniqBy } from 'lodash-es';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.tsx';
 import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
+import { ShowSearchSlotProgrammingForm } from './ShowSearchSlotProgrammingForm.tsx';
 import { ShowSlotProgrammingForm } from './ShowSlotProgrammingForm.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
@@ -37,13 +38,33 @@ export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
       'type',
     );
   }, [programOptions]);
+  const [typeSelectValue, setTypeSelectValue] =
+    useState<ProgramOption['type']>(type);
+  // console.log(availableTypes, programOptions);
 
-  const handleTypeChange = (value: BaseSlot['type']) => {
-    if (value === type) {
+  const handleTypeChange = (value: ProgramOption['type']) => {
+    if (value === typeSelectValue) {
       return;
     }
 
-    reset((prev) => ({ ...prev, ...newSlotForType(value) }));
+    setTypeSelectValue(value);
+
+    let slot: SlotType;
+    switch (value) {
+      case 'movie':
+      case 'flex':
+      case 'custom-show':
+      case 'redirect':
+      case 'show':
+      case 'filler':
+        slot = newSlotForType(value);
+        break;
+      case 'show-search':
+        slot = newSlotForType('show');
+        break;
+    }
+
+    reset((prev) => ({ ...prev, ...slot }));
   };
 
   const redirectShowAutoCompleteOpts = useMemo(
@@ -67,41 +88,43 @@ export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
     <>
       <FormControl fullWidth>
         <InputLabel>Type</InputLabel>
-        <Controller
+        {/* <Controller
           control={control}
           name="type"
           render={({ field }) => (
-            <Select
-              label="Type"
-              value={field.value}
-              onChange={(e) =>
-                handleTypeChange(e.target.value as ProgramOption['type'])
-              }
-            >
-              {map(
-                filter(ProgramOptionTypes, ({ value }) =>
-                  availableTypes.includes(value),
-                ),
-                ({ value, description }) => (
-                  <MenuItem key={value} value={value}>
-                    {description}
-                  </MenuItem>
-                ),
-              )}
-            </Select>
+            
           )}
-        />
+        /> */}
+        <Select
+          label="Type"
+          value={typeSelectValue}
+          onChange={(e) =>
+            handleTypeChange(e.target.value as ProgramOption['type'])
+          }
+        >
+          {map(
+            filter(ProgramOptionTypes, ({ value }) =>
+              availableTypes.includes(value),
+            ),
+            ({ value, description }) => (
+              <MenuItem key={value} value={value}>
+                {description}
+              </MenuItem>
+            ),
+          )}
+        </Select>
       </FormControl>
-      {type === 'custom-show' && (
+      {typeSelectValue === 'custom-show' && (
         <CustomShowSlotProgrammingForm programOptions={programOptions} />
       )}
-      {type === 'filler' && (
+      {typeSelectValue === 'filler' && (
         <FillerListSlotProgrammingForm programOptions={programOptions} />
       )}
-      {type === 'show' && (
+      {typeSelectValue === 'show' && (
         <ShowSlotProgrammingForm programOptions={programOptions} />
       )}
-      {type === 'redirect' && (
+      {typeSelectValue === 'show-search' && <ShowSearchSlotProgrammingForm />}
+      {typeSelectValue === 'redirect' && (
         <Controller
           control={control}
           name="channelId"
@@ -124,7 +147,7 @@ export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
           )}
         />
       )}
-      {type === 'movie' && <SlotOrderFormControl />}
+      {typeSelectValue === 'movie' && <SlotOrderFormControl />}
     </>
   );
 };

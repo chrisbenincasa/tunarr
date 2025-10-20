@@ -33,6 +33,10 @@ export type ShowProgramOption = DropdownOption<string> & {
   showId: string;
 };
 
+export type ShowSearchProgramOption = DropdownOption<string> & {
+  type: 'show-search';
+};
+
 export type FillerProgramOption = DropdownOption<string> & {
   type: 'filler';
   fillerListId: string;
@@ -46,7 +50,8 @@ export type ProgramOption =
   | CustomShowProgramOption
   | RedirectProgramOption
   | ShowProgramOption
-  | FillerProgramOption;
+  | FillerProgramOption
+  | ShowSearchProgramOption;
 
 export type ProgramOptionType = ProgramOption['type'];
 
@@ -220,6 +225,10 @@ export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
   {
     value: 'filler',
     description: 'Filler List',
+  },
+  {
+    value: 'show-search',
+    description: 'Shows (synced)',
   },
 ];
 

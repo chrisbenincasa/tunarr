@@ -137,7 +137,7 @@ export const EditTimeSlotDialogContent = ({
         }))
         .with('show', () => ({
           type: 'show',
-          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
+          showId: programOptions.find((opt) => opt.type === 'show')?.showId,
           order: 'next',
           direction: 'asc',
         }))
