@@ -19,3 +19,6 @@ server/temp
 **/.tsup
 
 *.html
+
+web/src/generated/*
+web/src/routeTree.gen.ts

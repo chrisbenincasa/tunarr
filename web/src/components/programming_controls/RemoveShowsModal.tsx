@@ -1,11 +1,15 @@
 import { betterHumanize } from '@/helpers/dayjs';
 import { isNonEmptyString } from '@/helpers/util';
 import {
+  Autocomplete,
+  Box,
   Checkbox,
+  Chip,
   DialogContentText,
   List,
   ListItem,
   ListItemText,
+  TextField,
 } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -21,12 +25,12 @@ import {
   isEmpty,
   map,
   reduce,
-  reject,
   some,
   uniqBy,
   values,
 } from 'lodash-es';
 import pluralize from 'pluralize';
+import type { HTMLAttributes } from 'react';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useCounter } from 'usehooks-ts';
@@ -40,11 +44,18 @@ type RemoveShowsModalProps = {
   onClose: () => void;
 };
 
+interface FilmOptionType {
+  id: string;
+  title: string;
+  firstLetter?: string;
+}
+
 export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
   const { count, increment, decrement } = useCounter(0);
-
   const removeProgramming = useRemoveProgramming();
-
+  const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>(
+    {},
+  );
   const programs = useStore(materializedProgramListSelector);
   const hasMovies = useMemo(() => {
     return some(programs, (p) => p.type === 'content' && p.subtype === 'movie');
@@ -78,6 +89,9 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
       {} as Record<string, { totalPrograms: number; totalDuration: number }>,
     );
   }, [programs]);
+
+  // Get the total number of movies from the memoized object
+  const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0;
 
   const showList = useMemo(() => {
     return map(
@@ -123,14 +137,44 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
     );
   }, [programs]);
 
-  const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>(
-    {},
+  const mapListToGroupedOptions = (
+    list: Array<{ id: string; title: string }>,
+  ) => {
+    return list.map((option) => {
+      // Get the first letter, use a placeholder if title is empty.
+      const firstLetter = (option.title?.[0] ?? '-').toUpperCase();
+
+      return {
+        // Group numbers/digits under '0-9', otherwise use the first letter.
+        firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter,
+        ...option,
+      };
+    });
+  };
+
+  const showOptions = useMemo(
+    () => mapListToGroupedOptions(showList),
+    [showList],
+  );
+
+  const artistOptions = useMemo(
+    () => mapListToGroupedOptions(artistList),
+    [artistList],
   );
 
   const isEmptyRemoveRequest = useMemo(() => {
     return (
-      isEmpty(removeRequest) ||
-      every(values(removeRequest), (value) => isEmpty(value) || value === false)
+      isEmpty(removeRequest) ??
+      every(values(removeRequest), (value) => {
+        // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false).
+        // We do this because lodash treats booleans as empty regardless of value
+        if (typeof value === 'boolean') {
+          return value === false;
+        }
+
+        // Otherwise, check if the value is empty.
+        return isEmpty(value);
+      })
     );
   }, [removeRequest]);
 
@@ -139,134 +183,235 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
     onClose();
   };
 
-  const getSecondaryText = (id: string) => {
+  const getProgramCounts = (id: string, type?: string) => {
     const details = numAndDurationById[id];
     if (!details) {
       return null;
     }
 
     return `${details.totalPrograms} ${pluralize(
-      'program',
+      type ?? 'program',
       details.totalPrograms,
     )}, ${betterHumanize(dayjs.duration(details.totalDuration), {
       style: 'short',
     })}`;
   };
 
-  return (
-    <Dialog open={open}>
-      <DialogTitle>Remove Programming</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Pick specific programming to remove from the channel.
-        </DialogContentText>
-        <List dense>
-          {hasMovies && (
-            <ListItem
-              secondaryAction={
-                <Checkbox
-                  edge="end"
-                  onChange={(e) => {
-                    setRemoveRequest((prev) => ({
-                      ...prev,
-                      movies: !prev.movies,
-                    }));
-                    if (e.target.checked) {
-                      increment();
-                    } else {
-                      decrement();
-                    }
-                  }}
-                  checked={!!removeRequest.movies}
-                  inputProps={{ 'aria-labelledby': 'Select Show' }}
-                />
-              }
-            >
-              <ListItemText
-                primary={'Movies'}
-                secondary={getSecondaryText('movies')}
-              />
-            </ListItem>
-          )}
-          {map(showList, ({ title, id }) => {
-            return (
-              <ListItem
-                key={id}
-                disablePadding
-                secondaryAction={
-                  <Checkbox
-                    edge="end"
-                    onChange={(e) => {
-                      setRemoveRequest((prev) => ({
-                        ...prev,
-                        showIds: e.target.checked
-                          ? [...(prev.showIds ?? []), id]
-                          : reject(prev.showIds, (i) => i === id),
-                      }));
-                      if (e.target.checked) {
-                        increment();
-                      } else {
-                        decrement();
-                      }
-                    }}
-                    checked={includes(removeRequest.showIds, id)}
-                    inputProps={{ 'aria-labelledby': 'Select Show' }}
-                  />
-                }
-              >
-                <ListItemText
-                  primary={title}
-                  secondary={getSecondaryText(id)}
-                />
-              </ListItem>
-            );
-          })}
+  const getArtistIds = (options: FilmOptionType[]) => map(options, 'id');
 
-          {map(artistList, ({ title, id }) => {
-            return (
-              <ListItem
-                key={id}
-                disablePadding
-                secondaryAction={
-                  <Checkbox
-                    edge="end"
-                    onChange={(e) => {
-                      setRemoveRequest((prev) => ({
-                        ...prev,
-                        artistIds: e.target.checked
-                          ? [...(prev.artistIds ?? []), id]
-                          : reject(prev.artistIds, (i) => i === id),
-                      }));
-                      if (e.target.checked) {
-                        increment();
-                      } else {
-                        decrement();
-                      }
+  return (
+    <>
+      <Dialog open={open} scroll={'paper'}>
+        <DialogTitle>Remove Programming</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Pick specific programming to remove from the channel.
+          </DialogContentText>
+
+          <Autocomplete
+            options={showOptions.sort(
+              (a, b) => -b.firstLetter.localeCompare(a.firstLetter),
+            )}
+            groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'}
+            getOptionLabel={(option: FilmOptionType) => option.title}
+            openOnFocus
+            sx={{ my: 2, flex: 1 }}
+            autoComplete
+            includeInputInList
+            multiple={true}
+            getOptionDisabled={(option) => {
+              const selectedIds = removeRequest.showIds ?? [];
+              return includes(selectedIds, option.id);
+            }}
+            onChange={(_, newOptions) => {
+              // Extract the IDs from the selected options
+              const newShowIds = map(newOptions, 'id');
+
+              setRemoveRequest((prev) => ({
+                ...prev,
+                showIds: newShowIds,
+              }));
+
+              // Update the program counter based on the number of selected shows
+              const countDifference =
+                newShowIds.length - (removeRequest.showIds?.length ?? 0);
+              if (countDifference > 0) {
+                for (let i = 0; i < countDifference; i++) increment();
+              } else if (countDifference < 0) {
+                for (let i = 0; i < Math.abs(countDifference); i++) decrement();
+              }
+            }}
+            value={
+              removeRequest.showIds
+                ? showList.filter((show) =>
+                    (removeRequest.showIds ?? []).includes(show.id),
+                  )
+                : []
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Select Shows to Remove" />
+            )}
+            renderOption={(
+              props: HTMLAttributes<HTMLLIElement>,
+              option: FilmOptionType,
+            ) => {
+              const { ...optionProps } = props;
+              return (
+                <Box
+                  key={option.id}
+                  component="li"
+                  sx={{
+                    width: '100%',
+                    flexDirection: ['column', 'row'],
+                  }}
+                  {...optionProps}
+                >
+                  <div
+                    style={{
+                      textAlign: 'left',
+                      width: '100%',
                     }}
-                    checked={includes(removeRequest.artistIds, id)}
-                    inputProps={{ 'aria-labelledby': 'Select Show' }}
+                  >
+                    {option.title}
+                  </div>
+                  <Chip
+                    label={getProgramCounts(option.id, 'episode')}
+                    size="small"
+                    sx={{ width: '100%' }}
                   />
+                </Box>
+              );
+            }}
+          />
+
+          {artistList.length > 0 && (
+            <Autocomplete
+              options={artistOptions.sort(
+                (a, b) => -b.firstLetter.localeCompare(a.firstLetter),
+              )}
+              groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'}
+              getOptionLabel={(option: FilmOptionType) => option.title}
+              openOnFocus
+              sx={{ my: 2, flex: 1 }}
+              autoComplete
+              includeInputInList
+              multiple={true}
+              getOptionDisabled={(option) => {
+                const selectedIds = removeRequest.artistIds ?? [];
+                return includes(selectedIds, option.id);
+              }}
+              value={
+                removeRequest.artistIds
+                  ? artistList.filter((artist) =>
+                      (removeRequest.artistIds ?? []).includes(artist.id),
+                    )
+                  : []
+              }
+              onChange={(_, newOptions) => {
+                const newArtistIds = getArtistIds(newOptions);
+                const previousArtistIds = removeRequest.artistIds ?? [];
+
+                setRemoveRequest((prev) => ({
+                  ...prev,
+                  artistIds: newArtistIds,
+                }));
+
+                // Update the program counter based on the number of selected shows
+                const countDifference =
+                  newArtistIds.length - previousArtistIds.length;
+
+                if (countDifference > 0) {
+                  for (let i = 0; i < countDifference; i++) increment();
+                } else if (countDifference < 0) {
+                  for (let i = 0; i < Math.abs(countDifference); i++)
+                    decrement();
                 }
-              >
-                <ListItemText
-                  primary={title}
-                  secondary={getSecondaryText(id)}
-                />
-              </ListItem>
-            );
-          })}
-        </List>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
-        <Button
-          variant="contained"
-          onClick={() => removeShowsProgramming()}
-          disabled={isEmptyRemoveRequest}
-        >
-          {`Remove ${count} ${pluralize('program', count)}`}
-        </Button>
-      </DialogActions>
-    </Dialog>
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Select Artists to Remove" />
+              )}
+              renderOption={(
+                props: HTMLAttributes<HTMLLIElement>,
+                option: FilmOptionType,
+              ) => {
+                const { ...optionProps } = props;
+                return (
+                  <Box
+                    key={option.id}
+                    component="li"
+                    sx={{
+                      width: '100%',
+                      flexDirection: ['column', 'row'],
+                    }}
+                    {...optionProps}
+                  >
+                    <div
+                      style={{
+                        textAlign: 'left',
+                        width: '100%',
+                      }}
+                    >
+                      {option.title}
+                    </div>
+                    <Chip
+                      label={getProgramCounts(option.id, 'track')}
+                      size="small"
+                      sx={{ width: '100%' }}
+                    />
+                  </Box>
+                );
+              }}
+            />
+          )}
+
+          <Box key="dynamic-list-container">
+            <List dense>
+              {hasMovies && (
+                <ListItem
+                  secondaryAction={
+                    <Checkbox
+                      edge="end"
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+
+                        setRemoveRequest((prev) => {
+                          const newState = {
+                            ...prev,
+                            movies: isChecked,
+                          };
+                          return newState;
+                        });
+
+                        const countDelta = isChecked ? movieCount : -movieCount;
+                        for (let i = 0; i < Math.abs(countDelta); i++) {
+                          if (countDelta > 0) increment();
+                          else decrement();
+                        }
+                      }}
+                      checked={!!removeRequest.movies}
+                    />
+                  }
+                >
+                  <ListItemText
+                    primary={`Remove All ${movieCount} ${pluralize('Movie', movieCount)}`}
+                    secondary={getProgramCounts('movies')}
+                  />
+                </ListItem>
+              )}
+            </List>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose()}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={() => removeShowsProgramming()}
+            disabled={isEmptyRemoveRequest}
+          >
+            {`Remove ${count} ${pluralize('program', count)}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
