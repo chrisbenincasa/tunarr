@@ -10,7 +10,7 @@ const editChannelParamsSchema = z.object({
   tab: z.enum(['flex', 'epg', 'ffmpeg']).optional().catch(undefined),
 });
 
-export const Route = createFileRoute('/channels/$channelId/edit/')({
+export const Route = createFileRoute('/channels_/$channelId/edit/')({
   validateSearch: (search) => editChannelParamsSchema.parse(search),
   loader: async ({ params, context }) => {
     const channel = await context.queryClient.ensureQueryData(
