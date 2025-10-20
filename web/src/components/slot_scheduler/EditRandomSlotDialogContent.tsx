@@ -3,7 +3,6 @@ import { betterHumanize } from '@/helpers/dayjs.ts';
 import type {
   CustomShowProgramOption,
   FillerProgramOption,
-  ProgramOption,
 } from '@/helpers/slotSchedulerUtil';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
@@ -29,16 +28,18 @@ import React, { useCallback, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
+import type { SlotViewModel } from '../../model/SlotModels.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
 
 type EditRandomSlotDialogContentProps = {
-  slot: RandomSlot;
+  slot: SlotViewModel;
   index: number;
-  programOptions: ProgramOption[];
-  onClose: () => void;
+  onSave: () => void;
+  onCancel: () => void;
 };
 
 // Just the fields required for content
@@ -50,25 +51,36 @@ type PartialRandomSlot = StrictOmit<
 export const EditRandomSlotDialogContent = ({
   slot,
   index,
-  programOptions,
-  onClose,
+  onSave,
+  onCancel,
 }: EditRandomSlotDialogContentProps) => {
   const randomSlotForm = useRandomSlotFormContext();
+  const {
+    formState: { isDirty: slotWeightDirty, isValid: slotWeightValid },
+  } = randomSlotForm;
+  const programOptions = useSlotProgramOptionsContext();
   const { slotArray } = randomSlotForm;
-  const [currentSlots, distribution] = randomSlotForm.watch([
+  const [currentSlots, distribution, lockWeights] = randomSlotForm.watch([
     'slots',
     'randomDistribution',
+    'lockWeights',
   ]);
 
-  const formMethods = useForm<RandomSlot>({
+  const formMethods = useForm<SlotViewModel>({
     defaultValues: slot,
   });
-  const { control, getValues, setValue, watch } = formMethods;
+
+  const {
+    control,
+    getValues,
+    setValue,
+    watch,
+    formState: { isDirty, isValid },
+  } = formMethods;
   const [durationSpec, programType] = watch(['durationSpec', 'type']);
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
 
-  // const [programming, slotDuration] = watch([`programming`, 'durationMs']);
   const [weightValue, setWeightValue] = useState(getValues('weight'));
 
   const handleWeightChange = (_: Event, newValue: number | number[]) => {
@@ -79,24 +91,53 @@ export const EditRandomSlotDialogContent = ({
 
   const setFormWeightValue = (
     _: React.SyntheticEvent | Event,
-    newValue: number | number[],
+    newValue: number,
   ) => {
-    const newWeights = adjustSlotWeights(index, newValue as number, 1);
+    if (!lockWeights) {
+      setValue('weight', newValue, { shouldDirty: true, shouldTouch: true });
+      randomSlotForm.setValue(
+        'slots',
+        currentSlots.map((slot, slotIdx) =>
+          slotIdx === index ? { ...slot, weight: newValue } : slot,
+        ),
+        {
+          shouldDirty: true,
+          shouldTouch: true,
+        },
+      );
+      return;
+    }
+
+    const newWeights = adjustSlotWeights(
+      currentSlots.map((slot) => slot.weight),
+      index,
+      newValue,
+      1,
+    );
+
     if (newWeights) {
-      setValue('weight', newWeights[index]);
+      setValue('weight', newWeights[index], {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+
       randomSlotForm.setValue(
         'slots',
         map(currentSlots, (slot, idx) => ({
           ...slot,
           weight: newWeights[idx],
         })),
+        {
+          shouldDirty: true,
+          shouldTouch: true,
+        },
       );
     }
   };
 
   const commit = () => {
     slotArray.update(index, getValues());
-    onClose();
+    onSave();
   };
 
   const updateSlotTime = useCallback(
@@ -300,10 +341,7 @@ export const EditRandomSlotDialogContent = ({
                 )}
               </Stack>
               <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm
-                  programOptions={programOptions}
-                  newSlotForType={newSlotForType}
-                />
+                <EditSlotProgrammingForm newSlotForType={newSlotForType} />
               </FormProvider>
               {distribution === 'weighted' && (
                 <Stack direction="row" spacing={2} alignItems="center">
@@ -329,7 +367,7 @@ export const EditRandomSlotDialogContent = ({
                   />
                   <TextField
                     type="number"
-                    label="Weight %"
+                    label={lockWeights ? 'Weight %' : 'Frequency'}
                     value={weightValue}
                     disabled
                   />
@@ -345,8 +383,14 @@ export const EditRandomSlotDialogContent = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
-        <Button onClick={() => commit()} variant="contained">
+        <Button onClick={() => onCancel()}>Cancel</Button>
+        <Button
+          disabled={
+            !isDirty || !isValid || !slotWeightDirty || !slotWeightValid
+          }
+          onClick={() => commit()}
+          variant="contained"
+        >
           Save
         </Button>
       </DialogActions>

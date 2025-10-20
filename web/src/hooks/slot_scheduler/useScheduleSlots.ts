@@ -1,3 +1,4 @@
+import type { RandomSlotForm } from '@/model/SlotModels.ts';
 import { useMutation } from '@tanstack/react-query';
 import type { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -10,8 +11,7 @@ import {
   postApiChannelsByChannelIdScheduleTimeSlots,
 } from '../../generated/sdk.gen.ts';
 import { zipWithIndex } from '../../helpers/util.ts';
-import type { RandomSlotForm } from '../../pages/channels/RandomSlotEditorPage.tsx';
-import type { TimeSlotForm } from '../../pages/channels/TimeSlotEditorPage.tsx';
+import type { TimeSlotForm } from '../../model/TimeSlotModels.ts';
 import {
   setCurrentLineup,
   updateCurrentChannel,

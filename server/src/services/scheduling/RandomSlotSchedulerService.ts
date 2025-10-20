@@ -79,16 +79,19 @@ export class SlotSchedulerService {
       programs = request.programs;
     }
 
-    const [customShowPrograms, fillerPrograms] = await Promise.all([
-      this.slotSchedulerHelper.materializeCustomShowPrograms(
-        request.schedule.slots,
-      ),
-      this.slotSchedulerHelper.materializeFillerLists(request.schedule.slots),
-    ]);
+    const [customShowPrograms, fillerPrograms, showPrograms] =
+      await Promise.all([
+        this.slotSchedulerHelper.materializeCustomShowPrograms(
+          request.schedule.slots,
+        ),
+        this.slotSchedulerHelper.materializeFillerLists(request.schedule.slots),
+        this.slotSchedulerHelper.materializeShows(request.schedule.slots),
+      ]);
 
     programs = reject(programs, (p) => p.type === 'flex')
       .concat(customShowPrograms)
-      .concat(fillerPrograms);
+      .concat(fillerPrograms)
+      .concat(showPrograms);
 
     return new RandomSlotScheduler(request.schedule).generateSchedule(
       programs,

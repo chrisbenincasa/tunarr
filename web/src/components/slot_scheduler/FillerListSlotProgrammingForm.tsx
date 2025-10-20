@@ -1,31 +1,23 @@
 import { Autocomplete, TextField } from '@mui/material';
-import type { BaseSlot } from '@tunarr/types/api';
 import { find, first } from 'lodash-es';
 import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import type {
-  FillerProgramOption,
-  ProgramOption,
-} from '../../helpers/slotSchedulerUtil.ts';
+import type { FillerProgramOption } from '../../helpers/slotSchedulerUtil.ts';
 import { pluralizeWithCount } from '../../helpers/util.ts';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
+import type { CommonFillerSlotViewModel } from '../../model/CommonSlotModels.ts';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
-type Props = {
-  programOptions: ProgramOption[];
-};
-
-export const FillerListSlotProgrammingForm = ({ programOptions }: Props) => {
-  const { watch, control } = useFormContext<BaseSlot>();
-  const type = watch('type');
+export const FillerListSlotProgrammingForm = () => {
+  const programOptions = useSlotProgramOptionsContext();
+  const { control } = useFormContext<CommonFillerSlotViewModel>();
 
   const fillerAutoCompleteOpts = useMemo(
     () =>
-      type === 'filler'
-        ? programOptions
-            .filter((opt) => opt.type === 'filler')
-            .map((opt) => ({ ...opt, label: opt.description }))
-        : [],
-    [programOptions, type],
+      programOptions
+        .filter((opt) => opt.type === 'filler')
+        .map((opt) => ({ ...opt, label: opt.description })),
+    [programOptions],
   );
 
   return (
@@ -40,6 +32,7 @@ export const FillerListSlotProgrammingForm = ({ programOptions }: Props) => {
             }) ?? first(fillerAutoCompleteOpts);
           return (
             <Autocomplete<FillerProgramOption & { label: string }>
+              disabled={fillerAutoCompleteOpts.length === 0}
               options={fillerAutoCompleteOpts}
               value={value}
               onChange={(_, value) =>

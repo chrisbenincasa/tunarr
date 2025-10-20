@@ -1,5 +1,3 @@
-import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
-import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext';
 import {
@@ -11,12 +9,12 @@ import {
   DialogTitle,
   Slider,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { isNumber, isUndefined, map, round, sum } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
+import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 
 type Props = {
   open: boolean;
@@ -27,6 +25,7 @@ export const UnlockedWeightScale = 24;
 
 export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
   const { slotArray, setValue, watch } = useRandomSlotFormContext();
+  const getSlotName = useSlotName();
 
   const [currentSlots, lockWeights] = watch(['slots', 'lockWeights']);
 
@@ -34,7 +33,6 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
   const totalWeight = sum(weights);
 
   const adjustRandomSlotWeights = useAdjustRandomSlotWeights();
-  const programOptions = useSlotProgramOptions();
 
   useEffect(() => {
     if (open) {
@@ -79,7 +77,12 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
         return;
       }
 
-      const newWeights = adjustRandomSlotWeights(idx, value, upscaleAmt);
+      const newWeights = adjustRandomSlotWeights(
+        weights,
+        idx,
+        value,
+        upscaleAmt,
+      );
       if (newWeights) {
         setWeights(newWeights);
         if (commit) {
@@ -87,7 +90,7 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
         }
       }
     },
-    [adjustRandomSlotWeights, lockWeights, updateSlotWeights],
+    [adjustRandomSlotWeights, lockWeights, updateSlotWeights, weights],
   );
 
   const onCommit = () => {
@@ -110,11 +113,11 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
         >
           <Slider
             min={0}
-            max={lockWeights ? 100 : UnlockedWeightScale}
+            max={100}
             value={weights[idx]}
             step={0.1}
             onChange={(_, value) => adjustWeights(idx, value, 1)}
-            onChangeCommitted={(_, value) => adjustWeights(idx, value, 1)}
+            // onChangeCommitted={(_, value) => adjustWeights(idx, value, 1, true)}
             component="div"
             sx={{
               flexBasis: '50%',
@@ -129,17 +132,9 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
               },
             }}
           />
-          {lockWeights && (
-            <TextField
-              type="number"
-              label="Weight %"
-              value={weights[idx]}
-              disabled
-            />
-          )}
           <Box>
             <Typography>
-              {programOptions.nameById[getRandomSlotId(slot) as string]}{' '}
+              {getSlotName(slot)}{' '}
               {`(${round((weights[idx] / totalWeight) * 100, 2)}%)`}
             </Typography>
           </Box>
@@ -152,7 +147,7 @@ export const RandomSlotsWeightAdjustDialog = ({ open, onClose }: Props) => {
     <Dialog maxWidth="md" fullWidth open={open} onClose={onClose}>
       <DialogTitle>Adjust Weights</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} alignItems="center">
+        <Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
           {renderSliders()}
         </Stack>
       </DialogContent>

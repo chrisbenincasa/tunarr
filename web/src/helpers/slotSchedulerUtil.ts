@@ -1,4 +1,5 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
+import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import type { Maybe } from '@/types/util.ts';
 import type {
   ChannelProgram,
@@ -9,11 +10,10 @@ import type {
   BaseSlot,
   FillerProgrammingTimeSlot,
   RandomSlot,
-  TimeSlot,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
-import type { StrictExclude } from 'ts-essentials';
+import type { StrictExclude, StrictExtract } from 'ts-essentials';
 import type { DropdownOption } from './DropdownOption';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
@@ -138,9 +138,15 @@ export const slotOptionIsScheduled = (
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
 export const OneWeekMillis = dayjs.duration(1, 'week').asMilliseconds();
 
+type SlotTypeWithOrdering = StrictExclude<
+  BaseSlot['type'],
+  'redirect' | 'flex'
+>;
+type SlotWithOrdering = StrictExtract<BaseSlot, { type: SlotTypeWithOrdering }>;
+
 export function slotOrderOptions(
-  slotProgrammingType: StrictExclude<BaseSlot['type'], 'redirect' | 'flex'>,
-): DropdownOption<BaseSlot['order']>[] {
+  slotProgrammingType: SlotTypeWithOrdering,
+): DropdownOption<SlotWithOrdering['order']>[] {
   switch (slotProgrammingType) {
     case 'movie':
       return [
@@ -196,7 +202,7 @@ export function slotOrderOptions(
   }
 }
 
-export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
+export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
   {
     value: 'flex',
     description: 'Flex',
@@ -223,7 +229,7 @@ export const ProgramOptionTypes: DropdownOption<ProgramOption['type']>[] = [
   },
 ];
 
-export const getTimeSlotId = (programming: TimeSlot): SlotId => {
+export const getTimeSlotId = (programming: TimeSlotViewModel): SlotId => {
   switch (programming.type) {
     case 'show': {
       return `show.${programming.showId}`;

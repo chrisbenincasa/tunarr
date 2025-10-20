@@ -1,36 +1,32 @@
 import type {
   ProgramOption,
-  RedirectProgramOption,
+  ProgramOptionType,
 } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
-import {
-  Autocomplete,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from '@mui/material';
-import type { BaseSlot } from '@tunarr/types/api';
-import { filter, find, first, map, uniqBy } from 'lodash-es';
-import { useMemo } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { filter, map, uniqBy } from 'lodash-es';
+import { useMemo, useState } from 'react';
+import type { FieldPath } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.tsx';
 import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
-import { ShowSlotProgrammingForm } from './ShowSlotProgrammingForm.tsx';
+import { RedirectProgrammingForm } from './RedirectProgrammingForm.tsx';
+import { ShowSearchSlotProgrammingForm } from './ShowSearchSlotProgrammingForm.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
-type EditSlotProgramProps<SlotType extends BaseSlot> = {
-  programOptions: ProgramOption[];
-  newSlotForType: (type: SlotType['type']) => SlotType;
+type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
+  newSlotForType: (type: ProgramOptionType) => SlotT;
 };
 
-export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
-  programOptions,
+export const EditSlotProgrammingForm = <
+  SlotT extends { type: ProgramOptionType },
+>({
   newSlotForType,
-}: EditSlotProgramProps<SlotType>) => {
-  const { watch, control, reset } = useFormContext<BaseSlot>();
-  const type = watch('type');
+}: EditSlotProgramProps<SlotT>) => {
+  const { watch, reset } = useFormContext<SlotT>();
+  const type = watch('type' as FieldPath<SlotT>);
+  const programOptions = useSlotProgramOptionsContext();
   const availableTypes = useMemo(() => {
     return map(
       uniqBy(programOptions, ({ type }) => type),
@@ -38,93 +34,48 @@ export const EditSlotProgrammingForm = <SlotType extends BaseSlot>({
     );
   }, [programOptions]);
 
-  const handleTypeChange = (value: BaseSlot['type']) => {
-    if (value === type) {
+  const [typeSelectValue, setTypeSelectValue] =
+    useState<ProgramOptionType>(type);
+
+  const handleTypeChange = (value: ProgramOptionType) => {
+    if (value === typeSelectValue) {
       return;
     }
 
-    reset((prev) => ({ ...prev, ...newSlotForType(value) }));
-  };
+    setTypeSelectValue(value);
 
-  const redirectShowAutoCompleteOpts = useMemo(
-    () =>
-      type === 'redirect'
-        ? map(
-            filter(
-              programOptions,
-              (opt): opt is RedirectProgramOption => opt.type === 'redirect',
-            ),
-            (opt) => ({
-              ...opt,
-              label: opt.channelName,
-            }),
-          )
-        : [],
-    [programOptions, type],
-  );
+    const slot = newSlotForType(value);
+    reset((prev) => ({ ...prev, ...slot }));
+  };
 
   return (
     <>
       <FormControl fullWidth>
         <InputLabel>Type</InputLabel>
-        <Controller
-          control={control}
-          name="type"
-          render={({ field }) => (
-            <Select
-              label="Type"
-              value={field.value}
-              onChange={(e) =>
-                handleTypeChange(e.target.value as ProgramOption['type'])
-              }
-            >
-              {map(
-                filter(ProgramOptionTypes, ({ value }) =>
-                  availableTypes.includes(value),
-                ),
-                ({ value, description }) => (
-                  <MenuItem key={value} value={value}>
-                    {description}
-                  </MenuItem>
-                ),
-              )}
-            </Select>
+        <Select
+          label="Type"
+          value={typeSelectValue}
+          onChange={(e) =>
+            handleTypeChange(e.target.value as ProgramOption['type'])
+          }
+        >
+          {map(
+            filter(ProgramOptionTypes, ({ value }) =>
+              availableTypes.includes(value),
+            ),
+            ({ value, description }) => (
+              <MenuItem key={value} value={value}>
+                {description}
+              </MenuItem>
+            ),
           )}
-        />
+        </Select>
       </FormControl>
-      {type === 'custom-show' && (
-        <CustomShowSlotProgrammingForm programOptions={programOptions} />
-      )}
-      {type === 'filler' && (
-        <FillerListSlotProgrammingForm programOptions={programOptions} />
-      )}
-      {type === 'show' && (
-        <ShowSlotProgrammingForm programOptions={programOptions} />
-      )}
-      {type === 'redirect' && (
-        <Controller
-          control={control}
-          name="channelId"
-          render={({ field }) => (
-            <Autocomplete<RedirectProgramOption & { label: string }>
-              value={
-                find(
-                  redirectShowAutoCompleteOpts,
-                  (opt) => opt.channelId === field.value,
-                ) ?? first(redirectShowAutoCompleteOpts)
-              }
-              options={redirectShowAutoCompleteOpts}
-              onChange={(_, value) =>
-                value ? field.onChange(value.channelId) : void 0
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Program" />
-              )}
-            />
-          )}
-        />
-      )}
-      {type === 'movie' && <SlotOrderFormControl />}
+      {typeSelectValue === 'custom-show' && <CustomShowSlotProgrammingForm />}
+      {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
+      {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
+      {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
+      {typeSelectValue === 'movie' && <SlotOrderFormControl />}
     </>
   );
 };

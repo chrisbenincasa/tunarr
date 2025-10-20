@@ -10,6 +10,10 @@ import {
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
+import type {
+  TimeSlotForm,
+  TimeSlotViewModel,
+} from '@/model/TimeSlotModels.ts';
 import { useChannelEditorLazy } from '@/store/selectors.ts';
 import { ArrowBack, Autorenew, ExpandMore } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material';
@@ -32,9 +36,13 @@ import {
   useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
-import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
+import type {
+  MaterializedTimeSlotSchedule,
+  TimeSlotSchedule,
+} from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -44,7 +52,6 @@ import {
   flatMap,
   groupBy,
   head,
-  isUndefined,
   map,
   mapValues,
   range,
@@ -56,10 +63,13 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { toggle } from '../../helpers/util.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
+import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import type { Maybe } from '../../types/util.ts';
@@ -67,8 +77,6 @@ import type { Maybe } from '../../types/util.ts';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
-
-export type TimeSlotForm = Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>;
 
 const latenessOptions: DropdownOption<number>[] = [
   dayjs.duration(5, 'minutes'),
@@ -100,7 +108,9 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
   timeZoneOffset: new Date().getTimezoneOffset(),
 };
 
-function sanitizeStartTimes(schedule: TimeSlotSchedule) {
+function convertToViewModel(
+  schedule: MaterializedTimeSlotSchedule,
+): TimeSlotForm {
   return {
     ...schedule,
     slots: map(schedule.slots, (slot) => ({
@@ -114,9 +124,10 @@ function sanitizeStartTimes(schedule: TimeSlotSchedule) {
 
 export default function TimeSlotEditorPage() {
   const {
-    channelEditor: { currentEntity: channel, schedule: loadedSchedule },
+    channelEditor: { currentEntity: channel },
     materializeOriginalProgramList,
   } = useChannelEditorLazy();
+  const { data: channelSchedule } = useChannelSchedule(channel!.id);
 
   const [startTime, setStartTime] = useState(
     channel?.startTime ? dayjs(channel?.startTime) : dayjs(),
@@ -134,8 +145,8 @@ export default function TimeSlotEditorPage() {
 
   const formMethods = useForm<TimeSlotForm>({
     defaultValues:
-      !isUndefined(loadedSchedule) && loadedSchedule.type === 'time'
-        ? sanitizeStartTimes(loadedSchedule)
+      channelSchedule.schedule?.type === 'time'
+        ? convertToViewModel(channelSchedule.schedule)
         : defaultTimeSlotSchedule,
     // mode: 'all',
   });
@@ -148,49 +159,6 @@ export default function TimeSlotEditorPage() {
     reset,
   } = formMethods;
 
-  /* Uncomment when we can make this work better and be more performant....
-  useEffect(() => {
-    const sub = watch(({ slots }, { name }) => {
-      if (name?.startsWith('slots') && slots) {
-        const grouped = groupBy(slots, 'startTime');
-        const isError = some(values(grouped), (group) => group.length > 1);
-        if (isError) {
-          const badIndexes = seq.collect(slots, (slot, index) => {
-            if (
-              !isUndefined(slot?.startTime) &&
-              grouped[slot.startTime]?.length > 1
-            ) {
-              return index;
-            }
-          });
-
-          setError('slots', {
-            message: 'All slot start times must be unique',
-            type: 'unique',
-          });
-
-          badIndexes.forEach((index) => {
-            setError(`slots.${index}.startTime`, {
-              message: 'All slot start times must be unique',
-              type: 'unique',
-            });
-          });
-          hadSlotError(true)
-        } else if (hadSlotError) {
-          const keys = range(0, slots.length).map(
-            (i) => `slots.${i}.startTime` as const,
-          );
-          clearErrors(['slots', ...keys]);
-          setHadSlotError(false)
-        }
-      }
-    });
-    return () => {
-      sub.unsubscribe();
-    };
-  }, [setError, watch, clearErrors]);
-  */
-
   const slotArray = useFieldArray({
     control,
     name: 'slots',
@@ -199,12 +167,14 @@ export default function TimeSlotEditorPage() {
     },
   });
 
+  const queryClient = useQueryClient();
   const updateLineupMutation = useUpdateLineup({
-    onSuccess(data) {
-      reset(data.schedule ?? defaultTimeSlotSchedule, {
-        keepDefaultValues: false,
-        keepDirty: false,
-      });
+    onSuccess() {
+      queryClient
+        .invalidateQueries({
+          predicate: invalidateTaggedQueries('Channels'),
+        })
+        .catch(console.error);
     },
   });
 
@@ -214,11 +184,11 @@ export default function TimeSlotEditorPage() {
   }, [reset]);
 
   const onSave = () => {
-    const schedule: TimeSlotSchedule = {
+    const schedule = {
       ...getValues(),
       timeZoneOffset: new Date().getTimezoneOffset(),
       type: 'time',
-    };
+    } satisfies TimeSlotSchedule;
 
     // Find programs that have active slots
     const filteredLineup = filter(materializeOriginalProgramList(), (item) =>
@@ -243,7 +213,7 @@ export default function TimeSlotEditorPage() {
     (e: SelectChangeEvent<'day' | 'week' | 'month'>) => {
       const value = e.target.value as TimeSlotSchedule['period'];
       setValue('period', value, { shouldDirty: true });
-      let newSlots: TimeSlot[] = [];
+      let newSlots: TimeSlotViewModel[] = [];
       const currentSlots = getValues('slots');
       if (value === 'day') {
         // Remove slots
@@ -320,7 +290,9 @@ export default function TimeSlotEditorPage() {
           </Stack>
           <Divider sx={{ my: 2 }} />
           <TimeSlotFormProvider {...formMethods} slotArray={slotArray}>
-            <TimeSlotTable />
+            <SlotProgrammingOptionsProvider>
+              <TimeSlotTable />
+            </SlotProgrammingOptionsProvider>
           </TimeSlotFormProvider>
           <Divider sx={{ my: 2 }} />
           <Stack direction="row">

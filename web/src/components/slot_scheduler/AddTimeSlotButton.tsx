@@ -5,14 +5,12 @@ import type {
   ShowProgramOption,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { useTimeSlotFormContext } from '@/hooks/useTimeSlotFormContext.ts';
+import type {
+  ShowTimeSlotViewModel,
+  TimeSlotViewModel,
+} from '@/model/TimeSlotModels.ts';
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
-import type {
-  CustomShowProgrammingTimeSlot,
-  FillerProgrammingTimeSlot,
-  ShowProgrammingTimeSlot,
-  TimeSlot,
-} from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { groupBy, isEmpty, maxBy, sortBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
@@ -62,7 +60,7 @@ export const AddTimeSlotButton = ({
       order: 'next' as const,
     } as const;
 
-    let newSlot: TimeSlot;
+    let newSlot: TimeSlotViewModel;
     if (optionsByType['show'] && !isEmpty(optionsByType['show'])) {
       const opts: ShowProgramOption[] = optionsByType[
         'show'
@@ -71,7 +69,8 @@ export const AddTimeSlotButton = ({
         ...baseSlot,
         type: 'show',
         showId: sortBy(opts, (opt) => opt.value)?.[0].showId,
-      } satisfies ShowProgrammingTimeSlot;
+        show: null,
+      } satisfies ShowTimeSlotViewModel;
     } else if (
       optionsByType['custom-show'] &&
       !isEmpty(optionsByType['custom-show'])
@@ -84,7 +83,7 @@ export const AddTimeSlotButton = ({
         ...baseSlot,
         type: 'custom-show',
         customShowId: sortBy(opts, (opt) => opt.value)?.[0].customShowId,
-      } satisfies CustomShowProgrammingTimeSlot;
+      };
     } else if (optionsByType['filler'] && !isEmpty(optionsByType['filler'])) {
       const opts: FillerProgramOption[] = optionsByType[
         'filler'
@@ -98,7 +97,7 @@ export const AddTimeSlotButton = ({
         durationWeighting: 'linear',
         recoveryFactor: 0.05,
         order: 'shuffle_prefer_short',
-      } satisfies FillerProgrammingTimeSlot;
+      };
     } else if (optionsByType['movie'] && !isEmpty(optionsByType['movie'])) {
       newSlot = {
         ...baseSlot,
@@ -128,7 +127,7 @@ export const AddTimeSlotButton = ({
 };
 
 type AddTimeSlotButtonProps = {
-  onAdd: (slot: TimeSlot) => void;
+  onAdd: (slot: TimeSlotViewModel) => void;
   programOptions: ProgramOption[];
   dayOffset: number;
 };

@@ -2,11 +2,12 @@ import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import { Add } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import type { RandomSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { first, map, round, sortBy } from 'lodash-es';
 import { useCallback } from 'react';
 import { match } from 'ts-pattern';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
+import type { SlotViewModel } from '../../model/SlotModels.ts';
 
 const typeWeights: Record<ProgramOption['type'], number> = {
   show: 0,
@@ -29,12 +30,10 @@ const findBestProgramOption = (
   );
 };
 
-export const AddRandomSlotButton = ({
-  onAdd,
-  programOptions,
-}: AddRandomSlotButtonProps) => {
+export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
   const { watch, slotArray } = useRandomSlotFormContext();
   const [currentSlots, distribution] = watch(['slots', 'randomDistribution']);
+  const programOptions = useSlotProgramOptionsContext();
 
   const addSlot = useCallback(() => {
     let slots = currentSlots;
@@ -71,7 +70,7 @@ export const AddRandomSlotButton = ({
     } as const;
 
     const newSlot = match(programOption)
-      .returnType<RandomSlot>()
+      .returnType<SlotViewModel>()
       .with({ type: 'movie' }, () => ({
         ...baseSlot,
         type: 'movie',
@@ -97,6 +96,7 @@ export const AddRandomSlotButton = ({
         type: 'show',
         showId: s.showId,
         order: 'next',
+        show: null,
       }))
       .with({ type: 'flex' }, () => ({
         ...baseSlot,
@@ -123,6 +123,5 @@ export const AddRandomSlotButton = ({
 };
 
 type AddRandomSlotButtonProps = {
-  onAdd: (slot: RandomSlot) => void;
-  programOptions: ProgramOption[];
+  onAdd: (slot: SlotViewModel) => void;
 };

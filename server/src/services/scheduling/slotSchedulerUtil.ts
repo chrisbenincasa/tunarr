@@ -47,7 +47,11 @@ import {
   values,
 } from 'lodash-es';
 import type { Random } from 'random-js';
-import type { NonEmptyArray } from 'ts-essentials';
+import type {
+  NonEmptyArray,
+  StrictExclude,
+  StrictExtract,
+} from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { groupByTyped, retrySimple } from '../../util/index.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
@@ -353,7 +357,7 @@ export function createProgramIterators(
                 (program) => program.index,
               ),
           )
-          .with({ type: 'custom-show' }, () => {
+          .with({ type: 'custom-show' }, (slot) => {
             throw new Error(
               `Invalid ordering type for custom show slot: ${slot.order}`,
             );
@@ -542,15 +546,20 @@ function getContentProgramIterator(
   }
 }
 
+type SlotTypeWithOrdering = StrictExclude<
+  BaseSlot['type'],
+  'redirect' | 'flex'
+>;
+type SlotWithOrdering = StrictExtract<BaseSlot, { type: SlotTypeWithOrdering }>;
+export type SlotOrder = SlotWithOrdering['order'];
+
 export type SlotIteratorKey =
   | `movie_${SlotOrder}`
   | `tv_${string}_${SlotOrder}`
-  | `redirect_${string}_${SlotOrder}`
+  | `redirect_${string}`
   | `custom-show_${string}_${SlotOrder}`
   | `filler_${string}_${SlotOrder}`
   | 'flex';
-
-export type SlotOrder = BaseSlot['order'];
 
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it

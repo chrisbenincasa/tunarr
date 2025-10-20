@@ -44,6 +44,29 @@ export class CustomShowDB {
       .executeTakeFirst();
   }
 
+  async getShows(ids: string[]) {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.db
+      .selectFrom('customShow')
+      .where('customShow.uuid', 'in', ids)
+      .innerJoin(
+        'customShowContent',
+        'customShowContent.customShowUuid',
+        'customShow.uuid',
+      )
+      .selectAll('customShow')
+      .select((eb) =>
+        eb.fn
+          .count<number>('customShowContent.contentUuid')
+          .distinct()
+          .as('contentCount'),
+      )
+      .execute();
+  }
+
   async getShowPrograms(id: string): Promise<CustomProgram[]> {
     const programs = await this.db
       .selectFrom('customShow')

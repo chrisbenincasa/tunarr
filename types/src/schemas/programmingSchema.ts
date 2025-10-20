@@ -1,8 +1,4 @@
 import z from 'zod/v4';
-import {
-  DynamicContentConfigSchema,
-  LineupScheduleSchema,
-} from '../api/Scheduling.js';
 import { EmbyItemSchema } from '../emby/index.js';
 import { JellyfinItem } from '../jellyfin/index.js';
 import {
@@ -265,15 +261,13 @@ export const ChannelProgramSchema = z.discriminatedUnion('type', [
   FillerProgramSchema,
 ]);
 
-const startTimeOffsets = z.array(z.number());
-
 export const ChannelProgrammingSchema = z.object({
   icon: ChannelIconSchema.optional(),
   name: z.string().optional(),
   number: z.number().optional(),
   totalPrograms: z.number(),
   programs: z.array(ChannelProgramSchema),
-  startTimeOffsets,
+  startTimeOffsets: z.array(z.number()),
 });
 
 export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
@@ -283,18 +277,6 @@ export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
   RedirectProgramSchema,
   FlexProgramSchema,
 ]);
-
-export const CondensedChannelProgrammingSchema = z.object({
-  icon: ChannelIconSchema.optional(),
-  name: z.string().optional(),
-  number: z.number().optional(),
-  totalPrograms: z.number(),
-  programs: z.record(z.string(), ContentProgramSchema),
-  lineup: z.array(CondensedChannelProgramSchema),
-  startTimeOffsets,
-  schedule: LineupScheduleSchema.optional(),
-  dynamicContentConfig: DynamicContentConfigSchema.optional(),
-});
 
 //
 // New stuff

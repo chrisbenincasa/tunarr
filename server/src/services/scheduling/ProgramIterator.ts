@@ -89,7 +89,7 @@ export function slotIteratorKey<T extends BaseSlot>(slot: T): SlotIteratorKey {
     case 'show':
       return `tv_${slot.showId}_${slot.order}`;
     case 'redirect':
-      return `redirect_${slot.channelId}_${slot.order}`;
+      return `redirect_${slot.channelId}`;
     case 'custom-show':
       return `custom-show_${slot.customShowId}_${slot.order}`;
     case 'filler':

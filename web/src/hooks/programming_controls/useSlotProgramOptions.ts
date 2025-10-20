@@ -1,9 +1,13 @@
 import type { ProgramOption } from '@/helpers/slotSchedulerUtil';
 import { isNonEmptyString } from '@/helpers/util';
 import useStore from '@/store';
+import { useQuery } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
-import { map, reject, some, sortBy, uniqBy } from 'lodash-es';
-import { useMemo } from 'react';
+import { map, reject, some } from 'lodash-es';
+import { useContext, useMemo } from 'react';
+import { SlotProgrammingOptionsContext } from '../../components/slot_scheduler/SlotProgrammingOptionsContext.ts';
+import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { useMediaSources } from '../settingsHooks.ts';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
 import { useFillerLists } from '../useFillerLists.ts';
@@ -13,10 +17,64 @@ type ProgramOptions = {
   nameById: Record<string, string>;
 };
 
+function useCustomShowOptions() {
+  const { data: customShows } = useCustomShows();
+  return useMemo(() => {
+    return map(
+      customShows,
+      (show) =>
+        ({
+          description: show.name,
+          value: `custom-show.${show.id}`,
+          customShowId: show.id,
+          type: 'custom-show',
+          programCount: show.contentCount,
+        }) satisfies ProgramOption,
+    );
+  }, [customShows]);
+}
+
+function useSyncedProgrammingOptions() {
+  const { data: mediaSources } = useMediaSources();
+  const hasSyncedLibraries = mediaSources.some((ms) => {
+    if (ms.type === 'local') {
+      return ms.libraries.some((lib) => !!lib.lastScannedAt);
+    } else {
+      return ms.libraries
+        .filter((lib) => lib.enabled)
+        .some((lib) => !!lib.lastScannedAt);
+    }
+  });
+
+  // TODO: Handle error
+  const facetQuery = useQuery({
+    ...postApiProgramsFacetsByFacetNameOptions({
+      path: { facetName: 'type' },
+      body: {},
+    }),
+    enabled: hasSyncedLibraries,
+  });
+
+  return useMemo(() => {
+    const showCount = facetQuery.data?.facetValues['show'] ?? 0;
+    const opts: ProgramOption[] = [];
+    if (showCount > 0) {
+      opts.push({
+        type: 'show',
+        description: 'Shows',
+        value: '',
+        showId: '',
+      });
+    }
+    return opts;
+  }, [facetQuery]);
+}
+
 export const useSlotProgramOptions = (channelId?: string) => {
   const { originalProgramList: newLineup } = useStore((s) => s.channelEditor);
   const { programLookup } = useStore();
-  const { data: customShows } = useCustomShows();
+  const syncedOptions = useSyncedProgrammingOptions();
+  const customShowOpts = useCustomShowOptions();
   const { data: fillerLists } = useFillerLists();
   const { data: channels } = useChannelsSuspense({
     select: (channels) =>
@@ -32,6 +90,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
 
     const opts: ProgramOption[] = [
       { value: 'flex', description: 'Flex', type: 'flex' },
+      ...syncedOptions,
     ];
     const nameById: Record<string, string> = {
       flex: 'Flex',
@@ -43,41 +102,41 @@ export const useSlotProgramOptions = (channelId?: string) => {
         opts.push({ description: 'Movies', value: 'movie', type: 'movie' });
       }
 
-      const showOptions = sortBy(
-        uniqBy(
-          contentPrograms.filter(
-            (p) => p.subtype === 'episode' && isNonEmptyString(p.showId),
-          ),
-          (p) => p.showId,
-        ).map(
-          (show) =>
-            ({
-              description: show.grandparent?.title ?? 'Missing Show Title',
-              value: `show.${show.showId}`,
-              type: 'show',
-              showId: show.showId!,
-            }) satisfies ProgramOption,
-        ),
-        (opt) => opt.description,
-      );
-      for (const opt of showOptions) {
-        nameById[opt.value] = opt.description;
-      }
+      // const showOptions = sortBy(
+      //   uniqBy(
+      //     contentPrograms.filter(
+      //       (p) => p.subtype === 'episode' && isNonEmptyString(p.showId),
+      //     ),
+      //     (p) => p.showId,
+      //   ).map(
+      //     (show) =>
+      //       ({
+      //         description: show.grandparent?.title ?? 'Missing Show Title',
+      //         value: `show.${show.showId}`,
+      //         type: 'show',
+      //         showId: show.showId!,
+      //       }) satisfies ProgramOption,
+      //   ),
+      //   (opt) => opt.description,
+      // );
+      // for (const opt of showOptions) {
+      //   nameById[opt.value] = opt.description;
+      // }
 
-      opts.push(...showOptions);
+      // opts.push(...showOptions);
     }
 
-    const customShowOpts = map(
-      customShows,
-      (show) =>
-        ({
-          description: show.name,
-          value: `custom-show.${show.id}`,
-          customShowId: show.id,
-          type: 'custom-show',
-          programCount: show.contentCount,
-        }) satisfies ProgramOption,
-    );
+    // const customShowOpts = map(
+    //   customShows,
+    //   (show) =>
+    //     ({
+    //       description: show.name,
+    //       value: `custom-show.${show.id}`,
+    //       customShowId: show.id,
+    //       type: 'custom-show',
+    //       programCount: show.contentCount,
+    //     }) satisfies ProgramOption,
+    // );
 
     for (const opt of customShowOpts) {
       nameById[opt.value] = opt.description;
@@ -122,5 +181,15 @@ export const useSlotProgramOptions = (channelId?: string) => {
       dropdownOpts: opts,
       nameById,
     };
-  }, [newLineup, customShows, fillerLists, channels, programLookup]);
+  }, [
+    newLineup,
+    syncedOptions,
+    customShowOpts,
+    fillerLists,
+    channels,
+    programLookup,
+  ]);
 };
+
+export const useSlotProgramOptionsContext = () =>
+  useContext(SlotProgrammingOptionsContext);

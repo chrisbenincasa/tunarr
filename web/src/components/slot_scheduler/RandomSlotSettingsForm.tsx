@@ -1,6 +1,6 @@
 import type { DropdownOption } from '@/helpers/DropdownOption.js';
 import { flexOptions, padOptions } from '@/helpers/slotSchedulerUtil';
-import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage';
+import type { RandomSlotForm } from '@/model/SlotModels.ts';
 
 import { Autorenew } from '@mui/icons-material';
 import {
@@ -66,12 +66,14 @@ export const RandomSlotSettingsForm = ({
       slots: values.slots.map((slot, idx) => ({ ...slot, index: idx })),
     })
       .then(({ seed, discardCount }) => {
-        toggleIsCalculatingSlots(false);
         onCalculateEnd?.({ seed, discardCount });
       })
       .catch((e) => {
         console.error(e);
         onCalculateEnd?.();
+      })
+      .finally(() => {
+        toggleIsCalculatingSlots(false);
       });
   };
 

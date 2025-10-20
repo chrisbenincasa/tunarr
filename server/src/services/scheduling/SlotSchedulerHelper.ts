@@ -1,15 +1,21 @@
+import { seq } from '@tunarr/shared/util';
 import { FillerProgram } from '@tunarr/types';
 import { BaseSlot } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
-import { flatten, reduce } from 'lodash-es';
+import { flatten, reduce, uniq } from 'lodash-es';
+import { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import { CustomShowDB } from '../../db/CustomShowDB.ts';
 import { FillerDB } from '../../db/FillerListDB.ts';
+import { ProgramDB } from '../../db/ProgramDB.ts';
+import { KEYS } from '../../types/inject.ts';
 
 @injectable()
 export class SlotSchedulerHelper {
   constructor(
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(FillerDB) private fillerDB: FillerDB,
+    @inject(KEYS.ProgramDB) private programDB: ProgramDB,
+    @inject(ProgramConverter) private programConverter: ProgramConverter,
   ) {}
 
   async materializeCustomShowPrograms(slots: BaseSlot[]) {
@@ -86,5 +92,30 @@ export class SlotSchedulerHelper {
         ),
       ),
     );
+  }
+
+  async materializeShows(slots: BaseSlot[]) {
+    const showIds = uniq(
+      seq.collect(slots, (slot) => {
+        if (slot.type !== 'show') {
+          return;
+        }
+        return slot.showId;
+      }),
+    );
+
+    const allDescendants = flatten(
+      await Promise.all(
+        showIds.map((id) =>
+          this.programDB.getProgramGroupingDescendants(id, 'show'),
+        ),
+      ),
+    );
+    return seq.collect(allDescendants, (program) => {
+      if (!program.mediaSourceId) {
+        return;
+      }
+      return this.programConverter.programOrmToContentProgram(program);
+    });
   }
 }

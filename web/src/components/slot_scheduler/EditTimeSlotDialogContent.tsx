@@ -1,9 +1,9 @@
 import type {
   CustomShowProgramOption,
   FillerProgramOption,
-  ProgramOption,
 } from '@/helpers/slotSchedulerUtil';
 import { OneDayMillis } from '@/helpers/slotSchedulerUtil';
+import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import {
   Box,
   Button,
@@ -18,14 +18,13 @@ import {
   Tabs,
 } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers';
-import type { TimeSlot } from '@tunarr/types/api';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { find, isNil, map } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { TabPanel } from '../TabPanel.tsx';
@@ -43,25 +42,22 @@ const DaysOfWeekMenuItems = [
 ];
 
 type EditTimeSlotDialogContentProps = {
-  slot: TimeSlot;
+  slot: TimeSlotViewModel;
   index: number;
-  programOptions: ProgramOption[];
   onClose: () => void;
 };
-
-type PartialTimeSlot = StrictOmit<TimeSlot, 'startTime'>;
 
 export const EditTimeSlotDialogContent = ({
   slot,
   index,
-  programOptions,
   onClose,
 }: EditTimeSlotDialogContentProps) => {
   const { getValues: getSlotFormValues, slotArray } = useTimeSlotFormContext();
   const currentPeriod = getSlotFormValues('period');
   const { data: fillerLists } = useFillerLists();
+  const programOptions = useSlotProgramOptionsContext();
 
-  const formMethods = useForm<TimeSlot>({
+  const formMethods = useForm<TimeSlotViewModel>({
     defaultValues: slot,
     reValidateMode: 'onChange',
   });
@@ -100,50 +96,75 @@ export const EditTimeSlotDialogContent = ({
   const [tab, setTab] = useState(0);
 
   const newSlotForType = useCallback(
-    (type: TimeSlot['type']) => {
+    (type: TimeSlotViewModel['type']) => {
+      const startTime = getValues('startTime');
+      const opt = find(
+        programOptions,
+        (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
+      );
       return match(type)
-        .returnType<PartialTimeSlot>()
-        .with('custom-show', () => ({
-          type: 'custom-show',
-          order: 'next',
-          direction: 'asc',
-          customShowId: find(
-            programOptions,
-            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
-          )!.customShowId,
-        }))
+        .returnType<TimeSlotViewModel>()
+        .with('custom-show', () => {
+          return {
+            startTime,
+            type: 'custom-show',
+            order: 'next',
+            direction: 'asc',
+            customShowId: opt!.customShowId,
+            title: opt!.description,
+          };
+        })
         .with('movie', () => ({
+          startTime,
           type: 'movie',
           order: 'alphanumeric',
           direction: 'asc',
+          title: 'Movies',
         }))
-        .with('filler', () => ({
-          type: 'filler',
-          order: 'shuffle_prefer_short',
-          decayFactor: 0.5,
-          durationWeighting: 'linear',
-          recoveryFactor: 0.05,
-          fillerListId: programOptions.find(
+        .with('filler', () => {
+          const opt = programOptions.find(
             (opt): opt is FillerProgramOption => opt.type === 'filler',
-          )!.fillerListId,
+          );
+          return {
+            type: 'filler',
+            order: 'shuffle_prefer_short',
+            decayFactor: 0.5,
+            durationWeighting: 'linear',
+            recoveryFactor: 0.05,
+            fillerListId: opt?.value ?? '',
+            startTime,
+          };
+        })
+        .with('flex', () => ({
+          type: 'flex',
+          startTime,
         }))
-        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
-        .with('redirect', () => ({
-          type: 'redirect',
-          channelId: programOptions.find((opt) => opt.type === 'redirect')!
-            .channelId,
-          order: 'next',
-          direction: 'asc',
-        }))
-        .with('show', () => ({
-          type: 'show',
-          showId: programOptions.find((opt) => opt.type === 'show')!.showId,
-          order: 'next',
-          direction: 'asc',
-        }))
+        .with('redirect', () => {
+          const opt = programOptions.find((opt) => opt.type === 'redirect');
+          return {
+            startTime,
+            type: 'redirect',
+            channelId: opt?.channelId ?? '',
+            order: 'next',
+            direction: 'asc',
+            title: `Redirect to Channel ${opt?.channelName ?? ''}`,
+          };
+        })
+        .with('show', () => {
+          const opt = programOptions.find((opt) => opt.type === 'show');
+          return {
+            startTime,
+            type: 'show' as const,
+            showId: opt?.showId ?? '',
+            order: 'next',
+            direction: 'asc',
+            title: opt?.description ?? '',
+            show: null,
+          };
+        })
         .exhaustive();
     },
-    [programOptions],
+    [getValues, programOptions],
   );
 
   const commit = () => {
@@ -211,7 +232,6 @@ export const EditTimeSlotDialogContent = ({
                   render={({ field, fieldState: { error } }) => {
                     return (
                       <TimePicker
-                        disabled
                         reduceAnimations
                         {...field}
                         value={dayjs().startOf(currentPeriod).add(field.value)}
@@ -231,10 +251,7 @@ export const EditTimeSlotDialogContent = ({
                 />
               </Stack>
               <FormProvider {...formMethods}>
-                <EditSlotProgrammingForm
-                  programOptions={programOptions}
-                  newSlotForType={newSlotForType}
-                />
+                <EditSlotProgrammingForm newSlotForType={newSlotForType} />
               </FormProvider>
             </Stack>
           </TabPanel>

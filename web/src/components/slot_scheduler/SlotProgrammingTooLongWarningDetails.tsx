@@ -1,10 +1,10 @@
-import type {
-  ProgramTooLongWarning,
-  SlotTableWarnings,
-} from '@/components/slot_scheduler/SlotTypes.ts';
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { alternateColors } from '@/helpers/util.ts';
 import { useProgramTitleFormatter } from '@/hooks/useProgramTitleFormatter.ts';
+import type {
+  ProgramTooLongWarning,
+  SlotTableWarnings,
+} from '@/model/CommonSlotModels';
 import { removeChannelProgramsById } from '@/store/entityEditor/util.ts';
 import { useStoreProgramLookup } from '@/store/selectors.ts';
 import { Delete, Error, ExpandMore, WarningAmber } from '@mui/icons-material';

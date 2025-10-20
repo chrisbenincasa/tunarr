@@ -13,7 +13,6 @@ import {
 } from '../schemas/channelSchema.js';
 import {
   ChannelProgramSchema,
-  CondensedChannelProgrammingSchema,
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
@@ -28,13 +27,14 @@ import {
   LocalMediaSourceSchema,
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
-import {
-  RandomSlotScheduleSchema,
-  TimeSlotScheduleSchema,
-} from './Scheduling.js';
+import { MaterializedSlot, RandomSlotScheduleSchema } from './RandomSlots.js';
+import { MaterializedTimeSlot, TimeSlotScheduleSchema } from './TimeSlots.js';
 import { SearchRequestSchema } from './search.js';
 
+export * from './CommonSlots.js';
+export * from './RandomSlots.js';
 export * from './Scheduling.js';
+export * from './TimeSlots.js';
 export * from './plexSearch.js';
 export * from './search.js';
 
@@ -309,10 +309,6 @@ export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
 
-// This is sorta hacky.
-export const GetChannelProgrammingResponseSchema =
-  CondensedChannelProgrammingSchema;
-
 export const JellyfinGetLibraryItemsQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().positive().optional(),
@@ -437,3 +433,26 @@ export const ScanProgressSchema = z.discriminatedUnion('state', [
 ]);
 
 export type ScanProgress = z.infer<typeof ScanProgressSchema>;
+
+export const MaterializedTimeSlotSchedule = z.object({
+  ...TimeSlotScheduleSchema.shape,
+  slots: MaterializedTimeSlot.array(),
+});
+
+export type MaterializedTimeSlotSchedule = z.infer<
+  typeof MaterializedTimeSlotSchedule
+>;
+
+export const MaterializedSlotSchedule = z.object({
+  ...RandomSlotScheduleSchema.shape,
+  slots: MaterializedSlot.array(),
+});
+
+export type MaterializedSlotSchedule = z.infer<typeof MaterializedSlotSchedule>;
+
+export const MaterializedSchedule = z.discriminatedUnion('type', [
+  MaterializedTimeSlotSchedule,
+  MaterializedSlotSchedule,
+]);
+
+export type MaterializedSchedule = z.infer<typeof MaterializedSchedule>;

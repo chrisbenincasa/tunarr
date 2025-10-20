@@ -1,20 +1,15 @@
 import { Autocomplete, TextField } from '@mui/material';
-import type { BaseSlot } from '@tunarr/types/api';
 import { filter, find, first, map } from 'lodash-es';
 import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import type {
-  CustomShowProgramOption,
-  ProgramOption,
-} from '../../helpers/slotSchedulerUtil.ts';
+import type { CustomShowProgramOption } from '../../helpers/slotSchedulerUtil.ts';
+import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
+import type { CommonCustomShowSlotViewModel } from '../../model/CommonSlotModels.ts';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
 
-type Props = {
-  programOptions: ProgramOption[];
-};
-
-export const CustomShowSlotProgrammingForm = ({ programOptions }: Props) => {
-  const { watch, control } = useFormContext<BaseSlot>();
+export const CustomShowSlotProgrammingForm = () => {
+  const { watch, control } = useFormContext<CommonCustomShowSlotViewModel>();
+  const programOptions = useSlotProgramOptionsContext();
   const [type] = watch(['type']);
 
   const customShowAutoCompleteOpts = useMemo(
