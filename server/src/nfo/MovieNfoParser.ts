@@ -13,7 +13,7 @@ export const MovieNfo = z.object({
   runtime: z.coerce.number().optional(), // mins
   thumb: z.array(NfoThumb).optional(),
   mpaa: z.string().optional().catch(undefined),
-  uniqueid: z.array(NfoUniqueId),
+  uniqueid: z.array(NfoUniqueId).optional(),
   genre: z.array(z.string()).optional(),
   country: z.array(z.string()).optional(),
   set: z
@@ -21,7 +21,8 @@ export const MovieNfo = z.object({
       name: z.string(),
       overview: z.string(),
     })
-    .optional(),
+    .optional()
+    .catch(undefined),
   tag: z.array(z.string()).optional(),
   credits: z.array(z.string()).optional(),
   director: z.array(z.string()).optional(),

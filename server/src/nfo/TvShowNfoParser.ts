@@ -14,7 +14,7 @@ export const TvShowNfo = z.object({
   season: z.coerce.number().optional(),
   episode: z.coerce.number().optional(),
   mpaa: z.string().optional().catch(undefined),
-  uniqueid: z.array(NfoUniqueId),
+  uniqueid: z.array(NfoUniqueId).optional(),
   genre: z.array(z.string()).optional(),
   country: z.array(z.string()).optional(),
   set: z
@@ -22,7 +22,8 @@ export const TvShowNfo = z.object({
       name: z.string(),
       overview: z.string(),
     })
-    .optional(),
+    .optional()
+    .catch(undefined),
   tag: z.array(z.string()).optional(),
   credits: z.array(z.string()).optional(),
   director: z.array(z.string()).optional(),

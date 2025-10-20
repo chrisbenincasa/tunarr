@@ -33,7 +33,7 @@ const NfoVideoStream = z.object({
   height: z.number(),
   durationinseconds: z.number(),
   stereomode: z.string().optional(),
-  hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']),
+  hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']).nullish(),
 });
 
 const NfoSubtitleStream = z.object({
