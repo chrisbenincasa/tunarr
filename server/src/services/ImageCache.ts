@@ -1,9 +1,7 @@
-import * as blurhash from 'blurhash';
 import { inject, injectable } from 'inversify';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
-import sharp from 'sharp';
 import { match } from 'ts-pattern';
 import { ArtworkType } from '../db/schema/Artwork.ts';
 import { GlobalOptions } from '../globals.ts';
@@ -21,8 +19,6 @@ import {
 } from '../util/constants.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { caughtErrorToError } from '../util/index.ts';
-import { Logger } from '../util/logging/LoggerFactory.ts';
-import { timeNamedAsync, timeNamedSync } from '../util/perf.ts';
 
 type ImageCacheResult = {
   fullPath: string;
@@ -31,10 +27,7 @@ type ImageCacheResult = {
 
 @injectable()
 export class ImageCache {
-  constructor(
-    @inject(KEYS.GlobalOptions) private globalOpts: GlobalOptions,
-    @inject(KEYS.Logger) private logger: Logger,
-  ) {}
+  constructor(@inject(KEYS.GlobalOptions) private globalOpts: GlobalOptions) {}
 
   async addArtworkToCache(
     filePath: string,
@@ -64,6 +57,8 @@ export class ImageCache {
     }
   }
 
+  /*
+  TODO: We need to figure out a cross-platform solution to installing sharp
   async calculateBlurHash(
     cacheKey: string,
     artworkType: ArtworkType,
@@ -94,6 +89,7 @@ export class ImageCache {
       return hash;
     });
   }
+    */
 
   getImagePath(cacheKey: string, artworkType: ArtworkType) {
     const cacheKeyBaseName = basename(cacheKey);
