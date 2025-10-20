@@ -192,9 +192,10 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       );
 
       return new HttpStreamSource(
-        `${trimEnd(server.uri, '/')}${serverPath}?X-Plex-Token=${
-          server.accessToken
-        }`,
+        `${trimEnd(server.uri, '/')}/Videos/${serverPath}/stream?static=true`,
+        {
+          'X-Emby-Token': server.accessToken,
+        },
       );
     } else {
       throw new Error('Could not resolve stream URL');

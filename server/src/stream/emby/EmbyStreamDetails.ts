@@ -180,14 +180,14 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
     if (isNonEmptyString(serverPath)) {
       serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
       this.logger.debug(
-        'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
+        'Did not find Emby file on disk relative to Tunarr. Using network path: %s',
         serverPath,
       );
 
       return new HttpStreamSource(
-        `${trimEnd(server.uri, '/')}${serverPath}?X-Plex-Token=${
+        `${trimEnd(server.uri, '/')}/Videos/${serverPath}/stream?X-Emby-Token=${
           server.accessToken
-        }`,
+        }&static=true`,
       );
     } else {
       throw new Error('Could not resolve stream URL');
