@@ -164,7 +164,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
 
   const isEmptyRemoveRequest = useMemo(() => {
     return (
-      isEmpty(removeRequest) ||
+      isEmpty(removeRequest) ??
       every(values(removeRequest), (value) => {
         // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false).
         // We do this because lodash treats booleans as empty regardless of value
@@ -190,7 +190,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
     }
 
     return `${details.totalPrograms} ${pluralize(
-      type || 'program',
+      type ?? 'program',
       details.totalPrograms,
     )}, ${betterHumanize(dayjs.duration(details.totalDuration), {
       style: 'short',
@@ -212,7 +212,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
             options={showOptions.sort(
               (a, b) => -b.firstLetter.localeCompare(a.firstLetter),
             )}
-            groupBy={(option: FilmOptionType) => option.firstLetter || '-'}
+            groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'}
             getOptionLabel={(option: FilmOptionType) => option.title}
             openOnFocus
             sx={{ my: 2, flex: 1 }}
@@ -289,7 +289,7 @@ export const RemoveShowsModal = ({ open, onClose }: RemoveShowsModalProps) => {
               options={artistOptions.sort(
                 (a, b) => -b.firstLetter.localeCompare(a.firstLetter),
               )}
-              groupBy={(option: FilmOptionType) => option.firstLetter || '-'}
+              groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'}
               getOptionLabel={(option: FilmOptionType) => option.title}
               openOnFocus
               sx={{ my: 2, flex: 1 }}
