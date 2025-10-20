@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0-alpha.16](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.15...v0.23.0-alpha.16) (2025-10-20)
+
+
+### Bug Fixes
+
+* fix jellyfin and emby streaming ([5bf3e84](https://github.com/chrisbenincasa/tunarr/commit/5bf3e849c964eb98c59bb99fe5807561fca14733))
+* more permissive nfo parsing ([66369b9](https://github.com/chrisbenincasa/tunarr/commit/66369b9e241e76ce1a2d6f59e4b1de79b46614d5))
+
 ## [0.23.0-alpha.15](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.14...v0.23.0-alpha.15) (2025-10-20)
 
 
