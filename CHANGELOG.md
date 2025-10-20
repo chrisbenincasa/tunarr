@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.15](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.14...v0.23.0-alpha.15) (2025-10-20)
+
+
+### Bug Fixes
+
+* remove dependency on sharp until we can figure out x-platform packaging ([f4433f6](https://github.com/chrisbenincasa/tunarr/commit/f4433f6648791f99a4f2ee327e9f851579e9d3ec))
+
 ## [0.23.0-alpha.14](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.13...v0.23.0-alpha.14) (2025-10-18)
 
 
