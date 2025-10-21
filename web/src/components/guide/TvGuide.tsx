@@ -27,7 +27,7 @@ import type { Maybe } from '../../types/util.ts';
 import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
-import { ChannelsTableOptionsMenu } from '../channels/ChannelsTableOptionsMenu.tsx';
+import { ChannelOptionsMenu } from '../channels/ChannelOptionsMenu.tsx';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
 import { TvGuideItem } from './TvGuideItem.tsx';
 
@@ -159,7 +159,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
   const renderChannelMenu = () => {
     return channelMenu ? (
-      <ChannelsTableOptionsMenu
+      <ChannelOptionsMenu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}

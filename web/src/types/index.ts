@@ -136,3 +136,10 @@ export type Prettify<Type> = Type extends Function
       },
       Type
     >;
+
+export type channelListOptions =
+  | 'edit'
+  | 'duplicate'
+  | 'delete'
+  | 'programming'
+  | 'watch';

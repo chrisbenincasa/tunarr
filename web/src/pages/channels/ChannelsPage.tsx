@@ -5,7 +5,7 @@ import {
   setChannelTableColumnModel,
 } from '@/store/settings/actions.ts';
 import type { Maybe } from '@/types/util.ts';
-import { Check, Close, MoreVert, Settings } from '@mui/icons-material';
+import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
 import {
@@ -47,8 +47,8 @@ import pluralize from 'pluralize';
 import React, { useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
-import { ChannelsTableOptionsMenu } from '../../components/channels/ChannelsTableOptionsMenu.tsx';
 import { deleteApiChannelsByIdMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
@@ -222,7 +222,7 @@ export default function ChannelsPage() {
 
   const renderChannelMenu = (row: ChannelRow) => {
     return (
-      <ChannelsTableOptionsMenu
+      <ChannelOptionsMenu
         anchorEl={anchorEl}
         onClose={() => handleChannelMenuClose()}
         open={channelMenuOpen === row.id}
@@ -247,7 +247,7 @@ export default function ChannelsPage() {
               component={RouterLink}
               onClick={(e) => e.stopPropagation()}
             >
-              <Settings />
+              <Edit />
             </IconButton>
           </Tooltip>
         )}

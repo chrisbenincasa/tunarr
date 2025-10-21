@@ -1,15 +1,12 @@
-import { AddToQueue, Settings } from '@mui/icons-material';
+import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import {
   Box,
-  IconButton,
   LinearProgress,
   Stack,
-  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Link } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { ChannelNowPlayingCard } from '../../components/channels/ChannelNowPlayingCard.tsx';
@@ -47,16 +44,10 @@ export const ChannelSummaryPage = () => {
         </Box>
       </Stack>
       <Stack direction="row" spacing={1} justifyContent="right">
-        <Tooltip title="Edit" placement="top">
-          <IconButton component={Link} from={Route.fullPath} to="./edit">
-            <Settings />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Add Programming" placement="top">
-          <IconButton component={Link} from={Route.fullPath} to="./programming">
-            <AddToQueue />
-          </IconButton>
-        </Tooltip>
+        <ChannelOptionsButton
+          channel={channel}
+          hideItems={['duplicate', 'delete']}
+        />
       </Stack>
       <Box sx={{ width: '100%' }}>
         <Suspense fallback={<LinearProgress />}>

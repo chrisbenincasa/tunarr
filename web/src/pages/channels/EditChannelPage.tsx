@@ -1,12 +1,11 @@
 import type { EditChannelTabs } from '@/components/channel_config/EditChannelTabPanel.tsx';
+import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
+import { useChannelSuspense } from '@/hooks/useChannels.ts';
+import { Route } from '@/routes/channels_/$channelId/edit/index.tsx';
+import { Box, Stack } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { EditChannelForm } from '../../components/channel_config/EditChannelForm.tsx';
-import { Route } from '@/routes/channels_/$channelId/edit/index.tsx';
-import { useChannelSuspense } from '@/hooks/useChannels.ts';
-import Edit from '@mui/icons-material/Edit';
-import { Link } from '@tanstack/react-router';
-import { Stack, Box, Button } from '@mui/material';
 
 type Props = {
   initialTab?: EditChannelTabs;
@@ -25,14 +24,10 @@ export default function EditChannelPage({ initialTab }: Props) {
             {channel.name}
           </Typography>
           <Box>
-            <Button
-              component={Link}
-              to="../programming"
-              variant="outlined"
-              startIcon={<Edit />}
-            >
-              Programming
-            </Button>
+            <ChannelOptionsButton
+              channel={channel}
+              hideItems={['edit', 'duplicate', 'delete']}
+            />
           </Box>
         </Stack>
         <EditChannelForm
