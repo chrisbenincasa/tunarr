@@ -7,6 +7,7 @@ import { CurrentLineupSchemaVersion } from '../../db/derived_types/Lineup.ts';
 import { GlobalOptions } from '../../globals.ts';
 import { PersistentChannelCache } from '../../stream/ChannelCache.ts';
 import { KEYS } from '../../types/inject.ts';
+import { fileExists } from '../../util/fsUtil.ts';
 import { parseIntOrNull } from '../../util/index.ts';
 import { getFirstValue } from '../../util/json.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -30,9 +31,14 @@ export class StreamCacheMigrator extends JsonFileMigrator<MigrationStep> {
   }
 
   async run(): Promise<void> {
-    const rawCacheContents = await fs.readFile(
-      path.join(this.opts.databaseDirectory, 'stream-cache.json'),
+    const cachePath = path.join(
+      this.opts.databaseDirectory,
+      'stream-cache.json',
     );
+    if (!(await fileExists(cachePath))) {
+      return;
+    }
+    const rawCacheContents = await fs.readFile(cachePath);
     const parsed = jsonSchema.parse(
       JSON.parse(rawCacheContents.toString('utf-8')),
     );
