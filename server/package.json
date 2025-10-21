@@ -68,7 +68,7 @@
     "kysely": "^0.27.6",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.1",
-    "meilisearch": "^0.49.0",
+    "meilisearch": "^0.50.0",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
     "node-ssdp": "^4.0.1",

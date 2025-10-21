@@ -18,6 +18,7 @@ import {
   EnqueuedTaskObject,
   MeiliSearch,
   MeiliSearchApiError,
+  ResourceResults,
   Settings,
   Task,
 } from 'meilisearch';
@@ -542,8 +543,11 @@ export class MeilisearchService implements ISearchService {
   }
 
   async sync() {
-    await this.client().httpRequest.patch('/experimental-features', {
-      containsFilter: true,
+    await this.client().httpRequest.patch({
+      path: '/experimental-features',
+      body: {
+        containsFilter: true,
+      },
     });
 
     const existingIndexes = await this.client().getIndexes();
@@ -585,6 +589,36 @@ export class MeilisearchService implements ISearchService {
     } catch (e) {
       if (e instanceof MeiliSearchApiError && e.response.status === 404) {
         return Promise.resolve(undefined);
+      }
+      throw e;
+    }
+  }
+
+  async getPrograms(ids: string[]): Promise<ProgramSearchDocument[]> {
+    try {
+      if (ids.length === 0) {
+        return [];
+      }
+
+      const results: ProgramSearchDocument[] = [];
+      let res: ResourceResults<ProgramSearchDocument[]>;
+      let offset = 0;
+      do {
+        res = await this.#client
+          .index<ProgramSearchDocument>(ProgramsIndex.name)
+          .getDocuments({
+            ids,
+            offset,
+            limit: 100,
+          });
+        results.push(...res.results);
+        offset += res.results.length;
+      } while (results.length < res.total || res.results.length > 0);
+
+      return results;
+    } catch (e) {
+      if (e instanceof MeiliSearchApiError && e.response.status === 404) {
+        return Promise.resolve([]);
       }
       throw e;
     }
@@ -1240,7 +1274,7 @@ export class MeilisearchService implements ISearchService {
     let status: EnqueuedTaskObject['status'] = 'enqueued';
     let task: Task;
     do {
-      task = await this.client().getTask(taskId);
+      task = await this.client().tasks.getTask(taskId);
       status = task.status;
       await wait(500);
     } while (

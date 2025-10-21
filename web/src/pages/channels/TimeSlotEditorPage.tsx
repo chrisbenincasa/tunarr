@@ -34,7 +34,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
-import type { TimeSlot, TimeSlotSchedule } from '@tunarr/types/api';
+import type { TimeSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -56,6 +56,10 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import type {
+  TimeSlotForm,
+  UITimeSlot,
+} from '../../components/slot_scheduler/SlotTypes.ts';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { flexOptions, padOptions } from '../../helpers/slotSchedulerUtil.ts';
 import { toggle } from '../../helpers/util.ts';
@@ -67,8 +71,6 @@ import type { Maybe } from '../../types/util.ts';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(dayjsMod);
-
-export type TimeSlotForm = Omit<TimeSlotSchedule, 'timeZoneOffset' | 'type'>;
 
 const latenessOptions: DropdownOption<number>[] = [
   dayjs.duration(5, 'minutes'),
@@ -243,7 +245,7 @@ export default function TimeSlotEditorPage() {
     (e: SelectChangeEvent<'day' | 'week' | 'month'>) => {
       const value = e.target.value as TimeSlotSchedule['period'];
       setValue('period', value, { shouldDirty: true });
-      let newSlots: TimeSlot[] = [];
+      let newSlots: UITimeSlot[] = [];
       const currentSlots = getValues('slots');
       if (value === 'day') {
         // Remove slots

@@ -28,6 +28,7 @@ import type { StrictOmit } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
+import type { UITimeSlot } from '../../pages/channels/TimeSlotEditorPage.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
@@ -49,7 +50,7 @@ type EditTimeSlotDialogContentProps = {
   onClose: () => void;
 };
 
-type PartialTimeSlot = StrictOmit<TimeSlot, 'startTime'>;
+type PartialTimeSlot = StrictOmit<UITimeSlot, 'startTime'>;
 
 export const EditTimeSlotDialogContent = ({
   slot,
@@ -61,7 +62,7 @@ export const EditTimeSlotDialogContent = ({
   const currentPeriod = getSlotFormValues('period');
   const { data: fillerLists } = useFillerLists();
 
-  const formMethods = useForm<TimeSlot>({
+  const formMethods = useForm<UITimeSlot>({
     defaultValues: slot,
     reValidateMode: 'onChange',
   });
@@ -101,46 +102,67 @@ export const EditTimeSlotDialogContent = ({
 
   const newSlotForType = useCallback(
     (type: TimeSlot['type']) => {
+      const opt = find(
+        programOptions,
+        (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
+      );
       return match(type)
         .returnType<PartialTimeSlot>()
-        .with('custom-show', () => ({
-          type: 'custom-show',
-          order: 'next',
-          direction: 'asc',
-          customShowId: find(
-            programOptions,
-            (opt): opt is CustomShowProgramOption => opt.type === 'custom-show',
-          )!.customShowId,
-        }))
+        .with('custom-show', () => {
+          return {
+            type: 'custom-show',
+            order: 'next',
+            direction: 'asc',
+            customShowId: opt!.customShowId,
+            title: opt!.description,
+          };
+        })
         .with('movie', () => ({
           type: 'movie',
           order: 'alphanumeric',
           direction: 'asc',
+          title: 'Movies',
         }))
-        .with('filler', () => ({
-          type: 'filler',
-          order: 'shuffle_prefer_short',
-          decayFactor: 0.5,
-          durationWeighting: 'linear',
-          recoveryFactor: 0.05,
-          fillerListId: programOptions.find(
+        .with('filler', () => {
+          const opt = programOptions.find(
             (opt): opt is FillerProgramOption => opt.type === 'filler',
-          )!.fillerListId,
-        }))
-        .with('flex', () => ({ type: 'flex', order: 'next', direction: 'asc' }))
-        .with('redirect', () => ({
-          type: 'redirect',
-          channelId: programOptions.find((opt) => opt.type === 'redirect')!
-            .channelId,
+          );
+          return {
+            type: 'filler',
+            order: 'shuffle_prefer_short',
+            decayFactor: 0.5,
+            durationWeighting: 'linear',
+            recoveryFactor: 0.05,
+            fillerListId: opt!.fillerListId,
+            title: opt!.description,
+          };
+        })
+        .with('flex', () => ({
+          type: 'flex',
           order: 'next',
           direction: 'asc',
+          title: 'Flex',
         }))
-        .with('show', () => ({
-          type: 'show',
-          showId: programOptions.find((opt) => opt.type === 'show')?.showId,
-          order: 'next',
-          direction: 'asc',
-        }))
+        .with('redirect', () => {
+          const opt = programOptions.find((opt) => opt.type === 'redirect');
+          return {
+            type: 'redirect',
+            channelId: opt!.channelId,
+            order: 'next',
+            direction: 'asc',
+            title: `Redirect to Channel ${opt!.channelName}`,
+          };
+        })
+        .with('show', () => {
+          const opt = programOptions.find((opt) => opt.type === 'show');
+          return {
+            type: 'show' as const,
+            showId: opt?.showId ?? '',
+            order: 'next',
+            direction: 'asc',
+            title: opt?.description ?? '',
+          };
+        })
         .exhaustive();
     },
     [programOptions],

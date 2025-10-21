@@ -1,18 +1,18 @@
 import { Autocomplete, ListItem, TextField } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { createTypeSearchField } from '@tunarr/shared/util';
-import type { ProgramOrFolder } from '@tunarr/types';
-import type { BaseSlot } from '@tunarr/types/api';
+import type { Show } from '@tunarr/types';
 import { useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { postApiProgramsSearchInfiniteOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
+import type { UIShowProgrammingTimeSlot } from './SlotTypes.ts';
 
-type Opt = ProgramOrFolder | { type: 'sentinel' };
+type Opt = Show | { type: 'sentinel' };
 
 export const ShowSearchSlotProgrammingForm = () => {
-  const { control } = useFormContext<BaseSlot>();
+  const { control, setValue } = useFormContext<UIShowProgrammingTimeSlot>();
   const [searchQuery, setSearchQuery] = useState('');
   const enabled = useMemo(() => searchQuery.length >= 1, [searchQuery]);
 
@@ -62,8 +62,9 @@ export const ShowSearchSlotProgrammingForm = () => {
   });
 
   const options = useMemo(() => {
-    const realOpts: Opt[] =
-      results.data?.pages.flatMap((page) => page.results) ?? [];
+    const realOpts: Opt[] = (
+      results.data?.pages.flatMap((page) => page.results) ?? []
+    ).filter((result) => result.type === 'show');
     if (enabled && realOpts.length > 0 && results.hasNextPage) {
       realOpts.push({ type: 'sentinel' });
     }
@@ -93,11 +94,12 @@ export const ShowSearchSlotProgrammingForm = () => {
               }
               return <ListItem {...optProps}>{opt.title}</ListItem>;
             }}
-            onChange={(_, value) =>
-              value && value?.type !== 'sentinel'
-                ? field.onChange(value.uuid)
-                : void 0
-            }
+            onChange={(_, value) => {
+              if (value && value.type !== 'sentinel') {
+                field.onChange(value.uuid);
+                setValue('show', value);
+              }
+            }}
             renderInput={(params) => <TextField {...params} label="Program" />}
             autoComplete
             onInputChange={(_, newInputValue) => {

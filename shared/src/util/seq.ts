@@ -110,7 +110,11 @@ export function groupBy<T, Key extends string | number | symbol>(
   f: (t: T) => Key,
 ): Record<Key, NonEmptyArray<T>>;
 export function groupBy<T, Key extends string | number | symbol>(
-  arr: T[] | null | undefined,
+  arr: Array<T>,
+  f: (t: T) => Key,
+): Record<Key, Array<T>>;
+export function groupBy<T, Key extends string | number | symbol>(
+  arr: T[] | NonEmptyArray<T> | null | undefined,
   f: (t: T) => Key,
 ): Record<Key, T[]> {
   if (isNil(arr)) {

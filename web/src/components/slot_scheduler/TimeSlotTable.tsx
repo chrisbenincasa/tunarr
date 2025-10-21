@@ -49,7 +49,11 @@ import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
 import { EditTimeSlotDialogContent } from './EditTimeSlotDialogContent.tsx';
-import type { SlotWarning, TimeSlotTableRowType } from './SlotTypes.ts';
+import type {
+  SlotWarning,
+  TimeSlotTableRowType,
+  UITimeSlot,
+} from './SlotTypes.ts';
 import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
@@ -225,13 +229,16 @@ export const TimeSlotTable = () => {
         id: 'programming',
         enableEditing: true,
         Cell: ({ cell }) => {
-          const value = cell.getValue<TimeSlot>();
+          const value = cell.getValue<UITimeSlot>();
+          console.log(value);
           switch (value.type) {
             case 'movie':
               return 'Movie';
             case 'show':
-              return find(programOptions, { showId: value.showId })
-                ?.description;
+              return (
+                value.show?.title ??
+                find(programOptions, { showId: value.showId })?.description
+              );
             case 'flex':
               return 'Flex';
             case 'redirect':
@@ -254,24 +261,24 @@ export const TimeSlotTable = () => {
         grow: true,
         size: 350,
       },
-      {
-        header: '# of Programs',
-        id: 'programCount',
-        enableEditing: false,
-        Cell({ row }) {
-          const programming = row.original;
-          switch (programming.type) {
-            case 'movie':
-            case 'show':
-            case 'custom-show':
-            case 'filler':
-              return row.original.programCount;
-            case 'flex':
-            case 'redirect':
-              return '-';
-          }
-        },
-      },
+      // {
+      //   header: '# of Programs',
+      //   id: 'programCount',
+      //   enableEditing: false,
+      //   Cell({ row }) {
+      //     const programming = row.original;
+      //     switch (programming.type) {
+      //       case 'movie':
+      //       case 'show':
+      //       case 'custom-show':
+      //       case 'filler':
+      //         return row.original.programCount;
+      //       case 'flex':
+      //       case 'redirect':
+      //         return '-';
+      //     }
+      //   },
+      // },
       {
         header: 'Order',
         accessorFn(originalRow) {

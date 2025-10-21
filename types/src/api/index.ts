@@ -13,7 +13,6 @@ import {
 } from '../schemas/channelSchema.js';
 import {
   ChannelProgramSchema,
-  CondensedChannelProgrammingSchema,
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
@@ -29,6 +28,7 @@ import {
   PlexServerSettingsSchema,
 } from '../schemas/settingsSchemas.js';
 import {
+  MaterializedRandomSlot,
   RandomSlotScheduleSchema,
   TimeSlotScheduleSchema,
 } from './Scheduling.js';
@@ -309,10 +309,6 @@ export type ChannelSessionsResponse = z.infer<
   typeof ChannelSessionsResponseSchema
 >;
 
-// This is sorta hacky.
-export const GetChannelProgrammingResponseSchema =
-  CondensedChannelProgrammingSchema;
-
 export const JellyfinGetLibraryItemsQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().positive().optional(),
@@ -437,3 +433,12 @@ export const ScanProgressSchema = z.discriminatedUnion('state', [
 ]);
 
 export type ScanProgress = z.infer<typeof ScanProgressSchema>;
+
+export const MaterializedSchedule = z.discriminatedUnion('type', [
+  TimeSlotScheduleSchema,
+  RandomSlotScheduleSchema.omit({ slots: true }).extend({
+    slots: MaterializedRandomSlot,
+  }),
+]);
+
+export type MaterializedSchedule = z.infer<typeof MaterializedSchedule>;

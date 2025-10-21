@@ -1,6 +1,6 @@
 import React from 'react';
 import type { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
-import type { TimeSlotForm } from '../../pages/channels/TimeSlotEditorPage.tsx';
+import type { TimeSlotForm } from './SlotTypes.ts';
 
 export const TimeSlotFormContext =
   React.createContext<TimeSlotFormContextType | null>(null);

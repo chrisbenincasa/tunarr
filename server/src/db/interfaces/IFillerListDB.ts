@@ -11,6 +11,9 @@ import type { ChannelFillerShowWithContent } from '../schema/derivedTypes.js';
 
 export interface IFillerListDB {
   getFiller(id: string): Promise<Maybe<FillerShowWithContent>>;
+  getFillerListsByIds(
+    ids: string[],
+  ): Promise<(FillerShow & { contentCount: number })[]>;
   saveFiller(
     id: string,
     updateRequest: UpdateFillerListRequest,

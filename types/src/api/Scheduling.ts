@@ -1,4 +1,8 @@
 import { z } from 'zod/v4';
+import { ChannelSchema } from '../schemas/channelSchema.js';
+import { CustomShowSchema } from '../schemas/customShowsSchema.js';
+import { FillerListSchema } from '../schemas/fillerSchema.js';
+import { Show } from '../schemas/programmingSchema.js';
 import { PlexSearchSchema } from './plexSearch.js';
 
 const SlotProgrammingOrderSchema = z.enum([
@@ -129,6 +133,11 @@ export const ShowProgrammingTimeSlotSchema = z.object({
   ...ShowProgrammingSlotSchema.shape,
 });
 
+export const MaterializedShowTimeSlot = z.object({
+  ...ShowProgrammingTimeSlotSchema.shape,
+  show: Show,
+});
+
 export const FlexProgrammingTimeSlotSchema = z.object({
   ...BaseTimeSlot.shape,
   ...FlexProgrammingSlotSchema.shape,
@@ -136,10 +145,38 @@ export const FlexProgrammingTimeSlotSchema = z.object({
 
 export const RedirectProgrammingTimeSlotSchema =
   RedirectProgrammingSlotSchema.extend(BaseTimeSlot.shape);
+
+export const MaterializedRedirectTimeSlot = z.object({
+  ...RedirectProgrammingTimeSlotSchema.shape,
+  channel: ChannelSchema,
+});
+export type MaterializedRedirectTimeSlot = z.infer<
+  typeof MaterializedRedirectTimeSlot
+>;
+
 export const CustomShowProgrammingTimeSlotSchema =
   CustomShowProgrammingSlotSchema.extend(BaseTimeSlot.shape);
+
+export const MaterializedCustomShowTimeSlot = z.object({
+  ...CustomShowProgrammingTimeSlotSchema.shape,
+  customShow: CustomShowSchema.omit({ programs: true, totalDuration: true }),
+});
+
+export type MaterializedCustomShowTimeSlot = z.infer<
+  typeof MaterializedCustomShowTimeSlot
+>;
+
 export const FillerShowProgrammingTimeSlotSchema =
   FillerProgrammingSlotSchema.extend(BaseTimeSlot.shape);
+
+export const MaterializedFillerTimeSlot = z.object({
+  ...FillerShowProgrammingTimeSlotSchema.shape,
+  fillerList: FillerListSchema.omit({ programs: true }),
+});
+
+export type MaterializedFillerTimeSlot = z.infer<
+  typeof MaterializedFillerTimeSlot
+>;
 
 export type MovieProgrammingTimeSlot = z.infer<
   typeof MovieProgrammingTimeSlotSchema
@@ -158,11 +195,11 @@ export type CustomShowProgrammingTimeSlot = z.infer<
 >;
 
 export type RedirectProgrammingTimeSlot = z.infer<
-  typeof RedirectProgrammingRandomSlotSchema
+  typeof RedirectProgrammingTimeSlotSchema
 >;
 
 export type FillerProgrammingTimeSlot = z.infer<
-  typeof FillerProgrammingSlotSchema
+  typeof FillerShowProgrammingTimeSlotSchema
 >;
 
 export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
@@ -186,6 +223,17 @@ export const TimeSlotSchema = z.discriminatedUnion('type', [
 ]);
 
 export type TimeSlot = z.infer<typeof TimeSlotSchema>;
+
+export const MaterializedTimeSlot = z.discriminatedUnion('type', [
+  MovieProgrammingTimeSlotSchema,
+  MaterializedShowTimeSlot,
+  FlexProgrammingTimeSlotSchema,
+  MaterializedRedirectTimeSlot,
+  MaterializedCustomShowTimeSlot,
+  MaterializedFillerTimeSlot,
+]);
+
+export type MaterializedTimeSlot = z.infer<typeof MaterializedTimeSlot>;
 
 export const TimeSlotScheduleSchema = z.object({
   type: z.literal('time'),
@@ -250,6 +298,11 @@ export const ShowProgrammingRandomSlotSchema = z.object({
   ...ShowProgrammingSlotSchema.shape,
 });
 
+export const MaterializedShowRandomSlot = z.object({
+  ...ShowProgrammingRandomSlotSchema.shape,
+  show: Show,
+});
+
 export const FlexProgrammingRandomSlotSchema = z.object({
   ...BaseRandomSlotSchema.shape,
   ...FlexProgrammingSlotSchema.shape,
@@ -258,6 +311,11 @@ export const FlexProgrammingRandomSlotSchema = z.object({
 export const RedirectProgrammingRandomSlotSchema = z.object({
   ...BaseRandomSlotSchema.shape,
   ...RedirectProgrammingSlotSchema.shape,
+});
+
+export const MaterializedRedirectRandomSlot = z.object({
+  ...RedirectProgrammingRandomSlotSchema.shape,
+  channel: ChannelSchema,
 });
 
 export const CustomShowProgrammingRandomSchema = z.object({
@@ -301,6 +359,15 @@ export const RandomSlotSchema = z.discriminatedUnion('type', [
 ]);
 
 export type RandomSlot = z.infer<typeof RandomSlotSchema>;
+
+export const MaterializedRandomSlot = z.discriminatedUnion('type', [
+  MovieProgrammingRandomSlotSchema,
+  MaterializedShowRandomSlot,
+  FlexProgrammingRandomSlotSchema,
+  MaterializedRedirectRandomSlot,
+  CustomShowProgrammingRandomSchema,
+  FillerProgrammingRandomSlotSchema,
+]);
 
 export const RandomSlotDistributionTypeSchema = z.enum([
   'uniform',

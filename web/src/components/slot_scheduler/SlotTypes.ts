@@ -1,6 +1,37 @@
 import type { RandomSlotForm } from '@/pages/channels/RandomSlotEditorPage.tsx';
-import type { TimeSlotForm } from '@/pages/channels/TimeSlotEditorPage.tsx';
 import type { FieldArrayWithId } from 'react-hook-form';
+
+import type { Show } from '@tunarr/types';
+import type {
+  CustomShowProgrammingTimeSlot,
+  FillerProgrammingTimeSlot,
+  FlexProgrammingTimeSlot,
+  MovieProgrammingTimeSlot,
+  RedirectProgrammingTimeSlot,
+  ShowProgrammingTimeSlot,
+  TimeSlotSchedule,
+} from '@tunarr/types/api';
+
+export type UIShowProgrammingTimeSlot = ShowProgrammingTimeSlot & {
+  show?: Show;
+};
+
+export type UITimeSlot =
+  | MovieProgrammingTimeSlot
+  | UIShowProgrammingTimeSlot
+  | FlexProgrammingTimeSlot
+  | RedirectProgrammingTimeSlot
+  | CustomShowProgrammingTimeSlot
+  | FillerProgrammingTimeSlot;
+
+export type TimeSlotForm = {
+  flexPreference: TimeSlotSchedule['flexPreference'];
+  latenessMs: number;
+  maxDays: number;
+  padMs: number;
+  period: 'day' | 'week';
+  slots: UITimeSlot[];
+};
 
 export type ProgramTooLongWarning = {
   type: 'program_too_long';
