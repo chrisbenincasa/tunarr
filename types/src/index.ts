@@ -1,4 +1,5 @@
 export * from './Channel.js';
+export * from './Collections.js';
 export * from './CustomShow.js';
 export * from './Event.js';
 export * from './FfmpegSettings.js';

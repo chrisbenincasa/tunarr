@@ -4,9 +4,10 @@ import type {
   FfprobeSubtitleStream,
   FfprobeVideoStream,
 } from '@/types/ffmpeg.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import type { Maybe } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
 import {
+  isDefined,
   isNonEmptyArray,
   isNonEmptyString,
   parseFloatOrNull,
@@ -17,7 +18,8 @@ import { inject, injectable } from 'inversify';
 import { filter, find, isEmpty, isNull, map, orderBy } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
 import { LanguageService } from '../services/LanguageService.ts';
-import { StreamDetailsFetcher } from './StreamDetailsFetcher.ts';
+import { Result } from '../types/result.ts';
+import { StreamDetailsFetcher } from './ExternalStreamDetailsFetcher.ts';
 import type {
   AudioStreamDetails,
   ProgramStreamResult,
@@ -41,15 +43,19 @@ export class FfprobeStreamDetails
 
   async getStream({
     path,
-  }: FfprobeStreamDetailsRequest): Promise<Nullable<ProgramStreamResult>> {
-    const probeResult = await this.ffmpegInfo.probeFile(path);
+  }: FfprobeStreamDetailsRequest): Promise<Result<ProgramStreamResult>> {
+    const probeResult = (
+      await Result.attemptAsync(() => this.ffmpegInfo.probeFile(path))
+    ).filter(isDefined);
 
-    if (!probeResult) {
-      return null;
+    if (probeResult.isFailure()) {
+      return probeResult.recast();
     }
 
+    const probeDetails = probeResult.get();
+
     const videoStream = find(
-      probeResult.streams,
+      probeDetails.streams,
       (stream): stream is FfprobeVideoStream => stream.codec_type === 'video',
     );
 
@@ -93,7 +99,7 @@ export class FfprobeStreamDetails
 
     const audioStreamDetails = map(
       filter(
-        probeResult.streams,
+        probeDetails.streams,
         (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
       ),
       (audioStream) => {
@@ -117,7 +123,7 @@ export class FfprobeStreamDetails
 
     const subtitleStreamDetails = map(
       filter(
-        probeResult.streams,
+        probeDetails.streams,
         (stream): stream is FfprobeSubtitleStream =>
           stream.codec_type === 'subtitle',
       ),
@@ -138,7 +144,7 @@ export class FfprobeStreamDetails
       },
     );
 
-    return {
+    return Result.success({
       streamDetails: {
         videoDetails: videoDetails ? [videoDetails] : undefined,
         audioDetails: isEmpty(audioStreamDetails)
@@ -147,9 +153,9 @@ export class FfprobeStreamDetails
         subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
           ? subtitleStreamDetails
           : undefined,
-        duration: dayjs.duration({ seconds: probeResult.format.duration }),
+        duration: dayjs.duration({ seconds: probeDetails.format.duration }),
         chapters: seq.collect(
-          orderBy(probeResult.chapters, (c) => c.start, 'asc'),
+          orderBy(probeDetails.chapters, (c) => c.start, 'asc'),
           (chapter, index) => {
             const startSeconds = parseFloatOrNull(chapter.start_time);
             const endSeconds = parseFloatOrNull(chapter.end_time);
@@ -172,7 +178,7 @@ export class FfprobeStreamDetails
       streamSource: path.startsWith('http')
         ? new HttpStreamSource(path)
         : new FileStreamSource(path),
-    };
+    });
   }
 }
 

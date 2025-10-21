@@ -409,6 +409,9 @@ export const ProgramSearchResponse = z.object({
   page: z.number(),
   totalPages: z.number(),
   totalHits: z.number(),
+  facetDistribution: z
+    .record(z.string(), z.record(z.string(), z.number()))
+    .optional(),
 });
 
 export type ProgramSearchResponse = z.infer<typeof ProgramSearchResponse>;

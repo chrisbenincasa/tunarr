@@ -103,7 +103,7 @@ export const LibraryProgramGrid = ({
     return {
       query: searchRequest?.query,
       filter,
-      restrictSeachTo: searchRequest?.restrictSearchTo,
+      restrictSearchTo: searchRequest?.restrictSearchTo,
     };
   }, [
     currentParentContext,
@@ -200,14 +200,10 @@ export const LibraryProgramGrid = ({
 
   return (
     <Box sx={{ mt: 1 }}>
-      {depth === 0 && (
-        <>
-          {!isUndefined(totalHits) && (
-            <Typography textAlign="right" variant="subtitle2">
-              Total hits: {totalHits >= 1000 ? '>1000' : totalHits}
-            </Typography>
-          )}
-        </>
+      {depth === 0 && !isUndefined(totalHits) && (
+        <Typography textAlign="right" variant="subtitle2">
+          Total hits: {totalHits >= 1000 ? '>1000' : totalHits}
+        </Typography>
       )}
       {search.isLoading && <LinearProgress />}
       {viewType === 'grid' ? (

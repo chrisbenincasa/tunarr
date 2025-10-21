@@ -1,4 +1,4 @@
-import { Checklist, Clear, Search } from '@mui/icons-material';
+import { Checklist, Clear, Save, Search } from '@mui/icons-material';
 import {
   Box,
   IconButton,
@@ -9,7 +9,9 @@ import {
 } from '@mui/material';
 import { useMatches } from '@tanstack/react-router';
 import { search as tunarrSearch } from '@tunarr/shared/util';
+import type { MediaSourceContentType } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
+import { useToggle } from '@uidotdev/usehooks';
 import { isEmpty, last } from 'lodash-es';
 import { useCallback, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
@@ -18,23 +20,24 @@ import { difference, isNonEmptyString } from '../../helpers/util.ts';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { Route } from '../../routes/__root.tsx';
 import type { Nullable } from '../../types/util.ts';
+import { CreateSmartCollectionDialog } from '../smart_collections/CreateSmartCollectionDialog.tsx';
 import {
   AllSearchRestrictKeys,
   SearchFieldRestrictMenu,
 } from './SearchFieldRestrictMenu.tsx';
 
 type SearchBuilderProps = {
-  // mediaSource?: MediaSourceSettings;
-  // library?: MediaSourceLibrary;
   onSearch: (query: SearchRequest) => void;
   initialQuery?: string;
+  // If we're focused on a specific media / library, filter available
+  // field options
+  mediaTypeFilter?: MediaSourceContentType;
 };
 
 export function SearchBuilder({
-  // mediaSource,
-  // library,
   onSearch,
   initialQuery,
+  mediaTypeFilter,
 }: SearchBuilderProps) {
   const navigate = Route.useNavigate();
   const routeMatch = useMatches();
@@ -43,6 +46,8 @@ export function SearchBuilder({
   const [searchRestrctState, setSearchRestrictState] = useState<
     ReadonlySet<string>
   >(AllSearchRestrictKeys);
+  const [smartCollectionModalOpen, toggleSmartCollectionModal] =
+    useToggle(false);
 
   const formMethods = useForm<SearchRequest>({
     defaultValues: {
@@ -100,27 +105,6 @@ export function SearchBuilder({
     [expr, onSearch, query, routeMatch, searchRestrctState],
   );
 
-  // const handleSearchFilterTypeChange = useCallback(
-  //   (
-  //     newType: 'basic' | 'advanced' | 'none',
-  //     originalOnChange: (...args: unknown[]) => void,
-  //   ) => {
-  //     const newValue = match([filter, newType])
-  //       .returnType<SearchFilter | null>()
-  //       .with([P._, 'none'], () => null)
-  //       .with([P._, 'basic'], () => defaultValueNode)
-  //       .with([P._, 'advanced'], ([currentFilter, _]) => ({
-  //         op: 'and',
-  //         type: 'op',
-  //         children: [currentFilter ?? defaultValueNode],
-  //       }))
-  //       .exhaustive();
-
-  //     originalOnChange(newValue);
-  //   },
-  //   [filter],
-  // );
-
   const handleClear = () => {
     formMethods.setValue('query', '');
     navigate({
@@ -171,12 +155,17 @@ export function SearchBuilder({
                             onClose={() => setSearchRestrictEl(null)}
                             searchFields={searchRestrctState}
                             onSearchFieldsChanged={setSearchRestrictState}
-                            // libraryType={
-                            //   mediaSource?.type === 'local'
-                            //     ? mediaSource.mediaType
-                            //     : library?.mediaType
-                            // }
+                            mediaType={mediaTypeFilter}
                           />
+                        </InputAdornment>
+                        <InputAdornment position="end">
+                          <Tooltip title="Save as Smart Collection">
+                            <IconButton
+                              onClick={() => toggleSmartCollectionModal(true)}
+                            >
+                              <Save />
+                            </IconButton>
+                          </Tooltip>
                         </InputAdornment>
                         <InputAdornment position="end">
                           <IconButton type="submit">
@@ -192,48 +181,13 @@ export function SearchBuilder({
               />
             )}
           />
-          {/* <Box>
-            <FormLabel>Filter: </FormLabel>
-            <Controller
-              control={formMethods.control}
-              name="filter"
-              render={({ field }) => {
-                return (
-                  <ToggleButtonGroup
-                    size="small"
-                    color="primary"
-                    exclusive
-                    value={
-                      !field.value
-                        ? 'none'
-                        : field.value.type === 'value'
-                          ? 'basic'
-                          : 'advanced'
-                    }
-                    onChange={(_, value) =>
-                      value
-                        ? handleSearchFilterTypeChange(
-                            value as 'basic' | 'advanced' | 'none',
-                            field.onChange,
-                          )
-                        : void 0
-                    }
-                  >
-                    <ToggleButton value="none">None</ToggleButton>
-                    <ToggleButton value="basic">Basic</ToggleButton>
-                    <ToggleButton value="advanced">Advanced</ToggleButton>
-                  </ToggleButtonGroup>
-                );
-              }}
-            />
-          </Box> */}
-          {/* <Box>
-            <Stack gap={2} useFlexGap>
-              {renderFilters()}
-            </Stack>
-          </Box> */}
         </Stack>
       </Box>
+      <CreateSmartCollectionDialog
+        open={smartCollectionModalOpen}
+        onClose={() => toggleSmartCollectionModal(false)}
+        initialQuery={query}
+      />
     </FormProvider>
   );
 }

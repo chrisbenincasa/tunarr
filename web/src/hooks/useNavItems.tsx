@@ -3,9 +3,9 @@ import {
   Computer,
   Home,
   InfoOutlined,
-  LiveTv,
   Notes,
   Preview,
+  Psychology,
   Settings,
   SettingsRemote,
   Theaters,
@@ -13,6 +13,7 @@ import {
   VideoLibrary,
 } from '@mui/icons-material';
 import type { BadgeProps } from '@mui/material';
+import type { Register } from '@tanstack/react-router';
 import { useRouterState } from '@tanstack/react-router';
 import { countBy, last, trimEnd } from 'lodash-es';
 import { useCallback, useMemo, type ReactNode } from 'react';
@@ -66,7 +67,7 @@ export const useNavItems = () => {
         path: '/channels',
         icon: <SettingsRemote />,
       },
-      { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
+      // { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
       {
         name: 'Media',
         path: '/library',
@@ -76,6 +77,11 @@ export const useNavItems = () => {
             name: 'Filler',
             path: '/library/fillers',
             icon: <Preview />,
+          },
+          {
+            name: 'Smart Collections',
+            path: '/library/smart_collections',
+            icon: <Psychology />,
           },
           {
             name: 'Custom Shows',
@@ -133,7 +139,7 @@ export const useNavItems = () => {
 
 export interface NavItem {
   name: string;
-  path: string;
+  path: keyof Register['router']['routesByPath'];
   hidden?: boolean;
   children?: NavItem[];
   icon?: ReactNode;

@@ -1,3 +1,4 @@
+import { Stack } from '@mui/material';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
 import { useCallback } from 'react';
@@ -20,16 +21,21 @@ export const LibrarySearch = (props: Props) => {
     toggleOrSetSelectedProgramsDrawer,
     initialSearchQuery,
   } = props;
+
   const handleSearchChange = useCallback((searchRequest: SearchRequest) => {
-    console.log(searchRequest);
     setSearchRequest(searchRequest);
   }, []);
 
   return (
-    <>
+    <Stack gap={2}>
       <SearchBuilder
         onSearch={handleSearchChange}
         initialQuery={initialSearchQuery}
+        mediaTypeFilter={
+          props.mediaSource?.type === 'local'
+            ? props.mediaSource.mediaType
+            : props.library?.mediaType
+        }
       />
       {!disableProgramSelection && toggleOrSetSelectedProgramsDrawer && (
         <SelectedProgrammingActions
@@ -37,6 +43,6 @@ export const LibrarySearch = (props: Props) => {
         />
       )}
       <LibraryProgramGrid {...props} />
-    </>
+    </Stack>
   );
 };

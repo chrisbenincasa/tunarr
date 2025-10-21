@@ -29,7 +29,9 @@ import {
   MediaSourceWithRelations,
   SpecificProgramSourceOrmType,
 } from '../../db/schema/derivedTypes.js';
+import { WrappedError } from '../../types/errors.ts';
 import { JellyfinT } from '../../types/internal.ts';
+import { Result } from '../../types/result.ts';
 import {
   ifDefined,
   isDefined,
@@ -37,12 +39,12 @@ import {
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.js';
-import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
-import { PathCalculator } from '../PathCalculator.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
-} from '../StreamDetailsFetcher.ts';
+} from '../ExternalStreamDetailsFetcher.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../PathCalculator.ts';
 import {
   type AudioStreamDetails,
   HttpStreamSource,
@@ -79,9 +81,13 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     mediaSource: MediaSourceWithRelations,
     program: SpecificProgramSourceOrmType<JellyfinT, StreamLineupProgram>,
     depth: number = 0,
-  ): Promise<Nullable<ProgramStreamResult>> {
+  ): Promise<Result<ProgramStreamResult>> {
     if (depth > 1) {
-      return null;
+      return Result.failure(
+        WrappedError.forMessage(
+          'Exceeded maximum recursion depth when trying to find Plex item.',
+        ),
+      );
     }
 
     this.jellyfin =
@@ -98,7 +104,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         itemMetadataResult.error,
         'Error getting Jellyfin stream',
       );
-      return null;
+      return itemMetadataResult.recast();
     }
 
     const itemMetadata = itemMetadataResult.get();
@@ -122,13 +128,18 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         );
       }
 
-      return null;
+      return Result.failure(
+        'Could not find matching Jellyfin item to match the changed item. Not good!',
+      );
     }
 
     const details = await this.getItemStreamDetails(program, itemMetadata);
 
     if (isNull(details)) {
-      return null;
+      return Result.failure(
+        'Could not extract stream details for Jellyfin item: ' +
+          JSON.stringify(itemMetadata),
+      );
     }
 
     const filePath =
@@ -144,10 +155,10 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       serverPath,
     );
 
-    return {
+    return Result.success({
       streamSource,
       streamDetails: details,
-    };
+    });
   }
 
   private async getStreamSource(

@@ -24,6 +24,7 @@ import {
   takeWhile,
   trimEnd,
 } from 'lodash-es';
+import util from 'node:util';
 import { type NonEmptyArray } from 'ts-essentials';
 import { MediaSourceType } from '../../db/schema/base.ts';
 import {
@@ -31,7 +32,9 @@ import {
   SpecificProgramSourceOrmType,
 } from '../../db/schema/derivedTypes.js';
 import type { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
+import { WrappedError } from '../../types/errors.ts';
 import { EmbyT } from '../../types/internal.ts';
+import { Result } from '../../types/result.ts';
 import {
   ifDefined,
   isDefined,
@@ -39,12 +42,12 @@ import {
   isNonEmptyString,
   nullToUndefined,
 } from '../../util/index.ts';
-import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
-import { PathCalculator } from '../PathCalculator.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
-} from '../StreamDetailsFetcher.ts';
+} from '../ExternalStreamDetailsFetcher.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../PathCalculator.ts';
 import {
   type AudioStreamDetails,
   HttpStreamSource,
@@ -78,9 +81,13 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
     mediaSource: MediaSourceWithRelations,
     program: SpecificProgramSourceOrmType<EmbyT, StreamLineupProgram>,
     depth: number = 0,
-  ): Promise<Nullable<ProgramStreamResult>> {
+  ): Promise<Result<ProgramStreamResult>> {
     if (depth > 1) {
-      return null;
+      return Result.failure(
+        WrappedError.forMessage(
+          'Exceeded maximum recursion depth when trying to find Plex item.',
+        ),
+      );
     }
 
     this.emby =
@@ -91,15 +98,15 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
     const itemMetadataResult = await this.emby.getItem(program.externalKey);
 
     if (itemMetadataResult.isFailure()) {
-      this.logger.error(itemMetadataResult, 'Error getting Emby stream');
-      return null;
+      this.logger.error(itemMetadataResult.error, 'Error getting Emby stream');
+      return itemMetadataResult.recast();
     }
 
     const itemMetadata = itemMetadataResult.get();
 
     if (isUndefined(itemMetadata)) {
       this.logger.error(
-        'Emby item with ID %s does not exist. Underlying file might have change. Attempting to locate it.',
+        'Emby item with ID %s does not exist. Underlying file might have changed.',
         program.externalKey,
       );
       // const newExternalId =
@@ -116,13 +123,18 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       //   );
       // }
 
-      return null;
+      return Result.failure(
+        util.format(
+          'Emby item with ID %s does not exist. Underlying file might have changed.',
+          program.externalKey,
+        ),
+      );
     }
 
     const details = await this.getItemStreamDetails(program, itemMetadata);
 
     if (isNull(details)) {
-      return null;
+      return Result.failure('Could not find a media source for Emby item.');
     }
 
     const filePath =
@@ -137,10 +149,10 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       serverPath,
     );
 
-    return {
+    return Result.success({
       streamSource,
       streamDetails: details,
-    };
+    });
   }
 
   private async getStreamSource(

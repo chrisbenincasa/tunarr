@@ -3,6 +3,7 @@
 export * from './utilSchemas.js';
 
 export * from './channelSchema.js';
+export * from './collectionsSchema.js';
 export * from './customShowsSchema.js';
 export * from './eventSchema.js';
 export * from './fillerSchema.js';

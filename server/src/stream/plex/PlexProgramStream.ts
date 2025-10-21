@@ -17,7 +17,7 @@ import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import type { interfaces } from 'inversify';
-import { isNil, isNull, isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import { v4 } from 'uuid';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
 import type { StreamOptions } from '../../ffmpeg/ffmpegBase.ts';
@@ -92,15 +92,15 @@ export class PlexProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await plexStreamDetails.getStream({
+    const streamResult = await plexStreamDetails.getStream({
       server,
       lineupItem: lineupItem.program,
     });
-    if (isNull(stream)) {
-      return Result.forError(
-        new Error('Unable to retrieve stream details from Plex'),
-      );
+    if (streamResult.isFailure()) {
+      return streamResult.recast();
     }
+
+    const stream = streamResult.get();
 
     if (this.killed) {
       this.logger.warn('Plex stream was killed already, returning');

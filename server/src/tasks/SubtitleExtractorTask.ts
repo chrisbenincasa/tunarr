@@ -170,12 +170,13 @@ export class SubtitleExtractorTask extends Task {
       lineupItem: { ...dbProgram, mediaSourceId: mediaSource.uuid },
     });
 
-    if (!stream) {
+    if (stream.isFailure()) {
+      this.logger.error(stream.error);
       return;
     }
 
     const textBasedSubs =
-      stream.streamDetails.subtitleDetails?.filter((subtitle) => {
+      stream.get().streamDetails.subtitleDetails?.filter((subtitle) => {
         return (
           subtitle.type === 'embedded' && !isImageBasedSubtitle(subtitle.codec)
         );
@@ -267,11 +268,11 @@ export class SubtitleExtractorTask extends Task {
           '-hide_banner',
           '-loglevel',
           'warning',
-          ...(stream.streamSource.type === 'http'
+          ...(stream.get().streamSource.type === 'http'
             ? new HttpReconnectOptions().options()
             : []),
           '-i',
-          `${stream.streamSource.path}`,
+          `${stream.get().streamSource.path}`,
           ...subtitleOutputArgs,
         ],
         {

@@ -16,7 +16,7 @@ import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { type interfaces } from 'inversify';
-import { isNil, isNull, isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import { format } from 'node:util';
 import { type FFmpegFactory } from '../../ffmpeg/FFmpegModule.js';
 import { type JellyfinStreamDetails } from './JellyfinStreamDetails.js';
@@ -98,11 +98,11 @@ export class JellyfinProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await jellyfinStreamDetails.getStream({
+    const streamResult = await jellyfinStreamDetails.getStream({
       server,
       lineupItem: lineupItem.program,
     });
-    if (isNull(stream)) {
+    if (streamResult.isFailure()) {
       return Result.forError(
         new Error('Unable to retrieve stream details from Jellyfin'),
       );
@@ -111,6 +111,8 @@ export class JellyfinProgramStream extends ProgramStream {
     if (this.killed) {
       return Result.forError(new Error('Stream was killed already, returning'));
     }
+
+    const stream = streamResult.get();
 
     const streamStats = stream.streamDetails;
     if (streamStats) {

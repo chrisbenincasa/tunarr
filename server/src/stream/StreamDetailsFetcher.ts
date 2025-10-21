@@ -1,36 +1,17 @@
 import { MediaSourceType } from '@/db/schema/base.js';
-import {
-  SpecificMediaSourceType,
-  SpecificProgramSourceOrmType,
-} from '@/db/schema/derivedTypes.js';
 import { inject, injectable } from 'inversify';
 import { match, P } from 'ts-pattern';
-import type { StreamLineupProgram } from '../db/derived_types/StreamLineup.ts';
 import { KEYS } from '../types/inject.ts';
-import type { Nullable } from '../types/util.ts';
+import { Result } from '../types/result.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
+import {
+  ExternalStreamDetailsFetcher,
+  StreamFetchRequest,
+} from './ExternalStreamDetailsFetcher.ts';
 import { JellyfinStreamDetails } from './jellyfin/JellyfinStreamDetails.ts';
+import { LocalProgramStreamDetails } from './local/LocalProgramStreamDetails.ts';
 import { PlexStreamDetails } from './plex/PlexStreamDetails.ts';
 import type { ProgramStreamResult } from './types.ts';
-
-export type StreamFetchRequest<Typ extends MediaSourceType = MediaSourceType> =
-  {
-    server: SpecificMediaSourceType<Typ>;
-    lineupItem: SpecificProgramSourceOrmType<Typ, StreamLineupProgram>;
-  };
-
-export interface StreamDetailsFetcher<RequestType> {
-  getStream(request: RequestType): Promise<Nullable<ProgramStreamResult>>;
-}
-
-export abstract class ExternalStreamDetailsFetcher<
-  Typ extends MediaSourceType = MediaSourceType,
-> implements StreamDetailsFetcher<StreamFetchRequest<Typ>>
-{
-  abstract getStream(
-    request: StreamFetchRequest<Typ>,
-  ): Promise<Nullable<ProgramStreamResult>>;
-}
 
 @injectable()
 export class ExternalStreamDetailsFetcherFactory extends ExternalStreamDetailsFetcher {
@@ -41,11 +22,13 @@ export class ExternalStreamDetailsFetcherFactory extends ExternalStreamDetailsFe
     private jellyfinStreamDetailsFactory: () => JellyfinStreamDetails,
     @inject(KEYS.EmbyStreamDetailsFactory)
     private embyStreamDetailsFactory: () => EmbyStreamDetails,
+    @inject(LocalProgramStreamDetails)
+    private localProgramStreamDetails: LocalProgramStreamDetails,
   ) {
     super();
   }
 
-  getStream(req: StreamFetchRequest): Promise<Nullable<ProgramStreamResult>> {
+  getStream(req: StreamFetchRequest): Promise<Result<ProgramStreamResult>> {
     return match(req)
       .with(P.when(isPlexStreamFetch), (plex) =>
         this.plexStreamDetailsFactory().getStream(plex),
@@ -56,7 +39,16 @@ export class ExternalStreamDetailsFetcherFactory extends ExternalStreamDetailsFe
       .with(P.when(isEmbyStreamFetch), (emby) =>
         this.embyStreamDetailsFactory().getStream(emby),
       )
-      .otherwise(() => Promise.resolve(null));
+      .with(P.when(isLocalStreamFetch), (local) =>
+        this.localProgramStreamDetails.getStream(local),
+      )
+      .otherwise(() =>
+        Promise.resolve(
+          Result.failure(
+            `Could not get stream details for request: ${JSON.stringify(req)}`,
+          ),
+        ),
+      );
   }
 }
 
@@ -84,5 +76,14 @@ function isEmbyStreamFetch(
   return (
     streamFetch.server.type === MediaSourceType.Emby &&
     streamFetch.lineupItem.sourceType === MediaSourceType.Emby
+  );
+}
+
+function isLocalStreamFetch(
+  streamFetch: StreamFetchRequest,
+): streamFetch is StreamFetchRequest<typeof MediaSourceType.Local> {
+  return (
+    streamFetch.server.type === MediaSourceType.Local &&
+    streamFetch.lineupItem.sourceType === MediaSourceType.Local
   );
 }

@@ -22,6 +22,7 @@ import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { MutexMap } from '@/util/mutexMap.js';
+import { search } from '@tunarr/shared/util';
 import type { interfaces } from 'inversify';
 import { Container, ContainerModule } from 'inversify';
 import { isMainThread } from 'node:worker_threads';
@@ -161,6 +162,8 @@ const RootModule = new ContainerModule((bind) => {
   bind(ChildProcessHelper).toSelf().inSingletonScope();
 
   bind(App).toSelf().inSingletonScope();
+
+  bind(search.SearchParser).to(search.SearchParser);
 });
 
 container.load(RootModule);

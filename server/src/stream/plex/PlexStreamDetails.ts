@@ -42,19 +42,22 @@ import {
   sortBy,
   trimEnd,
 } from 'lodash-es';
+import { format } from 'node:util';
 import { container } from '../../container.ts';
 import { MinimalPlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import { MediaSourceType } from '../../db/schema/base.js';
 import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
 import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
+import { WrappedError } from '../../types/errors.ts';
 import { PlexT } from '../../types/internal.ts';
-import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
-import { PathCalculator } from '../PathCalculator.ts';
+import { Result } from '../../types/result.ts';
 import {
   ExternalStreamDetailsFetcher,
   StreamFetchRequest,
-} from '../StreamDetailsFetcher.ts';
+} from '../ExternalStreamDetailsFetcher.ts';
+import { ExternalSubtitleDownloader } from '../ExternalSubtitleDownloader.ts';
+import { PathCalculator } from '../PathCalculator.ts';
 import {
   AudioStreamDetails,
   HttpStreamSource,
@@ -92,9 +95,13 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
     server: PlexMediaSource,
     program: MinimalPlexBackedStreamLineupItem,
     depth: number = 0,
-  ): Promise<Nullable<ProgramStreamResult>> {
+  ): Promise<Result<ProgramStreamResult>> {
     if (depth > 1) {
-      return null;
+      return Result.failure(
+        WrappedError.forMessage(
+          'Exceeded maximum recursion depth when trying to find Plex item.',
+        ),
+      );
     }
 
     const plexExternalInfo = program.externalIds.find(
@@ -105,7 +112,14 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         'Could not find Plex external info for program ID %s',
         program.uuid,
       );
-      return null;
+      return Result.failure(
+        WrappedError.forMessage(
+          format(
+            'Could not find Plex external info for program ID %s',
+            program.uuid,
+          ),
+        ),
+      );
     }
 
     const plexApiClient =
@@ -205,7 +219,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         }
       }
       // This will have to throw somewhere!
-      return null;
+      return itemMetadataResult.recast();
     }
 
     const itemMetadata = itemMetadataResult.get();
@@ -217,7 +231,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         program.externalKey,
         expectedItemType,
       );
-      return null;
+      return Result.failure('');
     }
 
     const details = await this.getItemStreamDetails(
@@ -227,7 +241,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
     );
 
     if (isNull(details)) {
-      return null;
+      return Result.failure('Could got not get item stream details');
     }
 
     if (
@@ -257,10 +271,10 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
       details.serverPath ?? plexExternalInfo.externalFilePath,
     );
 
-    return {
+    return Result.success({
       streamSource,
       streamDetails: details,
-    };
+    });
   }
 
   private async getStreamSource(

@@ -112,11 +112,11 @@ export abstract class FileSystemScanner {
         path: filePath,
       });
 
-      if (!streamDetails) {
-        return Result.forError(new Error(`Could not probe file: ${filePath}`));
+      if (streamDetails.isFailure()) {
+        return streamDetails.recast();
       }
 
-      const videoStreams = streamDetails.streamDetails.videoDetails;
+      const videoStreams = streamDetails.get().streamDetails.videoDetails;
       const streams: MediaStream[] = [];
       if (videoStreams) {
         for (const probeVideoStream of videoStreams) {
@@ -144,8 +144,8 @@ export abstract class FileSystemScanner {
         }
       }
 
-      for (const audioStream of streamDetails.streamDetails.audioDetails ??
-        []) {
+      for (const audioStream of streamDetails.get().streamDetails
+        .audioDetails ?? []) {
         const stream: MediaStream = {
           ...audioStream,
           // uuid: v4(),
@@ -165,7 +165,7 @@ export abstract class FileSystemScanner {
         streams.push(stream);
       }
 
-      for (const subtitleStream of streamDetails.streamDetails
+      for (const subtitleStream of streamDetails.get().streamDetails
         .subtitleDetails ?? []) {
         const stream: MediaStream = {
           ...subtitleStream,
@@ -191,13 +191,13 @@ export abstract class FileSystemScanner {
 
       const firstVideoStream = head(
         orderBy(
-          streamDetails.streamDetails.videoDetails,
+          streamDetails.get().streamDetails.videoDetails,
           (v, i) => (v.streamIndex ?? 0) + i,
           'asc',
         ),
       );
 
-      const chapters = streamDetails.streamDetails.chapters;
+      const chapters = streamDetails.get().streamDetails.chapters;
 
       const mediaItem: MediaItem = {
         // createdAt: statResult.ctime,
@@ -205,7 +205,7 @@ export abstract class FileSystemScanner {
         chapters,
         displayAspectRatio: firstVideoStream?.displayAspectRatio,
         sampleAspectRatio: firstVideoStream?.sampleAspectRatio,
-        duration: +streamDetails.streamDetails.duration,
+        duration: +streamDetails.get().streamDetails.duration,
         frameRate: firstVideoStream?.framerate,
         resolution:
           isDefined(firstVideoStream?.height) &&
