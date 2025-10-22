@@ -1,11 +1,13 @@
+import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import { useChannelSuspense } from '@/hooks/useChannels.ts';
+import { Route } from '@/routes/channels_/$channelId/watch.tsx';
+import { Stack } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import Video from '../../components/Video.tsx';
 import { TvGuide } from '../../components/guide/TvGuide.tsx';
 import { roundCurrentTime } from '../../helpers/util.ts';
-import { Route } from '@/routes/channels_/$channelId/watch.tsx';
 
 export default function ChannelWatchPage() {
   const { channelId } = Route.useParams();
@@ -20,9 +22,15 @@ export default function ChannelWatchPage() {
     channel && (
       <div>
         <Breadcrumbs />
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          "{channel.name}" Live
-        </Typography>
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+          <Typography variant="h4" sx={{ mb: 2, width: '100%' }}>
+            "{channel.name}" Live
+          </Typography>
+          <ChannelOptionsButton
+            channel={channel}
+            hideItems={['duplicate', 'delete', 'watch']}
+          />
+        </Stack>
         <Video channelId={channel.id} />
         <TvGuide channelId={channel.id} start={start} end={end} />
       </div>

@@ -1,3 +1,4 @@
+import type { channelListOptions } from '@/types/index.ts';
 import {
   ContentCopy,
   CopyAll,
@@ -27,12 +28,10 @@ type Props = {
   anchorEl: PopoverAnchorEl;
   open: boolean;
   onClose: (e?: SyntheticEvent) => void;
-  hideItems?: ListItem[];
+  hideItems?: channelListOptions[];
 };
 
-type ListItem = 'edit' | 'duplicate' | 'delete';
-
-export const ChannelsTableOptionsMenu = ({
+export const ChannelOptionsMenu = ({
   row,
   anchorEl,
   open,
@@ -108,18 +107,20 @@ export const ChannelsTableOptionsMenu = ({
           </MenuItem>
         ) : null}
 
-        <MenuItem
-          to={`/channels/${channelId}/programming`}
-          component={Link}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <ListItemIcon>
-            <Edit />
-          </ListItemIcon>
-          <ListItemText>Modify Programming</ListItemText>
-        </MenuItem>
+        {!hideItems?.includes('programming') ? (
+          <MenuItem
+            to={`/channels/${channelId}/programming`}
+            component={Link}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <ListItemIcon>
+              <Edit />
+            </ListItemIcon>
+            <ListItemText>Modify Programming</ListItemText>
+          </MenuItem>
+        ) : null}
 
         <MenuItem
           onClick={(e) => {
@@ -162,18 +163,21 @@ export const ChannelsTableOptionsMenu = ({
           </ListItemIcon>
           <ListItemText>Copy Channel ID</ListItemText>
         </MenuItem>
-        <MenuItem
-          component={Link}
-          to={`/channels/${channelId}/watch`}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <ListItemIcon>
-            <Tv />
-          </ListItemIcon>
-          <ListItemText>Watch Channel</ListItemText>
-        </MenuItem>
+
+        {!hideItems?.includes('watch') ? (
+          <MenuItem
+            component={Link}
+            to={`/channels/${channelId}/watch`}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <ListItemIcon>
+              <Tv />
+            </ListItemIcon>
+            <ListItemText>Watch Channel</ListItemText>
+          </MenuItem>
+        ) : null}
         <MenuItem
           onClick={(e) => {
             e.stopPropagation();

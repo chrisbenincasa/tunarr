@@ -1,16 +1,8 @@
 import Breadcrumbs from '@/components/Breadcrumbs.tsx';
+import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import { useChannelAndProgramming } from '@/hooks/useChannelLineup.ts';
 import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
-import Edit from '@mui/icons-material/Edit';
-import {
-  Alert,
-  Box,
-  Button,
-  Link,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Link, Paper, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
@@ -44,14 +36,10 @@ export default function ChannelProgrammingPage() {
           {channel.name}
         </Typography>
         <Box>
-          <Button
-            component={RouterLink}
-            to="../edit"
-            variant="outlined"
-            startIcon={<Edit />}
-          >
-            Edit
-          </Button>
+          <ChannelOptionsButton
+            channel={channel}
+            hideItems={['programming', 'duplicate', 'delete']}
+          />
         </Box>
       </Stack>
       {schedule && (
