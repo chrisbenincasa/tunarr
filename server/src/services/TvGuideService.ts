@@ -1129,9 +1129,7 @@ export class TVGuideService {
     currentProgram: GuideItem,
     allChannels: Channel[],
   ): TvGuideProgram {
-    return this.guideItemToProgram(
-      channel,
-      currentProgram,
+    const materializedProgram =
       this.programConverter.lineupItemToChannelProgram(
         channel,
         currentProgram.lineupItem,
@@ -1148,7 +1146,19 @@ export class TVGuideService {
                 p.uuid === currentProgram.lineupItem.id,
             )
           : undefined,
-      ),
+      );
+
+    if (currentProgram.lineupItem.type === 'content' && !materializedProgram) {
+      this.logger.warn(
+        'Could not materialize content program ID = %s. If this issue persists, please try restarting Tunarr.',
+        currentProgram.lineupItem.id,
+      );
+    }
+
+    return this.guideItemToProgram(
+      channel,
+      currentProgram,
+      materializedProgram,
     );
   }
 
