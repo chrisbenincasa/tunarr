@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.23.0-alpha.17](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.16...v0.23.0-alpha.17) (2025-10-22)
+
+
+### Features
+
+* adds new channel options button across pages ([#1425](https://github.com/chrisbenincasa/tunarr/issues/1425)) ([1c9c99c](https://github.com/chrisbenincasa/tunarr/commit/1c9c99cfd0123de8b67972fa314f622bc20dc1bd))
+
+
+### Bug Fixes
+
+* do not crash if there is no stream-cache to migrate ([abb708a](https://github.com/chrisbenincasa/tunarr/commit/abb708a689e39bf48ce623f1c8320d3bfcac4e53))
+* make durationinseconds optional; we dont even use this field currently ([46ceea1](https://github.com/chrisbenincasa/tunarr/commit/46ceea145358b741dafd86926ddc710fba914b4f))
+
 ## [0.23.0-alpha.16](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.15...v0.23.0-alpha.16) (2025-10-20)
 
 
