@@ -319,5 +319,6 @@ export const setPlexSort = (plexSort: PlexSort | undefined) =>
 
 export const setSearchRequest = (request: Nullable<SearchRequest>) =>
   useStore.setState((state) => {
+    console.log('setting search', request);
     state.currentSearchRequest = request;
   });

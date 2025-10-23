@@ -1,5 +1,5 @@
 import { isString } from 'lodash-es';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { isNonEmptyString, uuidRegexPattern } from '../helpers/util';
 import type { State } from '../store/index.ts';
 import useStore from '../store/index.ts';
@@ -28,116 +28,130 @@ const channelsPageMatcher = (path: string) =>
 const customShowsPageMatcher = (path: string) =>
   entityPageMatcher('library/custom-shows', path);
 
-const namedRoutes: Route[] = [
-  {
-    matcher: /^\/channels$/g,
-    name: 'Channels',
-  },
-  {
-    matcher: channelsPageMatcher(''),
-    name: (store, maybeId) =>
-      isNonEmptyString(maybeId) &&
-      store.channelEditor.currentEntity?.id === maybeId
-        ? store.channelEditor.currentEntity.name
-        : undefined,
-    // name: (store) => store.channelEditor.,
-  },
-  {
-    matcher: /^\/channels\/new$/g,
-    name: 'New',
-  },
-  {
-    matcher: channelsPageMatcher('watch'),
-    name: 'Watch',
-  },
-  {
-    matcher: channelsPageMatcher('edit'),
-    name: 'Edit',
-  },
-  {
-    matcher: channelsPageMatcher('edit/flex'),
-    name: 'Flex',
-  },
-  {
-    matcher: channelsPageMatcher('edit/ffmpeg'),
-    name: 'FFMPEG',
-  },
-  {
-    matcher: channelsPageMatcher('edit/epg'),
-    name: 'EPG',
-  },
-  {
-    matcher: customShowsPageMatcher('edit'),
-    name: 'Edit',
-  },
-  {
-    matcher: channelsPageMatcher('programming'),
-    name: 'Programming',
-  },
-  {
-    matcher: channelsPageMatcher('programming/add'),
-    name: 'Add',
-  },
-  {
-    matcher: channelsPageMatcher('programming/time-slot-editor'),
-    name: 'Time Slot Editor',
-  },
-  {
-    matcher: channelsPageMatcher('programming/slot-editor'),
-    name: 'Slot Editor',
-  },
-  {
-    matcher: /^\/library$/g,
-    name: 'Library',
-  },
-  {
-    matcher: /^\/library\/fillers$/g,
-    name: 'Fillers',
-  },
-  {
-    matcher: new RegExp(
-      `^/library/fillers/(new|${uuidRegexPattern})/programming/?$`,
-    ),
-    name: 'Add Programming',
-  },
-  {
-    matcher: entityPageMatcher('library/fillers', 'edit'),
-    name: 'Edit',
-  },
-  {
-    matcher: /^\/library\/fillers\/new$/g,
-    name: 'New',
-  },
-  {
-    matcher: /^\/library\/custom-shows$/g,
-    name: 'Custom Shows',
-  },
-  {
-    matcher: /^\/library\/custom-shows\/new$/g,
-    name: 'New',
-  },
-  {
-    matcher: new RegExp(
-      `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
-    ),
-    name: 'Add Programming',
-  },
-  {
-    matcher: /^\/settings\/ffmpeg$/g,
-    name: 'FFmpeg Settings',
-  },
-  {
-    matcher: entityPageMatcher('settings/ffmpeg', ''),
-    name: 'Edit Transcode Config',
-  },
-  {
-    matcher: entityPageMatcher('library', ''),
-    name: 'Search',
-  },
-];
+const useNamedRoutes = () => {
+  return useMemo(
+    (): Route[] => [
+      {
+        matcher: /^\/channels$/g,
+        name: 'Channels',
+      },
+      {
+        matcher: channelsPageMatcher(''),
+        name: (store, maybeId) =>
+          isNonEmptyString(maybeId) &&
+          store.channelEditor.currentEntity?.id === maybeId
+            ? store.channelEditor.currentEntity.name
+            : undefined,
+        // name: (store) => store.channelEditor.,
+      },
+      {
+        matcher: /^\/channels\/new$/g,
+        name: 'New',
+      },
+      {
+        matcher: channelsPageMatcher('watch'),
+        name: 'Watch',
+      },
+      {
+        matcher: channelsPageMatcher('edit'),
+        name: 'Edit',
+      },
+      {
+        matcher: channelsPageMatcher('edit/flex'),
+        name: 'Flex',
+      },
+      {
+        matcher: channelsPageMatcher('edit/ffmpeg'),
+        name: 'FFMPEG',
+      },
+      {
+        matcher: channelsPageMatcher('edit/epg'),
+        name: 'EPG',
+      },
+      {
+        matcher: customShowsPageMatcher('edit'),
+        name: 'Edit',
+      },
+      {
+        matcher: channelsPageMatcher('programming'),
+        name: 'Programming',
+      },
+      {
+        matcher: channelsPageMatcher('programming/add'),
+        name: 'Add',
+      },
+      {
+        matcher: channelsPageMatcher('programming/time-slot-editor'),
+        name: 'Time Slot Editor',
+      },
+      {
+        matcher: channelsPageMatcher('programming/slot-editor'),
+        name: 'Slot Editor',
+      },
+      {
+        matcher: /^\/library$/g,
+        name: 'Library',
+      },
+      {
+        matcher: /^\/library\/fillers$/g,
+        name: 'Fillers',
+      },
+      {
+        matcher: new RegExp(
+          `^/library/fillers/(new|${uuidRegexPattern})/programming/?$`,
+        ),
+        name: 'Add Programming',
+      },
+      {
+        matcher: entityPageMatcher('library/fillers', 'edit'),
+        name: 'Edit',
+      },
+      {
+        matcher: /^\/library\/fillers\/new$/g,
+        name: 'New',
+      },
+      {
+        matcher: /^\/library\/custom-shows$/g,
+        name: 'Custom Shows',
+      },
+      {
+        matcher: /^\/library\/custom-shows\/new$/g,
+        name: 'New',
+      },
+      {
+        matcher: new RegExp(
+          `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
+        ),
+        name: 'Add Programming',
+      },
+      {
+        matcher: /^\/settings\/ffmpeg$/g,
+        name: 'FFmpeg Settings',
+      },
+      {
+        matcher: entityPageMatcher('settings/ffmpeg', ''),
+        name: 'Edit Transcode Config',
+      },
+      {
+        matcher: entityPageMatcher('library', ''),
+        name: 'Search',
+      },
+      {
+        matcher: /^\/media_sources$/g,
+        name: 'Media Sources',
+      },
+      {
+        matcher: entityPageMatcher('media_sources', ''),
+        name: '<replace me>',
+      },
+    ],
+    [],
+  );
+};
 
 export const useGetRouteDetails = () => {
   const store = useStore();
+  const namedRoutes = useNamedRoutes();
 
   const getRoute = useCallback(
     (path: string) => {
@@ -165,7 +179,7 @@ export const useGetRouteDetails = () => {
         isLink: route.isLink ?? true,
       } satisfies RouteDetails;
     },
-    [store],
+    [namedRoutes, store],
   );
 
   return getRoute;

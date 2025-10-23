@@ -1,71 +1,59 @@
 import { Checklist, Clear, Search } from '@mui/icons-material';
 import {
   Box,
-  FormLabel,
   IconButton,
   InputAdornment,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
 } from '@mui/material';
+import { useMatches } from '@tanstack/react-router';
 import { search as tunarrSearch } from '@tunarr/shared/util';
-import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
-import type { SearchFilterValueNode, SearchRequest } from '@tunarr/types/api';
-import { type SearchFilter } from '@tunarr/types/api';
-import { isEmpty } from 'lodash-es';
+import type { SearchRequest } from '@tunarr/types/api';
+import { isEmpty, last } from 'lodash-es';
 import { useCallback, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import { match, P } from 'ts-pattern';
 import { difference, isNonEmptyString } from '../../helpers/util.ts';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
+import { Route } from '../../routes/__root.tsx';
 import type { Nullable } from '../../types/util.ts';
 import {
   AllSearchRestrictKeys,
   SearchFieldRestrictMenu,
 } from './SearchFieldRestrictMenu.tsx';
-import { SearchGroupNode } from './SearchGroupNode.tsx';
-import { SearchValueNode } from './SearchValueNode.tsx';
 
 type SearchBuilderProps = {
-  mediaSource: MediaSourceSettings;
-  library?: MediaSourceLibrary;
+  // mediaSource?: MediaSourceSettings;
+  // library?: MediaSourceLibrary;
   onSearch: (query: SearchRequest) => void;
-};
-
-const defaultValueNode: SearchFilterValueNode = {
-  type: 'value',
-  fieldSpec: {
-    key: 'title',
-    name: 'Title',
-    type: 'string',
-    op: '=',
-    value: [],
-  },
+  initialQuery?: string;
 };
 
 export function SearchBuilder({
-  mediaSource,
-  library,
+  // mediaSource,
+  // library,
   onSearch,
+  initialQuery,
 }: SearchBuilderProps) {
+  const navigate = Route.useNavigate();
+  const routeMatch = useMatches();
   const [searchRestrictEl, setSearchRestrictEl] =
     useState<Nullable<HTMLElement>>(null);
   const [searchRestrctState, setSearchRestrictState] = useState<
     ReadonlySet<string>
   >(AllSearchRestrictKeys);
+
   const formMethods = useForm<SearchRequest>({
     defaultValues: {
-      query: '',
+      query: initialQuery ?? '',
       filter: null,
       sort: null,
     },
   });
 
   const { getSearchExpression } = useSearchQueryParser();
-  const [filter, query] = formMethods.watch(['filter', 'query']);
+  const [query] = formMethods.watch(['query']);
 
   const expr = useMemo(() => {
     if (isNonEmptyString(query)) {
@@ -74,77 +62,73 @@ export function SearchBuilder({
     return;
   }, [query, getSearchExpression]);
 
-  const handleSearch: SubmitHandler<SearchRequest> = (data) => {
-    const search: SearchRequest = data;
-    // If we successfully parsed the search query, it's structured. Otherwise
-    // we just treat it as a raw query.
-    if (expr && expr.type === 'success') {
-      search.query = null;
-      search.filter = tunarrSearch.parsedSearchToRequest(expr.query);
-    }
-    onSearch({
-      ...search,
-      restrictSearchTo:
-        isEmpty(searchRestrctState) ||
-        difference(AllSearchRestrictKeys, searchRestrctState).size === 0
-          ? undefined
-          : [...searchRestrctState],
-    });
-  };
+  const handleSearch: SubmitHandler<SearchRequest> = useCallback(
+    (data) => {
+      const search: SearchRequest = data;
+      // If we successfully parsed the search query, it's structured. Otherwise
+      // we just treat it as a raw query.
+      const currentParams = new URLSearchParams(window.location.search);
+      if (isNonEmptyString(query)) {
+        currentParams.set('query', query);
+      } else {
+        currentParams.delete('query');
+      }
 
-  const handleSearchFilterTypeChange = useCallback(
-    (
-      newType: 'basic' | 'advanced' | 'none',
-      originalOnChange: (...args: unknown[]) => void,
-    ) => {
-      const newValue = match([filter, newType])
-        .returnType<SearchFilter | null>()
-        .with([P._, 'none'], () => null)
-        .with([P._, 'basic'], () => defaultValueNode)
-        .with([P._, 'advanced'], ([currentFilter, _]) => ({
-          op: 'and',
-          type: 'op',
-          children: [currentFilter ?? defaultValueNode],
-        }))
-        .exhaustive();
+      if (last(routeMatch)?.pathname.startsWith('/search')) {
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}?${currentParams.toString()}`,
+        );
+      }
 
-      originalOnChange(newValue);
+      if (expr && expr.type === 'success') {
+        search.query = null;
+        search.filter = tunarrSearch.parsedSearchToRequest(expr.query);
+      } else {
+        expr?.errors.forEach((err) => console.error(err));
+      }
+      onSearch({
+        ...search,
+        restrictSearchTo:
+          isEmpty(searchRestrctState) ||
+          difference(AllSearchRestrictKeys, searchRestrctState).size === 0
+            ? undefined
+            : [...searchRestrctState],
+      });
     },
-    [filter],
+    [expr, onSearch, query, routeMatch, searchRestrctState],
   );
+
+  // const handleSearchFilterTypeChange = useCallback(
+  //   (
+  //     newType: 'basic' | 'advanced' | 'none',
+  //     originalOnChange: (...args: unknown[]) => void,
+  //   ) => {
+  //     const newValue = match([filter, newType])
+  //       .returnType<SearchFilter | null>()
+  //       .with([P._, 'none'], () => null)
+  //       .with([P._, 'basic'], () => defaultValueNode)
+  //       .with([P._, 'advanced'], ([currentFilter, _]) => ({
+  //         op: 'and',
+  //         type: 'op',
+  //         children: [currentFilter ?? defaultValueNode],
+  //       }))
+  //       .exhaustive();
+
+  //     originalOnChange(newValue);
+  //   },
+  //   [filter],
+  // );
 
   const handleClear = () => {
     formMethods.setValue('query', '');
-    formMethods.handleSubmit(handleSearch, console.error);
-  };
-
-  const renderFilters = () => {
-    if (!filter) {
-      return null;
-    }
-
-    if (filter.type === 'op') {
-      return (
-        <SearchGroupNode
-          depth={0}
-          formKey="filter"
-          index={0}
-          remove={() => {}}
-          library={library}
-        />
-      );
-    } else {
-      return (
-        <SearchValueNode
-          only
-          depth={0}
-          formKey="filter"
-          index={0}
-          remove={() => {}}
-          library={library}
-        />
-      );
-    }
+    navigate({
+      to: last(routeMatch)?.pathname,
+      search: {},
+      replace: true,
+    }).catch(console.error);
+    handleSearch(formMethods.getValues());
   };
 
   return (
@@ -159,14 +143,10 @@ export function SearchBuilder({
             control={formMethods.control}
             render={({ field }) => (
               <TextField
-                placeholder="Search"
+                label="Search"
                 slotProps={{
                   input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search />
-                      </InputAdornment>
-                    ),
+                    spellCheck: false,
                     endAdornment: (
                       <>
                         {isNonEmptyString(field.value) && (
@@ -191,11 +171,11 @@ export function SearchBuilder({
                             onClose={() => setSearchRestrictEl(null)}
                             searchFields={searchRestrctState}
                             onSearchFieldsChanged={setSearchRestrictState}
-                            libraryType={
-                              mediaSource.type === 'local'
-                                ? mediaSource.mediaType
-                                : library?.mediaType
-                            }
+                            // libraryType={
+                            //   mediaSource?.type === 'local'
+                            //     ? mediaSource.mediaType
+                            //     : library?.mediaType
+                            // }
                           />
                         </InputAdornment>
                         <InputAdornment position="end">
@@ -212,7 +192,7 @@ export function SearchBuilder({
               />
             )}
           />
-          <Box>
+          {/* <Box>
             <FormLabel>Filter: </FormLabel>
             <Controller
               control={formMethods.control}
@@ -246,12 +226,12 @@ export function SearchBuilder({
                 );
               }}
             />
-          </Box>
-          <Box>
+          </Box> */}
+          {/* <Box>
             <Stack gap={2} useFlexGap>
               {renderFilters()}
             </Stack>
-          </Box>
+          </Box> */}
         </Stack>
       </Box>
     </FormProvider>

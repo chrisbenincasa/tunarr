@@ -186,7 +186,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       index: number,
       lineup: TvGuideProgram[],
     ) => {
-      console.log(program);
       const title = match(program)
         .with(
           { type: 'content', grandparent: { title: P.nonNullable } },

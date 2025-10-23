@@ -12,35 +12,30 @@ import {
   type ProgramSearchResponse,
   type SearchRequest,
 } from '@tunarr/types/api';
-import { isEmpty, isUndefined, last } from 'lodash-es';
+import { groupBy, isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
 import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
 import { getChildSearchFilter } from '../../hooks/useProgramSearch.ts';
 import useStore from '../../store/index.ts';
-import {
-  addKnownMediaForServer,
-  setSearchRequest,
-} from '../../store/programmingSelector/actions.ts';
+import { addKnownMediaForServer } from '../../store/programmingSelector/actions.ts';
 import type { RenderNestedGrid } from '../channel_config/MediaItemGrid.tsx';
 import {
   MediaItemGrid,
   type GridItemProps,
 } from '../channel_config/MediaItemGrid.tsx';
 import { MediaItemList } from '../channel_config/MediaItemList.tsx';
-import SelectedProgrammingActions from '../channel_config/SelectedProgrammingActions.tsx';
-import { SearchBuilder } from '../search/SearchBuilder.tsx';
 import { ProgramGridItem } from './ProgramGridItem.tsx';
 import { ProgramListItem } from './ProgramListItem.tsx';
 
 type Props = {
-  mediaSource: MediaSourceSettings;
+  mediaSource?: MediaSourceSettings;
   library?: MediaSourceLibrary;
   disableProgramSelection?: boolean;
-  toggleOrSetSelectedProgramsDrawer?: (open: boolean) => void;
   depth?: number;
   parentContext?: ProgramOrFolder[];
+  initialSearchQuery?: string;
 };
 
 function searchItemTypeFromContentType(
@@ -77,7 +72,6 @@ export const LibraryProgramGrid = ({
   mediaSource,
   library,
   disableProgramSelection,
-  toggleOrSetSelectedProgramsDrawer,
   depth = 0,
   parentContext = [],
 }: Props) => {
@@ -96,7 +90,7 @@ export const LibraryProgramGrid = ({
     }
 
     const filter = match([searchRequest?.filter, mediaSource, library])
-      .returnType<SearchFilter>()
+      .returnType<SearchFilter | null>()
       .with([P.select(P.nonNullable), P._, P._], (filter) => filter)
       .with([P._, { mediaType: P.select(P.nonNullable) }, P.nullish], (typ) =>
         typeFilter(typ),
@@ -104,7 +98,7 @@ export const LibraryProgramGrid = ({
       .with([P._, P._, P.select(P.nonNullable)], ({ mediaType }) =>
         typeFilter(mediaType),
       )
-      .exhaustive();
+      .otherwise(() => null);
 
     return {
       query: searchRequest?.query,
@@ -121,11 +115,11 @@ export const LibraryProgramGrid = ({
   ]);
 
   const search = useInfiniteQuery({
-    queryKey: ['programs', 'search', query, mediaSource.id, library?.id],
+    queryKey: ['programs', 'search', query, mediaSource?.id, library?.id],
     queryFn: async ({ pageParam }) => {
       const { data } = await postApiProgramsSearch({
         body: {
-          mediaSourceId: mediaSource.id,
+          mediaSourceId: mediaSource?.id,
           libraryId: library?.id,
           query: query,
           limit: 45,
@@ -160,19 +154,21 @@ export const LibraryProgramGrid = ({
     staleTime: 0,
   });
 
-  const handleSearchChange = useCallback((searchRequest: SearchRequest) => {
-    setSearchRequest(searchRequest);
-  }, []);
-
   useEffect(() => {
-    const d = search.data?.pages.flatMap((page) => {
+    const allResults = search.data?.pages.flatMap((page) => {
       return page.results;
     });
 
-    if (!isEmpty(d)) {
-      addKnownMediaForServer(mediaSource.id, d!);
+    if (!isEmpty(allResults)) {
+      const byMediaSourceId = groupBy(
+        allResults,
+        (result) => result.mediaSourceId,
+      );
+      for (const [mediaSourceId, results] of Object.entries(byMediaSourceId)) {
+        addKnownMediaForServer(mediaSourceId, results);
+      }
     }
-  }, [mediaSource.id, search.data?.pages]);
+  }, [search.data?.pages]);
 
   const renderGridItem = (gridItemProps: GridItemProps<ProgramOrFolder>) => {
     return (
@@ -203,21 +199,9 @@ export const LibraryProgramGrid = ({
   const totalHits = search.data?.pages?.[0].totalHits;
 
   return (
-    <Box>
+    <Box sx={{ mt: 1 }}>
       {depth === 0 && (
         <>
-          <SearchBuilder
-            mediaSource={mediaSource}
-            library={library}
-            onSearch={handleSearchChange}
-          />
-          {!disableProgramSelection && toggleOrSetSelectedProgramsDrawer && (
-            <SelectedProgrammingActions
-              toggleOrSetSelectedProgramsDrawer={
-                toggleOrSetSelectedProgramsDrawer
-              }
-            />
-          )}
           {!isUndefined(totalHits) && (
             <Typography textAlign="right" variant="subtitle2">
               Total hits: {totalHits >= 1000 ? '>1000' : totalHits}

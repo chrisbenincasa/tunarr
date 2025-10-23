@@ -1,11 +1,14 @@
+import { Box, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
-import { LibraryBrowser } from '../../../components/library/LibraryBrowser.tsx';
+import Breadcrumbs from '../../../components/Breadcrumbs.tsx';
+import { LibrarySearch } from '../../../components/library/LibrarySearch.tsx';
 import { getApiMediaSourcesByMediaSourceIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { useMediaSource } from '../../../hooks/media-sources/mediaSourceHooks.ts';
 
 export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
   component: MediaSourceBrowserPage,
-  loader: ({ context, params: { mediaSourceId } }) => {
-    return context.queryClient.ensureQueryData(
+  loader: async ({ context, params: { mediaSourceId } }) => {
+    return await context.queryClient.ensureQueryData(
       getApiMediaSourcesByMediaSourceIdOptions({
         path: {
           mediaSourceId,
@@ -17,5 +20,18 @@ export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
 
 function MediaSourceBrowserPage() {
   const { mediaSourceId } = Route.useParams();
-  return <LibraryBrowser mediaSourceId={mediaSourceId} />;
+  const { data: mediaSource } = useMediaSource(mediaSourceId);
+
+  return (
+    <Box>
+      <Breadcrumbs thisRouteName={mediaSource.name} />
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h4">Media Source: "{mediaSource.name}"</Typography>
+        <Typography>
+          Search is currently scoped to this Media Source.
+        </Typography>
+      </Box>
+      <LibrarySearch mediaSource={mediaSource} disableProgramSelection />
+    </Box>
+  );
 }

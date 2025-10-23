@@ -33,7 +33,7 @@ import {
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
-import { LibraryProgramGrid } from '../library/LibraryProgramGrid.tsx';
+import { LibrarySearch } from '../library/LibrarySearch.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
@@ -135,7 +135,7 @@ export const ProgrammingSelector = ({
     if (selectedServer?.type === 'local') {
       return (
         <Box sx={{ mt: 2 }}>
-          <LibraryProgramGrid
+          <LibrarySearch
             mediaSource={selectedServer}
             disableProgramSelection={false}
             toggleOrSetSelectedProgramsDrawer={
@@ -183,8 +183,8 @@ export const ProgrammingSelector = ({
         case Imported:
           return (
             <Box sx={{ mt: 2 }}>
-              <LibraryProgramGrid
-                mediaSource={selectedServer!}
+              <LibrarySearch
+                mediaSource={selectedServer}
                 library={{
                   ...selectedLibrary.view,
                   mediaSource: selectedServer!,
@@ -196,6 +196,8 @@ export const ProgrammingSelector = ({
               />
             </Box>
           );
+        default:
+          return null;
       }
     }
 
