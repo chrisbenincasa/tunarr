@@ -84,7 +84,7 @@ export function SearchGroupNode({
                 fieldSpec: {
                   ...SearchFieldSpec['title'],
                   op: '=',
-                  value: [],
+                  value: [''],
                 },
               })
             }

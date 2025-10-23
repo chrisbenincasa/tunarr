@@ -1060,17 +1060,17 @@ export class MeilisearchService implements ISearchService {
           .with(
             { type: P.union('facted_string', 'string'), value: P.array() },
             ({ value }) => {
-              value = seq.collect(value, (v) =>
+              const filteredValue = seq.collect(value, (v) =>
                 isNonEmptyString(v) ? v : null,
               );
-              if (value.length === 0) {
+              if (filteredValue.length === 0) {
                 return null;
-              } else if (value.length === 1) {
+              } else if (filteredValue.length === 1) {
                 const v = index.caseSensitiveFilters?.includes(
                   query.fieldSpec.key,
                 )
-                  ? encodeCaseSensitiveId(value[0])
-                  : value[0];
+                  ? encodeCaseSensitiveId(filteredValue[0])
+                  : filteredValue[0];
                 const op =
                   query.fieldSpec.op.trim().toLowerCase() === 'in'
                     ? '='
@@ -1080,8 +1080,8 @@ export class MeilisearchService implements ISearchService {
                 const v = index.caseSensitiveFilters?.includes(
                   query.fieldSpec.key,
                 )
-                  ? value.map(encodeCaseSensitiveId)
-                  : value;
+                  ? filteredValue.map(encodeCaseSensitiveId)
+                  : filteredValue;
                 return `IN [${v.map((_) => `'${_}'`).join(', ')}]`;
               }
             },

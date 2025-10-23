@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root';
 import { Route as WelcomeRouteImport } from './routes/welcome';
 import { Route as SystemRouteImport } from './routes/system';
 import { Route as SettingsRouteImport } from './routes/settings';
+import { Route as SearchRouteImport } from './routes/search';
 import { Route as GuideRouteImport } from './routes/guide';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as SystemIndexRouteImport } from './routes/system/index';
@@ -67,6 +68,11 @@ const SystemRoute = SystemRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any);
 const GuideRoute = GuideRouteImport.update({
@@ -295,6 +301,7 @@ const ChannelsChannelIdProgrammingAddRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/guide': typeof GuideRoute;
+  '/search': typeof SearchRoute;
   '/settings': typeof SettingsRouteWithChildren;
   '/system': typeof SystemRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
@@ -341,6 +348,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/guide': typeof GuideRoute;
+  '/search': typeof SearchRoute;
   '/settings': typeof SettingsRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
   '/channels/new': typeof ChannelsNewRoute;
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/': typeof IndexRoute;
   '/guide': typeof GuideRoute;
+  '/search': typeof SearchRoute;
   '/settings': typeof SettingsRouteWithChildren;
   '/system': typeof SystemRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
@@ -432,6 +441,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/guide'
+    | '/search'
     | '/settings'
     | '/system'
     | '/welcome'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/guide'
+    | '/search'
     | '/settings'
     | '/welcome'
     | '/channels/new'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/guide'
+    | '/search'
     | '/settings'
     | '/system'
     | '/welcome'
@@ -567,6 +579,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   GuideRoute: typeof GuideRoute;
+  SearchRoute: typeof SearchRoute;
   SettingsRoute: typeof SettingsRouteWithChildren;
   SystemRoute: typeof SystemRouteWithChildren;
   WelcomeRoute: typeof WelcomeRoute;
@@ -606,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/settings';
       fullPath: '/settings';
       preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/search': {
+      id: '/search';
+      path: '/search';
+      fullPath: '/search';
+      preLoaderRoute: typeof SearchRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/guide': {
@@ -1038,6 +1058,7 @@ const LibraryFillersNewRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
+  SearchRoute: SearchRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SystemRoute: SystemRouteWithChildren,
   WelcomeRoute: WelcomeRoute,

@@ -1,3 +1,4 @@
+import type { MediaSourceContentType, ProgramLike } from '@tunarr/types';
 import type {
   SearchFilter,
   SearchFilterOperatorNode,
@@ -5,7 +6,8 @@ import type {
 } from '@tunarr/types/api';
 import { FreeSearchQueryKeyMappings } from '@tunarr/types/api';
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
-import { isArray } from 'lodash-es';
+import { isArray, isNumber } from 'lodash-es';
+import type { NonEmptyArray } from 'ts-essentials';
 
 const Integer = createToken({ name: 'Integer', pattern: /\d+/ });
 
@@ -14,7 +16,10 @@ const FloatingPoint = createToken({
   pattern: /\d+\.\d+/,
 });
 
-const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z]+/ });
+const Identifier = createToken({
+  name: 'Identifier',
+  pattern: /[a-zA-Z0-9-]+/,
+});
 
 const WhiteSpace = createToken({
   name: 'WhiteSpace',
@@ -127,7 +132,7 @@ export type SingleStringSearchQuery = {
   type: 'single_query';
   field: string;
   op: StringOps;
-  value: string | string[];
+  value: string | NonEmptyArray<string>;
 };
 
 export type SingleNumericQuery = {
@@ -200,7 +205,7 @@ export class SearchParser extends EmbeddedActionsParser {
   });
 
   private operator = this.RULE('operator', () => {
-    return this.OR<{ op: StringOps; value: string | string[] }>([
+    return this.OR<{ op: StringOps; value: string | NonEmptyArray<string> }>([
       {
         ALT: () => {
           const op = this.OR2<StringOps>([
@@ -251,7 +256,8 @@ export class SearchParser extends EmbeddedActionsParser {
             SEP: Comma,
           });
           this.CONSUME2(CloseArray);
-          return { op, value: values };
+          // Safe because of "at least one" above
+          return { op, value: values as NonEmptyArray<string> };
         },
       },
     ]);
@@ -387,13 +393,12 @@ export class SearchParser extends EmbeddedActionsParser {
   });
 }
 
-export function parseSearchQuery(queryString: string) {
+export function tokenizeSearchQuery(queryString: string) {
   return SearchExpressionLexer.tokenize(queryString);
 }
 
 // Parse a valid SearchClause into an actual Tunarr SearchFilter
 export function parsedSearchToRequest(input: SearchClause): SearchFilter {
-  console.log(input);
   switch (input.type) {
     case 'search_group': {
       if (input.clauses.length === 1) {
@@ -421,11 +426,13 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       } satisfies SearchFilterValueNode;
     }
     case 'single_query': {
+      const key: string =
+        (FreeSearchQueryKeyMappings[input.field]) ?? input.field;
       return {
         type: 'value',
         fieldSpec: {
           // HACK for now
-          key: FreeSearchQueryKeyMappings[input.field] ?? input.field,
+          key,
           name: '',
           // TODO: Fix
           op: input.op === '<' || input.op === '<=' ? 'starts with' : input.op,
@@ -446,4 +453,73 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       } satisfies SearchFilterOperatorNode;
     }
   }
+}
+
+export function searchFilterToString(
+  input: SearchFilter,
+  depth: number = 0,
+): string {
+  switch (input.type) {
+    case 'op': {
+      const children = input.children.map((child) =>
+        searchFilterToString(child, depth + 1),
+      );
+      if (depth === 0) {
+        return children.join(` ${input.op.toUpperCase()} `);
+      }
+      // Wrap in parents for higher depth
+      return `(${children.join(` ${input.op.toUpperCase()} `)})`;
+    }
+    case 'value': {
+      let valueString: string;
+      if (isNumber(input.fieldSpec.value)) {
+        valueString = input.fieldSpec.value.toString();
+      } else if (input.fieldSpec.value.length === 1) {
+        return `${input.fieldSpec.key} ${input.fieldSpec.op} ${input.fieldSpec.value[0]}`;
+      } else {
+        const components: string[] = [];
+        for (const x of input.fieldSpec.value) {
+          if (isNumber(x)) {
+            components.push(x.toString());
+          } else {
+            components.push(x);
+          }
+        }
+        valueString = `[${components.join(', ')}]`;
+      }
+      return `${input.fieldSpec.key} ${input.fieldSpec.op} ${valueString}`;
+    }
+  }
+}
+
+export function searchItemTypeFromContentType(
+  mediaType: MediaSourceContentType,
+): ProgramLike['type'] {
+  switch (mediaType) {
+    case 'movies':
+      return 'movie';
+    case 'shows':
+      return 'show';
+    case 'tracks':
+      return 'artist';
+    case 'other_videos':
+      return 'other_video';
+    case 'music_videos':
+      return 'music_video';
+  }
+}
+
+export function makeSearchTypeFilter(
+  mediaType: MediaSourceContentType,
+): SearchFilter {
+  return {
+    type: 'value',
+    fieldSpec: {
+      key: 'type',
+      name: 'Type',
+      op: '=',
+      type: 'string',
+      value: [searchItemTypeFromContentType(mediaType)],
+    },
+  };
 }

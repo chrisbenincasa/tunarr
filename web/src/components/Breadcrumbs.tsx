@@ -10,11 +10,20 @@ import { Link as RouterLink, useLocation } from '@tanstack/react-router';
 import { isEmpty, map, reject } from 'lodash-es';
 import { useGetRouteDetails } from '../hooks/useRouteName.ts';
 
-export default function Breadcrumbs(props: BreadcrumbsProps) {
+type Props = BreadcrumbsProps & {
+  thisRouteName?: string;
+};
+
+export default function Breadcrumbs(props: Props) {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { sx = { mb: 2 }, separator = '›', ...restProps } = props;
+  const {
+    sx = { mb: 2 },
+    separator = '›',
+    thisRouteName,
+    ...restProps
+  } = props;
 
   const location = useLocation();
   // TODO Hard code this somewhere else
@@ -50,7 +59,7 @@ export default function Breadcrumbs(props: BreadcrumbsProps) {
           // Don't display crumbs for pages that aren't excplicely defined in useRouteNames hook
           return isLast || !route?.isLink ? (
             <Typography color="text.primary" key={to}>
-              {trimmedText ?? ''}
+              {thisRouteName ?? trimmedText ?? ''}
             </Typography>
           ) : (
             <Link component={RouterLink} to={to} key={to}>

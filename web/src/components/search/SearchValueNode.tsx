@@ -73,7 +73,7 @@ export function SearchValueNode(props: ValueNodeProps) {
             type: field.type,
             name: field.name,
             op: '=',
-            value: [],
+            value: [''],
           };
           break;
         case 'facted_string':
@@ -82,7 +82,7 @@ export function SearchValueNode(props: ValueNodeProps) {
             type: field.type,
             name: field.name,
             op: '=',
-            value: [],
+            value: [''],
           };
           break;
         case 'date':

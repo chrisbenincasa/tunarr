@@ -7,8 +7,45 @@ import {
   Link as RouterLink,
   createRootRouteWithContext,
 } from '@tanstack/react-router';
+import { search } from '@tunarr/shared/util';
+import type { SearchRequest } from '@tunarr/types/api';
+import { isEmpty, isUndefined } from 'lodash-es';
+import { z } from 'zod/v4';
+import { parseSearchQuery } from '../hooks/useSearchQueryParser.ts';
+import useStore from '../store/index.ts';
+
+const searchQuerySchema = z.object({
+  query: z.string().optional(),
+});
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  validateSearch: (searchParams) => {
+    const { query: searchString } = searchQuerySchema.parse(searchParams);
+    if (isUndefined(searchString) || isEmpty(searchString)) {
+      return;
+    }
+
+    const parseResult = parseSearchQuery(searchString);
+
+    const searchRequest: SearchRequest = {
+      query: '',
+      filter: null,
+      sort: null,
+    };
+
+    if (parseResult?.type === 'success') {
+      searchRequest.filter = search.parsedSearchToRequest(parseResult.query);
+      searchRequest.query = null;
+    }
+
+    useStore.setState((s) => {
+      s.currentSearchRequest = searchRequest;
+    });
+
+    return {
+      query: searchString,
+    };
+  },
   component: () => (
     <>
       <Root />

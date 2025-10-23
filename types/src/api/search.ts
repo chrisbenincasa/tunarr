@@ -13,10 +13,11 @@ const StringSearchFieldSchema = z.object({
   name: z.string(),
   type: z.literal('string'),
   op: z.enum(StringOperators),
-  value: z.array(z.string()),
+  value: z.tuple([z.string()], z.string()),
 });
 
-const FactedStringSearchFieldSchema = StringSearchFieldSchema.extend({
+const FactedStringSearchFieldSchema = z.object({
+  ...StringSearchFieldSchema.shape,
   type: z.literal('facted_string'),
 });
 
@@ -33,9 +34,8 @@ const NumericSearchFieldSchema = z.object({
   value: z.number().or(z.tuple([z.number(), z.number()])),
 });
 
-const DateSearchFieldSchema = NumericSearchFieldSchema.omit({
-  type: true,
-}).extend({
+const DateSearchFieldSchema = z.object({
+  ...NumericSearchFieldSchema.shape,
   type: z.literal('date'),
 });
 
@@ -130,7 +130,7 @@ export type SearchFieldSpec<Key extends string = string> = {
     | ReadonlyArray<MediaSourceLibrary['mediaType']>;
 };
 
-export const FreeSearchQueryKeyMappings = {
+export const FreeSearchQueryKeyMappings: Record<string, string> = {
   genre: 'genres.name',
   actor: 'actors.name',
 };
