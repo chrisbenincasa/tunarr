@@ -311,8 +311,6 @@ export class FfmpegInfo {
       '-show_format',
       '-show_chapters',
       '-show_streams',
-      '-analyzeduration',
-      '30',
       `${path}`,
     ]);
 
