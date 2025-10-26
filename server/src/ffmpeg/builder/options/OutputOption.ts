@@ -83,11 +83,6 @@ export const VideoBufferSizeOutputOption = (
 ): ConstantOutputOption =>
   makeConstantOutputOption(['-bufsize:v', `${bufferSize}k`]);
 
-export const FrameRateOutputOption = (
-  frameRate: number,
-): ConstantOutputOption =>
-  makeConstantOutputOption(['-r', frameRate.toString(10), '-fps_mode', 'cfr']);
-
 export const VideoTrackTimescaleOutputOption = (scale: number) =>
   makeConstantOutputOption(['-video_track_timescale', scale.toString()]);
 

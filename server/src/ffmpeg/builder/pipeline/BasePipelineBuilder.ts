@@ -95,7 +95,6 @@ import {
   ClosedGopOutputOption,
   DoNotMapMetadataOutputOption,
   FastStartOutputOption,
-  FrameRateOutputOption,
   MapAllStreamsOutputOption,
   MatroskaOutputFormatOption,
   MetadataServiceNameOutputOption,
@@ -114,6 +113,7 @@ import {
   VideoBufferSizeOutputOption,
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption.ts';
+import { FrameRateOutputOption } from '../options/output/FrameRateOutputOption.ts';
 import { Pipeline } from './Pipeline.ts';
 import type { PipelineBuilder } from './PipelineBuilder.ts';
 
@@ -533,7 +533,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       this.desiredState.frameRate
     ) {
       this.pipelineSteps.push(
-        FrameRateOutputOption(this.desiredState.frameRate),
+        new FrameRateOutputOption(this.desiredState.frameRate),
       );
     }
 
@@ -769,7 +769,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           this.pipelineSteps.push(
             new HlsOutputFormat(
               this.desiredState,
-              this.context.videoStream?.frameRate,
+              this.context.videoStream?.getNumericFrameRateOrDefault() ?? 24,
               this.ffmpegState.hlsPlaylistPath,
               this.ffmpegState.hlsSegmentTemplate,
               this.ffmpegState.hlsBaseStreamUrl,

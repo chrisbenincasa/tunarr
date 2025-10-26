@@ -44,10 +44,12 @@ import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { ResetPtsFilter } from '../../filter/ResetPtsFilter.ts';
+import { SetFpsFilter } from '../../filter/SetFpsFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
 import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
+import { FrameRateOutputOption } from '../../options/output/FrameRateOutputOption.ts';
 
 export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
   constructor(
@@ -165,6 +167,27 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       currentState,
       new ResetPtsFilter(),
     );
+
+    const setFrameRate =
+      this.context?.videoStream.getNumericFrameRateOrDefault() ?? 24;
+    currentState = this.addFilterToVideoChain(
+      currentState,
+      new SetFpsFilter(setFrameRate),
+    );
+
+    // Remove existing frame rate output option if the framerate we just
+    // set differs from the
+    if (
+      this.desiredState.frameRate &&
+      this.desiredState.frameRate !== setFrameRate
+    ) {
+      const idx = this.pipelineSteps.findIndex(
+        (step) => step instanceof FrameRateOutputOption,
+      );
+      if (idx !== -1) {
+        this.pipelineSteps.splice(idx, 1);
+      }
+    }
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);

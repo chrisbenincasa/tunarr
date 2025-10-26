@@ -1,7 +1,4 @@
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import type { Maybe } from '@/types/util.js';
-import { isNonEmptyString } from '@/util/index.js';
-import { nth } from 'lodash-es';
 import { OutputOption } from './OutputOption.ts';
 
 export class HlsOutputFormat extends OutputOption {
@@ -9,7 +6,7 @@ export class HlsOutputFormat extends OutputOption {
 
   constructor(
     private desiredState: FrameState,
-    private mediaFrameRate: Maybe<string>,
+    private mediaFrameRate: number,
     private playlistPath: string,
     private segmentTemplate: string,
     private baseStreamUrl: string,
@@ -20,8 +17,7 @@ export class HlsOutputFormat extends OutputOption {
   }
 
   options(): string[] {
-    const frameRate =
-      this.desiredState.frameRate ?? this.getFrameRateFromMedia();
+    const frameRate = this.desiredState.frameRate ?? this.mediaFrameRate;
     const gop = this.oneSecondGop
       ? frameRate
       : frameRate * HlsOutputFormat.SegmentSeconds;
@@ -65,28 +61,5 @@ export class HlsOutputFormat extends OutputOption {
     }
 
     return opts;
-  }
-
-  private getFrameRateFromMedia() {
-    let frameRate = 24;
-    if (isNonEmptyString(this.mediaFrameRate)) {
-      const intParsed = parseInt(this.mediaFrameRate);
-      if (isNaN(intParsed)) {
-        const parts = this.mediaFrameRate.split('/');
-        const numerator = nth(parts, 0);
-        const denominator = nth(parts, 1);
-        let rate = 24;
-        if (isNonEmptyString(numerator) && isNonEmptyString(denominator)) {
-          const numeratorInt = parseInt(numerator);
-          const denominatorInt = parseInt(denominator);
-          if (!isNaN(numeratorInt) && !isNaN(denominatorInt)) {
-            rate = Math.round(numeratorInt / denominatorInt);
-          }
-        }
-        frameRate = rate;
-      }
-    }
-
-    return frameRate;
   }
 }
