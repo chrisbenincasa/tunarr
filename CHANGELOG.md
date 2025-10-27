@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.22.10](https://github.com/chrisbenincasa/tunarr/compare/v0.22.9...v0.22.10) (2025-10-27)
+
+
+### Bug Fixes
+
+* fix HLS direct playback in Jellyfin for MKV/MP4 output formats ([85ea844](https://github.com/chrisbenincasa/tunarr/commit/85ea844e6a64d8f277c5e6d2ffea4ee8524cb962))
+* fix lineupItemToChannelProgram override to account for undefined channel.programs ([a87cf4a](https://github.com/chrisbenincasa/tunarr/commit/a87cf4a9f848e9b2d3d15d9dba3f4fee21ba45e5))
+* **streaming:** always set framerate when resetting PTS in QSV pipeline ([00c17a8](https://github.com/chrisbenincasa/tunarr/commit/00c17a8689ae04f7d91ae9085f0b9de859529676)), closes [#1431](https://github.com/chrisbenincasa/tunarr/issues/1431)
+* **streaming:** fix HLS direct streaming for Jellyfin 10.11 ([81ea984](https://github.com/chrisbenincasa/tunarr/commit/81ea98410fce5f19950e86c8c601fa92fb53e4f5))
+* use default analyzeduration (5s) when probing files instead of 30 microseconds ([91755b3](https://github.com/chrisbenincasa/tunarr/commit/91755b3eab8e82d8cbd5ac85dfc28560f985cf2e))
+
 ## [0.22.9](https://github.com/chrisbenincasa/tunarr/compare/v0.22.8...v0.22.9) (2025-10-18)
 
 
