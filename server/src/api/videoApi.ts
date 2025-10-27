@@ -7,9 +7,10 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { ChannelStreamModeSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { isNil, isNumber } from 'lodash-es';
+import { isNil } from 'lodash-es';
 import * as fsSync from 'node:fs';
 import { Readable } from 'node:stream';
+import { match, P } from 'ts-pattern';
 import { z } from 'zod/v4';
 
 const FfmpegPlaylistQuerySchema = z.object({
@@ -105,11 +106,11 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           ext: z.enum(['.mkv', '.ts', '.mp4']).optional(),
         }),
         querystring: z.object({
-          channel: z.coerce.number().or(z.string().uuid()),
+          channel: z.coerce.number().or(z.uuid()),
           audioOnly: TruthyQueryParam.catch(false),
           mode: ChannelStreamModeSchema,
           startTime: z.coerce.number().optional(),
-          token: z.string().uuid().optional(),
+          token: z.uuid().optional(),
         }),
       },
       onRequest(req, _, done) {
@@ -123,15 +124,11 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const videoStream = container.get(VideoStream);
 
-      const channelId = isNumber(req.query.channel)
-        ? await req.serverCtx.channelDB
-            .getChannel(req.query.channel)
-            .then((c) => c?.uuid)
-        : await req.serverCtx.channelDB
-            .getChannel(req.query.channel)
-            .then((channel) => channel?.uuid);
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.query.channel,
+      );
 
-      if (isNil(channelId)) {
+      if (isNil(channel)) {
         return res.status(404).send();
       }
 
@@ -139,7 +136,7 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       // this stream. If not, we just return the timestamp we gave it.
       let now = req.query.startTime ?? +dayjs();
       now = await req.serverCtx.onDemandChannelService.getLiveTimestamp(
-        channelId,
+        channel.uuid,
         now,
       );
 
@@ -173,17 +170,18 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
         rawStreamResult.stop();
       });
 
-      let contentType: string;
-      switch (req.query.mode) {
-        case 'hls':
-        case 'mpegts':
-        case 'hls_direct':
-          contentType = 'video/mp2t';
-          break;
-        case 'hls_slower':
-          contentType = 'video/nut';
-          break;
-      }
+      const settings = req.serverCtx.settings.ffmpegSettings();
+
+      const contentType = match([
+        req.query.mode,
+        settings.hlsDirectOutputFormat,
+      ])
+        .with([P.union('hls', 'mpegts'), P._], () => 'video/mp2t')
+        .with(['hls_slower', P._], () => 'video/nut')
+        .with(['hls_direct', 'mpegts'], () => 'video/mp2t')
+        .with(['hls_direct', 'mkv'], () => 'video/matroska')
+        .with(['hls_direct', 'mp4'], () => 'video/mp4')
+        .exhaustive();
 
       return res
         .header('Content-Type', contentType)
