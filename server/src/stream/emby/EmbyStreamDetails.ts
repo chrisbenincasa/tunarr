@@ -333,8 +333,17 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
 
     const audioOnly = !videoStreamDetails && !isEmpty(audioStreamDetails);
 
+    let serverPath = nullToUndefined(firstMediaSource?.Id);
+    if (
+      isNonEmptyString(serverPath) &&
+      serverPath.toLowerCase().startsWith('mediasource_')
+    ) {
+      // For "remote" media (in the eyes of Emby) use the ID itself.
+      serverPath = media.Id;
+    }
+
     const streamDetails: StreamDetails = {
-      serverPath: nullToUndefined(firstMediaSource?.Id),
+      serverPath,
       directFilePath: nullToUndefined(firstMediaSource?.Path),
       videoDetails: videoStreamDetails ? [videoStreamDetails] : undefined,
       audioDetails: isEmpty(audioStreamDetails)
