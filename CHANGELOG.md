@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.11](https://github.com/chrisbenincasa/tunarr/compare/v0.22.10...v0.22.11) (2025-10-27)
+
+
+### Bug Fixes
+
+* allow playing remote media from Emby ([8eaa68f](https://github.com/chrisbenincasa/tunarr/commit/8eaa68fe684fe909a4f06b901a54249e5dbb91e3))
+
 ## [0.22.10](https://github.com/chrisbenincasa/tunarr/compare/v0.22.9...v0.22.10) (2025-10-27)
 
 
