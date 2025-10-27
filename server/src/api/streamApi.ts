@@ -51,7 +51,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           streamMode: ChannelStreamModeSchema.optional(),
           token: z.string().uuid().optional(),
           audioOnly: TruthyQueryParam.optional().default(false),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -65,9 +64,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const params = new URLSearchParams();
       params.set('mode', mode);
-      if (!isUndefined(req.query.useNewPipeline)) {
-        params.set('useNewPipeline', `${req.query.useNewPipeline}`);
-      }
 
       switch (mode) {
         case 'hls':
@@ -367,6 +363,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             );
           break;
         case 'hls_direct': {
+          const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
           const playlist = await new HlsPlaylistCreator(
             req.serverCtx.streamProgramCalculator,
           ).createPlaylist(channelId, dayjs(), {
@@ -374,6 +371,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             host: req.host,
             channelIdOrNumber: channelId,
             streamMode: mode,
+            outputFormat: ffmpegSettings.hlsDirectOutputFormat,
           });
           return res.type('application/vnd.apple.mpegurl').send(playlist);
         }

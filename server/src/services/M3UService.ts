@@ -7,6 +7,8 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
 import { isError, sortBy } from 'lodash-es';
+import { match, P } from 'ts-pattern';
+import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { FileCacheService } from './FileCacheService.ts';
 
 /**
@@ -23,7 +25,10 @@ export class M3uService {
   #logger = LoggerFactory.child({ className: this.constructor.name });
 
   // TODO figure out a better way to manage interdependencies of 'services'
-  constructor(@inject(KEYS.ChannelDB) private channelDB: IChannelDB) {
+  constructor(
+    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+  ) {
     this.fileCacheService = new FileCacheService();
   }
 
@@ -66,7 +71,15 @@ export class M3uService {
           : '{{host}}/images/tunarr.png'
       }" group-title="${channel.groupTitle}",${channel.name}\n`;
 
-      data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;
+      const ext =
+        channel.streamMode === 'hls_direct'
+          ? '.' +
+            match(this.settingsDB.ffmpegSettings().hlsDirectOutputFormat)
+              .with(P.union('mkv', 'mp4'), (fmt) => fmt)
+              .with('mpegts', () => 'ts')
+              .exhaustive()
+          : '';
+      data += `{{host}}/stream/channels/${channel.uuid}${ext}?streamMode=${channel.streamMode}\n`;
     }
 
     if (channels.length === 0) {

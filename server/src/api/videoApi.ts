@@ -97,10 +97,13 @@ export const videoApiRouter: RouterPluginAsyncCallback = async (fastify) => {
    * at the given time, or "now"
    */
   fastify.get(
-    '/stream',
+    '/stream:ext(^\\.[mkv|ts|mp4]+)',
     {
       schema: {
         hide: true,
+        params: z.object({
+          ext: z.enum(['.mkv', '.ts', '.mp4']).optional(),
+        }),
         querystring: z.object({
           channel: z.coerce.number().or(z.string().uuid()),
           audioOnly: TruthyQueryParam.catch(false),
