@@ -6,10 +6,12 @@ import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
 import { addMediaToCurrentChannel } from '@/store/channelEditor/actions';
 import { setPlexFilter } from '@/store/programmingSelector/actions';
 import { createFileRoute } from '@tanstack/react-router';
-import { SearchRequest, SearchRequestSchema } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/api';
+import { SearchRequestSchema } from '@tunarr/types/api';
 import { useCallback, useMemo } from 'react';
 import { z } from 'zod/v4';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
+import useStore from '../../../../store/index.ts';
 
 const channelProgrammingSchema = z.object({
   mediaSourceId: z.string().optional().catch(undefined),
@@ -19,10 +21,14 @@ const channelProgrammingSchema = z.object({
 
 export const Route = createFileRoute('/channels_/$channelId/programming/add')({
   validateSearch: (search) => channelProgrammingSchema.parse(search),
-  loader: (args: ChannelArgs) =>
-    preloadChannelAndProgramming(args).then(() => {
+  loader: (args: ChannelArgs) => {
+    useStore.setState((s) => {
+      s.currentSearchRequest = null;
+    });
+    return preloadChannelAndProgramming(args).then(() => {
       setPlexFilter(undefined);
-    }),
+    });
+  },
   component: ChannelProgrammingSelectorPage,
 });
 
@@ -49,8 +55,11 @@ function ChannelProgrammingSelectorPage() {
         }, [navigate]),
         entityType: 'channel',
         onMediaSourceChange: useCallback(
-          (mediaSourceId: string) =>
-            navigate({ search: { ...search, mediaSourceId } }),
+          (mediaSourceId: string) => {
+            navigate({ search: { ...search, mediaSourceId } }).catch(
+              console.error,
+            );
+          },
           [navigate, search],
         ),
         onLibraryChange: useCallback(
@@ -60,13 +69,14 @@ function ChannelProgrammingSelectorPage() {
           [navigate, search],
         ),
         onSearchChange: useCallback(
-          (searchReq: SearchRequest) =>
+          (searchReq: SearchRequest) => {
             navigate({
               search: {
                 ...search,
                 searchRequest: btoa(JSON.stringify(searchReq)),
               },
-            }).catch(console.error),
+            }).catch(console.error);
+          },
           [search, navigate],
         ),
       }}

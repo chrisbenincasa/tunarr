@@ -67,6 +67,7 @@ import {
   ProgramSubtitlesRelations,
 } from './ProgramSubtitles.ts';
 import { ProgramVersion, ProgramVersionRelations } from './ProgramVersion.ts';
+import { SmartCollection } from './SmartCollection.ts';
 
 // export { Program } from './Program.ts';
 
@@ -118,6 +119,7 @@ export const schema = {
   artworkRelations: ArtworkRelations,
   programSubtitles: ProgramSubtitles,
   programSubtitlesRelations: ProgramSubtitlesRelations,
+  smartCollection: SmartCollection,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

@@ -1,5 +1,5 @@
 import { Checkbox, FormControlLabel, Menu, MenuItem } from '@mui/material';
-import type { MediaSourceLibrary } from '@tunarr/types';
+import type { MediaSourceContentType } from '@tunarr/types';
 import { reject } from 'lodash-es';
 import { useMemo } from 'react';
 import { difference } from '../../helpers/util.ts';
@@ -10,13 +10,13 @@ type Props = {
   onClose: () => void;
   searchFields: ReadonlySet<SearchRestrictKeys>;
   onSearchFieldsChanged: (newFields: ReadonlySet<SearchRestrictKeys>) => void;
-  libraryType?: MediaSourceLibrary['mediaType'];
+  mediaType?: MediaSourceContentType;
 };
 
 type SearchRestrictOption = {
   key: string;
   name: string;
-  libraryTypes: 'all' | MediaSourceLibrary['mediaType'][];
+  libraryTypes: 'all' | MediaSourceContentType[];
   selectedDefault: boolean;
 };
 
@@ -24,11 +24,11 @@ const SearchRestrictOptions: SearchRestrictOption[] = [
   {
     key: 'title',
     name: 'Title',
-    libraryTypes: 'all',
+    libraryTypes: ['movies', 'music_videos', 'other_videos'],
     selectedDefault: true,
   },
   {
-    key: 'grandparent.title',
+    key: 'title',
     name: 'Show Title',
     libraryTypes: ['shows'],
     selectedDefault: true,
@@ -52,7 +52,7 @@ export const SearchFieldRestrictMenu = ({
   onClose,
   searchFields,
   onSearchFieldsChanged,
-  libraryType,
+  mediaType: libraryType,
 }: Props) => {
   const searchRestrictOptions = useMemo(() => {
     return SearchRestrictOptions.filter(

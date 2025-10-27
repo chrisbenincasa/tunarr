@@ -33,6 +33,7 @@ import { plexSettingsRouter } from './plexSettingsApi.js';
 import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
 import { settingsApi } from './settingsApi.ts';
+import { SmartCollectionsApiController } from './smartCollectionsApi.ts';
 import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
@@ -73,7 +74,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(jellyfinApiRouter)
     .register(sessionApiRouter)
     .register(embyApiRouter)
-    .register(settingsApi);
+    .register(settingsApi)
+    .register(container.get(SmartCollectionsApiController).mount);
 
   fastify.get(
     '/version',

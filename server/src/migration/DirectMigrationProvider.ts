@@ -44,6 +44,7 @@ import Migration1759518565_AddProgramSubtitles from './db/Migration1759518565_Ad
 import Migration1760129429_AddProgramGroupingSourceType from './db/Migration1760129429_AddProgramGroupingSourceType.ts';
 import Migration1760213210_AddMoreProgramGroupingFields from './db/Migration1760213210_AddMoreProgramGroupingFields.ts';
 import Migration1760455673_UpdateForeignKeyCasacades from './db/Migration1760455673_UpdateForeignKeyCasacades.ts';
+import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
   ['Migration20240124115044', '_Legacy_Migration00'],
@@ -142,6 +143,10 @@ export class DirectMigrationProvider implements MigrationProvider {
             Migration1760213210_AddMoreProgramGroupingFields,
           migration1760455673_UpdateForeignKeyCasacades:
             Migration1760455673_UpdateForeignKeyCasacades,
+          migration1761309919_AddSmartCollections:
+            makeKyselyMigrationFromSqlFile(
+              './sql/0021_stormy_victor_mancha.sql',
+            ),
         },
         wrapWithTransaction,
       ),

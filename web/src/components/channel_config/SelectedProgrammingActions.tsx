@@ -224,6 +224,8 @@ export default function SelectedProgrammingActions({
       direction={{ sm: 'column', md: 'row' }}
       spacing={{ sm: 1, md: 4 }}
       sx={{
+        width: 'calc(100% + 2em)',
+        alignSelf: 'center',
         display: 'flex',
         justifyContent: 'start',
         alignItems: 'center',

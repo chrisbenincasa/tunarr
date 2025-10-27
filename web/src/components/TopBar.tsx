@@ -26,9 +26,9 @@ import {
 import { Link as RouterLink, useMatches } from '@tanstack/react-router';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty, isNull, last } from 'lodash-es';
+import type { ReactNode } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
-import type { NavItem } from '../hooks/useNavItems.tsx';
 import { useSearchQueryParser } from '../hooks/useSearchQueryParser.ts';
 import { Route } from '../routes/__root.tsx';
 import { useSettings } from '../store/settings/selectors.ts';
@@ -78,6 +78,14 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
+type TopBarNavItem = {
+  name: string;
+  path: string;
+  visible: boolean;
+  icon?: ReactNode;
+  copyToClipboard?: boolean;
+};
+
 export const TopBar = () => {
   const initialSearch = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -121,7 +129,7 @@ export const TopBar = () => {
   );
 
   const handleNavItemLinkClick = useCallback(
-    (e: React.SyntheticEvent, navItem: NavItem) => {
+    (e: React.SyntheticEvent, navItem: TopBarNavItem) => {
       if (navItem.copyToClipboard) {
         e.preventDefault();
         copyToClipboard(
@@ -142,7 +150,7 @@ export const TopBar = () => {
     [settings.backendUri],
   );
 
-  const TopBarLinks: NavItem[] = useMemo(
+  const TopBarLinks = useMemo<TopBarNavItem[]>(
     () => [
       {
         name: 'XMLTV',

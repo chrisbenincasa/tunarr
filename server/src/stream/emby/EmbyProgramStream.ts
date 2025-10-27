@@ -16,7 +16,7 @@ import { ifDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import dayjs from 'dayjs';
 import { type interfaces } from 'inversify';
-import { isNil, isNull, isUndefined } from 'lodash-es';
+import { isNil, isUndefined } from 'lodash-es';
 import { type FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
 import type { EmbyStreamDetails } from './EmbyStreamDetails.ts';
 
@@ -82,19 +82,19 @@ export class EmbyProgramStream extends ProgramStream {
       this.context.streamMode,
     );
 
-    const stream = await streamDetails.getStream({
+    const streamResult = await streamDetails.getStream({
       server,
       lineupItem: lineupItem.program,
     });
-    if (isNull(stream)) {
-      return Result.forError(
-        new Error('Unable to retrieve stream details from Emby'),
-      );
+    if (streamResult.isFailure()) {
+      return streamResult.recast();
     }
 
     if (this.killed) {
       return Result.forError(new Error('Stream was killed already, returning'));
     }
+
+    const stream = streamResult.get();
 
     const streamStats = stream.streamDetails;
     if (streamStats) {

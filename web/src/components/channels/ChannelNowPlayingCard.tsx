@@ -210,23 +210,24 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
             Details
           </Button>
 
-          {firstProgram?.type === 'content' && (
-            <Button
-              startIcon={
-                <NetworkIcon
-                  network={firstProgram.externalSourceType}
-                  width={15}
-                  height={15}
-                />
-              }
-              size="small"
-              component={Link}
-              href={`${backendUri}/api/programs/${firstProgram.id}/external-link`}
-              target="_blank"
-            >
-              View in {capitalize(firstProgram.externalSourceType)}
-            </Button>
-          )}
+          {firstProgram?.type === 'content' &&
+            firstProgram?.externalSourceType !== 'local' && (
+              <Button
+                startIcon={
+                  <NetworkIcon
+                    network={firstProgram.externalSourceType}
+                    width={15}
+                    height={15}
+                  />
+                }
+                size="small"
+                component={Link}
+                href={`${backendUri}/api/programs/${firstProgram.id}/external-link`}
+                target="_blank"
+              >
+                View in {capitalize(firstProgram.externalSourceType)}
+              </Button>
+            )}
         </CardActions>
       </Box>
       {firstProgram.type === 'content' && (

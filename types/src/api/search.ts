@@ -13,7 +13,7 @@ const StringSearchFieldSchema = z.object({
   name: z.string(),
   type: z.literal('string'),
   op: z.enum(StringOperators),
-  value: z.tuple([z.string()], z.string()),
+  value: z.string().array(),
 });
 
 const FactedStringSearchFieldSchema = z.object({
@@ -107,7 +107,7 @@ export type SearchSort = z.infer<typeof SearchSortSchema>;
 
 export const SearchRequestSchema = z.object({
   query: z.string().nullish(),
-  restrictSearchTo: z.array(z.string()).optional(),
+  restrictSearchTo: z.string().array().optional(),
   filter: SearchFilterQuerySchema.nullish(),
   sort: SearchSortSchema.nullish(),
 });

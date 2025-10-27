@@ -36,8 +36,10 @@ export abstract class Result<T, E extends WrappedError = WrappedError> {
     return this.failure(WrappedError.fromError(e));
   }
 
-  static failure<T, U extends WrappedError>(e: U): Result<T, U> {
-    return new Failure(e);
+  static failure<T>(message: string): Result<T, WrappedError>;
+  static failure<T, U extends WrappedError>(e: U): Result<T, U>;
+  static failure<T>(e: WrappedError | string): Result<T, WrappedError> {
+    return new Failure(isString(e) ? WrappedError.forMessage(e) : e);
   }
 
   static success<T, U extends WrappedError>(d: T): Result<T, U> {
@@ -259,6 +261,10 @@ export class Failure<T, E extends WrappedError = WrappedError> extends Result<
 
   isSuccess(): this is Success<T, E> {
     return false;
+  }
+
+  recast<U>(): Failure<U, E> {
+    return this as unknown as Failure<U, E>;
   }
 
   get error(): E {

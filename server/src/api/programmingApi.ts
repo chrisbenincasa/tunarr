@@ -405,7 +405,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         // TODO not a great cast...
         restrictSearchTo: req.body.query
           .restrictSearchTo as Path<ProgramSearchDocument>[],
+        facets: ['type'],
       });
+      console.log(result);
 
       const [programIds, groupingIds] = result.hits.reduce(
         (acc, curr) => {
@@ -478,6 +480,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         page: result.page,
         totalHits: result.totalHits,
         totalPages: result.totalPages,
+        facetDistribution: result.facetDistribution,
       });
     },
   );
@@ -829,22 +832,26 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           server,
         });
 
-      if (!result) {
-        return res.status(500).send();
+      if (result.isFailure()) {
+        logger.error(result.error);
+        return res.status(500).send(result.error.message);
       }
 
-      const ffprobeDetails = await ffprobe.getStream({
-        path: result.streamSource.path,
-      });
+      const { streamDetails, streamSource } = result.get();
 
-      if (result.streamDetails.placeholderImage?.type === 'http') {
-        result.streamDetails.placeholderImage.redact();
+      const ffprobeDetails = (
+        await ffprobe.getStream({
+          path: streamSource.path,
+        })
+      ).orUndefined();
+
+      if (streamDetails.placeholderImage?.type === 'http') {
+        streamDetails.placeholderImage.redact();
       }
 
-      if (result.streamSource.type === 'http') {
-        result.streamSource.redact();
+      if (streamSource.type === 'http') {
+        streamSource.redact();
       }
-
       if (ffprobeDetails?.streamSource.type === 'http') {
         ffprobeDetails.streamSource.redact();
       }
