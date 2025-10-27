@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0-alpha.18](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.17...v0.23.0-alpha.18) (2025-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436))
+
+### Features
+
+* add search bar to top bar ([#1432](https://github.com/chrisbenincasa/tunarr/issues/1432)) ([de41188](https://github.com/chrisbenincasa/tunarr/commit/de41188963d31eefaf897b93d683bb0c565efd34))
+* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436)) ([5183eae](https://github.com/chrisbenincasa/tunarr/commit/5183eae8e06141f58afb7b5085584ff5bb4e724d))
+
 ## [0.23.0-alpha.17](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.16...v0.23.0-alpha.17) (2025-10-22)
 
 
