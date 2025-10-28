@@ -29,6 +29,7 @@ import { ImageCache } from '../ImageCache.ts';
 import { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import { LocalMediaCanonicalizer } from '../LocalMediaCanonicalizer.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
+import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import { FileSystemScanner, LocalScanContext } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -60,6 +61,8 @@ export class LocalMovieScanner extends FileSystemScanner {
     private localMediaCanonicalizer: LocalMediaCanonicalizer,
     @inject(LocalSubtitlesService)
     private localSubtitlesService: LocalSubtitlesService,
+    @inject(FallbackMetadataService)
+    private fallbackMetadataService: FallbackMetadataService,
   ) {
     super(
       logger,
@@ -222,21 +225,9 @@ export class LocalMovieScanner extends FileSystemScanner {
         return mediaItemResult.mapPure(() => void 0);
       }
 
-      // TODO: implement fallback metadata
-      const nfoPath = await this.findNfoFile(fullVideoFilePath);
-      if (isUndefined(nfoPath) || isEmpty(nfoPath)) {
-        return Result.forError(
-          new Error(
-            `Could not locate nfo for movie file: ${fullVideoFilePath}`,
-          ),
-        );
-      }
-
-      const parseResult = await new MovieNfoParser().parse(
-        await fs.readFile(nfoPath, 'utf-8'),
-      );
-      if (parseResult.isFailure()) {
-        return parseResult.map(() => void 0);
+      const metadataResult = await this.loadMovieMetadata(fullVideoFilePath);
+      if (metadataResult.isFailure()) {
+        return metadataResult.recast();
       }
 
       const posterArtResult = await this.scanArtworkForMovie(
@@ -262,10 +253,8 @@ export class LocalMovieScanner extends FileSystemScanner {
         );
       }
 
-      const movieMetadata = this.movieNfoToMovie(parseResult.get().movie);
-
       const movie: MediaSourceMovie = {
-        ...movieMetadata,
+        ...metadataResult.get(),
         mediaSourceId: context.mediaSource.uuid,
         libraryId: context.library.uuid,
         duration: mediaItemResult.get().duration,
@@ -312,6 +301,30 @@ export class LocalMovieScanner extends FileSystemScanner {
     } catch (e) {
       return Result.forError(caughtErrorToError(e));
     }
+  }
+
+  private async loadMovieMetadata(fullVideoFilePath: string) {
+    const nfoPath = await this.findNfoFile(fullVideoFilePath);
+    if (isUndefined(nfoPath) || isEmpty(nfoPath)) {
+      return Result.attemptAsync(() =>
+        Promise.resolve(
+          this.fallbackMetadataService.getMovieFallbackMetadata(
+            fullVideoFilePath,
+          ),
+        ),
+      );
+    }
+
+    const parseResult = await new MovieNfoParser().parse(
+      await fs.readFile(nfoPath, 'utf-8'),
+    );
+    if (parseResult.isFailure()) {
+      return parseResult.recast();
+    }
+
+    return Result.attemptAsync(() =>
+      Promise.resolve(this.movieNfoToMovie(parseResult.get().movie)),
+    );
   }
 
   private movieNfoToMovie(movieNfo: MovieNfo): MovieMetadata {
