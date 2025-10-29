@@ -1980,7 +1980,7 @@ export class ProgramDB implements IProgramDB {
   async getProgramGroupingDescendants(
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
-  ) {
+  ): Promise<ProgramWithRelationsOrm[]> {
     return this.drizzleDB.query.program.findMany({
       where: (fields, { or, eq }) => {
         if (groupTypeHint) {

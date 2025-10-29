@@ -11,7 +11,7 @@ import type { ChannelSession, CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
-  GetChannelProgrammingResponseSchema,
+  MaterializedSchedule,
   PagedResult,
   RandomSlotScheduleSchema,
   TimeSlotScheduleResult,
@@ -45,6 +45,8 @@ import {
   reduce,
 } from 'lodash-es';
 import z from 'zod/v4';
+import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializedChannelScheduleCommand.ts';
+import { container } from '../container.ts';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
 import type { ChannelAndLineup } from '../types/internal.ts';
@@ -236,7 +238,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
-        .catch((err) => logger.error('Error regenerating guide: %O', err));
+        .catch((err) => logger.error(err, 'Error regenerating guide'));
       await req.serverCtx.m3uService.regenerateCache();
 
       return res.status(201).send(dbChannelToApiChannel(inserted));
@@ -467,7 +469,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         querystring: BasicPagingSchema,
         tags: ['Channels'],
         response: {
-          200: GetChannelProgrammingResponseSchema,
+          200: CondensedChannelProgrammingSchema,
           404: z.object({ error: z.string() }),
         },
       },
@@ -745,6 +747,36 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         type: 'schedule-slots',
       });
       return res.serializer(JSON.stringify).send(result);
+    },
+  );
+
+  fastify.get(
+    '/channels/:id/schedule',
+    {
+      schema: {
+        tags: ['Channels', 'Scheduling'],
+        params: z.object({
+          id: z.uuid(),
+        }),
+        response: {
+          200: z.object({
+            schedule: MaterializedSchedule.optional(),
+          }),
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await container
+        .get(GetMaterializedChannelScheduleCommand)
+        .execute({
+          channelId: req.params.id,
+        });
+
+      if (!result) {
+        return res.send();
+      }
+
+      return res.serializer(JSON.stringify).send({ schedule: result });
     },
   );
 };

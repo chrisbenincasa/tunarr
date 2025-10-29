@@ -1,5 +1,4 @@
 import { type Channel } from '@tunarr/types';
-import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { range } from 'lodash-es';
 import { type MarkOptional } from 'ts-essentials';
 
@@ -63,18 +62,7 @@ export const Imported = 'imported';
 export const Local = 'local';
 export const Playlists = 'playlists';
 export const Library = 'library';
-export const defaultRandomSlotSchedule: RandomSlotSchedule = {
-  type: 'random',
-  padStyle: 'slot',
-  randomDistribution: 'uniform',
-  flexPreference: 'distribute',
-  maxDays: 365,
-  padMs: 1,
-  slots: [],
-  timeZoneOffset: new Date().getTimezoneOffset(),
-  // UI mechanism
-  lockWeights: false,
-};
+
 export const AlphanumericCharCodes = [
   '#'.charCodeAt(0),
   ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),

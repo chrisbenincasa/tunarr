@@ -15,9 +15,10 @@ import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
 import {
-  EnqueuedTaskObject,
+  EnqueuedTask,
   MeiliSearch,
   MeiliSearchApiError,
+  ResourceResults,
   Settings,
   Task,
 } from 'meilisearch';
@@ -542,8 +543,11 @@ export class MeilisearchService implements ISearchService {
   }
 
   async sync() {
-    await this.client().httpRequest.patch('/experimental-features', {
-      containsFilter: true,
+    await this.client().httpRequest.patch({
+      path: '/experimental-features',
+      body: {
+        containsFilter: true,
+      },
     });
 
     const existingIndexes = await this.client().getIndexes();
@@ -590,17 +594,49 @@ export class MeilisearchService implements ISearchService {
     }
   }
 
+  async getPrograms(ids: string[]): Promise<ProgramSearchDocument[]> {
+    try {
+      if (ids.length === 0) {
+        return [];
+      }
+
+      const results: ProgramSearchDocument[] = [];
+      let res: ResourceResults<ProgramSearchDocument[]>;
+      let offset = 0;
+      do {
+        res = await this.#client
+          .index<ProgramSearchDocument>(ProgramsIndex.name)
+          .getDocuments({
+            ids,
+            offset,
+            limit: 100,
+          });
+        results.push(...res.results);
+        offset += res.results.length;
+      } while (results.length < res.total || res.results.length > 0);
+
+      return results;
+    } catch (e) {
+      if (e instanceof MeiliSearchApiError && e.response.status === 404) {
+        return Promise.resolve([]);
+      }
+      throw e;
+    }
+  }
+
   async indexMovie(programs: (Movie & HasMediaSourceAndLibraryId)[]) {
     if (isEmpty(programs)) {
       return;
     }
 
-    await this.client()
-      .index<ProgramSearchDocument>(ProgramsIndex.name)
-      .addDocumentsInBatches(
-        programs.map((p) => this.convertProgramToSearchDocument(p)),
-        100,
-      );
+    return await Promise.all(
+      this.client()
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .addDocumentsInBatches(
+          programs.map((p) => this.convertProgramToSearchDocument(p)),
+          100,
+        ),
+    );
   }
 
   async indexOtherVideo(programs: (OtherVideo & HasMediaSourceAndLibraryId)[]) {
@@ -608,12 +644,14 @@ export class MeilisearchService implements ISearchService {
       return;
     }
 
-    await this.client()
-      .index<ProgramSearchDocument>(ProgramsIndex.name)
-      .addDocumentsInBatches(
-        programs.map((p) => this.convertProgramToSearchDocument(p)),
-        100,
-      );
+    return await Promise.all(
+      this.client()
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .addDocumentsInBatches(
+          programs.map((p) => this.convertProgramToSearchDocument(p)),
+          100,
+        ),
+    );
   }
 
   async indexShow(show: Show & HasMediaSourceAndLibraryId) {
@@ -768,9 +806,11 @@ export class MeilisearchService implements ISearchService {
       return document;
     });
 
-    await this.client()
-      .index<TerminalProgramSearchDocument<'episode'>>(ProgramsIndex.name)
-      .addDocumentsInBatches(episodeDocuments, 100);
+    return await Promise.all(
+      this.client()
+        .index<TerminalProgramSearchDocument<'episode'>>(ProgramsIndex.name)
+        .addDocumentsInBatches(episodeDocuments, 100),
+    );
   }
 
   async indexMusicArtist(artist: MusicArtist & HasMediaSourceAndLibraryId) {
@@ -921,9 +961,11 @@ export class MeilisearchService implements ISearchService {
       return document;
     });
 
-    await this.client()
-      .index<TerminalProgramSearchDocument<'track'>>(ProgramsIndex.name)
-      .addDocumentsInBatches(episodeDocuments, 100);
+    return await Promise.all(
+      this.client()
+        .index<TerminalProgramSearchDocument<'track'>>(ProgramsIndex.name)
+        .addDocumentsInBatches(episodeDocuments, 100),
+    );
   }
 
   async search<
@@ -1237,10 +1279,10 @@ export class MeilisearchService implements ISearchService {
     taskId: number,
     canceledIsOk: boolean = false,
   ) {
-    let status: EnqueuedTaskObject['status'] = 'enqueued';
+    let status: EnqueuedTask['status'] = 'enqueued';
     let task: Task;
     do {
-      task = await this.client().getTask(taskId);
+      task = await this.client().tasks.getTask(taskId);
       status = task.status;
       await wait(500);
     } while (

@@ -1,7 +1,8 @@
 import { OneDayMillis } from '@/helpers/constants.ts';
 import { getTimeSlotId, OneWeekMillis } from '@/helpers/slotSchedulerUtil.ts';
-import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
+import { useSlotProgramOptionsContext } from '@/hooks/programming_controls/useSlotProgramOptions';
 import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails.ts';
+import type { TimeSlotViewModel } from '@/model/TimeSlotModels.ts';
 import { Delete, Edit, Warning } from '@mui/icons-material';
 import {
   Box,
@@ -17,7 +18,7 @@ import {
 } from '@mui/material';
 import { blue, green, orange, pink, purple } from '@mui/material/colors';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
-import { type SlotFiller, type TimeSlot } from '@tunarr/types/api';
+import { type SlotFiller } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
@@ -46,10 +47,13 @@ import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
+import type {
+  SlotWarning,
+  TimeSlotTableRowType,
+} from '../../model/CommonSlotModels.ts';
 import { AddTimeSlotButton } from './AddTimeSlotButton.tsx';
 import { ClearSlotsButton } from './ClearSlotsButton.tsx';
 import { EditTimeSlotDialogContent } from './EditTimeSlotDialogContent.tsx';
-import type { SlotWarning, TimeSlotTableRowType } from './SlotTypes.ts';
 import { TimeSlotWarningsDialog } from './TimeSlotWarningsDialog.tsx';
 
 dayjs.extend(localizedFormat);
@@ -81,7 +85,7 @@ export const TimeSlotTable = () => {
   const localeData = useMemo(() => providedDjs().localeData(), [providedDjs]);
   const { watch, slotArray } = useTimeSlotFormContext();
   const [currentPeriod, latenessMs] = watch(['period', 'latenessMs']);
-  const { dropdownOpts: programOptions } = useSlotProgramOptions();
+  const programOptions = useSlotProgramOptionsContext();
   const startOfPeriod = dayjs().startOf(currentPeriod);
   const slotIds = useMemo(
     () => uniq(map(slotArray.fields, (slot) => getTimeSlotId(slot))),
@@ -97,7 +101,7 @@ export const TimeSlotTable = () => {
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 
   const [currentEditingSlot, setCurrentEditingSlot] = useState<{
-    slot: TimeSlot;
+    slot: TimeSlotViewModel;
     index: number;
   } | null>(null);
 
@@ -106,6 +110,7 @@ export const TimeSlotTable = () => {
   >(null);
 
   const rows = useMemo(() => {
+    console.log(slotArray.fields);
     return map(
       sortBy(
         slotArray.fields
@@ -220,18 +225,19 @@ export const TimeSlotTable = () => {
       },
       {
         header: 'Program',
-        // accessorKey: 'programming',
         accessorFn: identity,
         id: 'programming',
         enableEditing: true,
         Cell: ({ cell }) => {
-          const value = cell.getValue<TimeSlot>();
+          const value = cell.getValue<TimeSlotViewModel>();
           switch (value.type) {
             case 'movie':
               return 'Movie';
             case 'show':
-              return find(programOptions, { showId: value.showId })
-                ?.description;
+              return (
+                value.show?.title ??
+                find(programOptions, { showId: value.showId })?.description
+              );
             case 'flex':
               return 'Flex';
             case 'redirect':
@@ -254,24 +260,24 @@ export const TimeSlotTable = () => {
         grow: true,
         size: 350,
       },
-      {
-        header: '# of Programs',
-        id: 'programCount',
-        enableEditing: false,
-        Cell({ row }) {
-          const programming = row.original;
-          switch (programming.type) {
-            case 'movie':
-            case 'show':
-            case 'custom-show':
-            case 'filler':
-              return row.original.programCount;
-            case 'flex':
-            case 'redirect':
-              return '-';
-          }
-        },
-      },
+      // {
+      //   header: '# of Programs',
+      //   id: 'programCount',
+      //   enableEditing: false,
+      //   Cell({ row }) {
+      //     const programming = row.original;
+      //     switch (programming.type) {
+      //       case 'movie':
+      //       case 'show':
+      //       case 'custom-show':
+      //       case 'filler':
+      //         return row.original.programCount;
+      //       case 'flex':
+      //       case 'redirect':
+      //         return '-';
+      //     }
+      //   },
+      // },
       {
         header: 'Order',
         accessorFn(originalRow) {
@@ -288,7 +294,7 @@ export const TimeSlotTable = () => {
         },
         id: 'programOrder',
         Cell({ cell }) {
-          const value = cell.getValue<TimeSlot['order'] | null>();
+          const value = cell.getValue<string | null>();
           if (!value) {
             return '-';
           }
@@ -456,7 +462,6 @@ export const TimeSlotTable = () => {
           <EditTimeSlotDialogContent
             slot={currentEditingSlot.slot}
             index={currentEditingSlot.index}
-            programOptions={programOptions}
             onClose={() => setCurrentEditingSlot(null)}
           />
         )}

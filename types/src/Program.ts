@@ -1,4 +1,5 @@
 import type z from 'zod/v4';
+import { type CondensedChannelProgrammingSchema } from './schemas/lineups.js';
 import type {
   Collection,
   Episode,
@@ -40,7 +41,6 @@ import {
   type ChannelProgramSchema,
   type ChannelProgrammingSchema,
   type CondensedChannelProgramSchema,
-  type CondensedChannelProgrammingSchema,
   type CondensedContentProgramSchema,
   type ContentProgramParentSchema,
   type ContentProgramSchema,

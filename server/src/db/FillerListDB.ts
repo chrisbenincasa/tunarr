@@ -41,7 +41,7 @@ import {
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import { withFillerPrograms } from './programQueryHelpers.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
-import type { NewFillerShow } from './schema/FillerShow.ts';
+import type { FillerShow, NewFillerShow } from './schema/FillerShow.ts';
 import type { NewFillerShowContent } from './schema/FillerShowContent.ts';
 import { DB } from './schema/db.ts';
 import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
@@ -62,6 +62,31 @@ export class FillerDB implements IFillerListDB {
       .selectAll()
       .select((eb) => withFillerPrograms(eb, { fields: ['program.uuid'] }))
       .executeTakeFirst();
+  }
+
+  async getFillerListsByIds(
+    ids: string[],
+  ): Promise<(FillerShow & { contentCount: number })[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.db
+      .selectFrom('fillerShow')
+      .where('uuid', 'in', ids)
+      .innerJoin(
+        'fillerShowContent',
+        'fillerShow.uuid',
+        'fillerShowContent.fillerShowUuid',
+      )
+      .selectAll('fillerShow')
+      .select((eb) =>
+        eb.fn
+          .count<number>('fillerShowContent.programUuid')
+          .distinct()
+          .as('contentCount'),
+      )
+      .execute();
   }
 
   async saveFiller(

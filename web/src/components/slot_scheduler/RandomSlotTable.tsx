@@ -7,15 +7,15 @@ import {
   RandomSlotsWeightAdjustDialog,
   UnlockedWeightScale,
 } from '@/components/slot_scheduler/RandomSlotsWeightAdjustDialog';
+import { betterHumanize } from '@/helpers/dayjs';
+import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
+
+import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails';
+import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import type {
   RandomSlotTableRowType,
   SlotWarning,
-} from '@/components/slot_scheduler/SlotTypes.ts';
-import { betterHumanize } from '@/helpers/dayjs';
-import { getRandomSlotId } from '@/helpers/slotSchedulerUtil.ts';
-import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
-import { useScheduledSlotProgramDetails } from '@/hooks/slot_scheduler/useScheduledSlotProgramDetails';
-import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
+} from '@/model/CommonSlotModels';
 import { Balance, Warning } from '@mui/icons-material';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';
@@ -30,7 +30,6 @@ import {
 } from '@mui/material';
 import type { VisibilityState } from '@tanstack/react-table';
 import { seq } from '@tunarr/shared/util';
-import type { RandomSlot } from '@tunarr/types/api';
 import { usePrevious, useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import {
@@ -41,7 +40,6 @@ import {
   isEmpty,
   isNil,
   map,
-  maxBy,
   nth,
   round,
   sum,
@@ -59,11 +57,13 @@ import {
 import pluralize from 'pluralize';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
+import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
+import type { SlotViewModel } from '../../model/SlotModels.ts';
+import type { Nullable } from '../../types/util.ts';
 
 export const RandomSlotTable = () => {
   const { slotArray, getValues, watch, setValue } = useRandomSlotFormContext();
-  const { dropdownOpts: programOptions, nameById: programOptionNameById } =
-    useSlotProgramOptions();
+  const getSlotName = useSlotName();
 
   const slotIds = useMemo(
     () => uniq(map(slotArray.fields, (slot) => getRandomSlotId(slot))),
@@ -71,7 +71,7 @@ export const RandomSlotTable = () => {
   );
 
   const [currentEditingSlot, setCurrentEditingSlot] = useState<{
-    slot: RandomSlot;
+    slot: SlotViewModel;
     index: number;
   } | null>(null);
 
@@ -93,39 +93,72 @@ export const RandomSlotTable = () => {
     cooldownMs: slotDistribution !== 'none',
   });
 
-  const [currentSlots, distributionType] = watch([
+  const [currentSlots, distributionType, lockWeights] = watch([
     'slots',
     'randomDistribution',
+    'lockWeights',
   ]);
   const prevDistributionType = usePrevious(distributionType);
+  const maxWeight = useMemo(
+    () => sum(currentSlots.map((slot) => slot.weight)),
+    [currentSlots],
+  );
+
+  const setSlotsAndDirty = useCallback(
+    (newSlots: SlotViewModel[]) => {
+      setValue('slots', newSlots, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    },
+    [setValue],
+  );
 
   useEffect(() => {
     const sub = watch((value, { name }) => {
-      if (name === 'randomDistribution' || name === 'lockWeights') {
-        match([value.randomDistribution, value.lockWeights])
-          .with([P.string, true], () => {
-            const newWeight = round(100 / currentSlots.length, 2);
-            setValue(
-              'slots',
-              map(currentSlots, (slot) => ({ ...slot, weight: newWeight })),
-              { shouldDirty: true },
-            );
-          })
-          .with([P.string, false], () => {
-            const maxWeight =
-              maxBy(currentSlots, (slot) => slot.weight)?.weight ?? 100.0;
-            setValue(
-              'slots',
-              map(currentSlots, (slot) => ({
-                ...slot,
-                weight: Math.ceil(
-                  (UnlockedWeightScale * slot.weight) / maxWeight,
-                ),
-              })),
-              { shouldDirty: true },
-            );
+      console.log(name);
+      if (name === 'randomDistribution') {
+        match([prevDistributionType, value.randomDistribution])
+          .with([P._, P.nullish], () => {})
+          // Uniform, all slots get same weight.
+          // No distribution, slots are scheduled in order, weight doesn't matter
+          .with([P._, P.union('none', 'uniform')], () =>
+            setSlotsAndDirty(
+              currentSlots.map((slot) => ({ ...slot, weight: 100 })),
+            ),
+          )
+          // Changing to weighted
+          .with([P.not('weighted'), 'weighted'], () => {
+            // Here we have to calculate the weights
+            if (value.lockWeights) {
+              // If weights are relative, we distribute to start
+              const newWeight = round(100 / currentSlots.length, 2);
+              setSlotsAndDirty(
+                currentSlots.map((slot) => ({ ...slot, weight: newWeight })),
+              );
+            } else {
+              // If weights are independent scale them relative to
+              setSlotsAndDirty(
+                currentSlots.map((slot) => ({
+                  ...slot,
+                  weight: UnlockedWeightScale * 100,
+                })),
+              );
+            }
           })
           .otherwise(() => {});
+      }
+
+      if (name === 'lockWeights' && value.randomDistribution === 'weighted') {
+        if (value.lockWeights) {
+          // If we're moving to locked weights
+          const summedWeights = sum(currentSlots.map((slot) => slot.weight));
+          const scaled = currentSlots.map((slot) => ({
+            ...slot,
+            weight: round((slot.weight / summedWeights) * 100.0, 2),
+          }));
+          setSlotsAndDirty(scaled);
+        }
       }
 
       setColumnVisibility((prev) => ({
@@ -135,7 +168,7 @@ export const RandomSlotTable = () => {
       }));
     });
     return () => sub.unsubscribe();
-  }, [currentSlots, prevDistributionType, setValue, watch]);
+  }, [currentSlots, prevDistributionType, setSlotsAndDirty, setValue, watch]);
 
   const columns = useMemo<MRT_ColumnDef<RandomSlotTableRowType>[]>(() => {
     return [
@@ -216,8 +249,8 @@ export const RandomSlotTable = () => {
         accessorFn: identity,
         enableEditing: true,
         Cell: ({ cell }) => {
-          const value = cell.getValue<RandomSlot>();
-          return programOptionNameById[getRandomSlotId(value)];
+          const value = cell.getValue<SlotViewModel>();
+          return getSlotName(value);
         },
         grow: true,
         size: 350,
@@ -248,7 +281,7 @@ export const RandomSlotTable = () => {
           );
         },
         Cell({ cell }) {
-          const value = cell.getValue<RandomSlot['order'] | null>();
+          const value = cell.getValue<Nullable<string>>();
           if (!value) {
             return '-';
           }
@@ -277,10 +310,17 @@ export const RandomSlotTable = () => {
         header: 'Weight',
         accessorKey: 'weight',
         enableSorting: false,
-        Cell: ({ cell }) => `${cell.getValue<number>()}%`,
+        Cell: ({ cell }) => {
+          const value = cell.getValue<number>();
+          if (lockWeights) {
+            return `${value}%`;
+          } else {
+            return `${round((value / maxWeight) * 100.0, 2)}%`;
+          }
+        },
       },
     ];
-  }, [programOptionNameById]);
+  }, [getSlotName, lockWeights, maxWeight]);
 
   const onDeleteSlot = useCallback(
     (index: number) => {
@@ -336,8 +376,7 @@ export const RandomSlotTable = () => {
   const detailsBySlotId = useScheduledSlotProgramDetails(slotIds);
 
   const rows = useMemo<RandomSlotTableRowType[]>(() => {
-    const totalWeight = sum(map(slotArray.fields, 'weight'));
-    return map(slotArray.fields, (slot) => {
+    return map(currentSlots, (slot, idx) => {
       const warnings: SlotWarning[] = [];
       const slotId = getRandomSlotId(slot);
       const slotDetails = detailsBySlotId[slotId];
@@ -362,12 +401,12 @@ export const RandomSlotTable = () => {
       }
       return {
         ...slot,
-        weight: round((slot.weight / totalWeight) * 100.0, 2),
+        id: slotArray.fields[idx].id,
         programCount,
         warnings,
       } satisfies RandomSlotTableRowType;
     });
-  }, [detailsBySlotId, slotArray.fields]);
+  }, [currentSlots, detailsBySlotId, slotArray.fields]);
 
   const table = useMaterialReactTable({
     columns,
@@ -393,9 +432,8 @@ export const RandomSlotTable = () => {
             onAdd={(slot) =>
               setCurrentEditingSlot({ slot, index: slotArray.fields.length })
             }
-            programOptions={programOptions}
           />
-          {distributionType === 'weighted' && (
+          {distributionType === 'weighted' && slotArray.fields.length > 1 && (
             <Button
               onClick={() => toggleWeightAdjustDialogOpen(true)}
               startIcon={<Balance />}
@@ -459,8 +497,8 @@ export const RandomSlotTable = () => {
           <EditRandomSlotDialogContent
             slot={currentEditingSlot.slot}
             index={currentEditingSlot.index}
-            programOptions={programOptions}
-            onClose={() => setCurrentEditingSlot(null)}
+            onCancel={() => setCurrentEditingSlot(null)}
+            onSave={() => setCurrentEditingSlot(null)}
           />
         )}
       </Dialog>

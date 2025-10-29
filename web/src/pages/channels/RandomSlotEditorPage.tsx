@@ -1,8 +1,8 @@
-import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
 import { RandomSlotFormProvider } from '@/components/slot_scheduler/RandomSlotFormProvider.tsx';
 import { RandomSlotSettingsForm } from '@/components/slot_scheduler/RandomSlotSettingsForm';
 import { RandomSlotTable } from '@/components/slot_scheduler/RandomSlotTable.tsx';
 import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions';
+import { defaultRandomSlotSchedule } from '@/model/SlotModels.ts';
 import { useChannelEditor } from '@/store/selectors';
 import { ArrowBack, HelpOutline } from '@mui/icons-material';
 import {
@@ -25,40 +25,33 @@ import duration from 'dayjs/plugin/duration';
 import {
   filter,
   groupBy,
-  isNil,
   isUndefined,
   keys,
   mapValues,
   orderBy,
   round,
+  sum,
 } from 'lodash-es';
 import React, { useCallback, useMemo, useState } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
-import type { StrictOmit } from 'ts-essentials';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
 import ChannelLineupList from '../../components/channel_config/ChannelLineupList.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
-import { defaultRandomSlotSchedule } from '../../helpers/constants.ts';
+import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
+import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
+import type { RandomSlotForm } from '../../model/SlotModels.ts';
 import { resetLineup } from '../../store/channelEditor/actions';
 import type { Maybe } from '../../types/util.ts';
 
 dayjs.extend(duration);
 
-export type RandomSlotForm = StrictOmit<
-  RandomSlotSchedule,
-  'timeZoneOffset' | 'type'
->;
-
 export default function RandomSlotEditorPage() {
-  const {
-    currentEntity: channel,
-    programList: newLineup,
-    schedule: loadedSchedule,
-  } = useChannelEditor();
+  const { currentEntity: channel, programList: newLineup } = useChannelEditor();
+  const { data: channelSchedule } = useChannelSchedule(channel!.id);
 
   const updateLineupMutation = useUpdateLineup({
     onSuccess(data) {
@@ -71,25 +64,29 @@ export default function RandomSlotEditorPage() {
 
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const { dropdownOpts: programOptions, nameById: programOptionNameById } =
-    useSlotProgramOptions();
+  const { nameById: programOptionNameById } = useSlotProgramOptions();
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
   const [randomState, setRandomState] =
     useState<Maybe<{ seed?: number[]; discardCount?: number }>>();
 
-  const hasExistingTimeSlotSchedule =
-    !isNil(loadedSchedule) && loadedSchedule.type === 'time';
+  const hasExistingTimeSlotSchedule = channelSchedule.schedule?.type === 'time';
 
   const randomSlotForm = useForm<RandomSlotForm>({
     defaultValues:
-      !isUndefined(loadedSchedule) && loadedSchedule.type === 'random'
+      channelSchedule.schedule?.type === 'random'
         ? {
-            ...loadedSchedule,
+            ...channelSchedule.schedule,
             slots: orderBy(
-              loadedSchedule.slots,
+              channelSchedule.schedule.slots,
               (slot, idx) => slot.index ?? idx,
               'asc',
             ),
+            lockWeights:
+              channelSchedule.schedule.randomDistribution !== 'weighted'
+                ? false
+                : sum(
+                    channelSchedule.schedule.slots.map((slot) => slot.weight),
+                  ) > 100,
           }
         : defaultRandomSlotSchedule,
   });
@@ -184,10 +181,6 @@ export default function RandomSlotEditorPage() {
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
         <Typography variant="h4">Slot Scheduler</Typography>
-        <MissingProgramsAlert
-          slots={slotArray.fields}
-          programOptions={programOptions}
-        />
         {hasExistingTimeSlotSchedule && (
           <Alert severity="warning">
             This channel has an existing time slot schedule. A channel can only
@@ -198,16 +191,18 @@ export default function RandomSlotEditorPage() {
         <PaddedPaper>
           <Typography sx={{ flexGrow: 1, fontWeight: 600 }}>Slots</Typography>
           <Divider sx={{ my: 2 }} />
-          <RandomSlotFormProvider {...randomSlotForm} slotArray={slotArray}>
-            <RandomSlotTable />
-          </RandomSlotFormProvider>
-          <Divider sx={{ my: 2 }} />
-          <FormProvider {...randomSlotForm}>
-            <RandomSlotSettingsForm
-              onCalculateStart={() => toggleIsCalculatingSlots(true)}
-              onCalculateEnd={onCalculateSlotsEnd}
-            />
-          </FormProvider>
+          <SlotProgrammingOptionsProvider>
+            <RandomSlotFormProvider {...randomSlotForm} slotArray={slotArray}>
+              <RandomSlotTable />
+            </RandomSlotFormProvider>
+            <Divider sx={{ my: 2 }} />
+            <FormProvider {...randomSlotForm}>
+              <RandomSlotSettingsForm
+                onCalculateStart={() => toggleIsCalculatingSlots(true)}
+                onCalculateEnd={onCalculateSlotsEnd}
+              />
+            </FormProvider>
+          </SlotProgrammingOptionsProvider>
         </PaddedPaper>
         <PaddedPaper>
           <Stack direction="row" sx={{ width: '100%' }}>
