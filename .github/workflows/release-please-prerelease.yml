@@ -4,7 +4,7 @@ on:
       base_ref:
         description: "Ref to build pre-release from"
         required: true
-        default: 'dev'
+        default: "dev"
   push:
     branches:
       - media-scanner
@@ -19,7 +19,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: release-please-oss/release-please-action@v5.0.0
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
