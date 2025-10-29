@@ -28,7 +28,7 @@ const NfoAudioStream = z.object({
 
 const NfoVideoStream = z.object({
   codec: z.string(),
-  aspect: z.number(),
+  aspect: z.number().optional(),
   width: z.number(),
   height: z.number(),
   durationinseconds: z.number().optional(),
