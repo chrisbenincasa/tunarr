@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.23.0-alpha.19](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.18...v0.23.0-alpha.19) (2025-10-31)
+
+
+### Features
+
+* add basic fallback metadata extraction for local media ([45a9643](https://github.com/chrisbenincasa/tunarr/commit/45a9643909bb5e0a14289b818b3eae0030553c4d)), closes [#1428](https://github.com/chrisbenincasa/tunarr/issues/1428)
+* allow scheduling shows that are not part of channel lineup ([#1440](https://github.com/chrisbenincasa/tunarr/issues/1440)) ([83bf854](https://github.com/chrisbenincasa/tunarr/commit/83bf85496b00d502e58ba39f74bc79d0ef3aef51))
+* support smart collection slots in both slot editors ([#1442](https://github.com/chrisbenincasa/tunarr/issues/1442)) ([2c6ef93](https://github.com/chrisbenincasa/tunarr/commit/2c6ef93b56861f7d229470d568b86d975ad5b2a3))
+
+
+### Bug Fixes
+
+* do not require episode nfo files to have the uniqueid field ([6342a03](https://github.com/chrisbenincasa/tunarr/commit/6342a039c37946a3f19ef7afdb91677d3e2a0bb7))
+* make videodetails nfo parsing more persmissive ([c611297](https://github.com/chrisbenincasa/tunarr/commit/c6112975308bdefc7acb99c35a9add63f710e9a0))
+
 ## [0.23.0-alpha.18](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.17...v0.23.0-alpha.18) (2025-10-27)
 
 
