@@ -60,20 +60,14 @@ export class NoopWorkerPool implements IWorkerPool {
           return Promise.resolve<Out>(void 0 as Out);
         })
         .with({ type: 'time-slots' }, async ({ request, type }) => {
-          const result = await this.timeSlotSchedulerService.schedule({
-            ...request,
-            materializeResult: false,
-          });
+          const result = await this.timeSlotSchedulerService.schedule(request);
           return {
             result,
             type,
           } satisfies z.infer<OutTypes[typeof type]>;
         })
         .with({ type: 'schedule-slots' }, async ({ request, type }) => {
-          const result = await this.slotSchedulerService.schedule({
-            ...request,
-            materializeResult: false,
-          });
+          const result = await this.slotSchedulerService.schedule(request);
 
           return {
             result,

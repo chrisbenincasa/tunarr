@@ -32,6 +32,12 @@ export const useSlotName = () => {
           })?.description;
           return `Filler - ${showName}`;
         }
+        case 'smart-collection': {
+          const collectionName = find(programOptions, {
+            collectionId: slot.smartCollectionId,
+          })?.description;
+          return `Smart Collection - ${collectionName}`;
+        }
       }
     },
     [programOptions],

@@ -9,6 +9,7 @@ import {
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
   CommonShowSlotViewModel,
+  CommonSmartCollectionViewModel,
   WithSlotFiller,
 } from './CommonSlotModels.ts';
 
@@ -63,6 +64,17 @@ export const CustomShowSlotViewModel = z.object({
   ...WithSlotFiller.shape,
 });
 
+export const SmartCollectionTimeSlotViewModel = z.object({
+  ...BaseSlot.shape,
+  ...BaseSlotOrdering.shape,
+  ...CommonSmartCollectionViewModel.shape,
+  ...WithSlotFiller.shape,
+});
+
+export type SmartCollectionTimeSlotViewModel = z.infer<
+  typeof SmartCollectionTimeSlotViewModel
+>;
+
 export const SlotViewModel = z.discriminatedUnion('type', [
   MovieSlotViewModel,
   ShowSlotViewModel,
@@ -70,6 +82,7 @@ export const SlotViewModel = z.discriminatedUnion('type', [
   RedirectSlotViewModel,
   FillerSlotViewModel,
   CustomShowSlotViewModel,
+  SmartCollectionTimeSlotViewModel,
 ]);
 
 export type SlotViewModel = z.infer<typeof SlotViewModel>;

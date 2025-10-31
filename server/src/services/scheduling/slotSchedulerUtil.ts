@@ -1,19 +1,11 @@
-import { createExternalIdFromMulti } from '@tunarr/shared';
 import constants from '@tunarr/shared/constants';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import {
-  isContentProgram,
-  isCustomProgram,
-  isFillerProgram,
   isFlexProgram,
-  type ChannelProgram,
   type CondensedChannelProgram,
-  type CondensedContentProgram,
   type ContentProgram,
-  type CustomProgram,
   type FillerProgram,
   type FlexProgram,
-  type MultiExternalId,
 } from '@tunarr/types';
 import type {
   BaseCustomShowProgrammingSlot,
@@ -23,26 +15,19 @@ import type {
   FillerProgrammingSlot,
   SlotFillerTypes,
 } from '@tunarr/types/api';
-import {
-  FillerTypes,
-  type CondensedCustomProgram,
-  type CondensedFillerProgram,
-} from '@tunarr/types/schemas';
+import { FillerTypes } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import {
-  filter,
-  first,
   forEach,
-  groupBy,
   isEmpty,
   isNull,
   last,
   map,
   reduce,
   reject,
-  some,
   sortBy,
   sumBy,
+  uniq,
   uniqBy,
   values,
 } from 'lodash-es';
@@ -53,37 +38,72 @@ import type {
   StrictExtract,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import { groupByTyped, retrySimple } from '../../util/index.ts';
+import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
+import type { Nullable } from '../../types/util.ts';
+import { isNonEmptyArray, retrySimple } from '../../util/index.ts';
 import { FlexProgramIterator } from './FlexProgramIterator.ts';
-import { ProgramChunkedShuffle } from './ProgramChunkedShuffle.ts';
+import {
+  ContentProgramChunkedShuffle,
+  CustomProgramChunkedShuffle,
+} from './ProgramChunkedShuffle.ts';
 import type { ProgramIterator } from './ProgramIterator.js';
 import {
   fillerSlotIteratorKey,
   getProgramOrderer,
   slotIteratorKey,
 } from './ProgramIterator.js';
-import { ProgramOrdereredIterator } from './ProgramOrdereredIterator.ts';
-import { ShuffleProgramIterator } from './ShuffleProgramIterator.ts';
+import {
+  ContentProgramOrderedIterator,
+  CustomProgramOrderedIterator,
+} from './ProgramOrdereredIterator.ts';
+import {
+  ContentProgramShuffleIterator,
+  CustomProgramShuffleIterator,
+  ProgramShuffleIteratorImpl,
+} from './ShuffleProgramIterator.ts';
 import type { SlotImpl } from './SlotImpl.ts';
 import { StaticProgramIterator } from './StaticProgramIterator.ts';
 import { WeightedFillerProgramIterator } from './WeightedFillerProgramIterator.ts';
 
 type ProgramMapping = {
-  [K in 'content' | 'redirect' | 'custom' | 'filler']: Record<
-    string,
-    Extract<ChannelProgram, { type: K }>[]
-  >;
+  content: Record<ContentSlotId, SlotSchedulerProgram[]>;
+  custom: Record<`custom-show.${string}`, SlotSchedulerProgram[]>;
+  filler: Record<`filler.${string}`, SlotSchedulerProgram[]>;
+  smartCollection: Record<`smart-collection.${string}`, SlotSchedulerProgram[]>;
 };
 
-export type SlotId =
+export type CustomShowContext = {
+  customShowId: string;
+  index: number; // TODO: support multiple indices
+};
+
+export type SlotSchedulerProgram = ProgramWithRelationsOrm & {
+  parentFillerLists: string[];
+  parentCustomShows: CustomShowContext[];
+  parentSmartCollections: string[];
+};
+
+type ContentSlotId =
   | 'movie'
   | 'music_video'
   | 'other_video'
   | `show.${string}`
+  | `artist.${string}`;
+
+export type SlotId =
+  | ContentSlotId
   | `custom-show.${string}`
   | `filler.${string}`
   | `redirect.${string}`
+  | `smart-collection.${string}`
   | `flex`;
+
+const customShowSlotId = (id: string): `custom-show.${typeof id}` =>
+  `custom-show.${id}` as const;
+const fillerSlotId = (id: string): `filler.${typeof id}` =>
+  `filler.${id}` as const;
+const smartCollectionId = (id: string): `smart-collection.${string}` =>
+  `smart-collection.${id}` as const;
 
 export const getSlotIdForProgram = (
   program: CondensedChannelProgram,
@@ -121,81 +141,29 @@ export const getSlotIdForProgram = (
   }
 };
 
-function deduplicateContentPrograms(programs: ContentProgram[]) {
-  // Remove any duplicates.
-  // We don't need to go through and remove flex since
-  // they will just be ignored during schedule generation
-  const seenDBIds = new Set<string>();
-  const seenIds = new Set<string>();
-  return filter(programs, (p) => {
-    if (p.persisted && isNonEmptyString(p.id)) {
-      if (!seenDBIds.has(p.id)) {
-        seenDBIds.add(p.id);
-        forEach(p.externalIds, (eid) => {
-          if (eid.type === 'multi') {
-            seenIds.add(createExternalIdFromMulti(eid));
-          }
-        });
-        return true;
-      } else {
-        return false;
-      }
+export function deduplicatePrograms(
+  programs: SlotSchedulerProgram[],
+): SlotSchedulerProgram[] {
+  const acc: Map<string, SlotSchedulerProgram> = new Map();
+  for (const program of programs) {
+    if (acc.has(program.uuid)) {
+      const existing = acc.get(program.uuid)!;
+      // Merge ids. This should theoretically never happen.
+      existing.parentFillerLists = uniq(
+        existing.parentFillerLists.concat(program.parentFillerLists),
+      );
+      existing.parentCustomShows = uniq(
+        existing.parentCustomShows.concat(program.parentCustomShows),
+      );
+      existing.parentSmartCollections = uniq(
+        existing.parentSmartCollections.concat(program.parentSmartCollections),
+      );
+      acc.set(program.uuid, existing); // Necessary?
+    } else {
+      acc.set(program.uuid, program);
     }
-
-    const externalIds = filter(
-      p.externalIds,
-      (eid): eid is MultiExternalId => eid.type === 'multi',
-    );
-    const eids = map(externalIds, createExternalIdFromMulti);
-    if (some(eids, (eid) => seenIds.has(eid))) {
-      return false;
-    }
-
-    forEach(eids, (eid) => seenIds.add(eid));
-    return true;
-  });
-}
-
-function deduplicateCustomPrograms(programs: CustomProgram[]) {
-  const byCustomShowId = groupBy(programs, (program) => program.customShowId);
-  const unique: CustomProgram[] = [];
-  for (const [_, programs] of Object.entries(byCustomShowId)) {
-    unique.push(...uniqBy(programs, (p) => p.id));
   }
-  return unique;
-}
-
-function deduplicateFillerPrograms(programs: FillerProgram[]) {
-  const byFillerListId = groupBy(programs, (program) => program.fillerListId);
-  const unique: FillerProgram[] = [];
-  for (const [_, programs] of Object.entries(byFillerListId)) {
-    unique.push(...uniqBy(programs, (p) => p.id));
-  }
-  return unique;
-}
-
-export function deduplicatePrograms(programs: ChannelProgram[]) {
-  const programsByType = groupByTyped(programs, (program) => program.type);
-  const uniquePrograms = [
-    ...(programsByType['flex'] ?? []),
-    ...(programsByType['redirect'] ?? []),
-  ];
-  uniquePrograms.push(
-    ...deduplicateContentPrograms(
-      (programsByType['content'] ?? []).filter(isContentProgram),
-    ),
-  );
-  uniquePrograms.push(
-    ...deduplicateCustomPrograms(
-      (programsByType['custom'] ?? []).filter(isCustomProgram),
-    ),
-  );
-  uniquePrograms.push(
-    ...deduplicateFillerPrograms(
-      (programsByType['filler'] ?? []).filter(isFillerProgram),
-    ),
-  );
-  return uniquePrograms;
+  return [...acc.values()];
 }
 
 /**
@@ -203,57 +171,53 @@ export function deduplicatePrograms(programs: ChannelProgram[]) {
  * @param programs
  * @returns
  */
-export function createProgramMap(programs: ChannelProgram[]): ProgramMapping {
+export function createProgramMap(
+  programs: SlotSchedulerProgram[],
+): ProgramMapping {
   return reduce(
     programs,
     (acc, program) => {
-      switch (program.type) {
-        case 'content': {
-          let id: string | null = null;
-          if (
-            program.subtype === 'movie' ||
-            program.subtype === 'music_video' ||
-            program.subtype === 'other_video'
-          ) {
-            id = 'movie';
-          } else if (
-            program.subtype === 'episode' &&
-            isNonEmptyString(program.showId)
-          ) {
-            id = `tv.${program.showId}`;
-          } else if (
-            program.subtype === 'track' &&
-            isNonEmptyString(program.artistId)
-          ) {
-            id = `artist.${program.artistId}`;
-          }
+      const id = match(program)
+        .returnType<Nullable<ContentSlotId>>()
+        .with(
+          { type: P.union('movie', 'music_video', 'other_video') },
+          () => 'movie',
+        )
+        .with(
+          { type: 'episode', show: { uuid: P.when(isNonEmptyString) } },
+          (ep) => `show.${ep.show.uuid}`,
+        )
+        .with(
+          { type: 'track', artist: { uuid: P.when(isNonEmptyString) } },
+          (track) => `artist.${track.artist.uuid}`,
+        )
+        .otherwise(() => null);
 
-          if (!isNull(id)) {
-            const existing = acc.content[id] ?? [];
-            acc.content[id] = [...existing, program];
-          }
-          break;
-        }
-        case 'redirect': {
-          const id = `redirect.${program.channel}`;
-          const existing = acc.redirect[id] ?? [];
-          acc.redirect[id] = [...existing, program];
-          break;
-        }
-        case 'custom': {
-          const id = `custom-show.${program.customShowId}`;
-          const existing = acc.custom[id] ?? [];
-          acc.custom[id] = [...existing, program];
-          break;
-        }
-        case 'filler': {
-          const id = `filler.${program.fillerListId}`;
-          const existing = acc.filler[id] ?? [];
-          acc.filler[id] = [...existing, program];
-          break;
-        }
-        case 'flex':
-          break;
+      if (!isNull(id)) {
+        const existing = acc.content[id] ?? [];
+        existing.push(program);
+        acc.content[id] = existing;
+      }
+
+      for (const customShow of program.parentCustomShows) {
+        const id = `custom-show.${customShow.customShowId}` as const;
+        const existing = acc.custom[id] ?? [];
+        existing.push(program);
+        acc.custom[id] = existing;
+      }
+
+      for (const fillerList of program.parentFillerLists) {
+        const id = `filler.${fillerList}` as const;
+        const existing = acc.filler[id] ?? [];
+        existing.push(program);
+        acc.filler[id] = existing;
+      }
+
+      for (const collectionId of program.parentSmartCollections) {
+        const id = smartCollectionId(collectionId);
+        const existing = acc.smartCollection[id] ?? [];
+        existing.push(program);
+        acc.smartCollection[id] = existing;
       }
 
       return acc;
@@ -263,7 +227,8 @@ export function createProgramMap(programs: ChannelProgram[]): ProgramMapping {
       redirect: {},
       custom: {},
       filler: {},
-    } as ProgramMapping,
+      smartCollection: {},
+    } as unknown as ProgramMapping,
   );
 }
 
@@ -284,30 +249,8 @@ export function createProgramIterators(
     slots,
     (acc, slot) => {
       const id = slotIteratorKey(slot);
-      let slotId: string;
 
-      switch (slot.type) {
-        case 'movie':
-          slotId = 'movie';
-          break;
-        case 'show':
-          slotId = `tv.${slot.showId}`;
-          break;
-        case 'redirect':
-          slotId = `redirect.${slot.channelId}`;
-          break;
-        case 'custom-show':
-          slotId = `custom-show.${slot.customShowId}`;
-          break;
-        case 'filler':
-          slotId = `filler.${slot.fillerListId}`;
-          break;
-        case 'flex':
-          slotId = 'flex';
-          break;
-      }
-
-      if (id && slotId && !acc[id]) {
+      if (id && !acc[id]) {
         acc[id] = match(slot)
           .with(
             { type: 'flex' },
@@ -319,44 +262,42 @@ export function createProgramIterators(
               }),
           )
           .with({ type: 'redirect' }, (slot) => {
-            const program = first(programBySlotType.redirect[slotId] ?? []);
-            if (program) {
-              return new StaticProgramIterator(program);
-            } else {
-              return new StaticProgramIterator({
-                type: 'redirect',
-                channel: slot.channelId,
-                channelName: slot.channelName ?? '',
-                channelNumber: -1,
-                duration: 1,
-                persisted: false,
-              });
-            }
+            return new StaticProgramIterator({
+              type: 'redirect',
+              channel: slot.channelId,
+              channelName: slot.channelName ?? '',
+              channelNumber: -1,
+              duration: 1,
+              persisted: false,
+            });
+          })
+          .with({ type: 'custom-show', order: 'next' }, (slot) => {
+            const programs =
+              programBySlotType.custom[customShowSlotId(slot.customShowId)] ??
+              [];
+
+            return new CustomProgramOrderedIterator(
+              slot.customShowId,
+              programs,
+            );
           })
           .with(
-            { type: 'custom-show', order: 'next' },
-            () =>
-              new ProgramOrdereredIterator<CustomProgram>(
-                programBySlotType.custom[slotId] ?? [],
-                (program) => program.index,
-              ),
-          )
-          .with(
             { type: 'custom-show', order: 'shuffle' },
-            () =>
-              new ShuffleProgramIterator(
-                programBySlotType.custom[slotId] ?? [],
+            (slot) =>
+              new CustomProgramShuffleIterator(
+                slot.customShowId,
+                programBySlotType.custom[customShowSlotId(slot.customShowId)] ??
+                  [],
                 random,
               ),
           )
-          .with(
-            { type: 'custom-show', order: 'ordered_shuffle' },
-            () =>
-              new ProgramChunkedShuffle(
-                programBySlotType.custom[slotId] ?? [],
-                (program) => program.index,
-              ),
-          )
+          .with({ type: 'custom-show', order: 'ordered_shuffle' }, (slot) => {
+            const programs =
+              programBySlotType.custom[
+                `custom-show.${slot.customShowId}` as const
+              ] ?? [];
+            return new CustomProgramChunkedShuffle(slot.customShowId, programs);
+          })
           .with({ type: 'custom-show' }, (slot) => {
             throw new Error(
               `Invalid ordering type for custom show slot: ${slot.order}`,
@@ -368,27 +309,69 @@ export function createProgramIterators(
               order: P.union('shuffle_prefer_short', 'shuffle_prefer_long'),
             },
             (slot) => {
-              const programs = programBySlotType.filler[slotId] ?? [];
-              if (isEmpty(programs)) {
+              const programs =
+                programBySlotType.filler[fillerSlotId(slot.fillerListId)] ?? [];
+              if (!isNonEmptyArray(programs)) {
                 throw new Error('Cannot schedule an empty filler list slot.');
               }
-              return new WeightedFillerProgramIterator(
-                programs as NonEmptyArray<FillerProgram>,
-                slot,
-                random,
-              );
+              return new WeightedFillerProgramIterator(programs, slot, random);
             },
           )
-          .with({ type: 'filler' }, () => {
-            const programs = programBySlotType.filler[slotId] ?? [];
+          .with({ type: 'filler' }, (slot) => {
+            const programs =
+              programBySlotType.filler[fillerSlotId(slot.fillerListId)] ?? [];
             if (isEmpty(programs)) {
               throw new Error('Cannot schedule an empty filler list slot.');
             }
-            return new ShuffleProgramIterator(programs, random);
+            return new ProgramShuffleIteratorImpl(
+              programs,
+              random,
+              (program) => ({
+                type: 'filler',
+                duration: program.duration,
+                fillerListId: slot.fillerListId,
+                id: program.uuid,
+                persisted: true,
+              }),
+            );
           })
-          .with({ type: P.union('movie', 'show') }, (slot) =>
-            getContentProgramIterator(programBySlotType, slotId, slot, random),
-          )
+          .with({ type: P.union('movie', 'show') }, (slot) => {
+            const slotId = match(slot)
+              .returnType<ContentSlotId>()
+              .with({ type: 'movie' }, () => 'movie')
+              .with({ type: 'show' }, (show) => `show.${show.showId}`)
+              .exhaustive();
+            return getContentProgramIterator(
+              programBySlotType,
+              slotId,
+              slot,
+              random,
+            );
+          })
+          .with({ type: 'smart-collection' }, (slot) => {
+            const programs =
+              programBySlotType.smartCollection[
+                smartCollectionId(slot.smartCollectionId)
+              ] ?? [];
+            switch (slot.order) {
+              case 'next':
+              case 'alphanumeric':
+              case 'chronological':
+                return new ContentProgramOrderedIterator(
+                  programs,
+                  getProgramOrderer(slot.order),
+                  slot.direction === 'asc',
+                );
+              case 'shuffle':
+                return new ContentProgramShuffleIterator(programs, random);
+              case 'ordered_shuffle':
+                return new ContentProgramChunkedShuffle(
+                  programs,
+                  getProgramOrderer('next'),
+                  slot.direction === 'asc',
+                );
+            }
+          })
           .exhaustive();
       }
 
@@ -426,25 +409,27 @@ export function createProgramIterators(
       .exhaustive();
 
     const iteratorKey = slotIteratorKey(fakeSlot);
-    const slotId = `filler.${fillerDef.fillerListId}`;
+    const slotId = `filler.${fillerDef.fillerListId}` satisfies SlotId;
 
     // Already made this.
     if (iteratorsFromSlots[iteratorKey]) {
       continue;
     }
     const programs = programBySlotType.filler[slotId] ?? [];
-    if (isEmpty(programs)) {
+    if (!isNonEmptyArray(programs)) {
       throw new Error('Cannot schedule an empty filler list slot.');
     }
 
     const iterator =
       fakeSlot.order === 'uniform'
-        ? new ShuffleProgramIterator(programs, random)
-        : new WeightedFillerProgramIterator(
-            programs as NonEmptyArray<FillerProgram>,
-            fakeSlot,
-            random,
-          );
+        ? new ProgramShuffleIteratorImpl(programs, random, (program) => ({
+            type: 'filler',
+            duration: program.duration,
+            fillerListId: fillerDef.fillerListId,
+            id: program.uuid,
+            persisted: true,
+          }))
+        : new WeightedFillerProgramIterator(programs, fakeSlot, random);
 
     iteratorsFromSlots[iteratorKey] = iterator;
   }
@@ -487,59 +472,29 @@ export function slotFillerIterators(
 
 function getContentProgramIterator(
   programBySlotType: ProgramMapping,
-  contentSlotId: string,
+  contentSlotId: ContentSlotId,
   slot: BaseMovieProgrammingSlot | BaseShowProgrammingSlot,
   random: Random,
 ) {
-  const programs = programBySlotType.content[contentSlotId] ?? [];
-  // Remove any duplicates.
-  // We don't need to go through and remove flex since
-  // they will just be ignored during schedule generation
-  const seenDBIds = new Set<string>();
-  const seenIds = new Set<string>();
-  const uniquePrograms = filter(programs, (p) => {
-    if (p.persisted && isNonEmptyString(p.id)) {
-      if (!seenDBIds.has(p.id)) {
-        seenDBIds.add(p.id);
-        forEach(p.externalIds, (eid) => {
-          if (eid.type === 'multi') {
-            seenIds.add(createExternalIdFromMulti(eid));
-          }
-        });
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    const externalIds = filter(
-      p.externalIds,
-      (eid): eid is MultiExternalId => eid.type === 'multi',
-    );
-    const eids = map(externalIds, createExternalIdFromMulti);
-    if (some(eids, (eid) => seenIds.has(eid))) {
-      return false;
-    }
-
-    forEach(eids, (eid) => seenIds.add(eid));
-    return true;
-  });
+  const programs = uniqBy(
+    programBySlotType.content[contentSlotId] ?? [],
+    (p) => p.uuid,
+  );
 
   switch (slot.order) {
     case 'next':
     case 'alphanumeric':
     case 'chronological':
-      return new ProgramOrdereredIterator(
-        uniquePrograms,
+      return new ContentProgramOrderedIterator(
+        programs,
         getProgramOrderer(slot.order),
         slot.direction === 'asc',
       );
     case 'shuffle':
-      return new ShuffleProgramIterator(uniquePrograms, random);
-      break;
+      return new ContentProgramShuffleIterator(programs, random);
     case 'ordered_shuffle':
-      return new ProgramChunkedShuffle(
-        uniquePrograms,
+      return new ContentProgramChunkedShuffle(
+        programs,
         getProgramOrderer('next'),
         slot.direction === 'asc',
       );
@@ -559,6 +514,7 @@ export type SlotIteratorKey =
   | `redirect_${string}`
   | `custom-show_${string}_${SlotOrder}`
   | `filler_${string}_${SlotOrder}`
+  | `smart_collection_${string}_${SlotOrder}`
   | 'flex';
 
 // Adds flex time to the end of a programs array.
@@ -596,46 +552,8 @@ export function pushOrExtendFlex(
   return durationMs;
 }
 
-export function condense(program: ChannelProgram): CondensedChannelProgram {
-  switch (program.type) {
-    case 'content':
-      return {
-        id: program.uniqueId, // TODO
-        duration: program.duration,
-        persisted: program.persisted,
-        type: 'content',
-      } satisfies CondensedContentProgram;
-    case 'custom':
-      return {
-        customShowId: program.customShowId,
-        duration: program.duration,
-        id: program.id,
-        index: program.index,
-        persisted: program.persisted,
-        type: 'custom',
-        program: program.program
-          ? (condense(program.program) as CondensedContentProgram)
-          : undefined,
-      } satisfies CondensedCustomProgram;
-    case 'filler':
-      return {
-        fillerListId: program.fillerListId,
-        duration: program.duration,
-        id: program.id,
-        persisted: program.persisted,
-        type: 'filler',
-        program: program.program
-          ? (condense(program.program) as CondensedContentProgram)
-          : undefined,
-      } satisfies CondensedFillerProgram;
-    case 'redirect':
-    case 'flex':
-      return program;
-  }
-}
-
 export function createPaddedProgram(
-  program: ChannelProgram,
+  program: CondensedChannelProgram,
   padMs: number,
 ): PaddedProgram {
   const rem = program.duration % padMs;
@@ -845,9 +763,9 @@ function maybeAddFillerOfType(
 }
 export class PaddedProgram {
   constructor(
-    public program: ChannelProgram,
+    public program: CondensedChannelProgram,
     public padMs: number,
-    public filler: Partial<Record<SlotFillerTypes, ChannelProgram>>,
+    public filler: Partial<Record<SlotFillerTypes, CondensedChannelProgram>>,
   ) {}
 
   get totalDuration() {
@@ -855,4 +773,23 @@ export class PaddedProgram {
     const fillerDur = sumBy(values(this.filler), (f) => f.duration);
     return programDur + fillerDur + this.padMs;
   }
+}
+export function createIndexByIdMap(
+  programs: SlotSchedulerProgram[],
+  customShowId,
+) {
+  return reduce(
+    programs,
+    (acc, program) => {
+      const cs = program.parentCustomShows.find(
+        (cs) => cs.customShowId === customShowId,
+      );
+      if (!cs) {
+        return acc;
+      }
+      acc[program.uuid] = cs.index;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 }

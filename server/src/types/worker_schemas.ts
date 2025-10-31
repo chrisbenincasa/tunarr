@@ -25,8 +25,8 @@ export const WorkerStatusRequest = BaseWorkerRequest.extend({
 export const WorkerScheduleTimeSlotsRequest = BaseWorkerRequest.extend({
   type: z.literal('time-slots'),
   request: z.discriminatedUnion('type', [
-    ChannelTimeSlotScheduleRequest.omit({ materializeResult: true }),
-    ProgramsTimeSlotScheduleRequest.omit({ materializeResult: true }),
+    ChannelTimeSlotScheduleRequest,
+    ProgramsTimeSlotScheduleRequest,
   ]),
 });
 
@@ -38,8 +38,8 @@ export const WorkerScheduleSlotsRequest = z.object({
   ...BaseWorkerRequest.shape,
   type: z.literal('schedule-slots'),
   request: z.discriminatedUnion('type', [
-    ChannelSlotScheduleRequest.omit({ materializeResult: true }),
-    ProgramsSlotScheduleRequest.omit({ materializeResult: true }),
+    ChannelSlotScheduleRequest,
+    ProgramsSlotScheduleRequest,
   ]),
 });
 

@@ -65,10 +65,9 @@ import { join } from 'node:path';
 import { MarkRequired } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
-import { SlotSchedulerService } from '../services/scheduling/RandomSlotSchedulerService.ts';
-import { TimeSlotSchedulerService } from '../services/scheduling/TimeSlotSchedulerService.ts';
 import { ChannelAndLineup } from '../types/internal.ts';
 import {
   asyncMapToRecord,
@@ -238,6 +237,8 @@ export class ChannelDB implements IChannelDB {
     private workerPoolProvider: interfaces.AutoFactory<IWorkerPool>,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
+    @inject(MaterializeLineupCommand)
+    private materializeLineupCommand: MaterializeLineupCommand,
   ) {}
 
   async channelExists(channelId: string) {
@@ -856,7 +857,7 @@ export class ChannelDB implements IChannelDB {
       // Best effort remove references to this channel
       const removeRefs = () =>
         this.removeRedirectReferences(channelId).catch((e) => {
-          this.logger.error('Error while removing redirect references: %O', e);
+          this.logger.error(e, 'Error while removing redirect references');
         });
 
       if (blockOnLineupUpdates) {
@@ -879,9 +880,9 @@ export class ChannelDB implements IChannelDB {
       }
 
       this.logger.error(
-        'Error while attempting to delete channel %s: %O',
-        channelId,
         e,
+        'Error while attempting to delete channel %s',
+        channelId,
       );
 
       throw e;
@@ -1113,17 +1114,6 @@ export class ChannelDB implements IChannelDB {
         newLineup: newLineupItems,
       };
     } else if (req.type === 'time' || req.type === 'random') {
-      // const programs = req.body.programs;
-      // const persistedPrograms = filter(programs, isContentProgram)
-      // const upsertedPrograms = await upsertContentPrograms(programs);
-      // TODO: What would it be like to run the scheduler in a separate worker thread??
-      // await runWorker<number>(
-      //   new URL('../../util/scheduleTimeSlotsWorker', import.meta.url),
-      //   {
-      //     schedule: req.body.schedule,
-      //     programs: req.body.programs,
-      //   },
-      // ),
       let programs: ChannelProgram[];
       let startTime: number;
       if (req.type === 'time') {
@@ -1131,27 +1121,56 @@ export class ChannelDB implements IChannelDB {
           type: 'time-slots',
           request: {
             type: 'programs',
-            programs: req.programs,
+            programIds: seq.collect(req.programs, (p) => {
+              switch (p.type) {
+                case 'custom':
+                case 'content':
+                case 'filler':
+                  return p.id;
+                case 'redirect':
+                case 'flex':
+                  return;
+              }
+            }),
             schedule: req.schedule,
             seed: req.seed,
           },
         });
 
-        ({ programs, startTime } =
-          TimeSlotSchedulerService.materializeProgramsFromResult(result));
+        startTime = result.startTime;
+        programs = MaterializeLineupCommand.expandLineup(
+          result.lineup,
+          await this.materializeLineupCommand.execute({
+            lineup: result.lineup,
+          }),
+        );
       } else {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'schedule-slots',
           request: {
             type: 'programs',
-            programs: req.programs,
+            programIds: seq.collect(req.programs, (p) => {
+              switch (p.type) {
+                case 'custom':
+                case 'content':
+                case 'filler':
+                  return p.id;
+                case 'redirect':
+                case 'flex':
+                  return;
+              }
+            }),
             schedule: req.schedule,
             seed: req.seed,
           },
         });
-
-        ({ programs, startTime } =
-          SlotSchedulerService.materializeProgramsFromResult(result));
+        startTime = result.startTime;
+        programs = MaterializeLineupCommand.expandLineup(
+          result.lineup,
+          await this.materializeLineupCommand.execute({
+            lineup: result.lineup,
+          }),
+        );
       }
 
       const newLineup = await createNewLineup(programs);

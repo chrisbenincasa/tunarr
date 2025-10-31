@@ -1,4 +1,4 @@
-import type { ChannelProgram, FillerProgram } from '@tunarr/types';
+import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
 import type { BaseSlot, SlotFillerTypes } from '@tunarr/types/api';
 import { isEmpty, some } from 'lodash-es';
 import type { Random } from 'random-js';
@@ -6,7 +6,10 @@ import type { Nullable } from '../../types/util.ts';
 import type { IterationState, ProgramIterator } from './ProgramIterator.js';
 import { slotMayHaveFiller } from './slotSchedulerUtil.js';
 
-export abstract class SlotImpl<SlotType extends BaseSlot> {
+export abstract class SlotImpl<
+  SlotType extends BaseSlot,
+  ProgramT extends CondensedChannelProgram = CondensedChannelProgram,
+> {
   protected fillerIteratorsByType: Record<
     SlotFillerTypes,
     ProgramIterator<FillerProgram>[]
@@ -20,7 +23,7 @@ export abstract class SlotImpl<SlotType extends BaseSlot> {
 
   constructor(
     protected slot: SlotType,
-    private iterator: ProgramIterator,
+    private iterator: ProgramIterator<ProgramT>,
     private random: Random,
     private fillerIteratorsByListId: Record<
       string,
@@ -46,7 +49,7 @@ export abstract class SlotImpl<SlotType extends BaseSlot> {
     }
   }
 
-  getNextProgram(state: IterationState): ChannelProgram | null {
+  getNextProgram(state: IterationState): ProgramT | null {
     return this.iterator.current(state);
   }
 

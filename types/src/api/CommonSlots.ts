@@ -98,6 +98,13 @@ export const FillerProgrammingSlotSchema = z.object({
 
 export type FillerProgrammingSlot = z.infer<typeof FillerProgrammingSlotSchema>;
 
+export const SmartCollectionProgrammingSlot = z.object({
+  type: z.literal('smart-collection'),
+  smartCollectionId: z.uuid(),
+  ...BaseSlotOrdering.shape,
+  ...Slot.shape,
+});
+
 export const BaseSlotSchema = z.discriminatedUnion('type', [
   MovieProgrammingSlotSchema,
   ShowProgrammingSlotSchema,
@@ -105,6 +112,7 @@ export const BaseSlotSchema = z.discriminatedUnion('type', [
   RedirectProgrammingSlotSchema,
   CustomShowProgrammingSlotSchema,
   FillerProgrammingSlotSchema,
+  SmartCollectionProgrammingSlot,
 ]);
 
 export type BaseSlot = z.infer<typeof BaseSlotSchema>;

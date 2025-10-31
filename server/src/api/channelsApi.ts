@@ -14,8 +14,9 @@ import {
   MaterializedSchedule,
   PagedResult,
   RandomSlotScheduleSchema,
-  TimeSlotScheduleResult,
+  SlotScheduleWithPrograms,
   TimeSlotScheduleSchema,
+  TimeSlotScheduleWithPrograms,
   UpdateChannelProgrammingRequestSchema,
 } from '@tunarr/types/api';
 import {
@@ -46,6 +47,7 @@ import {
 } from 'lodash-es';
 import z from 'zod/v4';
 import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializedChannelScheduleCommand.ts';
+import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { container } from '../container.ts';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
@@ -701,10 +703,9 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         body: z.object({
           schedule: TimeSlotScheduleSchema,
-          // programs: z.array(ChannelProgramSchema),
         }),
         response: {
-          200: TimeSlotScheduleResult,
+          200: TimeSlotScheduleWithPrograms,
         },
       },
     },
@@ -717,7 +718,17 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         },
         type: 'time-slots',
       });
-      return res.serializer(JSON.stringify).send(result);
+
+      const programsById = await container
+        .get(MaterializeLineupCommand)
+        .execute({
+          lineup: result.lineup,
+        });
+
+      return res.serializer(JSON.stringify).send({
+        ...result,
+        programs: programsById,
+      });
     },
   );
 
@@ -733,7 +744,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           schedule: RandomSlotScheduleSchema,
         }),
         response: {
-          200: TimeSlotScheduleResult,
+          200: SlotScheduleWithPrograms,
         },
       },
     },
@@ -746,7 +757,17 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         },
         type: 'schedule-slots',
       });
-      return res.serializer(JSON.stringify).send(result);
+
+      const programsById = await container
+        .get(MaterializeLineupCommand)
+        .execute({
+          lineup: result.lineup,
+        });
+
+      return res.serializer(JSON.stringify).send({
+        ...result,
+        programs: programsById,
+      });
     },
   );
 

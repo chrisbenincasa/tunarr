@@ -1,6 +1,8 @@
 import { faker } from '@faker-js/faker';
+import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { now, sumBy } from 'lodash-es';
+import { DeepPartial } from 'ts-essentials';
 import { instance, mock, verify, when } from 'ts-mockito';
 import { test as baseTest } from 'vitest';
 import { LineupItem } from '../db/derived_types/Lineup.ts';
@@ -9,6 +11,7 @@ import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
+import { MediaSourceId } from '../db/schema/base.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import {
@@ -46,13 +49,21 @@ describe('StreamProgramCalculator', () => {
 
     when(programDB.getProgramById(programId1)).thenReturn(
       Promise.resolve(
-        createFakeProgram({ uuid: programId1, duration: lineup[0].durationMs }),
+        createFakeProgram({
+          uuid: programId1,
+          duration: lineup[0].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
       ),
     );
 
     when(programDB.getProgramById(programId2)).thenReturn(
       Promise.resolve(
-        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+        createFakeProgram({
+          uuid: programId2,
+          duration: lineup[1].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
       ),
     );
 
@@ -91,9 +102,11 @@ describe('StreamProgramCalculator', () => {
       })
     ).get();
 
-    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+    expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
       streamDuration: +dayjs.duration(6, 'minutes'),
-      programId: programId1,
+      program: {
+        uuid: programId1,
+      },
       infiniteLoop: false,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
       startOffset: +dayjs.duration(16, 'minutes'),
@@ -133,13 +146,21 @@ describe('StreamProgramCalculator', () => {
 
     when(programDB.getProgramById(programId1)).thenReturn(
       Promise.resolve(
-        createFakeProgram({ uuid: programId1, duration: lineup[0].durationMs }),
+        createFakeProgram({
+          uuid: programId1,
+          duration: lineup[0].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
       ),
     );
 
     when(programDB.getProgramById(programId2)).thenReturn(
       Promise.resolve(
-        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+        createFakeProgram({
+          uuid: programId2,
+          duration: lineup[1].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
       ),
     );
 
@@ -178,9 +199,11 @@ describe('StreamProgramCalculator', () => {
       })
     ).get();
 
-    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+    expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
       streamDuration: +dayjs.duration(6, 'minutes'),
-      programId: programId1,
+      program: {
+        uuid: programId1,
+      },
       infiniteLoop: false,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
       startOffset: +dayjs.duration(16, 'minutes'),
@@ -225,13 +248,18 @@ describe('StreamProgramCalculator', () => {
         createFakeProgram({
           uuid: programId1,
           duration: +dayjs.duration({ minutes: 2 }),
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
         }),
       ),
     );
 
     when(programDB.getProgramById(programId2)).thenReturn(
       Promise.resolve(
-        createFakeProgram({ uuid: programId2, duration: lineup[1].durationMs }),
+        createFakeProgram({
+          uuid: programId2,
+          duration: lineup[1].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
       ),
     );
 
@@ -270,16 +298,15 @@ describe('StreamProgramCalculator', () => {
       })
     ).get();
 
-    expect(out.lineupItem).toMatchObject<Partial<StreamLineupItem>>({
+    expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
       streamDuration: +dayjs.duration(6, 'minutes'),
-      programId: programId1,
+      program: { uuid: programId1 },
       infiniteLoop: true,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
       startOffset: +dayjs.duration(16, 'minutes'),
       fillerId: fillerListId,
       type: 'commercial',
       duration: +dayjs.duration(22, 'minutes'),
-      contentDuration: +dayjs.duration(2, 'minutes'),
     });
 
     verify(

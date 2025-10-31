@@ -1,15 +1,16 @@
 import type { FillerProgram } from '@tunarr/types';
-import type { FillerProgrammingSlot } from '@tunarr/types/api';
+import type { FillerProgrammingSlot, SlotFillerTypes } from '@tunarr/types/api';
 import { isNil, last, maxBy, sortBy, sum } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import { match } from 'ts-pattern';
-import type { Nullable } from '../../types/util.ts';
+import type { Maybe, Nullable } from '../../types/util.ts';
 import type {
   IterationState,
   ProgramIterator,
   WeightedProgram,
 } from './ProgramIterator.ts';
+import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
 
 export class WeightedFillerProgramIterator
   implements ProgramIterator<FillerProgram>
@@ -21,9 +22,10 @@ export class WeightedFillerProgramIterator
   private maxDuration: number;
 
   constructor(
-    programs: NonEmptyArray<FillerProgram>,
+    programs: NonEmptyArray<SlotSchedulerProgram>,
     private slotDef: FillerProgrammingSlot,
     private random: Random,
+    private fillerType: Maybe<SlotFillerTypes> = undefined,
     private decayFactor: number = slotDef.decayFactor,
     private resetRate: number = slotDef.recoveryFactor,
   ) {
@@ -51,7 +53,7 @@ export class WeightedFillerProgramIterator
     const weightSum = sum(rawWeights);
     const normalizedWeights = rawWeights.map((weight) => weight / weightSum);
     programs.forEach((p, idx) => {
-      this.weightsById.set(p.id, normalizedWeights[idx]);
+      this.weightsById.set(p.uuid, normalizedWeights[idx]);
     });
     // TODO: Precalculate slices because we know all of the relevant
     // slot lengths at creation time. Then we don't have to calculate
@@ -82,7 +84,7 @@ export class WeightedFillerProgramIterator
     const programsToConsider = this.weightedPrograms
       .slice(0, idx)
       .filter(({ program }) => {
-        const lastSeen = this.lastSeenTimestampById.get(program.id);
+        const lastSeen = this.lastSeenTimestampById.get(program.uuid);
         if (
           !isNil(lastSeen) &&
           state.timeCursor - lastSeen < state.slotDuration
@@ -103,13 +105,32 @@ export class WeightedFillerProgramIterator
     for (let i = 0; i < cumulativeWeights.length; i++) {
       const program = programsToConsider[i];
       if (targetWeight < cumulativeWeights[i]) {
-        this.lastSeenTimestampById.set(program.program.id, state.timeCursor);
+        this.lastSeenTimestampById.set(program.program.uuid, state.timeCursor);
         program.currentWeight *= this.decayFactor;
-        return program.program;
+        return {
+          type: 'filler',
+          duration: program.program.duration,
+          fillerListId: this.slotDef.fillerListId,
+          id: program.program.uuid,
+          persisted: true,
+          fillerType: this.fillerType,
+        };
       }
     }
 
-    return last(programsToConsider)?.program ?? null;
+    const p = last(programsToConsider)?.program;
+    if (!p) {
+      return null;
+    }
+
+    return {
+      type: 'filler',
+      duration: p.duration,
+      fillerListId: this.slotDef.fillerListId,
+      id: p.uuid,
+      persisted: true,
+      fillerType: this.fillerType,
+    };
   }
 
   next(): void {

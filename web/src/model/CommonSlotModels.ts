@@ -58,6 +58,15 @@ export const CommonRedirectSlotViewModel = z.object({
   channelId: z.string(),
 });
 
+export const CommonSmartCollectionViewModel = z.object({
+  type: z.literal('smart-collection'),
+  smartCollectionId: z.uuid(),
+});
+
+export type CommonSmartCollectionViewModel = z.infer<
+  typeof CommonSmartCollectionViewModel
+>;
+
 export const CommonSlotViewModel = z.discriminatedUnion('type', [
   CommonMovieSlotViewModel,
   CommonCustomShowSlotViewModel,
@@ -65,6 +74,7 @@ export const CommonSlotViewModel = z.discriminatedUnion('type', [
   CommonShowSlotViewModel,
   CommonFlexSlotViewModel,
   CommonRedirectSlotViewModel,
+  CommonSmartCollectionViewModel,
 ]);
 
 export type CommonSlotViewModel = z.infer<typeof CommonSlotViewModel>;

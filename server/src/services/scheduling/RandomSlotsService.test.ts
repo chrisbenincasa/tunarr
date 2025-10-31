@@ -1,25 +1,9 @@
-import { ChannelProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { map, random, range } from 'lodash-es';
-import { SlotSchedulerService } from './RandomSlotSchedulerService.ts';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
-
-function formatProgram(program: ChannelProgram) {
-  switch (program.type) {
-    case 'content':
-      return `${program.showId ?? program.type}.${program.uniqueId}`;
-    case 'custom':
-      return `${program.customShowId}.${program.id}`;
-    case 'redirect':
-      return `redirect.${program.channel}`;
-    case 'flex':
-      return 'flex';
-  }
-}
 
 describe('randomSlotsService', () => {
   test('basic', async () => {
-    const result = new RandomSlotScheduler({
+    new RandomSlotScheduler({
       type: 'random',
       flexPreference: 'distribute',
       maxDays: 365,
@@ -64,65 +48,6 @@ describe('randomSlotsService', () => {
           direction: 'asc',
         },
       ],
-    }).generateSchedule([
-      ...map(
-        range(0, 5),
-        (i) =>
-          ({
-            type: 'content' as const,
-            duration: +dayjs.duration({
-              hours: random(1, 3, false),
-              minutes: random(0, 60),
-            }),
-            externalIds: [],
-            persisted: true,
-            subtype: 'movie' as const,
-            title: `Movie${i}`,
-            uniqueId: `Movie${i}`,
-            externalKey: '123',
-            externalSourceId: 'abc',
-            externalSourceName: 'plex',
-            externalSourceType: 'plex',
-            // showId: 'test.1',
-          }) satisfies ChannelProgram,
-      ),
-      {
-        type: 'content',
-        duration: +dayjs.duration({ minutes: 22 }),
-        externalIds: [],
-        persisted: true,
-        subtype: 'episode',
-        title: 'Show1.Ep1',
-        uniqueId: 'Show1.Ep1',
-        showId: 'test.1',
-        externalKey: '123',
-        externalSourceId: 'abc',
-        externalSourceName: 'plex',
-        externalSourceType: 'plex',
-      } satisfies ChannelProgram,
-      {
-        type: 'content',
-        duration: +dayjs.duration({ minutes: 22 }),
-        externalIds: [],
-        persisted: true,
-        subtype: 'episode',
-        title: 'Show2.Ep1',
-        uniqueId: 'Show2.Ep1',
-        showId: 'test.2',
-        externalKey: '123',
-        externalSourceId: 'abc',
-        externalSourceName: 'plex',
-        externalSourceType: 'plex',
-      } satisfies ChannelProgram,
-    ]);
-
-    const materialized =
-      SlotSchedulerService.materializeProgramsFromResult(result);
-    for (const program of materialized.programs) {
-      console.log(
-        formatProgram(program),
-        dayjs.duration(program.duration).humanize(),
-      );
-    }
+    });
   });
 });

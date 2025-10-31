@@ -1,5 +1,6 @@
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { seq } from '@tunarr/shared/util';
 import {
   CreateCustomShowRequestSchema,
   IdPathParamSchema,
@@ -126,9 +127,26 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      return res
-        .status(200)
-        .send(await req.serverCtx.customShowDB.getShowPrograms(req.params.id));
+      const csc = await req.serverCtx.customShowDB.getShowPrograms(
+        req.params.id,
+      );
+      const result = seq.collect(csc, (csc, idx) => {
+        const program =
+          req.serverCtx.programConverter.programDaoToContentProgram(csc, []);
+        if (!program) {
+          return;
+        }
+        return {
+          type: 'custom' as const,
+          persisted: true,
+          duration: csc.duration,
+          program,
+          customShowId: req.params.id,
+          index: idx,
+          id: csc.uuid,
+        };
+      });
+      return res.status(200).send(result);
     },
   );
 

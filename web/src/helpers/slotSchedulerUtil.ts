@@ -6,14 +6,11 @@ import type {
   CondensedChannelProgram,
   ContentProgram,
 } from '@tunarr/types';
-import type {
-  BaseSlot,
-  FillerProgrammingTimeSlot,
-  RandomSlot,
-} from '@tunarr/types/api';
+import type { BaseSlot, RandomSlot } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
+import { match, P } from 'ts-pattern';
 import type { DropdownOption } from './DropdownOption';
 
 export type CustomShowProgramOption = DropdownOption<string> & {
@@ -39,6 +36,11 @@ export type FillerProgramOption = DropdownOption<string> & {
   programCount: number;
 };
 
+export type SmartCollectionOption = DropdownOption<string> & {
+  type: 'smart-collection';
+  collectionId: string;
+};
+
 export type ProgramOption =
   | (DropdownOption<string> & {
       type: 'movie' | 'flex';
@@ -46,7 +48,8 @@ export type ProgramOption =
   | CustomShowProgramOption
   | RedirectProgramOption
   | ShowProgramOption
-  | FillerProgramOption;
+  | FillerProgramOption
+  | SmartCollectionOption;
 
 export type ProgramOptionType = ProgramOption['type'];
 
@@ -57,7 +60,8 @@ export type SlotId =
   | `custom-show.${string}`
   | `filler.${string}`
   | `redirect.${string}`
-  | `flex`;
+  | `flex`
+  | `smart-collection.${string}`;
 
 export const padOptions: DropdownOption<number>[] = [
   { value: 1, description: 'Do not pad' },
@@ -96,6 +100,8 @@ export const lineupItemAppearsInSchedule = (
           (item.type === 'content' && item.subtype === 'movie') ||
           (item.type === 'custom' && item.program?.subtype === 'movie')
         );
+      case 'smart-collection':
+        return true;
       case 'show': {
         const showTitle = slot.showId;
         return (
@@ -133,6 +139,12 @@ export const slotOptionIsScheduled = (
       );
     case 'filler':
       return true;
+    case 'smart-collection':
+      return slots.some(
+        (slot) =>
+          slot.type === 'smart-collection' &&
+          slot.smartCollectionId === option.collectionId,
+      );
   }
 };
 export const OneDayMillis = dayjs.duration(1, 'day').asMilliseconds();
@@ -144,62 +156,71 @@ type SlotTypeWithOrdering = StrictExclude<
 >;
 type SlotWithOrdering = StrictExtract<BaseSlot, { type: SlotTypeWithOrdering }>;
 
+const AlphanumericSortOpt = {
+  value: 'alphanumeric',
+  description: 'Alphanumeric',
+} as const;
+
+const ChronologicalSortOpt = {
+  value: 'chronological',
+  description: 'Chronological',
+} as const;
+const ShuffleSortOpt = {
+  value: 'shuffle',
+  description: 'Shuffle',
+} as const;
+const NextEpSortOpt = {
+  value: 'next',
+  description: 'Next Episode',
+} as const;
+const OrderedShuffleSortOpt = {
+  value: 'ordered_shuffle',
+  description: 'Ordered Shuffle',
+} as const;
+const ShufflePreferLongSortOpt = {
+  value: 'shuffle_prefer_long',
+  description: 'Shuffle (prefer long)',
+  helperText: 'Shuffles filler items, prefering those with longer duration',
+} as const;
+const ShufflePreferShortSortOpt = {
+  value: 'shuffle_prefer_short',
+  description: 'Shuffle (prefer short)',
+  helperText: 'Shuffles filler items, prefering those with shorter duration',
+} as const;
+const UniformShuffleSortOpt = {
+  value: 'uniform',
+  description: 'Shuffle (uniform)',
+  helperText: 'Randomizes filler items with no weighting',
+} as const;
+
 export function slotOrderOptions(
   slotProgrammingType: SlotTypeWithOrdering,
 ): DropdownOption<SlotWithOrdering['order']>[] {
-  switch (slotProgrammingType) {
-    case 'movie':
-      return [
-        {
-          value: 'alphanumeric',
-          description: 'Alphanumeric',
-        },
-        {
-          value: 'chronological',
-          description: 'Chronological',
-        },
-        {
-          value: 'shuffle',
-          description: 'Shuffle',
-        },
-      ];
-    case 'filler':
-      return [
-        {
-          value: 'shuffle_prefer_long',
-          description: 'Shuffle (prefer long)',
-          helperText:
-            'Shuffles filler items, prefering those with longer duration',
-        },
-        {
-          value: 'shuffle_prefer_short',
-          description: 'Shuffle (prefer short)',
-          helperText:
-            'Shuffles filler items, prefering those with shorter duration',
-        },
-        {
-          value: 'uniform',
-          description: 'Shuffle (uniform)',
-          helperText: 'Randomizes filler items with no weighting',
-        },
-      ] satisfies DropdownOption<FillerProgrammingTimeSlot['order']>[];
-    case 'show':
-    case 'custom-show':
-      return [
-        {
-          value: 'next',
-          description: 'Next Episode',
-        },
-        {
-          value: 'ordered_shuffle',
-          description: 'Ordered Shuffle',
-        },
-        {
-          value: 'shuffle',
-          description: 'Shuffle',
-        },
-      ];
-  }
+  return match(slotProgrammingType)
+    .with('movie', () => [
+      AlphanumericSortOpt,
+      ChronologicalSortOpt,
+      ShuffleSortOpt,
+    ])
+    .with(P.union('show', 'custom-show'), () => [
+      NextEpSortOpt,
+      OrderedShuffleSortOpt,
+      ShuffleSortOpt,
+    ])
+    .with('filler', () => [
+      ShufflePreferLongSortOpt,
+      ShufflePreferShortSortOpt,
+      UniformShuffleSortOpt,
+    ])
+    .with('smart-collection', () => [
+      AlphanumericSortOpt,
+      ChronologicalSortOpt,
+      ShuffleSortOpt,
+      NextEpSortOpt,
+      OrderedShuffleSortOpt,
+      ShuffleSortOpt,
+    ])
+    .exhaustive();
 }
 
 export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
@@ -227,6 +248,10 @@ export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
     value: 'filler',
     description: 'Filler List',
   },
+  {
+    value: 'smart-collection',
+    description: 'Smart Collection',
+  },
 ];
 
 export const getTimeSlotId = (programming: TimeSlotViewModel): SlotId => {
@@ -245,6 +270,9 @@ export const getTimeSlotId = (programming: TimeSlotViewModel): SlotId => {
     case 'flex':
     case 'movie': {
       return programming.type;
+    }
+    case 'smart-collection': {
+      return `${programming.type}.${programming.smartCollectionId}`;
     }
   }
 };
@@ -266,6 +294,8 @@ export const getRandomSlotId = (programming: RandomSlot): SlotId => {
     case 'movie': {
       return programming.type;
     }
+    case 'smart-collection':
+      return `${programming.type}.${programming.smartCollectionId}`;
   }
 };
 
