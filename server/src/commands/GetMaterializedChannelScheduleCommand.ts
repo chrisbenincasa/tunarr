@@ -230,6 +230,9 @@ export class GetMaterializedChannelScheduleCommand {
               channel: dbChannelToApiChannel(channel),
             };
           })
+          .with({ type: 'smart-collection' }, (slot) => {
+            return slot;
+          })
           .otherwise((slot) => slot);
       });
 

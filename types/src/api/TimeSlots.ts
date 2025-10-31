@@ -10,6 +10,7 @@ import {
   MovieProgrammingSlotSchema,
   RedirectProgrammingSlotSchema,
   ShowProgrammingSlotSchema,
+  SmartCollectionProgrammingSlot,
 } from './CommonSlots.js';
 
 //
@@ -74,6 +75,11 @@ export type MaterializedFillerTimeSlot = z.infer<
   typeof MaterializedFillerTimeSlot
 >;
 
+export const SmartCollectionTimeSlot = z.object({
+  ...BaseTimeSlot.shape,
+  ...SmartCollectionProgrammingSlot.shape,
+});
+
 export type MovieProgrammingTimeSlot = z.infer<
   typeof MovieProgrammingTimeSlotSchema
 >;
@@ -98,17 +104,6 @@ export type FillerProgrammingTimeSlot = z.infer<
   typeof FillerShowProgrammingTimeSlotSchema
 >;
 
-export const TimeSlotProgrammingSchema = z.discriminatedUnion('type', [
-  MovieProgrammingTimeSlotSchema,
-  ShowProgrammingTimeSlotSchema,
-  FlexProgrammingTimeSlotSchema,
-  RedirectProgrammingTimeSlotSchema,
-  CustomShowProgrammingTimeSlotSchema,
-  FillerProgrammingSlotSchema,
-]);
-
-export type TimeSlotProgramming = z.infer<typeof TimeSlotProgrammingSchema>;
-
 export const TimeSlotSchema = z.discriminatedUnion('type', [
   MovieProgrammingTimeSlotSchema,
   ShowProgrammingTimeSlotSchema,
@@ -116,6 +111,7 @@ export const TimeSlotSchema = z.discriminatedUnion('type', [
   RedirectProgrammingTimeSlotSchema,
   FillerShowProgrammingTimeSlotSchema,
   CustomShowProgrammingTimeSlotSchema,
+  SmartCollectionTimeSlot,
 ]);
 
 export type TimeSlot = z.infer<typeof TimeSlotSchema>;
@@ -127,6 +123,7 @@ export const MaterializedTimeSlot = z.discriminatedUnion('type', [
   MaterializedRedirectTimeSlot,
   MaterializedCustomShowTimeSlot,
   MaterializedFillerTimeSlot,
+  SmartCollectionTimeSlot,
 ]);
 
 export type MaterializedTimeSlot = z.infer<typeof MaterializedTimeSlot>;

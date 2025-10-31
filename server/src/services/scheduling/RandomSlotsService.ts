@@ -1,18 +1,8 @@
 import dayjs from '@/util/dayjs.js';
 import { dayjsMod } from '@tunarr/shared';
 import constants from '@tunarr/shared/constants';
-import type {
-  ChannelProgram,
-  CondensedChannelProgram,
-  ContentProgram,
-} from '@tunarr/types';
-import {
-  isContentProgram,
-  isCustomProgram,
-  isFillerProgram,
-  isFlexProgram,
-  isRedirectProgram,
-} from '@tunarr/types';
+import type { CondensedChannelProgram } from '@tunarr/types';
+import { isFlexProgram, isRedirectProgram } from '@tunarr/types';
 import type { RandomSlotSchedule, SlotScheduleResult } from '@tunarr/types/api';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import duration from 'dayjs/plugin/duration.js';
@@ -28,7 +18,6 @@ import {
   last,
   map,
   orderBy,
-  reject,
   sum,
 } from 'lodash-es';
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
@@ -41,10 +30,12 @@ import {
   type ProgramIterator,
 } from './ProgramIterator.ts';
 import { RandomSlotImpl } from './RandomSlotImpl.ts';
-import type { PaddedProgram } from './slotSchedulerUtil.js';
+import type {
+  PaddedProgram,
+  SlotSchedulerProgram,
+} from './slotSchedulerUtil.js';
 import {
   addHeadAndTailFillerToSlot,
-  condense,
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
@@ -73,12 +64,10 @@ class ScheduleContext {
   #seed: number[];
   #random: Random;
   #engine: MersenneTwister19937;
-  #contentProgramsById: Record<string, ContentProgram>;
-  #condensedProgramsById: Record<string, CondensedChannelProgram>;
 
   constructor(
     schedule: RandomSlotSchedule,
-    programming: ChannelProgram[],
+    programming: SlotSchedulerProgram[],
     startTime: dayjs.Dayjs,
     seed: number[] = createEntropy(),
     discardCount: number = 0,
@@ -90,9 +79,7 @@ class ScheduleContext {
     this.#random = new Random(this.#engine);
     this.#programmingIteratorsById = createProgramIterators(
       schedule.slots,
-      createProgramMap(
-        deduplicatePrograms(reject(programming, (p) => isFlexProgram(p))),
-      ),
+      createProgramMap(deduplicatePrograms(programming)),
       this.#random,
     );
     this.#startTime = this.#timeCursor = startTime;
@@ -106,24 +93,6 @@ class ScheduleContext {
           slotFillerIterators(slot, this.programmingIteratorsById),
         ),
     );
-
-    const contentProgramsById: Record<string, ContentProgram> = {};
-    const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
-    for (const program of programming) {
-      if (isContentProgram(program)) {
-        contentProgramsById[program.uniqueId] = program;
-        condensedProgramsById[program.uniqueId] = condense(program);
-      } else if (
-        (isCustomProgram(program) && program.program?.id) ||
-        (isFillerProgram(program) && program.program?.id)
-      ) {
-        contentProgramsById[program.program.id] = program.program;
-        condensedProgramsById[program.program.id] = condense(program.program);
-      }
-    }
-
-    this.#contentProgramsById = contentProgramsById;
-    this.#condensedProgramsById = condensedProgramsById;
   }
 
   get sortedSlots() {
@@ -167,16 +136,12 @@ class ScheduleContext {
     this.advanceTime(dur);
   }
 
-  pushProgram(program: Nilable<ChannelProgram>) {
+  pushProgram(program: Nilable<CondensedChannelProgram>) {
     if (!program) {
       return;
     }
 
-    const condensed =
-      program.type === 'content'
-        ? (this.#condensedProgramsById[program.uniqueId] ?? condense(program))
-        : program;
-    this.#workingLineup.push(condensed);
+    this.#workingLineup.push(program);
   }
 
   get lineup(): CondensedChannelProgram[] {
@@ -200,7 +165,6 @@ class ScheduleContext {
       lineup: this.lineup,
       seed: this.#seed,
       startTime: +this.#startTime,
-      programs: this.#contentProgramsById,
       discardCount: this.#engine.getUseCount(),
     };
   }
@@ -210,7 +174,7 @@ export class RandomSlotScheduler {
   constructor(private schedule: RandomSlotSchedule) {}
 
   generateSchedule(
-    programming: ChannelProgram[],
+    programming: SlotSchedulerProgram[],
     seed: number[] = createEntropy(),
     discardCount: number = 0,
     startTime: dayjs.Dayjs = dayjs.tz(),
@@ -397,6 +361,7 @@ export class RandomSlotScheduler {
           case 'show':
           case 'custom-show':
           case 'filler':
+          case 'smart-collection':
             break;
         }
       }
@@ -554,7 +519,7 @@ export class RandomSlotScheduler {
     return;
   }
 
-  private createPaddedProgram(program: ChannelProgram) {
+  private createPaddedProgram(program: CondensedChannelProgram) {
     return createPaddedProgram(
       program,
       this.schedule.padStyle === 'slot' ? 1 : this.schedule.padMs,

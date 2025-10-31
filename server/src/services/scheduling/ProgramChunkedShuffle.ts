@@ -1,35 +1,66 @@
 import { seq } from '@tunarr/shared/util';
-import type { ChannelProgram } from '@tunarr/types';
-import { nth, orderBy } from 'lodash-es';
-import type { ProgramIterator } from './ProgramIterator.ts';
+import type {
+  CondensedChannelProgram,
+  CondensedContentProgram,
+} from '@tunarr/types';
+import type { CondensedCustomProgram } from '@tunarr/types/schemas';
+import { orderBy } from 'lodash-es';
+import { IndexBasedProgramIterator } from './ProgramIterator.js';
 import { random } from './RandomSlotsService.ts';
+import {
+  createIndexByIdMap,
+  type SlotSchedulerProgram,
+} from './slotSchedulerUtil.ts';
 
-export class ProgramChunkedShuffle<ProgramType extends ChannelProgram>
-  implements ProgramIterator
-{
-  #programs: ProgramType[];
-  #position: number = 0;
-
+export abstract class ProgramChunkedShuffle<
+  ProgramT extends CondensedChannelProgram,
+> extends IndexBasedProgramIterator<ProgramT> {
   constructor(
-    programs: ProgramType[],
-    orderer: (program: ProgramType) => string | number,
+    programs: SlotSchedulerProgram[],
+    orderer: (program: SlotSchedulerProgram) => string | number,
     asc: boolean = true,
   ) {
-    this.#programs = seq.rotateArray(
-      orderBy(programs, orderer, [asc ? 'asc' : 'desc']),
-      random.integer(0, programs.length),
+    super(
+      seq.rotateArray(
+        orderBy(programs, orderer, [asc ? 'asc' : 'desc']),
+        random.integer(0, programs.length),
+      ),
     );
   }
+}
 
-  current(): ProgramType | null {
-    return nth(this.#programs, this.#position) ?? null;
+export class ContentProgramChunkedShuffle extends ProgramChunkedShuffle<CondensedContentProgram> {
+  protected mint(program: SlotSchedulerProgram): CondensedContentProgram {
+    return {
+      type: 'content',
+      duration: program.duration,
+      persisted: true,
+      id: program.uuid,
+    };
+  }
+}
+
+export class CustomProgramChunkedShuffle extends ProgramChunkedShuffle<CondensedCustomProgram> {
+  private indexById!: Record<string, number>;
+
+  constructor(
+    private customShowId: string,
+    programs: SlotSchedulerProgram[],
+    asc: boolean = true,
+  ) {
+    const indexById = createIndexByIdMap(programs, customShowId);
+    super(programs, (program) => indexById[program.uuid] ?? -1, asc);
+    this.indexById = indexById;
   }
 
-  next(): void {
-    this.#position = (this.#position + 1) % this.#programs.length;
-  }
-
-  reset(): void {
-    this.#position = 0;
+  protected mint(program: SlotSchedulerProgram): CondensedCustomProgram {
+    return {
+      customShowId: this.customShowId,
+      duration: program.duration,
+      id: program.uuid,
+      index: this.indexById[program.uuid],
+      persisted: true,
+      type: 'custom',
+    };
   }
 }

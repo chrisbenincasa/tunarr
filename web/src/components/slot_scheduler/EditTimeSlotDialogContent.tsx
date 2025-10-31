@@ -162,6 +162,18 @@ export const EditTimeSlotDialogContent = ({
             show: null,
           };
         })
+        .with('smart-collection', () => {
+          const opt = programOptions.find(
+            (opt) => opt.type === 'smart-collection',
+          );
+          return {
+            startTime,
+            type: 'smart-collection' as const,
+            order: 'next',
+            direction: 'asc',
+            smartCollectionId: opt?.collectionId ?? '',
+          };
+        })
         .exhaustive();
     },
     [getValues, programOptions],

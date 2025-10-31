@@ -1,20 +1,12 @@
 import dayjs from '@/util/dayjs.js';
 import constants from '@tunarr/shared/constants';
 import type {
-  ChannelProgram,
   CondensedChannelProgram,
-  ContentProgram,
   FillerProgram,
   FlexProgram,
 } from '@tunarr/types';
-import {
-  isContentProgram,
-  isCustomProgram,
-  isFillerProgram,
-  isFlexProgram,
-} from '@tunarr/types';
+import { isFlexProgram } from '@tunarr/types';
 import type {
-  SlotFillerTypes,
   TimeSlotSchedule,
   TimeSlotScheduleResult,
 } from '@tunarr/types/api';
@@ -29,7 +21,6 @@ import {
   last,
   map,
   nth,
-  reject,
   sortBy,
   sumBy,
 } from 'lodash-es';
@@ -37,9 +28,12 @@ import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
 import { slotIteratorKey } from './ProgramIterator.ts';
+import type {
+  PaddedProgram,
+  SlotSchedulerProgram,
+} from './slotSchedulerUtil.js';
 import {
   addHeadAndTailFillerToSlot,
-  condense,
   createPaddedProgram,
   createProgramIterators,
   createProgramMap,
@@ -55,13 +49,6 @@ dayjs.extend(relativeTime);
 // dayjs.extend(mod);
 dayjs.extend(utc);
 dayjs.extend(tz);
-
-type PaddedProgram = {
-  program: ChannelProgram;
-  padMs: number;
-  totalDuration: number;
-  filler: Partial<Record<SlotFillerTypes, ChannelProgram>>;
-};
 
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it
@@ -100,41 +87,39 @@ function pushOrExtendFlex(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
-  channelProgramming: ChannelProgram[],
+  // channelProgramming: ChannelProgram[],
+  programs: SlotSchedulerProgram[],
   seed: number[] = createEntropy(),
   discardCount: number = 0,
 ): Promise<TimeSlotScheduleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
-  const contentProgramsById: Record<string, ContentProgram> = {};
-  const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
-  for (const program of channelProgramming) {
-    if (isContentProgram(program)) {
-      contentProgramsById[program.uniqueId] = program;
-      condensedProgramsById[program.uniqueId] = condense(program);
-    } else if (
-      (isCustomProgram(program) && program.program?.id) ||
-      (isFillerProgram(program) && program.program?.id)
-    ) {
-      contentProgramsById[program.program.id] = program.program;
-      condensedProgramsById[program.program.id] = condense(program.program);
-    }
-  }
+  // const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
+  // for (const program of channelProgramming) {
+  //   if (isContentProgram(program)) {
+  //     contentProgramsById[program.uniqueId] = program;
+  //     condensedProgramsById[program.uniqueId] = condense(program);
+  //   } else if (
+  //     (isCustomProgram(program) && program.program?.id) ||
+  //     (isFillerProgram(program) && program.program?.id)
+  //   ) {
+  //     contentProgramsById[program.program.id] = program.program;
+  //     condensedProgramsById[program.program.id] = condense(program.program);
+  //   }
+  // }
 
   // Load programs
   // TODO: include redirects and custom programs!
-  const allPrograms = deduplicatePrograms(
-    reject<ChannelProgram>(channelProgramming, isFlexProgram),
-  );
+  const allPrograms = deduplicatePrograms(programs);
   const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
     createProgramMap(allPrograms),
     random,
   );
+  console.log(contentProgramIteratorsById);
 
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
-  // TODO: validate
 
   const sortedSlots = map(
     sortBy(schedule.slots, (slot) => slot.startTime),
@@ -166,30 +151,24 @@ export async function scheduleTimeSlots(
   let timeCursor = t0;
   const channelPrograms: CondensedChannelProgram[] = [];
 
-  const maybeCondenseProgram = (program: ChannelProgram) => {
-    return program.type === 'content'
-      ? (condensedProgramsById[program.uniqueId] ?? condense(program))
-      : program;
-  };
-
   const pushFlex = (flexDurationMs: number) => {
     const inc = pushOrExtendFlex(channelPrograms, flexDurationMs);
     timeCursor = timeCursor.add(inc);
   };
 
-  const pushProgram = (program: Nilable<ChannelProgram>) => {
+  const pushProgram = (program: Nilable<CondensedChannelProgram>) => {
     if (!program) {
       return;
     }
 
-    channelPrograms.push(maybeCondenseProgram(program));
+    channelPrograms.push(program);
     timeCursor = timeCursor.add(program.duration);
   };
 
   while (timeCursor.isBefore(upperLimit)) {
     let currOffset = timeCursor.diff(startOfCurrentPeriod) % periodMs;
 
-    let currSlot: TimeSlotImpl | null = null;
+    let currSlot: TimeSlotImpl<CondensedChannelProgram> | null = null;
     let lateMillis: number | null = null;
     let slotDuration = 0;
 
@@ -257,11 +236,7 @@ export async function scheduleTimeSlots(
 
     // Program longer than we have left? Add it and move on...
     if (program.duration > slotDuration) {
-      const condensed =
-        program.type === 'content'
-          ? (condensedProgramsById[program.uniqueId] ?? condense(program))
-          : program;
-      channelPrograms.push(condensed);
+      channelPrograms.push(program);
       currSlot.advanceIterator();
       timeCursor = timeCursor.add(program.duration);
       continue;
@@ -361,7 +336,7 @@ export async function scheduleTimeSlots(
 
   return {
     lineup: channelPrograms,
-    programs: contentProgramsById,
+    // programs: contentProgramsById,
     startTime: +t0,
     seed,
     discardCount: mt.getUseCount(),

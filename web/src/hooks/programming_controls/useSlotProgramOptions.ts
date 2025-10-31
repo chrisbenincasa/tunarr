@@ -8,6 +8,7 @@ import { useContext, useMemo } from 'react';
 import { SlotProgrammingOptionsContext } from '../../components/slot_scheduler/SlotProgrammingOptionsContext.ts';
 import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { useMediaSources } from '../settingsHooks.ts';
+import { useSmartCollections } from '../smartCollectionHooks.ts';
 import { useChannelsSuspense } from '../useChannels.ts';
 import { useCustomShows } from '../useCustomShows.ts';
 import { useFillerLists } from '../useFillerLists.ts';
@@ -70,11 +71,28 @@ function useSyncedProgrammingOptions() {
   }, [facetQuery]);
 }
 
+function useSmartCollectionProgrammingOptions() {
+  const { data: smartCollections } = useSmartCollections();
+  return useMemo(() => {
+    const opts: ProgramOption[] = [];
+    for (const coll of smartCollections) {
+      opts.push({
+        type: 'smart-collection',
+        collectionId: coll.uuid,
+        description: coll.name,
+        value: '',
+      });
+    }
+    return opts;
+  }, [smartCollections]);
+}
+
 export const useSlotProgramOptions = (channelId?: string) => {
   const { originalProgramList: newLineup } = useStore((s) => s.channelEditor);
   const { programLookup } = useStore();
   const syncedOptions = useSyncedProgrammingOptions();
   const customShowOpts = useCustomShowOptions();
+  const smartCollectionOpts = useSmartCollectionProgrammingOptions();
   const { data: fillerLists } = useFillerLists();
   const { data: channels } = useChannelsSuspense({
     select: (channels) =>
@@ -101,48 +119,19 @@ export const useSlotProgramOptions = (channelId?: string) => {
       if (some(contentPrograms, (p) => p.subtype === 'movie')) {
         opts.push({ description: 'Movies', value: 'movie', type: 'movie' });
       }
-
-      // const showOptions = sortBy(
-      //   uniqBy(
-      //     contentPrograms.filter(
-      //       (p) => p.subtype === 'episode' && isNonEmptyString(p.showId),
-      //     ),
-      //     (p) => p.showId,
-      //   ).map(
-      //     (show) =>
-      //       ({
-      //         description: show.grandparent?.title ?? 'Missing Show Title',
-      //         value: `show.${show.showId}`,
-      //         type: 'show',
-      //         showId: show.showId!,
-      //       }) satisfies ProgramOption,
-      //   ),
-      //   (opt) => opt.description,
-      // );
-      // for (const opt of showOptions) {
-      //   nameById[opt.value] = opt.description;
-      // }
-
-      // opts.push(...showOptions);
     }
-
-    // const customShowOpts = map(
-    //   customShows,
-    //   (show) =>
-    //     ({
-    //       description: show.name,
-    //       value: `custom-show.${show.id}`,
-    //       customShowId: show.id,
-    //       type: 'custom-show',
-    //       programCount: show.contentCount,
-    //     }) satisfies ProgramOption,
-    // );
 
     for (const opt of customShowOpts) {
       nameById[opt.value] = opt.description;
     }
 
     opts.push(...customShowOpts);
+
+    for (const opt of smartCollectionOpts) {
+      nameById[opt.value] = opt.description;
+    }
+
+    opts.push(...smartCollectionOpts);
 
     const fillerOpts = map(
       fillerLists,
@@ -185,6 +174,7 @@ export const useSlotProgramOptions = (channelId?: string) => {
     newLineup,
     syncedOptions,
     customShowOpts,
+    smartCollectionOpts,
     fillerLists,
     channels,
     programLookup,

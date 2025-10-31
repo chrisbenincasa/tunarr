@@ -9,6 +9,7 @@ import {
   RedirectProgrammingSlotSchema,
   ShowProgrammingSlotSchema,
   Slot,
+  SmartCollectionProgrammingSlot,
 } from './CommonSlots.js';
 
 //
@@ -89,6 +90,13 @@ export const FillerProgrammingRandomSlotSchema = z.object({
   ...FillerProgrammingSlotSchema.shape,
 });
 
+export const SmartCollectionRandomSlot = z.object({
+  ...Slot.shape,
+  ...BaseRandomSlotSchema.shape,
+  ...BaseSlotOrdering.shape,
+  ...SmartCollectionProgrammingSlot.shape,
+});
+
 export type MovieProgrammingRandomSlot = z.infer<
   typeof MovieProgrammingRandomSlotSchema
 >;
@@ -109,6 +117,10 @@ export type CustomShowProgrammingRandom = z.infer<
   typeof CustomShowProgrammingRandomSchema
 >;
 
+export type SmartCollectionRandomSlot = z.infer<
+  typeof SmartCollectionRandomSlot
+>;
+
 export const RandomSlotSchema = z.discriminatedUnion('type', [
   MovieProgrammingRandomSlotSchema,
   ShowProgrammingRandomSlotSchema,
@@ -116,6 +128,7 @@ export const RandomSlotSchema = z.discriminatedUnion('type', [
   RedirectProgrammingRandomSlotSchema,
   CustomShowProgrammingRandomSchema,
   FillerProgrammingRandomSlotSchema,
+  SmartCollectionRandomSlot,
 ]);
 
 export type RandomSlot = z.infer<typeof RandomSlotSchema>;
@@ -127,6 +140,7 @@ export const MaterializedSlot = z.discriminatedUnion('type', [
   MaterializedRedirectRandomSlot,
   CustomShowProgrammingRandomSchema,
   FillerProgrammingRandomSlotSchema,
+  SmartCollectionRandomSlot,
 ]);
 
 export type MaterializedSlot = z.infer<typeof MaterializedSlot>;

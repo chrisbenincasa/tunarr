@@ -1461,6 +1461,17 @@ export type GetApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 startTime: number;
+            } | {
+                startTime: number;
+                type: 'smart-collection';
+                smartCollectionId: string;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -1578,6 +1589,27 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+            } | {
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                cooldownMs: number;
+                periodMs?: number;
+                durationSpec: {
+                    durationMs: number;
+                    type: 'fixed';
+                } | {
+                    type: 'dynamic';
+                    programCount: number;
+                };
+                weight: number;
+                index?: number;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                type: 'smart-collection';
+                smartCollectionId: string;
             }>;
             timeZoneOffset?: number;
             randomDistribution: 'uniform' | 'weighted' | 'none';
@@ -2670,6 +2702,17 @@ export type PostApiChannelsByIdProgrammingData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 startTime: number;
+            } | {
+                startTime: number;
+                type: 'smart-collection';
+                smartCollectionId: string;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction?: 'asc' | 'desc';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -3286,6 +3329,27 @@ export type PostApiChannelsByIdProgrammingData = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+            } | {
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                cooldownMs: number;
+                periodMs?: number;
+                durationSpec?: {
+                    durationMs: number;
+                    type: 'fixed';
+                } | {
+                    type: 'dynamic';
+                    programCount: number;
+                };
+                weight: number;
+                index?: number;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction?: 'asc' | 'desc';
+                type: 'smart-collection';
+                smartCollectionId: string;
             }>;
             timeZoneOffset?: number;
             randomDistribution: 'uniform' | 'weighted' | 'none';
@@ -3594,6 +3658,17 @@ export type PostApiChannelsByIdProgrammingResponses = {
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 startTime: number;
+            } | {
+                startTime: number;
+                type: 'smart-collection';
+                smartCollectionId: string;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -3711,6 +3786,27 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+            } | {
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                cooldownMs: number;
+                periodMs?: number;
+                durationSpec: {
+                    durationMs: number;
+                    type: 'fixed';
+                } | {
+                    type: 'dynamic';
+                    programCount: number;
+                };
+                weight: number;
+                index?: number;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                type: 'smart-collection';
+                smartCollectionId: string;
             }>;
             timeZoneOffset?: number;
             randomDistribution: 'uniform' | 'weighted' | 'none';
@@ -5204,6 +5300,17 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
                 startTime: number;
+            } | {
+                startTime: number;
+                type: 'smart-collection';
+                smartCollectionId: string;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction?: 'asc' | 'desc';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -5272,6 +5379,8 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
             duration: number;
             icon?: string;
         }>;
+        seed: Array<number>;
+        discardCount: number;
         programs: {
             [key: string]: {
                 type: 'content';
@@ -5429,8 +5538,6 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
                 canonicalId?: string;
             };
         };
-        seed: Array<number>;
-        discardCount: number;
     };
 };
 
@@ -5552,6 +5659,27 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+            } | {
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                cooldownMs: number;
+                periodMs?: number;
+                durationSpec?: {
+                    durationMs: number;
+                    type: 'fixed';
+                } | {
+                    type: 'dynamic';
+                    programCount: number;
+                };
+                weight: number;
+                index?: number;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction?: 'asc' | 'desc';
+                type: 'smart-collection';
+                smartCollectionId: string;
             }>;
             timeZoneOffset?: number;
             randomDistribution: 'uniform' | 'weighted' | 'none';
@@ -5622,6 +5750,8 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
             duration: number;
             icon?: string;
         }>;
+        seed: Array<number>;
+        discardCount: number;
         programs: {
             [key: string]: {
                 type: 'content';
@@ -5779,8 +5909,6 @@ export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
                 canonicalId?: string;
             };
         };
-        seed: Array<number>;
-        discardCount: number;
     };
 };
 
@@ -6013,6 +6141,17 @@ export type GetApiChannelsByIdScheduleResponses = {
                     name: string;
                     contentCount: number;
                 };
+            } | {
+                startTime: number;
+                type: 'smart-collection';
+                smartCollectionId: string;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -6278,6 +6417,27 @@ export type GetApiChannelsByIdScheduleResponses = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+            } | {
+                filler?: Array<{
+                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                }>;
+                cooldownMs: number;
+                periodMs?: number;
+                durationSpec: {
+                    durationMs: number;
+                    type: 'fixed';
+                } | {
+                    type: 'dynamic';
+                    programCount: number;
+                };
+                weight: number;
+                index?: number;
+                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
+                direction: 'asc' | 'desc';
+                type: 'smart-collection';
+                smartCollectionId: string;
             }>;
             timeZoneOffset?: number;
             randomDistribution: 'uniform' | 'weighted' | 'none';

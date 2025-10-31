@@ -354,22 +354,37 @@ export type MediaSourceStatus = z.infer<typeof MediaSourceStatusSchema>;
 export const TimeSlotScheduleResult = z.object({
   startTime: z.number().positive(),
   lineup: CondensedChannelProgramSchema.array(),
-  programs: z.record(z.string(), ContentProgramSchema),
+  // programs: z.record(z.string(), ContentProgramSchema),
   seed: z.number().array(),
   discardCount: z.number(),
 });
 
 export type TimeSlotScheduleResult = z.infer<typeof TimeSlotScheduleResult>;
 
+export const TimeSlotScheduleWithPrograms = z.object({
+  ...TimeSlotScheduleResult.shape,
+  programs: z.record(z.string(), ContentProgramSchema),
+});
+
+export type TimeSlotScheduleWithPrograms = z.infer<
+  typeof TimeSlotScheduleWithPrograms
+>;
+
 export const SlotScheduleResult = z.object({
   startTime: z.number().positive(),
   lineup: CondensedChannelProgramSchema.array(),
-  programs: z.record(z.string(), ContentProgramSchema),
   seed: z.number().array(),
   discardCount: z.number(),
 });
 
 export type SlotScheduleResult = z.infer<typeof SlotScheduleResult>;
+
+export const SlotScheduleWithPrograms = z.object({
+  ...SlotScheduleResult.shape,
+  programs: z.record(z.string(), ContentProgramSchema),
+});
+
+export type SlotScheduleWithPrograms = z.infer<typeof SlotScheduleWithPrograms>;
 
 export const ProgramChildrenResult = PagedResult(
   z

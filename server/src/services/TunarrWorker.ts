@@ -74,10 +74,7 @@ export class TunarrWorker {
 
   private async handleTimeSlots(req: WorkerScheduleTimeSlotsRequest) {
     const result = await Result.attemptAsync(() =>
-      this.timeSlotSchedulerService.schedule({
-        ...req.request,
-        materializeResult: false,
-      }),
+      this.timeSlotSchedulerService.schedule(req.request),
     );
 
     if (result.isFailure()) {
@@ -98,10 +95,7 @@ export class TunarrWorker {
 
   private async handleSlots(req: WorkerScheduleSlotsRequest) {
     const result = await Result.attemptAsync(() =>
-      this.slotSchedulerService.schedule({
-        ...req.request,
-        materializeResult: false,
-      }),
+      this.slotSchedulerService.schedule(req.request),
     );
 
     if (result.isFailure()) {

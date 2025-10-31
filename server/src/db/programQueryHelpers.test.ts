@@ -13,7 +13,7 @@ describe('getProgramGroupingUpsertFields', () => {
 
     expect(getProgramGroupingUpsertFields(update)).toEqual([
       'excluded.summary',
-      'excluded.artistUUid',
+      'excluded.artistUuid',
     ]);
   });
 });

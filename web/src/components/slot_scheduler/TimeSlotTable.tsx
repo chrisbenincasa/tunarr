@@ -24,7 +24,6 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
   capitalize,
   filter,
-  find,
   identity,
   isEmpty,
   isNil,
@@ -45,6 +44,7 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
+import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import type {
@@ -109,8 +109,9 @@ export const TimeSlotTable = () => {
     number | null
   >(null);
 
+  const getSlotName = useSlotName();
+
   const rows = useMemo(() => {
-    console.log(slotArray.fields);
     return map(
       sortBy(
         slotArray.fields
@@ -230,32 +231,7 @@ export const TimeSlotTable = () => {
         enableEditing: true,
         Cell: ({ cell }) => {
           const value = cell.getValue<TimeSlotViewModel>();
-          switch (value.type) {
-            case 'movie':
-              return 'Movie';
-            case 'show':
-              return (
-                value.show?.title ??
-                find(programOptions, { showId: value.showId })?.description
-              );
-            case 'flex':
-              return 'Flex';
-            case 'redirect':
-              return find(programOptions, { channelId: value.channelId })
-                ?.description;
-            case 'custom-show': {
-              const showName = find(programOptions, {
-                customShowId: value.customShowId,
-              })?.description;
-              return `Custom Show - ${showName}`;
-            }
-            case 'filler': {
-              const showName = find(programOptions, {
-                fillerListId: value.fillerListId,
-              })?.description;
-              return `Filler - ${showName}`;
-            }
-          }
+          return getSlotName(value) ?? '-';
         },
         grow: true,
         size: 350,
@@ -289,6 +265,7 @@ export const TimeSlotTable = () => {
             case 'show':
             case 'custom-show':
             case 'filler':
+            case 'smart-collection':
               return prettifySnakeCaseString(originalRow.order);
           }
         },
@@ -310,6 +287,7 @@ export const TimeSlotTable = () => {
             case 'movie':
             case 'show':
             case 'custom-show':
+            case 'smart-collection':
               return row.filler ?? [];
             case 'filler':
             case 'flex':
@@ -353,7 +331,7 @@ export const TimeSlotTable = () => {
         },
       },
     ];
-  }, [currentPeriod, programOptions, startOfPeriod]);
+  }, [currentPeriod, getSlotName, startOfPeriod]);
 
   const renderActionCell = ({
     row,

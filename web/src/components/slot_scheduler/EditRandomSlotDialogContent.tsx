@@ -197,6 +197,17 @@ export const EditRandomSlotDialogContent = ({
           order: 'next',
           direction: 'asc',
         }))
+        .with('smart-collection', () => {
+          const opt = programOptions.find(
+            (opt) => opt.type === 'smart-collection',
+          );
+          return {
+            type: 'smart-collection' as const,
+            order: 'next',
+            direction: 'asc',
+            smartCollectionId: opt?.collectionId ?? '',
+          };
+        })
         .exhaustive();
     },
     [programOptions],

@@ -54,7 +54,7 @@ export interface IProgramDB {
   updateProgramDuration(programId: string, duration: number): Promise<void>;
 
   getProgramsByIds(
-    ids: string[],
+    ids: string[] | readonly string[],
     batchSize?: number,
   ): Promise<ProgramWithRelationsOrm[]>;
 

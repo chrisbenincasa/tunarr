@@ -1,13 +1,15 @@
-import type { FillerProgram } from '@tunarr/types';
+import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
 import type { RandomSlot, RandomSlotDurationSpec } from '@tunarr/types/api';
 import type { Random } from 'random-js';
 import type { ProgramIterator } from './ProgramIterator.js';
 import { SlotImpl } from './SlotImpl.js';
 
-export class RandomSlotImpl extends SlotImpl<RandomSlot> {
+export class RandomSlotImpl<
+  ProgramT extends CondensedChannelProgram = CondensedChannelProgram,
+> extends SlotImpl<RandomSlot, ProgramT> {
   constructor(
     slot: RandomSlot,
-    iterator: ProgramIterator,
+    iterator: ProgramIterator<ProgramT>,
     random: Random,
     fillerIteratorsByListId: Record<
       string,

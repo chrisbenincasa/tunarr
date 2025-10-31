@@ -14,6 +14,7 @@ import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.t
 import { RedirectProgrammingForm } from './RedirectProgrammingForm.tsx';
 import { ShowSearchSlotProgrammingForm } from './ShowSearchSlotProgrammingForm.tsx';
 import { SlotOrderFormControl } from './SlotOrderFormControl.tsx';
+import { SmartCollectionSlotProgrammingForm } from './SmartCollectionSlotProgrammingForm.tsx';
 
 type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
   newSlotForType: (type: ProgramOptionType) => SlotT;
@@ -72,6 +73,9 @@ export const EditSlotProgrammingForm = <
         </Select>
       </FormControl>
       {typeSelectValue === 'custom-show' && <CustomShowSlotProgrammingForm />}
+      {typeSelectValue === 'smart-collection' && (
+        <SmartCollectionSlotProgrammingForm />
+      )}
       {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
       {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
       {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}

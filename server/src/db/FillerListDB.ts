@@ -45,6 +45,7 @@ import type { FillerShow, NewFillerShow } from './schema/FillerShow.ts';
 import type { NewFillerShowContent } from './schema/FillerShowContent.ts';
 import { DB } from './schema/db.ts';
 import type { ChannelFillerShowWithContent } from './schema/derivedTypes.ts';
+import { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class FillerDB implements IFillerListDB {
@@ -53,6 +54,7 @@ export class FillerDB implements IFillerListDB {
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(ProgramConverter) private programConverter: ProgramConverter,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
 
   getFiller(id: string): Promise<Maybe<FillerShowWithContent>> {
@@ -382,6 +384,25 @@ export class FillerDB implements IFillerListDB {
     return seq.collect(programs?.fillerContent, (program) =>
       this.programConverter.programDaoToContentProgram(program, []),
     );
+  }
+
+  async getFillerProgramsOrm(id: string) {
+    return await this.drizzle.query.fillerShowContent
+      .findMany({
+        where: (fields, { eq }) => eq(fields.fillerShowUuid, id),
+        with: {
+          program: {
+            with: {
+              album: true,
+              artist: true,
+              show: true,
+              season: true,
+              externalIds: true,
+            },
+          },
+        },
+      })
+      .then((_) => _.map((fc) => fc.program));
   }
 
   async getFillersFromChannel(

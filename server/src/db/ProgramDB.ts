@@ -279,7 +279,7 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getProgramsByIds(
-    ids: string[],
+    ids: string[] | readonly string[],
     batchSize: number = 500,
   ): Promise<ProgramWithRelationsOrm[]> {
     const results: ProgramWithRelationsOrm[] = [];
@@ -892,10 +892,7 @@ export class ProgramDB implements IProgramDB {
 
     const [requiredExternalIds, backgroundExternalIds] = partition(
       programExternalIds,
-      (p) =>
-        p.sourceType === ProgramExternalIdType.PLEX ||
-        // p.sourceType === ProgramExternalIdType.PLEX_GUID ||
-        p.sourceType === ProgramExternalIdType.JELLYFIN,
+      (p) => p.sourceType === 'plex' || p.sourceType === 'jellyfin',
     );
 
     // Fail hard on not saving Plex / Jellyfin program external IDs. We need them for streaming
@@ -1077,20 +1074,18 @@ export class ProgramDB implements IProgramDB {
           .returningAll()
           .execute();
 
-        await Promise.all([
-          await this.upsertProgramMediaStreams(
-            versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
-            tx,
-          ),
-          await this.upsertProgramChapters(
-            versionBatch.flatMap(({ chapters }) => chapters ?? []),
-            tx,
-          ),
-          await this.upsertProgramMediaFiles(
-            versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
-            tx,
-          ),
-        ]);
+        await this.upsertProgramMediaStreams(
+          versionBatch.flatMap(({ mediaStreams }) => mediaStreams),
+          tx,
+        );
+        await this.upsertProgramChapters(
+          versionBatch.flatMap(({ chapters }) => chapters ?? []),
+          tx,
+        );
+        await this.upsertProgramMediaFiles(
+          versionBatch.flatMap(({ mediaFiles }) => mediaFiles),
+          tx,
+        );
 
         insertedVersions.push(...insertResult);
       }
@@ -2635,10 +2630,7 @@ export class ProgramDB implements IProgramDB {
     JellyfinTaskQueue.pause();
     this.timer.timeSync('Schedule Jellyfin external IDs tasks', () => {
       forEach(
-        filter(
-          upsertedPrograms,
-          (p) => p.sourceType === ProgramSourceType.JELLYFIN,
-        ),
+        filter(upsertedPrograms, (p) => p.sourceType === 'jellyfin'),
         (program) => {
           try {
             const task = this.saveJellyfinProgramExternalIdsTask(program.uuid);

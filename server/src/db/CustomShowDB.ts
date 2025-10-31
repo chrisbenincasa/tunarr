@@ -1,7 +1,5 @@
 import { KEYS } from '@/types/inject.js';
 import { isNonEmptyString, programExternalIdString } from '@/util/index.js';
-import { seq } from '@tunarr/shared/util';
-import { CustomProgram } from '@tunarr/types';
 import {
   CreateCustomShowRequest,
   UpdateCustomShowRequest,
@@ -12,7 +10,6 @@ import { Kysely } from 'kysely';
 import { chunk, filter, isNil, map } from 'lodash-es';
 import { v4 } from 'uuid';
 import { ProgramDB } from './ProgramDB.ts';
-import { ProgramConverter } from './converters/ProgramConverter.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
 import {
   AllProgramJoins,
@@ -21,14 +18,18 @@ import {
 import type { NewCustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
+import {
+  ProgramWithRelations,
+  ProgramWithRelationsOrm,
+} from './schema/derivedTypes.ts';
+import { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class CustomShowDB {
-  @inject(ProgramConverter) private programConverter: ProgramConverter;
-
   constructor(
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
 
   async getShow(id: string) {
@@ -67,28 +68,33 @@ export class CustomShowDB {
       .execute();
   }
 
-  async getShowPrograms(id: string): Promise<CustomProgram[]> {
+  async getShowPrograms(id: string): Promise<ProgramWithRelations[]> {
     const programs = await this.db
       .selectFrom('customShow')
       .where('customShow.uuid', '=', id)
       .select((eb) => withCustomShowPrograms(eb, { joins: AllProgramJoins }))
       .executeTakeFirst();
 
-    return seq.collect(programs?.customShowContent, (csc) => {
-      const program = this.programConverter.programDaoToContentProgram(csc, []);
-      if (!program) {
-        return;
-      }
-      return {
-        type: 'custom' as const,
-        persisted: true,
-        duration: csc.duration,
-        program,
-        customShowId: id,
-        index: csc.index,
-        id: csc.uuid,
-      };
+    return programs?.customShowContent ?? [];
+  }
+
+  async getShowProgramsOrm(id: string): Promise<ProgramWithRelationsOrm[]> {
+    const results = await this.drizzle.query.customShowContent.findMany({
+      where: (fields, { eq }) => eq(fields.customShowUuid, id),
+      with: {
+        program: {
+          with: {
+            album: true,
+            artist: true,
+            externalIds: true,
+            season: true,
+            show: true,
+          },
+        },
+      },
+      orderBy: (fields, { asc }) => asc(fields.index),
     });
+    return results.map((result) => result.program);
   }
 
   async saveShow(id: string, updateRequest: UpdateCustomShowRequest) {

@@ -13,6 +13,7 @@ const typeWeights: Record<ProgramOption['type'], number> = {
   show: 0,
   movie: 1,
   'custom-show': 2,
+  'smart-collection': 2,
   filler: 2,
   redirect: 3,
   flex: 4,
@@ -107,6 +108,12 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
         ...baseSlot,
         type: 'redirect',
         channelId: r.channelId,
+        order: 'next',
+      }))
+      .with({ type: 'smart-collection' }, (c) => ({
+        ...baseSlot,
+        type: 'smart-collection',
+        smartCollectionId: c.collectionId,
         order: 'next',
       }))
       .exhaustive();

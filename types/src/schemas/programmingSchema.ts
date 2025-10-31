@@ -115,6 +115,10 @@ export const CondensedContentProgramSchema = BaseProgramSchema.extend({
   duration: z.number().min(0),
 });
 
+export type CondensedContentProgram = z.infer<
+  typeof CondensedContentProgramSchema
+>;
+
 export type ContentProgramType = z.infer<typeof ContentProgramTypeSchema>;
 
 const BaseContentProgramParentSchema = z.object({
