@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0-alpha.20](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.19...v0.23.0-alpha.20) (2025-11-01)
+
+
+### Bug Fixes
+
+* accept both string or number for aspect ratio in NFO files ([eba9f89](https://github.com/chrisbenincasa/tunarr/commit/eba9f89244a68530fd8c8e4cba0cb019ce42910f))
+* reset local media settings dialog state on close ([6c614e8](https://github.com/chrisbenincasa/tunarr/commit/6c614e84dc141ded751292d70708e696b553fc0b))
+
 ## [0.23.0-alpha.19](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.18...v0.23.0-alpha.19) (2025-10-31)
 
 
