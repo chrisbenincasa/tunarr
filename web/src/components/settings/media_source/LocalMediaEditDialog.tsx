@@ -36,11 +36,10 @@ import {
   useCreateMediaSource,
   useUpdateMediaSource,
 } from '../../../hooks/media-sources/mediaSourceHooks.ts';
+import type { CommonDialogProps } from '../../../types/CommonDialogProps.ts';
 import { RotatingLoopIcon } from '../../base/LoadingIcon.tsx';
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
+type Props = CommonDialogProps & {
   source?: LocalMediaSource;
 };
 
@@ -58,7 +57,7 @@ const emptyDefaults = () =>
     pathReplacements: [],
   }) satisfies LocalMediaSourceForm;
 
-export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
+const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
   const {
     control,
     watch,
@@ -73,8 +72,6 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
     defaultValues: source ?? emptyDefaults(),
     reValidateMode: 'onChange',
   });
-
-  console.log(isDirty, isValid);
 
   const snackbar = useSnackbar();
 
@@ -203,7 +200,7 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
 
   const title = source ? `Editing "${source.name}"` : 'New Local Media Source';
   return (
-    <Dialog open={open} onClose={onClose} fullWidth keepMounted={false}>
+    <>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ p: 2 }}>
         <Box
@@ -325,6 +322,15 @@ export const LocalMediaEditDialog = ({ onClose, open, source }: Props) => {
           {source?.id ? 'Update' : 'Add'}
         </Button>
       </DialogActions>
+    </>
+  );
+};
+
+export const LocalMediaEditDialog = (props: Props) => {
+  const { onClose, open } = props;
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth>
+      <LocalMediaEditDialogContent {...props} />
     </Dialog>
   );
 };
