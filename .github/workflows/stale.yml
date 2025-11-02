@@ -1,0 +1,17 @@
+name: 'Close stale pending response issues'
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 1 * * *'
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v10
+        with:
+          stale-issue-message: 'This issue is pending a response and has no activity in 30 days. It will be closed automatically in one week if no updates are provided.'
+          exempt-draft-pr: true
+          any-of-issue-labels: pending response,info needed
+          days-before-issue-stale: 30
+          days-before-pr-stale: -1
