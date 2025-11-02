@@ -6,6 +6,7 @@ import { groupByFunc, isNonEmptyString } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   writeXmltv,
+  Xmltv,
   type XmltvChannel,
   type XmltvProgramme,
 } from '@iptv/xmltv';
@@ -19,7 +20,7 @@ import { match, P } from 'ts-pattern';
 
 const lock = new Mutex();
 
-type MaterializedChannelPrograms = {
+export type MaterializedChannelPrograms = {
   channel: Channel;
   programs: TvGuideProgram[];
 };
@@ -46,12 +47,18 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
+    const content = writeXmltv(this.generateXmltv(channels));
+
+    return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+  }
+
+  generateXmltv(channels: MaterializedChannelPrograms[]) {
     const xmlChannelIdById = groupByFunc(
       channels,
       ({ channel }) => channel.uuid,
       ({ channel }) => getChannelId(channel.number),
     );
-    const content = writeXmltv({
+    return {
       generatorInfoName: 'tunarr',
       date: new Date(),
       channels: map(channels, ({ channel }) =>
@@ -62,9 +69,7 @@ export class XmlTvWriter {
           this.makeXmlTvProgram(p, xmlChannelIdById[channel.uuid]),
         ),
       ),
-    });
-
-    return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+    } satisfies Xmltv;
   }
 
   private makeXmlTvChannel(
@@ -122,9 +127,12 @@ export class XmlTvWriter {
       .exhaustive();
 
     const subTitle = match(program)
+      .with({ type: 'content', subtype: 'episode' }, (p) =>
+        p.title === title ? undefined : p.title,
+      )
       .with(
-        { type: 'content', subtype: P.union('track', 'episode') },
-        (p) => p.title,
+        { type: 'content', subtype: 'track' },
+        (p) => `${p.parent?.title ? `${p.parent.title} - ` : ''}${p.title}`,
       )
       .with(
         { type: 'custom', program: { subtype: P.union('track', 'episode') } },
