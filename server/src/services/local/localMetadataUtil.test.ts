@@ -19,6 +19,13 @@ describe('extractSeasonAndEpisodeNumber', () => {
 
     expect(result).toMatchObject({ season: 2, episodes: [13, 14] });
   });
+
+  test('parse season and episode with space', () => {
+    const result = extractSeasonAndEpisodeNumber(
+      'ANIMANIACS - S01 E01 - De-Zanitized, The Monkey Song, and Nighty-Night Toon (480p - DVDRip).mp4',
+    );
+    expect(result).toMatchObject({ season: 1, episodes: [1] });
+  });
 });
 
 describe('extractSeasonNumberFromFolder', () => {
