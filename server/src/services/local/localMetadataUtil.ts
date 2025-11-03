@@ -79,7 +79,7 @@ export function mapNfoActors(actors: Nilable<NfoActor[]>) {
     seq.collect(actors, (actor, index) => {
       return {
         name: actor.name,
-        role: actor.role,
+        role: actor.role ?? undefined,
         order: actor.order ?? index,
       } satisfies Actor;
     }),

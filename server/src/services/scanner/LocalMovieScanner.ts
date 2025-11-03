@@ -347,11 +347,11 @@ export class LocalMovieScanner extends FileSystemScanner {
       ? Result.attempt(() => dayjs(movieNfo.premiered, 'YYYY-MM-DD')).orNull()
       : null;
 
-    const actors = seq.collect(movieNfo.actor, (actor) => {
+    const actors = seq.collect(movieNfo.actor, (actor, idx) => {
       return {
         name: actor.name,
-        role: actor.role,
-        order: actor.order,
+        role: actor.role ?? undefined,
+        order: actor.order ?? idx,
       } satisfies Actor;
     });
 

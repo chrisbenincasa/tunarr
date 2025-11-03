@@ -50,7 +50,7 @@ export const NfoFileInfo = z.object({
 
 export const NfoActor = z.object({
   name: z.string(),
-  role: z.string(),
+  role: z.string().nullish(),
   order: z.number().optional(),
   thumb: z.string().optional(),
 });
