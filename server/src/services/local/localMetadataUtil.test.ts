@@ -26,6 +26,13 @@ describe('extractSeasonAndEpisodeNumber', () => {
     );
     expect(result).toMatchObject({ season: 1, episodes: [1] });
   });
+
+  test('parse season and episode with "x" separator', () => {
+    const result = extractSeasonAndEpisodeNumber(
+      'Bonanza - 4x03 - The Artist.avi',
+    );
+    expect(result).toMatchObject({ season: 4, episodes: [3] });
+  });
 });
 
 describe('extractSeasonNumberFromFolder', () => {

@@ -10,7 +10,7 @@ import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
 // but not things like S01E03 or "blah blah blah 02"
 const SeasonNameRegex = /s(?:eason)?\s?(\d+)(?![e\d])/i;
 const SeasonAndEpisodeNameRegex =
-  /s(?:eason)?\s?(\d+)\s?((?:(e\d+)+(e?\d+-?))+)/i;
+  /s?(?:eason)?\s?(\d+)[\s|x]?((?:(e?\d+)+(e?\d+-?))+)/i;
 
 export function extractSeasonNumberFromFolder(folderName: string) {
   folderName = basename(folderName);
