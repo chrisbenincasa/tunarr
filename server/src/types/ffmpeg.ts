@@ -94,6 +94,10 @@ export const FfprobeAttachmentStreamSchema =
     codec_name: z.string().optional(),
   });
 
+export const FfprobeBinDataStreamSchema = z.object({
+  codec_type: z.literal('bin_data'),
+});
+
 export type FfprobeSubtitleStream = z.infer<typeof FfprobeSubtitleStreamSchema>;
 
 function parsePossibleFractionToFloat(s: string) {
@@ -114,6 +118,7 @@ export const FfprobeMediaStreamSchema = z.discriminatedUnion('codec_type', [
   FfprobeAudioStreamSchema,
   FfprobeSubtitleStreamSchema,
   FfprobeAttachmentStreamSchema,
+  FfprobeBinDataStreamSchema,
 ]);
 
 export const FfprobeMediaFormatSchema = z.object({
