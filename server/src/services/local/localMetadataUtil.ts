@@ -9,8 +9,9 @@ import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
 // Match things like S01, season 01, Season1, S1
 // but not things like S01E03 or "blah blah blah 02"
 const SeasonNameRegex = /s(?:eason)?\s?(\d+)(?![e\d])/i;
-const SeasonAndEpisodeNameRegex =
-  /s?(?:eason)?\s?(\d+)[\s|x]?((?:(e?\d+)+(e?\d+-?))+)/i;
+const SeasonAndEpisodeNameRegex1 =
+  /s(?:eason)?\s?(\d+)\s?((?:([e|x]?\d+)+(e?\d+-?))+)/i;
+const SeasonAndEpisodeNameRegex2 = /(\d+)\s?x(\d+)/i;
 
 export function extractSeasonNumberFromFolder(folderName: string) {
   folderName = basename(folderName);
@@ -42,7 +43,7 @@ export function extractSeasonNumberFromFolder(folderName: string) {
 
 export function extractSeasonAndEpisodeNumber(fileName: string) {
   fileName = basename(fileName, extname(fileName));
-  const matches = fileName.match(SeasonAndEpisodeNameRegex);
+  const matches = fileName.match(SeasonAndEpisodeNameRegex1);
   if (matches && matches.length > 2) {
     const season = parseIntOrNull(matches[1]);
     if (isNull(season)) {
@@ -61,6 +62,18 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
       season,
       episodes: epMatches,
     };
+  }
+
+  const matches2 = fileName.match(SeasonAndEpisodeNameRegex2);
+  if (matches2 && matches2.length > 2) {
+    const season = parseIntOrNull(matches2[1]);
+    const episode = parseIntOrNull(matches2[2]);
+    if (!isNull(season) && !isNull(episode)) {
+      return {
+        season,
+        episodes: [episode],
+      };
+    }
   }
 
   return;
