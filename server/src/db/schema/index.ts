@@ -13,6 +13,7 @@ import {
   ChannelPrograms,
   ChannelProgramsRelations,
 } from './ChannelPrograms.ts';
+import { Credit, CreditRelations } from './Credit.ts';
 import { CustomShow, CustomShowRelations } from './CustomShow.ts';
 import {
   CustomShowContent,
@@ -120,6 +121,8 @@ export const schema = {
   programSubtitles: ProgramSubtitles,
   programSubtitlesRelations: ProgramSubtitlesRelations,
   smartCollection: SmartCollection,
+  credit: Credit,
+  creditRelations: CreditRelations,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

@@ -6,6 +6,7 @@ import type { Artwork, NewArtwork } from './Artwork.ts';
 import type { MediaSourceType } from './base.ts';
 import type { Channel, ChannelOrm } from './Channel.ts';
 import type { ChannelFillerShow } from './ChannelFillerShow.ts';
+import type { Credit, NewCredit } from './Credit.ts';
 import type { FillerShow } from './FillerShow.ts';
 import type {
   LocalMediaSourcePath,
@@ -104,6 +105,7 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
   artwork?: Artwork[];
   subtitles?: ProgramSubtitles[];
+  credits?: Credit[];
 };
 
 export type SpecificProgramOrmType<
@@ -207,12 +209,18 @@ export type NewProgramVersion = NewProgramVersionDao & {
   chapters?: Insertable<ProgramChapterTable>[];
 };
 
+export type NewCreditWithArtwork = {
+  credit: NewCredit;
+  artwork: NewArtwork[];
+};
+
 export type NewProgramWithRelations<Type extends ProgramType = ProgramType> = {
   program: SpecificProgramType<Type, NewProgramDao>;
   externalIds: NewSingleOrMultiExternalId[];
   versions: NewProgramVersion[];
-  artwork?: NewArtwork[];
-  subtitles?: NewProgramSubtitles[];
+  artwork: NewArtwork[];
+  subtitles: NewProgramSubtitles[];
+  credits: NewCreditWithArtwork[];
 };
 
 export type NewProgramWithExternalIds = NewProgramDao & {
@@ -234,6 +242,7 @@ export type ProgramGroupingWithExternalIds = ProgramGrouping & {
 export type ProgramGroupingOrmWithRelations = ProgramGroupingOrm & {
   externalIds: ProgramGroupingExternalIdOrm[];
   artwork?: Artwork[];
+  credits?: Credit[];
 };
 
 type SpecificSubtype<
@@ -284,6 +293,7 @@ export type NewProgramGroupingWithRelations<
   programGrouping: SpecificProgramGroupingType<Typ, NewProgramGrouping>;
   externalIds: NewSingleOrMultiProgramGroupingExternalId[];
   artwork: NewArtwork[];
+  credits: NewCreditWithArtwork[];
 };
 
 export type NewTvShow = SpecificProgramGroupingType<'show', NewProgramGrouping>;

@@ -6,6 +6,7 @@ import { isNonEmptyString, nullToUndefined } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  Actor,
   ChannelProgram,
   ContentProgram,
   ContentProgramParent,
@@ -159,6 +160,18 @@ export class ProgramConverter {
         ? +dayjs(program.originalAirDate)
         : null,
       releaseDateString: program.originalAirDate,
+      actors: orderBy(
+        program.credits?.filter((credit) => credit.type === 'cast'),
+        (c, idx) => c.index ?? idx,
+        'asc',
+      ).map(
+        (credit, idx) =>
+          ({
+            name: credit.name,
+            order: idx,
+            role: credit.role,
+          }) satisfies Actor,
+      ),
     };
 
     const typed = match(program)
@@ -168,6 +181,18 @@ export class ProgramConverter {
         type: 'movie',
         plot: movie.summary,
         tagline: null,
+        writers:
+          program.credits
+            ?.filter((c) => c.type === 'writer')
+            .map((writer) => ({
+              name: writer.name,
+            })) ?? [],
+        directors:
+          program.credits
+            ?.filter((c) => c.type === 'director')
+            .map((director) => ({
+              name: director.name,
+            })) ?? [],
       }))
       .with(
         { type: 'episode' },

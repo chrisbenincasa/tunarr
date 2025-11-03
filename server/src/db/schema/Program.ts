@@ -14,6 +14,7 @@ import type { MarkNotNilable } from '../../types/util.ts';
 import { Artwork } from './Artwork.ts';
 import type { MediaSourceName } from './base.ts';
 import { MediaSourceTypes, type MediaSourceId } from './base.ts';
+import { Credit } from './Credit.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { LocalMediaFolder } from './LocalMediaFolder.ts';
 import { LocalMediaSourcePath } from './LocalMediaSourcePath.ts';
@@ -150,6 +151,7 @@ export const ProgramRelations = relations(Program, ({ many, one }) => ({
   }),
   artwork: many(Artwork),
   subtitles: many(ProgramSubtitles),
+  credits: many(Credit),
 }));
 
 export type ProgramTable = KyselifyBetter<typeof Program>;

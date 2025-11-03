@@ -44,6 +44,8 @@ import Migration1759518565_AddProgramSubtitles from './db/Migration1759518565_Ad
 import Migration1760129429_AddProgramGroupingSourceType from './db/Migration1760129429_AddProgramGroupingSourceType.ts';
 import Migration1760213210_AddMoreProgramGroupingFields from './db/Migration1760213210_AddMoreProgramGroupingFields.ts';
 import Migration1760455673_UpdateForeignKeyCasacades from './db/Migration1760455673_UpdateForeignKeyCasacades.ts';
+import Migration1762205138_AddCredits from './db/Migration1762205138_AddCredits.ts';
+import Migration1762205207_ArtworkCachePathNullable from './db/Migration1762205207_ArtworkCachePathNullable.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -147,6 +149,9 @@ export class DirectMigrationProvider implements MigrationProvider {
             makeKyselyMigrationFromSqlFile(
               './sql/0021_stormy_victor_mancha.sql',
             ),
+          migration1762205138_AddCredits: Migration1762205138_AddCredits,
+          migration1762205207_ArtworkCachePathNullable:
+            Migration1762205207_ArtworkCachePathNullable,
         },
         wrapWithTransaction,
       ),

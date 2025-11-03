@@ -11,7 +11,7 @@ import {
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
-import type { Folder, Library, MediaChapter } from '@tunarr/types';
+import type { Folder, Library, MediaChapter, NamedEntity } from '@tunarr/types';
 import type { MediaSourceStatus, PagedResult } from '@tunarr/types/api';
 import type {
   JellyfinItem as ApiJellyfinItem,
@@ -81,7 +81,6 @@ import type {
   JellyfinShow,
   MediaItem,
   MediaStream,
-  NamedEntity,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { titleToSortTitle } from '../../util/programs.ts';

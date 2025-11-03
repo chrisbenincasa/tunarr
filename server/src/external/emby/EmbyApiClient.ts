@@ -10,7 +10,7 @@ import {
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
-import type { Folder, Library } from '@tunarr/types';
+import type { Folder, Library, NamedEntity } from '@tunarr/types';
 import type { MediaSourceStatus } from '@tunarr/types/api';
 import type { EmbyLibrary, EmbyMediaSourceInfo } from '@tunarr/types/emby';
 import {
@@ -77,7 +77,6 @@ import type {
   Identifier,
   MediaItem,
   MediaStream,
-  NamedEntity,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { titleToSortTitle } from '../../util/programs.ts';

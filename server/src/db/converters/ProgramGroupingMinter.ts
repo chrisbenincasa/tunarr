@@ -3,6 +3,7 @@ import type { NewSingleOrMultiProgramGroupingExternalId } from '@/db/schema/Prog
 import { isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  Actor,
   tag,
   type ContentProgram,
   type Identifier,
@@ -23,8 +24,13 @@ import {
   MediaSourceMusicArtist,
 } from '../../types/Media.ts';
 import type { Nilable, Nullable } from '../../types/util.ts';
+import { NewArtwork } from '../schema/Artwork.ts';
 import { MediaSourceId, MediaSourceName } from '../schema/base.js';
-import { NewProgramGroupingWithRelations } from '../schema/derivedTypes.js';
+import { NewCredit } from '../schema/Credit.ts';
+import {
+  NewCreditWithArtwork,
+  NewProgramGroupingWithRelations,
+} from '../schema/derivedTypes.js';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import {
@@ -165,15 +171,15 @@ export class ProgramGroupingMinter {
     mediaSourceLibrary: MediaSourceLibraryOrm,
     show: Show,
   ): NewProgramGroupingWithRelations<'show'> {
-    const now = +dayjs();
+    const now = dayjs();
     const groupingId = v4();
 
     return {
       programGrouping: {
         uuid: groupingId,
         type: ProgramGroupingType.Show,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: +now,
+        updatedAt: +now,
         // index: show.index,
         title: show.title,
         summary: show.summary ?? show.plot,
@@ -188,9 +194,48 @@ export class ProgramGroupingMinter {
         mediaSource,
         groupingId,
         show.identifiers,
-        now,
+        +now,
       ),
       artwork: [],
+      credits: show.actors.map((actor) =>
+        this.mintCreditForActor(actor, groupingId, +now),
+      ),
+    };
+  }
+
+  // TODO: This is duplicated with ProgramMinter, except for programId, dedupe it
+  mintCreditForActor(
+    actor: Actor,
+    groupingId: string,
+    createdAt: number = +dayjs(),
+    updatedAt: number = createdAt,
+  ): NewCreditWithArtwork {
+    const credit = {
+      type: 'cast',
+      name: actor.name,
+      uuid: v4(),
+      createdAt: new Date(createdAt),
+      updatedAt: new Date(updatedAt),
+      groupingId,
+      index: actor.order,
+      role: actor.role,
+    } satisfies NewCredit;
+
+    const artwork: NewArtwork[] = [];
+    if (isNonEmptyString(actor.thumb)) {
+      artwork.push({
+        artworkType: 'thumbnail',
+        sourcePath: actor.thumb,
+        uuid: v4(),
+        creditId: credit.uuid,
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(updatedAt),
+      });
+    }
+
+    return {
+      credit,
+      artwork,
     };
   }
 
@@ -225,6 +270,7 @@ export class ProgramGroupingMinter {
         now,
       ),
       artwork: [],
+      credits: [],
     };
   }
 
@@ -259,6 +305,7 @@ export class ProgramGroupingMinter {
         now,
       ),
       artwork: [],
+      credits: [],
     };
   }
 
@@ -291,6 +338,7 @@ export class ProgramGroupingMinter {
         now,
       ),
       artwork: [],
+      credits: [],
     };
   }
 
