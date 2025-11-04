@@ -17,6 +17,7 @@ import type {
   Collection,
   Library,
   MediaChapter,
+  NamedEntity,
   Playlist,
   ProgramOrFolder,
 } from '@tunarr/types';
@@ -98,7 +99,6 @@ import type { WrappedError } from '../../types/errors.ts';
 import type {
   MediaItem,
   MediaStream,
-  NamedEntity,
   PlexAlbum,
   PlexArtist,
   PlexEpisode,

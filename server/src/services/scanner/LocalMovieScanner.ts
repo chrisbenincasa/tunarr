@@ -1,5 +1,5 @@
 import { seq } from '@tunarr/shared/util';
-import { Identifier, MovieMetadata } from '@tunarr/types';
+import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { isEmpty, isUndefined } from 'lodash-es';
@@ -16,7 +16,7 @@ import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramOrm } from '../../db/schema/Program.ts';
 import { MovieNfo, MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
-import { Actor, Director, MediaSourceMovie } from '../../types/Media.ts';
+import { MediaSourceMovie } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.js';
 import { Maybe } from '../../types/util.ts';
@@ -273,13 +273,12 @@ export class LocalMovieScanner extends FileSystemScanner {
         movie,
         stat.mtimeMs,
       );
-      movieDao.artwork ??= [];
 
       posterArtResult.filter(isDefined).forEach((poster) => {
-        movieDao.artwork?.push(poster);
+        movieDao.artwork.push(poster);
       });
       fanartArtResult.filter(isDefined).forEach((fanart) => {
-        movieDao.artwork?.push(fanart);
+        movieDao.artwork.push(fanart);
       });
 
       const upsertResult = await this.programDB.upsertPrograms(movieDao);
@@ -352,6 +351,7 @@ export class LocalMovieScanner extends FileSystemScanner {
         name: actor.name,
         role: actor.role ?? undefined,
         order: actor.order ?? idx,
+        thumb: actor.thumb,
       } satisfies Actor;
     });
 

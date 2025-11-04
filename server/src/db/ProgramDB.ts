@@ -115,6 +115,7 @@ import {
   withTvShow,
 } from './programQueryHelpers.ts';
 import { Artwork, NewArtwork } from './schema/Artwork.ts';
+import { Credit, NewCredit } from './schema/Credit.ts';
 import { RemoteMediaSourceType } from './schema/MediaSource.ts';
 import {
   NewProgramDao,
@@ -995,6 +996,7 @@ export class ProgramDB implements IProgramDB {
         const versionsToInsert: NewProgramVersion[] = [];
         const artworkToInsert: NewArtwork[] = [];
         const subtitlesToInsert: NewProgramSubtitles[] = [];
+        const creditsToInsert: NewCredit[] = [];
         for (const program of chunkResult) {
           const key = program.canonicalId;
           const request: Maybe<NewProgramWithRelations> =
@@ -1018,12 +1020,22 @@ export class ProgramDB implements IProgramDB {
             subtitle.programId = program.uuid;
             subtitlesToInsert.push(subtitle);
           }
+
+          for (const { credit, artwork } of request?.credits ?? []) {
+            credit.programId = program.uuid;
+            creditsToInsert.push(credit);
+            artworkToInsert.push(...artwork);
+          }
         }
 
         const externalIdsByProgramId =
           await this.upsertProgramExternalIds(allExternalIds);
 
         await this.upsertProgramVersions(versionsToInsert);
+
+        // Credits must come before artwork because some art may
+        // rely on credit IDs
+        await this.upsertCredits(creditsToInsert);
 
         await this.upsertArtwork(artworkToInsert);
 
@@ -1170,7 +1182,7 @@ export class ProgramDB implements IProgramDB {
     return inserted;
   }
 
-  private async upsertArtwork(artwork: NewArtwork[]) {
+  async upsertArtwork(artwork: NewArtwork[]) {
     if (artwork.length === 0) {
       return;
     }
@@ -1183,6 +1195,10 @@ export class ProgramDB implements IProgramDB {
       artwork.filter((art) => isNonEmptyString(art.groupingId)),
       (art) => art.groupingId,
     );
+    const creditArt = groupBy(
+      artwork.filter((art) => isNonEmptyString(art.creditId)),
+      (art) => art.creditId,
+    );
 
     return await this.drizzleDB.transaction(async (tx) => {
       for (const batch of chunk(keys(programArt), 50)) {
@@ -1190,6 +1206,9 @@ export class ProgramDB implements IProgramDB {
       }
       for (const batch of chunk(keys(groupArt), 50)) {
         await tx.delete(Artwork).where(inArray(Artwork.groupingId, batch));
+      }
+      for (const batch of chunk(keys(creditArt), 50)) {
+        await tx.delete(Artwork).where(inArray(Artwork.creditId, batch));
       }
       const inserted: Artwork[] = [];
       for (const batch of chunk(artwork, 50)) {
@@ -1343,6 +1362,39 @@ export class ProgramDB implements IProgramDB {
         }
       });
     }
+  }
+
+  async upsertCredits(credits: NewCredit[]) {
+    if (credits.length === 0) {
+      return;
+    }
+
+    const programCredits = groupBy(
+      credits.filter((credit) => isNonEmptyString(credit.programId)),
+      (credit) => credit.programId,
+    );
+    const groupCredits = groupBy(
+      credits.filter((credit) => isNonEmptyString(credit.groupingId)),
+      (credit) => credit.groupingId,
+    );
+
+    return await this.drizzleDB.transaction(async (tx) => {
+      for (const batch of chunk(keys(programCredits), 50)) {
+        await tx.delete(Credit).where(inArray(Credit.programId, batch));
+      }
+      for (const batch of chunk(keys(groupCredits), 50)) {
+        await tx.delete(Credit).where(inArray(Credit.groupingId, batch));
+      }
+      const inserted: Credit[] = [];
+      for (const batch of chunk(credits, 50)) {
+        const batchResult = await this.drizzleDB
+          .insert(Credit)
+          .values(batch)
+          .returning();
+        inserted.push(...batchResult);
+      }
+      return inserted;
+    });
   }
 
   async upsertProgramExternalIds(
@@ -1688,6 +1740,9 @@ export class ProgramDB implements IProgramDB {
       newGroupingAndRelations.artwork.forEach((art) => {
         art.groupingId = existingGrouping.uuid;
       });
+      newGroupingAndRelations.credits.forEach(({ credit }) => {
+        credit.groupingId = existingGrouping.uuid;
+      });
 
       const [grouping, externalIds] = await this.drizzleDB.transaction(
         async (tx) => {
@@ -1723,7 +1778,18 @@ export class ProgramDB implements IProgramDB {
         art.groupingId = grouping.uuid;
       });
 
-      await this.upsertArtwork(newGroupingAndRelations.artwork);
+      newGroupingAndRelations.credits.forEach(({ credit }) => {
+        credit.groupingId = grouping.uuid;
+      });
+
+      await this.upsertCredits(
+        newGroupingAndRelations.credits.map(({ credit }) => credit),
+      );
+      await this.upsertArtwork(
+        newGroupingAndRelations.artwork.concat(
+          newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
+        ),
+      );
 
       return {
         entity: {
@@ -1761,7 +1827,18 @@ export class ProgramDB implements IProgramDB {
       art.groupingId = grouping.uuid;
     });
 
-    await this.upsertArtwork(newGroupingAndRelations.artwork);
+    newGroupingAndRelations.credits.forEach(({ credit }) => {
+      credit.groupingId = grouping.uuid;
+    });
+
+    await this.upsertCredits(
+      newGroupingAndRelations.credits.map(({ credit }) => credit),
+    );
+    await this.upsertArtwork(
+      newGroupingAndRelations.artwork.concat(
+        newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
+      ),
+    );
 
     return {
       entity: {

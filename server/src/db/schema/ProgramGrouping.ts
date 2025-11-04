@@ -14,6 +14,7 @@ import type { MarkRequiredNotNull } from '../../types/util.ts';
 import { Artwork } from './Artwork.ts';
 import type { MediaSourceId } from './base.ts';
 import { MediaSourceTypes } from './base.ts';
+import { Credit } from './Credit.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource } from './MediaSource.ts';
 import { MediaSourceLibrary } from './MediaSourceLibrary.ts';
@@ -99,6 +100,7 @@ export const ProgramGroupingRelations = relations(
     //   fields: [ProgramGrouping.mediaSourcePathId],
     //   references: [LocalMediaSourcePath.uuid],
     // }),
+    credits: many(Credit),
   }),
 );
 

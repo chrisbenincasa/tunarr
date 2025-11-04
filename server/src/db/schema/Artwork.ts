@@ -5,6 +5,7 @@ import {
   type InferSelectModel,
 } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { Credit } from './Credit.ts';
 import { Program } from './Program.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
@@ -38,7 +39,7 @@ export const Artwork = sqliteTable(
   'artwork',
   {
     uuid: text().primaryKey(),
-    cachePath: text().notNull(),
+    cachePath: text(),
     sourcePath: text().notNull(),
     artworkType: text({ enum: ArtworkTypes }).notNull(),
     blurHash43: text(),
@@ -47,6 +48,7 @@ export const Artwork = sqliteTable(
     groupingId: text().references(() => ProgramGrouping.uuid, {
       onDelete: 'cascade',
     }),
+    creditId: text().references(() => Credit.uuid, { onDelete: 'cascade' }),
     createdAt: integer({ mode: 'timestamp_ms' }),
     updatedAt: integer({ mode: 'timestamp_ms' }),
   },
@@ -61,6 +63,10 @@ export const ArtworkRelations = relations(Artwork, ({ one }) => ({
   programGrouping: one(ProgramGrouping, {
     fields: [Artwork.groupingId],
     references: [ProgramGrouping.uuid],
+  }),
+  credit: one(Credit, {
+    fields: [Artwork.creditId],
+    references: [Credit.uuid],
   }),
 }));
 

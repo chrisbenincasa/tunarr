@@ -32,6 +32,8 @@ export const TvEpisodeNfo = z.object({
   actor: z.array(NfoActor).optional(),
 });
 
+export type TvEpisodeNfo = z.infer<typeof TvEpisodeNfo>;
+
 const TvEpisodeNfoContainer = z.object({
   episodedetails: z.array(TvEpisodeNfo),
 });

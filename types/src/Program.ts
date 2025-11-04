@@ -1,12 +1,15 @@
 import type z from 'zod/v4';
 import { type CondensedChannelProgrammingSchema } from './schemas/lineups.js';
 import type {
+  Actor,
   Collection,
+  Director,
   Episode,
   EpisodeMetadata,
   EpisodeWithHierarchy,
   FillerProgramSchema,
   Folder,
+  Genre,
   IdentifierSchema,
   ItemOrFolder,
   ItemSchema,
@@ -24,6 +27,7 @@ import type {
   MusicTrack,
   MusicTrackWithHierarchy,
   MusicVideo,
+  NamedEntity,
   OtherVideo,
   Playlist,
   ProgramGroupingSchema,
@@ -32,9 +36,11 @@ import type {
   Show,
   ShowMetadata,
   StructuralProgramGroupingSchema,
+  Studio,
   TerminalProgramSchema,
   TvSeasonContentProgramSchema,
   TvShowContentProgramSchema,
+  Writer,
 } from './schemas/programmingSchema.js';
 import {
   type BaseProgramSchema,
@@ -137,6 +143,13 @@ export type CondensedChannelProgramming = z.infer<
 
 export type ExternalId = z.infer<typeof ExternalIdSchema>;
 export type Identifier = z.infer<typeof IdentifierSchema>;
+
+export type Actor = z.infer<typeof Actor>;
+export type Writer = z.infer<typeof Writer>;
+export type Director = z.infer<typeof Director>;
+export type Studio = z.infer<typeof Studio>;
+export type Genre = z.infer<typeof Genre>;
+export type NamedEntity = z.infer<typeof NamedEntity>;
 
 // Specific types
 export type Movie = z.infer<typeof Movie>;

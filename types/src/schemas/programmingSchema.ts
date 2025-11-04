@@ -286,19 +286,33 @@ export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
 // New stuff
 //
 
-const NamedEntity = z.object({
+export const NamedEntity = z.object({
   name: z.string(),
+  externalInfo: z
+    .object({
+      source: SourceTypeSchema,
+      id: z.string(),
+    })
+    .nullish(),
 });
 
-const ActorSchema = z.object({
+export const Actor = z.object({
   ...NamedEntity.shape,
   order: z.number().nullish(),
   role: z.string().nullish(),
+  thumb: z.string().nullish(),
 });
-const WriterSchema = NamedEntity;
-const DirectorSchema = NamedEntity;
-const GenreSchema = NamedEntity;
-const StudioSchema = NamedEntity;
+
+export const Writer = z.object({
+  ...NamedEntity.shape,
+  thumb: z.string().nullish(),
+});
+export const Director = z.object({
+  ...NamedEntity.shape,
+  thumb: z.string().nullish(),
+});
+export const Genre = NamedEntity;
+export const Studio = NamedEntity;
 
 const HasMediaSourceAndLibraryId = z.object({
   mediaSourceId: z.string(),
@@ -442,11 +456,11 @@ const BaseProgram = z.object({
   releaseDate: z.number().nullable().describe('Epoch timestamp'),
   releaseDateString: z.string().nullable(),
   mediaItem: MediaItem.optional(),
-  actors: z.array(ActorSchema).optional(),
-  writers: z.array(WriterSchema).optional(),
-  directors: z.array(DirectorSchema).optional(),
-  genres: z.array(GenreSchema).optional(),
-  studios: z.array(StudioSchema).optional(),
+  actors: z.array(Actor).optional(),
+  writers: z.array(Writer).optional(),
+  directors: z.array(Director).optional(),
+  genres: z.array(Genre).optional(),
+  studios: z.array(Studio).optional(),
   duration: z.number(),
   externalSubtitles: z.array(MediaSubtitles).nullish(),
 });
@@ -473,7 +487,7 @@ export const MovieMetadata = Movie.omit(MetadataOmitMask);
 const BaseProgramGrouping = z.object({
   ...BaseItem.shape,
   ...WithSummaryMetadata.shape,
-  genres: z.array(GenreSchema).optional(),
+  genres: z.array(Genre).optional(),
   // e.g. for shows => seasons, seasons => episodes
   childCount: z.number().nonnegative().optional(),
   // e.g. for shows, this is episodes
@@ -483,9 +497,9 @@ const BaseProgramGrouping = z.object({
 export const Show = z.object({
   ...BaseProgramGrouping.shape,
   type: z.literal('show'),
-  genres: z.array(GenreSchema),
-  actors: z.array(ActorSchema),
-  studios: z.array(StudioSchema),
+  genres: z.array(Genre),
+  actors: z.array(Actor),
+  studios: z.array(Studio),
   rating: z.string().nullable(),
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
@@ -495,7 +509,7 @@ export const Show = z.object({
 export const Season = z.object({
   ...BaseProgramGrouping.shape,
   type: z.literal('season'),
-  studios: z.array(StudioSchema),
+  studios: z.array(Studio),
   index: z.number().nonnegative(),
   year: z.number().positive().nullable(),
   releaseDate: z.number().nullable(),
@@ -536,7 +550,7 @@ export const MusicAlbum = BaseProgramGrouping.extend({
   artist: MusicArtist.optional(),
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
-  studios: z.array(StudioSchema).optional(),
+  studios: z.array(Studio).optional(),
 });
 
 export const MusicTrack = BaseProgram.extend({

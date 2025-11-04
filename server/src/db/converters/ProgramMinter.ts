@@ -6,8 +6,10 @@ import type {
 } from '@/db/schema/ProgramExternalId.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  Actor,
   Episode,
   isTerminalItemType,
+  NamedEntity,
   ProgramLike,
   tag,
   TerminalProgram,
@@ -28,7 +30,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { find, first, head, isError } from 'lodash-es';
+import { compact, find, first, head, isError } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { Canonicalizer } from '../../services/Canonicalizer.ts';
@@ -38,11 +40,13 @@ import {
   MediaSourceOtherVideo,
 } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';
-import { Maybe } from '../../types/util.ts';
+import { Maybe, Nilable } from '../../types/util.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
+import { NewArtwork } from '../schema/Artwork.ts';
+import { CreditType, NewCredit } from '../schema/Credit.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from '../schema/Program.ts';
@@ -52,6 +56,7 @@ import { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
 import { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
 import { MediaSourceId, MediaSourceName } from '../schema/base.js';
 import {
+  NewCreditWithArtwork,
   NewEpisodeProgram,
   NewMovieProgram,
   NewMusicTrack,
@@ -201,6 +206,10 @@ export class ProgramDaoMinter {
       externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
       versions: this.mintVersions(programId, movie, now),
       subtitles: this.mintSubtitles(programId, movie),
+      artwork: [], // Added later
+      credits: seq.collect(movie.actors, (actor) =>
+        this.mintCreditForActor(actor, programId, now),
+      ),
     };
   }
 
@@ -208,7 +217,7 @@ export class ProgramDaoMinter {
     programId: string,
     item: TerminalProgram,
     now: number = +dayjs(),
-  ) {
+  ): NewProgramVersion[] {
     const versions: NewProgramVersion[] = [];
     if (item.mediaItem) {
       const versionId = v4();
@@ -283,7 +292,7 @@ export class ProgramDaoMinter {
     item: ProgramLike,
     mediaSource: MediaSourceOrm,
     now: number = +dayjs(),
-  ) {
+  ): NewSingleOrMultiExternalId[] {
     return seq.collect(item.identifiers, (id) => {
       if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
         return {
@@ -417,6 +426,19 @@ export class ProgramDaoMinter {
         now,
       ),
       versions: this.mintVersions(programId, episode, now),
+      artwork: [],
+      credits: compact([
+        ...seq.collect(episode.actors, (actor) =>
+          this.mintCreditForActor(actor, programId, now),
+        ),
+        ...(episode.writers?.map((writer) =>
+          this.mintCredit(writer, 'writer', programId, now),
+        ) ?? []),
+        ...(episode.directors?.map((director) =>
+          this.mintCredit(director, 'director', programId, now),
+        ) ?? []),
+      ]),
+      subtitles: this.mintSubtitles(programId, episode),
     };
   }
 
@@ -456,6 +478,9 @@ export class ProgramDaoMinter {
       program: newTrack,
       externalIds: this.mintExternalIdsNew(programId, track, mediaSource, now),
       versions: this.mintVersions(programId, track, now),
+      artwork: [],
+      credits: [],
+      subtitles: [],
     };
   }
 
@@ -494,6 +519,19 @@ export class ProgramDaoMinter {
       program: newVideo,
       externalIds: this.mintExternalIdsNew(programId, video, mediaSource, now),
       versions: this.mintVersions(programId, video, now),
+      artwork: [],
+      credits: compact([
+        ...seq.collect(video.actors, (actor) =>
+          this.mintCreditForActor(actor, programId, now),
+        ),
+        ...(video.writers?.map((writer) =>
+          this.mintCredit(writer, 'writer', programId, now),
+        ) ?? []),
+        ...(video.directors?.map((director) =>
+          this.mintCredit(director, 'director', programId, now),
+        ) ?? []),
+      ]),
+      subtitles: this.mintSubtitles(programId, video),
     };
   }
 
@@ -944,5 +982,74 @@ export class ProgramDaoMinter {
     );
 
     return ids;
+  }
+
+  mintCreditForActor(
+    actor: Actor,
+    programId: string,
+    createdAt: number = +dayjs(),
+    updatedAt: number = createdAt,
+  ): NewCreditWithArtwork {
+    const credit = {
+      type: 'cast',
+      name: actor.name,
+      uuid: v4(),
+      createdAt: new Date(createdAt),
+      updatedAt: new Date(updatedAt),
+      programId,
+      index: actor.order,
+      role: actor.role,
+    } satisfies NewCredit;
+
+    const artwork: NewArtwork[] = [];
+    if (isNonEmptyString(actor.thumb)) {
+      artwork.push({
+        artworkType: 'thumbnail',
+        sourcePath: actor.thumb,
+        uuid: v4(),
+        creditId: credit.uuid,
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(updatedAt),
+      });
+    }
+
+    return {
+      credit,
+      artwork,
+    };
+  }
+
+  mintCredit(
+    entity: NamedEntity & { thumb?: Nilable<string> },
+    type: CreditType,
+    programId: string,
+    createdAt: number = +dayjs(),
+    updatedAt: number = createdAt,
+  ): NewCreditWithArtwork {
+    const credit = {
+      type,
+      name: entity.name,
+      uuid: v4(),
+      createdAt: new Date(createdAt),
+      updatedAt: new Date(updatedAt),
+      programId,
+    } satisfies NewCredit;
+
+    const artwork: NewArtwork[] = [];
+    if (isNonEmptyString(entity.thumb)) {
+      artwork.push({
+        artworkType: 'thumbnail',
+        sourcePath: entity.thumb,
+        uuid: v4(),
+        creditId: credit.uuid,
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(updatedAt),
+      });
+    }
+
+    return {
+      credit,
+      artwork,
+    };
   }
 }

@@ -1,8 +1,8 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
+import type { Actor, NamedEntity } from '@tunarr/types';
 import { isNull, last, orderBy } from 'lodash-es';
 import { basename, extname } from 'node:path';
 import type { NfoActor } from '../../nfo/NfoSchemas.ts';
-import type { Actor, NamedEntity } from '../../types/Media.ts';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
 

@@ -352,6 +352,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           artist: true,
           externalIds: true,
           mediaLibrary: true,
+          credits: true,
           versions: {
             with: {
               mediaStreams: true,
@@ -401,6 +402,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           artist: true,
           externalIds: true,
           artwork: true,
+          credits: true,
         },
       });
 
@@ -484,19 +486,26 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const art = program.artwork?.find(
         (art) => art.artworkType === req.params.artworkType,
       );
+
       if (!art) {
         return res.status(404).send();
       }
 
-      const path = req.serverCtx.imageCache.getImagePath(
-        art.cachePath,
-        art.artworkType,
-      );
+      if (art.cachePath) {
+        const path = req.serverCtx.imageCache.getImagePath(
+          art.cachePath,
+          art.artworkType,
+        );
 
-      return res.sendFile(
-        trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
-        { contentType: true },
-      );
+        return res.sendFile(
+          trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
+          { contentType: true },
+        );
+      } else if (URL.canParse(art.sourcePath)) {
+        return res.redirect(art.sourcePath);
+      } else {
+        return res.sendFile(art.sourcePath);
+      }
     },
   );
 

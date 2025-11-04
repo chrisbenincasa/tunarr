@@ -22,7 +22,10 @@ import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { ArtworkType } from '../../db/schema/Artwork.ts';
-import { TvEpisodeNfoParser } from '../../nfo/TvEpisodeNfoParser.ts';
+import {
+  TvEpisodeNfo,
+  TvEpisodeNfoParser,
+} from '../../nfo/TvEpisodeNfoParser.ts';
 import { TvShowNfo, TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { WrappedError } from '../../types/errors.ts';
@@ -211,13 +214,15 @@ export class LocalTvShowScanner extends FileSystemScanner {
       show,
     );
 
-    mintedShow.artwork = seq.collect(artworkResults, (result) => {
-      if (result.isFailure()) {
-        this.logger.error(result.error);
-        return;
-      }
-      return result.get();
-    });
+    mintedShow.artwork.push(
+      ...seq.collect(artworkResults, (result) => {
+        if (result.isFailure()) {
+          this.logger.error(result.error);
+          return;
+        }
+        return result.get();
+      }),
+    );
 
     const upsertedShow = await this.programDB.upsertLocalProgramGrouping(
       mintedShow,
@@ -709,43 +714,53 @@ export class LocalTvShowScanner extends FileSystemScanner {
 
     const parseResult = await this.tvEpisodeNfoParser.parseFile(nfoPath);
 
-    return parseResult
-      .mapPure(({ episodedetails }) =>
-        episodedetails.find((ep) => ep.episode === expectedEpisodeNumber),
-      )
-      .filter(isDefined)
-      .mapPure((episode) => {
-        const releaseDate = episode.aired
-          ? Result.attempt(() => dayjs(episode.aired, 'YYYY-MM-DD')).orNull()
-          : null;
-        return {
-          episodeNumber: expectedEpisodeNumber,
-          identifiers: seq.collect(
-            episode.uniqueid,
-            ({ '@_type': sourceType, '#text': value }) =>
-              isValidSingleExternalIdType(sourceType)
-                ? {
-                    id: value,
-                    type: sourceType,
-                  }
-                : null,
-          ),
-          originalTitle: episode.title,
-          releaseDate: releaseDate?.valueOf() ?? null,
-          releaseDateString: releaseDate?.format() ?? null,
-          sortTitle: '', // TODO
-          sourceType: 'local',
-          summary: episode.plot ?? null,
-          tags: [],
-          title: episode.title,
-          type: 'episode',
-          uuid: v4(),
-          year: releaseDate?.year() ?? null,
-          actors: mapNfoActors(episode.actor),
-          directors: mapNfoToNamedEntity(episode.director),
-          writers: mapNfoToNamedEntity(episode.credits),
-        } satisfies EpisodeMetadata;
-      });
+    return (
+      parseResult
+        .flatMapPure<TvEpisodeNfo>(({ episodedetails }) => {
+          const matchingEpisode = episodedetails.find(
+            (ep) => ep.episode === expectedEpisodeNumber,
+          );
+          if (!matchingEpisode) {
+            return Result.failure(
+              `Episode details from NFO did not match expected episode number: NFO = ${JSON.stringify(episodedetails)}, expected; ${expectedEpisodeNumber}`,
+            );
+          }
+          return Result.success(matchingEpisode);
+        })
+        // .filter(isDefined)
+        .mapPure((episode) => {
+          const releaseDate = episode.aired
+            ? Result.attempt(() => dayjs(episode.aired, 'YYYY-MM-DD')).orNull()
+            : null;
+          return {
+            episodeNumber: expectedEpisodeNumber,
+            identifiers: seq.collect(
+              episode.uniqueid,
+              ({ '@_type': sourceType, '#text': value }) =>
+                isValidSingleExternalIdType(sourceType)
+                  ? {
+                      id: value,
+                      type: sourceType,
+                    }
+                  : null,
+            ),
+            originalTitle: episode.title,
+            releaseDate: releaseDate?.valueOf() ?? null,
+            releaseDateString: releaseDate?.format() ?? null,
+            sortTitle: '', // TODO
+            sourceType: 'local',
+            summary: episode.plot ?? null,
+            tags: [],
+            title: episode.title,
+            type: 'episode',
+            uuid: v4(),
+            year: releaseDate?.year() ?? null,
+            actors: mapNfoActors(episode.actor),
+            directors: mapNfoToNamedEntity(episode.director),
+            writers: mapNfoToNamedEntity(episode.credits),
+          } satisfies EpisodeMetadata;
+        })
+    );
   }
 
   private async scanShowArtwork(

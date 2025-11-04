@@ -18,20 +18,6 @@ import type {
 } from '@tunarr/types/schemas';
 import type z from 'zod';
 
-export interface NamedEntity {
-  name: string;
-  externalId?: string;
-  order?: number;
-}
-
-export type Actor = NamedEntity & {
-  role?: string;
-};
-export type Writer = NamedEntity;
-export type Director = NamedEntity;
-export type Genre = NamedEntity;
-export type Studio = NamedEntity;
-
 export type MediaStreamTypes = {
   Video: 'video';
   Audio: 'audio';

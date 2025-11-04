@@ -1,4 +1,5 @@
 import type {
+  Actor,
   Episode,
   Movie,
   MusicAlbum,
@@ -11,14 +12,15 @@ import type {
   TerminalProgram,
 } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { orderBy } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
 import type {
   MediaSourceWithRelations,
+  ProgramGroupingOrmWithRelations,
   ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.ts';
 import type { MediaSourceLibraryOrm } from '../db/schema/MediaSourceLibrary.ts';
-import type { ProgramGrouping as ProgramGroupingDao } from '../db/schema/ProgramGrouping.ts';
 import type {
   ProgramGroupingSearchDocument,
   TerminalProgramSearchDocument,
@@ -166,7 +168,7 @@ export class ApiProgramConverters {
 
   static convertProgramGroupingSearchResult(
     doc: ProgramGroupingSearchDocument,
-    grouping: ProgramGroupingDao,
+    grouping: ProgramGroupingOrmWithRelations,
     childCounts: Maybe<ProgramGroupingChildCounts>,
     mediaSource: MediaSourceWithRelations,
     mediaLibrary: MediaSourceLibraryOrm,
@@ -242,6 +244,18 @@ export class ApiProgramConverters {
             year: doc.originalReleaseYear,
             childCount,
             grandchildCount,
+            actors: orderBy(
+              grouping.credits?.filter((credit) => credit.type === 'cast'),
+              (credit, idx) => credit.index ?? idx,
+              'asc',
+            ).map(
+              (credit, index) =>
+                ({
+                  name: credit.name,
+                  order: index,
+                  role: credit.role,
+                }) satisfies Actor,
+            ),
           }) satisfies Show,
       )
       .with(
