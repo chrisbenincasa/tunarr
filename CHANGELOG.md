@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.23.0-alpha.21](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.20...v0.23.0-alpha.21) (2025-11-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448))
+
+### Features
+
+* persist artwork and credits extracted from media source scanning ([#1450](https://github.com/chrisbenincasa/tunarr/issues/1450)) ([9c82432](https://github.com/chrisbenincasa/tunarr/commit/9c8243282618ac26caef4b238f836dd93488f601))
+* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448)) ([b26a0ba](https://github.com/chrisbenincasa/tunarr/commit/b26a0ba6223803952ee7fb4f30ee1504db1c8dbf))
+
+
+### Bug Fixes
+
+* allow for space between season / episode numbers ([2d4be84](https://github.com/chrisbenincasa/tunarr/commit/2d4be84f7e79f6ae55accf85ce6253ff734c312e))
+* fix season/episode regex regressions with fallback regex ([0ab464f](https://github.com/chrisbenincasa/tunarr/commit/0ab464fa2f5172deaaf8d280c24de3cf86a8d107))
+* make actor.role optional when parsing nfo ([5633933](https://github.com/chrisbenincasa/tunarr/commit/563393304661d7e9e99aaf1a4c29d0cf683b6d30))
+* parse but ignore bin_data streams in with ffprobe ([24b7fbb](https://github.com/chrisbenincasa/tunarr/commit/24b7fbb09366ec266158b1d5680e47e13fb18454))
+* support parsing season/episode numbers in the form 4x03 ([84979a6](https://github.com/chrisbenincasa/tunarr/commit/84979a67312574876fb8c95ed23e911f0cc451d2))
+
 ## [0.23.0-alpha.20](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.19...v0.23.0-alpha.20) (2025-11-01)
 
 
