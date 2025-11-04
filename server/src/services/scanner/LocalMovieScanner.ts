@@ -382,6 +382,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       studios: movieNfo.studio ? [{ name: movieNfo.studio }] : [],
       genres: movieNfo.genre?.map((g) => ({ name: g })) ?? [],
       writers: movieNfo.credits?.map((c) => ({ name: c })) ?? [],
+      artwork: [], // Added later
     };
   }
 

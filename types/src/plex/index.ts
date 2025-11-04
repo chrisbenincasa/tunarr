@@ -20,13 +20,17 @@ const neverDirectory = z.object({ directory: z.unknown().optional() });
 // Represents an object that as a tag=>string value
 export const PlexJoinItemSchema = z.object({
   tag: z.string(),
+  thumb: z.string().optional(),
 });
 
 export type PlexJoinItem = z.infer<typeof PlexJoinItemSchema>;
 
 export const PlexActorSchema = PlexJoinItemSchema.extend({
   role: z.string().optional(),
+  thumb: z.string().optional(),
 });
+
+export type PlexActor = z.infer<typeof PlexActorSchema>;
 
 export const PlexChapterSchema = z.object({
   id: z.number(),

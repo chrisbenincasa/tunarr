@@ -433,7 +433,21 @@ export const MediaSubtitles = z.object({
   path: z.string().nullish(),
 });
 
-export const MediaArtwork = z.object({});
+export const MediaArtworkType = z.enum([
+  'poster',
+  'thumbnail',
+  'logo',
+  'fanart',
+  'watermark',
+  'banner',
+  'landscape',
+]);
+
+export const MediaArtwork = z.object({
+  id: z.uuid(),
+  type: MediaArtworkType,
+  path: z.string().nullish(),
+});
 
 export const MediaItem = z.object({
   streams: z.array(MediaStream),
@@ -463,6 +477,7 @@ const BaseProgram = z.object({
   studios: z.array(Studio).optional(),
   duration: z.number(),
   externalSubtitles: z.array(MediaSubtitles).nullish(),
+  artwork: MediaArtwork.array(),
 });
 
 export const Movie = z.object({
@@ -492,6 +507,7 @@ const BaseProgramGrouping = z.object({
   childCount: z.number().nonnegative().optional(),
   // e.g. for shows, this is episodes
   grandchildCount: z.number().nonnegative().optional(),
+  artwork: MediaArtwork.array(),
 });
 
 export const Show = z.object({

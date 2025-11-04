@@ -353,6 +353,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           externalIds: true,
           mediaLibrary: true,
           credits: true,
+          artwork: true,
           versions: {
             with: {
               mediaStreams: true,

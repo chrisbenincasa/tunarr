@@ -14,12 +14,16 @@ import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import { seq } from '@tunarr/shared/util';
 import type {
+  Actor,
   Collection,
+  Director,
   Library,
+  MediaArtwork,
   MediaChapter,
   NamedEntity,
   Playlist,
   ProgramOrFolder,
+  Writer,
 } from '@tunarr/types';
 import type { MediaSourceStatus, PagedResult } from '@tunarr/types/api';
 import type {
@@ -30,6 +34,7 @@ import type {
   PlexMusicTrack as ApiPlexMusicTrack,
   PlexTvSeason as ApiPlexTvSeason,
   PlexTvShow as ApiPlexTvShow,
+  PlexActor,
   PlexJoinItem,
   PlexMediaAudioStream,
   PlexMediaContainerMetadata,
@@ -92,6 +97,7 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import type { z } from 'zod/v4';
 import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramType, ProgramTypes } from '../../db/schema/Program.js';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.js';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
@@ -1097,6 +1103,11 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     plexShow: ApiPlexTvShow,
     mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexShow> {
+    const artwork: MediaArtwork[] = compact([
+      this.plexArtworkInject(plexShow.thumb, 'poster'),
+      this.plexArtworkInject(plexShow.art, 'banner'),
+    ]);
+
     return Result.success({
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(plexShow),
@@ -1113,7 +1124,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           ).orNull()
         : null,
       releaseDateString: plexShow.originallyAvailableAt ?? null,
-      actors: [],
+      actors: plexActorInject(plexShow.Role),
       genres: plexJoinItemInject(plexShow.Genre),
       plot: plexShow.summary ?? null,
       studios: isNonEmptyString(plexShow.studio)
@@ -1146,6 +1157,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       childCount: plexShow.childCount,
       grandchildCount: plexShow.leafCount,
       sortTitle: titleToSortTitle(plexShow.title),
+      artwork,
     } satisfies PlexShow);
   }
 
@@ -1195,6 +1207,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       tags: [],
       externalId: plexSeason.ratingKey,
       childCount: plexSeason.leafCount,
+      artwork: compact([
+        this.plexArtworkInject(plexSeason.thumb, 'poster'),
+        this.plexArtworkInject(plexSeason.art, 'banner'),
+      ]),
       show: plexSeason.parentRatingKey
         ? ({
             sortTitle: plexSeason.parentTitle
@@ -1235,6 +1251,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             genres: [],
             actors: [],
             rating: null,
+            artwork: compact([
+              this.plexArtworkInject(plexSeason.parentThumb, 'poster'),
+            ]),
           } satisfies PlexShow)
         : undefined,
     } satisfies PlexSeason);
@@ -1260,12 +1279,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
-    const actors =
-      plexEpisode.Role?.map(({ tag, role }) => ({ name: tag, role })) ?? [];
-    const directors =
-      plexEpisode.Director?.map(({ tag }) => ({ name: tag })) ?? [];
-    const writers = plexEpisode.Writer?.map(({ tag }) => ({ name: tag })) ?? [];
-
     const episode: PlexEpisode = {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(plexEpisode),
@@ -1280,9 +1293,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       year: null,
       summary: plexEpisode.summary ?? null,
       duration: plexEpisode.duration,
-      actors,
-      directors,
-      writers,
+      actors: plexActorInject(plexEpisode.Role),
+      directors: plexDirectorInject(plexEpisode.Director),
+      writers: plexWriterInject(plexEpisode.Writer),
       episodeNumber: plexEpisode.index ?? 0,
       mediaItem: plexMediaStreamsInject(
         plexEpisode.ratingKey,
@@ -1315,6 +1328,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ],
       tags: [],
       externalId: plexEpisode.ratingKey,
+      artwork: compact([
+        this.plexArtworkInject(plexEpisode.thumb, 'poster'),
+        this.plexArtworkInject(plexEpisode.art, 'banner'),
+      ]),
       season: plexEpisode.parentRatingKey
         ? {
             externalId: plexEpisode.parentRatingKey,
@@ -1353,6 +1370,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             type: 'season',
             year: null,
             canonicalId: '???',
+            artwork: compact([
+              this.plexArtworkInject(plexEpisode.parentThumb, 'poster'),
+            ]),
             show: plexEpisode.grandparentRatingKey
               ? ({
                   externalId: plexEpisode.grandparentRatingKey,
@@ -1393,6 +1413,16 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
                   genres: [],
                   actors: [],
                   rating: null,
+                  artwork: compact([
+                    this.plexArtworkInject(
+                      plexEpisode.grandparentThumb,
+                      'poster',
+                    ),
+                    this.plexArtworkInject(
+                      plexEpisode.grandparentArt,
+                      'banner',
+                    ),
+                  ]),
                 } satisfies PlexShow)
               : undefined,
           }
@@ -1422,11 +1452,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
-    const actors =
-      plexMovie.Role?.map(({ tag, role }) => ({ name: tag, role })) ?? [];
-    const directors =
-      plexMovie.Director?.map(({ tag }) => ({ name: tag })) ?? [];
-    const writers = plexMovie.Writer?.map(({ tag }) => ({ name: tag })) ?? [];
     const studios = isNonEmptyString(plexMovie.studio)
       ? [{ name: plexMovie.studio }]
       : [];
@@ -1452,9 +1477,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         plexMovie,
       ).getOrElse(() => emptyMediaItem(plexMovie)),
       duration: plexMovie.duration,
-      actors,
-      directors,
-      writers,
+      actors: plexActorInject(plexMovie.Role),
+      directors: plexDirectorInject(plexMovie.Director),
+      writers: plexWriterInject(plexMovie.Writer),
       studios,
       genres: plexMovie.Genre?.map(({ tag }) => ({ name: tag })) ?? [],
       summary: plexMovie.summary ?? null,
@@ -1482,6 +1507,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
+      artwork: compact([
+        this.plexArtworkInject(plexMovie.thumb, 'poster'),
+        this.plexArtworkInject(plexMovie.art, 'banner'),
+      ]),
     });
   }
 
@@ -1503,11 +1532,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
-    const actors =
-      plexClip.Role?.map(({ tag, role }) => ({ name: tag, role })) ?? [];
-    const directors =
-      plexClip.Director?.map(({ tag }) => ({ name: tag })) ?? [];
-    const writers = plexClip.Writer?.map(({ tag }) => ({ name: tag })) ?? [];
     const studios = isNonEmptyString(plexClip.studio)
       ? [{ name: plexClip.studio }]
       : [];
@@ -1533,9 +1557,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         () => emptyMediaItem(plexClip),
       ),
       duration: plexClip.duration,
-      actors,
-      directors,
-      writers,
+      actors: plexActorInject(plexClip.Role),
+      directors: plexDirectorInject(plexClip.Director),
+      writers: plexWriterInject(plexClip.Writer),
       studios,
       genres: plexClip.Genre?.map(({ tag }) => ({ name: tag })) ?? [],
       summary: plexClip.summary ?? null,
@@ -1544,6 +1568,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       rating: plexClip.contentRating ?? null,
       tags: [],
       externalId: plexClip.ratingKey,
+      artwork: compact([
+        this.plexArtworkInject(plexClip.thumb, 'poster'),
+        this.plexArtworkInject(plexClip.art, 'banner'),
+      ]),
       identifiers: [
         {
           id: plexClip.ratingKey,
@@ -1605,6 +1633,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ],
       tags: [],
       externalId: plexArtist.ratingKey,
+      artwork: compact([
+        this.plexArtworkInject(plexArtist.thumb, 'poster'),
+        this.plexArtworkInject(plexArtist.art, 'banner'),
+      ]),
     } satisfies PlexArtist);
   }
 
@@ -1656,6 +1688,10 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         ? +dayjs(plexAlbum.originallyAvailableAt)
         : null,
       releaseDateString: plexAlbum.originallyAvailableAt ?? null,
+      artwork: compact([
+        this.plexArtworkInject(plexAlbum.thumb, 'poster'),
+        this.plexArtworkInject(plexAlbum.art, 'banner'),
+      ]),
     });
   }
 
@@ -1727,6 +1763,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ],
       tags: [],
       externalId: plexTrack.ratingKey,
+      artwork: [],
       album: plexTrack.parentRatingKey
         ? {
             externalId: plexTrack.parentRatingKey,
@@ -1765,6 +1802,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             type: 'album',
             year: null,
             canonicalId: '???',
+            artwork: compact([
+              this.plexArtworkInject(plexTrack.parentThumb, 'poster'),
+            ]),
             artist: plexTrack.grandparentRatingKey
               ? ({
                   externalId: plexTrack.grandparentRatingKey,
@@ -1799,11 +1839,32 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
                   type: 'artist',
                   canonicalId: '???',
                   genres: [],
+                  artwork: [],
                 } satisfies PlexArtist)
               : undefined,
           }
         : undefined,
     } satisfies PlexTrack);
+  }
+
+  private plexArtworkInject(
+    path: Nilable<string>,
+    artworkType: ArtworkType,
+  ): Maybe<MediaArtwork> {
+    if (!isNonEmptyString(path)) {
+      return;
+    }
+
+    try {
+      const url = new URL(path, this.options.mediaSource.uri).href;
+      return {
+        id: v4(),
+        type: artworkType,
+        path: url,
+      };
+    } catch {
+      return;
+    }
   }
 }
 
@@ -1813,6 +1874,29 @@ type PlexTvDevicesResponse = {
 
 function plexJoinItemInject(items: Nilable<PlexJoinItem[]>): NamedEntity[] {
   return items?.map(({ tag }) => ({ name: tag })) ?? [];
+}
+
+function plexActorInject(items: Nilable<PlexActor[]>): Actor[] {
+  return (
+    items?.map(
+      ({ tag, role, thumb }, idx) =>
+        ({ name: tag, role, thumb, order: idx }) satisfies Actor,
+    ) ?? []
+  );
+}
+
+function plexWriterInject(items: Nilable<PlexJoinItem[]>): Writer[] {
+  return (
+    items?.map(({ tag, thumb }, idx) => ({ name: tag, thumb, order: idx })) ??
+    []
+  );
+}
+
+function plexDirectorInject(items: Nilable<PlexJoinItem[]>): Director[] {
+  return (
+    items?.map(({ tag, thumb }, idx) => ({ name: tag, thumb, order: idx })) ??
+    []
+  );
 }
 
 function emptyMediaItem(item: PlexTerminalMedia): Maybe<MediaItem> {

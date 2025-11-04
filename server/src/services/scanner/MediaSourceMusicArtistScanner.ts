@@ -96,11 +96,15 @@ export abstract class MediaSourceMusicArtistScanner<
       );
 
       const upsertResult = await Result.attemptAsync(() =>
-        this.programDB.upsertProgramGrouping(dao, {
-          externalKey: this.getEntityExternalKey(artist),
-          externalSourceId: mediaSource.uuid,
-          sourceType: this.mediaSourceType,
-        }),
+        this.programDB.upsertProgramGrouping(
+          dao,
+          {
+            externalKey: this.getEntityExternalKey(artist),
+            externalSourceId: mediaSource.uuid,
+            sourceType: this.mediaSourceType,
+          },
+          context.force,
+        ),
       );
 
       if (upsertResult.isFailure()) {
@@ -160,11 +164,15 @@ export abstract class MediaSourceMusicArtistScanner<
         dao.programGrouping.artistUuid = artist.uuid;
 
         const upsertResult = await Result.attemptAsync(() =>
-          this.programDB.upsertProgramGrouping(dao, {
-            externalKey: this.getEntityExternalKey(album),
-            externalSourceId: mediaSource.uuid,
-            sourceType: this.mediaSourceType,
-          }),
+          this.programDB.upsertProgramGrouping(
+            dao,
+            {
+              externalKey: this.getEntityExternalKey(album),
+              externalSourceId: mediaSource.uuid,
+              sourceType: this.mediaSourceType,
+            },
+            scanContext.force,
+          ),
         );
 
         if (upsertResult.isFailure()) {

@@ -1,6 +1,7 @@
 import type {
   Actor,
   Episode,
+  MediaArtwork,
   Movie,
   MusicAlbum,
   MusicArtist,
@@ -60,7 +61,16 @@ export class ApiProgramConverters {
       externalId: externalId ?? program.externalKey,
       sourceType: mediaSource.type,
       sortTitle: '',
-    };
+      artwork:
+        program.artwork?.map(
+          (art) =>
+            ({
+              id: art.uuid,
+              type: art.artworkType,
+              path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
+            }) satisfies MediaArtwork,
+        ) ?? [],
+    } satisfies Partial<TerminalProgram>;
 
     const identifiers = doc.externalIds.map((eid) => ({
       id: eid.id,
@@ -210,7 +220,16 @@ export class ApiProgramConverters {
         : null,
       externalId: externalId ?? grouping.externalKey ?? '',
       sourceType: mediaSource.type,
-    };
+      artwork:
+        grouping.artwork?.map(
+          (art) =>
+            ({
+              id: art.uuid,
+              type: art.artworkType,
+              path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
+            }) satisfies MediaArtwork,
+        ) ?? [],
+    } satisfies Partial<ProgramGrouping>;
 
     const result = match(doc)
       .returnType<ProgramGrouping>()

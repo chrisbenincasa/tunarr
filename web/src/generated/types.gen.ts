@@ -5981,16 +5981,34 @@ export type GetApiChannelsByIdScheduleResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -6227,16 +6245,34 @@ export type GetApiChannelsByIdScheduleResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -10056,20 +10092,43 @@ export type PostApiProgramsSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -10083,6 +10142,11 @@ export type PostApiProgramsSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -10163,20 +10227,43 @@ export type PostApiProgramsSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -10190,6 +10277,11 @@ export type PostApiProgramsSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             episodeNumber: number;
             summary: string | null;
             season?: {
@@ -10217,11 +10309,24 @@ export type PostApiProgramsSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 index: number;
                 year: number | null;
@@ -10252,16 +10357,34 @@ export type PostApiProgramsSearchResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -10294,11 +10417,24 @@ export type PostApiProgramsSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -10329,16 +10465,34 @@ export type PostApiProgramsSearchResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -10370,16 +10524,34 @@ export type PostApiProgramsSearchResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -10464,20 +10636,43 @@ export type PostApiProgramsSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -10491,6 +10686,11 @@ export type PostApiProgramsSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             trackNumber: number;
             album?: {
                 uuid: string;
@@ -10517,9 +10717,18 @@ export type PostApiProgramsSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 index?: number;
                 year: number | null;
                 artist?: {
@@ -10547,14 +10756,27 @@ export type PostApiProgramsSearchResponses = {
                     tagline: string | null;
                     genres?: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                 };
                 releaseDate: number | null;
                 releaseDateString: string | null;
                 studios?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
             };
         } | {
@@ -10582,9 +10804,18 @@ export type PostApiProgramsSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -10612,14 +10843,27 @@ export type PostApiProgramsSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         } | {
             uuid: string;
@@ -10646,9 +10890,18 @@ export type PostApiProgramsSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -10728,20 +10981,43 @@ export type PostApiProgramsSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -10755,6 +11031,11 @@ export type PostApiProgramsSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -10834,20 +11115,43 @@ export type PostApiProgramsSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -10861,6 +11165,11 @@ export type PostApiProgramsSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -11240,20 +11549,43 @@ export type GetApiProgramsByIdResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -11267,6 +11599,11 @@ export type GetApiProgramsByIdResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -11347,20 +11684,43 @@ export type GetApiProgramsByIdResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -11374,6 +11734,11 @@ export type GetApiProgramsByIdResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         episodeNumber: number;
         summary: string | null;
         season?: {
@@ -11401,11 +11766,24 @@ export type GetApiProgramsByIdResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -11436,16 +11814,34 @@ export type GetApiProgramsByIdResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -11532,20 +11928,43 @@ export type GetApiProgramsByIdResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -11559,6 +11978,11 @@ export type GetApiProgramsByIdResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         trackNumber: number;
         album?: {
             uuid: string;
@@ -11585,9 +12009,18 @@ export type GetApiProgramsByIdResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -11615,14 +12048,27 @@ export type GetApiProgramsByIdResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         };
     } | {
@@ -11704,20 +12150,43 @@ export type GetApiProgramsByIdResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -11731,6 +12200,11 @@ export type GetApiProgramsByIdResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     } | {
         uuid: string;
         canonicalId: string;
@@ -11810,20 +12284,43 @@ export type GetApiProgramsByIdResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -11837,6 +12334,11 @@ export type GetApiProgramsByIdResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     };
 };
 
@@ -11891,16 +12393,34 @@ export type GetApiProgramGroupingsByIdResponses = {
         tagline: string | null;
         genres: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         actors: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         studios: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         rating: string | null;
         releaseDate: number | null;
@@ -11931,11 +12451,24 @@ export type GetApiProgramGroupingsByIdResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         studios: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         index: number;
         year: number | null;
@@ -11966,16 +12499,34 @@ export type GetApiProgramGroupingsByIdResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -12007,9 +12558,18 @@ export type GetApiProgramGroupingsByIdResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     } | {
         uuid: string;
         canonicalId: string;
@@ -12035,9 +12595,18 @@ export type GetApiProgramGroupingsByIdResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         index?: number;
         year: number | null;
         artist?: {
@@ -12065,14 +12634,27 @@ export type GetApiProgramGroupingsByIdResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         };
         releaseDate: number | null;
         releaseDateString: string | null;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
     };
 };
@@ -16346,20 +16928,43 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -16373,6 +16978,11 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -16453,20 +17063,43 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -16480,6 +17113,11 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             episodeNumber: number;
             summary: string | null;
             season?: {
@@ -16507,11 +17145,24 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 index: number;
                 year: number | null;
@@ -16542,16 +17193,34 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -16584,11 +17253,24 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -16619,16 +17301,34 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -16660,16 +17360,34 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -16754,20 +17472,43 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -16781,6 +17522,11 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             trackNumber: number;
             album?: {
                 uuid: string;
@@ -16807,9 +17553,18 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 index?: number;
                 year: number | null;
                 artist?: {
@@ -16837,14 +17592,27 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     tagline: string | null;
                     genres?: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                 };
                 releaseDate: number | null;
                 releaseDateString: string | null;
                 studios?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
             };
         } | {
@@ -16872,9 +17640,18 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -16902,14 +17679,27 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         } | {
             uuid: string;
@@ -16936,9 +17726,18 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -17018,20 +17817,43 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -17045,6 +17867,11 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -17124,20 +17951,43 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -17151,6 +18001,11 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         }>;
         size: number;
         offset?: number;
@@ -17488,20 +18343,43 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -17515,6 +18393,11 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -17595,20 +18478,43 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -17622,6 +18528,11 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         episodeNumber: number;
         summary: string | null;
         season?: {
@@ -17649,11 +18560,24 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -17684,16 +18608,34 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -17726,11 +18668,24 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         studios: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         index: number;
         year: number | null;
@@ -17761,16 +18716,34 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -17802,16 +18775,34 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         tagline: string | null;
         genres: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         actors: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         studios: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         rating: string | null;
         releaseDate: number | null;
@@ -17896,20 +18887,43 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -17923,6 +18937,11 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         trackNumber: number;
         album?: {
             uuid: string;
@@ -17949,9 +18968,18 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -17979,14 +19007,27 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         };
     } | {
@@ -18014,9 +19055,18 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
         index?: number;
         year: number | null;
         artist?: {
@@ -18044,14 +19094,27 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         };
         releaseDate: number | null;
         releaseDateString: string | null;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
     } | {
         uuid: string;
@@ -18078,9 +19141,18 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         tagline: string | null;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         childCount?: number;
         grandchildCount?: number;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     } | {
         uuid: string;
         canonicalId: string;
@@ -18160,20 +19232,43 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -18187,6 +19282,11 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     } | {
         uuid: string;
         canonicalId: string;
@@ -18266,20 +19366,43 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         };
         actors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
             order?: number | null;
             role?: string | null;
+            thumb?: string | null;
         }>;
         writers?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         directors?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
         }>;
         genres?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         studios?: Array<{
             name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
         }>;
         duration: number;
         externalSubtitles?: Array<{
@@ -18293,6 +19416,11 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             language: string;
             path?: string | null;
         }> | null;
+        artwork: Array<{
+            id: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
     }) | ({
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         uuid: string;
@@ -18920,20 +20048,43 @@ export type GetJellyfinLibraryItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -18947,6 +20098,11 @@ export type GetJellyfinLibraryItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -19027,20 +20183,43 @@ export type GetJellyfinLibraryItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -19054,6 +20233,11 @@ export type GetJellyfinLibraryItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             episodeNumber: number;
             summary: string | null;
             season?: {
@@ -19081,11 +20265,24 @@ export type GetJellyfinLibraryItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 index: number;
                 year: number | null;
@@ -19116,16 +20313,34 @@ export type GetJellyfinLibraryItemsResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -19158,11 +20373,24 @@ export type GetJellyfinLibraryItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -19193,16 +20421,34 @@ export type GetJellyfinLibraryItemsResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -19234,16 +20480,34 @@ export type GetJellyfinLibraryItemsResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -19328,20 +20592,43 @@ export type GetJellyfinLibraryItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -19355,6 +20642,11 @@ export type GetJellyfinLibraryItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             trackNumber: number;
             album?: {
                 uuid: string;
@@ -19381,9 +20673,18 @@ export type GetJellyfinLibraryItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 index?: number;
                 year: number | null;
                 artist?: {
@@ -19411,14 +20712,27 @@ export type GetJellyfinLibraryItemsResponses = {
                     tagline: string | null;
                     genres?: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                 };
                 releaseDate: number | null;
                 releaseDateString: string | null;
                 studios?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
             };
         } | {
@@ -19446,9 +20760,18 @@ export type GetJellyfinLibraryItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -19476,14 +20799,27 @@ export type GetJellyfinLibraryItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         } | {
             uuid: string;
@@ -19510,9 +20846,18 @@ export type GetJellyfinLibraryItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -19592,20 +20937,43 @@ export type GetJellyfinLibraryItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -19619,6 +20987,11 @@ export type GetJellyfinLibraryItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -19698,20 +21071,43 @@ export type GetJellyfinLibraryItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -19725,6 +21121,11 @@ export type GetJellyfinLibraryItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -20032,20 +21433,43 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -20059,6 +21483,11 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -20139,20 +21568,43 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -20166,6 +21618,11 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             episodeNumber: number;
             summary: string | null;
             season?: {
@@ -20193,11 +21650,24 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 index: number;
                 year: number | null;
@@ -20228,16 +21698,34 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     tagline: string | null;
                     genres: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                     actors: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                         order?: number | null;
                         role?: string | null;
+                        thumb?: string | null;
                     }>;
                     studios: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     rating: string | null;
                     releaseDate: number | null;
@@ -20270,11 +21758,24 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             index: number;
             year: number | null;
@@ -20305,16 +21806,34 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 tagline: string | null;
                 genres: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 actors: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                     order?: number | null;
                     role?: string | null;
+                    thumb?: string | null;
                 }>;
                 studios: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 rating: string | null;
                 releaseDate: number | null;
@@ -20346,16 +21865,34 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             tagline: string | null;
             genres: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             actors: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             studios: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             rating: string | null;
             releaseDate: number | null;
@@ -20440,20 +21977,43 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -20467,6 +22027,11 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             trackNumber: number;
             album?: {
                 uuid: string;
@@ -20493,9 +22058,18 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
                 index?: number;
                 year: number | null;
                 artist?: {
@@ -20523,14 +22097,27 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     tagline: string | null;
                     genres?: Array<{
                         name: string;
+                        externalInfo?: {
+                            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                            id: string;
+                        } | null;
                     }>;
                     childCount?: number;
                     grandchildCount?: number;
+                    artwork: Array<{
+                        id: string;
+                        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                        path?: string | null;
+                    }>;
                 };
                 releaseDate: number | null;
                 releaseDateString: string | null;
                 studios?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
             };
         } | {
@@ -20558,9 +22145,18 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
             index?: number;
             year: number | null;
             artist?: {
@@ -20588,14 +22184,27 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 tagline: string | null;
                 genres?: Array<{
                     name: string;
+                    externalInfo?: {
+                        source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                        id: string;
+                    } | null;
                 }>;
                 childCount?: number;
                 grandchildCount?: number;
+                artwork: Array<{
+                    id: string;
+                    type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                    path?: string | null;
+                }>;
             };
             releaseDate: number | null;
             releaseDateString: string | null;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
         } | {
             uuid: string;
@@ -20622,9 +22231,18 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             tagline: string | null;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             childCount?: number;
             grandchildCount?: number;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -20704,20 +22322,43 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -20731,6 +22372,11 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         } | {
             uuid: string;
             canonicalId: string;
@@ -20810,20 +22456,43 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             };
             actors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
                 order?: number | null;
                 role?: string | null;
+                thumb?: string | null;
             }>;
             writers?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             directors?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
             }>;
             genres?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             studios?: Array<{
                 name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
             }>;
             duration: number;
             externalSubtitles?: Array<{
@@ -20837,6 +22506,11 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 language: string;
                 path?: string | null;
             }> | null;
+            artwork: Array<{
+                id: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;

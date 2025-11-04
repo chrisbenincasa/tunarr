@@ -11,7 +11,15 @@ import {
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
-import type { Folder, Library, MediaChapter, NamedEntity } from '@tunarr/types';
+import type {
+  Actor,
+  Director,
+  Folder,
+  Library,
+  MediaArtwork,
+  MediaChapter,
+  Writer,
+} from '@tunarr/types';
 import type { MediaSourceStatus, PagedResult } from '@tunarr/types/api';
 import type {
   JellyfinItem as ApiJellyfinItem,
@@ -31,6 +39,7 @@ import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import {
+  compact,
   every,
   find,
   floor,
@@ -50,6 +59,7 @@ import {
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
@@ -944,7 +954,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
-    const people = getJellyfinItemPersonMap(movie);
+    const people = getJellyfinItemPersonMap(
+      movie,
+      this.options.mediaSource.uri,
+    );
     const parsedReleaseDate = isNonEmptyString(movie.PremiereDate)
       ? attemptSync(() => dayjs(movie.PremiereDate))
       : null;
@@ -1002,6 +1015,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: movie.RunTimeTicks / 10_000,
       externalId: movie.Id,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', movie, 'Primary'),
+        this.jellyfinArtworkProjection('banner', movie, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', movie, 'Thumb'),
+      ]),
     };
   }
 
@@ -1151,7 +1169,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
-    const people = getJellyfinItemPersonMap(series);
+    const people = getJellyfinItemPersonMap(
+      series,
+      this.options.mediaSource.uri,
+    );
 
     const parsedReleaseDate = isNonEmptyString(series.PremiereDate)
       ? attemptSync(() => dayjs(series.PremiereDate))
@@ -1198,6 +1219,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       externalLibraryId: '',
       childCount: series.ChildCount ?? undefined,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', series, 'Primary'),
+        this.jellyfinArtworkProjection('banner', series, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', series, 'Thumb'),
+      ]),
     };
   }
 
@@ -1250,6 +1276,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         season.IndexNumber ?? getSeasonNumberFromPath(season.Path ?? '') ?? 0,
       externalLibraryId: '',
       childCount: season.ChildCount ?? undefined,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', season, 'Primary'),
+        this.jellyfinArtworkProjection('banner', season, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', season, 'Thumb'),
+      ]),
     };
   }
 
@@ -1264,7 +1295,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
-    const people = getJellyfinItemPersonMap(episode);
+    const people = getJellyfinItemPersonMap(
+      episode,
+      this.options.mediaSource.uri,
+    );
     const parsedReleaseDate = isNonEmptyString(episode.PremiereDate)
       ? attemptSync(() => dayjs(episode.PremiereDate))
       : null;
@@ -1323,6 +1357,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       duration: episode.RunTimeTicks / 10_000,
       externalLibraryId: '',
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', episode, 'Primary'),
+        this.jellyfinArtworkProjection('banner', episode, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', episode, 'Thumb'),
+      ]),
     };
   }
 
@@ -1351,6 +1390,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       childCount: artist.ChildCount ?? undefined,
       externalId: artist.Id,
       sortTitle: titleToSortTitle(artist.Name ?? ''),
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', artist, 'Primary'),
+        this.jellyfinArtworkProjection('banner', artist, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', artist, 'Thumb'),
+      ]),
     } satisfies JellyfinMusicArtist;
   }
 
@@ -1392,6 +1436,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: album.ChildCount ?? undefined,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', album, 'Primary'),
+        this.jellyfinArtworkProjection('banner', album, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', album, 'Thumb'),
+      ]),
     };
   }
 
@@ -1448,6 +1497,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       externalLibraryId: '',
       releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', track, 'Primary'),
+        this.jellyfinArtworkProjection('banner', track, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', track, 'Thumb'),
+      ]),
     } satisfies JellyfinMusicTrack;
   }
 
@@ -1462,7 +1516,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
-    const people = getJellyfinItemPersonMap(video);
+    const people = getJellyfinItemPersonMap(
+      video,
+      this.options.mediaSource.uri,
+    );
     const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
       ? attemptSync(() => dayjs(video.PremiereDate))
       : null;
@@ -1520,6 +1577,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', video, 'Primary'),
+        this.jellyfinArtworkProjection('banner', video, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', video, 'Thumb'),
+      ]),
     };
   }
 
@@ -1534,7 +1596,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
-    const people = getJellyfinItemPersonMap(video);
+    const people = getJellyfinItemPersonMap(
+      video,
+      this.options.mediaSource.uri,
+    );
     const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
       ? attemptSync(() => dayjs(video.PremiereDate))
       : null;
@@ -1592,30 +1657,87 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
+      artwork: compact([
+        this.jellyfinArtworkProjection('poster', video, 'Primary'),
+        this.jellyfinArtworkProjection('banner', video, 'Banner'),
+        this.jellyfinArtworkProjection('thumbnail', video, 'Thumb'),
+      ]),
+    };
+  }
+
+  private jellyfinArtworkProjection(
+    artworkType: ArtworkType,
+    item: ApiJellyfinItem,
+    jfArtworkType: string,
+  ): Maybe<MediaArtwork> {
+    if (isEmpty(item.ImageTags?.[jfArtworkType])) {
+      return;
+    }
+
+    const url = new URL(
+      `/Items/${item.Id}/Images/${jfArtworkType}`,
+      this.options.mediaSource.uri,
+    ).href;
+    return {
+      id: v4(),
+      type: artworkType,
+      path: url,
     };
   }
 }
 
-type JellyfinApiPersonType = 'Actor' | 'Writer' | 'Director';
-type LowercasedPersonType = Lowercase<JellyfinApiPersonType>;
-type PersonMapping = Partial<
-  Record<LowercasedPersonType, (NamedEntity & { role?: string })[]>
->;
+type PersonMapping = Partial<{
+  actor: Actor[];
+  writer: Writer[];
+  director: Director[];
+}>;
 
-function getJellyfinItemPersonMap(item: ApiJellyfinItem): PersonMapping {
+function getJellyfinItemPersonMap(
+  item: ApiJellyfinItem,
+  mediaSourceUrl: string,
+): PersonMapping {
   const mapping: PersonMapping = {};
   forEach(
     groupBy(item.People, (p) => p.Type?.toLowerCase()),
     (people, key) => {
       switch (key) {
         case 'actor':
+          mapping[key] = people.map(
+            (person, idx) =>
+              ({
+                name: person.Name,
+                role: person.Role ?? undefined,
+                thumb: new URL(
+                  `/Items/${person.Id}/Images/Primary`,
+                  mediaSourceUrl,
+                ).href,
+                order: idx,
+              }) satisfies Actor,
+          );
+          break;
         case 'writer':
+          mapping[key] = people.map(
+            (person) =>
+              ({
+                name: person.Name,
+                thumb: new URL(
+                  `/Items/${person.Id}/Images/Primary`,
+                  mediaSourceUrl,
+                ).href,
+              }) satisfies Writer,
+          );
+          break;
         case 'director': {
-          mapping[key] = people.map((person) => ({
-            name: person.Name,
-            role: person.Role ?? undefined,
-            externalId: person.Id,
-          }));
+          mapping[key] = people.map(
+            (person) =>
+              ({
+                name: person.Name,
+                thumb: new URL(
+                  `/Items/${person.Id}/Images/Primary`,
+                  mediaSourceUrl,
+                ).href,
+              }) satisfies Director,
+          );
           return;
         }
         default:

@@ -196,7 +196,19 @@ export class ProgramGroupingMinter {
         show.identifiers,
         +now,
       ),
-      artwork: [],
+      artwork: show.artwork
+        .filter((art) => isNonEmptyString(art.path))
+        .map(
+          (art) =>
+            ({
+              uuid: v4(),
+              groupingId,
+              artworkType: art.type,
+              createdAt: now.toDate(),
+              updatedAt: now.toDate(),
+              sourcePath: art.path!,
+            }) satisfies NewArtwork,
+        ),
       credits: show.actors.map((actor) =>
         this.mintCreditForActor(actor, groupingId, +now),
       ),
@@ -269,7 +281,19 @@ export class ProgramGroupingMinter {
         artist.identifiers,
         now,
       ),
-      artwork: [],
+      artwork: artist.artwork
+        .filter((art) => isNonEmptyString(art.path))
+        .map(
+          (art) =>
+            ({
+              uuid: v4(),
+              groupingId,
+              artworkType: art.type,
+              createdAt: new Date(now),
+              updatedAt: new Date(now),
+              sourcePath: art.path!,
+            }) satisfies NewArtwork,
+        ),
       credits: [],
     };
   }
@@ -304,7 +328,19 @@ export class ProgramGroupingMinter {
         season.identifiers,
         now,
       ),
-      artwork: [],
+      artwork: season.artwork
+        .filter((art) => isNonEmptyString(art.path))
+        .map(
+          (art) =>
+            ({
+              uuid: v4(),
+              groupingId,
+              artworkType: art.type,
+              createdAt: new Date(now),
+              updatedAt: new Date(now),
+              sourcePath: art.path!,
+            }) satisfies NewArtwork,
+        ),
       credits: [],
     };
   }
@@ -337,7 +373,19 @@ export class ProgramGroupingMinter {
         album.identifiers,
         now,
       ),
-      artwork: [],
+      artwork: album.artwork
+        .filter((art) => isNonEmptyString(art.path))
+        .map(
+          (art) =>
+            ({
+              uuid: v4(),
+              groupingId,
+              artworkType: art.type,
+              createdAt: new Date(now),
+              updatedAt: new Date(now),
+              sourcePath: art.path!,
+            }) satisfies NewArtwork,
+        ),
       credits: [],
     };
   }

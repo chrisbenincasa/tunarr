@@ -10,7 +10,14 @@ import {
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { seq } from '@tunarr/shared/util';
-import type { Folder, Library, NamedEntity } from '@tunarr/types';
+import type {
+  Actor,
+  Director,
+  Folder,
+  Library,
+  MediaArtwork,
+  Writer,
+} from '@tunarr/types';
 import type { MediaSourceStatus } from '@tunarr/types/api';
 import type { EmbyLibrary, EmbyMediaSourceInfo } from '@tunarr/types/emby';
 import {
@@ -28,6 +35,7 @@ import type { AxiosRequestConfig } from 'axios';
 import axios, { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import {
+  compact,
   find,
   forEach,
   groupBy,
@@ -46,6 +54,7 @@ import { type NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { z } from 'zod/v4';
+import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
@@ -877,7 +886,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
-    const people = getEmbyItemPersonMap(movie);
+    const people = getEmbyItemPersonMap(movie, this.options.mediaSource.uri);
     const parsedReleaseDate = isNonEmptyString(movie.PremiereDate)
       ? attemptSync(() => dayjs(movie.PremiereDate))
       : null;
@@ -935,6 +944,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: movie.RunTimeTicks / 10_000,
       externalId: movie.Id,
+      artwork: compact([
+        this.embyArtworkProjection('poster', movie, 'Primary'),
+        this.embyArtworkProjection('banner', movie, 'Banner'),
+        this.embyArtworkProjection('thumbnail', movie, 'Thumb'),
+      ]),
     };
   }
 
@@ -1053,7 +1067,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
-    const people = getEmbyItemPersonMap(series);
+    const people = getEmbyItemPersonMap(series, this.options.mediaSource.uri);
 
     const parsedReleaseDate = isNonEmptyString(series.PremiereDate)
       ? attemptSync(() => dayjs(series.PremiereDate))
@@ -1100,6 +1114,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       externalLibraryId: '',
       childCount: series.ChildCount ?? undefined,
+      artwork: compact([
+        this.embyArtworkProjection('poster', series, 'Primary'),
+        this.embyArtworkProjection('banner', series, 'Banner'),
+        this.embyArtworkProjection('thumbnail', series, 'Thumb'),
+      ]),
     };
   }
 
@@ -1150,6 +1169,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         season.IndexNumber ?? getSeasonNumberFromPath(season.Path ?? '') ?? 0,
       externalLibraryId: '',
       childCount: season.ChildCount ?? undefined,
+      artwork: compact([
+        this.embyArtworkProjection('poster', season, 'Primary'),
+        this.embyArtworkProjection('banner', season, 'Banner'),
+        this.embyArtworkProjection('thumbnail', season, 'Thumb'),
+      ]),
     };
   }
 
@@ -1164,7 +1188,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
-    const people = getEmbyItemPersonMap(episode);
+    const people = getEmbyItemPersonMap(episode, this.options.mediaSource.uri);
     const parsedReleaseDate = isNonEmptyString(episode.PremiereDate)
       ? attemptSync(() => dayjs(episode.PremiereDate))
       : null;
@@ -1223,6 +1247,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       duration: episode.RunTimeTicks / 10_000,
       externalLibraryId: '',
+      artwork: compact([
+        this.embyArtworkProjection('poster', episode, 'Primary'),
+        this.embyArtworkProjection('banner', episode, 'Banner'),
+        this.embyArtworkProjection('thumbnail', episode, 'Thumb'),
+      ]),
     };
   }
 
@@ -1251,6 +1280,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: artist.ChildCount ?? undefined,
       externalId: artist.Id,
+      artwork: compact([
+        this.embyArtworkProjection('poster', artist, 'Primary'),
+        this.embyArtworkProjection('banner', artist, 'Banner'),
+        this.embyArtworkProjection('thumbnail', artist, 'Thumb'),
+      ]),
     } satisfies EmbyMusicArtist;
   }
 
@@ -1290,6 +1324,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: album.ChildCount ?? undefined,
+      artwork: compact([
+        this.embyArtworkProjection('poster', album, 'Primary'),
+        this.embyArtworkProjection('banner', album, 'Banner'),
+        this.embyArtworkProjection('thumbnail', album, 'Thumb'),
+      ]),
     };
   }
 
@@ -1346,6 +1385,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       externalLibraryId: '',
       releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
+      artwork: compact([
+        this.embyArtworkProjection('poster', track, 'Primary'),
+        this.embyArtworkProjection('banner', track, 'Banner'),
+        this.embyArtworkProjection('thumbnail', track, 'Thumb'),
+      ]),
     } satisfies EmbyMusicTrack;
   }
 
@@ -1357,7 +1401,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
-    const people = getEmbyItemPersonMap(video);
+    const people = getEmbyItemPersonMap(video, this.options.mediaSource.uri);
     const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
       ? attemptSync(() => dayjs(video.PremiereDate))
       : null;
@@ -1415,6 +1459,11 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
+      artwork: compact([
+        this.embyArtworkProjection('poster', video, 'Primary'),
+        this.embyArtworkProjection('banner', video, 'Banner'),
+        this.embyArtworkProjection('thumbnail', video, 'Thumb'),
+      ]),
     };
   }
 
@@ -1426,7 +1475,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
-    const people = getEmbyItemPersonMap(video);
+    const people = getEmbyItemPersonMap(video, this.options.mediaSource.uri);
     const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
       ? attemptSync(() => dayjs(video.PremiereDate))
       : null;
@@ -1484,35 +1533,90 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
+      artwork: compact([
+        this.embyArtworkProjection('poster', video, 'Primary'),
+        this.embyArtworkProjection('banner', video, 'Banner'),
+        this.embyArtworkProjection('thumbnail', video, 'Thumb'),
+      ]),
+    };
+  }
+
+  private embyArtworkProjection(
+    artworkType: ArtworkType,
+    item: ApiEmbyItem,
+    embyArtworkType: string,
+  ): Maybe<MediaArtwork> {
+    if (isEmpty(item.ImageTags?.[embyArtworkType])) {
+      return;
+    }
+
+    const url = new URL(
+      `/Items/${item.Id}/Images/${embyArtworkType}`,
+      this.options.mediaSource.uri,
+    ).href;
+    return {
+      id: v4(),
+      type: artworkType,
+      path: url,
     };
   }
 }
 
-type EmbyApiPersonType = 'Actor' | 'Writer' | 'Director';
-type LowercasedPersonType = Lowercase<EmbyApiPersonType>;
-type PersonMapping = Partial<
-  Record<LowercasedPersonType, (NamedEntity & { role?: string })[]>
->;
+type PersonMapping = Partial<{
+  actor: Actor[];
+  writer: Writer[];
+  director: Director[];
+}>;
 
-function getEmbyItemPersonMap(item: ApiEmbyItem): PersonMapping {
+function getEmbyItemPersonMap(
+  item: ApiEmbyItem,
+  mediaSourceUrl: string,
+): PersonMapping {
   const mapping: PersonMapping = {};
   forEach(
     groupBy(item.People, (p) => p.Type?.toLowerCase()),
     (people, key) => {
       switch (key) {
         case 'actor':
+          mapping[key] = seq.collect(people, (person, idx) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  role: person.Role ?? undefined,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                  order: idx,
+                } satisfies Actor)
+              : null,
+          );
+          break;
         case 'writer':
+          mapping[key] = seq.collect(people, (person) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                } satisfies Writer)
+              : null,
+          );
+          break;
         case 'director': {
-          mapping[key] = seq.collect(people, (person) => {
-            if (!isNonEmptyString(person.Name)) {
-              return;
-            }
-            return {
-              name: person.Name,
-              role: person.Role ?? undefined,
-              externalId: person.Id,
-            };
-          });
+          mapping[key] = seq.collect(people, (person) =>
+            isNonEmptyString(person.Name)
+              ? ({
+                  name: person.Name,
+                  thumb: new URL(
+                    `/Items/${person.Id}/Images/Primary`,
+                    mediaSourceUrl,
+                  ).href,
+                } satisfies Director)
+              : null,
+          );
           return;
         }
         default:
@@ -1522,7 +1626,6 @@ function getEmbyItemPersonMap(item: ApiEmbyItem): PersonMapping {
   );
   return mapping;
 }
-
 function collectEmbyItemIdentifiers(
   item: ApiEmbyItem,
   serverId: string,
