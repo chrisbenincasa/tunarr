@@ -14,6 +14,7 @@ import type {
   ItemOrFolder,
   ItemSchema,
   Library,
+  MediaArtwork,
   MediaChapter,
   MediaItem,
   MediaStream,
@@ -150,6 +151,7 @@ export type Director = z.infer<typeof Director>;
 export type Studio = z.infer<typeof Studio>;
 export type Genre = z.infer<typeof Genre>;
 export type NamedEntity = z.infer<typeof NamedEntity>;
+export type MediaArtwork = z.infer<typeof MediaArtwork>;
 
 // Specific types
 export type Movie = z.infer<typeof Movie>;

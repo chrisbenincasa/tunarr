@@ -14,8 +14,10 @@ import {
   ExternalId,
   FlexProgram,
   Identifier,
+  MediaArtwork,
   MediaItem,
   MediaStream,
+  Movie,
   MusicAlbumContentProgram,
   MusicArtistContentProgram,
   RedirectProgram,
@@ -138,10 +140,16 @@ export class ProgramConverter {
     }
 
     const base = {
-      ...program,
+      rating: program.rating,
+      summary: program.summary,
+      title: program.title,
+      year: program.year,
+      duration: program.duration,
+      uuid: program.uuid,
+      sourceType: program.sourceType,
       sortTitle: titleToSortTitle(program.title),
       type: program.type,
-      mediaSourceId: untag(program.mediaSourceId),
+      mediaSourceId: untag(program.mediaSourceId)!,
       canonicalId: program.canonicalId,
       libraryId: program.libraryId,
       externalId: program.externalKey,
@@ -172,28 +180,40 @@ export class ProgramConverter {
             role: credit.role,
           }) satisfies Actor,
       ),
-    };
+      artwork:
+        program.artwork?.map(
+          (art) =>
+            ({
+              id: art.uuid,
+              type: art.artworkType,
+            }) satisfies MediaArtwork,
+        ) ?? [],
+    } satisfies Partial<TerminalProgram>;
 
     const typed = match(program)
       .returnType<TerminalProgram>()
-      .with({ type: 'movie' }, (movie) => ({
-        ...base,
-        type: 'movie',
-        plot: movie.summary,
-        tagline: null,
-        writers:
-          program.credits
-            ?.filter((c) => c.type === 'writer')
-            .map((writer) => ({
-              name: writer.name,
-            })) ?? [],
-        directors:
-          program.credits
-            ?.filter((c) => c.type === 'director')
-            .map((director) => ({
-              name: director.name,
-            })) ?? [],
-      }))
+      .with(
+        { type: 'movie' },
+        (movie) =>
+          ({
+            ...base,
+            type: 'movie',
+            plot: movie.summary,
+            tagline: null,
+            writers:
+              program.credits
+                ?.filter((c) => c.type === 'writer')
+                .map((writer) => ({
+                  name: writer.name,
+                })) ?? [],
+            directors:
+              program.credits
+                ?.filter((c) => c.type === 'director')
+                .map((director) => ({
+                  name: director.name,
+                })) ?? [],
+          }) satisfies Movie,
+      )
       .with(
         { type: 'episode' },
         (episode) =>

@@ -1656,6 +1656,24 @@ export class ProgramDB implements IProgramDB {
           );
         });
 
+        newGroupingAndRelations.credits.forEach((credit) => {
+          credit.credit.groupingId = existing.uuid;
+        });
+
+        newGroupingAndRelations.artwork.forEach((artwork) => {
+          artwork.groupingId = existing.uuid;
+        });
+
+        await this.upsertCredits(
+          newGroupingAndRelations.credits.map(({ credit }) => credit),
+        );
+
+        await this.upsertArtwork(
+          newGroupingAndRelations.artwork.concat(
+            newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
+          ),
+        );
+
         wasUpdated = true;
       }
 
@@ -1666,7 +1684,7 @@ export class ProgramDB implements IProgramDB {
       };
     }
 
-    return await this.db.transaction().execute(async (tx) => {
+    const inserted = await this.db.transaction().execute(async (tx) => {
       const grouping = await tx
         .insertInto('programGrouping')
         .values(omit(dao, 'externalIds'))
@@ -1695,6 +1713,25 @@ export class ProgramDB implements IProgramDB {
         } satisfies ProgramGroupingWithExternalIds,
       };
     });
+
+    newGroupingAndRelations.credits.forEach((credit) => {
+      credit.credit.groupingId = inserted.entity.uuid;
+    });
+
+    newGroupingAndRelations.artwork.forEach((artwork) => {
+      artwork.groupingId = inserted.entity.uuid;
+    });
+
+    await this.upsertCredits(
+      newGroupingAndRelations.credits.map(({ credit }) => credit),
+    );
+    await this.upsertArtwork(
+      newGroupingAndRelations.artwork.concat(
+        newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
+      ),
+    );
+
+    return inserted;
   }
 
   async upsertLocalProgramGrouping(

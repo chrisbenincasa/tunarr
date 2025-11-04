@@ -677,6 +677,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       year: releaseDate?.year() ?? null,
       childCount: undefined,
       grandchildCount: undefined,
+      artwork: [], // Added later
     };
   }
 
@@ -709,6 +710,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
         type: 'episode',
         uuid: v4(),
         year: null,
+        artwork: [],
       });
     }
 
@@ -758,6 +760,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
             actors: mapNfoActors(episode.actor),
             directors: mapNfoToNamedEntity(episode.director),
             writers: mapNfoToNamedEntity(episode.credits),
+            artwork: [], // Added later
           } satisfies EpisodeMetadata;
         })
     );
@@ -962,6 +965,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       // mediaSourceId: '',
       childCount: episodeFileCount,
       show,
+      artwork: [], // Added later
     };
   }
 }

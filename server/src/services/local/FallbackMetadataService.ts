@@ -32,6 +32,7 @@ export class FallbackMetadataService {
       type: 'show',
       uuid: v4(),
       year: null,
+      artwork: [],
     };
     return metadata;
   }
@@ -54,6 +55,7 @@ export class FallbackMetadataService {
       plot: null,
       rating: null,
       tagline: null,
+      artwork: [],
     };
 
     const filename = basename(movieFilePath);
