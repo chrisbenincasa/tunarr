@@ -324,7 +324,12 @@ export class MeilisearchService implements ISearchService {
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,
-  ) {}
+  ) {
+    // this.indexBatcher = new DataLoader(x => {
+    //   x
+    // }, {
+    // })
+  }
 
   getPort() {
     return this.port;
@@ -389,8 +394,6 @@ export class MeilisearchService implements ISearchService {
           '--db-path',
           `${this.dbPath}`,
           '--no-analytics',
-          '--log-level',
-          'trace',
         ];
 
         const indexingRamSetting =
@@ -399,6 +402,13 @@ export class MeilisearchService implements ISearchService {
             .maxIndexingMemory;
         if (indexingRamSetting) {
           args.push('--max-indexing-memory', `${indexingRamSetting}`);
+        }
+
+        const indexingMaxThreads = getNumericEnvVar(
+          TUNARR_ENV_VARS.SEARCH_MAX_INDEXING_THREADS,
+        );
+        if (indexingMaxThreads) {
+          args.push('--max-indexing-threads', indexingMaxThreads.toString());
         }
 
         args.push(
