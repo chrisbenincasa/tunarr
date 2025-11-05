@@ -20,15 +20,11 @@ Click the "Add" button, followed by your source. For Plex, you can choose Auto t
 
 ### FFMPEG
 
-Tunarr also requires [FFmpeg](https://ffmpeg.org/). FFmpeg is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFmpeg executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFmpeg settings page. The minimum known supported version of FFmpeg is 6.1. The recommended version is at least 7.0.
+Tunarr also requires [FFmpeg](https://ffmpeg.org/). FFmpeg is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFmpeg executable at `/usr/bin/ffmpeg`. If no executable is found, you can change the path in the FFmpeg settings page. The minimum known supported version of FFmpeg is 6.1. The recommended version is 7.1.1.
 
 Please note that FFmpeg is provided in Tunarr Docker images, so Docker users should not need to make any adjustments to this page.
 
 ![Welcome Page With FFMPEG](../assets/welcome_page_ffmpeg_installed.png)
-
-!!! info
-
-    In order to set the FFmpeg path, Tunarr must be run in "admin mode". Please see the [Security](/configure/system/security) page for more details on how to run Tunarr in admin mode and why this is necessary.
 
 Click "FINISH" and you will be brought to the new channel page to [create your first channel](/configure/channels/properties).
 

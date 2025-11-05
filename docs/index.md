@@ -13,7 +13,6 @@ Tunarr was originally a fork of [**dizqueTV**](https://github.com/vexorian/dizqu
 Tunarr has the following goals:
 
 - Modernize the stack, both backend and frontend
-- Provide an [migration path](getting-started/setup.md#migrating-from-dizquetv) for existing users
-- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on Node 20.11.1, which offers [non-trivial performance improvements](https://blog.rafaelgss.dev/state-of-nodejs-performance-2023) over previous versions)
+- Stabilize the program, fix bugs, and improve performance (Tunarr currently is developed and tested on Node 22.13.1, which offers [non-trivial performance improvements](https://blog.rafaelgss.dev/state-of-nodejs-performance-2023) over previous versions)
 - Modernize and "prettify" the Web UI
 - And of course, **Add a ton great new features!**
