@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Scalar API Reference</title>
+    <title>Tunarr API Reference</title>
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -9,9 +9,30 @@
   </head>
   <body>
     <!-- Need a Custom Header? Check out this example https://codepen.io/scalarorg/pen/VwOXqam -->
-    <script
+     <div id="app"></div>
+    <!-- <script
       id="api-reference"
-      data-url="/generated/tunarr-latest-openapi.json"></script>
+      data-url="/generated/tunarr-latest-openapi.json"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script> 
+      Scalar.createApiReference('#app', {
+        theme: "default",
+        // favicon: 'assets/favicon.png',
+        hideClientButton: true,
+
+        sources: [
+          {
+            title: 'Latest',
+            slug: 'latest',
+            url: '/generated/tunarr-latest-openapi.json'
+          },
+          {
+            title: 'Alpha',
+            slug: 'alpha',
+            url: '/generated/tunarr-v0.23.0-alpha.20-openapi.json'
+          }
+        ],
+      })
+    </script>
   </body>
 </html>
