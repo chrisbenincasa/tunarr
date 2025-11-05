@@ -21,8 +21,9 @@ import {
   Typography,
 } from '@mui/material';
 import { isNonEmptyString, prettifySnakeCaseString } from '@tunarr/shared/util';
-import type { LocalMediaSource } from '@tunarr/types';
-import { MediaSourceContentType } from '@tunarr/types/schemas';
+import type { MediaSourceContentType } from '@tunarr/types';
+import { type LocalMediaSource } from '@tunarr/types';
+import { MediaSourceContentType as MediaSourceContentTypeSchema } from '@tunarr/types/schemas';
 import { useDebounce } from '@uidotdev/usehooks';
 import { isEmpty, isUndefined } from 'lodash-es';
 import { useSnackbar } from 'notistack';
@@ -47,6 +48,11 @@ type LocalMediaSourceForm = MarkOptional<
   StrictOmit<LocalMediaSource, 'libraries'>,
   'id'
 >;
+
+const supportedLocalLibraryTypes: MediaSourceContentType[] = [
+  'movies',
+  'shows',
+];
 
 const emptyDefaults = () =>
   ({
@@ -242,11 +248,13 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
                 <FormControl fullWidth>
                   <InputLabel>Media Type</InputLabel>
                   <Select label="Media Type" {...field} error={!!error}>
-                    {Object.values(MediaSourceContentType.enum).map((type) => (
-                      <MenuItem value={type} key={type}>
-                        {prettifySnakeCaseString(type)}
-                      </MenuItem>
-                    ))}
+                    {Object.values(MediaSourceContentTypeSchema.enum)
+                      .filter((val) => supportedLocalLibraryTypes.includes(val))
+                      .map((type) => (
+                        <MenuItem value={type} key={type}>
+                          {prettifySnakeCaseString(type)}
+                        </MenuItem>
+                      ))}
                   </Select>
                   <FormHelperText>
                     The type of media in the provided paths{' '}
