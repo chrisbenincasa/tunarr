@@ -32,24 +32,4 @@ By default, your shows are ordered alphabetically (by show name) and episodes wi
 
 ![Media added](/assets/programming-mediaadded.png)
 
-To make the viewing experience more interesting and authentic, you will want to use Tunarr's [scheduling tools](../scheduling-tools/) to reorder and group content.
-
-If we instead wanted this similar to what we'd see on traditional television, select "SORT" and choose either Block Shuffle or Cyclic Shuffle. 
-
-![Shuffle](/assets/programming-shuffle.png)
-
-Block Shuffle will play a specific number of episodes from a show, proceed to the next show, play that same number of episodes, proceed to the next show, etc. 
-
-By default, when a show completes airing, it will be absent from your schedule until all of the remaining shows complete airing, where the schedule will then be repeated. This means that as you reach the end of your schedule, it may be dominated by one or two shows that have a longer runtime or more episodes than others.
-
-To get around this, select "Make perfect schedule loop". This will attempt to have all shows complete airing at the same time.
-
-![Block shuffle](/assets/programming-blockshuffle.png)
-
-Please note the perfect schedule loop option does not currently support larger channels. If you see the below error, your channel has too many episodes to use this feature. In this case, the "Loop Short Programs" option can be used.
-
-![Block shuffle loop error](/assets/programming-blockshuffle-noloop.png)
-
-Cyclic Shuffle will alternate between shows while attempting to preserve the episode sequence. So in this example, it will play S00E01 from show 1, then play S00E01-E02 from show 2, then S01E01-E02 from show 1, then S01E01 from show 2, etc. Compared to Block Schedule, Cyclic Shuffle is randomized, so it will not always display the same number of episodes from a show. Cyclic Shuffle also does not support any features to create even blocks, so the end of your schedule will likely be dominated by a few shows with larger episode counts and runtime. 
-
-Once you have a channel created with programming, you are ready to setup your [Client](/configure/clients) and start using Tunarr!
+To make the viewing experience more interesting and authentic, you will want to use Tunarr's [scheduling tools](../scheduling/) to reorder and group content.

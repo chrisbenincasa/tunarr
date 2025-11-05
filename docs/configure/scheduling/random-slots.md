@@ -4,13 +4,13 @@ Slots Editor allows you to schedule programming in "slots". This tool is powerfu
 
 To use Slots Editor for your channel programming, select "TOOLS", then "Slots Editor".
 
-![Slots Editor](/assets/scheduling-tools-random_slots.png)
+![Slots Editor](../../assets/scheduling-tools-random_slots.png)
 
 ## Slot Configuration
 
 Each slot is configured with a few parameters.
 
-![Add/Edit Slot Dialog](/assets/slot-editor-dialog.png)
+![Add/Edit Slot Dialog](../../assets/slot-editor-dialog.png)
 
 When creating a programming slot, you choose between "Fixed" and "Dynamic" length.
 
@@ -68,21 +68,21 @@ This is an implementation of the original "cyclic shuffle" dizqueTV programming 
 
 In this example, we want "30 Rock and "Arrested Development" to air in 30 minute blocks. We have Pad Times set to 00:00 and 00:30, so the episodes will always try to air right at those times by using [Flex](/configure/channels/flex) to fill the empty time. 
 
-![Random Slots example](/assets/scheduling-tools-random_slots_example.png)
+![Random Slots example](../../assets/scheduling-tools-random_slots_example.png)
 
 Below is a generated schedule with this configuration. A few things to note:
 
 * 
 
 <figure markdown="span">
-  ![Random Slots preview](/assets/scheduling-tools-random_slots_preview.png)
+  ![Random Slots preview](../../assets/scheduling-tools-random_slots_preview.png)
   <figcaption>Example generated schedule</figcaption>
 </figure>
 
 In this example, one of our shows has far more episodes than the other but by default the episode Distribution is Uniform so the shows will be ordered with equal priority. If we instead wanted "Yu-Gi-Oh! Duel Monsters" to air 70% of the time, and "Batman Beyond" to air 30% of the time, we would set Distribution to Weighted and adjust the sliders. 
 
-![Random Slots example with weighting](/assets/scheduling-tools-random_slots_example_weighted.png)
+![Random Slots example with weighting](../../assets/scheduling-tools-random_slots_example_weighted.png)
 
 See below for an example of our schedule now that "Yu-Gi-Oh! Duel Monsters" is Weighted to air 70% of the time. 
 
-![Random Slots preview with weighting](/assets/scheduling-tools-random_slots_preview_weighted.png)
+![Random Slots preview with weighting](../../assets/scheduling-tools-random_slots_preview_weighted.png)
