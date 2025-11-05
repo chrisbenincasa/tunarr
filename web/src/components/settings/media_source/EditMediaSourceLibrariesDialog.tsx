@@ -141,13 +141,25 @@ export const EditMediaSourceLibrariesDialog = ({
                   </span>
                 </Tooltip>
               )}
-              <Switch
-                edge="end"
-                checked={library.enabled}
-                onChange={(ev) =>
-                  updateLibraryEnabled(library.id, ev.target.checked)
+              <Tooltip
+                placement="top"
+                title={
+                  library.mediaType === 'music_videos'
+                    ? 'Music Video libraries are not yet supported'
+                    : null
                 }
-              />
+              >
+                <span>
+                  <Switch
+                    edge="end"
+                    disabled={library.mediaType === 'music_videos'}
+                    checked={library.enabled}
+                    onChange={(ev) =>
+                      updateLibraryEnabled(library.id, ev.target.checked)
+                    }
+                  />
+                </span>
+              </Tooltip>
             </ListItem>
           ))}
         </List>
