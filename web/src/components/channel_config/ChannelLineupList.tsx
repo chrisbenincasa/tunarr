@@ -54,7 +54,6 @@ import {
   type UIFlexProgram,
   type UIRedirectProgram,
 } from '../../types/index.ts';
-import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
 
@@ -405,7 +404,7 @@ export default function ChannelLineupList(props: Props) {
   const [focusedProgramDetails, setFocusedProgramDetails] = useState<
     ChannelProgram | undefined
   >();
-  const [, setStartStop] = useState<GuideTime>({});
+  const [guideTime, setStartStop] = useState<GuideTime>({});
   const [editProgram, setEditProgram] = useState<
     ((UIFlexProgram | UIRedirectProgram) & { index: number }) | undefined
   >();
@@ -426,6 +425,11 @@ export default function ChannelLineupList(props: Props) {
 
   const openDetailsDialog = useCallback(
     (program: ChannelProgram, startTimeDate?: Date) => {
+      if (program.type !== 'content' && program.type !== 'custom') {
+        return;
+      }
+
+      console.log(program);
       setFocusedProgramDetails(program);
       const start = dayjs(startTimeDate);
       if (startTimeDate) {
@@ -516,6 +520,20 @@ export default function ChannelLineupList(props: Props) {
       );
     }
 
+    const programId =
+      focusedProgramDetails?.type === 'custom'
+        ? focusedProgramDetails.program?.uniqueId
+        : focusedProgramDetails?.type === 'content'
+          ? focusedProgramDetails?.id
+          : null;
+
+    const programType =
+      focusedProgramDetails?.type === 'custom'
+        ? focusedProgramDetails.program?.subtype
+        : focusedProgramDetails?.type === 'content'
+          ? focusedProgramDetails?.subtype
+          : null;
+
     return (
       <Box width="100%">
         {showProgramCount && (
@@ -544,11 +562,16 @@ export default function ChannelLineupList(props: Props) {
             </Box>
           )}
         </Box>
-        <ProgramDetailsDialog
-          open={!isUndefined(focusedProgramDetails)}
-          onClose={() => setFocusedProgramDetails(undefined)}
-          program={focusedProgramDetails}
-        />
+        {focusedProgramDetails && programId && programType && (
+          <ProgramDetailsDialog
+            open={!isUndefined(focusedProgramDetails)}
+            onClose={() => setFocusedProgramDetails(undefined)}
+            start={guideTime.start}
+            stop={guideTime.stop}
+            programId={programId}
+            programType={programType}
+          />
+        )}
         <AddFlexModal
           open={!isUndefined(editProgram) && editProgram.type === 'flex'}
           onClose={() => setEditProgram(undefined)}
