@@ -175,6 +175,23 @@ export const EditRandomSlotDialogContent = ({
   //   return 0;
   // }, [programDetails, slotDuration, slotId]);
 
+  const handleDurationTypeChange = useCallback(
+    (value: RandomSlot['durationSpec']['type']) => {
+      if (value === 'fixed') {
+        setValue('durationSpec', {
+          durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+          type: 'fixed',
+        });
+      } else {
+        setValue('durationSpec', {
+          type: 'dynamic',
+          programCount: 1,
+        });
+      }
+    },
+    [setValue],
+  );
+
   return (
     <>
       <DialogContent>
@@ -214,6 +231,11 @@ export const EditRandomSlotDialogContent = ({
                           exclusive
                           aria-label="Platform"
                           {...field}
+                          onChange={(_, value) =>
+                            handleDurationTypeChange(
+                              value as RandomSlot['durationSpec']['type'],
+                            )
+                          }
                         >
                           <ToggleButton value="fixed">Fixed</ToggleButton>
                           <ToggleButton value="dynamic">Dynamic</ToggleButton>
@@ -245,6 +267,7 @@ export const EditRandomSlotDialogContent = ({
                       min: 1,
                     }}
                     render={({ field, fieldState: { error } }) => {
+                      console.log(field);
                       return (
                         <TimeField
                           format="H[h] m[m] s[s]"
