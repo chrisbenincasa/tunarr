@@ -267,7 +267,6 @@ export const EditRandomSlotDialogContent = ({
                       min: 1,
                     }}
                     render={({ field, fieldState: { error } }) => {
-                      console.log(field);
                       return (
                         <TimeField
                           format="H[h] m[m] s[s]"
