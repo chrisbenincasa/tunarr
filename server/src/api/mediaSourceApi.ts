@@ -61,7 +61,6 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
               name: source.name,
               accessToken: source.accessToken,
               clientIdentifier: nullToUndefined(source.clientIdentifier),
-              sendChannelUpdates: numberToBoolean(source.sendChannelUpdates),
               sendGuideUpdates: numberToBoolean(source.sendGuideUpdates),
               userId: source.userId,
               username: source.username,

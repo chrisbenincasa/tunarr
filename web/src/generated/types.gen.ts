@@ -646,6 +646,17 @@ export type PutApiChannelsByIdData = {
     url: '/api/channels/{id}';
 };
 
+export type PutApiChannelsByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+    /**
+     * Default Response
+     */
+    500: unknown;
+};
+
 export type PutApiChannelsByIdResponses = {
     /**
      * Default Response
@@ -8524,6 +8535,13 @@ export type PutApiFillerListsByIdData = {
     url: '/api/filler-lists/{id}';
 };
 
+export type PutApiFillerListsByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
 export type PutApiFillerListsByIdResponses = {
     /**
      * Default Response
@@ -9238,6 +9256,10 @@ export type GetApiProgramsByIdChildrenErrors = {
     /**
      * Default Response
      */
+    400: unknown;
+    /**
+     * Default Response
+     */
     404: unknown;
 };
 
@@ -9488,6 +9510,10 @@ export type GetApiProgramsByIdExternalLinkErrors = {
      * Default Response
      */
     404: unknown;
+    /**
+     * Default Response
+     */
+    405: unknown;
 };
 
 export type GetApiProgramsByIdExternalLinkResponses = {
@@ -9912,7 +9938,7 @@ export type GetApiDebugJellyfinLibrariesData = {
     body?: never;
     path?: never;
     query: {
-        userId: string;
+        userId?: string;
         uri: string;
         apiKey: string;
     };
@@ -10672,7 +10698,6 @@ export type GetApiMediaSourcesResponses = {
         username: string | null;
         type: 'plex';
         sendGuideUpdates: boolean;
-        sendChannelUpdates: boolean;
         index: number;
         clientIdentifier?: string;
     } | {
@@ -10705,7 +10730,6 @@ export type PostApiMediaSourcesData = {
         username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
-        sendChannelUpdates?: boolean;
         index?: number;
         clientIdentifier?: string;
     } | {
@@ -10733,6 +10757,10 @@ export type PostApiMediaSourcesErrors = {
      * Default Response
      */
     400: string;
+    /**
+     * Default Response
+     */
+    500: string;
 };
 
 export type PostApiMediaSourcesError = PostApiMediaSourcesErrors[keyof PostApiMediaSourcesErrors];
@@ -10850,7 +10878,6 @@ export type PutApiMediaSourcesByIdData = {
         username: string | null;
         type: 'plex';
         sendGuideUpdates?: boolean;
-        sendChannelUpdates?: boolean;
         index: number;
         clientIdentifier?: string;
     } | {
@@ -11192,6 +11219,13 @@ export type DeleteApiTranscodeConfigsByIdData = {
     };
     query?: never;
     url: '/api/transcode_configs/{id}';
+};
+
+export type DeleteApiTranscodeConfigsByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
 };
 
 export type DeleteApiTranscodeConfigsByIdResponses = {
@@ -13395,6 +13429,10 @@ export type DeleteApiChannelsByIdSessionsResponses = {
             lastHeartbeat?: number;
         }>;
     };
+    /**
+     * Default Response
+     */
+    201: unknown;
 };
 
 export type DeleteApiChannelsByIdSessionsResponse = DeleteApiChannelsByIdSessionsResponses[keyof DeleteApiChannelsByIdSessionsResponses];
@@ -14473,6 +14511,13 @@ export type PostApiUploadImageData = {
     url: '/api/upload/image';
 };
 
+export type PostApiUploadImageErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+};
+
 export type PostApiUploadImageResponses = {
     /**
      * Default Response
@@ -14634,7 +14679,6 @@ export type GetStreamChannelsByIdData = {
         streamMode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct';
         token?: string;
         audioOnly?: boolean | 'true' | 'false' | number;
-        useNewPipeline?: boolean | 'true' | 'false' | number;
     };
     url: '/stream/channels/{id}';
 };
@@ -14678,6 +14722,24 @@ export type GetStreamChannelsByIdM3U8Data = {
 };
 
 export type GetStreamChannelsByIdM3U8Responses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type HeadStreamChannelsByIdM3U8Data = {
+    body?: never;
+    path: {
+        id: string | number;
+    };
+    query?: {
+        mode?: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct';
+    };
+    url: '/stream/channels/{id}.m3u8';
+};
+
+export type HeadStreamChannelsByIdM3U8Responses = {
     /**
      * Default Response
      */

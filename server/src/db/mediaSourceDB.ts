@@ -193,8 +193,6 @@ export class MediaSourceDB {
 
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
-    const sendChannelUpdates =
-      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
 
     await this.db
       .updateTable('mediaSource')
@@ -203,7 +201,7 @@ export class MediaSourceDB {
         uri: trimEnd(server.uri, '/'),
         accessToken: server.accessToken,
         sendGuideUpdates: booleanToNumber(sendGuideUpdates),
-        sendChannelUpdates: booleanToNumber(sendChannelUpdates),
+        sendChannelUpdates: booleanToNumber(false),
         updatedAt: +dayjs(),
         // This allows clearing the values
         userId: server.userId,
@@ -247,8 +245,6 @@ export class MediaSourceDB {
     const name = isUndefined(server.name) ? 'plex' : server.name;
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
-    const sendChannelUpdates =
-      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
     const index = await this.db
       .selectFrom('mediaSource')
       .select((eb) => eb.fn.count<number>('uuid').as('count'))
@@ -263,8 +259,8 @@ export class MediaSourceDB {
         uuid: v4(),
         name,
         uri: trimEnd(server.uri, '/'),
-        sendChannelUpdates: sendChannelUpdates ? 1 : 0,
-        sendGuideUpdates: sendGuideUpdates ? 1 : 0,
+        sendChannelUpdates: booleanToNumber(false),
+        sendGuideUpdates: booleanToNumber(sendGuideUpdates),
         createdAt: now,
         updatedAt: now,
         index,

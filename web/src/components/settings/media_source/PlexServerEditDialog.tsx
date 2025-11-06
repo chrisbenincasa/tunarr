@@ -55,7 +55,6 @@ const emptyDefaults: PlexServerSettingsForm = {
   uri: '',
   name: '',
   accessToken: '',
-  sendChannelUpdates: false,
   sendGuideUpdates: false,
   index: 0,
   type: 'plex',
@@ -316,20 +315,6 @@ export function PlexServerEditDialog({ open, onClose, server }: Props) {
                     />
                   }
                   label="Auto-Update Guide"
-                />
-              </FormControl>
-              <FormControl>
-                <FormControlLabel
-                  control={
-                    <Controller
-                      control={control}
-                      name="sendChannelUpdates"
-                      render={({ field }) => (
-                        <Checkbox {...field} checked={field.value} />
-                      )}
-                    />
-                  }
-                  label="Auto-Update Channels"
                 />
               </FormControl>
             </Box>

@@ -1,6 +1,5 @@
 import { PlexRequestRedacter } from '@/external/plex/PlexRequestRedacter.js';
 import type { Maybe } from '@/types/util.js';
-import { getChannelId } from '@/util/channels.js';
 import { caughtErrorToError } from '@/util/index.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
@@ -19,16 +18,7 @@ import {
 import type { AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
 import { isAxiosError } from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-import {
-  first,
-  flatMap,
-  forEach,
-  isEmpty,
-  isError,
-  isUndefined,
-  map,
-  reject,
-} from 'lodash-es';
+import { first, isEmpty, isError, isUndefined } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type {
   PlexMediaContainer,
@@ -232,43 +222,6 @@ export class PlexApiClient extends BaseApiClient {
 
     for (const dvr of dvrs) {
       await this.doPost({ url: `/livetv/dvrs/${dvr.key}/reloadGuide` });
-    }
-  }
-
-  async refreshChannels(
-    channels: { number: number; stealth: number; uuid: string }[],
-    providedDvrs?: PlexDvr[],
-  ) {
-    const liveChannels = reject(channels, { stealth: 1 });
-    const dvrs = !isEmpty(providedDvrs) ? providedDvrs : await this.getDvrs();
-    if (!dvrs) {
-      throw new Error('Could not retrieve Plex DVRs');
-    }
-
-    if (isEmpty(dvrs)) {
-      return;
-    }
-
-    const qs: Record<string, number | string> = {
-      channelsEnabled: map(liveChannels, 'number').join(','),
-    };
-
-    forEach(channels, ({ number }) => {
-      const id = getChannelId(number);
-      qs[`channelMapping[${number}]`] = number;
-      qs[`channelMappingByKey[${number}]`] = id;
-    });
-
-    const keys = map(
-      flatMap(dvrs, ({ Device }) => Device),
-      (device) => device.key,
-    );
-
-    for (const key of keys) {
-      await this.doPut({
-        url: `/media/grabbers/devices/${key}/channelmap`,
-        params: qs,
-      });
     }
   }
 

@@ -1,5 +1,4 @@
 import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
-import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
@@ -29,7 +28,6 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
 
   constructor(
     @inject(KEYS.Logger) protected logger: Logger,
-    @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -91,8 +89,6 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
       return;
     }
 
-    const channels = await this.channelDB.getAllChannels();
-
     const allMediaSources = await this.mediaSourceDB.findByType('plex');
 
     await mapAsyncSeq(allMediaSources, async (plexServer) => {
@@ -102,7 +98,7 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
         );
       let dvrs: PlexDvr[] = [];
 
-      if (!plexServer.sendGuideUpdates && !plexServer.sendChannelUpdates) {
+      if (!plexServer.sendGuideUpdates) {
         return;
       }
 
@@ -126,17 +122,6 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
         } catch (err) {
           this.logger.error(
             `Couldn't tell Plex ${plexServer.name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.`,
-            err,
-          );
-        }
-      }
-
-      if (plexServer.sendChannelUpdates && channels.length !== 0) {
-        try {
-          await plex.refreshChannels(channels, dvrs);
-        } catch (err) {
-          this.logger.error(
-            `Couldn't tell Plex ${plexServer.name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.`,
             err,
           );
         }
