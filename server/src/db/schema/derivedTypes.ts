@@ -280,6 +280,26 @@ export type GeneralizedProgramGroupingWithExternalIds =
   | MusicAlbumWithExternalIds
   | MusicArtistWithExternalIds;
 
+export type TvSeasonOrm = SpecificSubtype<
+  ProgramGroupingOrmWithRelations,
+  'season'
+>;
+
+export type TvShowOrm = SpecificSubtype<
+  ProgramGroupingOrmWithRelations,
+  'show'
+>;
+
+export type MusicAlbumOrm = SpecificSubtype<
+  ProgramGroupingOrmWithRelations,
+  'album'
+>;
+
+export type MusicArtistOrm = SpecificSubtype<
+  ProgramGroupingOrmWithRelations,
+  'artist'
+>;
+
 type WithNewGroupingExternalIds = {
   externalIds: NewSingleOrMultiProgramGroupingExternalId[];
 };
