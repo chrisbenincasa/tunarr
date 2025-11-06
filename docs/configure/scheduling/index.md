@@ -1,6 +1,6 @@
 # Scheduling Tools
 
-Tunarr offers a range of tools for modifying channel schedules.
+Tunarr offers a range of tools for modifying channel schedules. However, it is important to first become familiar with Tunarr's scheduling [concepts](./concepts.md).
 
 * [Slot Editor](random-slots.md) allows assigning programming to "slots" of fixed or dynamic duration. Slots can then be played back sequentially or at random when generating a schedule.
 

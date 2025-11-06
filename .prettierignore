@@ -20,5 +20,7 @@ server/temp
 
 *.html
 
+docs-extras/**/*.md
+
 web/src/generated/*
 web/src/routeTree.gen.ts

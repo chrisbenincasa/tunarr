@@ -4,8 +4,8 @@ repo_url: https://github.com/chrisbenincasa/tunarr
 site_url: https://tunarr.com/
 theme:
   name: material
-  palette: 
-  # Palette toggle for automatic mode
+  palette:
+    # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
@@ -34,49 +34,60 @@ theme:
     - navigation.indexes
     - content.code.copy
     - content.code.select
+    - content.tooltips
 
 nav:
   - Home: index.md
   - API Docs: api-docs.html
   - Getting Started:
-    - Install: getting-started/installation.md
-    - Run: getting-started/run.md
-    - Setup: getting-started/setup.md
+      - Install: getting-started/installation.md
+      - Run: getting-started/run.md
+      - Setup: getting-started/setup.md
   - Configure:
-    - Channels:
-      - configure/channels/index.md
-      - Properties: configure/channels/properties.md
-      - Flex: configure/channels/flex.md
-      - EPG: configure/channels/epg.md
-      - Transcoding: configure/channels/transcoding.md
-    - Programming: configure/programming.md
-    - Scheduling Tools: 
-      - configure/scheduling-tools/index.md
-      - Slot Editor: configure/scheduling-tools/random-slots.md
-      - Time Slots: configure/scheduling-tools/time-slots.md
-      - Balance: configure/scheduling-tools/balance.md
-      - Replicate: configure/scheduling-tools/replicate.md
-      - Consolidate: configure/scheduling-tools/consolidate.md
-    - Library:
-      - configure/library/index.md
-      - Filler: configure/library/filler.md
-      - Custom Shows: configure/library/custom-shows.md
-    - System:
-      - configure/system/index.md
-      - Security: configure/system/security.md
-      - FFmpeg: configure/system/ffmpeg.md
-    - Clients:
-      - configure/clients/index.md
-      - Plex: configure/clients/plex.md
-      - Jellyfin: configure/clients/jellyfin.md
+      - Media Sources:
+          - configure/media_sources/index.md
+          - Plex: configure/media_sources/plex.md
+          - Jellyfin: configure/media_sources/jellyfin.md
+          - Emby: configure/media_sources/emby.md
+          - Local: configure/media_sources/local.md
+      - FFmpeg:
+          - configure/ffmpeg/index.md
+          - Transcode Configs: configure/ffmpeg/transcode_config.md
+      - Channels:
+          - configure/channels/index.md
+          - Properties: configure/channels/properties.md
+          - Flex: configure/channels/flex.md
+          - EPG: configure/channels/epg.md
+          - Transcoding: configure/channels/transcoding.md
+          - Watermarks: configure/channels/watermarks.md
+      - Programming: configure/programming.md
+      - Scheduling:
+          - configure/scheduling/index.md
+          - Concepts: configure/scheduling/concepts.md
+          - Slot Editor: configure/scheduling/random-slots.md
+          - Time Slots: configure/scheduling/time-slots.md
+          - Cyclic Shuffle: configure/scheduling/cyclic-shuffle.md
+          - Block Shuffle: configure/scheduling/block-shuffle.md
+          #- Balance: configure/scheduling/balance.md
+          - Replicate: configure/scheduling/replicate.md
+          - Consolidate: configure/scheduling/consolidate.md
+      - Library:
+          - configure/library/index.md
+          - Filler: configure/library/filler.md
+          - Custom Shows: configure/library/custom-shows.md
+      - Clients:
+          - configure/clients/index.md
+          - Plex: configure/clients/plex.md
+          - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
-    - Common Issues: misc/common-issues.md
-    - Troubleshooting: misc/troubleshooting.md
+      - Common Issues: misc/common-issues.md
+      - Troubleshooting: misc/troubleshooting.md
   - Development:
-    - Contributing: dev/contributing.md
+      - Contributing: dev/contributing.md
 
 markdown_extensions:
   - admonition
+  - abbr
   - md_in_html
   - toc:
       permalink: true
@@ -87,14 +98,19 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      auto_append:
+        - docs-extras/includes/definitions.md
 
 extra_css:
   - stylesheets/extra.css
 
 extra:
-  version:
-    provider: mike
+  status:
+    alpha: Alpha
 
 plugins:
- - glightbox
+  - glightbox
+
+watch:
+  - docs-extras/includes

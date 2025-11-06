@@ -161,7 +161,6 @@ const BaseMediaSourceSettingsSchema = z.object({
 export const PlexServerSettingsSchema = BaseMediaSourceSettingsSchema.extend({
   type: z.literal(MediaSourceType.enum.plex),
   sendGuideUpdates: z.boolean(),
-  sendChannelUpdates: z.boolean(),
   index: z.number(),
   clientIdentifier: z.string().optional(),
 });

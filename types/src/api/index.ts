@@ -186,7 +186,6 @@ export type UpdateChannelProgrammingRequest = z.infer<
 
 export const UpdateMediaSourceRequestSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema.partial({
-    sendChannelUpdates: true,
     sendGuideUpdates: true,
     clientIdentifier: true,
   }).omit({ libraries: true }),
@@ -200,7 +199,6 @@ export type UpdateMediaSourceRequest = z.infer<
 >;
 
 export const UpdatePlexServerRequestSchema = PlexServerSettingsSchema.partial({
-  sendChannelUpdates: true,
   sendGuideUpdates: true,
   clientIdentifier: true,
   id: true,
@@ -212,7 +210,6 @@ export type UpdatePlexServerRequest = z.infer<
 
 export const InsertMediaSourceRequestSchema = z.discriminatedUnion('type', [
   PlexServerSettingsSchema.partial({
-    sendChannelUpdates: true,
     sendGuideUpdates: true,
     index: true,
     clientIdentifier: true,

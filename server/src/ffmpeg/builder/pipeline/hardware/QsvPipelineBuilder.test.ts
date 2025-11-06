@@ -93,6 +93,7 @@ describe('QsvPipelineBuilder', () => {
         scaledSize: video.streams[0].squarePixelFrameSize(FrameSize.FHD),
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
+        frameRate: 24,
       }),
       DefaultPipelineOptions,
     );

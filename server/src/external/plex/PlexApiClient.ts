@@ -2,7 +2,6 @@ import { MediaSourceType } from '@/db/schema/base.js';
 import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import type { Nilable, Nullable } from '@/types/util.js';
 import { type Maybe } from '@/types/util.js';
-import { getChannelId } from '@/util/channels.js';
 import {
   caughtErrorToError,
   inConstArr,
@@ -76,32 +75,8 @@ import {
 } from 'axios';
 import dayjs from 'dayjs';
 import { XMLParser } from 'fast-xml-parser';
-import {
-  compact,
-  filter,
-  find,
-  first,
-  flatMap,
-  forEach,
-  isEmpty,
-  isError,
-  isNil,
-  isUndefined,
-  map,
-  maxBy,
-  orderBy,
-  reject,
-  sortBy,
-} from 'lodash-es';
-import { match, P } from 'ts-pattern';
-import { v4 } from 'uuid';
-import type { z } from 'zod/v4';
-import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
-import type { ArtworkType } from '../../db/schema/Artwork.ts';
-import { ProgramType, ProgramTypes } from '../../db/schema/Program.js';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.js';
-import type { Canonicalizer } from '../../services/Canonicalizer.ts';
-import type { WrappedError } from '../../types/errors.ts';
+import { first, forEach, isEmpty, isError, isUndefined, map } from 'lodash-es';
+import { match } from 'ts-pattern';
 import type {
   MediaItem,
   MediaStream,
@@ -965,43 +940,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
     for (const dvr of dvrs) {
       await this.doPost({ url: `/livetv/dvrs/${dvr.key}/reloadGuide` });
-    }
-  }
-
-  async refreshChannels(
-    channels: { number: number; stealth: number; uuid: string }[],
-    providedDvrs?: PlexDvr[],
-  ) {
-    const liveChannels = reject(channels, { stealth: 1 });
-    const dvrs = !isEmpty(providedDvrs) ? providedDvrs : await this.getDvrs();
-    if (!dvrs) {
-      throw new Error('Could not retrieve Plex DVRs');
-    }
-
-    if (isEmpty(dvrs)) {
-      return;
-    }
-
-    const qs: Record<string, number | string> = {
-      channelsEnabled: map(liveChannels, 'number').join(','),
-    };
-
-    forEach(channels, ({ number }) => {
-      const id = getChannelId(number);
-      qs[`channelMapping[${number}]`] = number;
-      qs[`channelMappingByKey[${number}]`] = id;
-    });
-
-    const keys = map(
-      flatMap(dvrs, ({ Device }) => Device),
-      (device) => device.key,
-    );
-
-    for (const key of keys) {
-      await this.doPut({
-        url: `/media/grabbers/devices/${key}/channelmap`,
-        params: qs,
-      });
     }
   }
 

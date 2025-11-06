@@ -1,6 +1,12 @@
-import type { SettingsFile } from '@/db/SettingsDB.js';
+import {
+  defaultSettings,
+  SettingsDB,
+  type SettingsFile,
+} from '@/db/SettingsDB.js';
 import type { GlobalOptions } from '@/globals.js';
 import { globalOptions, setGlobalOptions } from '@/globals.js';
+import { merge } from 'lodash-es';
+import { Low, Memory } from 'lowdb';
 import tmp from 'tmp';
 import type { DeepPartial } from 'ts-essentials';
 import { SettingsDBFactory } from '../db/SettingsDBFactory.ts';
@@ -41,4 +47,15 @@ export async function setTestGlobalOptions(
 
 export function getFakeSettingsDb(initialSettings?: DeepPartial<SettingsFile>) {
   return new SettingsDBFactory(globalOptions()).get(undefined, initialSettings);
+}
+
+export function inMemorySettingsDB(
+  initialSettings?: DeepPartial<SettingsFile>,
+) {
+  const defaultValue = merge(
+    {},
+    defaultSettings(globalOptions().databaseDirectory),
+    initialSettings,
+  );
+  return new SettingsDB(new Low(new Memory(), defaultValue));
 }

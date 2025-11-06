@@ -5,6 +5,7 @@ import { isNonEmptyString } from '@/util/index.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import NodeCache from 'node-cache';
 import util from 'node:util';
+import { match, P } from 'ts-pattern';
 
 const playlistFmtString = `#EXTM3U
 #EXT-X-VERSION:3
@@ -12,7 +13,7 @@ const playlistFmtString = `#EXTM3U
 #EXT-X-MEDIA-SEQUENCE:%d
 #EXT-X-DISCONTINUITY
 #EXTINF:%d
-%s://%s/stream?channel=%s&index=%d%s
+%s://%s/stream.%s?channel=%s&index=%d%s
 `;
 
 type CachedCurrentIndex = {
@@ -25,6 +26,7 @@ type RequestDetails = {
   host: string;
   channelIdOrNumber: string;
   streamMode: ChannelStreamMode;
+  outputFormat: 'mkv' | 'mpegts' | 'mp4';
 };
 
 export class HlsPlaylistCreator {
@@ -65,6 +67,10 @@ export class HlsPlaylistCreator {
         .asSeconds(),
       request.protocol,
       request.host,
+      match(request.outputFormat)
+        .with(P.union('mkv', 'mp4'), (fmt) => fmt)
+        .with('mpegts', () => 'ts')
+        .exhaustive(),
       request.channelIdOrNumber,
       currentIndex,
       streamMode,

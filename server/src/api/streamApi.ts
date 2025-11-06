@@ -52,13 +52,12 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       schema: {
         tags: ['Streaming'],
         params: z.object({
-          id: z.coerce.number().or(z.string()),
+          id: z.coerce.number().or(z.uuid()),
         }),
         querystring: z.object({
           streamMode: ChannelStreamModeSchema.optional(),
-          token: z.string().uuid().optional(),
+          token: z.uuid().optional(),
           audioOnly: TruthyQueryParam.optional().default(false),
-          useNewPipeline: TruthyQueryParam.optional(),
         }),
       },
     },
@@ -72,9 +71,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
 
       const params = new URLSearchParams();
       params.set('mode', mode);
-      if (!isUndefined(req.query.useNewPipeline)) {
-        params.set('useNewPipeline', `${req.query.useNewPipeline}`);
-      }
 
       switch (mode) {
         case 'hls':
@@ -102,11 +98,11 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         description:
           'Returns a continuous, direct MPEGTS video stream for the given channel',
         params: z.object({
-          id: z.coerce.number().or(z.string()),
+          id: z.coerce.number().or(z.uuid()),
         }),
         querystring: z.object({
           streamMode: ChannelStreamModeSchema.optional(),
-          token: z.string().uuid().optional(),
+          token: z.uuid().optional(),
           audioOnly: TruthyQueryParam.optional().default(false),
         }),
       },
@@ -278,20 +274,21 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
-  fastify.get(
-    '/stream/channels/:id.m3u8',
-    {
-      schema: {
-        tags: ['Streaming'],
-        params: z.object({
-          id: z.string().uuid().or(z.coerce.number()),
-        }),
-        querystring: z.object({
-          mode: ChannelStreamModeSchema.optional(),
-        }),
-      },
+  fastify.route({
+    url: '/stream/channels/:id.m3u8',
+    method: ['HEAD', 'GET'],
+    schema: {
+      tags: ['Streaming'],
+      description:
+        'Returns an m3u8 playlist for the given channel, for use in HLS',
+      params: z.object({
+        id: z.uuid().or(z.coerce.number()),
+      }),
+      querystring: z.object({
+        mode: ChannelStreamModeSchema.optional(),
+      }),
     },
-    async (req, res) => {
+    handler: async (req, res) => {
       const connectionDetails: StreamConnectionDetails = {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
@@ -374,6 +371,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             );
           break;
         case 'hls_direct': {
+          const ffmpegSettings = req.serverCtx.settings.ffmpegSettings();
           const playlist = await new HlsPlaylistCreator(
             req.serverCtx.streamProgramCalculator,
           ).createPlaylist(channelId, dayjs(), {
@@ -381,6 +379,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             host: req.host,
             channelIdOrNumber: channelId,
             streamMode: mode,
+            outputFormat: ffmpegSettings.hlsDirectOutputFormat,
           });
           return res.type('application/vnd.apple.mpegurl').send(playlist);
         }
@@ -396,5 +395,5 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(500).send('Error starting or retrieving session');
       });
     },
-  );
+  });
 };

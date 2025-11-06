@@ -905,7 +905,6 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
             name: source.name,
             accessToken: source.accessToken,
             clientIdentifier: nullToUndefined(source.clientIdentifier),
-            sendChannelUpdates: source.sendChannelUpdates ?? false,
             sendGuideUpdates: source.sendGuideUpdates ?? false,
             libraries: (source.libraries ?? []).map((library) => ({
               id: library.uuid,

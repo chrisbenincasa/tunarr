@@ -5,25 +5,75 @@ labels: ["user-issue", "triage"]
 assignees:
   - chrisbenincasa
 body:
+  - type: checkboxes
+    id: before-posting
+    attributes:
+      label: "This issue respects the following points:"
+      description: All conditions are **required**. Failure to comply with any of these conditions may cause your issue to be closed without comment.
+      options:
+        - label: This is a **bug**, not a question or a configuration issue; Please visit our [Discord](https://discord.gg/scMJxnPXaB) first to troubleshoot with volunteers, before creating a report.
+          required: true
+        - label: This issue is **not** already reported on [GitHub](https://github.com/chrisbenincasa/tunarr/issues?q=is%3Aopen+is%3Aissue) _(I've searched it)_.
+          required: true
+        - label: I'm using an up to date version of Jellyfin Server stable, unstable or master; We generally do not support previous older versions. If possible, please update to the latest version before opening an issue.
+          required: true
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
   - type: textarea
-    id: what-happened
+    id: bug-description
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
+      label: Description of the bug
+      description: Please provide a detailed description on the bug you encountered, in a readable and comprehensible way.
+      placeholder: |
+        After upgrading to version x.y.z of Tunarr, the "slot editor" is showing incorrect times. It appears to me that it is appending the server name to the end of the login disclaimer, and showing that to a user. It might be a regression from pull request 123. I have tried rebooting my instance as well as my container multiple times. I tested this functionality on different clients, and it happens to all the tested clients (client x, y, z), that support the login disclaimer functionality. This makes me believe it is a server side issue.
     validations:
       required: true
-  - type: input
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Reproduction steps
+      description: Reproduction steps should be complete and self-contained. Anyone can reproduce this issue by following these steps. Furthermore, the steps should be clear and easy to follow.
+      placeholder: |
+        1. Create a channel and add 3 shows to it. Save.
+        2. Navigate to the slot editor.
+        3. Configure the following schedule: ...
+        4. Save the schedule
+        5. Refresh the page
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What is the current _bug_ behavior?
+      description: Write down the incorrect behavior that currently happens after following the reproduction steps.
+      placeholder: |
+        The generated schedule shows the incorrect times (screenshot?)
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: What is the expected _correct_ behavior?
+      description: Write down the correct expected behavior that is supposed to happen after following the reproduction steps.
+      placeholder: |
+        The generated schedule shows the correct times
+    validations:
+      required: true
+  - type: dropdown
     id: version
     attributes:
-      label: Version
-      description: What version of our Tunarr are you running?
-      placeholder: "1.0.0"
-    validations:
+      label: Tunarr version
+      description: What version of Tunarr are you using?
+      options:
+        - Latest
+        - Edge
+        - Alpha
+        - Older*
+      validations:
       required: true
   - type: dropdown
     id: encoder
@@ -34,22 +84,50 @@ body:
         - Software
         - CUDA (Nvidia)
         - VAAPI
+        - QSV (QuickSync)
         - VideoToolbox (macOS)
-    validations:
-      required: true
+  - type: input
+    id: version-edge
+    attributes:
+      label: "Specify full Edge version id"
+      description: Fill in this field in case the option 'Edge' is selected. Paste the full Tunarr version from the sidebar.
+      placeholder: |
+        0.22.11-abcdef123
+  - type: input
+    id: version-alpha
+    attributes:
+      label: "Specify Alpha release number"
+      description: Fill in this field in case the option 'Alpha' is selected. Provide the unstable release number.
+      placeholder: |
+        0.23.0-alpha.21
+  - type: input
+    id: version-older
+    attributes:
+      label: "Specify version number"
+      description: Fill in this field in case the option 'Older' is selected. Provide the version number.
+      placeholder: |
+        0.21.11
   - type: input
     id: browser
     attributes:
-      label: What browser did you experience the the problem on?
+      label: What browser did you experience the the problem on? Please provide if the issue is related to the Web UI and definitely not the server.
       placeholder: "ex: Chrome 122.0.6261.128"
+  - type: dropdown
+    id: deployment-type
+    options:
+      - Docker
+      - Binary
+      - Other
   - type: input
     id: os
     attributes:
       label: What operating system are you using?
       placeholder: "ex: Windows 8.1"
   - type: textarea
-    id: logs
+    id: server-logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks. Be sure to check both the server and the browser console logs!
+      label: Full server logs
+      description: Please paste the full server logs from your Tunarr data directory (usually located at /var/lib/tunarr or the path configured via TUNARR_DATA_DIR). Include the entire log file(s) around the time the issue occurred. This will be automatically formatted into code, so no need for backticks.
       render: shell
+    validations:
+      required: true

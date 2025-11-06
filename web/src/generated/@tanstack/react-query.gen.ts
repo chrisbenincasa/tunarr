@@ -3642,6 +3642,9 @@ export const getStreamChannelsByIdM3U8QueryKey = (options: Options<GetStreamChan
     'Streaming'
 ]);
 
+/**
+ * Returns an m3u8 playlist for the given channel, for use in HLS
+ */
 export const getStreamChannelsByIdM3U8Options = (options: Options<GetStreamChannelsByIdM3U8Data>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {

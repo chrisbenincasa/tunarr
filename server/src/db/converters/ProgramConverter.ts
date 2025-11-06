@@ -88,6 +88,15 @@ export class ProgramConverter {
       'uuid' | 'number' | 'name'
     >[], // TODO fix this up...
     preMaterializedProgram?: ProgramWithRelations,
+  ): ChannelProgram | null;
+  lineupItemToChannelProgram(
+    channel: ChannelWithRelations | ChannelWithPrograms,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<Channel>,
+      'uuid' | 'number' | 'name'
+    >[], // TODO fix this up...
+    preMaterializedProgram?: ProgramWithRelations,
   ): ChannelProgram | null {
     if (isOfflineItem(item)) {
       return this.offlineLineupItemToProgram(channel, item);
@@ -109,7 +118,7 @@ export class ProgramConverter {
       const program =
         preMaterializedProgram && preMaterializedProgram.uuid === item.id
           ? preMaterializedProgram
-          : channel.programs.find((p) => p.uuid === item.id);
+          : channel.programs?.find((p) => p.uuid === item.id);
       if (isNil(program) || isNil(program.mediaSourceId)) {
         return null;
       }

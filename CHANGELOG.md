@@ -256,6 +256,32 @@
 * allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
 * **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
+## [0.22.12](https://github.com/chrisbenincasa/tunarr/compare/v0.22.11...v0.22.12) (2025-11-06)
+
+
+### Bug Fixes
+
+* fix form state when switching between slot duration types ([f02fb9b](https://github.com/chrisbenincasa/tunarr/commit/f02fb9b4ba980c1a857b7a51cd15fe1b1760fbc4))
+* remove Plex auto-channel updater ([effcb18](https://github.com/chrisbenincasa/tunarr/commit/effcb1835dad099392ca6ad4418c800c2f36f635))
+
+## [0.22.11](https://github.com/chrisbenincasa/tunarr/compare/v0.22.10...v0.22.11) (2025-10-27)
+
+
+### Bug Fixes
+
+* allow playing remote media from Emby ([8eaa68f](https://github.com/chrisbenincasa/tunarr/commit/8eaa68fe684fe909a4f06b901a54249e5dbb91e3))
+
+## [0.22.10](https://github.com/chrisbenincasa/tunarr/compare/v0.22.9...v0.22.10) (2025-10-27)
+
+
+### Bug Fixes
+
+* fix HLS direct playback in Jellyfin for MKV/MP4 output formats ([85ea844](https://github.com/chrisbenincasa/tunarr/commit/85ea844e6a64d8f277c5e6d2ffea4ee8524cb962))
+* fix lineupItemToChannelProgram override to account for undefined channel.programs ([a87cf4a](https://github.com/chrisbenincasa/tunarr/commit/a87cf4a9f848e9b2d3d15d9dba3f4fee21ba45e5))
+* **streaming:** always set framerate when resetting PTS in QSV pipeline ([00c17a8](https://github.com/chrisbenincasa/tunarr/commit/00c17a8689ae04f7d91ae9085f0b9de859529676)), closes [#1431](https://github.com/chrisbenincasa/tunarr/issues/1431)
+* **streaming:** fix HLS direct streaming for Jellyfin 10.11 ([81ea984](https://github.com/chrisbenincasa/tunarr/commit/81ea98410fce5f19950e86c8c601fa92fb53e4f5))
+* use default analyzeduration (5s) when probing files instead of 30 microseconds ([91755b3](https://github.com/chrisbenincasa/tunarr/commit/91755b3eab8e82d8cbd5ac85dfc28560f985cf2e))
+
 ## [0.22.9](https://github.com/chrisbenincasa/tunarr/compare/v0.22.8...v0.22.9) (2025-10-18)
 
 

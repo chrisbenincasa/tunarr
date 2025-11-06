@@ -1,10 +1,16 @@
+import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import { KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniqProp, isNonEmptyString } from '@/util/index.js';
+import { booleanToNumber } from '@/util/sqliteUtil.js';
+import { tag } from '@tunarr/types';
 import type {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
+import { inject, injectable, interfaces } from 'inversify';
+import { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
@@ -17,16 +23,8 @@ import {
   some,
   trimEnd,
 } from 'lodash-es';
-import { v4 } from 'uuid';
-
-import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import { KEYS } from '@/types/inject.js';
-import { booleanToNumber } from '@/util/sqliteUtil.js';
-import { tag } from '@tunarr/types';
-import { inArray } from 'drizzle-orm';
-import { inject, injectable, interfaces } from 'inversify';
-import { Kysely } from 'kysely';
 import { MarkRequired } from 'ts-essentials';
+import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import {
@@ -47,12 +45,11 @@ import {
   PlexMediaSource,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
-import { MediaSourceOrm, MediaSourceUpdate } from './schema/MediaSource.ts';
+import { MediaSourceOrm } from './schema/MediaSource.ts';
 import {
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
-import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 
 type Report = {
   type: 'channel' | 'custom-show' | 'filler';
@@ -256,74 +253,23 @@ export class MediaSourceDB {
         updateReq.type === 'plex'
           ? (updateReq.sendGuideUpdates ?? false)
           : false;
-      const sendChannelUpdates =
-        updateReq.type === 'plex'
-          ? (updateReq.sendChannelUpdates ?? false)
-          : false;
 
       await this.db
         .updateTable('mediaSource')
         .set({
-          name: tag<MediaSourceName>(updateReq.name),
+          name: updateReq.name,
           uri: trimEnd(updateReq.uri, '/'),
           accessToken: updateReq.accessToken,
           sendGuideUpdates: booleanToNumber(sendGuideUpdates),
-          sendChannelUpdates: booleanToNumber(sendChannelUpdates),
           updatedAt: +dayjs(),
           // This allows clearing the values
           userId: updateReq.userId,
           username: updateReq.username,
-        } satisfies MediaSourceUpdate)
-        .where('uuid', '=', tag<MediaSourceId>(updateReq.id))
+        })
+        .where('uuid', '=', updateReq.id)
         // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
         // .limit(1)
-        .executeTakeFirstOrThrow();
-
-      await this.drizzleDB.transaction(async (tx) => {
-        const existing = await tx.query.mediaSourceLibraryReplacePath.findMany({
-          where: (fields, { eq }) => eq(fields.mediaSourceId, updateReq.id),
-        });
-
-        const newPaths = differenceWith(
-          updateReq.pathReplacements,
-          existing,
-          (existing, incoming) => {
-            return (
-              existing.localPath !== incoming.localPath &&
-              existing.serverPath !== incoming.serverPath
-            );
-          },
-        );
-        const removedPaths = differenceWith(
-          existing,
-          updateReq.pathReplacements,
-          (existing, incoming) => {
-            return (
-              existing.localPath !== incoming.localPath &&
-              existing.serverPath !== incoming.serverPath
-            );
-          },
-        );
-
-        if (removedPaths.length > 0) {
-          await tx.delete(MediaSourceLibraryReplacePath).where(
-            inArray(
-              MediaSourceLibraryReplacePath.uuid,
-              removedPaths.map(({ uuid }) => uuid),
-            ),
-          );
-        }
-
-        if (newPaths.length > 0) {
-          await tx.insert(MediaSourceLibraryReplacePath).values(
-            newPaths.map((newPath) => ({
-              ...newPath,
-              uuid: v4(),
-              mediaSourceId: updateReq.id,
-            })),
-          );
-        }
-      });
+        .executeTakeFirst();
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
     }
@@ -359,8 +305,6 @@ export class MediaSourceDB {
     const name = tag<MediaSourceName>(server.name);
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;
-    const sendChannelUpdates =
-      server.type === 'plex' ? (server.sendChannelUpdates ?? false) : false;
 
     if (server.type === 'local' && isEmpty(server.paths)) {
       throw new Error(
@@ -383,8 +327,8 @@ export class MediaSourceDB {
           uuid: tag<MediaSourceId>(v4()),
           name,
           uri: server.type === 'local' ? '' : trimEnd(server.uri, '/'),
-          sendChannelUpdates: sendChannelUpdates ? 1 : 0,
-          sendGuideUpdates: sendGuideUpdates ? 1 : 0,
+          sendChannelUpdates: booleanToNumber(false),
+          sendGuideUpdates: booleanToNumber(sendGuideUpdates),
           createdAt: now,
           updatedAt: now,
           index,
