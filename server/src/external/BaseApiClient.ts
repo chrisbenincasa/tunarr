@@ -138,7 +138,9 @@ export abstract class BaseApiClient<
       return this.makeErrorResult('generic_request_error', response.message);
     }
 
-    const parsed = await schema.safeParseAsync(response);
+    const parsed = await schema.safeParseAsync(response, {
+      reportInput: true,
+    });
 
     if (parsed.success) {
       return this.makeSuccessResult(parsed.data as Out);
