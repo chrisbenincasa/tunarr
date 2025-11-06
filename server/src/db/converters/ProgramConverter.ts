@@ -231,14 +231,12 @@ export class ProgramConverter {
             type: 'episode' as const,
             summary: episode.summary,
             episodeNumber: episode.episode ?? 0,
-            season: undefined,
           }) satisfies Episode,
       )
       .with({ type: 'track' }, (track) => ({
         ...base,
         type: 'track',
         trackNumber: track.episode ?? 0,
-        album: undefined, // TODO:
       }))
       .with({ type: 'music_video' }, () => ({ ...base, type: 'music_video' }))
       .with({ type: 'other_video' }, () => ({ ...base, type: 'other_video' }))

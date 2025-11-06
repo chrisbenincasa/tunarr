@@ -54,6 +54,7 @@ import type { Artwork } from '../db/schema/Artwork.ts';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import type { MediaSourceId } from '../db/schema/base.js';
 
+import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { globalOptions } from '../globals.ts';
 import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
@@ -346,10 +347,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       const dbRes = await db.query.program.findFirst({
         where: (program, { eq }) => eq(program.uuid, req.params.id),
         with: {
-          season: true,
-          show: true,
-          album: true,
-          artist: true,
           externalIds: true,
           mediaLibrary: true,
           credits: true,
@@ -376,6 +373,42 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
 
+        const getGroupingDetails = container.get<GetProgramGroupingById>(
+          GetProgramGroupingById,
+        );
+
+        if (converted.type === 'episode') {
+          if (dbRes.seasonUuid) {
+            const apiSeason = await getGroupingDetails.execute(
+              dbRes.seasonUuid,
+            );
+            if (apiSeason?.type === 'season') {
+              converted.season = apiSeason;
+            }
+          }
+          if (dbRes.tvShowUuid) {
+            const apiShow = await getGroupingDetails.execute(dbRes.tvShowUuid);
+            if (apiShow?.type === 'show') {
+              converted.show = apiShow;
+            }
+          }
+        } else if (converted.type === 'track') {
+          if (dbRes.albumUuid) {
+            const apiAlbum = await getGroupingDetails.execute(dbRes.albumUuid);
+            if (apiAlbum?.type === 'album') {
+              converted.album = apiAlbum;
+            }
+          }
+          if (dbRes.artistUuid) {
+            const apiArtist = await getGroupingDetails.execute(
+              dbRes.artistUuid,
+            );
+            if (apiArtist?.type === 'artist') {
+              converted.artist = apiArtist;
+            }
+          }
+        }
+
         return res.send(converted);
       }
     },
@@ -395,63 +428,13 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const db = container.get<DrizzleDBAccess>(KEYS.DrizzleDB);
-      const dbRes = await db.query.programGrouping.findFirst({
-        where: (program, { eq }) => eq(program.uuid, req.params.id),
-        with: {
-          show: true,
-          artist: true,
-          externalIds: true,
-          artwork: true,
-          credits: true,
-        },
-      });
-
-      if (!dbRes) {
+      const result = await container
+        .get<GetProgramGroupingById>(GetProgramGroupingById)
+        .execute(req.params.id);
+      if (!result) {
         return res.status(404).send();
       }
-
-      const groupingCounts =
-        await req.serverCtx.programDB.getProgramGroupingChildCounts([
-          dbRes.uuid,
-        ]);
-
-      const searchDoc = await req.serverCtx.searchService.getProgram(
-        dbRes.uuid,
-      );
-      if (!searchDoc || !isProgramGroupingDocument(searchDoc)) {
-        return res.status(404).send();
-      }
-
-      const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
-      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
-        tag(mediaSourceId),
-      );
-      if (!mediaSource) {
-        return;
-      }
-      const libraryId = decodeCaseSensitiveId(searchDoc.libraryId);
-      const library = await req.serverCtx.mediaSourceDB.getLibrary(libraryId);
-      if (!library) {
-        return;
-      }
-
-      if (dbRes.canonicalId) {
-        const converted =
-          ApiProgramConverters.convertProgramGroupingSearchResult(
-            searchDoc,
-            dbRes,
-            groupingCounts[dbRes.uuid],
-            mediaSource,
-            library,
-          );
-
-        if (!converted) {
-          return res.status(404).send();
-        }
-
-        return res.send(converted);
-      }
+      return res.send(result);
     },
   );
 

@@ -546,6 +546,7 @@ export const Episode = z.object({
   releaseDateString: z.string().nullable(),
   summary: z.string().nullable(),
   season: Season.optional(),
+  show: Show.optional(),
 });
 
 export const EpisodeMetadata = Episode.omit(MetadataOmitMask);
@@ -573,6 +574,7 @@ export const MusicTrack = BaseProgram.extend({
   type: z.literal('track'),
   trackNumber: z.number().positive(),
   album: MusicAlbum.optional(),
+  artist: MusicArtist.optional(),
 });
 
 export const MusicAlbumWithArtist = MusicAlbum.required({ artist: true });
