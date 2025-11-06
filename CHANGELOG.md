@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.12](https://github.com/chrisbenincasa/tunarr/compare/v0.22.11...v0.22.12) (2025-11-06)
+
+
+### Bug Fixes
+
+* fix form state when switching between slot duration types ([f02fb9b](https://github.com/chrisbenincasa/tunarr/commit/f02fb9b4ba980c1a857b7a51cd15fe1b1760fbc4))
+* remove Plex auto-channel updater ([effcb18](https://github.com/chrisbenincasa/tunarr/commit/effcb1835dad099392ca6ad4418c800c2f36f635))
+
 ## [0.22.11](https://github.com/chrisbenincasa/tunarr/compare/v0.22.10...v0.22.11) (2025-10-27)
 
 
