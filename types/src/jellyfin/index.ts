@@ -561,7 +561,7 @@ const MediaStream = z
     CodecTimeBase: z.string().nullable().optional(),
     Title: z.string().nullable().optional(),
     VideoRange: VideoRange,
-    VideoRangeType: VideoRangeType,
+    VideoRangeType: VideoRangeType.catch('Unknown'),
     VideoDoViTitle: z.string().nullable().optional(),
     // AudioSpatialFormat: AudioSpatialFormat.default('None'),
     LocalizedUndefined: z.string().nullable().optional(),
