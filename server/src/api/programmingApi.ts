@@ -349,7 +349,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         with: {
           externalIds: true,
           mediaLibrary: true,
-          credits: true,
+          credits: {
+            with: {
+              artwork: true,
+            },
+          },
           artwork: true,
           versions: {
             with: {
@@ -430,10 +434,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const result = await container
         .get<GetProgramGroupingById>(GetProgramGroupingById)
-        .execute(req.params.id);
+        .execute(req.params.id, /* recursive= */ true);
       if (!result) {
         return res.status(404).send();
       }
+
       return res.send(result);
     },
   );

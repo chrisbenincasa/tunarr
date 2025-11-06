@@ -21,7 +21,15 @@ export class GetProgramGroupingById {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 
-  async execute(id: string): Promise<Maybe<ProgramGrouping>> {
+  async execute(
+    id: string,
+    recursive: boolean = false,
+    depth: number = 1,
+  ): Promise<Maybe<ProgramGrouping>> {
+    if (depth > 2) {
+      return;
+    }
+
     const dbRes = await this.db.query.programGrouping.findFirst({
       where: (program, { eq }) => eq(program.uuid, id),
       with: {
@@ -29,7 +37,11 @@ export class GetProgramGroupingById {
         artist: true,
         externalIds: true,
         artwork: true,
-        credits: true,
+        credits: {
+          with: {
+            artwork: true,
+          },
+        },
       },
     });
 
@@ -59,16 +71,36 @@ export class GetProgramGroupingById {
       return;
     }
 
-    if (dbRes.canonicalId) {
-      return ApiProgramConverters.convertProgramGroupingSearchResult(
-        searchDoc,
-        dbRes,
-        groupingCounts[dbRes.uuid],
-        mediaSource,
-        library,
-      );
+    if (!dbRes.canonicalId) {
+      return;
     }
 
-    return;
+    const result = ApiProgramConverters.convertProgramGroupingSearchResult(
+      searchDoc,
+      dbRes,
+      groupingCounts[dbRes.uuid],
+      mediaSource,
+      library,
+    );
+
+    if (recursive) {
+      if (result.type === 'season' && dbRes.showUuid) {
+        const maybeShow = await this.execute(dbRes.showUuid, false, depth + 1);
+        if (maybeShow?.type === 'show') {
+          result.show = maybeShow;
+        }
+      } else if (result.type === 'album' && dbRes.artistUuid) {
+        const maybeArtist = await this.execute(
+          dbRes.artistUuid,
+          false,
+          depth + 1,
+        );
+        if (maybeArtist?.type === 'artist') {
+          result.artist = maybeArtist;
+        }
+      }
+    }
+
+    return result;
   }
 }
