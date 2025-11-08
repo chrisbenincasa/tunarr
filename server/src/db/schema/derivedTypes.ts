@@ -33,6 +33,7 @@ import type {
 import type {
   MinimalProgramExternalId,
   NewSingleOrMultiExternalId,
+  ProgramExternalIdOrm,
 } from './ProgramExternalId.ts';
 import type {
   NewProgramGrouping,
@@ -100,7 +101,7 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   artist?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
   album?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
   // Require minimum data from externalId
-  externalIds?: MinimalProgramExternalId[];
+  externalIds?: ProgramExternalIdOrm[];
   versions?: ProgramVersionOrmWithRelations[];
   mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
   artwork?: Artwork[];
@@ -288,7 +289,9 @@ export type TvSeasonOrm = SpecificSubtype<
 export type TvShowOrm = SpecificSubtype<
   ProgramGroupingOrmWithRelations,
   'show'
->;
+> & {
+  seasons?: TvSeasonOrm[];
+};
 
 export type MusicAlbumOrm = SpecificSubtype<
   ProgramGroupingOrmWithRelations,
@@ -298,7 +301,9 @@ export type MusicAlbumOrm = SpecificSubtype<
 export type MusicArtistOrm = SpecificSubtype<
   ProgramGroupingOrmWithRelations,
   'artist'
->;
+> & {
+  albums?: MusicAlbumOrm[];
+};
 
 type WithNewGroupingExternalIds = {
   externalIds: NewSingleOrMultiProgramGroupingExternalId[];

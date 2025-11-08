@@ -10,9 +10,9 @@ import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
   ChannelOrmWithRelations,
   ChannelWithRelations,
-  MusicArtistWithExternalIds,
+  MusicArtistOrm,
   ProgramWithRelations,
-  TvShowWithExternalIds,
+  TvShowOrm,
 } from '@/db/schema/derivedTypes.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
 import type {
@@ -62,12 +62,12 @@ export interface IChannelDB {
   getChannelTvShows(
     id: string,
     pageParams?: PageParams,
-  ): Promise<PagedResult<TvShowWithExternalIds>>;
+  ): Promise<PagedResult<TvShowOrm>>;
 
   getChannelMusicArtists(
     id: string,
     pageParams?: PageParams,
-  ): Promise<PagedResult<MusicArtistWithExternalIds>>;
+  ): Promise<PagedResult<MusicArtistOrm>>;
 
   getChannelPrograms(
     id: string,

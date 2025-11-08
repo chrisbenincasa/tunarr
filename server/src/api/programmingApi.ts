@@ -13,6 +13,7 @@ import {
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
+import type { Episode, MusicAlbum, MusicTrack, Season } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import {
   BasicIdParamSchema,
@@ -54,7 +55,10 @@ import type { Artwork } from '../db/schema/Artwork.ts';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import type { MediaSourceId } from '../db/schema/base.js';
 
+import { match } from 'ts-pattern';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
+import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { globalOptions } from '../globals.ts';
 import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
@@ -606,52 +610,124 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           grouping.type,
           req.query,
         );
-        const result = seq.collect(results, (program) =>
-          req.serverCtx.programConverter.programDaoToContentProgram(
-            program,
-            program.externalIds,
-          ),
-        );
-
-        return res.send({
-          total,
-          result: {
-            type: grouping.type === 'album' ? 'track' : 'episode',
-            programs: result,
-          },
-          size: result.length,
-        });
-      } else if (grouping.type === 'artist') {
+        // Dealing with terminal programs.
+        const materialized = await container
+          .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+          .execute(results);
+        console.log(materialized);
+        const result = match(grouping.type)
+          .returnType<ProgramChildrenResult>()
+          .with('album', () => ({
+            total,
+            result: {
+              type: 'track',
+              programs: materialized.filter(
+                (p): p is MusicTrack => p.type === 'track',
+              ),
+            },
+            size: materialized.length,
+          }))
+          .with('season', () => ({
+            total,
+            result: {
+              type: 'episode',
+              programs: materialized.filter(
+                (p): p is Episode => p.type === 'episode',
+              ),
+            },
+            size: materialized.length,
+          }))
+          .exhaustive();
+        return res.send(result);
+      } else {
         const { total, results } = await req.serverCtx.programDB.getChildren(
           req.params.id,
           grouping.type,
           req.query,
         );
-        const result = results.map((program) =>
-          req.serverCtx.programConverter.programGroupingDaoToDto(program),
-        );
-        return res.send({
-          total,
-          result: { type: 'album', programs: result },
-          size: result.length,
-        });
-      } else if (grouping.type === 'show') {
-        const { total, results } = await req.serverCtx.programDB.getChildren(
-          req.params.id,
-          grouping.type,
-          req.query,
-        );
-        const result = results.map((program) =>
-          req.serverCtx.programConverter.programGroupingDaoToDto(program),
-        );
-        return res.send({
-          total,
-          result: { type: 'season', programs: result },
-          size: result.length,
-        });
+        // Dealing with terminal programs.
+        const materialized = await container
+          .get<MaterializeProgramGroupings>(MaterializeProgramGroupings)
+          .execute(results);
+        const result = match(grouping.type)
+          .returnType<ProgramChildrenResult>()
+          .with('artist', () => ({
+            total,
+            result: {
+              type: 'album',
+              programs: materialized.filter(
+                (p): p is MusicAlbum => p.type === 'album',
+              ),
+            },
+            size: materialized.length,
+          }))
+          .with('show', () => ({
+            total,
+            result: {
+              type: 'season',
+              programs: materialized.filter(
+                (p): p is Season => p.type === 'season',
+              ),
+            },
+            size: materialized.length,
+          }))
+          .exhaustive();
+        return res.send(result);
       }
 
-      return res.status(400).send();
+      // if (grouping.type === 'album' || grouping.type === 'season') {
+      //   const { total, results } = await req.serverCtx.programDB.getChildren(
+      //     req.params.id,
+      //     grouping.type,
+      //     req.query,
+      //   );
+      //   const result = seq.collect(results, (program) =>
+      //     req.serverCtx.programConverter.programDaoToContentProgram(
+      //       program,
+      //       program.externalIds,
+      //     ),
+      //   );
+
+      //   return res.status(405).send();
+      //   return res.send({
+      //     total,
+      //     result: {
+      //       type: grouping.type === 'album' ? 'track' : 'episode',
+      //       programs: result,
+      //     },
+      //     size: result.length,
+      //   });
+      // } else if (grouping.type === 'artist') {
+      //   const { total, results } = await req.serverCtx.programDB.getChildren(
+      //     req.params.id,
+      //     grouping.type,
+      //     req.query,
+      //   );
+      //   const result = results.map((program) =>
+      //     req.serverCtx.programConverter.programGroupingDaoToDto(program),
+      //   );
+      //   return res.send({
+      //     total,
+      //     result: { type: 'album', programs: result },
+      //     size: result.length,
+      //   });
+      // } else if (grouping.type === 'show') {
+      //   const { total, results } = await req.serverCtx.programDB.getChildren(
+      //     req.params.id,
+      //     grouping.type,
+      //     req.query,
+      //   );
+      //   const result = results.map((program) =>
+      //     req.serverCtx.programConverter.programGroupingDaoToDto(program),
+      //   );
+      //   return res.send({
+      //     total,
+      //     result: { type: 'season', programs: result },
+      //     size: result.length,
+      //   });
+      // }
+
+      // return res.status(400).send();
     },
   );
 

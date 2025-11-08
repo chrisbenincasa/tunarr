@@ -31,7 +31,8 @@ import {
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, count, countDistinct, eq, inArray, sql } from 'drizzle-orm';
+import { SelectedFields, SQLiteSelectBuilder } from 'drizzle-orm/sqlite-core';
 import { inject, injectable, interfaces } from 'inversify';
 import {
   CaseWhenBuilder,
@@ -68,6 +69,7 @@ import {
   reject,
   round,
   some,
+  sum,
   uniq,
   uniqBy,
 } from 'lodash-es';
@@ -80,6 +82,10 @@ import {
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { typedProperty } from '../types/path.ts';
+import {
+  createManyRelationAgg,
+  mapRawExternalIdsResult,
+} from '../util/drizzleUtil.ts';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import {
   flatMapAsyncSeq,
@@ -115,10 +121,12 @@ import {
   withTvShow,
 } from './programQueryHelpers.ts';
 import { Artwork, NewArtwork } from './schema/Artwork.ts';
+import { ChannelPrograms } from './schema/ChannelPrograms.ts';
 import { Credit, NewCredit } from './schema/Credit.ts';
 import { RemoteMediaSourceType } from './schema/MediaSource.ts';
 import {
   NewProgramDao,
+  Program,
   ProgramDao,
   ProgramType,
   ProgramDao as RawProgram,
@@ -136,6 +144,7 @@ import {
   ProgramGrouping,
   ProgramGroupingType,
   ProgramGroupingUpdate,
+  type ProgramGroupingTypes,
 } from './schema/ProgramGrouping.ts';
 import {
   NewProgramGroupingExternalId,
@@ -164,15 +173,16 @@ import {
 } from './schema/base.js';
 import { DB } from './schema/db.ts';
 import type {
-  MusicAlbumWithExternalIds,
+  MusicAlbumOrm,
   NewProgramGroupingWithRelations,
   NewProgramVersion,
   NewProgramWithRelations,
+  ProgramGroupingOrmWithRelations,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
   ProgramWithRelations,
   ProgramWithRelationsOrm,
-  TvSeasonWithExternalIds,
+  TvSeasonOrm,
 } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 
@@ -415,159 +425,247 @@ export class ProgramDB implements IProgramDB {
     parentId: string,
     parentType: 'season' | 'album',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<ProgramWithExternalIds>>;
+  ): Promise<PagedResult<ProgramWithRelationsOrm>>;
   getChildren(
     parentId: string,
     parentType: 'artist',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
+  ): Promise<PagedResult<MusicAlbumOrm>>;
   getChildren(
     parentId: string,
     parentType: 'show',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<TvSeasonWithExternalIds>>;
+  ): Promise<PagedResult<TvSeasonOrm>>;
+  getChildren(
+    parentId: string,
+    parentType: 'artist' | 'show',
+    params?: WithChannelIdFilter<PageParams>,
+  ): Promise<PagedResult<ProgramGroupingOrmWithRelations>>;
   async getChildren(
     parentId: string,
     parentType: ProgramGroupingType,
     params?: WithChannelIdFilter<PageParams>,
   ): Promise<
-    PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
+    | PagedResult<ProgramWithRelationsOrm>
+    | PagedResult<ProgramGroupingOrmWithRelations>
   > {
     if (parentType === 'album' || parentType === 'season') {
-      const baseQuery = params?.channelId
-        ? this.db
-            .selectFrom('channelPrograms')
-            .where('channelPrograms.channelUuid', '=', params.channelId)
-            .innerJoin('program', 'program.uuid', 'channelPrograms.programUuid')
-            .where(
-              'program.type',
-              '=',
-              parentType === 'album' ? 'track' : 'episode',
-            )
-            .where(
-              parentType === 'album' ? 'albumUuid' : 'seasonUuid',
-              '=',
+      return this.getTerminalChildren(parentId, parentType, params);
+    } else {
+      return this.getGroupingChildren(parentId, parentType, params);
+    }
+  }
+
+  private async getGroupingChildren(
+    parentId: string,
+    parentType: ProgramGroupingTypes['Show'] | ProgramGroupingTypes['Artist'],
+    params?: WithChannelIdFilter<PageParams>,
+  ) {
+    const childType = parentType === 'artist' ? 'album' : 'season';
+    function builder<
+      TSelection extends SelectedFields | undefined,
+      TResultType extends 'sync' | 'async',
+      TRunResult,
+    >(f: SQLiteSelectBuilder<TSelection, TResultType, TRunResult>) {
+      return f
+        .from(Program)
+        .where(
+          and(
+            eq(
+              Program.type,
+              parentType === ProgramGroupingType.Show
+                ? ProgramType.Episode
+                : ProgramType.Track,
+            ),
+            eq(
+              parentType === ProgramGroupingType.Show
+                ? Program.tvShowUuid
+                : Program.artistUuid,
               parentId,
-            )
-        : this.db
-            .selectFrom('program')
-            .where(
-              'program.type',
-              '=',
-              parentType === 'album' ? 'track' : 'episode',
-            )
-            .where(
-              parentType === 'album' ? 'albumUuid' : 'seasonUuid',
-              '=',
-              parentId,
-            );
+            ),
+            params?.channelId
+              ? eq(ChannelPrograms.channelUuid, params.channelId)
+              : undefined,
+          ),
+        );
+    }
 
-      const countPromise = baseQuery
-        .select((eb) => eb.fn.count<number>('uuid').as('count'))
-        .executeTakeFirstOrThrow();
+    const sq = this.drizzleDB
+      .select()
+      .from(ProgramGroupingExternalId)
+      .where(eq(ProgramGroupingExternalId.groupUuid, ProgramGrouping.uuid))
+      .as('sq');
 
-      const resultPromise = baseQuery
-        .select(withProgramExternalIds)
-        .selectAll()
-        .orderBy(['seasonNumber asc', 'episode asc'])
-        .$if(!!params && params.limit >= 0, (eb) => eb.offset(params!.offset))
-        .$if(!!params && params.limit >= 0, (eb) => eb.limit(params!.limit))
-        .execute();
+    const baseQuery = builder(
+      this.drizzleDB.select({
+        grouping: ProgramGrouping,
+        externalIds: createManyRelationAgg(sq, 'external_ids'),
+      }),
+    )
+      .innerJoin(
+        ProgramGrouping,
+        eq(
+          childType === 'season' ? Program.seasonUuid : Program.albumUuid,
+          ProgramGrouping.uuid,
+        ),
+      )
+      .orderBy(asc(ProgramGrouping.index))
+      .offset(params?.offset ?? 0)
+      .limit(params?.limit ?? 1_000_000)
+      .groupBy(ProgramGrouping.uuid);
 
-      const [{ count }, results] = await Promise.all([
-        countPromise,
-        resultPromise,
-      ]);
+    const baseCountQuery = builder(
+      this.drizzleDB.select({
+        count: countDistinct(ProgramGrouping.uuid),
+      }),
+    )
+      .innerJoin(
+        ProgramGrouping,
+        eq(
+          childType === 'season' ? Program.seasonUuid : Program.albumUuid,
+          ProgramGrouping.uuid,
+        ),
+      )
+      .groupBy(ProgramGrouping.uuid);
+
+    if (params?.channelId) {
+      const res = await baseQuery.innerJoin(
+        ChannelPrograms,
+        eq(ChannelPrograms.programUuid, Program.uuid),
+      );
+
+      const cq = baseCountQuery.innerJoin(
+        ChannelPrograms,
+        eq(ChannelPrograms.programUuid, Program.uuid),
+      );
+
+      const programs = res.map(({ grouping, externalIds }) => {
+        const withRelations = grouping as ProgramGroupingOrmWithRelations;
+        withRelations.externalIds = mapRawExternalIdsResult(
+          externalIds,
+          ProgramGroupingExternalId,
+        );
+        return withRelations;
+      });
 
       return {
-        total: count,
-        results,
+        total: sum((await cq).map(({ count }) => count)),
+        results: programs,
       };
     } else {
-      const childType = parentType === 'artist' ? 'album' : 'season';
-      if (params?.channelId) {
-        const baseQuery = this.db
-          .selectFrom('channelPrograms')
-          .where('channelPrograms.channelUuid', '=', params?.channelId)
-          .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-          .innerJoin(
-            'programGrouping',
-            childType === 'season' ? 'program.seasonUuid' : 'program.albumUuid',
-            'programGrouping.uuid',
-          )
-          .where(
-            'program.type',
-            '=',
-            childType === 'album' ? 'track' : 'episode',
-          )
-          .where(
-            parentType === 'artist'
-              ? 'program.artistUuid'
-              : 'program.tvShowUuid',
-            '=',
-            parentId,
-          )
-          .groupBy('programGrouping.uuid');
+      const res = await baseQuery;
 
-        const [{ count }, results] = await Promise.all([
-          baseQuery
-            .select((eb) =>
-              eb.fn
-                .count<number>('programGrouping.uuid')
-                .distinct()
-                .as('count'),
-            )
-            .executeTakeFirstOrThrow(),
-          baseQuery
-            .selectAll('programGrouping')
-            .orderBy(childType === 'season' ? 'title asc' : 'year asc')
-            .select(withProgramGroupingExternalIds)
-            .$if(!!params && params.limit >= 0, (eb) =>
-              eb.offset(params.offset),
-            )
-            .$if(!!params && params.limit >= 0, (eb) => eb.limit(params.limit))
-            .$narrowType<ProgramGroupingWithExternalIds[]>()
-            .execute(),
-        ]);
+      const programs = res.map(({ grouping, externalIds }) => {
+        const withRelations = grouping as ProgramGroupingOrmWithRelations;
+        withRelations.externalIds = mapRawExternalIdsResult(
+          externalIds,
+          ProgramGroupingExternalId,
+        );
+        return withRelations;
+      });
 
-        return {
-          total: count,
-          results,
-        };
-      } else {
-        const baseQuery = this.db
-          .selectFrom('programGrouping')
-          .where('programGrouping.type', '=', childType)
-          .where(
-            childType === 'season'
-              ? 'programGrouping.showUuid'
-              : 'programGrouping.artistUuid',
-            '=',
-            parentId,
-          );
+      return {
+        total: sum((await baseCountQuery).map(({ count }) => count)),
+        results: programs,
+      };
+    }
+  }
 
-        const [{ count }, results] = await Promise.all([
-          baseQuery
-            .select((eb) =>
-              eb.fn.count<number>('programGrouping.uuid').as('count'),
-            )
-            .executeTakeFirstOrThrow(),
-          baseQuery
-            .selectAll()
-            .orderBy(childType === 'season' ? 'title asc' : 'year asc')
-            .select(withProgramGroupingExternalIds)
-            .$if(!!params && params.limit >= 0, (eb) =>
-              eb.offset(params!.offset),
-            )
-            .$if(!!params && params.limit >= 0, (eb) => eb.limit(params!.limit))
-            .execute(),
-        ]);
+  private async getTerminalChildren(
+    parentId: string,
+    parentType: ProgramGroupingTypes['Season'] | ProgramGroupingTypes['Album'],
+    params?: WithChannelIdFilter<PageParams>,
+  ) {
+    function builder<
+      TSelection extends SelectedFields | undefined,
+      TResultType extends 'sync' | 'async',
+      TRunResult,
+    >(f: SQLiteSelectBuilder<TSelection, TResultType, TRunResult>) {
+      return f
+        .from(Program)
+        .where(
+          and(
+            eq(
+              Program.type,
+              parentType === ProgramGroupingType.Album
+                ? ProgramType.Track
+                : ProgramType.Episode,
+            ),
+            eq(
+              parentType === ProgramGroupingType.Album
+                ? Program.albumUuid
+                : Program.seasonUuid,
+              parentId,
+            ),
+            params?.channelId
+              ? eq(ChannelPrograms.channelUuid, params.channelId)
+              : undefined,
+          ),
+        );
+    }
 
-        return {
-          total: count,
-          results,
-        };
-      }
+    const sq = this.drizzleDB
+      .select()
+      .from(ProgramExternalId)
+      .where(eq(ProgramExternalId.programUuid, Program.uuid))
+      .as('sq');
+
+    const baseQuery = builder(
+      this.drizzleDB.select({
+        program: Program,
+        externalIds: createManyRelationAgg(sq, 'external_ids'),
+      }),
+    ).orderBy(asc(Program.episode));
+
+    const baseCountQuery = builder(
+      this.drizzleDB.select({
+        count: count(),
+      }),
+    );
+
+    if (params?.channelId) {
+      const res = await baseQuery
+        .offset(params?.offset ?? 0)
+        .limit(params?.limit ?? 1_000_000)
+        .innerJoin(
+          ChannelPrograms,
+          eq(ChannelPrograms.programUuid, Program.uuid),
+        );
+
+      const cq = baseCountQuery.innerJoin(
+        ChannelPrograms,
+        eq(ChannelPrograms.programUuid, Program.uuid),
+      );
+
+      const programs = res.map(({ program, externalIds }) => {
+        const withRelations: ProgramWithRelationsOrm = program;
+        withRelations.externalIds = mapRawExternalIdsResult(
+          externalIds,
+          ProgramExternalId,
+        );
+        return withRelations;
+      });
+
+      return {
+        total: sum((await cq).map(({ count }) => count)),
+        results: programs,
+      };
+    } else {
+      const res = await baseQuery;
+
+      const programs = res.map(({ program, externalIds }) => {
+        const withRelations: ProgramWithRelationsOrm = program;
+        withRelations.externalIds = mapRawExternalIdsResult(
+          externalIds,
+          ProgramExternalId,
+        );
+        return withRelations;
+      });
+
+      return {
+        total: sum((await baseCountQuery).map(({ count }) => count)),
+        results: programs,
+      };
     }
   }
 
