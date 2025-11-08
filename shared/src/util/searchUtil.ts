@@ -1,8 +1,13 @@
-import type { MediaSourceContentType, ProgramLike } from '@tunarr/types';
+import type {
+  MediaSourceContentType,
+  ProgramLike,
+  TupleToUnion,
+} from '@tunarr/types';
 import type {
   SearchFilter,
   SearchFilterOperatorNode,
   SearchFilterValueNode,
+  StringOperators,
 } from '@tunarr/types/api';
 import { FreeSearchQueryKeyMappings } from '@tunarr/types/api';
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
@@ -120,8 +125,18 @@ const allTokens = [
 
 const SearchExpressionLexer = new Lexer(allTokens);
 
-type StringOps = '=' | '!=' | '<' | '<=' | 'in' | 'contains';
+const StringOps = ['=', '!=', '<', '<=', 'in', 'contains'] as const;
+type StringOps = TupleToUnion<typeof StringOps>;
 type Ops = '=' | '!=' | '<' | '<=' | '>' | '>=';
+
+const StringOpToApiType = {
+  '<': 'starts with',
+  '<=': 'starts with',
+  '!=': '!=',
+  '=': '=',
+  contains: 'contains',
+  in: 'in',
+} satisfies Record<StringOps, StringOperators>;
 
 export type SearchGroup = {
   type: 'search_group';
@@ -427,15 +442,15 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
     }
     case 'single_query': {
       const key: string =
-        (FreeSearchQueryKeyMappings[input.field]) ?? input.field;
+        FreeSearchQueryKeyMappings[input.field] ?? input.field;
+
       return {
         type: 'value',
         fieldSpec: {
           // HACK for now
           key,
           name: '',
-          // TODO: Fix
-          op: input.op === '<' || input.op === '<=' ? 'starts with' : input.op,
+          op: StringOpToApiType[input.op],
           // TODO: derive better type based on field
           type: 'string' as const,
           value: isArray(input.value) ? input.value : [input.value],

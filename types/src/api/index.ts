@@ -16,9 +16,11 @@ import {
   CondensedChannelProgramSchema,
   ContentProgramSchema,
   CustomProgramSchema,
+  Episode,
   ItemOrFolder,
-  MusicAlbumContentProgramSchema,
-  TvSeasonContentProgramSchema,
+  MusicAlbum,
+  MusicTrack,
+  Season,
 } from '../schemas/programmingSchema.js';
 import {
   BackupSettingsSchema,
@@ -384,20 +386,27 @@ export const SlotScheduleWithPrograms = z.object({
 export type SlotScheduleWithPrograms = z.infer<typeof SlotScheduleWithPrograms>;
 
 export const ProgramChildrenResult = PagedResult(
-  z
-    .object({
-      type: z.enum(['season', 'album']),
-      programs: z
-        .array(TvSeasonContentProgramSchema)
-        .or(z.array(MusicAlbumContentProgramSchema)),
-    })
-    .or(
-      z.object({
-        type: z.enum(['episode', 'track']),
-        programs: z.array(ContentProgramSchema),
-      }),
-    ),
+  z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('season'),
+      programs: Season.array(),
+    }),
+    z.object({
+      type: z.literal('album'),
+      programs: MusicAlbum.array(),
+    }),
+    z.object({
+      type: z.literal('episode'),
+      programs: Episode.array(),
+    }),
+    z.object({
+      type: z.literal('track'),
+      programs: MusicTrack.array(),
+    }),
+  ]),
 );
+
+export type ProgramChildrenResult = z.infer<typeof ProgramChildrenResult>;
 
 export const UpdateMediaSourceLibraryRequest = z.object({
   enabled: z.boolean(),

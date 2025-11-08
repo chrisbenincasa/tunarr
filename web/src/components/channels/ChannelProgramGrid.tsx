@@ -2,30 +2,23 @@ import { Box } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type {
   ContentProgramParent,
-  MultiExternalId,
-  MusicArtistContentProgram,
-  TvShowContentProgram,
+  MusicArtist,
+  ProgramOrFolder,
+  Show,
 } from '@tunarr/types';
-import { type ContentProgram } from '@tunarr/types';
-import type { MultiExternalIdType } from '@tunarr/types/schemas';
-import {
-  isValidMultiExternalIdType,
-  type ContentProgramType,
-} from '@tunarr/types/schemas';
+import { type ContentProgramType } from '@tunarr/types/schemas';
 import { identity, isEmpty, last, sumBy } from 'lodash-es';
-import { forwardRef, useCallback, useMemo, type ForwardedRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   getApiChannelsByIdArtists,
   getApiChannelsByIdPrograms,
   getApiChannelsByIdShows,
   getApiProgramsByIdChildren,
 } from '../../generated/sdk.gen.ts';
-import { isNonEmptyString, prettyItemDuration } from '../../helpers/util.ts';
-import { useThumbnailUrl } from '../../hooks/useThumbnailUrl.ts';
-import type { GridItemMetadata } from '../channel_config/MediaGridItem.tsx';
-import { MediaGridItem } from '../channel_config/MediaGridItem.tsx';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import type { GridItemProps } from '../channel_config/MediaItemGrid.tsx';
 import { MediaItemGrid } from '../channel_config/MediaItemGrid.tsx';
+import { ProgramGridItem } from '../library/ProgramGridItem.tsx';
 
 type AllProgramTypes = ContentProgramType | ContentProgramParent['type'];
 
@@ -44,154 +37,6 @@ const ProgramTypeToChildType: Partial<
   album: 'track',
   artist: 'album',
 };
-
-const GridItemImpl = forwardRef(
-  (
-    { item: program, index, depth }: GridItemProps<ContentProgram>,
-    ref: ForwardedRef<HTMLDivElement>,
-  ) => {
-    const thumbnailUrlFunc = useThumbnailUrl();
-    const metadata = useMemo(() => {
-      const year =
-        program.year ??
-        (program.date ? new Date(program.date).getFullYear() : null);
-      return {
-        aspectRatio:
-          program.subtype === 'track'
-            ? 'square'
-            : program.subtype === 'music_video' || program.subtype === 'episode'
-              ? 'landscape'
-              : 'portrait',
-        childCount: null,
-        isPlaylist: false,
-        itemId: program.id!,
-        subtitle: `${prettyItemDuration(program.duration)}${year ? ` (${year})` : ''}`,
-        thumbnailUrl: thumbnailUrlFunc({
-          sourceType: program.externalSourceType,
-          externalId: program.externalKey,
-          mediaSourceId: program.externalSourceId,
-          type: program.subtype,
-          uuid: program.id!,
-        }),
-        title: program.title,
-        persisted: true,
-        itemType: program.subtype,
-      } satisfies GridItemMetadata;
-    }, [
-      program.date,
-      program.duration,
-      program.externalKey,
-      program.externalSourceId,
-      program.externalSourceType,
-      program.id,
-      program.subtype,
-      program.title,
-      program.year,
-      thumbnailUrlFunc,
-    ]);
-
-    return (
-      <MediaGridItem
-        ref={ref}
-        key={program.id}
-        depth={depth}
-        index={index}
-        isModalOpen={false}
-        item={program}
-        itemSource={program.externalSourceType}
-        metadata={metadata}
-        enableSelection={false}
-        onClick={() => {}}
-        onSelect={() => {}}
-        disablePadding
-      />
-    );
-  },
-);
-
-const ParentGridItemImpl = forwardRef(
-  (
-    {
-      item: program,
-      index,
-      moveModal,
-      depth,
-    }: GridItemProps<ContentProgramParent>,
-    ref: ForwardedRef<HTMLDivElement>,
-  ) => {
-    const thumbnailUrlFunc = useThumbnailUrl();
-    const metadata = useMemo(() => {
-      const year = program.year;
-      const externalId = program.externalIds.find(
-        (eid): eid is MultiExternalId =>
-          eid.source === 'plex' ||
-          eid.source === 'jellyfin' ||
-          eid.source === 'emby',
-      );
-      return {
-        aspectRatio:
-          program.type === 'artist' || program.type === 'album'
-            ? 'square'
-            : 'portrait',
-        childCount: 1,
-        isPlaylist: false,
-        itemId: program.id!,
-        subtitle: year ? (program.year?.toString() ?? null) : null,
-        thumbnailUrl: thumbnailUrlFunc({
-          externalId: externalId?.id ?? '',
-          mediaSourceId: externalId?.sourceId ?? '',
-          sourceType: externalId?.source ?? 'local',
-          type: program.type,
-          uuid: program.id!,
-        }),
-        title: program.title ?? '',
-        mayHaveChildren: true,
-        persisted: true,
-        itemType: program.type,
-      } satisfies GridItemMetadata;
-    }, [
-      program.externalIds,
-      program.id,
-      program.title,
-      program.type,
-      program.year,
-      thumbnailUrlFunc,
-    ]);
-
-    const externalSourceType = useMemo(
-      () =>
-        program.externalIds.find((eid) =>
-          eid.type === 'multi' &&
-          isValidMultiExternalIdType(eid.source) &&
-          isNonEmptyString(eid.sourceId)
-            ? true
-            : false,
-        )?.source ?? 'plex',
-      [program.externalIds],
-    ) as MultiExternalIdType;
-
-    const handleClick = useCallback(() => {
-      moveModal(index, program);
-    }, [index, moveModal, program]);
-
-    return (
-      <MediaGridItem
-        ref={ref}
-        key={program.id}
-        depth={depth}
-        index={index}
-        isModalOpen={false}
-        item={program}
-        itemSource={externalSourceType}
-        metadata={metadata}
-        enableSelection={false}
-        onClick={handleClick}
-        onSelect={() => {}}
-        disablePadding
-      />
-    );
-  },
-);
 
 function isParentType(type: ContentProgramType | ContentProgramParent['type']) {
   switch (type) {
@@ -261,7 +106,7 @@ export const ChannelProgramGrid = ({
       pageParam,
     }): Promise<{
       total: number;
-      result: Array<TvShowContentProgram> | Array<MusicArtistContentProgram>;
+      result: Array<Show> | Array<MusicArtist>;
     }> => {
       const prom = await (programType === 'show'
         ? getApiChannelsByIdShows({
@@ -285,7 +130,6 @@ export const ChannelProgramGrid = ({
       return totalSize;
     },
     initialPageParam: 0,
-    // These are terminal types
     enabled: gridType === 'parent',
   });
 
@@ -321,31 +165,17 @@ export const ChannelProgramGrid = ({
     enabled: gridType === 'nested',
   });
 
-  const renderContentProgramGridItem = useCallback(
-    (props: GridItemProps<ContentProgram>) => <GridItemImpl {...props} />,
-    [],
-  );
-
   const renderParentProgramGridItem = useCallback(
-    (props: GridItemProps<ContentProgramParent>) => (
-      <ParentGridItemImpl {...props} />
+    (props: GridItemProps<ProgramOrFolder>) => (
+      <ProgramGridItem
+        key={props.item.uuid}
+        // disableSelection={disableProgramSelection}
+        disableSelection
+        persisted
+        {...props}
+      />
     ),
     [],
-  );
-
-  const renderParentOrChild = useCallback(
-    (props: GridItemProps<ContentProgram | ContentProgramParent>) => {
-      switch (props.item.type) {
-        case 'season':
-        case 'album':
-        case 'show':
-        case 'artist':
-          return renderParentProgramGridItem({ ...props, item: props.item });
-        case 'content':
-          return renderContentProgramGridItem({ ...props, item: props.item });
-      }
-    },
-    [renderContentProgramGridItem, renderParentProgramGridItem],
   );
 
   return (
@@ -369,11 +199,11 @@ export const ChannelProgramGrid = ({
               channelId={channelId}
               depth={props.depth}
               programType={ProgramTypeToChildType[programType]!}
-              parentId={props.parent?.id}
+              parentId={props.parent?.uuid}
             />
           )}
           renderGridItem={renderParentProgramGridItem}
-          getItemKey={(p) => p.id!}
+          getItemKey={(p) => p.uuid}
           depth={depth}
         />
       ) : gridType === 'nested' ? (
@@ -389,11 +219,11 @@ export const ChannelProgramGrid = ({
               channelId={channelId}
               depth={props.depth}
               programType={ProgramTypeToChildType[programType]!}
-              parentId={props.parent?.id}
+              parentId={props.parent?.uuid}
             />
           )}
-          renderGridItem={renderParentOrChild}
-          getItemKey={(p) => p.id!}
+          renderGridItem={renderParentProgramGridItem}
+          getItemKey={(p) => p.uuid}
           depth={depth}
         />
       ) : (
@@ -402,8 +232,8 @@ export const ChannelProgramGrid = ({
           getPageDataSize={(page) => ({ size: page.length })}
           extractItems={identity}
           renderNestedGrid={() => null}
-          renderGridItem={renderContentProgramGridItem}
-          getItemKey={(p) => p.id!}
+          renderGridItem={renderParentProgramGridItem}
+          getItemKey={(p) => p.uuid}
           depth={depth}
         />
       )}

@@ -7,7 +7,7 @@ import { isDefined } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { timeNamedAsync } from '@/util/perf.js';
 import { seq } from '@tunarr/shared/util';
-import type { ChannelSession, CreateChannelRequest } from '@tunarr/types';
+import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
@@ -26,11 +26,11 @@ import {
   ContentProgramSchema,
   ContentProgramTypeSchema,
   CreateChannelRequestSchema,
-  MusicArtistContentProgramSchema,
+  MusicArtist,
   SaveableChannelSchema,
+  Show as ShowSchema,
   TranscodeConfigSchema,
   TvGuideProgramSchema,
-  TvShowContentProgramSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
@@ -48,6 +48,7 @@ import {
 import z from 'zod/v4';
 import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializedChannelScheduleCommand.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
+import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { container } from '../container.ts';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
@@ -390,7 +391,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: BasicIdParamSchema,
         querystring: PagingParams,
         response: {
-          200: PagedResult(z.array(TvShowContentProgramSchema)),
+          200: PagedResult(z.array(ShowSchema)),
         },
       },
     },
@@ -401,12 +402,15 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           req.query,
         );
 
+      const apiGroupings = await container
+        .get<MaterializeProgramGroupings>(MaterializeProgramGroupings)
+        .execute(shows);
+      const apiShows = apiGroupings.filter((group) => group.type === 'show');
+
       return res.send({
         total,
-        result: shows.map((show) =>
-          req.serverCtx.programConverter.tvShowDaoToDto(show),
-        ),
-        size: shows.length,
+        result: apiShows,
+        size: apiShows.length,
       });
     },
   );
@@ -418,50 +422,29 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         params: BasicIdParamSchema,
         querystring: PagingParams,
         response: {
-          200: PagedResult(z.array(MusicArtistContentProgramSchema)),
+          200: PagedResult(z.array(MusicArtist)),
         },
       },
     },
     async (req, res) => {
-      const { total, results: shows } =
+      const { total, results: musicArtists } =
         await req.serverCtx.channelDB.getChannelMusicArtists(
           req.params.id,
           req.query,
         );
 
+      const apiGroupings = await container
+        .get<MaterializeProgramGroupings>(MaterializeProgramGroupings)
+        .execute(musicArtists);
+      const artists = apiGroupings.filter((group) => group.type === 'artist');
+
       return res.send({
         total,
-        result: shows.map((show) =>
-          req.serverCtx.programConverter.musicArtistDaoToDto(show),
-        ),
-        size: shows.length,
+        result: artists,
+        size: artists.length,
       });
     },
   );
-
-  // fastify.get(
-  //   '/channels/:id/shows',
-  //   {
-  //     schema: {
-  //       params: BasicIdParamSchema,
-  //       querystring: PagingParams,
-  //       response: {
-  //         200: z.array(ContentProgramParentSchema),
-  //       },
-  //     },
-  //   },
-  //   async (req, res) => {
-  //     const shows = await req.serverCtx.channelDB.getChannelTvShows(
-  //       req.params.id,
-  //     );
-
-  //     return res.send(
-  //       shows.map((show) =>
-  //         req.serverCtx.programConverter.programGroupingDaoToDto(show),
-  //       ),
-  //     );
-  //   },
-  // );
 
   fastify.get(
     '/channels/:id/programming',

@@ -602,38 +602,6 @@ export class ProgramConverter {
     return base;
   }
 
-  tvShowDaoToDto(program: TvShowWithExternalIds): TvShowContentProgram {
-    const base = this.programGroupingDaoToDto(program);
-    return {
-      ...base,
-      type: 'show',
-      seasons: program.seasons?.map(
-        (season) =>
-          ({
-            ...this.programGroupingDaoToDto(season),
-            type: 'season',
-          }) satisfies TvSeasonContentProgram,
-      ),
-    } satisfies TvShowContentProgram;
-  }
-
-  musicArtistDaoToDto(
-    program: MusicArtistWithExternalIds,
-  ): MusicArtistContentProgram {
-    const base = this.programGroupingDaoToDto(program);
-    return {
-      ...base,
-      type: 'artist',
-      albums: program.albums?.map(
-        (season) =>
-          ({
-            ...this.programGroupingDaoToDto(season),
-            type: 'album',
-          }) satisfies MusicAlbumContentProgram,
-      ),
-    } satisfies MusicArtistContentProgram;
-  }
-
   offlineLineupItemToProgram(
     channel: ChannelWithRelations,
     program: OfflineItem,

@@ -1,3 +1,4 @@
+import type { InferSelectModel } from 'drizzle-orm';
 import { inArray, relations, sql } from 'drizzle-orm';
 import {
   check,
@@ -93,6 +94,8 @@ export function toInsertableProgramExternalId(
     'type'
   >;
 }
+
+export type ProgramExternalIdOrm = InferSelectModel<typeof ProgramExternalId>;
 
 export type MinimalProgramExternalId = MarkRequired<
   Partial<ProgramExternalId>,

@@ -90,6 +90,17 @@ class Connection {
       client: this.sqlite,
       casing: 'snake_case',
       schema,
+      logger: process.env['DATABASE_DEBUG_LOGGING']
+        ? {
+            logQuery: (query, params) => {
+              this.logger.debug(
+                'Query: %s. Params: %s',
+                query,
+                JSON.stringify(params),
+              );
+            },
+          }
+        : false,
     });
   }
 

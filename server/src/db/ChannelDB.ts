@@ -31,6 +31,7 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ContentProgramType } from '@tunarr/types/schemas';
+import { and, asc, count, countDistinct, eq, isNotNull } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -39,6 +40,7 @@ import {
   drop,
   entries,
   filter,
+  flatten,
   forEach,
   groupBy,
   isEmpty,
@@ -100,15 +102,12 @@ import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
   AllProgramGroupingFields,
   withFallbackPrograms,
-  withMusicArtistAlbums,
   withProgramExternalIds,
-  withProgramGroupingExternalIds,
   withPrograms,
   withTrackAlbum,
   withTrackArtist,
   withTvSeason,
   withTvShow,
-  withTvShowSeasons,
 } from './programQueryHelpers.ts';
 import {
   Channel,
@@ -117,12 +116,17 @@ import {
   Channel as RawChannel,
 } from './schema/Channel.ts';
 import { NewChannelFillerShow } from './schema/ChannelFillerShow.ts';
-import { NewChannelProgram } from './schema/ChannelPrograms.ts';
-import { ProgramType } from './schema/Program.ts';
+import {
+  ChannelPrograms,
+  NewChannelProgram,
+} from './schema/ChannelPrograms.ts';
+import { Program, ProgramType } from './schema/Program.ts';
 import {
   MinimalProgramGroupingFields,
+  ProgramGrouping,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
+import { ProgramGroupingExternalIdOrm } from './schema/ProgramGroupingExternalId.ts';
 import {
   ChannelSubtitlePreferences,
   NewChannelSubtitlePreference,
@@ -132,9 +136,13 @@ import {
   ChannelOrmWithRelations,
   ChannelWithPrograms,
   ChannelWithRelations,
+  MusicAlbumOrm,
+  MusicArtistOrm,
   MusicArtistWithExternalIds,
+  ProgramGroupingOrmWithRelations,
   ProgramWithRelations,
-  TvShowWithExternalIds,
+  TvSeasonOrm,
+  TvShowOrm,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
 
@@ -390,43 +398,96 @@ export class ChannelDB implements IChannelDB {
   async getChannelTvShows(
     id: string,
     pageParams?: PageParams,
-  ): Promise<PagedResult<TvShowWithExternalIds>> {
-    const baseQuery = this.db
-      .selectFrom('channelPrograms')
-      .where('channelPrograms.channelUuid', '=', id)
-      .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-      .innerJoin(
-        'programGrouping',
-        'program.tvShowUuid',
-        'programGrouping.uuid',
+  ): Promise<PagedResult<TvShowOrm>> {
+    const groups = await this.drizzleDB
+      .select({
+        programGrouping: ProgramGrouping,
+      })
+      .from(ChannelPrograms)
+      .where(
+        and(
+          eq(ChannelPrograms.channelUuid, id),
+          eq(Program.type, ProgramType.Episode),
+          isNotNull(Program.tvShowUuid),
+          eq(ProgramGrouping.type, ProgramGroupingType.Show),
+        ),
       )
-      .where('program.type', '=', 'episode')
-      .where('program.tvShowUuid', 'is not', null)
-      .where('programGrouping.type', '=', ProgramGroupingType.Show);
+      .groupBy(Program.tvShowUuid)
+      .orderBy(asc(ProgramGrouping.uuid))
+      .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid))
+      .innerJoin(ProgramGrouping, eq(ProgramGrouping.uuid, Program.tvShowUuid))
+      .offset(pageParams?.offset ?? 0)
+      .limit(pageParams?.limit ?? 1_000_000);
 
-    const countPromise = baseQuery
-      .select((eb) =>
-        eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
+    const countPromise = this.drizzleDB
+      .select({
+        count: countDistinct(ProgramGrouping.uuid),
+      })
+      .from(ChannelPrograms)
+      .where(
+        and(
+          eq(ChannelPrograms.channelUuid, id),
+          eq(Program.type, ProgramType.Episode),
+          isNotNull(Program.tvShowUuid),
+          eq(ProgramGrouping.type, ProgramGroupingType.Show),
+        ),
       )
-      .executeTakeFirstOrThrow();
-    const showPromise = baseQuery
-      .selectAll('programGrouping')
-      .select(withProgramGroupingExternalIds)
-      .select(withTvShowSeasons)
-      .groupBy('program.tvShowUuid')
-      .orderBy('programGrouping.uuid asc')
-      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-        eb.offset(pageParams!.offset),
-      )
-      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-        eb.limit(pageParams!.limit),
-      )
-      .execute() as Promise<TvShowWithExternalIds[]>;
+      .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid))
+      .innerJoin(ProgramGrouping, eq(ProgramGrouping.uuid, Program.tvShowUuid));
 
-    const [{ count }, shows] = await Promise.all([countPromise, showPromise]);
+    // Populate external ids
+    const externalIdQueries: Promise<ProgramGroupingExternalIdOrm[]>[] = [];
+    const seasonQueries: Promise<ProgramGroupingOrmWithRelations[]>[] = [];
+    for (const groupChunk of chunk(groups, 100)) {
+      const ids = groupChunk.map(({ programGrouping }) => programGrouping.uuid);
+      externalIdQueries.push(
+        this.drizzleDB.query.programGroupingExternalId.findMany({
+          where: (fields, { inArray }) => inArray(fields.groupUuid, ids),
+        }),
+      );
+      seasonQueries.push(
+        this.drizzleDB.query.programGrouping.findMany({
+          where: (fields, { eq, and, inArray }) =>
+            and(
+              eq(fields.type, ProgramGroupingType.Season),
+              inArray(fields.showUuid, ids),
+            ),
+          with: {
+            externalIds: true,
+          },
+        }),
+      );
+    }
+
+    const [externalIdResults, seasonResults] = await Promise.all([
+      Promise.all(externalIdQueries).then(flatten),
+      Promise.all(seasonQueries).then(flatten),
+    ]);
+
+    const externalIdsByGroupId = groupBy(
+      externalIdResults,
+      (id) => id.groupUuid,
+    );
+    const seasonByGroupId = groupBy(seasonResults, (season) => season.showUuid);
+
+    const shows: TvShowOrm[] = [];
+    for (const { programGrouping } of groups) {
+      if (programGrouping.type === 'show') {
+        const seasons =
+          seasonByGroupId[programGrouping.uuid]?.filter(
+            (group): group is TvSeasonOrm => group.type === 'season',
+          ) ?? [];
+        shows.push({
+          ...programGrouping,
+          type: 'show',
+          externalIds: externalIdsByGroupId[programGrouping.uuid] ?? [],
+          seasons,
+        });
+      }
+    }
 
     return {
-      total: count,
+      total: sum((await countPromise).map(({ count }) => count)),
       results: shows,
     };
   }
@@ -435,45 +496,132 @@ export class ChannelDB implements IChannelDB {
     id: string,
     pageParams?: PageParams,
   ): Promise<PagedResult<MusicArtistWithExternalIds>> {
-    const baseQuery = this.db
-      .selectFrom('channelPrograms')
-      .where('channelPrograms.channelUuid', '=', id)
-      .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-      .innerJoin(
-        'programGrouping',
-        'program.artistUuid',
-        'programGrouping.uuid',
+    const groups = await this.drizzleDB
+      .select({
+        programGrouping: ProgramGrouping,
+      })
+      .from(ChannelPrograms)
+      .where(
+        and(
+          eq(ChannelPrograms.channelUuid, id),
+          eq(Program.type, ProgramType.Track),
+          isNotNull(Program.artistUuid),
+          eq(ProgramGrouping.type, ProgramGroupingType.Artist),
+        ),
       )
-      .where('program.type', '=', ProgramType.Track)
-      .where('program.artistUuid', 'is not', null)
-      .where('programGrouping.type', '=', ProgramGroupingType.Artist);
+      .groupBy(Program.artistUuid)
+      .orderBy(asc(ProgramGrouping.uuid))
+      .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid))
+      .innerJoin(ProgramGrouping, eq(ProgramGrouping.uuid, Program.artistUuid))
+      .offset(pageParams?.offset ?? 0)
+      .limit(pageParams?.limit ?? 1_000_000);
 
-    const countPromise = baseQuery
-      .select((eb) =>
-        eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
+    const countPromise = this.drizzleDB
+      .select({
+        count: count(),
+      })
+      .from(ChannelPrograms)
+      .where(
+        and(
+          eq(ChannelPrograms.channelUuid, id),
+          eq(Program.type, ProgramType.Episode),
+          isNotNull(Program.tvShowUuid),
+          eq(ProgramGrouping.type, ProgramGroupingType.Show),
+        ),
       )
-      .executeTakeFirstOrThrow();
-    const artistsPromise = baseQuery
-      .selectAll('programGrouping')
-      .select(withProgramGroupingExternalIds)
-      .select(withMusicArtistAlbums)
-      .groupBy('program.artistUuid')
-      .orderBy('programGrouping.uuid asc')
-      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-        eb.offset(pageParams!.offset),
-      )
-      .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-        eb.limit(pageParams!.limit),
-      )
-      .execute() as Promise<MusicArtistWithExternalIds[]>;
+      .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid))
+      .innerJoin(ProgramGrouping, eq(ProgramGrouping.uuid, Program.tvShowUuid));
 
-    const [{ count }, artists] = await Promise.all([
-      countPromise,
-      artistsPromise,
+    // Populate external ids
+    const externalIdQueries: Promise<ProgramGroupingExternalIdOrm[]>[] = [];
+    const seasonQueries: Promise<ProgramGroupingOrmWithRelations[]>[] = [];
+    for (const groupChunk of chunk(groups, 100)) {
+      const ids = groupChunk.map(({ programGrouping }) => programGrouping.uuid);
+      externalIdQueries.push(
+        this.drizzleDB.query.programGroupingExternalId.findMany({
+          where: (fields, { inArray }) => inArray(fields.groupUuid, ids),
+        }),
+      );
+      seasonQueries.push(
+        this.drizzleDB.query.programGrouping.findMany({
+          where: (fields, { eq, and, inArray }) =>
+            and(
+              eq(fields.type, ProgramGroupingType.Season),
+              inArray(fields.showUuid, ids),
+            ),
+          with: {
+            externalIds: true,
+          },
+        }),
+      );
+    }
+
+    const [externalIdResults, seasonResults] = await Promise.all([
+      Promise.all(externalIdQueries).then(flatten),
+      Promise.all(seasonQueries).then(flatten),
     ]);
 
+    const externalIdsByGroupId = groupBy(
+      externalIdResults,
+      (id) => id.groupUuid,
+    );
+    const seasonByGroupId = groupBy(seasonResults, (season) => season.showUuid);
+
+    const artists: MusicArtistOrm[] = [];
+    for (const { programGrouping } of groups) {
+      if (programGrouping.type === 'artist') {
+        const albums =
+          seasonByGroupId[programGrouping.uuid]?.filter(
+            (group): group is MusicAlbumOrm => group.type === 'album',
+          ) ?? [];
+        artists.push({
+          ...programGrouping,
+          type: 'artist',
+          externalIds: externalIdsByGroupId[programGrouping.uuid] ?? [],
+          albums,
+        });
+      }
+    }
+
+    // const baseQuery = this.db
+    //   .selectFrom('channelPrograms')
+    //   .where('channelPrograms.channelUuid', '=', id)
+    //   .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
+    //   .innerJoin(
+    //     'programGrouping',
+    //     'program.artistUuid',
+    //     'programGrouping.uuid',
+    //   )
+    //   .where('program.type', '=', ProgramType.Track)
+    //   .where('program.artistUuid', 'is not', null)
+    //   .where('programGrouping.type', '=', ProgramGroupingType.Artist);
+
+    // const countPromise = baseQuery
+    //   .select((eb) =>
+    //     eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
+    //   )
+    //   .executeTakeFirstOrThrow();
+    // const artistsPromise = baseQuery
+    //   .selectAll('programGrouping')
+    //   .select(withProgramGroupingExternalIds)
+    //   .select(withMusicArtistAlbums)
+    //   .groupBy('program.artistUuid')
+    //   .orderBy('programGrouping.uuid asc')
+    //   .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+    //     eb.offset(pageParams!.offset),
+    //   )
+    //   .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
+    //     eb.limit(pageParams!.limit),
+    //   )
+    //   .execute() as Promise<MusicArtistWithExternalIds[]>;
+
+    // const [{ count }, artists] = await Promise.all([
+    //   countPromise,
+    //   artistsPromise,
+    // ]);
+
     return {
-      total: count,
+      total: sum((await countPromise).map(({ count }) => count)),
       results: artists,
     };
   }

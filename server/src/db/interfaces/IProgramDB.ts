@@ -13,7 +13,7 @@ import type {
 } from '@/db/schema/ProgramExternalId.js';
 import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
 import type {
-  MusicAlbumWithExternalIds,
+  MusicAlbumOrm,
   NewProgramGroupingWithRelations,
   NewProgramVersion,
   NewProgramWithRelations,
@@ -22,7 +22,7 @@ import type {
   ProgramWithExternalIds,
   ProgramWithRelations,
   ProgramWithRelationsOrm,
-  TvSeasonWithExternalIds,
+  TvSeasonOrm,
 } from '@/db/schema/derivedTypes.js';
 import type { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
 import type { ChannelProgram } from '@tunarr/types';
@@ -83,23 +83,29 @@ export interface IProgramDB {
     parentId: string,
     parentType: 'season' | 'album',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<ProgramWithExternalIds>>;
+  ): Promise<PagedResult<ProgramWithRelationsOrm>>;
   getChildren(
     parentId: string,
     parentType: 'artist',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<MusicAlbumWithExternalIds>>;
+  ): Promise<PagedResult<MusicAlbumOrm>>;
   getChildren(
     parentId: string,
     parentType: 'show',
     params?: WithChannelIdFilter<PageParams>,
-  ): Promise<PagedResult<TvSeasonWithExternalIds>>;
+  ): Promise<PagedResult<TvSeasonOrm>>;
+  getChildren(
+    parentId: string,
+    parentType: 'artist' | 'show',
+    params?: WithChannelIdFilter<PageParams>,
+  ): Promise<PagedResult<ProgramGroupingOrmWithRelations>>;
   getChildren(
     parentId: string,
     parentType: ProgramGroupingType,
     params?: WithChannelIdFilter<PageParams>,
   ): Promise<
-    PagedResult<ProgramWithExternalIds | ProgramGroupingWithExternalIds>
+    | PagedResult<ProgramWithRelationsOrm>
+    | PagedResult<ProgramGroupingOrmWithRelations>
   >;
 
   lookupByExternalId(eid: {

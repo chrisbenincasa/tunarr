@@ -38,6 +38,10 @@ export const ProgramGroupingTypes = [
 
 export type ProgramGroupingType = TupleToUnion<typeof ProgramGroupingTypes>;
 
+export type ProgramGroupingTypes = {
+  [K in Capitalize<ProgramGroupingType>]: Lowercase<K>;
+};
+
 export const ProgramGrouping = sqliteTable(
   'program_grouping',
   {

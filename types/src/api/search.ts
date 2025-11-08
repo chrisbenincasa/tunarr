@@ -50,6 +50,8 @@ export const SearchFieldSchema = z.union([
 
 export type SearchField = z.infer<typeof SearchFieldSchema>;
 
+export type SearchFieldType = SearchField['type'];
+
 export const OperatorsByType = {
   string: StringOperators,
   numeric: NumericOperators,
@@ -129,6 +131,22 @@ export type SearchFieldSpec<Key extends string = string> = {
     | 'all'
     | ReadonlyArray<MediaSourceLibrary['mediaType']>;
 };
+
+export const SearchFieldToType = {
+  'genres.name': 'facted_string',
+  'actors.name': 'string',
+  'director.name': 'string',
+  'writer.name': 'string',
+  duration: 'numeric',
+  type: 'facted_string',
+  originalReleaseDate: 'numeric',
+  originalReleaseYear: 'numeric',
+  libraryId: 'string',
+  mediaSourceId: 'string',
+  tags: 'string',
+  rating: 'string',
+  title: 'string',
+} satisfies Record<string, SearchFieldType>;
 
 export const FreeSearchQueryKeyMappings: Record<string, string> = {
   genre: 'genres.name',

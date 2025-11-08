@@ -1,24 +1,18 @@
-import { ProgramGrouping, tag } from '@tunarr/types';
+import { ProgramGrouping } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
-import { MediaSourceDB } from '../db/mediaSourceDB.ts';
-import { ProgramDB } from '../db/ProgramDB.ts';
 import { DrizzleDBAccess } from '../db/schema/index.ts';
-import {
-  decodeCaseSensitiveId,
-  MeilisearchService,
-} from '../services/MeilisearchService.ts';
+
+import { head } from 'lodash-es';
 import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
-import { isProgramGroupingDocument } from '../util/search.ts';
+import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
 @injectable()
 export class GetProgramGroupingById {
   constructor(
     @inject(KEYS.DrizzleDB) private db: DrizzleDBAccess,
-    @inject(KEYS.ProgramDB) private programDB: ProgramDB,
-    @inject(MeilisearchService) private searchService: MeilisearchService,
-    @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
+    @inject(MaterializeProgramGroupings)
+    private materializeProgramGroupings: MaterializeProgramGroupings,
   ) {}
 
   async execute(
@@ -47,40 +41,10 @@ export class GetProgramGroupingById {
 
     if (!dbRes) {
       return;
-      // return res.status(404).send();
     }
 
-    const groupingCounts = await this.programDB.getProgramGroupingChildCounts([
-      dbRes.uuid,
-    ]);
-
-    const searchDoc = await this.searchService.getProgram(dbRes.uuid);
-    if (!searchDoc || !isProgramGroupingDocument(searchDoc)) {
-      // return res.status(404).send();
-      return;
-    }
-
-    const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
-    const mediaSource = await this.mediaSourceDB.getById(tag(mediaSourceId));
-    if (!mediaSource) {
-      return;
-    }
-    const libraryId = decodeCaseSensitiveId(searchDoc.libraryId);
-    const library = await this.mediaSourceDB.getLibrary(libraryId);
-    if (!library) {
-      return;
-    }
-
-    if (!dbRes.canonicalId) {
-      return;
-    }
-
-    const result = ApiProgramConverters.convertProgramGroupingSearchResult(
-      searchDoc,
-      dbRes,
-      groupingCounts[dbRes.uuid],
-      mediaSource,
-      library,
+    const result = head(
+      await this.materializeProgramGroupings.execute([dbRes]),
     );
 
     if (recursive) {

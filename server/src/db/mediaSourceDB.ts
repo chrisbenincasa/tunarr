@@ -8,6 +8,7 @@ import type {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
+import DataLoader from 'dataloader';
 import dayjs from 'dayjs';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
@@ -67,6 +68,16 @@ type MediaSourceUserInfo = {
 
 @injectable()
 export class MediaSourceDB {
+  private mediaSourceByIdLoader = new DataLoader<
+    MediaSourceId,
+    MediaSourceWithRelations
+  >(
+    (b) => {
+      return this.getByIds([...b]);
+    },
+    { maxBatchSize: 100 },
+  );
+
   constructor(
     @inject(KEYS.ChannelDB) private channelDb: IChannelDB,
     @inject(KEYS.MediaSourceApiFactory)
@@ -89,8 +100,14 @@ export class MediaSourceDB {
   }
 
   async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithRelations>> {
-    return this.drizzleDB.query.mediaSource.findFirst({
-      where: (ms, { eq }) => eq(ms.uuid, id),
+    return this.mediaSourceByIdLoader.load(id);
+  }
+
+  private async getByIds(
+    ids: MediaSourceId[],
+  ): Promise<MediaSourceWithRelations[]> {
+    return await this.drizzleDB.query.mediaSource.findMany({
+      where: (ms, { inArray }) => inArray(ms.uuid, ids),
       with: {
         libraries: true,
         paths: true,
@@ -257,7 +274,7 @@ export class MediaSourceDB {
       await this.db
         .updateTable('mediaSource')
         .set({
-          name: updateReq.name,
+          name: tag<MediaSourceName>(updateReq.name),
           uri: trimEnd(updateReq.uri, '/'),
           accessToken: updateReq.accessToken,
           sendGuideUpdates: booleanToNumber(sendGuideUpdates),
@@ -266,9 +283,8 @@ export class MediaSourceDB {
           userId: updateReq.userId,
           username: updateReq.username,
         })
-        .where('uuid', '=', updateReq.id)
-        // TODO: Blocked on https://github.com/oven-sh/bun/issues/16909
-        // .limit(1)
+        .where('uuid', '=', id)
+        .limit(1)
         .executeTakeFirst();
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
