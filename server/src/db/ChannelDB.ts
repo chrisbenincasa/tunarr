@@ -72,6 +72,10 @@ import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
 import { ChannelAndLineup } from '../types/internal.ts';
 import {
+  createManyRelationAgg,
+  mapRawJsonRelationResult,
+} from '../util/drizzleUtil.ts';
+import {
   asyncMapToRecord,
   groupByFunc,
   groupByUniqProp,
@@ -109,6 +113,7 @@ import {
   withTvSeason,
   withTvShow,
 } from './programQueryHelpers.ts';
+import { Artwork } from './schema/Artwork.ts';
 import {
   Channel,
   ChannelUpdate,
@@ -402,6 +407,14 @@ export class ChannelDB implements IChannelDB {
     const groups = await this.drizzleDB
       .select({
         programGrouping: ProgramGrouping,
+        artwork: createManyRelationAgg(
+          this.drizzleDB
+            .select()
+            .from(Artwork)
+            .where(eq(ProgramGrouping.uuid, Artwork.groupingId))
+            .as('artwork'),
+          'artwork',
+        ),
       })
       .from(ChannelPrograms)
       .where(
@@ -471,7 +484,7 @@ export class ChannelDB implements IChannelDB {
     const seasonByGroupId = groupBy(seasonResults, (season) => season.showUuid);
 
     const shows: TvShowOrm[] = [];
-    for (const { programGrouping } of groups) {
+    for (const { programGrouping, artwork } of groups) {
       if (programGrouping.type === 'show') {
         const seasons =
           seasonByGroupId[programGrouping.uuid]?.filter(
@@ -482,6 +495,7 @@ export class ChannelDB implements IChannelDB {
           type: 'show',
           externalIds: externalIdsByGroupId[programGrouping.uuid] ?? [],
           seasons,
+          artwork: mapRawJsonRelationResult(artwork, Artwork),
         });
       }
     }

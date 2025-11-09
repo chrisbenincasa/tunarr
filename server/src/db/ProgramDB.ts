@@ -84,7 +84,7 @@ import { v4 } from 'uuid';
 import { typedProperty } from '../types/path.ts';
 import {
   createManyRelationAgg,
-  mapRawExternalIdsResult,
+  mapRawJsonRelationResult,
 } from '../util/drizzleUtil.ts';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import {
@@ -500,6 +500,14 @@ export class ProgramDB implements IProgramDB {
       this.drizzleDB.select({
         grouping: ProgramGrouping,
         externalIds: createManyRelationAgg(sq, 'external_ids'),
+        artwork: createManyRelationAgg(
+          this.drizzleDB
+            .select()
+            .from(Artwork)
+            .where(eq(ProgramGrouping.uuid, Artwork.groupingId))
+            .as('artwork'),
+          'artwork',
+        ),
       }),
     )
       .innerJoin(
@@ -539,12 +547,13 @@ export class ProgramDB implements IProgramDB {
         eq(ChannelPrograms.programUuid, Program.uuid),
       );
 
-      const programs = res.map(({ grouping, externalIds }) => {
+      const programs = res.map(({ grouping, externalIds, artwork }) => {
         const withRelations = grouping as ProgramGroupingOrmWithRelations;
-        withRelations.externalIds = mapRawExternalIdsResult(
+        withRelations.externalIds = mapRawJsonRelationResult(
           externalIds,
           ProgramGroupingExternalId,
         );
+        withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
 
@@ -555,12 +564,13 @@ export class ProgramDB implements IProgramDB {
     } else {
       const res = await baseQuery;
 
-      const programs = res.map(({ grouping, externalIds }) => {
+      const programs = res.map(({ grouping, externalIds, artwork }) => {
         const withRelations = grouping as ProgramGroupingOrmWithRelations;
-        withRelations.externalIds = mapRawExternalIdsResult(
+        withRelations.externalIds = mapRawJsonRelationResult(
           externalIds,
           ProgramGroupingExternalId,
         );
+        withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
 
@@ -614,6 +624,14 @@ export class ProgramDB implements IProgramDB {
       this.drizzleDB.select({
         program: Program,
         externalIds: createManyRelationAgg(sq, 'external_ids'),
+        artwork: createManyRelationAgg(
+          this.drizzleDB
+            .select()
+            .from(Artwork)
+            .where(eq(Artwork.programId, Program.uuid))
+            .as('artwork'),
+          'artwork',
+        ),
       }),
     ).orderBy(asc(Program.episode));
 
@@ -637,14 +655,17 @@ export class ProgramDB implements IProgramDB {
         eq(ChannelPrograms.programUuid, Program.uuid),
       );
 
-      const programs = res.map(({ program, externalIds }) => {
+      const programs = res.map(({ program, externalIds, artwork }) => {
         const withRelations: ProgramWithRelationsOrm = program;
-        withRelations.externalIds = mapRawExternalIdsResult(
+        withRelations.externalIds = mapRawJsonRelationResult(
           externalIds,
           ProgramExternalId,
         );
+        withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
+
+      console.log(programs);
 
       return {
         total: sum((await cq).map(({ count }) => count)),
@@ -653,12 +674,13 @@ export class ProgramDB implements IProgramDB {
     } else {
       const res = await baseQuery;
 
-      const programs = res.map(({ program, externalIds }) => {
+      const programs = res.map(({ program, externalIds, artwork }) => {
         const withRelations: ProgramWithRelationsOrm = program;
-        withRelations.externalIds = mapRawExternalIdsResult(
+        withRelations.externalIds = mapRawJsonRelationResult(
           externalIds,
           ProgramExternalId,
         );
+        withRelations.artwork = mapRawJsonRelationResult(artwork, Artwork);
         return withRelations;
       });
 

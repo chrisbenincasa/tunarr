@@ -369,6 +369,11 @@ export const PlexMediaDescriptionSchema = z.object({
 
 export type PlexMediaDescription = z.infer<typeof PlexMediaDescriptionSchema>;
 
+export const PlexImageSchema = z.object({
+  type: z.string(), // Be incredibly permissive here
+  url: z.string(),
+});
+
 // We have to be totally sure these fields apply to ALL media types before
 // adding here.
 const BasePlexMediaSchema = z.object({
@@ -379,6 +384,7 @@ const BasePlexMediaSchema = z.object({
   librarySectionID: z.number().optional(),
   // This is gnarly, but it won't be forever
   tunarrCanonicalId: z.string().optional(),
+  Image: z.array(PlexImageSchema).optional(),
 });
 
 export const PlexMovieSchema = BasePlexMediaSchema.extend({

@@ -614,7 +614,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const materialized = await container
           .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
           .execute(results);
-        console.log(materialized);
         const result = match(grouping.type)
           .returnType<ProgramChildrenResult>()
           .with('album', () => ({

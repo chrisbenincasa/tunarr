@@ -57,7 +57,7 @@ export function createManyRelationAgg<
   return sql.join([sq, sql.raw(`as "${aggAlias}"`)], sql` `);
 }
 
-export function mapRawExternalIdsResult<TTableConfig extends TableConfig>(
+export function mapRawJsonRelationResult<TTableConfig extends TableConfig>(
   input: unknown,
   table: SQLiteTableWithColumns<TTableConfig>,
 ) {

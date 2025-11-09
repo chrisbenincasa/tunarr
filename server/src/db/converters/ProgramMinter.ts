@@ -9,6 +9,7 @@ import {
   Actor,
   Episode,
   isTerminalItemType,
+  MediaArtwork,
   NamedEntity,
   ProgramLike,
   tag,
@@ -206,7 +207,9 @@ export class ProgramDaoMinter {
       externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
       versions: this.mintVersions(programId, movie, now),
       subtitles: this.mintSubtitles(programId, movie),
-      artwork: [], // Added later
+      artwork: movie.artwork.map((art) =>
+        this.mintArtwork(art, programId, now),
+      ),
       credits: seq.collect(movie.actors, (actor) =>
         this.mintCreditForActor(actor, programId, now),
       ),
@@ -426,7 +429,9 @@ export class ProgramDaoMinter {
         now,
       ),
       versions: this.mintVersions(programId, episode, now),
-      artwork: [],
+      artwork: episode.artwork.map((art) =>
+        this.mintArtwork(art, programId, now),
+      ),
       credits: compact([
         ...seq.collect(episode.actors, (actor) =>
           this.mintCreditForActor(actor, programId, now),
@@ -478,7 +483,9 @@ export class ProgramDaoMinter {
       program: newTrack,
       externalIds: this.mintExternalIdsNew(programId, track, mediaSource, now),
       versions: this.mintVersions(programId, track, now),
-      artwork: [],
+      artwork: track.artwork.map((art) =>
+        this.mintArtwork(art, programId, now),
+      ),
       credits: [],
       subtitles: [],
     };
@@ -519,7 +526,9 @@ export class ProgramDaoMinter {
       program: newVideo,
       externalIds: this.mintExternalIdsNew(programId, video, mediaSource, now),
       versions: this.mintVersions(programId, video, now),
-      artwork: [],
+      artwork: video.artwork.map((art) =>
+        this.mintArtwork(art, programId, now),
+      ),
       credits: compact([
         ...seq.collect(video.actors, (actor) =>
           this.mintCreditForActor(actor, programId, now),
@@ -1050,6 +1059,21 @@ export class ProgramDaoMinter {
     return {
       credit,
       artwork,
+    };
+  }
+
+  private mintArtwork(
+    artwork: MediaArtwork,
+    programId: string,
+    now: number,
+  ): NewArtwork {
+    return {
+      uuid: v4(),
+      programId,
+      artworkType: artwork.type,
+      createdAt: new Date(now),
+      updatedAt: new Date(now),
+      sourcePath: artwork.path!,
     };
   }
 }
