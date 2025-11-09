@@ -26,6 +26,7 @@ import {
   isNumber,
   mapValues,
   omitBy,
+  trimStart,
   union,
 } from 'lodash-es';
 import { v4 } from 'uuid';
@@ -277,7 +278,7 @@ export class JellyfinApiClient extends BaseApiClient {
   ): Promise<QueryResult<string>> {
     try {
       const subtitlesResult = await this.doGet<string>({
-        url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
+        url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${trimStart(subtitleExt, '.')}`,
         params: {
           userId: this.options.userId,
         },
