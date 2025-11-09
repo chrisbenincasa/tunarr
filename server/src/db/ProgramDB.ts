@@ -342,21 +342,31 @@ export class ProgramDB implements IProgramDB {
     });
   }
 
-  async getProgramGroupings(ids: string[]) {
+  async getProgramGroupings(
+    ids: string[],
+  ): Promise<Record<string, ProgramGroupingOrmWithRelations>> {
+    if (ids.length === 0) {
+      return {};
+    }
+
     const uniqueIds = uniq(ids);
 
     const results = await Promise.allSettled(
       chunk(uniqueIds, 1000).map((idChunk) => {
-        return this.db
-          .selectFrom('programGrouping')
-          .selectAll()
-          .select(withProgramGroupingExternalIds)
-          .where('uuid', 'in', idChunk)
-          .execute();
+        return this.drizzleDB.query.programGrouping.findMany({
+          where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+          with: {
+            externalIds: true,
+            artwork: true,
+            artist: true,
+            show: true,
+            credits: true,
+          },
+        });
       }),
     );
 
-    const map: Record<string, ProgramGroupingWithExternalIds> = {};
+    const map: Record<string, ProgramGroupingOrmWithRelations> = {};
     for (const result of results) {
       if (result.status === 'rejected') {
         this.logger.error(

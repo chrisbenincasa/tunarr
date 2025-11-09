@@ -69,7 +69,7 @@ export interface IProgramDB {
 
   getProgramGroupings(
     ids: string[],
-  ): Promise<Record<string, ProgramGroupingWithExternalIds>>;
+  ): Promise<Record<string, ProgramGroupingOrmWithRelations>>;
 
   getProgramGroupingByExternalId(
     eid: ProgramGroupingExternalIdLookup,
