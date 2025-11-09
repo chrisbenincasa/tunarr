@@ -107,7 +107,7 @@ extra_css:
 
 extra:
   status:
-    alpha: Alpha
+    new: Alpha only!
 
 plugins:
   - glightbox
