@@ -383,6 +383,17 @@ export class ProgramDB implements IProgramDB {
   }
 
   async getProgramGroupingByExternalId(eid: ProgramGroupingExternalIdLookup) {
+    return await this.drizzleDB.query.programGroupingExternalId.findFirst({
+      where: (fields, { eq, and }) =>
+        and(
+          eq(fields.externalKey, eid.externalKey),
+          eq(fields.mediaSourceId, eid.externalSourceId),
+          eq(fields.sourceType, eid.sourceType),
+        ),
+      with: {
+        grouping: true,
+      },
+    });
     return await this.db
       .selectFrom('programGroupingExternalId')
       .where('externalKey', '=', eid.externalKey)
@@ -1727,26 +1738,6 @@ export class ProgramDB implements IProgramDB {
       .then((result) =>
         groupByUniq(result, (p) => head(p.externalIds)?.externalKey ?? ''),
       );
-  }
-
-  async getShowSeasons(showUuid: string) {
-    return this.db
-      .selectFrom('programGrouping')
-      .where('programGrouping.showUuid', '=', showUuid)
-      .where('programGrouping.type', '=', ProgramGroupingType.Season)
-      .selectAll()
-      .select(withProgramGroupingExternalIds)
-      .execute();
-  }
-
-  async getArtistAlbums(artistUuid: string) {
-    return this.db
-      .selectFrom('programGrouping')
-      .where('programGrouping.artistUuid', '=', artistUuid)
-      .where('programGrouping.type', '=', ProgramGroupingType.Album)
-      .selectAll()
-      .select(withProgramGroupingExternalIds)
-      .execute();
   }
 
   async upsertProgramGrouping(
