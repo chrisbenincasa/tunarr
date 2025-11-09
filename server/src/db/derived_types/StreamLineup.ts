@@ -36,7 +36,7 @@ export function isCommercialLineupItem(
   return item.type === 'commercial';
 }
 
-export function isProgramLineupItem(
+function isProgramLineupItem(
   item: StreamLineupItem,
 ): item is ProgramStreamLineupItem {
   return item.type === 'program';

@@ -21,7 +21,6 @@ import {
 } from 'lodash-es';
 import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import type { Replace } from '../types/util.ts';
-import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
 import type {
   ProgramDao,
   ProgramTable as RawProgram,
@@ -65,15 +64,6 @@ export const MinimalProgramGroupingFields: ProgramGroupingFields = [
   'programGrouping.title',
   'programGrouping.year',
   // 'programGrouping.index',
-];
-
-type FillerShowFields = readonly `fillerShow.${keyof RawFillerShow}`[];
-
-export const AllFillerShowFields: FillerShowFields = [
-  'fillerShow.createdAt',
-  'fillerShow.name',
-  'fillerShow.updatedAt',
-  'fillerShow.uuid',
 ];
 
 export function withTvShow(
@@ -177,20 +167,6 @@ export function withProgramCustomShows(eb: ExpressionBuilder<DB, 'program'>) {
       )
       .select('customShow.uuid'),
   ).as('customShows');
-}
-
-export function withFillerShow(eb: ExpressionBuilder<DB, 'channelFillerShow'>) {
-  return jsonObjectFrom(
-    eb
-      .selectFrom('fillerShow')
-      .select(AllFillerShowFields)
-      .whereRef('channelFillerShow.fillerShowUuid', '=', 'fillerShow.uuid')
-      .innerJoin(
-        'fillerShow',
-        'channelFillerShow.fillerShowUuid',
-        'fillerShow.uuid',
-      ),
-  ).as('fillerShow');
 }
 
 export function withProgramGroupingExternalIds(
