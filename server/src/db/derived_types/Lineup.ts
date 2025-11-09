@@ -23,7 +23,7 @@ export const ContentLineupItemSchema = z
     fillerListId: z.uuid().optional(),
     fillerType: FillerType.optional(),
   })
-  .merge(BaseLineupItemSchema);
+  .extend(BaseLineupItemSchema.shape);
 
 // This item has to be hydrated from the DB
 export type ContentItem = z.infer<typeof ContentLineupItemSchema>;
@@ -32,7 +32,7 @@ export const OfflineLineupItemSchema = z
   .object({
     type: z.literal('offline'),
   })
-  .merge(BaseLineupItemSchema);
+  .extend(BaseLineupItemSchema.shape);
 
 export type OfflineItem = z.infer<typeof OfflineLineupItemSchema>;
 
@@ -41,7 +41,7 @@ export const RedirectLineupItemSchema = z
     type: z.literal('redirect'),
     channel: z.uuid(),
   })
-  .merge(BaseLineupItemSchema);
+  .extend(BaseLineupItemSchema.shape);
 export type RedirectItem = z.infer<typeof RedirectLineupItemSchema>;
 
 export const LineupItemSchema = z.discriminatedUnion('type', [
@@ -69,7 +69,7 @@ const PendingProgramSchema = ContentLineupItemSchema.extend({
 
 export type PendingProgram = z.infer<typeof PendingProgramSchema>;
 
-export const OnDemandChannelConfigSchema = z.object({
+const OnDemandChannelConfigSchema = z.object({
   state: z
     .union([z.literal('paused'), z.literal('playing')])
     .default('paused')

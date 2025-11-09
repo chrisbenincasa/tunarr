@@ -25,7 +25,8 @@
     "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
-    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit",
+    "knip": "knip"
   },
   "dependencies": {
     "@cospired/i18n-iso-languages": "^4.2.0",
@@ -114,6 +115,7 @@
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
     "globals": "^15.15.0",
+    "knip": "^5.68.0",
     "kysely-ctl": "^0.9.0",
     "memfs": "^4.51.0",
     "node-abi": "^3.75.0",
