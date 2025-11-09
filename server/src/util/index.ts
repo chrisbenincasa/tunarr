@@ -24,7 +24,6 @@ import {
   once,
   range,
   reduce,
-  reject,
   trim,
   zipWith,
 } from 'lodash-es';
@@ -514,10 +513,6 @@ export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
     return undefined;
   }
   return x;
-}
-
-export function removeErrors<T>(coll: Try<T>[] | null | undefined): T[] {
-  return reject(coll, isError) satisfies T[] as T[];
 }
 
 export function parseIntOrNull(s: string): number | null {
