@@ -220,6 +220,7 @@ export class ApiProgramConverters {
               path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
             }) satisfies MediaArtwork,
         ) ?? [],
+      index: grouping.index ?? doc.index ?? 0,
     } satisfies Partial<ProgramGrouping>;
 
     const result = match(doc)
@@ -236,7 +237,6 @@ export class ApiProgramConverters {
             canonicalId: grouping.canonicalId!,
             studios,
             year: doc.originalReleaseYear,
-            index: doc.index ?? 0,
             childCount,
             grandchildCount,
           }) satisfies Season,
