@@ -38,6 +38,7 @@ import type {
   PlexSelectedMedia,
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 
 export type GridItemMetadata = {
   itemId: string;
