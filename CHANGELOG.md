@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.13](https://github.com/chrisbenincasa/tunarr/compare/v0.22.12...v0.22.13) (2025-11-10)
+
+
+### Bug Fixes
+
+* disable time slot editor buttong when there are no slots ([cc4f056](https://github.com/chrisbenincasa/tunarr/commit/cc4f056e559f0e6d13ec6b7fc1403dc4807b9c55))
+* fix sidear ASS subtitle download in Jellyfin ([5784079](https://github.com/chrisbenincasa/tunarr/commit/578407965ce473006abbd65ea1b3c0ca0201e404)), closes [#1457](https://github.com/chrisbenincasa/tunarr/issues/1457)
+
 ## [0.22.12](https://github.com/chrisbenincasa/tunarr/compare/v0.22.11...v0.22.12) (2025-11-06)
 
 
