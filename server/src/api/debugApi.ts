@@ -383,6 +383,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.get('/debug/throw_error', {}, async () => {
+    throw new Error('test');
+  });
+
   fastify.get(
     '/debug/subprocess/status',
     {

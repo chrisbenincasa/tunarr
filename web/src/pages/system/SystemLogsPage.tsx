@@ -1,7 +1,7 @@
 import { Download } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import type { TupleToUnion } from '@tunarr/types';
-import { attempt, isString } from 'lodash-es';
+import { attempt, isError, isNil, isObject, isString } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
@@ -10,12 +10,7 @@ import {
 import pluralize from 'pluralize';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
-import { isNonEmptyString } from '../../helpers/util.ts';
-import { useDownload } from '../../hooks/useDownload.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-
-const LogPattern = /([0-9\-:.A-Z]+)\s*\[([a-z]+)\]\s*(<(.*)>:)?(.*)/;
-const JsonAddition = /\{(.*)\}/;
 
 const ValidLogLevels = [
   'fatal',
@@ -31,6 +26,29 @@ function isValidLogLevel(s: string): s is TupleToUnion<typeof ValidLogLevels> {
   return ValidLogLevels.includes(s);
 }
 
+function getLogLevelString(
+  level: number,
+): TupleToUnion<typeof ValidLogLevels> | null {
+  switch (level) {
+    case 10:
+      return 'trace';
+    case 20:
+      return 'debug';
+    case 25:
+      return 'http';
+    case 30:
+      return 'info';
+    case 40:
+      return 'warn';
+    case 50:
+      return 'error';
+    case 60:
+      return 'fatal';
+    default:
+      return null;
+  }
+}
+
 type LogLine = {
   fullLine: string;
   message: string;
@@ -40,11 +58,17 @@ type LogLine = {
   extraData?: unknown;
 };
 
+type ParsedLogLine = {
+  level: number;
+  caller?: string;
+  msg: string;
+  time: number;
+};
+
 export function SystemLogsPage() {
   const { backendUri } = useSettings();
   const source = useRef<EventSource | null>(null);
   const [logBuf, setLogBuf] = useState<LogLine[]>([]);
-  const download = useDownload();
 
   useEffect(() => {
     let es: EventSource | undefined;
@@ -52,34 +76,28 @@ export function SystemLogsPage() {
       es = new EventSource(`${backendUri}/api/system/debug/logs`);
       source.current = es;
 
-      es.addEventListener('message', (data) => {
-        if (isString(data.data)) {
-          const fullLine = data.data;
-          const parseResult = LogPattern.exec(data.data);
-          const date = parseResult?.[1];
-          const level = parseResult?.[2];
-          const component = parseResult?.[4];
-          const rest = parseResult?.[5];
-          let extraData: unknown;
-          if (isNonEmptyString(rest)) {
-            const jsonExtraData = JsonAddition.exec(rest);
-            if (jsonExtraData) {
-              extraData = attempt(
-                () => JSON.parse(jsonExtraData[0]) as unknown,
-              );
-            }
+      es.addEventListener('message', ({ data }) => {
+        if (isString(data)) {
+          const parsed = attempt(
+            () => JSON.parse(data) as unknown as ParsedLogLine,
+          );
+          if (isError(parsed) || isNil(parsed) || !isObject(parsed)) {
+            return;
           }
+
+          const date = new Date(parsed.time);
+          const level = getLogLevelString(parsed.level);
+          const component = parsed.caller;
 
           if (date && level && isValidLogLevel(level)) {
             setLogBuf((prev) => {
               const n = [
                 {
-                  fullLine,
-                  timestamp: date,
+                  fullLine: data,
+                  timestamp: date.toISOString(),
                   level,
                   component,
-                  extraData,
-                  message: (rest ?? '').replace(/^:\s*/, ''),
+                  message: parsed.msg,
                 } satisfies LogLine,
                 ...prev,
               ];
@@ -139,17 +157,8 @@ export function SystemLogsPage() {
       <Stack direction="row" gap={2}>
         <Button
           startIcon={<Download />}
-          disabled={table.getPrePaginationRowModel().rows.length === 0}
-          onClick={() =>
-            download(
-              table
-                .getPrePaginationRowModel()
-                .rows.map((row) => row.original.fullLine)
-                .join('\n'),
-              `tunarr_last_N_logs.txt`,
-              'text/plain',
-            )
-          }
+          component="a"
+          href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
         >
           Download last {table.getRowCount()}{' '}
           {pluralize('row', table.getRowCount())}
@@ -157,7 +166,7 @@ export function SystemLogsPage() {
         <Button
           startIcon={<Download />}
           component="a"
-          href={`${backendUri}/api/system/debug/logs?download=true`}
+          href={`${backendUri}/api/system/debug/logs?download=true&pretty=true`}
         >
           Download all logs
         </Button>

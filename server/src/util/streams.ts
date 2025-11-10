@@ -27,3 +27,14 @@ export class NewLineTransformStream extends Transform {
     callback();
   }
 }
+
+export async function* take<T>(generator: AsyncGenerator<T>, n: number) {
+  let c = 0;
+  for await (const item of generator) {
+    if (c >= n) {
+      return;
+    }
+    yield item;
+    c++;
+  }
+}
