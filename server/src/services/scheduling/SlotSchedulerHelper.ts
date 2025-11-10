@@ -50,6 +50,7 @@ export class SlotSchedulerHelper {
   ) {
     this.programLoader = new DataLoader<string, ProgramWithRelationsOrm>(
       (keys) => this.programDB.getProgramsByIds(keys),
+      { cache: false, maxBatchSize: 100 },
     );
     this.descendantsLoader = new DataLoader(
       (keys) => {
@@ -62,9 +63,8 @@ export class SlotSchedulerHelper {
         );
       },
       {
-        cacheKeyFn([id, type]) {
-          return `${id}_${type}`;
-        },
+        maxBatchSize: 100,
+        cache: false,
       },
     );
   }

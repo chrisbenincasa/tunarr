@@ -3,7 +3,6 @@ import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { nullToUndefined, run } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { numberToBoolean } from '@/util/sqliteUtil.js';
 import { seq } from '@tunarr/shared/util';
 import type { LocalMediaSource } from '@tunarr/types';
 import {
@@ -241,8 +240,8 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         ...updatedLibrary,
         id: updatedLibrary.uuid,
         type: mediaSource.type,
-        enabled: numberToBoolean(updatedLibrary.enabled),
-        lastScannedAt: nullToUndefined(updatedLibrary.lastScannedAt),
+        enabled: updatedLibrary.enabled,
+        lastScannedAt: nullToUndefined(updatedLibrary.lastScannedAt)?.valueOf(),
         isLocked:
           entityLocker.isLibraryLocked(updatedLibrary) ||
           entityLocker.isMediaSourceLocked(mediaSource),

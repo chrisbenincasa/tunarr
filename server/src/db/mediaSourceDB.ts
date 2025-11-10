@@ -10,12 +10,14 @@ import type {
 } from '@tunarr/types/api';
 import DataLoader from 'dataloader';
 import dayjs from 'dayjs';
+import { and, eq } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import {
   chunk,
   differenceWith,
   first,
+  head,
   isEmpty,
   isNil,
   keys,
@@ -48,6 +50,7 @@ import {
 import { DrizzleDBAccess } from './schema/index.ts';
 import { MediaSourceOrm } from './schema/MediaSource.ts';
 import {
+  MediaSourceLibrary,
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
@@ -75,7 +78,7 @@ export class MediaSourceDB {
     (b) => {
       return this.getByIds([...b]);
     },
-    { maxBatchSize: 100 },
+    { maxBatchSize: 100, cache: false },
   );
 
   constructor(
@@ -428,15 +431,20 @@ export class MediaSourceDB {
     libraryId: string,
     enabled: boolean,
   ) {
-    return this.db
-      .updateTable('mediaSourceLibrary')
+    return await this.drizzleDB
+      .update(MediaSourceLibrary)
       .set({
-        enabled: booleanToNumber(enabled),
+        enabled,
       })
-      .where('mediaSourceLibrary.mediaSourceId', '=', mediaSourceId)
-      .where('uuid', '=', libraryId)
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .where(
+        and(
+          eq(MediaSourceLibrary.mediaSourceId, mediaSourceId),
+          eq(MediaSourceLibrary.uuid, libraryId),
+        ),
+      )
+      .limit(1)
+      .returning()
+      .then((_) => head(_)!);
   }
 
   setLibraryLastScannedTime(libraryId: string, lastScannedAt: dayjs.Dayjs) {
