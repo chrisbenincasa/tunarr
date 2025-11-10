@@ -28,6 +28,7 @@ import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 
 dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);

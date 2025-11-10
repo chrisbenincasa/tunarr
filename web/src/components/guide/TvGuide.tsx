@@ -27,6 +27,7 @@ import type { Maybe } from '../../types/util.ts';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
 import { ChannelOptionsMenu } from '../channels/ChannelOptionsMenu.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
 import { TvGuideItem } from './TvGuideItem.tsx';
 

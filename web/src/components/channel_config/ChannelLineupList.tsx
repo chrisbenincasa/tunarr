@@ -56,6 +56,7 @@ import {
 } from '../../types/index.ts';
 import AddFlexModal from '../programming_controls/AddFlexModal.tsx';
 import AddRedirectModal from '../programming_controls/AddRedirectModal.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 
 export type CommonProps = {
   moveProgram?: (originalIndex: number, toIndex: number) => void;
