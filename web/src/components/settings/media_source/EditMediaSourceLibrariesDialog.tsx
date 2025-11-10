@@ -146,13 +146,17 @@ export const EditMediaSourceLibrariesDialog = ({
                 title={
                   library.mediaType === 'music_videos'
                     ? 'Music Video libraries are not yet supported'
-                    : null
+                    : library.isLocked
+                      ? 'Cannot disable libraries when they are locked'
+                      : null
                 }
               >
                 <span>
                   <Switch
                     edge="end"
-                    disabled={library.mediaType === 'music_videos'}
+                    disabled={
+                      library.isLocked || library.mediaType === 'music_videos'
+                    }
                     checked={library.enabled}
                     onChange={(ev) =>
                       updateLibraryEnabled(library.id, ev.target.checked)
