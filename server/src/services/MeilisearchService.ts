@@ -737,6 +737,7 @@ export class MeilisearchService implements ISearchService {
       type: ProgramGroupingType.Season,
       writer: [],
       externalIds,
+      index: season.index,
       externalIdsMerged: season.identifiers.map(
         (eid) =>
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
@@ -893,6 +894,7 @@ export class MeilisearchService implements ISearchService {
       mediaSourceId: encodeCaseSensitiveId(album.mediaSourceId),
       type: ProgramGroupingType.Album,
       writer: [],
+      index: album.index,
       externalIds,
       externalIdsMerged: album.identifiers.map(
         (eid) =>
@@ -1254,7 +1256,12 @@ export class MeilisearchService implements ISearchService {
       title: program.title,
       titleReverse: program.title.split('').reverse().join(''),
       type: program.type,
-      index: program.type === 'episode' ? program.episodeNumber : undefined,
+      index:
+        program.type === 'episode'
+          ? program.episodeNumber
+          : program.type === 'track'
+            ? program.trackNumber
+            : undefined,
       rating,
       genres: program.genres ?? [],
       actors: program.actors ?? [],
