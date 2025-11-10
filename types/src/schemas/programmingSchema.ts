@@ -572,7 +572,7 @@ export const MusicAlbum = BaseProgramGrouping.extend({
 
 export const MusicTrack = BaseProgram.extend({
   type: z.literal('track'),
-  trackNumber: z.number().positive(),
+  trackNumber: z.number().nonnegative(),
   album: MusicAlbum.optional(),
   artist: MusicArtist.optional(),
 });
