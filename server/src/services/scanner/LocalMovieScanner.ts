@@ -87,6 +87,13 @@ export class LocalMovieScanner extends FileSystemScanner {
 
     this.#pathCount += entries.length;
     for (const dirent of entries) {
+      if (this.state === 'canceled') {
+        this.logger.debug(
+          'Aborting directory scan for %s because it was canceled',
+          basePath,
+        );
+        return;
+      }
       try {
         await this.scanDirectory(dirent, context);
       } finally {

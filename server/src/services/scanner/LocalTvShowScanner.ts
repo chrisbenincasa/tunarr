@@ -101,6 +101,14 @@ export class LocalTvShowScanner extends FileSystemScanner {
 
       this.#pathCount += showFolders.length;
       for (const showFolder of showFolders) {
+        if (this.state === 'canceled') {
+          this.logger.debug(
+            'Aborting directory scan for %s because it was canceled',
+            showFolder,
+          );
+          return;
+        }
+
         if (
           isNonEmptyString(context.pathFilter) &&
           !showFolder.name

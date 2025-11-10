@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { head, round } from 'lodash-es';
 import type { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -54,7 +55,7 @@ export abstract class MediaSourceMovieLibraryScanner<
   ): Promise<void> {
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
-    const { mediaSource, library, force } = context;
+    const { mediaSource, library, force, pathFilter } = context;
     const existingPrograms =
       await this.programDB.getProgramCanonicalIdsForMediaSource(
         library.uuid,
@@ -83,6 +84,10 @@ export abstract class MediaSourceMovieLibraryScanner<
     )) {
       if (this.state(library.uuid) === 'canceled') {
         return;
+      }
+
+      if (isNonEmptyString(pathFilter) && movie.externalId !== pathFilter) {
+        continue;
       }
 
       const canonicalId = this.getCanonicalId(movie);

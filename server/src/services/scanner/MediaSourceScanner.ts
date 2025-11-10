@@ -24,7 +24,12 @@ export type ScanContext<ApiClientTypeT> = {
   pathFilter?: string;
 };
 
-export type RunState = 'unknown' | 'starting' | 'running' | 'canceled';
+export type RunState =
+  | 'unknown'
+  | 'starting'
+  | 'running'
+  | 'canceled'
+  | 'stopped';
 
 export type GenericMediaSourceScanner = MediaSourceScanner<
   MediaLibraryType,

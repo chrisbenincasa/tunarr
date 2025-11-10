@@ -25,6 +25,7 @@ import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { ImageCache } from '../ImageCache.ts';
 import { KnownImageFileExtensions } from './constants.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
+import type { RunState } from './MediaSourceScanner.ts';
 
 export type LocalScanRequest = {
   mediaSource: MediaSourceWithRelations;
@@ -39,6 +40,9 @@ export type GenericLocalMediaSourceScannerFactory = (
 ) => GenericLocalMediaSourceScanner;
 
 export abstract class FileSystemScanner {
+  protected state: RunState = 'starting';
+  private mediaSourceId: Maybe<string>;
+
   constructor(
     protected logger: Logger,
     protected ffprobeStreamDetails: FfprobeStreamDetails,
@@ -49,6 +53,7 @@ export abstract class FileSystemScanner {
   ) {}
 
   async scan(req: LocalScanRequest) {
+    this.mediaSourceId = req.mediaSource.uuid;
     if (!req.mediaSource.mediaType || req.mediaSource.type !== 'local') {
       throw new Error(
         'Invalid media source for local scanning: ' +
@@ -60,6 +65,8 @@ export abstract class FileSystemScanner {
       this.logger.warn('Media source has no paths to scan.');
       return;
     }
+
+    this.state = 'running';
 
     this.logger.info(
       'Scanning local media source: %s (force=%s)',
@@ -95,6 +102,14 @@ export abstract class FileSystemScanner {
         );
       }
     }
+  }
+
+  cancel() {
+    this.logger.info(
+      'Canceling scan of local media source: %s',
+      this.mediaSourceId ?? '???',
+    );
+    this.state = 'canceled';
   }
 
   abstract scanPath(context: LocalScanContext): Promise<Result<void>>;

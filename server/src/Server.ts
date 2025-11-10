@@ -40,7 +40,7 @@ import { type ServerOptions, serverOptions } from './globals.js';
 import { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { TUNARR_ENV_VARS } from './util/env.ts';
-import { filename, isDev, run } from './util/index.js';
+import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
 
 const currentDirectory = dirname(filename(import.meta.url));
@@ -460,6 +460,18 @@ export class Server {
       });
     } catch (e) {
       this.logger.debug(e, 'Error sending shutdown signal to frontend');
+    }
+
+    this.logger.debug('Canceling all active scans');
+    this.serverContext.mediaSourceScanCoordinator.cancelAll();
+
+    try {
+      await timeoutPromise(
+        this.serverContext.mediaSourceScanCoordinator.awaitAllFinished(),
+        1_000,
+      );
+    } catch {
+      this.logger.warn('Was unable to gracefully shutdown scans.');
     }
 
     this.serverContext.searchService.stop();

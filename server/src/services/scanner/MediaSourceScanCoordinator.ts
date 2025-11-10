@@ -8,11 +8,13 @@ import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
 import { GenericLocalMediaSourceScannerFactory } from './FileSystemScanner.ts';
+import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import { GenericMediaSourceScannerFactory } from './MediaSourceScanner.ts';
 
 @injectable()
 export class MediaSourceScanCoordinator {
   private static queue: PQueue = new PQueue({ concurrency: 1 });
+  private static signalById: Map<string, AbortController> = new Map();
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -22,6 +24,8 @@ export class MediaSourceScanCoordinator {
     private scannerFactory: GenericMediaSourceScannerFactory,
     @inject(KEYS.LocalMediaSourceScanner)
     private localScannerFactory: GenericLocalMediaSourceScannerFactory,
+    @inject(MediaSourceProgressService)
+    private progressService: MediaSourceProgressService,
   ) {}
 
   async addLocal({
@@ -60,9 +64,15 @@ export class MediaSourceScanCoordinator {
         return false;
       }
 
+      this.progressService.scanQueued(mediaSource.uuid);
+      const controller = new AbortController();
+      MediaSourceScanCoordinator.signalById.set(mediaSource.uuid, controller);
       MediaSourceScanCoordinator.queue
         .add(async () => {
           try {
+            controller.signal.addEventListener('abort', () => {
+              scanner.cancel();
+            });
             await scanner.scan({ mediaSource, force: forceScan, pathFilter });
           } finally {
             releaser();
@@ -74,7 +84,10 @@ export class MediaSourceScanCoordinator {
             'Error scanning media source %s',
             mediaSource.uuid,
           ),
-        );
+        )
+        .finally(() => {
+          MediaSourceScanCoordinator.signalById.delete(mediaSource.uuid);
+        });
 
       return true;
     } catch (e) {
@@ -126,9 +139,15 @@ export class MediaSourceScanCoordinator {
         return false;
       }
 
+      this.progressService.scanQueued(library.uuid);
+      const controller = new AbortController();
+      MediaSourceScanCoordinator.signalById.set(library.uuid, controller);
       MediaSourceScanCoordinator.queue
         .add(async () => {
           try {
+            controller.signal.addEventListener('abort', () => {
+              scanner.cancel(library.uuid);
+            });
             await scanner.scan({ library, force: forceScan, pathFilter });
           } finally {
             releaser();
@@ -136,7 +155,10 @@ export class MediaSourceScanCoordinator {
         })
         .catch((e) =>
           this.logger.error(e, 'Error scanning library %s', library.uuid),
-        );
+        )
+        .finally(() => {
+          MediaSourceScanCoordinator.signalById.delete(library.uuid);
+        });
 
       return true;
     } catch (e) {
@@ -154,6 +176,16 @@ export class MediaSourceScanCoordinator {
       }
       return false;
     }
+  }
+
+  cancelAll() {
+    for (const controller of MediaSourceScanCoordinator.signalById.values()) {
+      controller.abort();
+    }
+  }
+
+  awaitAllFinished() {
+    return MediaSourceScanCoordinator.queue.onEmpty();
   }
 }
 
