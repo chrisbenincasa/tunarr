@@ -35,6 +35,7 @@ import {
   every,
   find,
   first,
+  head,
   isNil,
   isNull,
   isUndefined,
@@ -374,8 +375,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       if (dbRes.mediaSourceId && dbRes.libraryId && dbRes.canonicalId) {
-        const converted =
-          req.serverCtx.programConverter.programDaoToTerminalProgram(dbRes);
+        const converted = head(
+          await container
+            .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
+            .execute([dbRes]),
+        );
 
         if (!converted) {
           return res.status(404).send();

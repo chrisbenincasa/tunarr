@@ -29,6 +29,7 @@ import type {
 import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
 import type { Maybe } from '../types/util.ts';
 import { isNonEmptyString } from '../util/index.ts';
+import { titleToSortTitle } from '../util/programs.ts';
 
 export class ApiProgramConverters {
   private constructor() {}
@@ -60,7 +61,7 @@ export class ApiProgramConverters {
         : null,
       externalId: externalId ?? program.externalKey,
       sourceType: mediaSource.type,
-      sortTitle: '',
+      sortTitle: titleToSortTitle(program.title),
       artwork:
         program.artwork?.map(
           (art) =>
@@ -70,6 +71,7 @@ export class ApiProgramConverters {
               path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
             }) satisfies MediaArtwork,
         ) ?? [],
+      genres: doc.genres,
     } satisfies Partial<TerminalProgram>;
 
     const identifiers = doc.externalIds.map((eid) => ({
@@ -106,17 +108,6 @@ export class ApiProgramConverters {
             identifiers,
             episodeNumber: ep.index ?? 0,
             canonicalId: program.canonicalId!,
-            sortTitle: '',
-            // mediaItem: {
-            //   displayAspectRatio: '',
-            //   duration: doc.duration,
-            //   resolution: {
-            //     widthPx: doc.videoWidth ?? 0,
-            //     heightPx: doc.videoHeight ?? 0,
-            //   },
-            //   sampleAspectRatio: '',
-
-            // },
           }) satisfies Episode,
       )
       .with(
