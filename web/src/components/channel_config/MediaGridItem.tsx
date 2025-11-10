@@ -38,7 +38,7 @@ import type {
   PlexSelectedMedia,
   SelectedMedia,
 } from '../../store/programmingSelector/store.ts';
-import { NewProgramDetailsDialog } from '../programs/NewProgramDetailsDialog.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 
 export type GridItemMetadata = {
   itemId: string;
@@ -348,7 +348,7 @@ const MediaGridItemInner = <ItemTypeT,>(
         </div>
       </Fade>
       {persisted && !isStructuralItemType(itemType) && (
-        <NewProgramDetailsDialog
+        <ProgramDetailsDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           programId={itemId}

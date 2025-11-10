@@ -28,7 +28,7 @@ import { useGetProgramsForDayFunc } from '../../hooks/calendarHooks.ts';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useSuspendedStore } from '../../hooks/useSuspendedStore.ts';
-import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 
 dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);
@@ -403,11 +403,16 @@ export const ProgramWeekCalendarView = ({
           ))}
         </Stack>
       </Stack>
-      <ProgramDetailsDialog
-        program={openProgramDetails ?? undefined}
-        open={!!openProgramDetails}
-        onClose={() => setOpenProgramDetails(null)}
-      />
+      {(openProgramDetails?.type === 'content' ||
+        (openProgramDetails?.type === 'custom' &&
+          openProgramDetails?.uniqueId)) && (
+        <ProgramDetailsDialog
+          programId={openProgramDetails?.uniqueId}
+          programType={openProgramDetails?.subtype}
+          open={!!openProgramDetails}
+          onClose={() => setOpenProgramDetails(null)}
+        />
+      )}
     </Stack>
   );
 };

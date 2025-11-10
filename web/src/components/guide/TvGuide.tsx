@@ -24,10 +24,10 @@ import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
 import type { Maybe } from '../../types/util.ts';
-import ProgramDetailsDialog from '../ProgramDetailsDialog';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
 import { ChannelOptionsMenu } from '../channels/ChannelOptionsMenu.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { TvGuideGridChild } from './TvGuideGridChild.tsx';
 import { TvGuideItem } from './TvGuideItem.tsx';
 
@@ -80,7 +80,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
   const { addListener, removeListener } = useServerEvents();
 
   const handleModalOpen = useCallback((program: TvGuideProgram | undefined) => {
-    if (program && program.type === 'flex') {
+    if (program?.type !== 'content') {
       return;
     }
 
@@ -423,6 +423,20 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
     );
   });
 
+  const programId =
+    modalProgram?.type === 'custom'
+      ? modalProgram.program?.uniqueId
+      : modalProgram?.type === 'content'
+        ? modalProgram?.id
+        : null;
+
+  const programType =
+    modalProgram?.type === 'custom'
+      ? modalProgram.program?.subtype
+      : modalProgram?.type === 'content'
+        ? modalProgram?.subtype
+        : null;
+
   return (
     <PaddedPaper
       sx={{
@@ -430,13 +444,16 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
         minHeight: minHeight >= 0 ? minHeight : undefined,
       }}
     >
-      <ProgramDetailsDialog
-        open={!isUndefined(modalProgram)}
-        onClose={() => handleModalClose()}
-        program={modalProgram}
-        start={dayjs(modalProgram?.start)}
-        stop={dayjs(modalProgram?.stop)}
-      />
+      {modalProgram && programId && programType && (
+        <ProgramDetailsDialog
+          open={!isUndefined(modalProgram)}
+          onClose={() => handleModalClose()}
+          programId={programId}
+          programType={programType}
+          start={dayjs(modalProgram?.start)}
+          stop={dayjs(modalProgram?.stop)}
+        />
+      )}
       <Box display="flex" ref={ref}>
         <Box
           display="flex"

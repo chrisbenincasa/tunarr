@@ -1,33 +1,37 @@
 import { CopyAll } from '@mui/icons-material';
-import { Box, Button } from '@mui/material';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { getApiProgramsByIdOptions } from '../generated/@tanstack/react-query.gen.ts';
+import { Box, Button, TextField } from '@mui/material';
+import type { ProgramGrouping, TerminalProgram } from '@tunarr/types';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
 
 type Props = {
-  programId: string;
+  program: TerminalProgram | ProgramGrouping;
 };
 
-export const RawProgramDetails = ({ programId }: Props) => {
-  const { data: result } = useSuspenseQuery({
-    ...getApiProgramsByIdOptions({ path: { id: programId } }),
-    staleTime: 60_000,
-  });
+export const RawProgramDetails = ({ program }: Props) => {
   const copy = useCopyToClipboard();
 
   return (
-    <Box sx={{ maxHeight: '70vh' }}>
+    <Box sx={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
       <Button
         onClick={() =>
-          copy(JSON.stringify(result, undefined, 2)).catch((e) =>
+          copy(JSON.stringify(program, undefined, 2)).catch((e) =>
             console.error(e),
           )
         }
         startIcon={<CopyAll />}
+        variant="contained"
+        sx={{ alignSelf: 'flex-end' }}
       >
         Copy to Clipboard
       </Button>
-      <pre>{JSON.stringify(result, undefined, 2)}</pre>
+      <TextField
+        label="Program JSON"
+        multiline
+        rows={8}
+        fullWidth
+        defaultValue={JSON.stringify(program, undefined, 2)}
+        disabled
+      />
     </Box>
   );
 };

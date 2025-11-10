@@ -25,7 +25,7 @@ import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useChannelNowPlaying } from '../../hooks/useTvGuide.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
-import ProgramDetailsDialog from '../ProgramDetailsDialog.tsx';
+import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { NetworkIcon } from '../util/NetworkIcon.tsx';
 
 type Props = {
@@ -233,7 +233,8 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       {firstProgram.type === 'content' && (
         <ProgramDetailsDialog
           open={open}
-          program={lineup.programs[firstProgram.id]}
+          programId={firstProgram.id}
+          programType={firstProgram.subtype}
           onClose={toggleOpen}
           start={dayjs(firstProgram.start)}
           stop={dayjs(firstProgram.stop)}
