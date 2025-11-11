@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.23.0-alpha.22](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.21...v0.23.0-alpha.22) (2025-11-10)
+
+
+### Features
+
+* expose max-indexing-threads advanced option for search ([0b30a62](https://github.com/chrisbenincasa/tunarr/commit/0b30a62b72898edfe5a1f9e1784bdec0234de079))
+* hookup scanner cancellation and do it in graceful shutdown ([de5ca88](https://github.com/chrisbenincasa/tunarr/commit/de5ca88e59068fd9a9fe7891d2f54f2f350487ac))
+
+
+### Bug Fixes
+
+* add derivedtypes update - forgot to save this file ([2f0c882](https://github.com/chrisbenincasa/tunarr/commit/2f0c882774e5accd34c91a0d92c48d75843bb26b))
+* allow 0 as a track number index ([ff17084](https://github.com/chrisbenincasa/tunarr/commit/ff17084eade2d53532124f792d4812210fac8a1b)), closes [#1462](https://github.com/chrisbenincasa/tunarr/issues/1462)
+* always report input on API schema parse errors ([5c20e72](https://github.com/chrisbenincasa/tunarr/commit/5c20e72a3054494a3470656751e8a9387cc1ccdf))
+* catch Jellyfin VideoRangeType parse error and default to Unknown ([568594d](https://github.com/chrisbenincasa/tunarr/commit/568594df74b1f17192764a0afd4b05bd717ff177)), closes [#1452](https://github.com/chrisbenincasa/tunarr/issues/1452)
+* disable dataloader caching ([95ff917](https://github.com/chrisbenincasa/tunarr/commit/95ff917ab2308d16aa580a21a63c83e77f62fc5e))
+* disable music video libraries in Manage Libraries ([4f952b6](https://github.com/chrisbenincasa/tunarr/commit/4f952b64f87efbbad7ff066ccaf39f06b5cf92ee))
+* do not allow changing library enabled state if locked ([8d417ba](https://github.com/chrisbenincasa/tunarr/commit/8d417bae2e4cd331e27ee7c5b198eb9af3471048))
+* ensure artwork for programs is minted and saved ([db5ec6a](https://github.com/chrisbenincasa/tunarr/commit/db5ec6aa061164a614b5db5cda2b2bf6d7367977))
+* fix form state when switching between slot duration types ([f02fb9b](https://github.com/chrisbenincasa/tunarr/commit/f02fb9b4ba980c1a857b7a51cd15fe1b1760fbc4))
+* only show supported media library types ([b348621](https://github.com/chrisbenincasa/tunarr/commit/b3486219bc95ce02430108c894a12c17feac501b))
+* populate parent entity when querying getProgramGroupingById ([9ea53fb](https://github.com/chrisbenincasa/tunarr/commit/9ea53fbf80c3d50b6753083746da953883585c25))
+* properly index "index" field for seasons/albums/tracks in search ([f8f1989](https://github.com/chrisbenincasa/tunarr/commit/f8f1989ff57fecbdfe917d51bc4ef2dafadc2e2a))
+* properly return index for season/album groupings from API ([533971a](https://github.com/chrisbenincasa/tunarr/commit/533971afae9c7ccb89da1a758ab2944e8cf55eb4)), closes [#1463](https://github.com/chrisbenincasa/tunarr/issues/1463)
+* re-implement ChannelProgramGrid on new APIs ([#1456](https://github.com/chrisbenincasa/tunarr/issues/1456)) ([86c305e](https://github.com/chrisbenincasa/tunarr/commit/86c305e2f301b909fa9fc3c25ce77cc1404ee177))
+* remove Plex auto-channel updater ([effcb18](https://github.com/chrisbenincasa/tunarr/commit/effcb1835dad099392ca6ad4418c800c2f36f635))
+* return all relations for program gropuings in search API ([d217d82](https://github.com/chrisbenincasa/tunarr/commit/d217d82d5d7c2fce60fd4cb69d6ac7c62963a892))
+* return full parent/grandparent details from getProgramById API ([66c03b2](https://github.com/chrisbenincasa/tunarr/commit/66c03b235c001f1f7ed029ee76a3e252696ce575))
+* return terminal program genres in /programs/:id endpoint ([957f0ce](https://github.com/chrisbenincasa/tunarr/commit/957f0ce2a321dde7b374cfde8279ca7b07ccf68e)), closes [#1461](https://github.com/chrisbenincasa/tunarr/issues/1461)
+* revert better-sqlite update ([e0f7162](https://github.com/chrisbenincasa/tunarr/commit/e0f71627601d3d1bef0b0c4d5029dbdb865037a2))
+
 ## [0.23.0-alpha.21](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.20...v0.23.0-alpha.21) (2025-11-04)
 
 
