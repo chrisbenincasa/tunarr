@@ -468,8 +468,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      let program: Maybe<{ artwork?: Artwork[] }> =
-        await req.serverCtx.programDB.getProgramById(req.params.id);
+      let program: Maybe<{
+        artwork?: Artwork[];
+        mediaSourceId: MediaSourceId | null;
+      }> = await req.serverCtx.programDB.getProgramById(req.params.id);
 
       if (!program) {
         program = await req.serverCtx.programDB.getProgramGrouping(
@@ -499,7 +501,30 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           { contentType: true },
         );
       } else if (URL.canParse(art.sourcePath)) {
-        return res.redirect(art.sourcePath);
+        if (!program.mediaSourceId) {
+          return res.status(404).send();
+        }
+        const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+          program.mediaSourceId,
+        );
+        if (!mediaSource) {
+          return res.status(404).send();
+        }
+
+        const url = URL.parse(art.sourcePath)!;
+        switch (mediaSource.type) {
+          case 'plex':
+            url?.searchParams.append('X-Plex-Token', mediaSource.accessToken);
+            break;
+          case 'jellyfin':
+          case 'emby':
+            url?.searchParams.append('X-Emby-Token', mediaSource.accessToken);
+            break;
+          case 'local':
+            break;
+        }
+
+        return res.redirect(url.toString());
       } else {
         return res.sendFile(art.sourcePath);
       }
