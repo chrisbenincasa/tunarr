@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import { z } from 'zod';
 import { EmbyItemSchema } from '../emby/index.js';
 import { JellyfinItem } from '../jellyfin/index.js';
 import {
@@ -520,9 +520,12 @@ export const Show = z.object({
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   year: z.number().positive().nullable(),
+  get seasons(): z.ZodOptional<z.ZodArray<typeof BaseSeason>> {
+    return z.array(Season).optional();
+  },
 });
 
-export const Season = z.object({
+const BaseSeason = z.object({
   ...BaseProgramGrouping.shape,
   type: z.literal('season'),
   studios: z.array(Studio),
@@ -530,21 +533,43 @@ export const Season = z.object({
   year: z.number().positive().nullable(),
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
-  show: Show.optional(),
 });
 
-export const ShowMetadata = Show.omit(MetadataOmitMask);
-export const SeasonMetadata = Season.omit(MetadataOmitMask);
-
-export const ShowWithSeason = Season.required({ show: true });
-
-export const Episode = z.object({
+const BaseEpisode = z.object({
   ...BaseProgram.shape,
   type: z.literal('episode'),
   episodeNumber: z.number().nonnegative(),
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   summary: z.string().nullable(),
+});
+
+export const Season = z.object({
+  ...BaseProgramGrouping.shape,
+  ...BaseSeason.shape,
+  get show(): z.ZodOptional<typeof Show> {
+    return z.optional(Show);
+  },
+  get episodes(): z.ZodOptional<z.ZodArray<typeof BaseEpisode>> {
+    return z.optional(z.array(BaseEpisode));
+  },
+});
+
+export const ShowMetadata = Show.omit(MetadataOmitMask);
+export const SeasonMetadata = Season.omit(MetadataOmitMask);
+export const SeasonWithShow = z.object({
+  ...Season.shape,
+  // We have to override this way because of the
+  // explicit type annotation for the recursive
+  //types above
+  get show(): typeof Show {
+    return Show;
+  },
+});
+
+export const Episode = z.object({
+  ...BaseProgram.shape,
+  ...BaseEpisode.shape,
   season: Season.optional(),
   show: Show.optional(),
 });
@@ -553,26 +578,44 @@ export const EpisodeMetadata = Episode.omit(MetadataOmitMask);
 
 export const EpisodeWithHierarchy = z.object({
   ...Episode.shape,
-  season: ShowWithSeason,
+  season: SeasonWithShow,
 });
 
-export const MusicArtist = BaseProgramGrouping.extend({
+export const MusicArtist = z.object({
+  ...BaseProgramGrouping.shape,
   type: z.literal('artist'),
+  get albums(): z.ZodOptional<z.ZodArray<typeof BaseMusicAlbum>> {
+    return z.optional(z.array(BaseMusicAlbum));
+  },
 });
 
-export const MusicAlbum = BaseProgramGrouping.extend({
+const BaseMusicAlbum = z.object({
+  ...BaseProgramGrouping.shape,
   type: z.literal('album'),
   index: z.number().optional(),
   year: z.number().positive().nullable(),
-  artist: MusicArtist.optional(),
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   studios: z.array(Studio).optional(),
 });
 
-export const MusicTrack = BaseProgram.extend({
+const BaseMusicTrack = z.object({
+  ...BaseProgram.shape,
   type: z.literal('track'),
   trackNumber: z.number().nonnegative(),
+});
+
+export const MusicAlbum = z.object({
+  ...BaseProgramGrouping.shape,
+  ...BaseMusicAlbum.shape,
+  artist: MusicArtist.optional(),
+  get tracks(): z.ZodOptional<z.ZodArray<typeof BaseMusicTrack>> {
+    return z.optional(z.array(BaseMusicTrack));
+  },
+});
+
+export const MusicTrack = z.object({
+  ...BaseMusicTrack.shape,
   album: MusicAlbum.optional(),
   artist: MusicArtist.optional(),
 });
@@ -681,3 +724,10 @@ export const TerminalProgramSchema = z.union([
 ]);
 
 export const ItemOrFolder = ItemSchema.or(StructuralProgramGroupingSchema);
+
+z.globalRegistry.add(Show, { id: 'Show' });
+z.globalRegistry.add(Season, { id: 'Season' });
+z.globalRegistry.add(Episode, { id: 'Episode' });
+z.globalRegistry.add(MusicArtist, { id: 'MusicArtist' });
+z.globalRegistry.add(MusicAlbum, { id: 'MusicAlbum' });
+z.globalRegistry.add(MusicTrack, { id: 'MusicTrack' });
