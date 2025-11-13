@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.14](https://github.com/chrisbenincasa/tunarr/compare/v0.22.13...v0.22.14) (2025-11-10)
+
+
+### Bug Fixes
+
+* overhaul logs and system logs page ([24b3213](https://github.com/chrisbenincasa/tunarr/commit/24b32130789c0c3666eefa2dc43113db659833ce))
+
 ## [0.22.13](https://github.com/chrisbenincasa/tunarr/compare/v0.22.12...v0.22.13) (2025-11-10)
 
 
