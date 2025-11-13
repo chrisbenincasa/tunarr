@@ -250,6 +250,7 @@ export default function ProgramDetailsDialog({
                     }}
                   ></Skeleton>
                   <Skeleton height="30px"></Skeleton>
+                  <Skeleton height="30px"></Skeleton>
                 </Box>
                 <Box width={'100%'}>
                   <Skeleton width="20%"></Skeleton>

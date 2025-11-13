@@ -20,6 +20,11 @@ export type ChannelArgs = {
   context: RouterContext;
 };
 
+export type ProgrammingArgs = {
+  params: { mediaId: string };
+  context: RouterContext;
+};
+
 export async function preloadChannelAndProgramming({
   params,
   context,

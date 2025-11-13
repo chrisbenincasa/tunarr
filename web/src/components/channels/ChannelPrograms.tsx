@@ -194,6 +194,7 @@ export const ChannelPrograms = ({ channelId }: Props) => {
           <ChannelProgramGrid
             channelId={channelId}
             programType={ProgramTypeToGridType[v]}
+            disableSelection={true}
           />
         </TabPanel>
       ))}

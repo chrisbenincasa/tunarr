@@ -217,6 +217,88 @@ export function getChildItemType(typ: ProgramOrFolder['type']) {
       return 'item';
   }
 }
+export function isChildItem(typ: PossibleItemTypes) {
+  switch (typ) {
+    case 'season':
+    case 'episode':
+    case 'album':
+    case 'track':
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function getParentItem(
+  input: PossibleProgramTypes,
+): PossibleProgramTypes | undefined {
+  switch (input.type) {
+    case 'show':
+    case 'movie':
+    case 'music_video':
+    case 'other_video':
+    case 'artist':
+      return undefined;
+    case 'season':
+      return input.show;
+    case 'episode':
+      return input.season;
+    case 'album':
+      return input.artist;
+    case 'track':
+      return input.album;
+  }
+}
+
+export type PossibleItemTypes =
+  | TerminalProgram['type']
+  | ProgramGrouping['type']
+  | undefined;
+
+export type PossibleProgramTypes = TerminalProgram | ProgramGrouping;
+
+export type PossibleParentTypes = 'show' | 'season' | 'artist' | 'album';
+
+export type hasHeirarchy = 'show' | 'season' | 'album' | 'artist';
+
+export function getParentItemType(
+  typ: PossibleItemTypes,
+): hasHeirarchy | undefined {
+  switch (typ) {
+    case 'season':
+      return 'show';
+    case 'episode':
+      return 'season';
+    case 'track':
+      return 'album';
+    case 'album':
+      return 'artist';
+    default:
+      return undefined; // parent groupings will technically return this as well
+  }
+}
+
+export function getParentItemUuid(input: ProgramOrFolder): string | undefined {
+  switch (input.type) {
+    case 'show':
+    case 'movie':
+    case 'music_video':
+    case 'other_video':
+    case 'artist':
+    case 'folder':
+    case 'collection':
+    case 'playlist':
+      return undefined;
+    case 'season':
+      return input.show?.uuid;
+    case 'episode':
+      return input.season?.uuid;
+    case 'album':
+      return input.artist?.uuid;
+    case 'track':
+      return input.album?.uuid;
+  }
+}
 
 export function getChildCount(input: ProgramOrFolder): number | undefined {
   switch (input.type) {

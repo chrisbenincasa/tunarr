@@ -37,6 +37,7 @@ import { Route as LibrarySmart_collectionsIndexRouteImport } from './routes/libr
 import { Route as ChannelsChannelIdIndexRouteImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewRouteImport } from './routes/settings/ffmpeg_/new';
 import { Route as SettingsFfmpegConfigIdRouteImport } from './routes/settings/ffmpeg_/$configId';
+import { Route as MediaProgramTypeProgramIdRouteImport } from './routes/media_/$programType.$programId';
 import { Route as LibrarySmart_collectionsIdRouteImport } from './routes/library/smart_collections/$id';
 import { Route as ChannelsChannelIdWatchRouteImport } from './routes/channels_/$channelId/watch';
 import { Route as LibraryFillersNewRouteRouteImport } from './routes/library/fillers_/new/route';
@@ -200,6 +201,12 @@ const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdRouteImport.update({
   path: '/ffmpeg/$configId',
   getParentRoute: () => SettingsRoute,
 } as any);
+const MediaProgramTypeProgramIdRoute =
+  MediaProgramTypeProgramIdRouteImport.update({
+    id: '/media_/$programType/$programId',
+    path: '/media/$programType/$programId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const LibrarySmart_collectionsIdRoute =
   LibrarySmart_collectionsIdRouteImport.update({
     id: '/library/smart_collections/$id',
@@ -347,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/library/fillers/new': typeof LibraryFillersNewRouteRouteWithChildren;
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
+  '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
   '/library/fillers/$fillerId': typeof LibraryFillersFillerIdRouteRouteWithChildren;
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
+  '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId': typeof ChannelsChannelIdIndexRoute;
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/library/fillers_/new': typeof LibraryFillersNewRouteRouteWithChildren;
   '/channels_/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
+  '/media_/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
   '/settings/ffmpeg_/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg_/new': typeof SettingsFfmpegNewRoute;
   '/channels_/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/library/fillers/new'
     | '/channels/$channelId/watch'
     | '/library/smart_collections/$id'
+    | '/media/$programType/$programId'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId/'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/library/fillers/$fillerId'
     | '/channels/$channelId/watch'
     | '/library/smart_collections/$id'
+    | '/media/$programType/$programId'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId'
@@ -592,6 +604,7 @@ export interface FileRouteTypes {
     | '/library/fillers_/new'
     | '/channels_/$channelId/watch'
     | '/library/smart_collections/$id'
+    | '/media_/$programType/$programId'
     | '/settings/ffmpeg_/$configId'
     | '/settings/ffmpeg_/new'
     | '/channels_/$channelId/'
@@ -633,6 +646,7 @@ export interface RootRouteChildren {
   LibraryFillersFillerIdRouteRoute: typeof LibraryFillersFillerIdRouteRouteWithChildren;
   LibraryFillersNewRouteRoute: typeof LibraryFillersNewRouteRouteWithChildren;
   LibrarySmart_collectionsIdRoute: typeof LibrarySmart_collectionsIdRoute;
+  MediaProgramTypeProgramIdRoute: typeof MediaProgramTypeProgramIdRoute;
   LibrarySmart_collectionsIndexRoute: typeof LibrarySmart_collectionsIndexRoute;
   LibraryTrashIndexRoute: typeof LibraryTrashIndexRoute;
   Media_sourcesMediaSourceIdIndexRoute: typeof Media_sourcesMediaSourceIdIndexRoute;
@@ -836,6 +850,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/ffmpeg/$configId';
       preLoaderRoute: typeof SettingsFfmpegConfigIdRouteImport;
       parentRoute: typeof SettingsRoute;
+    };
+    '/media_/$programType/$programId': {
+      id: '/media_/$programType/$programId';
+      path: '/media/$programType/$programId';
+      fullPath: '/media/$programType/$programId';
+      preLoaderRoute: typeof MediaProgramTypeProgramIdRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/library/smart_collections/$id': {
       id: '/library/smart_collections/$id';
@@ -1138,6 +1159,7 @@ const rootRouteChildren: RootRouteChildren = {
     LibraryFillersFillerIdRouteRouteWithChildren,
   LibraryFillersNewRouteRoute: LibraryFillersNewRouteRouteWithChildren,
   LibrarySmart_collectionsIdRoute: LibrarySmart_collectionsIdRoute,
+  MediaProgramTypeProgramIdRoute: MediaProgramTypeProgramIdRoute,
   LibrarySmart_collectionsIndexRoute: LibrarySmart_collectionsIndexRoute,
   LibraryTrashIndexRoute: LibraryTrashIndexRoute,
   Media_sourcesMediaSourceIdIndexRoute: Media_sourcesMediaSourceIdIndexRoute,

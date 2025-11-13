@@ -1,10 +1,21 @@
 import { createExternalId } from '@tunarr/shared';
-import type { ProgramOrFolder } from '@tunarr/types';
-import { tag, type ChannelProgram, type ContentProgram } from '@tunarr/types';
+import type {
+  ProgramGrouping,
+  ProgramOrFolder,
+  TerminalProgram,
+} from '@tunarr/types';
+import {
+  isTerminalItemType,
+  tag,
+  type ChannelProgram,
+  type ContentProgram,
+} from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../generated/sdk.gen.ts';
 import type { Nullable } from '../types/util.ts';
+import { prettyItemDuration } from './util.ts';
 
 function getGrandparentExternalId(program: ContentProgram) {
   const sourceType = program.externalSourceType;
@@ -83,4 +94,94 @@ export async function enumerateSyncedItems(
   };
 
   return loop();
+}
+
+export function getProgramDuration(program: TerminalProgram | ProgramGrouping) {
+  if (isTerminalItemType(program)) {
+    return prettyItemDuration(program.duration);
+  }
+
+  return;
+}
+
+export function getProgramRating(program: TerminalProgram | ProgramGrouping) {
+  let rating;
+
+  switch (program.type) {
+    case 'season':
+    case 'episode':
+      rating = program?.show?.rating;
+      break;
+    case 'movie':
+    case 'show':
+      rating = program?.rating;
+      break;
+    default:
+      return;
+  }
+  return rating;
+}
+
+export function getProgramSummary(program: TerminalProgram | ProgramGrouping) {
+  switch (program.type) {
+    case 'movie':
+    case 'show':
+      return program.plot ?? program.summary;
+    case 'episode':
+      return program.summary;
+    case 'season':
+      return program.show?.plot;
+    case 'artist':
+      return program.summary;
+    case 'album':
+      return program.plot;
+    default:
+      return '';
+  }
+}
+
+export function getProgramGenres(program: TerminalProgram | ProgramGrouping) {
+  switch (program.type) {
+    case 'season':
+      return program?.genres?.length ? program?.genres : program?.show?.genres;
+    case 'episode':
+      return program?.genres?.length ? program?.genres : program?.show?.genres;
+    case 'track':
+      return program?.genres?.length ? program?.genres : program?.album?.genres;
+    default:
+      return program.genres;
+  }
+}
+
+export function getProgramReleaseDate(
+  program: TerminalProgram | ProgramGrouping,
+  format?: string,
+) {
+  let dateValue;
+  const dateFormat = format || 'MMMM D, YYYY';
+
+  switch (program.type) {
+    case 'movie':
+    case 'show':
+    case 'other_video':
+    case 'music_video':
+      dateValue = program.year;
+      break;
+    case 'season':
+      dateValue = program.show?.releaseDate
+        ? dayjs(program.show?.releaseDate).format(dateFormat)
+        : '';
+      break;
+    case 'episode':
+    case 'album':
+    case 'track':
+      dateValue = program.releaseDate
+        ? dayjs(program.releaseDate).format(dateFormat)
+        : '';
+      break;
+    default:
+      return '';
+  }
+
+  return dateValue;
 }

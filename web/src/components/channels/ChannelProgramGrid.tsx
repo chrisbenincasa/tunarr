@@ -33,6 +33,7 @@ type Props = {
   programType: AllProgramTypes;
   parentId?: string;
   depth?: number;
+  disableSelection?: boolean;
 };
 
 const ProgramTypeToChildType: Partial<
@@ -67,6 +68,7 @@ export const ChannelProgramGrid = ({
   programType,
   depth = 0,
   parentId,
+  disableSelection,
 }: Props) => {
   const hasProgramHierarchy =
     programType === 'episode' || programType === 'track';
@@ -122,6 +124,7 @@ export const ChannelProgramGrid = ({
             query: { offset: pageParam, limit: 50 },
             throwOnError: true,
           }));
+      console.log(prom.data);
       return prom.data;
     },
     getNextPageParam: (currentPage, pages) => {
@@ -177,7 +180,7 @@ export const ChannelProgramGrid = ({
         {...props}
       />
     ),
-    [],
+    [disableSelection],
   );
 
   return (
