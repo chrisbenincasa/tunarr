@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.15](https://github.com/chrisbenincasa/tunarr/compare/v0.22.14...v0.22.15) (2025-11-16)
+
+
+### Bug Fixes
+
+* do not pass exact duration to audio pad filter ([289acf1](https://github.com/chrisbenincasa/tunarr/commit/289acf1c009da52396b440db9626f0f31df5a4d2))
+* fix bad form state in channel EPG settings ([ec82018](https://github.com/chrisbenincasa/tunarr/commit/ec820188a3c50e254668818cd61c6385028be104)), closes [#1468](https://github.com/chrisbenincasa/tunarr/issues/1468)
+* more balanced cyclic shuffle implementation ([0ceb5e3](https://github.com/chrisbenincasa/tunarr/commit/0ceb5e383705fc548cecea6574bb78d48494cda7))
+* remove BackfillProgramGroupings fixer ([f6cf17f](https://github.com/chrisbenincasa/tunarr/commit/f6cf17f27000500b5b71a67e99318696c35436c2))
+
 ## [0.22.14](https://github.com/chrisbenincasa/tunarr/compare/v0.22.13...v0.22.14) (2025-11-10)
 
 
