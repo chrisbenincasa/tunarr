@@ -6,8 +6,8 @@ import FormGroup from '@mui/material/FormGroup';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
 import type { Channel } from '@tunarr/types';
-import { isInteger, omit } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
+import { NumericFormController } from '../util/TypedController.tsx';
 
 export default function ChannelEpgConfig() {
   const { control } = useFormContext<Channel>();
@@ -48,12 +48,9 @@ export default function ChannelEpgConfig() {
             )}
           />
 
-          <Controller
+          <NumericFormController
             control={control}
             name="guideMinimumDuration"
-            rules={{
-              validate: (v) => (isInteger(v) ? true : 'Value must be a number'),
-            }}
             render={({ field, formState: { errors } }) => (
               <TextField
                 label="Min. Visible in Guide Duration Program (seconds)"
@@ -61,8 +58,7 @@ export default function ChannelEpgConfig() {
                   errors?.guideMinimumDuration?.message ?? ''
                 }`}
                 margin="normal"
-                {...omit(field, 'onChange')}
-                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                {...field}
               />
             )}
           />
