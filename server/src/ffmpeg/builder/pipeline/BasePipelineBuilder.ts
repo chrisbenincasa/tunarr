@@ -603,9 +603,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
 
       if (!isNull(this.context.desiredAudioState.audioDuration)) {
-        this.audioInputSource?.filterSteps.push(
-          AudioPadFilter.create(this.context.desiredAudioState.audioDuration),
-        );
+        this.audioInputSource?.filterSteps.push(new AudioPadFilter());
       }
     }
   }
