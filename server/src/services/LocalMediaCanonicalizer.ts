@@ -1,3 +1,4 @@
+import type { OtherVideo } from '@tunarr/types';
 import {
   isTerminalItemType,
   type Episode,
@@ -24,11 +25,12 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
         return this.getSeasonCanonicalId(input);
       case 'episode':
         return this.getEpisodeCanonicalId(input);
+      case 'other_video':
+        return this.getOtherVideoCanonicalId(input);
       case 'album':
       case 'track':
       case 'artist':
       case 'music_video':
-      case 'other_video':
         throw new Error('Unsupported');
     }
   }
@@ -78,6 +80,12 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
     hash.update(episode.episodeNumber?.toString() ?? '');
     hash.update(episode.year?.toString() ?? '');
     hash.update(episode.summary ?? '');
+    return hash.digest('hex');
+  }
+
+  private getOtherVideoCanonicalId(otherVideo: OtherVideo): string {
+    const hash = crypto.createHash('sha1');
+    this.updateHashForBaseItem(otherVideo, hash);
     return hash.digest('hex');
   }
 

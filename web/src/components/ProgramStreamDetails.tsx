@@ -1,5 +1,5 @@
 import { CopyAll } from '@mui/icons-material';
-import { Box, Button, TextField } from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getApiProgramsByIdStreamDetailsOptions } from '../generated/@tanstack/react-query.gen.ts';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
@@ -16,7 +16,7 @@ export const ProgramStreamDetails = ({ programId }: Props) => {
   const copy = useCopyToClipboard();
 
   return (
-    <Box sx={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+    <Stack sx={{ maxHeight: '70vh' }} spacing={2}>
       <Button
         onClick={() =>
           copy(JSON.stringify(result, undefined, 2)).catch((e) =>
@@ -32,12 +32,18 @@ export const ProgramStreamDetails = ({ programId }: Props) => {
       <TextField
         label="Stream JSON"
         multiline
-        rows={8}
+        maxRows={15}
         fullWidth
         defaultValue={JSON.stringify(result, undefined, 2)}
         disabled
-        // sx={{backgroundColor: }}
+        slotProps={{
+          input: {
+            sx: {
+              fontFamily: 'monospace',
+            },
+          },
+        }}
       />
-    </Box>
+    </Stack>
   );
 };

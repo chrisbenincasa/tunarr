@@ -602,7 +602,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.send({
-        details: result,
+        details: result.get(),
         ffprobeDetails,
       });
     },

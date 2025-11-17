@@ -218,12 +218,6 @@ export interface IProgramDB {
     libraryId: string,
   ): Promise<UpsertResult<ProgramGroupingWithExternalIds>>;
 
-  getShowSeasons(showUuid: string): Promise<ProgramGroupingWithExternalIds[]>;
-
-  getArtistAlbums(
-    artistUuid: string,
-  ): Promise<ProgramGroupingWithExternalIds[]>;
-
   getProgramGroupingChildCounts(
     groupIds: string[],
   ): Promise<Record<string, ProgramGroupingChildCounts>>;

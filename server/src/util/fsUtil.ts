@@ -49,3 +49,11 @@ export async function walkDirectory(dirPath: string) {
     console.error(`Error walking directory ${dirPath}:`, err);
   }
 }
+
+export function changeFileExtension(filePath: string, newExtension: string) {
+  const ext = newExtension.startsWith('.') ? newExtension : `.${newExtension}`;
+  return path.join(
+    path.dirname(filePath),
+    path.basename(filePath, path.extname(filePath)) + ext,
+  );
+}

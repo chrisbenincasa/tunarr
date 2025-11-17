@@ -1729,26 +1729,6 @@ export class ProgramDB implements IProgramDB {
       );
   }
 
-  async getShowSeasons(showUuid: string) {
-    return this.db
-      .selectFrom('programGrouping')
-      .where('programGrouping.showUuid', '=', showUuid)
-      .where('programGrouping.type', '=', ProgramGroupingType.Season)
-      .selectAll()
-      .select(withProgramGroupingExternalIds)
-      .execute();
-  }
-
-  async getArtistAlbums(artistUuid: string) {
-    return this.db
-      .selectFrom('programGrouping')
-      .where('programGrouping.artistUuid', '=', artistUuid)
-      .where('programGrouping.type', '=', ProgramGroupingType.Album)
-      .selectAll()
-      .select(withProgramGroupingExternalIds)
-      .execute();
-  }
-
   async upsertProgramGrouping(
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     externalId: ProgramGroupingExternalIdLookup,

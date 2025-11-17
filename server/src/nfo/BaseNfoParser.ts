@@ -45,14 +45,10 @@ export abstract class BaseNfoParser<MediaTypeSchema extends z4.$ZodType>
       );
     }
 
-    const result = z4.safeParse(this.schema, jObj);
+    const result = z4.safeParse(this.schema, jObj, { reportInput: true });
 
     if (result.error) {
-      return Promise.resolve(
-        Result.forError(
-          new Error(z4.prettifyError(result.error), result.error),
-        ),
-      );
+      return Promise.resolve(Result.failure(z4.prettifyError(result.error)));
     }
 
     return Promise.resolve(Result.success(result.data));

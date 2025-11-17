@@ -278,7 +278,7 @@ export const ProgramMetadataDialogContent = ({
               animation={thumbLoadState === 'loading' ? 'pulse' : false}
             ></Skeleton>
           )}
-          {externalLink && (
+          {externalLink && program.sourceType !== 'local' && (
             <Button
               component="a"
               target="_blank"

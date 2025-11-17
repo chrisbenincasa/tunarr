@@ -91,11 +91,9 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
         }) satisfies AudioStreamDetails,
     );
 
-    const subtitleStreamDetails: SubtitleStreamDetails[] = streamsByType[
-      'subtitles'
-    ]?.map(
-      (subtitle) =>
-        ({
+    const subtitleStreamDetails =
+      streamsByType['subtitles']?.map(
+        (subtitle): SubtitleStreamDetails => ({
           codec: subtitle.codec,
           default: subtitle.default,
           forced: subtitle.forced,
@@ -103,8 +101,8 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
           type: 'embedded',
           index: subtitle.index,
           languageCodeISO6392: nullToUndefined(subtitle.language),
-        }) satisfies SubtitleStreamDetails,
-    );
+        }),
+      ) ?? ([] as SubtitleStreamDetails[]);
 
     subtitleStreamDetails.push(
       ...(program.subtitles

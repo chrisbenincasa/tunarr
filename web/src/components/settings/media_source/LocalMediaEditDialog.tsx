@@ -20,7 +20,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { isNonEmptyString, prettifySnakeCaseString } from '@tunarr/shared/util';
+import {
+  isNonEmptyString,
+  prettifySnakeCaseString,
+  seq,
+} from '@tunarr/shared/util';
 import type { MediaSourceContentType } from '@tunarr/types';
 import { type LocalMediaSource } from '@tunarr/types';
 import { MediaSourceContentType as MediaSourceContentTypeSchema } from '@tunarr/types/schemas';
@@ -49,10 +53,11 @@ type LocalMediaSourceForm = MarkOptional<
   'id'
 >;
 
-const supportedLocalLibraryTypes: MediaSourceContentType[] = [
+const supportedLocalLibraryTypes = [
   'movies',
   'shows',
-];
+  'other_videos',
+] as const satisfies MediaSourceContentType[];
 
 const emptyDefaults = () =>
   ({
@@ -249,7 +254,9 @@ const LocalMediaEditDialogContent = ({ onClose, source }: Props) => {
                   <InputLabel>Media Type</InputLabel>
                   <Select label="Media Type" {...field} error={!!error}>
                     {Object.values(MediaSourceContentTypeSchema.enum)
-                      .filter((val) => supportedLocalLibraryTypes.includes(val))
+                      .filter((val) =>
+                        seq.inConstArr(supportedLocalLibraryTypes, val),
+                      )
                       .map((type) => (
                         <MenuItem value={type} key={type}>
                           {prettifySnakeCaseString(type)}
