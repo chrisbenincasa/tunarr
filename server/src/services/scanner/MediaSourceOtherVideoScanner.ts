@@ -7,7 +7,6 @@ import { ProgramType } from '../../db/schema/Program.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
 import type { HasMediaSourceInfo, OtherVideo } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { wait } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -61,10 +60,22 @@ export abstract class MediaSourceOtherVideoScanner<
           return;
         }
 
-        const canonicalId = video.canonicalId;
-        const externalKey = this.getExternalKey(video);
+        const externalKey = video.externalId;
 
         seenVideos.add(externalKey);
+
+        const fullMetadataResult = await this.scanVideo(context, video);
+
+        if (fullMetadataResult.isFailure()) {
+          this.logger.warn(
+            fullMetadataResult.error,
+            'Failed to request full metadata for video %s',
+            video.externalId,
+          );
+          continue;
+        }
+
+        const fullMetadata = fullMetadataResult.get();
 
         const processedAmount = round(seenVideos.size / totalSize, 2) * 100.0;
 
@@ -76,7 +87,7 @@ export abstract class MediaSourceOtherVideoScanner<
         if (
           !force &&
           existingPrograms[externalKey] &&
-          existingPrograms[externalKey].canonicalId === canonicalId
+          existingPrograms[externalKey].canonicalId === fullMetadata.canonicalId
         ) {
           this.logger.debug(
             'Found an unchanged program: rating key = %s, program ID = %s',
@@ -86,27 +97,19 @@ export abstract class MediaSourceOtherVideoScanner<
           continue;
         }
 
-        const result = await this.scanVideo(context, video).then((result) =>
-          result.flatMapAsync((fullVideo) => {
-            return Result.attemptAsync(async () => {
-              const minted = this.programMinter.mintOtherVideo(
-                mediaSource,
-                library,
-                fullVideo,
-              );
-
-              const upsertResult = await this.programDB.upsertPrograms([
-                minted,
-              ]);
-
-              return [fullVideo, upsertResult] as const;
-            });
-          }),
+        const minted = this.programMinter.mintOtherVideo(
+          mediaSource,
+          library,
+          fullMetadata,
         );
 
-        if (result.isFailure()) {
+        const upsertResult = await Result.attemptAsync(() =>
+          this.programDB.upsertPrograms([minted]),
+        );
+
+        if (upsertResult.isFailure()) {
           this.logger.warn(
-            result.error,
+            upsertResult.error,
             'Error while processing video (%O)',
             video,
           );
@@ -114,8 +117,8 @@ export abstract class MediaSourceOtherVideoScanner<
           continue;
         }
 
-        const [fullApiVideo, upsertedDbVideos] = result.get();
-        const dbVideo = head(upsertedDbVideos);
+        // const [fullApiVideo, upsertedDbVideos] = result.get();
+        const dbVideo = head(upsertResult.get());
         if (dbVideo) {
           this.logger.debug(
             'Upserted video %s (ID = %s)',
@@ -125,7 +128,7 @@ export abstract class MediaSourceOtherVideoScanner<
 
           await this.searchService.indexOtherVideo([
             {
-              ...fullApiVideo,
+              ...fullMetadata,
               uuid: dbVideo.uuid,
               mediaSourceId: mediaSource.uuid,
               libraryId: library.uuid,
@@ -134,8 +137,6 @@ export abstract class MediaSourceOtherVideoScanner<
         } else {
           this.logger.warn('No upserted video');
         }
-
-        await wait();
       }
 
       this.logger.debug('Completed scanning library %s', context.library.uuid);
@@ -153,6 +154,4 @@ export abstract class MediaSourceOtherVideoScanner<
     context: ScanContext<ApiClientTypeT>,
     incomingVideo: OtherVideoTypeT,
   ): Promise<Result<OtherVideoTypeT & HasMediaSourceInfo>>;
-
-  protected abstract getExternalKey(video: OtherVideoTypeT): string;
 }
