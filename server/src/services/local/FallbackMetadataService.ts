@@ -1,4 +1,4 @@
-import { MovieMetadata, ShowMetadata } from '@tunarr/types';
+import { MovieMetadata, OtherVideoMetadata, ShowMetadata } from '@tunarr/types';
 import { injectable } from 'inversify';
 import { isNull } from 'lodash-es';
 import { basename, extname } from 'node:path';
@@ -88,5 +88,23 @@ export class FallbackMetadataService {
     }
 
     return metadata;
+  }
+
+  getOtherVideoFallbackMetadata(filePath: string): OtherVideoMetadata {
+    const title = basename(filePath, extname(filePath));
+    return {
+      identifiers: [],
+      originalTitle: null,
+      releaseDate: null,
+      releaseDateString: null,
+      sortTitle: title, // TODO:
+      sourceType: 'local',
+      title,
+      tags: [],
+      type: 'other_video',
+      uuid: v4(),
+      year: null,
+      artwork: [],
+    };
   }
 }

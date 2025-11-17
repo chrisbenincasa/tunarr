@@ -1,5 +1,5 @@
 import { CopyAll } from '@mui/icons-material';
-import { Box, Button, TextField } from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
 import type { ProgramGrouping, TerminalProgram } from '@tunarr/types';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
 
@@ -11,7 +11,7 @@ export const RawProgramDetails = ({ program }: Props) => {
   const copy = useCopyToClipboard();
 
   return (
-    <Box sx={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+    <Stack sx={{ maxHeight: '70vh' }} spacing={2}>
       <Button
         onClick={() =>
           copy(JSON.stringify(program, undefined, 2)).catch((e) =>
@@ -27,11 +27,18 @@ export const RawProgramDetails = ({ program }: Props) => {
       <TextField
         label="Program JSON"
         multiline
-        rows={8}
+        maxRows={15}
         fullWidth
         defaultValue={JSON.stringify(program, undefined, 2)}
         disabled
+        slotProps={{
+          input: {
+            sx: {
+              fontFamily: 'monospace',
+            },
+          },
+        }}
       />
-    </Box>
+    </Stack>
   );
 };

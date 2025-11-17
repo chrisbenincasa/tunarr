@@ -322,6 +322,7 @@ export class FfmpegInfo {
 
     const result = await FfprobeMediaInfoSchema.safeParseAsync(
       JSON.parse(output),
+      { reportInput: true },
     );
 
     if (!result.success) {

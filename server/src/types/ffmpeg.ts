@@ -95,7 +95,7 @@ export const FfprobeAttachmentStreamSchema =
   });
 
 export const FfprobeBinDataStreamSchema = z.object({
-  codec_type: z.literal('bin_data'),
+  codec_type: z.literal('bin_data').or(z.literal('data')),
 });
 
 export type FfprobeSubtitleStream = z.infer<typeof FfprobeSubtitleStreamSchema>;

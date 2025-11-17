@@ -1,3 +1,4 @@
+import { TvEpisodeNfo, TvShowNfo } from '@/nfo/NfoSchemas.js';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import {
   EpisodeMetadata,
@@ -22,11 +23,8 @@ import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { ArtworkType } from '../../db/schema/Artwork.ts';
-import {
-  TvEpisodeNfo,
-  TvEpisodeNfoParser,
-} from '../../nfo/TvEpisodeNfoParser.ts';
-import { TvShowNfo, TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
+import { TvEpisodeNfoParser } from '../../nfo/TvEpisodeNfoParser.ts';
+import { TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
@@ -310,7 +308,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
         const folderResult = await this.localMediaDB.upsertFolder(
           context.library,
           parentFolder?.uuid,
-          seasonDir.name,
+          fullPath,
           canonicalId,
         );
         isNew = folderResult.isNew;
@@ -323,6 +321,11 @@ export class LocalTvShowScanner extends FileSystemScanner {
       }
 
       shouldScan = shouldScan || context.force;
+
+      if (!shouldScan) {
+        this.logger.debug('Skipping unchanged season folder %s', fullPath);
+        return;
+      }
 
       const seasonMetadata = this.seasonForNumber(show, seasonNumber);
 
@@ -356,11 +359,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
       seasonPosterResult.filter(isDefined).forEach((poster) => {
         seasonDao.artwork.push(poster);
       });
-
-      if (!shouldScan) {
-        this.logger.debug('Skipping unchanged season folder %s', fullPath);
-        return;
-      }
 
       const upsertedSeason = await this.programDB.upsertLocalProgramGrouping(
         seasonDao,

@@ -635,6 +635,8 @@ export const OtherVideo = BaseProgram.extend({
   type: z.literal('other_video'),
 });
 
+export const OtherVideoMetadata = OtherVideo.omit(MetadataOmitMask);
+
 export const HasMediaSourceInfo = z.object({
   sourceType: MediaSourceType,
   externalId: z.string(),

@@ -1,3 +1,4 @@
+import { MovieNfo } from '@/nfo/NfoSchemas.js';
 import { seq } from '@tunarr/shared/util';
 import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -14,7 +15,7 @@ import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramOrm } from '../../db/schema/Program.ts';
-import { MovieNfo, MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
+import { MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { MediaSourceMovie } from '../../types/Media.ts';
 import { KEYS } from '../../types/inject.ts';

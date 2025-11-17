@@ -30,6 +30,7 @@ import type {
   MusicVideo,
   NamedEntity,
   OtherVideo,
+  OtherVideoMetadata,
   Playlist,
   ProgramGroupingSchema,
   Season,
@@ -188,6 +189,7 @@ export type MovieMetadata = z.infer<typeof MovieMetadata>;
 export type EpisodeMetadata = z.infer<typeof EpisodeMetadata>;
 export type SeasonMetadata = z.infer<typeof SeasonMetadata>;
 export type ShowMetadata = z.infer<typeof ShowMetadata>;
+export type OtherVideoMetadata = z.infer<typeof OtherVideoMetadata>;
 
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,

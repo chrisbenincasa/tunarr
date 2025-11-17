@@ -1,4 +1,6 @@
+import { head } from 'lodash-es';
 import z from 'zod/v4';
+import type { Maybe } from '../types/util.ts';
 
 export const NfoThumb = z.object({
   '#text': z.string(),
@@ -56,3 +58,130 @@ export const NfoActor = z.object({
 });
 
 export type NfoActor = z.infer<typeof NfoActor>;
+
+export const MovieNfo = z.object({
+  title: z.string(),
+  originaltitle: z.string().optional(),
+  sorttitle: z.string().optional(),
+  userrating: z.coerce.number().optional(),
+  outline: z.string().optional(),
+  tagline: z.string().optional(),
+  plot: z.string().optional(),
+  runtime: z.coerce.number().optional(), // mins
+  thumb: z.array(NfoThumb).optional(),
+  mpaa: z.string().optional().catch(undefined),
+  uniqueid: z.array(NfoUniqueId).optional(),
+  genre: z.array(z.string()).optional(),
+  country: z.array(z.string()).optional(),
+  set: z
+    .object({
+      name: z.string(),
+      overview: z.string(),
+    })
+    .optional()
+    .catch(undefined),
+  tag: z.array(z.string()).optional(),
+  credits: z.array(z.string()).optional(),
+  director: z.array(z.string()).optional(),
+  premiered: z.string().optional(), // yyyy-mm-dd
+  studio: z.string().optional().catch(undefined),
+  fileinfo: z.array(NfoFileInfo).optional(),
+  actor: z.array(NfoActor).optional(),
+});
+
+export type MovieNfo = z.infer<typeof MovieNfo>;
+
+export const MovieNfoContainer = z.object({
+  movie: MovieNfo,
+});
+
+export const TvShowNfo = z.object({
+  title: z.string(),
+  originaltitle: z.string().optional(),
+  sorttitle: z.string().optional(),
+  userrating: z.number().optional(),
+  outline: z.string().optional(),
+  tagline: z.string().optional(),
+  plot: z.string().optional(),
+  thumb: z.array(NfoThumb).optional(),
+  season: z.coerce.number().optional(),
+  episode: z.coerce.number().optional(),
+  mpaa: z.string().optional().catch(undefined),
+  uniqueid: z.array(NfoUniqueId).optional(),
+  genre: z.array(z.string()).optional(),
+  country: z.array(z.string()).optional(),
+  set: z
+    .object({
+      name: z.string(),
+      overview: z.string(),
+    })
+    .optional()
+    .catch(undefined),
+  tag: z.array(z.string()).optional(),
+  credits: z.array(z.string()).optional(),
+  director: z.array(z.string()).optional(),
+  premiered: z.string().optional(), // yyyy-mm-dd
+  enddate: z.string().optional(), // yyyy-mm-dd
+  studio: z.string().optional().catch(undefined),
+  actor: z.array(NfoActor).optional(),
+});
+
+export type TvShowNfo = z.infer<typeof TvShowNfo>;
+
+export const TvShowNfoContainer = z.object({
+  tvshow: TvShowNfo,
+});
+
+export const TvEpisodeNfo = z.object({
+  title: z.string(),
+  originaltitle: z.string().optional(),
+  sorttitle: z.string().optional(),
+  userrating: z.number().optional(),
+  outline: z.string().optional(),
+  tagline: z.string().optional(),
+  plot: z.string().optional(),
+  thumb: z.array(NfoThumb).optional().catch([]),
+  season: z.coerce.number().optional(),
+  episode: z.coerce.number().optional(),
+  mpaa: z.string().optional(),
+  uniqueid: z.array(NfoUniqueId).optional().catch([]),
+  genre: z.array(z.string()).optional(),
+  country: z.array(z.string()).optional(),
+  set: z
+    .object({
+      name: z.string(),
+      overview: z.string(),
+    })
+    .optional(),
+  tag: z.array(z.string()).optional(),
+  credits: z.array(z.string()).optional(),
+  director: z.array(z.string()).optional(),
+  premiered: z.string().optional(), // yyyy-mm-dd
+  aired: z.string().optional(), // yyyy-mm-dd
+  studio: z.string().optional().catch(undefined),
+  actor: z.array(NfoActor).optional(),
+});
+
+export type TvEpisodeNfo = z.infer<typeof TvEpisodeNfo>;
+
+export const TvEpisodeNfoContainer = z.object({
+  episodedetails: z.array(TvEpisodeNfo),
+});
+
+export const OtherVideoNfoContainer = z
+  .object({
+    ...MovieNfoContainer.shape,
+    ...TvEpisodeNfoContainer.shape,
+  })
+  .partial();
+
+export type OtherVideoNfo = MovieNfo | TvEpisodeNfo;
+
+export function unwrapOtherVideoNfoContainer(
+  container: z.infer<typeof OtherVideoNfoContainer>,
+): Maybe<OtherVideoNfo> {
+  if ('movie' in container) {
+    return container.movie;
+  }
+  return head(container.episodedetails);
+}

@@ -1,5 +1,5 @@
 import type { Canonicalizer } from '../interfaces/Canonicalizer.ts';
-import type { MovieNfo } from './MovieNfoParser.ts';
+import type { MovieNfo } from './NfoSchemas.ts';
 
 class MovieNfoCanonicalizer implements Canonicalizer<MovieNfo> {
   getCanonicalId(_movie: MovieNfo): string {

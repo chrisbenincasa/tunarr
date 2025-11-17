@@ -1,5 +1,5 @@
 import { BaseNfoParser } from './BaseNfoParser.ts';
-import { TvEpisodeNfoContainer } from './NfoSchemas.ts';
+import { OtherVideoNfoContainer } from './NfoSchemas.ts';
 
 const ArrayTags = [
   'episodedetails',
@@ -13,13 +13,22 @@ const ArrayTags = [
   'episodedetails.tag',
   'episodedetails.actor',
   'episodedetails.uniqueid',
+  'movie.credits',
+  'movie.director',
+  'movie.genre',
+  'movie.country',
+  'movie.fileinfo',
+  'movie.thumb',
+  'movie.tag',
+  'movie.fileinfo',
+  'movie.actor',
 ];
 
-export class TvEpisodeNfoParser extends BaseNfoParser<
-  typeof TvEpisodeNfoContainer
+export class OtherVideoNfoParser extends BaseNfoParser<
+  typeof OtherVideoNfoContainer
 > {
   constructor() {
-    super(TvEpisodeNfoContainer);
+    super(OtherVideoNfoContainer);
   }
 
   protected override get arrayTags() {
