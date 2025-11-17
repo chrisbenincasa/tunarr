@@ -44,7 +44,7 @@ export function getEnvironmentLogLevel(): Maybe<LogLevels> {
   return;
 }
 
-const ExtraLogLevels = ['http'] as const;
+const ExtraLogLevels = ['http', 'http_out'] as const;
 
 export const ValidLogLevels = [
   ...Object.keys(levels.values),
@@ -170,7 +170,8 @@ class LoggerFactoryImpl {
       {
         level,
         customLevels: {
-          http: 25,
+          http: 25, // Finer than info but not as fine as debug
+          http_out: 15, // Finder than debug but not as fine as trace
         },
       },
       this.createLogStreams(),

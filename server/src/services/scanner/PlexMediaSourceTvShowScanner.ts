@@ -1,7 +1,9 @@
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { ScanContext } from '@/services/scanner/MediaSourceScanner.js';
+import { ProgramGrouping } from '@tunarr/types';
 import { inject, injectable, interfaces } from 'inversify';
+import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { type IProgramDB } from '../../db/interfaces/IProgramDB.ts';
@@ -39,6 +41,8 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(MediaSourceProgressService)
     mediaSourceProgressService: MediaSourceProgressService,
+    @inject(GetProgramGroupingById)
+    getProgramGroupingsById: GetProgramGroupingById,
   ) {
     super(
       logger,
@@ -48,6 +52,7 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
       programMinterFactory(),
       searchService,
       mediaSourceProgressService,
+      getProgramGroupingsById,
     );
   }
 
@@ -79,6 +84,20 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     return context.apiClient.getEpisode(episodeT.externalId);
   }
 
+  protected getFullTvShowMetadata(
+    externalId: string,
+    context: ScanContext<PlexApiClient>,
+  ): Promise<Result<PlexShow, WrappedError>> {
+    return context.apiClient.getShow(externalId);
+  }
+
+  protected getFullTvSeasonMetadata(
+    externalId: string,
+    context: ScanContext<PlexApiClient>,
+  ): Promise<Result<PlexSeason, WrappedError>> {
+    return context.apiClient.getSeason(externalId);
+  }
+
   protected getApiClient(
     mediaSource: MediaSourceWithRelations,
   ): Promise<PlexApiClient> {
@@ -100,5 +119,13 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     return context.apiClient
       .getLibraryCount(libraryKey)
       .then((_) => _.getOrThrow());
+  }
+
+  protected isShowT(grouping: ProgramGrouping): grouping is PlexShow {
+    return grouping.sourceType === 'plex' && grouping.type === 'show';
+  }
+
+  protected isSeasonT(grouping: ProgramGrouping): grouping is PlexSeason {
+    return grouping.sourceType === 'plex' && grouping.type === 'season';
   }
 }

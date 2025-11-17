@@ -11,6 +11,8 @@ import { JellyfinApiClient } from '../../external/jellyfin/JellyfinApiClient.ts'
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
+import { ProgramGrouping } from '@tunarr/types';
+import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import {
   JellyfinEpisode,
@@ -46,6 +48,8 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
     @inject(ProgramGroupingMinter)
     programGroupingMinter: ProgramGroupingMinter,
     @inject(MeilisearchService) searchService: MeilisearchService,
+    @inject(GetProgramGroupingById)
+    getProgramGroupingsById: GetProgramGroupingById,
   ) {
     super(
       logger,
@@ -55,6 +59,7 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
       programMinterFactory(),
       searchService,
       mediaSourceProgressService,
+      getProgramGroupingsById,
     );
   }
 
@@ -123,5 +128,27 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
     return context.apiClient
       .getChildItemCount(libraryKey, 'Series')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getFullTvSeasonMetadata(
+    externalId: string,
+    context: ScanContext<JellyfinApiClient>,
+  ): Promise<Result<JellyfinSeason, WrappedError>> {
+    return context.apiClient.getSeason(externalId);
+  }
+
+  protected getFullTvShowMetadata(
+    externalId: string,
+    context: ScanContext<JellyfinApiClient>,
+  ): Promise<Result<JellyfinShow, WrappedError>> {
+    return context.apiClient.getShow(externalId);
+  }
+
+  protected isShowT(grouping: ProgramGrouping): grouping is JellyfinShow {
+    return grouping.sourceType === 'jellyfin' && grouping.type === 'show';
+  }
+
+  protected isSeasonT(grouping: ProgramGrouping): grouping is JellyfinSeason {
+    return grouping.sourceType === 'jellyfin' && grouping.type === 'season';
   }
 }

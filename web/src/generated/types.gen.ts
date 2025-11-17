@@ -15795,10 +15795,10 @@ export type GetApiSystemSettingsResponses = {
             }>;
         };
         logging: {
-            logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'trace';
+            logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
-            environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'trace';
+            environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {
             enablePlexRequestCache: boolean;
@@ -15819,7 +15819,7 @@ export type GetApiSystemSettingsResponse = GetApiSystemSettingsResponses[keyof G
 export type PutApiSystemSettingsData = {
     body?: {
         logging?: {
-            logLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'trace';
+            logLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             useEnvVarLevel?: boolean;
         };
         backup?: {
@@ -15888,10 +15888,10 @@ export type PutApiSystemSettingsResponses = {
             }>;
         };
         logging: {
-            logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'trace';
+            logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
-            environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'trace';
+            environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {
             enablePlexRequestCache: boolean;

@@ -10,6 +10,7 @@ export const LogLevelsSchema = z.union([
   z.literal('info'),
   z.literal('http'),
   z.literal('debug'),
+  z.literal('http_out'),
   z.literal('trace'),
 ]);
 
@@ -21,6 +22,7 @@ export const LogLevels = [
   'info',
   'http',
   'debug',
+  'http_out',
   'trace',
 ] as const;
 

@@ -301,6 +301,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   getSeasonEpisodes(
     tvSeasonKey: string,
     pageSize: number = 50,
+    materializeFull: boolean = false,
   ): AsyncIterable<PlexEpisode> {
     return this.iterateChildItems(
       tvSeasonKey,
@@ -308,6 +309,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       (ep, library) => this.plexEpisodeInjection(ep, library),
       pageSize,
       `/library/metadata/${tvSeasonKey}/children`,
+      materializeFull ? (ep) => this.getEpisode(ep.ratingKey) : undefined,
     );
   }
 
@@ -349,6 +351,32 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     );
   }
 
+  async getMusicArtist(key: string): Promise<QueryResult<PlexArtist>> {
+    const queryResult = await this.getItemMetadataInternal(
+      key,
+      MakePlexMediaContainerResponseSchema(PlexMusicArtistSchema),
+    );
+
+    return queryResult.flatMap((artist) =>
+      this.findLibraryFromPlexMedia(artist)
+        .flatMap((library) => this.plexMusicArtistInjection(artist, library))
+        .mapError((e) => QueryError.genericQueryError(e.message)),
+    );
+  }
+
+  async getMusicAlbum(key: string): Promise<QueryResult<PlexAlbum>> {
+    const queryResult = await this.getItemMetadataInternal(
+      key,
+      MakePlexMediaContainerResponseSchema(PlexMusicAlbumSchema),
+    );
+
+    return queryResult.flatMap((album) =>
+      this.findLibraryFromPlexMedia(album)
+        .flatMap((library) => this.plexAlbumInjection(album, library))
+        .mapError((e) => QueryError.genericQueryError(e.message)),
+    );
+  }
+
   async getMusicTrack(key: string): Promise<QueryResult<PlexTrack>> {
     const queryResult = await this.getItemMetadataInternal(
       key,
@@ -374,6 +402,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     ) => Result<OutType>,
     pageSize: number = 50,
     key: string = `/library/sections/${libraryId}/all`,
+    materializeFull: Maybe<
+      (item: ItemType) => Promise<QueryResult<OutType>>
+    > = undefined,
   ): AsyncGenerator<OutType> {
     const count = await this.getChildCount(key);
     if (count.isFailure()) {
@@ -408,7 +439,21 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           continue;
         }
 
-        const converted = converter(item, library.get());
+        let converted: Result<OutType>;
+        if (materializeFull) {
+          const materialized = await materializeFull(item);
+          if (materialized.isFailure()) {
+            this.logger.warn(
+              materialized.error,
+              'Failed to materialize full child item: %s',
+              item.ratingKey,
+            );
+            continue;
+          }
+          converted = materialized;
+        } else {
+          converted = converter(item, library.get());
+        }
 
         if (converted.isFailure()) {
           this.logger.warn(

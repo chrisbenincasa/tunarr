@@ -18,9 +18,10 @@ const logLevels: Record<LogLevels, number> = {
   error: 0,
   warn: 1,
   info: 2,
-  debug: 3,
-  http: 4,
-  trace: 5,
+  http: 3,
+  debug: 4,
+  http_out: 5,
+  trace: 6,
 } as const;
 
 let _globalOptions: GlobalOptions | undefined;

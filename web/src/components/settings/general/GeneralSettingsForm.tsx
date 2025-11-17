@@ -54,7 +54,7 @@ const LogLevelChoices = [
     value: 'env',
   },
   ...map(LogLevels, (level) => ({
-    description: level,
+    description: level === 'http_out' ? 'http (egress)' : level,
     value: level,
   })),
 ];

@@ -1,19 +1,18 @@
 import { isError, isString } from 'lodash-es';
+import { WrappedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { caughtErrorToError, wait } from './index.js';
+import { LoggerFactory } from './logging/LoggerFactory.js';
 
 type AsyncPoolOpts = {
   concurrency: number;
   waitAfterEachMs?: number;
+  flushAfterEach?: boolean;
 };
 
 // Based on https://github.com/rxaviers/async-pool
 // Notable changes:
 // 1. Types
-
-import { WrappedError } from '../types/errors.ts';
-import { LoggerFactory } from './logging/LoggerFactory.js';
-
 // 2. Single failed promise doesn't abort the whole operation
 export async function* asyncPool<T, R>(
   iterable: Iterable<T>,
@@ -45,6 +44,8 @@ export async function* asyncPool<T, R>(
         const r = await iteratorFn(item, iterable);
         if (opts.waitAfterEachMs && opts.waitAfterEachMs > 0) {
           await wait(opts.waitAfterEachMs);
+        } else if (opts.flushAfterEach) {
+          await wait();
         }
         return [item, r] as const;
       } catch (e) {

@@ -40,6 +40,7 @@ export type ExtractMediaType<
   Client extends MediaSourceApiClient,
   Key extends keyof ProgramTypeMap,
 > =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Client extends MediaSourceApiClient<infer ProgramMapType, any>
     ? ProgramMapType[Key]
     : never;
@@ -52,6 +53,7 @@ export type ExtractShowType<Client extends MediaSourceApiClient> =
 export type MediaSourceApiClientFactory<
   Type extends MediaSourceApiClient,
   OptsType extends ApiClientOptions = Type extends MediaSourceApiClient<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any,
     infer Opts
   >
@@ -89,6 +91,7 @@ export abstract class MediaSourceApiClient<
   abstract getSeasonEpisodes(
     seasonKey: string,
     pageSize?: number,
+    materializeFull?: boolean,
   ): AsyncIterable<ProgramTypes['episode']>;
 
   abstract getSeason(
@@ -108,6 +111,14 @@ export abstract class MediaSourceApiClient<
     artistKey: string,
     pageSize: number,
   ): AsyncIterable<ProgramTypes['album']>;
+
+  abstract getMusicArtist(
+    artistKey: string,
+  ): Promise<QueryResult<ProgramTypes['artist']>>;
+
+  abstract getMusicAlbum(
+    artistKey: string,
+  ): Promise<QueryResult<ProgramTypes['album']>>;
 
   abstract getAlbumTracks(
     albumKey: string,

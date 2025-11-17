@@ -11,6 +11,8 @@ import { EmbyApiClient } from '../../external/emby/EmbyApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
 
+import { ProgramGrouping } from '@tunarr/types';
+import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { EmbyEpisode, EmbySeason, EmbyShow } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
@@ -42,6 +44,8 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     @inject(ProgramGroupingMinter)
     programGroupingMinter: ProgramGroupingMinter,
     @inject(MeilisearchService) searchService: MeilisearchService,
+    @inject(GetProgramGroupingById)
+    getProgramGroupingsById: GetProgramGroupingById,
   ) {
     super(
       logger,
@@ -51,6 +55,7 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
       programMinterFactory(),
       searchService,
       mediaSourceProgressService,
+      getProgramGroupingsById,
     );
   }
 
@@ -119,5 +124,27 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
     return context.apiClient
       .getChildItemCount(libraryKey, 'Series')
       .then((_) => _.getOrThrow());
+  }
+
+  protected getFullTvSeasonMetadata(
+    externalId: string,
+    context: ScanContext<EmbyApiClient>,
+  ): Promise<Result<EmbySeason, WrappedError>> {
+    return context.apiClient.getSeason(externalId);
+  }
+
+  protected getFullTvShowMetadata(
+    externalId: string,
+    context: ScanContext<EmbyApiClient>,
+  ): Promise<Result<EmbyShow, WrappedError>> {
+    return context.apiClient.getShow(externalId);
+  }
+
+  protected isShowT(grouping: ProgramGrouping): grouping is EmbyShow {
+    return grouping.sourceType === 'emby' && grouping.type === 'show';
+  }
+
+  protected isSeasonT(grouping: ProgramGrouping): grouping is EmbySeason {
+    return grouping.sourceType === 'emby' && grouping.type === 'season';
   }
 }

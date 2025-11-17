@@ -194,6 +194,13 @@ export interface IProgramDB {
     type: ProgramType,
   ): Promise<Dictionary<ProgramCanonicalIdLookupResult>>;
 
+  /**
+   * Returns a mapping of external ID (relative to the given media source)
+   * to existing details about the item in our DB, namely the canonical ID.
+   * @param mediaSourceLibraryId
+   * @param type
+   * @param sourceType
+   */
   getProgramGroupingCanonicalIds(
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,

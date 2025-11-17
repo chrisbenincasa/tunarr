@@ -346,6 +346,22 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     );
   }
 
+  async getMusicArtist(
+    artistKey: string,
+  ): Promise<QueryResult<JellyfinMusicArtist>> {
+    return this.getItemOfType(artistKey, 'MusicArtist', (artist) =>
+      this.jellyfinApiMusicArtistInjection(artist),
+    );
+  }
+
+  async getMusicAlbum(
+    albumKey: string,
+  ): Promise<QueryResult<JellyfinMusicAlbum>> {
+    return this.getItemOfType(albumKey, 'MusicAlbum', (album) =>
+      this.jellyfinApiMusicAlbumInjection(album),
+    );
+  }
+
   async getMusicTrack(
     itemId: string,
   ): Promise<QueryResult<JellyfinMusicTrack>> {

@@ -704,6 +704,18 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     );
   }
 
+  getMusicArtist(key: string): Promise<QueryResult<EmbyMusicArtist>> {
+    return this.getItemOfType(key, 'MusicArtist', (track) =>
+      this.embyApiMusicArtistInjection(track),
+    );
+  }
+
+  getMusicAlbum(key: string): Promise<QueryResult<EmbyMusicAlbum>> {
+    return this.getItemOfType(key, 'MusicAlbum', (track) =>
+      this.embyApiMusicAlbumInjection(track),
+    );
+  }
+
   async getMusicTrack(key: string): Promise<QueryResult<EmbyMusicTrack>> {
     return this.getItemOfType(key, 'Audio', (track) =>
       this.embyApiMusicTrackInjection(track),

@@ -1,4 +1,5 @@
 import { inject, interfaces } from 'inversify';
+import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
@@ -23,10 +24,10 @@ import { ScanContext } from './MediaSourceScanner.ts';
 
 export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
   EmbyT,
-  EmbyApiClient,
   EmbyMusicArtist,
   EmbyMusicAlbum,
-  EmbyMusicTrack
+  EmbyMusicTrack,
+  EmbyApiClient
 > {
   readonly mediaSourceType = 'emby';
 
@@ -43,6 +44,8 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
     @inject(MeilisearchService) searchService: MeilisearchService,
     @inject(MediaSourceProgressService)
     mediaSourceProgressService: MediaSourceProgressService,
+    @inject(GetProgramGroupingById)
+    getProgramGroupingsById: GetProgramGroupingById,
   ) {
     super(
       logger,
@@ -52,6 +55,7 @@ export class EmbyMediaSourceMusicScanner extends MediaSourceMusicArtistScanner<
       programMinterFactory(),
       searchService,
       mediaSourceProgressService,
+      getProgramGroupingsById,
     );
   }
 

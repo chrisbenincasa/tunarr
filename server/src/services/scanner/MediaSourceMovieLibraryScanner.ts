@@ -10,7 +10,6 @@ import { isMovieProgram } from '../../db/schema/schemaTypeGuards.ts';
 import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
 import type { HasMediaSourceInfo, Movie } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { wait } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -91,9 +90,7 @@ export abstract class MediaSourceMovieLibraryScanner<
       }
 
       const canonicalId = this.getCanonicalId(movie);
-      const externalKey = this.getExternalKey(movie);
-
-      seenMovieIds.add(externalKey);
+      seenMovieIds.add(movie.externalId);
 
       const processedAmount = round(seenMovieIds.size / totalSize, 2) * 100.0;
 
@@ -102,38 +99,44 @@ export abstract class MediaSourceMovieLibraryScanner<
         processedAmount,
       );
 
-      if (
-        !force &&
-        existingPrograms[externalKey] &&
-        existingPrograms[externalKey].canonicalId === canonicalId
-      ) {
-        this.logger.debug(
-          'Found an unchanged program: rating key = %s, program ID = %s',
-          externalKey,
-          existingPrograms[externalKey].uuid,
+      const fullMovieResult = await this.scanMovie(context, movie);
+
+      if (fullMovieResult.isFailure()) {
+        this.logger.warn(
+          fullMovieResult.error,
+          'Error querying full movie metadata for ID = %s',
+          movie.externalId,
         );
         continue;
       }
 
-      const result = await this.scanMovie(context, movie).then((result) =>
-        result.flatMapAsync((movieItem) => {
-          return Result.attemptAsync(async () => {
-            const minted = this.programMinter.mintMovie(
-              mediaSource,
-              library,
-              movieItem,
-            );
+      const fullMovie = fullMovieResult.get();
 
-            const upsertResult = await this.programDB.upsertPrograms([minted]);
-            const upsertedMovies = upsertResult.filter(isMovieProgram);
-            return [movieItem, upsertedMovies] as const;
-          });
-        }),
+      if (
+        !force &&
+        existingPrograms[fullMovie.externalId] &&
+        existingPrograms[fullMovie.externalId].canonicalId === canonicalId
+      ) {
+        this.logger.debug(
+          'Found an unchanged program: rating key = %s, program ID = %s',
+          fullMovie.externalId,
+          existingPrograms[fullMovie.externalId].uuid,
+        );
+        continue;
+      }
+
+      const minted = this.programMinter.mintMovie(
+        mediaSource,
+        library,
+        fullMovie,
       );
 
-      if (result.isFailure()) {
+      const upsertResult = await Result.attemptAsync(() =>
+        this.programDB.upsertPrograms([minted]),
+      );
+      if (upsertResult.isFailure()) {
         this.logger.warn(
-          result.error,
+          upsertResult.error,
           'Error while processing movie (%O)',
           movie,
         );
@@ -141,8 +144,8 @@ export abstract class MediaSourceMovieLibraryScanner<
         continue;
       }
 
-      const [movieItem, movieDao] = result.get();
-      const dbMovie = head(movieDao);
+      const dbMovie = head(upsertResult.get().filter(isMovieProgram));
+
       if (dbMovie) {
         this.logger.debug(
           'Upserted movie %s (ID = %s)',
@@ -152,7 +155,7 @@ export abstract class MediaSourceMovieLibraryScanner<
 
         await this.searchService.indexMovie([
           {
-            ...movieItem,
+            ...fullMovie,
             uuid: dbMovie.uuid,
             mediaSourceId: mediaSource.uuid,
             libraryId: library.uuid,
@@ -161,8 +164,6 @@ export abstract class MediaSourceMovieLibraryScanner<
       } else {
         this.logger.warn('No upserted movie');
       }
-
-      await wait();
     }
 
     this.logger.debug('Completed scanning library %s', context.library.uuid);

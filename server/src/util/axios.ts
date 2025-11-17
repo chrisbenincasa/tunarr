@@ -16,10 +16,14 @@ export function configureAxiosLogging(instance: AxiosInstance, logger: Logger) {
         `?${querystring.stringify(req.params)}`
       : '';
     const elapsedTime = new Date().getTime() - req.metadata.startTime;
-    logger.http(
-      `[Axios Request]: ${req.method?.toUpperCase()} ${req.baseURL}${
-        req.url
-      }${query} - (${status}) ${elapsedTime}ms`,
+    logger.http_out(
+      '%s %s%s%s - (%d) %dms',
+      req.method?.toUpperCase() ?? '',
+      req.baseURL ?? '',
+      req.url ?? '',
+      query,
+      status,
+      elapsedTime,
     );
   };
 

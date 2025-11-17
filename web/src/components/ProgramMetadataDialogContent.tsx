@@ -18,7 +18,7 @@ import {
 } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { capitalize } from 'lodash-es';
+import { capitalize, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
 import type { ReactEventHandler } from 'react';
 import React, {
@@ -28,7 +28,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { match, P } from 'ts-pattern';
 import { useSettings } from '../store/settings/selectors.ts';
+import type { Maybe } from '../types/util.ts';
 
 type Props = {
   program: TerminalProgram | ProgramGrouping;
@@ -88,7 +90,7 @@ export const ProgramMetadataDialogContent = ({
     switch (program.type) {
       case 'movie':
       case 'show':
-        return program.plot;
+        return program.plot ?? program.summary;
       case 'episode':
         return program.summary;
       case 'season':
@@ -103,21 +105,31 @@ export const ProgramMetadataDialogContent = ({
   }, [program]);
 
   const genres = useMemo(() => {
-    if (program.type === 'episode' || program.type === 'season') {
-      if (program.show?.genres && program.show?.genres.length > 0) {
-        return program.show?.genres
+    return match(program)
+      .returnType<Maybe<string>>()
+      .with(
+        { type: P.union('episode', 'season'), show: P.nonNullable },
+        ({ show }) =>
+          show.genres
+            .map((g) => g.name)
+            .slice(0, 3)
+            .join(', '),
+      )
+      .with(
+        { type: P.union('album', 'track'), artist: P.nonNullable },
+        ({ artist }) =>
+          artist.genres
+            ?.map((g) => g.name)
+            .slice(0, 3)
+            .join(', '),
+      )
+      .with({ genres: [P._, ...P.array()] }, ({ genres }) =>
+        genres
           .map((g) => g.name)
           .slice(0, 3)
-          .join(', ');
-      }
-    } else {
-      if (program.genres && program.genres.length > 0) {
-        return program.genres
-          .map((g) => g.name)
-          .slice(0, 3)
-          .join(', ');
-      }
-    }
+          .join(','),
+      )
+      .otherwise(() => undefined);
   }, [program]);
 
   const duration = useMemo(() => {
@@ -174,7 +186,7 @@ export const ProgramMetadataDialogContent = ({
   const childCount = useMemo(() => {
     const count = getChildCount(program);
 
-    if (typeof count !== 'number') {
+    if (isUndefined(count)) {
       return;
     }
 

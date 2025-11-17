@@ -1,11 +1,26 @@
-import { round } from 'lodash-es';
+import type {
+  Episode,
+  Movie,
+  ProgramGrouping,
+  Season,
+  Show,
+} from '@tunarr/types';
+import { head, round } from 'lodash-es';
+import type { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import type {
+  IProgramDB,
+  ProgramGroupingCanonicalIdLookupResult,
+} from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { RemoteMediaSourceType } from '../../db/schema/MediaSource.ts';
 import { ProgramType } from '../../db/schema/Program.ts';
-import type { MediaSourceApiClient } from '../../external/MediaSourceApiClient.ts';
+import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
+import type {
+  MediaSourceApiClient,
+  ProgramTypeMap,
+} from '../../external/MediaSourceApiClient.ts';
 import type {
   AlbumWithArtist,
   HasMediaSourceAndLibraryId,
@@ -14,7 +29,7 @@ import type {
   MediaSourceMusicTrack,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { wait } from '../../util/index.ts';
+import type { Maybe } from '../../types/util.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
@@ -31,18 +46,26 @@ export type GenericMediaSourceMusicLibraryScanner<
   >,
 > = MediaSourceMusicArtistScanner<
   RemoteMediaSourceType,
-  MediaSourceApiClient,
   ArtistT,
   AlbumT,
-  TrackT
+  TrackT,
+  MediaSourceApiClient<ProgramTypeMapForMusic<ArtistT, AlbumT, TrackT>>
 >;
 
-export abstract class MediaSourceMusicArtistScanner<
-  MediaSourceTypeT extends RemoteMediaSourceType,
-  ApiClientTypeT extends MediaSourceApiClient,
+type ProgramTypeMapForMusic<
   ArtistT extends MediaSourceMusicArtist,
   AlbumT extends MediaSourceMusicAlbum<ArtistT>,
   TrackT extends MediaSourceMusicTrack<ArtistT, AlbumT>,
+> = ProgramTypeMap<Movie, Show, Season, Episode, ArtistT, AlbumT, TrackT>;
+
+export abstract class MediaSourceMusicArtistScanner<
+  MediaSourceTypeT extends RemoteMediaSourceType,
+  ArtistT extends MediaSourceMusicArtist,
+  AlbumT extends MediaSourceMusicAlbum<ArtistT>,
+  TrackT extends MediaSourceMusicTrack<ArtistT, AlbumT>,
+  ApiClientTypeT extends MediaSourceApiClient<
+    ProgramTypeMapForMusic<ArtistT, AlbumT, TrackT>
+  >,
 > extends MediaSourceScanner<'tracks', MediaSourceTypeT, ApiClientTypeT> {
   readonly type = 'tracks' as const;
 
@@ -54,6 +77,7 @@ export abstract class MediaSourceMusicArtistScanner<
     protected programMinter: ProgramDaoMinter,
     protected searchService: MeilisearchService,
     private mediaSourceProgressService: MediaSourceProgressService,
+    private getProgramGroupingByIdCommand: GetProgramGroupingById,
   ) {
     super(logger, mediaSourceDB);
   }
@@ -63,13 +87,12 @@ export abstract class MediaSourceMusicArtistScanner<
   ): Promise<void> {
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
-    const { library, mediaSource } = context;
-    // TODO: CHeck
-    // const existingShows = this.programDB.getProgramGroupingCanonicalIds(
-    //   library.uuid,
-    //   ProgramGroupingType.Artist,
-    //   this.mediaSourceType,
-    // );
+    const { library } = context;
+    const existingArtists = await this.programDB.getProgramGroupingCanonicalIds(
+      library.uuid,
+      ProgramGroupingType.Artist,
+      this.mediaSourceType,
+    );
     const seenShows = new Set<string>();
 
     const totalSize = await this.getLibrarySize(library.externalKey, context);
@@ -81,65 +104,125 @@ export abstract class MediaSourceMusicArtistScanner<
 
       seenShows.add(artist.externalId);
       const processedAmount = round(seenShows.size / totalSize, 2) * 100.0;
-      // const canonicalId = this.getCanonicalId(show);
 
+      const persistedArtist = await this.scanArtist(
+        artist,
+        existingArtists[artist.externalId],
+        context,
+      );
       this.mediaSourceProgressService.scanProgress(
         library.uuid,
         processedAmount,
       );
 
-      // Get full metadata?
-      const dao = this.programGroupingMinter.mintForMediaSourceArtist(
-        mediaSource,
-        library,
-        artist,
-      );
-
-      const upsertResult = await Result.attemptAsync(() =>
-        this.programDB.upsertProgramGrouping(
-          dao,
-          {
-            externalKey: this.getEntityExternalKey(artist),
-            externalSourceId: mediaSource.uuid,
-            sourceType: this.mediaSourceType,
-          },
-          context.force,
-        ),
-      );
-
-      if (upsertResult.isFailure()) {
-        this.logger.warn(upsertResult.error);
+      if (persistedArtist.isFailure()) {
+        this.logger.warn(
+          persistedArtist.error,
+          'Failed to scan artist %s',
+          artist.externalId,
+        );
+        continue;
+      } else if (!persistedArtist.get()) {
         continue;
       }
 
-      const upsertedShow = upsertResult.get().entity;
-      const persistedArtist: ArtistT & HasMediaSourceAndLibraryId = {
-        ...artist,
-        uuid: upsertedShow.uuid,
-        mediaSourceId: mediaSource.uuid,
-        libraryId: library.uuid,
-      };
-
-      const indexResult = await Result.attemptAsync(() =>
-        this.searchService.indexMusicArtist(persistedArtist),
+      const scanSeasonsResult = await this.scanAlbums(
+        persistedArtist.get()!,
+        context,
       );
-
-      if (indexResult.isFailure()) {
-        this.logger.warn(indexResult.error);
-        // Should we skip indexing the rest in this case??
-        continue;
-      }
-
-      const scanSeasonsResult = await this.scanAlbums(persistedArtist, context);
 
       if (scanSeasonsResult.isFailure()) {
         this.logger.warn(scanSeasonsResult.error);
       }
-
-      await wait();
     }
 
     this.mediaSourceProgressService.scanEnded(library.uuid);
+  }
+
+  protected async scanArtist(
+    incomingArtist: ArtistT,
+    existingArtist: Maybe<ProgramGroupingCanonicalIdLookupResult>,
+    context: ScanContext<ApiClientTypeT>,
+  ): Promise<Result<Maybe<ArtistT & HasMediaSourceAndLibraryId>>> {
+    const artistResult = await context.apiClient.getMusicArtist(
+      incomingArtist.externalId,
+    );
+
+    if (artistResult.isFailure()) {
+      this.logger.warn(
+        artistResult.error,
+        'Error while querying full details for show ID %s.',
+        incomingArtist.externalId,
+      );
+      return artistResult.recast();
+    }
+
+    const artist = artistResult.get();
+    const needsDeepScan =
+      context.force ||
+      !existingArtist ||
+      artist.canonicalId !== existingArtist.canonicalId;
+
+    if (!needsDeepScan) {
+      const existing = await this.getProgramGroupingByIdCommand.execute(
+        existingArtist.uuid,
+      );
+      return Result.success(
+        existing && this.isArtistT(existing) ? existing : undefined,
+      );
+    }
+
+    this.logger.debug('Upserting artist key = %s', incomingArtist.externalId);
+
+    const { mediaSource, library } = context;
+
+    const groupingAndRelations =
+      this.programGroupingMinter.mintForMediaSourceArtist(
+        mediaSource,
+        library,
+        artist,
+      );
+    groupingAndRelations.programGrouping.libraryId = context.library.uuid;
+
+    const upsertResult = await Result.attemptAsync(() =>
+      this.programDB.upsertProgramGrouping(
+        groupingAndRelations,
+        {
+          externalKey: this.getEntityExternalKey(artist),
+          externalSourceId: mediaSource.uuid,
+          sourceType: this.mediaSourceType,
+        },
+        context.force,
+      ),
+    );
+
+    if (upsertResult.isFailure()) {
+      this.logger.warn(upsertResult.error, 'Failed to upsert show');
+      return upsertResult.recast();
+    }
+
+    const upsertedArtist = upsertResult.get().entity;
+    const persistedArtist: ArtistT & HasMediaSourceAndLibraryId = {
+      ...artist,
+      uuid: upsertedArtist.uuid,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: library.uuid,
+    };
+
+    const indexResult = await Result.attemptAsync(() =>
+      this.searchService.indexMusicArtist(persistedArtist),
+    );
+
+    if (indexResult.isFailure()) {
+      this.logger.warn(
+        indexResult.error,
+        'Failed to update search index for artist',
+      );
+      // Should we skip indexing the rest in this case??
+      return indexResult.recast();
+    }
+
+    return Result.success(persistedArtist);
   }
 
   protected async scanAlbums(
@@ -147,64 +230,146 @@ export abstract class MediaSourceMusicArtistScanner<
     scanContext: ScanContext<ApiClientTypeT>,
   ): Promise<Result<void>> {
     return Result.attemptAsync(async () => {
-      const { mediaSource, library } = scanContext;
-      // const existingSeasons = await this.programDB.getArtistAlbums(artist.uuid);
+      const { library } = scanContext;
+      const existingAlbums =
+        await this.programDB.getProgramGroupingCanonicalIds(
+          library.uuid,
+          ProgramGroupingType.Album,
+          this.mediaSourceType,
+        );
 
-      // TODO: Add seen ids
       for await (const album of this.getAlbums(artist, scanContext)) {
         if (this.state(library.uuid) === 'canceled') {
           return;
         }
 
-        const dao = this.programGroupingMinter.mintMusicAlbum(
-          mediaSource,
-          library,
+        const persistedAlbum = await this.updateAlbum(
           album,
-        );
-        dao.programGrouping.artistUuid = artist.uuid;
-
-        const upsertResult = await Result.attemptAsync(() =>
-          this.programDB.upsertProgramGrouping(
-            dao,
-            {
-              externalKey: this.getEntityExternalKey(album),
-              externalSourceId: mediaSource.uuid,
-              sourceType: this.mediaSourceType,
-            },
-            scanContext.force,
-          ),
-        );
-
-        if (upsertResult.isFailure()) {
-          this.logger.warn(upsertResult.error);
-          continue;
-        }
-
-        album.uuid = upsertResult.get().entity.uuid;
-
-        const persistedAlbum = {
-          ...album,
-          uuid: upsertResult.get().entity.uuid,
           artist,
-          mediaSourceId: mediaSource.uuid,
-          libraryId: library.uuid,
-        } satisfies AlbumWithArtist<AlbumT, ArtistT>;
-
-        await this.searchService.indexMusicAlbum(persistedAlbum);
-
-        const scanEpisodesResult = await this.scanTracks(
-          artist,
-          persistedAlbum,
+          existingAlbums[album.externalId],
           scanContext,
         );
 
-        if (scanEpisodesResult.isFailure()) {
-          this.logger.warn(scanEpisodesResult.error);
+        if (persistedAlbum.isFailure()) {
+          this.logger.warn(
+            persistedAlbum.error,
+            'Failed to scan album %s',
+            album.externalId,
+          );
+          continue;
+        } else if (!persistedAlbum.get()) {
+          continue;
         }
 
-        await wait();
+        const scanTracksResult = await this.scanTracks(
+          artist,
+          persistedAlbum.get()!,
+          scanContext,
+        );
+
+        if (scanTracksResult.isFailure()) {
+          this.logger.warn(scanTracksResult.error);
+        }
       }
     });
+  }
+
+  protected async updateAlbum(
+    album: AlbumT,
+    artist: ArtistT,
+    existingSeason: Maybe<ProgramGroupingCanonicalIdLookupResult>,
+    scanContext: ScanContext<ApiClientTypeT>,
+  ): Promise<
+    Result<Maybe<AlbumWithArtist<AlbumT, ArtistT> & HasMediaSourceAndLibraryId>>
+  > {
+    const fullAlbumResult = await scanContext.apiClient.getMusicAlbum(
+      album.externalId,
+    );
+
+    if (fullAlbumResult.isFailure()) {
+      this.logger.warn(
+        fullAlbumResult.error,
+        'Error while querying full details for season ID %s.',
+        album.externalId,
+      );
+      return fullAlbumResult.recast();
+    }
+
+    const fullAlbum = fullAlbumResult.get();
+
+    const needsUpdate =
+      scanContext.force ||
+      !existingSeason ||
+      fullAlbum.canonicalId !== existingSeason.canonicalId;
+
+    if (!needsUpdate) {
+      const existing = await this.getProgramGroupingByIdCommand.execute(
+        existingSeason.uuid,
+      );
+      if (existing && this.isAlbumT(existing)) {
+        const returnAlbum: AlbumWithArtist<AlbumT, ArtistT> &
+          HasMediaSourceAndLibraryId = {
+          ...existing,
+          artist,
+          mediaSourceId: scanContext.mediaSource.uuid,
+          libraryId: scanContext.library.uuid,
+        };
+        return Result.success(returnAlbum);
+      }
+
+      return Result.success(undefined);
+    }
+
+    this.logger.debug('Upserting season key = %s', fullAlbum.externalId);
+
+    const { mediaSource, library } = scanContext;
+
+    const albumAndRelations = this.programGroupingMinter.mintMusicAlbum(
+      mediaSource,
+      library,
+      fullAlbum,
+    );
+
+    albumAndRelations.programGrouping.libraryId = scanContext.library.uuid;
+    albumAndRelations.programGrouping.showUuid = artist.uuid;
+
+    const upsertResult = await Result.attemptAsync(() =>
+      this.programDB.upsertProgramGrouping(
+        albumAndRelations,
+        {
+          externalKey: fullAlbum.externalId,
+          externalSourceId: mediaSource.uuid,
+          sourceType: this.mediaSourceType,
+        },
+        scanContext.force,
+      ),
+    );
+
+    if (upsertResult.isFailure()) {
+      this.logger.warn(upsertResult.error);
+      return upsertResult.recast();
+    }
+
+    album.uuid = upsertResult.get().entity.uuid;
+
+    const persistedAlbum: AlbumWithArtist<AlbumT, ArtistT> &
+      HasMediaSourceAndLibraryId = {
+      ...album,
+      uuid: upsertResult.get().entity.uuid,
+      artist,
+      mediaSourceId: mediaSource.uuid,
+      libraryId: library.uuid,
+    };
+
+    const indexResult = await Result.attemptAsync(() =>
+      this.searchService.indexMusicAlbum(persistedAlbum),
+    );
+
+    if (indexResult.isFailure()) {
+      return indexResult.recast();
+    }
+
+    return Result.success(persistedAlbum);
   }
 
   protected async scanTracks(
@@ -220,61 +385,62 @@ export abstract class MediaSourceMusicArtistScanner<
           library.uuid,
           ProgramType.Episode,
         );
+
       for await (const track of this.getAlbumTracks(album, scanContext)) {
-        const externalKey = this.getEntityExternalKey(track);
-        if (
-          !force &&
-          existing[externalKey]?.canonicalId === this.getCanonicalId(track)
-        ) {
-          this.logger.debug(
-            "Skipping episode key = %s because it hasn't changed",
+        const externalKey = track.externalId;
+
+        const fullMetadataResult = await scanContext.apiClient.getMusicTrack(
+          track.externalId,
+        );
+
+        if (fullMetadataResult.isFailure()) {
+          this.logger.warn(
+            fullMetadataResult.error,
+            'Failed to get full metadata for track %s',
             externalKey,
           );
           continue;
         }
 
-        const fullMetadataResult = await this.getFullTrackMetadata(
-          track,
-          scanContext,
-        );
+        const fullMetadata = fullMetadataResult.get();
 
-        const upsertResult = await fullMetadataResult.flatMapAsync(
-          (fullEpisode) => {
-            const trackWithJoins = {
-              ...fullEpisode,
-              album,
-              mediaSourceId: mediaSource.uuid,
-              libraryId: library.uuid,
-            };
-
-            const dao = this.programMinter.mintMusicTrack(
-              mediaSource,
-              library,
-              trackWithJoins,
-            );
-
-            dao.program.tvShowUuid = null;
-            dao.program.seasonUuid = null;
-            dao.program.artistUuid = artist.uuid;
-            dao.program.albumUuid = album.uuid;
-
-            return Result.attemptAsync(() =>
-              this.programDB.upsertPrograms([dao]),
-            ).then((_) =>
-              _.mapAsync(([inserted]) =>
-                this.searchService.indexMusicTracks([
-                  { ...trackWithJoins, uuid: inserted.uuid },
-                ]),
-              ),
-            );
-          },
-        );
-
-        if (upsertResult.isFailure()) {
-          this.logger.warn(upsertResult.error);
+        if (
+          !force &&
+          existing[externalKey]?.canonicalId === fullMetadata.canonicalId
+        ) {
+          this.logger.debug(
+            "Skipping track key = %s because it hasn't changed",
+            externalKey,
+          );
+          continue;
         }
 
-        await wait();
+        const trackWithJoins = {
+          ...fullMetadata,
+          album,
+          mediaSourceId: mediaSource.uuid,
+          libraryId: library.uuid,
+        };
+
+        const dao = this.programMinter.mintMusicTrack(
+          mediaSource,
+          library,
+          trackWithJoins,
+        );
+
+        dao.program.tvShowUuid = null;
+        dao.program.seasonUuid = null;
+        dao.program.artistUuid = artist.uuid;
+        dao.program.albumUuid = album.uuid;
+
+        const upserted = head(await this.programDB.upsertPrograms([dao]));
+        if (!upserted) {
+          continue;
+        }
+
+        await this.searchService.indexMusicTracks([
+          { ...trackWithJoins, uuid: upserted.uuid },
+        ]);
       }
     });
   }
@@ -302,8 +468,15 @@ export abstract class MediaSourceMusicArtistScanner<
     show: ArtistT | AlbumT | TrackT,
   ): string;
 
-  protected abstract getFullTrackMetadata(
-    episodeT: TrackT,
-    context: ScanContext<ApiClientTypeT>,
-  ): Promise<Result<TrackT>>;
+  protected isArtistT(grouping: ProgramGrouping): grouping is ArtistT {
+    return (
+      grouping.sourceType === this.mediaSourceType && grouping.type === 'artist'
+    );
+  }
+
+  protected isAlbumT(grouping: ProgramGrouping): grouping is AlbumT {
+    return (
+      grouping.sourceType === this.mediaSourceType && grouping.type === 'album'
+    );
+  }
 }
