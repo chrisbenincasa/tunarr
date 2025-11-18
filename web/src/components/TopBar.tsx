@@ -116,13 +116,10 @@ export const TopBar = () => {
   > = useCallback(
     (e) => {
       if (e.key === 'Enter' && isNonEmptyString(searchQuery)) {
-        const expr = queryParser.getSearchExpression(searchQuery);
-        if (expr?.type === 'success') {
-          navigate({
-            to: '/search',
-            search: { query: searchQuery },
-          }).catch(console.error);
-        }
+        navigate({
+          to: '/search',
+          search: { query: searchQuery },
+        }).catch(console.error);
       }
     },
     [navigate, queryParser, searchQuery],

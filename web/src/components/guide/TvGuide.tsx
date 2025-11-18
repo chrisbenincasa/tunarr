@@ -211,7 +211,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
         )
         .with({ type: 'content', subtype: 'episode' }, (p) => {
           const epTitle = p.title;
-          console.log(p);
           if (isUndefined(p.parent?.index) || isUndefined(p.index)) {
             return epTitle;
           }

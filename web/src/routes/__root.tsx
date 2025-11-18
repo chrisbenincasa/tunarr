@@ -36,6 +36,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     if (parseResult?.type === 'success') {
       searchRequest.filter = search.parsedSearchToRequest(parseResult.query);
       searchRequest.query = null;
+    } else {
+      searchRequest.query = searchString;
     }
 
     useStore.setState((s) => {

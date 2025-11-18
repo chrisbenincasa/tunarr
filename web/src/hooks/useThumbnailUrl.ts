@@ -21,7 +21,6 @@ export const useThumbnailUrl = () => {
       }
 
       const artByType = groupBy(item.artwork, (art) => art.type);
-      console.log(item.artwork);
       for (const type of artworkCheckOrder) {
         if (artByType[type]) {
           return `${settings.backendUri}/api/programs/${item.uuid}/artwork/${type}`;
