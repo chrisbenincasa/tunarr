@@ -2,6 +2,7 @@ import { MediaSourceType } from '@/db/schema/base.js';
 import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import type { Nilable, Nullable } from '@/types/util.js';
 import { type Maybe } from '@/types/util.js';
+import dayjs from '@/util/dayjs.js';
 import {
   caughtErrorToError,
   inConstArr,
@@ -73,7 +74,6 @@ import {
   isAxiosError,
   type RawAxiosRequestHeaders,
 } from 'axios';
-import dayjs from 'dayjs';
 import { XMLParser } from 'fast-xml-parser';
 import {
   compact,
