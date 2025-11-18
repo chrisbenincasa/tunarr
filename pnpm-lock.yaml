@@ -461,6 +461,9 @@ importers:
       tsup:
         specifier: ^8.0.2
         version: 8.0.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.7))(@swc/core@1.13.5)(postcss@8.5.6)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.10.7)(typescript@5.7.3))(typescript@5.7.3)
+      tsx:
+        specifier: ^4.20.5
+        version: 4.20.6
       typescript:
         specifier: 5.7.3
         version: 5.7.3

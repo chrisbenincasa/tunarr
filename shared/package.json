@@ -13,6 +13,7 @@
     "build-dev": "tsup --dts --watch",
     "clean": "rimraf ./dist/",
     "dev": "tsc --declaration --watch",
+    "generate-search-diagram": "tsx scripts/generate_search_diagram.ts",
     "test": "vitest --run"
   },
   "exports": {
@@ -50,6 +51,7 @@
     "rimraf": "^5.0.5",
     "ts-essentials": "^9.4.2",
     "tsup": "^8.0.2",
+    "tsx": "^4.20.5",
     "typescript": "catalog:",
     "vitest": "^3.2.4"
   },

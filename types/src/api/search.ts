@@ -41,7 +41,7 @@ const DateSearchFieldSchema = z.object({
 
 export type DateSearchField = z.infer<typeof DateSearchFieldSchema>;
 
-export const SearchFieldSchema = z.union([
+export const SearchFieldSchema = z.discriminatedUnion('type', [
   StringSearchFieldSchema,
   FactedStringSearchFieldSchema,
   NumericSearchFieldSchema,
@@ -78,7 +78,7 @@ export type SearchFilterOperatorNode = {
 // Hack to get recursive types working in zod
 export const SearchFilterOperatorNodeSchema = z.object({
   type: z.literal('op'),
-  op: z.union([z.literal('or'), z.literal('and')]),
+  op: z.enum(['or', 'and']),
   get children(): z.ZodArray<
     z.ZodDiscriminatedUnion<
       [
@@ -102,7 +102,7 @@ export type SearchFilter = z.infer<typeof SearchFilterQuerySchema>;
 
 export const SearchSortSchema = z.object({
   field: z.string(),
-  direction: z.union([z.literal('asc'), z.literal('desc')]),
+  direction: z.enum(['asc', 'desc']),
 });
 
 export type SearchSort = z.infer<typeof SearchSortSchema>;
@@ -130,27 +130,6 @@ export type SearchFieldSpec<Key extends string = string> = {
   visibleForLibraryTypes:
     | 'all'
     | ReadonlyArray<MediaSourceLibrary['mediaType']>;
-};
-
-export const SearchFieldToType = {
-  'genres.name': 'facted_string',
-  'actors.name': 'string',
-  'director.name': 'string',
-  'writer.name': 'string',
-  duration: 'numeric',
-  type: 'facted_string',
-  originalReleaseDate: 'numeric',
-  originalReleaseYear: 'numeric',
-  libraryId: 'string',
-  mediaSourceId: 'string',
-  tags: 'string',
-  rating: 'string',
-  title: 'string',
-} satisfies Record<string, SearchFieldType>;
-
-export const FreeSearchQueryKeyMappings: Record<string, string> = {
-  genre: 'genres.name',
-  actor: 'actors.name',
 };
 
 z.globalRegistry.add(SearchFilterQuerySchema, { id: 'SearchFilter' });
