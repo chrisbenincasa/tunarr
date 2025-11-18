@@ -37,7 +37,7 @@ export const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   avg_frame_rate: z.string().transform(parsePossibleFractionToFloat).optional(),
   time_base: z.string().optional(),
   start_pts: z.number().optional(),
-  duration_ts: z.number(), // millis
+  duration_ts: z.number().optional(), // millis
   bit_rate: z.coerce.number().optional(),
   bits_per_raw_sample: z.coerce.number().optional(),
 });
