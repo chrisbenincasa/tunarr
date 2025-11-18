@@ -120,10 +120,18 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'grandparent.type',
     'grandparent.title',
     'grandparent.externalIdsMerged',
+    'grandparent.tags',
+    'grandparent.studio',
+    'grandparent.genres',
+    'grandparent.rating',
     'parent.id',
     'parent.type',
     'parent.title',
     'parent.externalIdsMerged',
+    'parent.genres',
+    'parent.studio',
+    'parent.tags',
+    'parent.rating',
     'mediaSourceId',
     'libraryId',
     'tags',
@@ -200,6 +208,10 @@ type ProgramGroupingDenormDocument<GroupingType extends ProgramGroupingType> = {
   year?: number;
   externalIds: ExternalIdSubDoc[];
   externalIdsMerged: MergedGroupingExternalId<GroupingType>[];
+  genres: string[];
+  tags: string[];
+  studio: string[];
+  rating?: string;
 };
 
 type ProgramParentTypeLookup = [
@@ -673,7 +685,7 @@ export class MeilisearchService implements ISearchService {
 
     const document: ProgramGroupingSearchDocument<'show'> = {
       id: show.uuid,
-      originalReleaseDate: null,
+      originalReleaseDate: show.releaseDate,
       originalReleaseYear: show.year,
       summary: show.summary,
       plot: show.plot,
@@ -755,6 +767,10 @@ export class MeilisearchService implements ISearchService {
         ),
         title: season.show.title,
         year: season.show.year ?? undefined,
+        genres: season.show.genres?.map(({ name }) => name) ?? [],
+        studio: season.show.studios?.map(({ name }) => name) ?? [],
+        tags: season.show.tags ?? [],
+        rating: season.show.rating ?? undefined,
       } satisfies ProgramGroupingDenormDocument<
         typeof ProgramGroupingType.Show
       >,
@@ -799,6 +815,9 @@ export class MeilisearchService implements ISearchService {
         ),
         title: program.season.title,
         year: program.season.year ?? undefined,
+        genres: program.season.genres?.map(({ name }) => name) ?? [],
+        studio: program.season.studios?.map(({ name }) => name) ?? [],
+        tags: program.season.tags ?? [],
       } satisfies ProgramGroupingDenormDocument<
         typeof ProgramGroupingType.Season
       >;
@@ -813,6 +832,10 @@ export class MeilisearchService implements ISearchService {
         ),
         title: program.season.show.title,
         year: program.season.show.year ?? undefined,
+        genres: program.season.show.genres?.map(({ name }) => name) ?? [],
+        studio: program.season.show.studios?.map(({ name }) => name) ?? [],
+        tags: program.season.show.tags ?? [],
+        rating: program.season.show.rating ?? undefined,
       };
       return document;
     });
@@ -912,6 +935,9 @@ export class MeilisearchService implements ISearchService {
             >,
         ),
         title: album.artist.title,
+        genres: album.artist.genres?.map(({ name }) => name) ?? [],
+        studio: [],
+        tags: album.artist.tags ?? [],
       } satisfies ProgramGroupingDenormDocument<
         typeof ProgramGroupingType.Artist
       >,
@@ -956,6 +982,9 @@ export class MeilisearchService implements ISearchService {
         ),
         title: program.album.title,
         year: program.album.year ?? undefined,
+        genres: program.album.genres?.map(({ name }) => name) ?? [],
+        studio: program.album.studios?.map(({ name }) => name) ?? [],
+        tags: program.album.tags ?? [],
       } satisfies ProgramGroupingDenormDocument<
         typeof ProgramGroupingType.Album
       >;
@@ -969,6 +998,9 @@ export class MeilisearchService implements ISearchService {
             `${program.album.artist.type}_${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedGroupingExternalId<'artist'>,
         ),
         title: program.album.artist.title,
+        genres: program.album.artist.genres?.map(({ name }) => name) ?? [],
+        tags: program.album.artist.tags ?? [],
+        studio: [],
       };
       return document;
     });
