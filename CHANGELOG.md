@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.0-alpha.23](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.22...v0.23.0-alpha.23) (2025-11-18)
+
+
+### Features
+
+* add local media scanner for "other video" library type ([#1474](https://github.com/chrisbenincasa/tunarr/issues/1474)) ([efff4b8](https://github.com/chrisbenincasa/tunarr/commit/efff4b826e7dedfc725acbc316076eeeb1fb9ac6))
+
+
+### Bug Fixes
+
+* allow query from top search bar even if not a structured query ([04cfe0c](https://github.com/chrisbenincasa/tunarr/commit/04cfe0cf420ae9235b99a7b9d7a9be0fbae621e4))
+* implement proper dirty checking in media source other video scanner ([4fed159](https://github.com/chrisbenincasa/tunarr/commit/4fed159f4ca1b452e83426a8166ac909442511a2))
+* include child relations for program groupings in API ([8c4634c](https://github.com/chrisbenincasa/tunarr/commit/8c4634c115b49382ea9fcfba638b130613f28d2c))
+* pass relevant media source token when loading external images ([7b65ff5](https://github.com/chrisbenincasa/tunarr/commit/7b65ff5ad77ac58d057bce55e8dcdb58736299b3)), closes [#1469](https://github.com/chrisbenincasa/tunarr/issues/1469)
+* proper implementation of dirty checking during media source scanning ([857f656](https://github.com/chrisbenincasa/tunarr/commit/857f6563fdffb2444f210d58d24f727cb90ff351))
+
 ## [0.23.0-alpha.22](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.21...v0.23.0-alpha.22) (2025-11-10)
 
 
