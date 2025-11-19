@@ -345,7 +345,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         profile: videoStreamDetails.profile,
         index: isNaN(streamIndex) ? 0 : streamIndex,
         inputKind: 'video',
-        sampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
+        providedSampleAspectRatio: videoStreamDetails.sampleAspectRatio ?? null,
         displayAspectRatio: videoStreamDetails.displayAspectRatio,
         pixelFormat,
         frameSize: FrameSize.create({
@@ -712,7 +712,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
         codec: 'unknown',
         frameSize: FrameSize.create({ width: 1920, height: 1080 }),
         index: 0,
-        sampleAspectRatio: '1:1',
+        providedSampleAspectRatio: '1:1',
         displayAspectRatio: '1:1',
         pixelFormat: PixelFormatUnknown(),
       }),

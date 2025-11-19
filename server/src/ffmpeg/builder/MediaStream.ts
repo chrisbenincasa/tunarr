@@ -25,7 +25,10 @@ type MediaStreamFields<T extends MediaStream> = Omit<
 // semantics with class construction, but still enabling us
 // to have hierarchies, methods, etc.
 type AudioStreamFields = MediaStreamFields<AudioStream>;
-type VideoStreamFields = Omit<MediaStreamFields<VideoStream>, 'isAnamorphic'>;
+type VideoStreamFields = StrictOmit<
+  MediaStreamFields<VideoStream>,
+  'isAnamorphic' | 'sampleAspectRatio'
+>;
 
 export class AudioStream implements MediaStream {
   readonly kind: StreamKind = 'audio';
@@ -55,7 +58,7 @@ export class VideoStream implements MediaStream {
   frameSize: FrameSize;
   frameRate?: string;
   inputKind: VideoInputKind = 'video' as const;
-  sampleAspectRatio: Nullable<string>;
+  providedSampleAspectRatio: Nullable<string>;
   displayAspectRatio: string;
 
   protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
@@ -72,6 +75,35 @@ export class VideoStream implements MediaStream {
 
   bitDepth() {
     return this.pixelFormat?.bitDepth ?? 8;
+  }
+
+  get sampleAspectRatio(): string {
+    const inputSar = this.providedSampleAspectRatio;
+    if (isNull(inputSar) || isEmpty(inputSar) || inputSar === '0:0') {
+      let dar = parseFloat(this.displayAspectRatio);
+      if (isNaN(dar)) {
+        const [num, den] = this.displayAspectRatio.split(':');
+        dar = parseFloat(num) / parseFloat(den);
+      }
+
+      const res = this.frameSize.width / this.frameSize.height;
+      const formattedDar = Number.isInteger(dar)
+        ? dar.toString()
+        : dar.toFixed(12);
+      const formattedRes = Number.isInteger(res)
+        ? res.toString()
+        : res.toFixed(12);
+      return `${formattedDar}:${formattedRes}`;
+    }
+
+    const [num, den] = inputSar.split(':').map((s) => parseFloat(s));
+    const formattedNum = Number.isInteger(num)
+      ? num.toString()
+      : num.toFixed(12);
+    const formattedDen = Number.isInteger(den)
+      ? den.toString()
+      : den.toFixed(12);
+    return `${formattedNum}:${formattedDen}`;
   }
 
   get isAnamorphic() {
@@ -159,6 +191,7 @@ type StillImageStreamFields = MarkOptional<
     | 'codec'
     | 'kind'
     | 'isAnamorphic'
+    | 'providedSampleAspectRatio'
     | 'sampleAspectRatio'
     | 'displayAspectRatio'
     | 'inputKind'
@@ -172,7 +205,7 @@ export class StillImageStream extends VideoStream {
   private constructor(fields: StillImageStreamFields) {
     super({
       codec: VideoFormats.Undetermined,
-      sampleAspectRatio: '1:1',
+      providedSampleAspectRatio: '1:1',
       displayAspectRatio: '1:1',
       ...fields,
       pixelFormat: fields.pixelFormat ?? PixelFormatUnknown(),

@@ -12,7 +12,10 @@ export default defineConfig({
     globals: true,
     watch: false,
     includeSource: ['src/**/*.test.ts'],
-    setupFiles: ['src/testing/matchers/PixelFormatMatcher.ts'],
+    setupFiles: [
+      'src/testing/matchers/PixelFormatMatcher.ts',
+      'src/testing/matchers/FrameSizeMatcher.ts',
+    ],
     coverage: {
       provider: 'v8',
     },

@@ -202,16 +202,18 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     // Video
     let videoStreamDetails: Maybe<VideoStreamDetails>;
     if (isDefined(videoStream)) {
-      const isAnamorphic =
-        (videoStream.IsAnamorphic ??
-        (isNonEmptyString(videoStream.AspectRatio) &&
-          videoStream.AspectRatio.includes(':')))
-          ? extractIsAnamorphic(
-              videoStream.Width ?? 1,
-              videoStream.Height ?? 1,
-              videoStream.AspectRatio!,
-            )
-          : false;
+      let isAnamorphic = false;
+
+      if (
+        isNonEmptyString(videoStream.AspectRatio) &&
+        videoStream.AspectRatio.includes(':')
+      ) {
+        isAnamorphic = extractIsAnamorphic(
+          videoStream.Width ?? 1,
+          videoStream.Height ?? 1,
+          videoStream.AspectRatio,
+        );
+      }
 
       videoStreamDetails = {
         width: videoStream.Width ?? 1,
