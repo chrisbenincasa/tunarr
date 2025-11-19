@@ -26,7 +26,7 @@ export class ConcatInputSource extends InputSource<VideoStream> {
         profile: '',
         pixelFormat: null,
         frameSize: this.frameSize,
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
         displayAspectRatio: '1:1',
         inputKind: 'video',
       }),

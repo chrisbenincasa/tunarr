@@ -20,7 +20,7 @@ export class LavfiVideoInputSource extends VideoInputSource {
         pixelFormat: PixelFormatUnknown(),
         index: 0,
         inputKind: 'filter',
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
         displayAspectRatio: '1:1',
         frameSize: size,
       }),

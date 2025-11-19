@@ -190,7 +190,7 @@ export class FfmpegStreamFactory extends IFFMPEG {
       codec: VideoFormats.Raw,
       pixelFormat: new PixelFormatYuv420P(), // Hard-coded right now
       frameSize: FrameSize.fromResolution(this.transcodeConfig.resolution),
-      sampleAspectRatio: '1:1',
+      providedSampleAspectRatio: '1:1',
       displayAspectRatio: '1:1',
       inputKind: 'video',
     });
