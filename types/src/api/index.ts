@@ -253,6 +253,7 @@ export const SystemSettingsResponseSchema = SystemSettingsSchema.extend({
   logging: LoggingSettingsSchema.extend({
     environmentLogLevel: LogLevelsSchema.optional(),
   }),
+  searchServerAddress: z.url(),
 });
 
 export type SystemSettingsResponse = z.infer<

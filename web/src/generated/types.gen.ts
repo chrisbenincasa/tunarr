@@ -15811,6 +15811,7 @@ export type GetApiSystemSettingsResponses = {
             };
         };
         dataDirectory: string;
+        searchServerAddress: string;
     };
 };
 
@@ -15904,6 +15905,7 @@ export type PutApiSystemSettingsResponses = {
             };
         };
         dataDirectory: string;
+        searchServerAddress: string;
     };
 };
 

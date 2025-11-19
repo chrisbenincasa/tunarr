@@ -242,6 +242,26 @@ export const StatusPage = () => {
                     </Typography>
                   </TableCell>
                 </TableRow>
+                <TableRow>
+                  <TableCell>
+                    <Typography>
+                      <strong>Search Server URL:</strong>
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography>
+                      <Link
+                        href={systemSettings.data.searchServerAddress}
+                        target="_blank"
+                      >
+                        {systemSettings.data.searchServerAddress}
+                      </Link>
+                      <CopyToClipboardButton
+                        content={systemSettings.data.searchServerAddress}
+                      />
+                    </Typography>
+                  </TableCell>
+                </TableRow>
                 <TableRow hover>
                   <TableCell>
                     <Typography>

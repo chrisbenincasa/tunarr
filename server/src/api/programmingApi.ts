@@ -69,7 +69,10 @@ import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetc
 import { KEYS } from '../types/inject.ts';
 import type { Path } from '../types/path.ts';
 import type { Maybe } from '../types/util.ts';
-import { isProgramGroupingDocument } from '../util/search.ts';
+import {
+  isProgramGroupingDocument,
+  isTerminalProgramDocument,
+} from '../util/search.ts';
 import { ApiProgramConverters } from './ApiProgramConverters.ts';
 
 const LookupExternalProgrammingSchema = z.object({
@@ -163,32 +166,53 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
         const mediaSource = allMediaSourcesById[mediaSourceId];
         if (!mediaSource) {
+          logger.debug(
+            'Could not find media source %s in DB for program ID %s',
+            mediaSourceId,
+            program.id,
+          );
           return;
         }
         const libraryId = decodeCaseSensitiveId(program.libraryId);
         const library = allLibrariesById[libraryId];
         if (!library) {
+          logger.debug(
+            'COuld not find media source library %s in DB for program ID %s',
+            libraryId,
+            program.id,
+          );
           return;
         }
 
-        if (isProgramGroupingDocument(program) && groupings[program.id]) {
-          return ApiProgramConverters.convertProgramGroupingSearchResult(
-            program,
-            groupings[program.id],
-            groupingCounts[program.id],
-            mediaSource,
-            library,
-          );
-        } else if (
-          !isProgramGroupingDocument(program) &&
-          programs[program.id]
-        ) {
-          return ApiProgramConverters.convertProgramSearchResult(
-            program,
-            programs[program.id],
-            mediaSource,
-            library,
-          );
+        if (isProgramGroupingDocument(program)) {
+          if (groupings[program.id]) {
+            return ApiProgramConverters.convertProgramGroupingSearchResult(
+              program,
+              groupings[program.id],
+              groupingCounts[program.id],
+              mediaSource,
+              library,
+            );
+          } else {
+            logger.debug(
+              'Could not find program grouping %s in DB, but it exists in search index!',
+              program.id,
+            );
+          }
+        } else if (isTerminalProgramDocument(program)) {
+          if (programs[program.id]) {
+            return ApiProgramConverters.convertProgramSearchResult(
+              program,
+              programs[program.id],
+              mediaSource,
+              library,
+            );
+          } else {
+            logger.debug(
+              'Could not find program %s in DB, but it exists in search index!',
+              program.id,
+            );
+          }
         }
 
         return;

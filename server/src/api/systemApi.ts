@@ -30,6 +30,7 @@ import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { MigrationStateSchema } from '../db/SettingsDB.ts';
 import { NvidiaGpuDetectionHelper } from '../ffmpeg/builder/capabilities/NvidiaHardwareCapabilitiesFactory.ts';
+import { MeilisearchService } from '../services/MeilisearchService.ts';
 import { SystemDevicesService } from '../services/SystemDevicesService.ts';
 import { Result } from '../types/result.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
@@ -226,6 +227,12 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
+      const smiResult = Result.attemptAsync(() =>
+        new ChildProcessHelper().getStdout('nvidia-smi', [], {
+          swallowError: true,
+          isPath: false,
+        }),
+      );
       const result = await Promise.all([
         new NvidiaGpuDetectionHelper()
           .getGpuFromFfmpeg(
@@ -238,14 +245,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
               (err) => err.message,
             ),
           ),
-        (
-          await Result.attemptAsync(() =>
-            new ChildProcessHelper().getStdout('nvidia-smi', [], {
-              swallowError: true,
-              isPath: false,
-            }),
-          )
-        ).either(identity, (err) => err.message),
+        smiResult.then((_) => _.either(identity, (err) => err.message)),
       ]);
 
       return res.send(result.join('\n\n'));
@@ -391,6 +391,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
         ...(settings.logging as Writable<LoggingSettings>),
         environmentLogLevel: envLogLevel,
       },
+      searchServerAddress: `http://localhost:${container.get<MeilisearchService>(MeilisearchService).getPort()}`,
     };
   }
 };

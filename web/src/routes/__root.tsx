@@ -22,6 +22,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   validateSearch: (searchParams) => {
     const { query: searchString } = searchQuerySchema.parse(searchParams);
     if (isUndefined(searchString) || isEmpty(searchString)) {
+      useStore.setState((s) => {
+        s.currentSearchRequest = null;
+      });
       return;
     }
 
