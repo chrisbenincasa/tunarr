@@ -15,11 +15,11 @@ export const FillerShowContent = sqliteTable(
   {
     fillerShowUuid: text()
       .notNull()
-      .references(() => FillerShow.uuid),
+      .references(() => FillerShow.uuid, { onDelete: 'cascade' }),
     index: integer().notNull(),
     programUuid: text()
       .notNull()
-      .references(() => Program.uuid),
+      .references(() => Program.uuid, { onDelete: 'cascade' }),
   },
   (table) => [
     primaryKey({ columns: [table.fillerShowUuid, table.programUuid] }),

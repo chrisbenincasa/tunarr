@@ -1758,6 +1758,17 @@ export class ChannelDB implements IChannelDB {
         ...lineup,
         items: newLineupItems,
       });
+
+      const duration = sum(newLineupItems.map((item) => item.durationMs));
+
+      await this.db
+        .updateTable('channel')
+        .set({
+          duration,
+        })
+        .where('uuid', '=', channelId)
+        .limit(1)
+        .executeTakeFirst();
     }
   }
 

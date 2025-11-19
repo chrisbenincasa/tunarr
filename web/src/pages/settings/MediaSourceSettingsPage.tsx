@@ -319,6 +319,7 @@ export default function MediaSourceSettingsPage() {
         open={!!deletingMediaSource}
         onClose={() => setDeletingMediaSource(null)}
         title={`Delete Media Source "${deletingMediaSource?.name}?"`}
+        body="Deleting a media source will remove all of its associated programs from Tunarr."
         onConfirm={() =>
           deleteMediaSourceMut.mutate({
             path: { id: deletingMediaSource!.id },

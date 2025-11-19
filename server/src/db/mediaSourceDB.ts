@@ -1,7 +1,7 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
-import { groupByUniqProp, isNonEmptyString } from '@/util/index.js';
+import { Maybe, Nullable } from '@/types/util.js';
+import { groupByUniq, isNonEmptyString } from '@/util/index.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { tag } from '@tunarr/types';
 import type {
@@ -20,16 +20,13 @@ import {
   head,
   isEmpty,
   isNil,
-  keys,
-  map,
-  mapValues,
-  some,
   trimEnd,
 } from 'lodash-es';
 import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
+import { MeilisearchService } from '../services/MeilisearchService.ts';
 import {
   withProgramChannels,
   withProgramCustomShows,
@@ -48,21 +45,11 @@ import {
   PlexMediaSource,
 } from './schema/derivedTypes.js';
 import { DrizzleDBAccess } from './schema/index.ts';
-import { MediaSourceOrm } from './schema/MediaSource.ts';
 import {
   MediaSourceLibrary,
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
-
-type Report = {
-  type: 'channel' | 'custom-show' | 'filler';
-  id: string;
-  channelNumber?: number;
-  channelName?: string;
-  destroyedPrograms: number;
-  modifiedPrograms: number;
-};
 
 type MediaSourceUserInfo = {
   userId?: string;
@@ -73,10 +60,16 @@ type MediaSourceUserInfo = {
 export class MediaSourceDB {
   private mediaSourceByIdLoader = new DataLoader<
     MediaSourceId,
-    MediaSourceWithRelations
+    MediaSourceWithRelations | null
   >(
-    (b) => {
-      return this.getByIds([...b]);
+    async (batch) => {
+      const results = await this.getByIds([...batch]);
+      const byId = groupByUniq(results, (result) => result.uuid);
+      const resultList: Nullable<MediaSourceWithRelations>[] = [];
+      for (const id of batch) {
+        resultList.push(byId[id] ?? null);
+      }
+      return resultList;
     },
     { maxBatchSize: 100, cache: false },
   );
@@ -90,6 +83,8 @@ export class MediaSourceDB {
     private mediaSourceLibraryRefresher: interfaces.AutoFactory<MediaSourceLibraryRefresher>,
     @inject(KEYS.DrizzleDB)
     private drizzleDB: DrizzleDBAccess,
+    @inject(MeilisearchService)
+    private searchService: MeilisearchService,
   ) {}
 
   async getAll(): Promise<MediaSourceWithRelations[]> {
@@ -102,8 +97,14 @@ export class MediaSourceDB {
     });
   }
 
-  async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithRelations>> {
-    return this.mediaSourceByIdLoader.load(id);
+  async getById(
+    id: MediaSourceId,
+    useLoader: boolean = true,
+  ): Promise<Maybe<MediaSourceWithRelations>> {
+    if (!useLoader) {
+      return head(await this.getByIds([id]));
+    }
+    return (await this.mediaSourceByIdLoader.load(id)) ?? undefined;
   }
 
   private async getByIds(
@@ -177,31 +178,65 @@ export class MediaSourceDB {
   }
 
   async deleteMediaSource(id: MediaSourceId) {
-    const deletedServer = await this.getById(id);
+    const deletedServer = await this.getById(id, false);
     if (isNil(deletedServer)) {
       throw new Error(`MediaSource not found: ${id}`);
     }
 
-    // This should cascade all relevant deletes across the DB
-    const relatedProgramIds = await this.db
-      .transaction()
-      .execute(async (tx) => {
-        const relatedProgramIds = await tx
-          .selectFrom('program')
-          .where('program.mediaSourceId', '=', id)
-          .select('uuid')
-          .execute()
-          .then((_) => _.map(({ uuid }) => uuid));
+    // TODO: We need to update this to:
+    // 1. handle different source types
+    // 2. use program_external_id table
+    // 3. not delete programs if they still have another reference via
+    //    the external id table (program that exists on 2 servers)
+    const allPrograms = await this.db
+      .selectFrom('program')
+      .select('uuid')
+      .where('sourceType', '=', deletedServer.type)
+      .where('mediaSourceId', '=', deletedServer.uuid)
+      .select(withProgramChannels)
+      .select(withProgramFillerShows)
+      .select(withProgramCustomShows)
+      .execute();
 
+    const allGroupings = await this.db
+      .selectFrom('programGrouping')
+      .select('uuid')
+      .where('sourceType', '=', deletedServer.type)
+      .where('mediaSourceId', '=', deletedServer.uuid)
+      .execute();
+
+    // Remove all associations of this program
+    for (const programChunk of chunk(allPrograms, 100)) {
+      const programIds = programChunk.map((p) => p.uuid);
+      await this.db.transaction().execute(async (tx) => {
         await tx
-          .deleteFrom('mediaSource')
-          .where('uuid', '=', id)
-          .limit(1)
+          .deleteFrom('program')
+          .where('uuid', 'in', programIds)
           .execute();
-        return relatedProgramIds;
       });
+    }
 
-    await this.channelDb.removeProgramsFromAllLineups(relatedProgramIds);
+    for (const programChunk of chunk(allGroupings, 100)) {
+      await this.db
+        .deleteFrom('programGrouping')
+        .where(
+          'uuid',
+          'in',
+          programChunk.map(({ uuid }) => uuid),
+        )
+        .execute();
+    }
+    await this.db
+      .deleteFrom('mediaSource')
+      .where('uuid', '=', id)
+      .limit(1)
+      .execute();
+
+    // This cannot happen in the transaction because the DB would be locked.
+    const programIds = allPrograms.map((p) => p.uuid);
+    await this.channelDb.removeProgramsFromAllLineups(programIds);
+    const groupingIds = allGroupings.map((p) => p.uuid);
+    await this.searchService.deleteByIds(programIds.concat(groupingIds));
 
     this.mediaSourceApiFactory().deleteCachedClient(deletedServer);
 
@@ -292,14 +327,6 @@ export class MediaSourceDB {
 
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
     }
-
-    const report = await this.fixupProgramReferences(
-      tag(id),
-      mediaSource.type,
-      mediaSource,
-    );
-
-    return report;
   }
 
   async setMediaSourceUserInfo(
@@ -455,127 +482,6 @@ export class MediaSourceDB {
       })
       .where('uuid', '=', libraryId)
       .executeTakeFirstOrThrow();
-  }
-
-  private async fixupProgramReferences(
-    serverId: MediaSourceId,
-    serverType: MediaSourceType,
-    newServer?: MediaSourceOrm,
-  ) {
-    // TODO: We need to update this to:
-    // 1. handle different source types
-    // 2. use program_external_id table
-    // 3. not delete programs if they still have another reference via
-    //    the external id table (program that exists on 2 servers)
-    const allPrograms = await this.db
-      .selectFrom('program')
-      .selectAll()
-      .where('sourceType', '=', serverType)
-      .where('mediaSourceId', '=', serverId)
-      .select(withProgramChannels)
-      .select(withProgramFillerShows)
-      .select(withProgramCustomShows)
-      .execute();
-
-    const channelById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.channels),
-      'uuid',
-    );
-
-    const customShowById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.customShows),
-      'uuid',
-    );
-
-    const fillersById = groupByUniqProp(
-      allPrograms.flatMap((p) => p.fillerShows),
-      'uuid',
-    );
-
-    const channelToProgramCount = mapValues(
-      channelById,
-      ({ uuid }) =>
-        allPrograms.filter((p) => some(p.channels, (f) => f.uuid === uuid))
-          .length,
-    );
-
-    const customShowToProgramCount = mapValues(
-      customShowById,
-      ({ uuid }) =>
-        allPrograms.filter((p) => some(p.customShows, (f) => f.uuid === uuid))
-          .length,
-    );
-
-    const fillerToProgramCount = mapValues(
-      fillersById,
-      ({ uuid }) =>
-        allPrograms.filter((p) => some(p.fillerShows, (f) => f.uuid === uuid))
-          .length,
-    );
-
-    const isUpdate = newServer && newServer.uuid !== serverId;
-    if (!isUpdate) {
-      // Remove all associations of this program
-      // TODO: See if we can just get this automatically with foreign keys...
-      await this.db.transaction().execute(async (tx) => {
-        for (const programChunk of chunk(allPrograms, 500)) {
-          const programIds = map(programChunk, 'uuid');
-          await tx
-            .deleteFrom('channelPrograms')
-            .where('channelPrograms.programUuid', 'in', programIds)
-            .execute();
-          await tx
-            .deleteFrom('fillerShowContent')
-            .where('fillerShowContent.programUuid', 'in', programIds)
-            .execute();
-          await tx
-            .deleteFrom('customShowContent')
-            .where('customShowContent.contentUuid', 'in', programIds)
-            .execute();
-          await tx
-            .deleteFrom('program')
-            .where('uuid', 'in', programIds)
-            .execute();
-        }
-
-        for (const channel of keys(channelById)) {
-          await this.channelDb.removeProgramsFromLineup(
-            channel,
-            map(allPrograms, 'uuid'),
-          );
-        }
-      });
-    }
-
-    const channelReports: Report[] = map(
-      channelById,
-      ({ number, name }, id) => {
-        return {
-          type: 'channel',
-          id,
-          channelNumber: number,
-          channelName: name,
-          destroyedPrograms: isUpdate ? 0 : (channelToProgramCount[id] ?? 0),
-          modifiedPrograms: isUpdate ? (channelToProgramCount[id] ?? 0) : 0,
-        } as Report;
-      },
-    );
-
-    const fillerReports: Report[] = map(fillersById, ({ uuid }) => ({
-      type: 'filler',
-      id: uuid,
-      destroyedPrograms: isUpdate ? 0 : (fillerToProgramCount[uuid] ?? 0),
-      modifiedPrograms: isUpdate ? (fillerToProgramCount[uuid] ?? 0) : 0,
-    }));
-
-    const customShowReports: Report[] = map(customShowById, ({ uuid }) => ({
-      type: 'custom-show',
-      id: uuid,
-      destroyedPrograms: isUpdate ? 0 : (customShowToProgramCount[uuid] ?? 0),
-      modifiedPrograms: isUpdate ? (customShowToProgramCount[uuid] ?? 0) : 0,
-    }));
-
-    return [...channelReports, ...fillerReports, ...customShowReports];
   }
 }
 

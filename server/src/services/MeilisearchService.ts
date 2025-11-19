@@ -336,12 +336,7 @@ export class MeilisearchService implements ISearchService {
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,
-  ) {
-    // this.indexBatcher = new DataLoader(x => {
-    //   x
-    // }, {
-    // })
-  }
+  ) {}
 
   getPort() {
     return this.port;
@@ -506,32 +501,11 @@ export class MeilisearchService implements ISearchService {
   }
 
   async restart() {
-    // if (this.proc?.pm_id) {
-    //   const id = this.proc.pm_id;
-    //   return new Promise((resolve, reject) => {
-    //     pm2.restart(id, (err) => {
-    //       if (err) reject(err);
-    //       resolve(void 0);
-    //     });
-    //   });
-    // }
-    // return Promise.resolve();
+    // TODO: implement
   }
 
   stop() {
     this.proc?.kill();
-    // return new Promise((resolve, reject) => {
-    //   if (this.proc) {
-    //     if (isDefined(this.proc.pm_id)) {
-    //       pm2.stop(this.proc.pm_id ?? 'meilisearch', (err) => {
-    //         if (err) reject(err);
-    //         resolve(void 0);
-    //       });
-    //     } else {
-    //       reject(new Error('Process had '));
-    //     }
-    //   }
-    // });
   }
 
   async getMeilisearchVersion(): Promise<Maybe<string>> {
@@ -1120,6 +1094,14 @@ export class MeilisearchService implements ISearchService {
         attributesToSearchOn: request.facetQuery ? [request.facetName] : null,
         sort: [request.facetName],
       });
+  }
+
+  async deleteByIds(ids: string[]) {
+    if (ids.length === 0) {
+      return;
+    }
+
+    return await this.#client.index(ProgramsIndex.name).deleteDocuments(ids);
   }
 
   private buildFilterExpression(

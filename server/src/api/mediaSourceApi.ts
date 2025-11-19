@@ -796,18 +796,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       try {
-        const report = await req.serverCtx.mediaSourceDB.updateMediaSource(
-          req.body,
-        );
-        let modifiedPrograms = 0;
-        let destroyedPrograms = 0;
-        report.forEach((r) => {
-          modifiedPrograms += r.modifiedPrograms;
-          destroyedPrograms += r.destroyedPrograms;
-        });
+        await req.serverCtx.mediaSourceDB.updateMediaSource(req.body);
         req.serverCtx.eventService.push({
           type: 'settings-update',
-          message: `Media source ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
+          message: `Media source ${req.body.name} updated.`,
           module: 'media-source',
           detail: {
             serverName: req.body.name,

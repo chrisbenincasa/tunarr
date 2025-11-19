@@ -46,6 +46,7 @@ import Migration1760213210_AddMoreProgramGroupingFields from './db/Migration1760
 import Migration1760455673_UpdateForeignKeyCasacades from './db/Migration1760455673_UpdateForeignKeyCasacades.ts';
 import Migration1762205138_AddCredits from './db/Migration1762205138_AddCredits.ts';
 import Migration1762205207_ArtworkCachePathNullable from './db/Migration1762205207_ArtworkCachePathNullable.ts';
+import Migration1763585155_AddProgramForeignKeys from './db/Migration1763585155_AddProgramForeignKeys.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -152,6 +153,8 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1762205138_AddCredits: Migration1762205138_AddCredits,
           migration1762205207_ArtworkCachePathNullable:
             Migration1762205207_ArtworkCachePathNullable,
+          migration1763585155_AddProgramForeignKeys:
+            Migration1763585155_AddProgramForeignKeys,
         },
         wrapWithTransaction,
       ),

@@ -62,6 +62,7 @@ export const ProgramGrouping = sqliteTable(
     externalKey: text(),
     mediaSourceId: text()
       .references(() => MediaSource.uuid, {
+        onUpdate: 'no action',
         onDelete: 'cascade',
       })
       .$type<MediaSourceId>(),

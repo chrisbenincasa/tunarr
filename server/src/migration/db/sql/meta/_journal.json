@@ -169,6 +169,13 @@
       "when": 1762202222375,
       "tag": "0023_powerful_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1763585134657,
+      "tag": "0024_messy_hammerhead",
+      "breakpoints": true
     }
   ]
 }

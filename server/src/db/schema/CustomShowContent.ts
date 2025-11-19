@@ -13,10 +13,12 @@ import { Program } from './Program.ts';
 export const CustomShowContent = sqliteTable(
   'custom_show_content',
   {
-    contentUuid: text().notNull(),
+    contentUuid: text()
+      .notNull()
+      .references(() => Program.uuid, { onDelete: 'cascade' }),
     customShowUuid: text()
       .notNull()
-      .references(() => CustomShow.uuid),
+      .references(() => CustomShow.uuid, { onDelete: 'cascade' }),
     index: integer().notNull(),
   },
   (table) => [
