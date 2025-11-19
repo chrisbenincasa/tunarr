@@ -40,7 +40,7 @@ describe('QsvPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -125,7 +125,7 @@ describe('QsvPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -211,7 +211,7 @@ describe('QsvPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -293,7 +293,7 @@ describe('QsvPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 

@@ -28,7 +28,7 @@ describe('NvidiaScaler', () => {
         displayAspectRatio: '16:9',
         frameSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -76,7 +76,7 @@ describe('NvidiaScaler', () => {
         displayAspectRatio: '16:9',
         frameSize: FrameSize.SevenTwenty,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -134,7 +134,7 @@ describe('NvidiaScaler', () => {
         displayAspectRatio: '16:9',
         frameSize: FrameSize.SevenTwenty,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
