@@ -22,6 +22,7 @@ import {
   orderBy,
   sortBy,
   takeWhile,
+  trim,
   trimEnd,
 } from 'lodash-es';
 import util from 'node:util';
@@ -190,7 +191,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
     }
 
     if (isNonEmptyString(serverPath)) {
-      serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
+      serverPath = trim(serverPath, '/');
       this.logger.debug(
         'Did not find Emby file on disk relative to Tunarr. Using network path: %s',
         serverPath,

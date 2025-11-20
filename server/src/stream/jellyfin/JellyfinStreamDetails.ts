@@ -22,6 +22,7 @@ import {
   map,
   orderBy,
   takeWhile,
+  trim,
   trimEnd,
 } from 'lodash-es';
 import { MediaSourceType } from '../../db/schema/base.js';
@@ -196,7 +197,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
     }
 
     if (isNonEmptyString(serverPath)) {
-      serverPath = serverPath.startsWith('/') ? serverPath : `/${serverPath}`;
+      serverPath = trim(serverPath, '/');
       this.logger.debug(
         'Did not find Plex file on disk relative to Tunarr. Using network path: %s',
         serverPath,
