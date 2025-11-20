@@ -1096,12 +1096,66 @@ export class MeilisearchService implements ISearchService {
       });
   }
 
+  // AHHH!!!!
+  async deleteAll() {
+    return await this.#client.index(ProgramsIndex.name).deleteAllDocuments();
+  }
+
   async deleteByIds(ids: string[]) {
     if (ids.length === 0) {
       return;
     }
 
     return await this.#client.index(ProgramsIndex.name).deleteDocuments(ids);
+  }
+
+  async deleteByMediaSourceIds(ids: string[]) {
+    if (ids.length === 0) {
+      return;
+    }
+
+    const encodedIds = ids.map((id) => encodeCaseSensitiveId(id));
+    const filter = `mediaSourceId NOT IN [${encodedIds.join(', ')}]`;
+
+    return await this.#client.index(ProgramsIndex.name).deleteDocuments({
+      filter,
+    });
+  }
+
+  async monitorTask(id: number) {
+    let task = await this.#client.tasks.getTask(id);
+    if (!task) {
+      this.logger.info(
+        'Attempted to monitor search task %d but it was not found',
+        id,
+      );
+      return;
+    }
+
+    while (task.status === 'enqueued' || task.status === 'processing') {
+      switch (task.status) {
+        case 'enqueued':
+          this.logger.info('Task %d is enqueued', id);
+          break;
+        case 'processing':
+          this.logger.info('Task %d is still processing...', id);
+          break;
+      }
+
+      await wait(3_000);
+
+      task = await this.#client.tasks.getTask(id);
+      if (!task) {
+        return;
+      }
+    }
+
+    this.logger.info(
+      'Task %d completed with status %s. %O',
+      id,
+      task.status,
+      task.details ?? {},
+    );
   }
 
   private buildFilterExpression(

@@ -1,11 +1,16 @@
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { seq } from '@tunarr/shared/util';
 import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { compact, isEmpty, isNil, map } from 'lodash-es';
+import { isEmpty, isNil } from 'lodash-es';
 import { z } from 'zod/v4';
+import { container } from '../container.ts';
+import { RemoveDanglingProgramsFromSearchTask } from '../tasks/RemoveDanglingProgramsFromSearchTask.ts';
+import type { Task } from '../tasks/Task.ts';
+import { KEYS } from '../types/inject.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -25,8 +30,9 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const result = compact(
-        map(GlobalScheduler.scheduledJobsById, (tasks, id) => {
+      const allJobs = seq.collectMapValues(
+        GlobalScheduler.scheduledJobsById,
+        (tasks, id) => {
           if (isNil(tasks) || isEmpty(tasks)) {
             return;
           }
@@ -51,10 +57,20 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
             nextExecution: nextExecution?.format(),
             nextExecutionEpoch: nextExecution?.unix(),
           };
-        }),
+        },
       );
 
-      return res.send(result);
+      allJobs.push({
+        id: RemoveDanglingProgramsFromSearchTask.ID,
+        name: RemoveDanglingProgramsFromSearchTask.name,
+        running: false,
+        lastExecution: undefined,
+        lastExecutionEpoch: undefined,
+        nextExecution: undefined,
+        nextExecutionEpoch: undefined,
+      });
+
+      return res.send(allJobs);
     },
   );
 
@@ -81,25 +97,50 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const tasks = GlobalScheduler.getScheduledJobs(req.params.id);
       if (isNil(tasks) || isEmpty(tasks)) {
-        return res.status(404).send();
-      }
+        const allTasks = container.getAll<Task>(KEYS.Task);
+        const matchedTask = allTasks.find(
+          (task) => task.taskName === req.params.id,
+        );
+        if (!matchedTask) {
+          return res.status(404).send();
+        }
 
-      const task = tasks[0];
-
-      if (task.running) {
-        return res.status(400).send({ message: 'Task already running' });
-      }
-
-      const taskPromise = task.runNow(req.query.background).catch((e) => {
-        logger.error('Async task triggered by API failed: %O', e);
-      });
-
-      if (!req.query.background) {
-        return taskPromise
-          .then((result) => res.status(200).send(result))
-          .catch(() => res.status(500).send());
+        const runPromise = matchedTask.run();
+        if (req.query.background) {
+          try {
+            const result = await runPromise;
+            return res.send(result);
+          } catch (e) {
+            logger.error(e, 'Task %s failed to run', matchedTask.taskName);
+            return res.status(500).send();
+          }
+        } else {
+          runPromise.catch((e) => {
+            logger.error(e, 'Async task triggered by API failed');
+          });
+          return res.status(202).send();
+        }
       } else {
-        return res.status(202).send();
+        const task = tasks[0];
+        if (task.running) {
+          return res.status(400).send({ message: 'Task already running' });
+        }
+        const taskPromise = task.runNow(req.query.background);
+
+        if (!req.query.background) {
+          try {
+            const result = await taskPromise;
+            return res.send(result);
+          } catch (e) {
+            logger.error(e, 'Task %s failed to run', task.name);
+            return res.status(500).send();
+          }
+        } else {
+          taskPromise.catch((e) => {
+            logger.error(e, 'Async task triggered by API failed');
+          });
+          return res.status(202).send();
+        }
       }
     },
   );

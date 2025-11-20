@@ -76,6 +76,7 @@ const KEYS = {
   LocalMediaSourceScanner: Symbol.for('LocalMediaSourceScanner'),
 
   // Tasks
+  Task: Symbol.for('Task'),
   StartupTasks: Symbol.for('StartupTasks'),
 };
 

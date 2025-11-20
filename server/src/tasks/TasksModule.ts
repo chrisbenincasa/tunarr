@@ -35,6 +35,7 @@ import type {
 } from './plex/UpdatePlexPlayStatusTask.ts';
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
 import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.ts';
+import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFromSearchTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import type {
   SubtitleExtractorTaskFactory,
@@ -72,6 +73,8 @@ const TasksModule = new ContainerModule((bind) => {
   bind<interfaces.Factory<ScanLibrariesTask>>(
     ScanLibrariesTask.KEY,
   ).toAutoFactory(ScanLibrariesTask);
+
+  bind(KEYS.Task).toService(RemoveDanglingProgramsFromSearchTask);
 
   bind<
     interfaces.Factory<
