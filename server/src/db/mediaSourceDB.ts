@@ -50,6 +50,7 @@ import {
   MediaSourceLibraryUpdate,
   NewMediaSourceLibrary,
 } from './schema/MediaSourceLibrary.ts';
+import { MediaSourceLibraryReplacePath } from './schema/MediaSourceLibraryReplacePath.ts';
 
 type MediaSourceUserInfo = {
   userId?: string;
@@ -325,6 +326,20 @@ export class MediaSourceDB {
         .limit(1)
         .executeTakeFirst();
 
+      await this.drizzleDB
+        .delete(MediaSourceLibraryReplacePath)
+        .where(eq(MediaSourceLibraryReplacePath.mediaSourceId, id));
+      if (updateReq.pathReplacements.length > 0) {
+        await this.drizzleDB.insert(MediaSourceLibraryReplacePath).values(
+          updateReq.pathReplacements.map((path) => ({
+            localPath: path.localPath,
+            mediaSourceId: id,
+            serverPath: path.serverPath,
+            uuid: v4(),
+          })),
+        );
+      }
+
       this.mediaSourceApiFactory().deleteCachedClient(mediaSource);
     }
   }
@@ -419,6 +434,17 @@ export class MediaSourceDB {
 
       return newServer;
     });
+
+    if (server.pathReplacements.length > 0) {
+      await this.drizzleDB.insert(MediaSourceLibraryReplacePath).values(
+        server.pathReplacements.map((path) => ({
+          localPath: path.localPath,
+          mediaSourceId: newServer.uuid,
+          serverPath: path.serverPath,
+          uuid: v4(),
+        })),
+      );
+    }
 
     await this.mediaSourceLibraryRefresher().refreshMediaSource(newServer.uuid);
 
