@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.23.0-alpha.24](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.23...v0.23.0-alpha.24) (2025-11-20)
+
+
+### Features
+
+* add search server link to status page ([9ff38ce](https://github.com/chrisbenincasa/tunarr/commit/9ff38ce35e4b6408d61c7ff04fed0aa41d8d7ff0))
+* allow manually purging dangling documents from search index ([2ddf07e](https://github.com/chrisbenincasa/tunarr/commit/2ddf07edc1c5a75460114e57d469d2b0452fd692))
+* search parser overhaul ([fa6db00](https://github.com/chrisbenincasa/tunarr/commit/fa6db00f27c57ea0bfa7b1196b1d1fee1503d06d))
+
+
+### Bug Fixes
+
+* add missing RemoveDanglingProgramsFromSearchTask ([96650ee](https://github.com/chrisbenincasa/tunarr/commit/96650ee0de7c08882bd8359f71ff782ea7e9afd0))
+* delete items from search index when media source is deleted ([de995c7](https://github.com/chrisbenincasa/tunarr/commit/de995c7a0bfdbde5d3530a42f8e57e92c86f801f))
+* ensure PlexApiClient uses dayjs from server impl ([0dc0b60](https://github.com/chrisbenincasa/tunarr/commit/0dc0b60f426ecf22b0ab47dd29a1ed0ecd3d942b))
+* fix JF/Emby stream path building ([db5e6bc](https://github.com/chrisbenincasa/tunarr/commit/db5e6bcf0ce5cd54839e5362d8f5a458cbe77953))
+* index additional denormalized details ([4ac97a5](https://github.com/chrisbenincasa/tunarr/commit/4ac97a5f8c738c252fcd78770e63f4f766b2cd58))
+* properly persist media source path replacements on save ([2744ad0](https://github.com/chrisbenincasa/tunarr/commit/2744ad01e53c47aec3de57c5a0544b143fa85c56))
+
 ## [0.23.0-alpha.23](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.22...v0.23.0-alpha.23) (2025-11-18)
 
 
