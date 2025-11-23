@@ -1337,6 +1337,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         this.plexArtworkInject(plexEpisode.thumb, 'poster'),
         this.plexArtworkInject(plexEpisode.art, 'banner'),
       ]),
+      state: 'ok',
       season: plexEpisode.parentRatingKey
         ? {
             externalId: plexEpisode.parentRatingKey,
@@ -1516,6 +1517,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         this.plexArtworkInject(plexMovie.thumb, 'poster'),
         this.plexArtworkInject(plexMovie.art, 'banner'),
       ]),
+      state: 'ok',
     });
   }
 
@@ -1596,6 +1598,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
+      state: 'ok',
     });
   }
 
@@ -1769,6 +1772,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       tags: [],
       externalId: plexTrack.ratingKey,
       artwork: [],
+      state: 'ok',
       album: plexTrack.parentRatingKey
         ? {
             externalId: plexTrack.parentRatingKey,

@@ -35,7 +35,7 @@ type Props = {
   disableProgramSelection?: boolean;
   depth?: number;
   parentContext?: ProgramOrFolder[];
-  initialSearchQuery?: string;
+  searchRequest?: SearchRequest;
 };
 
 function searchItemTypeFromContentType(
@@ -74,6 +74,7 @@ export const LibraryProgramGrid = ({
   disableProgramSelection,
   depth = 0,
   parentContext = [],
+  searchRequest: staticSearchRequest,
 }: Props) => {
   const searchRequest = useStore((s) => s.currentSearchRequest);
   const currentParentContext = last(parentContext);
@@ -89,6 +90,10 @@ export const LibraryProgramGrid = ({
       };
     }
 
+    if (staticSearchRequest) {
+      return staticSearchRequest;
+    }
+
     const filter = match([searchRequest?.filter, mediaSource, library])
       .returnType<SearchFilter | null>()
       .with([P.select(P.nonNullable), P._, P._], (filter) => filter)
@@ -99,6 +104,7 @@ export const LibraryProgramGrid = ({
         typeFilter(mediaType),
       )
       .otherwise(() => null);
+    console.log(filter);
 
     return {
       query: searchRequest?.query,
@@ -112,6 +118,7 @@ export const LibraryProgramGrid = ({
     searchRequest?.filter,
     searchRequest?.query,
     searchRequest?.restrictSearchTo,
+    staticSearchRequest,
   ]);
 
   const search = useInfiniteQuery({

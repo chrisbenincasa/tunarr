@@ -90,12 +90,4 @@ export class JellyfinMediaSourceMovieScanner extends MediaSourceMovieLibraryScan
       .getChildItemCount(libraryKey, 'Movie')
       .then((_) => _.getOrThrow());
   }
-
-  protected getCanonicalId(entity: JellyfinMovie): string {
-    return entity.canonicalId;
-  }
-
-  protected getExternalKey(entity: JellyfinMovie): string {
-    return entity.externalId;
-  }
 }

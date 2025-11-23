@@ -56,6 +56,7 @@ export class FallbackMetadataService {
       rating: null,
       tagline: null,
       artwork: [],
+      state: 'ok',
     };
 
     const filename = basename(movieFilePath);
@@ -105,6 +106,7 @@ export class FallbackMetadataService {
       uuid: v4(),
       year: null,
       artwork: [],
+      state: 'ok',
     };
   }
 }

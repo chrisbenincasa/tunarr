@@ -7,6 +7,7 @@ import {
   Folder,
   InfoSharp,
   RadioButtonUnchecked,
+  WarningTwoTone,
 } from '@mui/icons-material';
 import type { Theme } from '@mui/material';
 import {
@@ -17,13 +18,14 @@ import {
   ImageListItem,
   ImageListItemBar,
   Skeleton,
+  Tooltip,
   alpha,
   lighten,
   useTheme,
 } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ProgramOrFolder } from '@tunarr/types';
-import { isStructuralItemType } from '@tunarr/types';
+import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
 import type { ForwardedRef, MouseEvent } from 'react';
 import React, { forwardRef, useCallback, useMemo, useState } from 'react';
@@ -55,7 +57,7 @@ export type GridItemMetadata = {
   itemType: ProgramOrFolder['type'];
 };
 
-type Props<ItemTypeT> = {
+type Props<ItemTypeT extends ProgramOrFolder> = {
   item: ItemTypeT;
   itemSource: SelectedMedia['type'];
   metadata: GridItemMetadata;
@@ -69,7 +71,7 @@ type Props<ItemTypeT> = {
   disablePadding?: boolean;
 };
 
-const MediaGridItemInner = <ItemTypeT,>(
+const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
   props: Props<ItemTypeT>,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
@@ -228,6 +230,20 @@ const MediaGridItemInner = <ItemTypeT,>(
             onClick={(e) => (hasChildren ? handleClick() : toggleItemSelect(e))}
             ref={ref}
           >
+            {isTerminalItemType(item) && item.state === 'missing' && (
+              <Tooltip title="Item was not present during the last scan">
+                <WarningTwoTone
+                  sx={{
+                    position: 'absolute',
+                    zIndex: 2,
+                    top: disablePadding ? 8 : 16,
+                    left: disablePadding ? 8 : 16,
+                    cursor: 'pointer',
+                    color: (theme) => theme.palette.warning.main,
+                  }}
+                />
+              </Tooltip>
+            )}
             {persisted && !isStructuralItemType(itemType) && (
               <InfoSharp
                 inheritViewBox
@@ -360,6 +376,8 @@ const MediaGridItemInner = <ItemTypeT,>(
 };
 // );
 
-export const MediaGridItem = forwardRef(MediaGridItemInner) as <ItemTypeT>(
+export const MediaGridItem = forwardRef(MediaGridItemInner) as <
+  ItemTypeT extends ProgramOrFolder,
+>(
   props: Props<ItemTypeT> & { ref?: ForwardedRef<HTMLDivElement> },
 ) => ReturnType<typeof MediaGridItemInner>;

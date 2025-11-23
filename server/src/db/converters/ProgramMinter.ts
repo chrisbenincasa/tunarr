@@ -116,6 +116,7 @@ export class ProgramDaoMinter {
       updatedAt: now,
       canonicalId: program.canonicalId,
       libraryId: program.libraryId,
+      state: 'ok',
     };
   }
 
@@ -175,6 +176,7 @@ export class ProgramDaoMinter {
     mediaSource: MediaSourceOrm,
     mediaLibrary: MediaSourceLibraryOrm,
     movie: MediaSourceMovie,
+    localFolderId?: string,
     now: number = +dayjs(),
   ): NewProgramWithRelations<'movie'> {
     const programId = v4();
@@ -200,12 +202,13 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: movie.canonicalId,
+      state: 'ok',
     } satisfies NewMovieProgram;
 
     return {
       program: newMovie,
       externalIds: this.mintExternalIdsNew(programId, movie, mediaSource, now),
-      versions: this.mintVersions(programId, movie, now),
+      versions: this.mintVersions(programId, movie, localFolderId, now),
       subtitles: this.mintSubtitles(programId, movie),
       artwork: movie.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
@@ -219,6 +222,7 @@ export class ProgramDaoMinter {
   mintVersions(
     programId: string,
     item: TerminalProgram,
+    localFolderId?: string,
     now: number = +dayjs(),
   ): NewProgramVersion[] {
     const versions: NewProgramVersion[] = [];
@@ -247,6 +251,7 @@ export class ProgramDaoMinter {
         return {
           path: loc.path,
           programVersionId: versionId,
+          localMediaFolderId: localFolderId,
           uuid: v4(),
         } satisfies NewProgramMediaFile;
       });
@@ -391,6 +396,7 @@ export class ProgramDaoMinter {
     mediaSource: MediaSourceOrm,
     mediaLibrary: MediaSourceLibraryOrm,
     episode: Episode,
+    localFolderId?: string,
     now: number = +dayjs(),
   ): NewProgramWithRelations<'episode'> {
     const programId = v4();
@@ -418,6 +424,7 @@ export class ProgramDaoMinter {
       updatedAt: now,
       canonicalId: episode.canonicalId,
       episode: episode.episodeNumber,
+      state: 'ok',
     } satisfies NewEpisodeProgram;
 
     return {
@@ -428,7 +435,7 @@ export class ProgramDaoMinter {
         mediaSource,
         now,
       ),
-      versions: this.mintVersions(programId, episode, now),
+      versions: this.mintVersions(programId, episode, localFolderId, now),
       artwork: episode.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
       ),
@@ -451,6 +458,7 @@ export class ProgramDaoMinter {
     mediaSource: MediaSourceOrm,
     mediaLibrary: MediaSourceLibraryOrm,
     track: MediaSourceMusicTrack,
+    localFolderId?: string,
     now: number = +dayjs(),
   ): NewProgramWithRelations<'track'> {
     const programId = v4();
@@ -477,12 +485,13 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: track.canonicalId,
+      state: 'ok',
     } satisfies NewMusicTrack;
 
     return {
       program: newTrack,
       externalIds: this.mintExternalIdsNew(programId, track, mediaSource, now),
-      versions: this.mintVersions(programId, track, now),
+      versions: this.mintVersions(programId, track, localFolderId, now),
       artwork: track.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
       ),
@@ -495,6 +504,7 @@ export class ProgramDaoMinter {
     mediaSource: MediaSourceOrm,
     mediaLibrary: MediaSourceLibraryOrm,
     video: MediaSourceOtherVideo,
+    localFolderId?: string,
   ): NewProgramWithRelations<'other_video'> {
     const programId = v4();
     const now = +dayjs();
@@ -520,12 +530,13 @@ export class ProgramDaoMinter {
       createdAt: now,
       updatedAt: now,
       canonicalId: video.canonicalId,
+      state: 'ok',
     } satisfies NewOtherVideoProgram;
 
     return {
       program: newVideo,
       externalIds: this.mintExternalIdsNew(programId, video, mediaSource, now),
-      versions: this.mintVersions(programId, video, now),
+      versions: this.mintVersions(programId, video, localFolderId, now),
       artwork: video.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
       ),
@@ -570,6 +581,7 @@ export class ProgramDaoMinter {
       createdAt: +dayjs(),
       updatedAt: +dayjs(),
       canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexMovie),
+      state: 'ok',
     };
   }
 
@@ -610,6 +622,7 @@ export class ProgramDaoMinter {
         item.SeriesId ??
         find(item.AlbumArtists, { Name: item.AlbumArtist })?.Id,
       canonicalId: this.jellyfinCanonicalizer.getCanonicalId(item),
+      state: 'ok',
     };
 
     const externalIds = this.mintAllJellyfinExternalIdForApiItem(
@@ -657,6 +670,7 @@ export class ProgramDaoMinter {
       parentExternalKey: plexEpisode.parentRatingKey,
       grandparentExternalKey: plexEpisode.grandparentRatingKey,
       canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexEpisode),
+      state: 'ok',
     };
   }
 
@@ -692,6 +706,7 @@ export class ProgramDaoMinter {
       albumName: plexTrack.parentTitle,
       artistName: plexTrack.grandparentTitle,
       canonicalId: this.plexProgramCanonicalizer.getCanonicalId(plexTrack),
+      state: 'ok',
     };
   }
 

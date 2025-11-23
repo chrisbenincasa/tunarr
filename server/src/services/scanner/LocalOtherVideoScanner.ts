@@ -11,7 +11,7 @@ import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { isNil } from 'lodash-es';
 import { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
-import path, { basename, extname } from 'node:path';
+import path, { basename, dirname, extname } from 'node:path';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -46,8 +46,7 @@ import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 @injectable()
 export class LocalOtherVideoScanner extends FileSystemScanner {
   #pathsComplete: number = 0;
-  #pathCount: number = 0;
-  #queue: Dirent[] = [];
+  #queue: string[] = [];
 
   private nfoParser = new OtherVideoNfoParser();
 
@@ -82,15 +81,24 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     );
   }
 
+  private get pathCount() {
+    return this.#queue.length;
+  }
+
   async scanPath(context: LocalScanContext): Promise<Result<void>> {
     return Result.attemptAsync(async () => {
+      // Queue the root of the library.
+      this.#queue.push(context.library.externalKey);
+
       const subfolders = await this.getAllScannableSubdirectories(
         context.library.externalKey,
       );
 
-      this.#pathCount += subfolders.length;
+      this.#queue.push(
+        ...subfolders.map((dir) => path.join(dir.parentPath, dir.name)),
+      );
 
-      this.#queue.push(...subfolders);
+      const seenPaths = new Set<string>();
 
       while (this.#queue.length > 0) {
         if (this.state === 'canceled') {
@@ -106,14 +114,11 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
           break;
         }
 
-        this.logger.debug(
-          'Scanning directory: %s',
-          path.join(folder.parentPath, folder.name),
-        );
+        this.logger.debug('Scanning directory: %s', folder);
 
         if (
           isNonEmptyString(context.pathFilter) &&
-          !folder.name
+          !basename(folder)
             .toLowerCase()
             .startsWith(context.pathFilter.toLowerCase())
         ) {
@@ -128,33 +133,29 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
           this.logger.error(
             result.error,
             'Failed to scan show directory %s',
-            path.join(folder.parentPath, folder.name),
+            folder,
           );
+        } else {
+          result.get()?.forEach((video) => {
+            seenPaths.add(video.externalId);
+          });
         }
 
         this.#pathsComplete++;
         const pctComplete =
-          this.#pathsComplete / (this.#pathsComplete + this.#pathCount);
+          this.#pathsComplete / (this.#pathsComplete + this.pathCount);
         const progressPct =
           context.percentMin + pctComplete * context.percentCompleteMultiplier;
         this.mediaSourceProgressService.scanProgress(
           context.mediaSource.uuid,
           progressPct * 100.0,
         );
-        this.#pathCount--;
       }
     });
   }
 
-  private async scanFolder(folder: Dirent, context: LocalScanContext) {
-    if (!folder.isDirectory()) {
-      return;
-    }
-
-    await wait();
-
-    const parent = folder.parentPath;
-    const fullPath = path.join(parent, folder.name);
+  private async scanFolder(fullPath: string, context: LocalScanContext) {
+    const parent = dirname(fullPath);
 
     // Find the existing parent folder if it exists
     const parentFolder = await this.localMediaDB.findFolder(
@@ -171,8 +172,9 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     // Get all of the files. These are used to calculate the canonicalId
     const allFiles = await fs.readdir(fullPath, { withFileTypes: true });
     const scannableSubdirs = await this.getAllScannableSubdirectories(fullPath);
-    this.#queue.push(...scannableSubdirs);
-    this.#pathCount += scannableSubdirs.length;
+    this.#queue.push(
+      ...scannableSubdirs.map((dir) => path.join(dir.parentPath, dir.name)),
+    );
 
     // TODO filter extra files
     const videoFiles = allFiles.filter(
@@ -188,7 +190,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     const canonicalFilesAndStats = await Promise.all(
       canonicalFiles.map(async (file) => {
-        const stat = await fs.stat(path.join(file.parentPath, file.name));
+        const stat = await fs.stat(fullPath);
         return {
           dirent: file,
           stats: stat,
@@ -198,7 +200,8 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     const canonicalId = this.canonicalizer.getCanonicalId({
       contents: canonicalFilesAndStats,
-      folder: folder,
+      folderName: fullPath,
+      folderStats: await fs.stat(fullPath),
     });
 
     let shouldScan = false;
@@ -228,6 +231,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       return;
     }
 
+    const files: OtherVideo[] = [];
     for (const file of videoFiles) {
       const result = await Result.attemptAsync(() =>
         this.scanVideoFile(file, context),
@@ -239,12 +243,18 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
           'Failed to scan video file: %s',
           path.join(file.parentPath, file.name),
         );
+      } else {
+        const video = result.get();
+        if (video) {
+          files.push(video);
+        }
       }
     }
 
     if (!isNew) {
       await this.localMediaDB.setCanonicalId(folderId, canonicalId);
     }
+    return files;
   }
 
   private async scanVideoFile(file: Dirent, context: LocalScanContext) {
@@ -312,7 +322,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     await this.searchService.indexOtherVideo([video]);
 
-    return;
+    return video;
   }
 
   private async loadVideoMetadata(
@@ -416,6 +426,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
       writers: nfo.credits?.map((c) => ({ name: c })) ?? [],
       artwork: [], // Added later
+      state: 'ok',
     };
   }
 

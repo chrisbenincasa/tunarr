@@ -1036,6 +1036,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('banner', movie, 'Banner'),
         this.jellyfinArtworkProjection('thumbnail', movie, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1378,6 +1379,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('banner', episode, 'Banner'),
         this.jellyfinArtworkProjection('thumbnail', episode, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1518,6 +1520,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('banner', track, 'Banner'),
         this.jellyfinArtworkProjection('thumbnail', track, 'Thumb'),
       ]),
+      state: 'ok',
     } satisfies JellyfinMusicTrack;
   }
 
@@ -1598,6 +1601,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('banner', video, 'Banner'),
         this.jellyfinArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1678,6 +1682,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('banner', video, 'Banner'),
         this.jellyfinArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 

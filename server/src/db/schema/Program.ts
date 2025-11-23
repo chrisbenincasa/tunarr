@@ -13,7 +13,7 @@ import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkNotNilable } from '../../types/util.ts';
 import { Artwork } from './Artwork.ts';
 import type { MediaSourceName } from './base.ts';
-import { MediaSourceTypes, type MediaSourceId } from './base.ts';
+import { MediaSourceTypes, ProgramStates, type MediaSourceId } from './base.ts';
 import { Credit } from './Credit.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { LocalMediaFolder } from './LocalMediaFolder.ts';
@@ -62,7 +62,9 @@ export const Program = sqliteTable(
         onDelete: 'cascade',
       })
       .$type<MediaSourceId>(),
-    libraryId: text().references(() => MediaSourceLibrary.uuid),
+    libraryId: text().references(() => MediaSourceLibrary.uuid, {
+      onDelete: 'cascade',
+    }),
     localMediaFolderId: text().references(() => LocalMediaFolder.uuid),
     localMediaSourcePathId: text().references(() => LocalMediaSourcePath.uuid),
     filePath: text(),
@@ -84,12 +86,15 @@ export const Program = sqliteTable(
     tvShowUuid: text().references(() => ProgramGrouping.uuid),
     type: text({ enum: ProgramTypes }).notNull(),
     year: integer(),
+    state: text({ enum: ProgramStates }).notNull().default('ok'),
   },
   (table) => [
     index('program_season_uuid_index').on(table.seasonUuid),
     index('program_tv_show_uuid_index').on(table.tvShowUuid),
     index('program_album_uuid_index').on(table.albumUuid),
     index('program_artist_uuid_index').on(table.artistUuid),
+    index('program_media_source_id_index').on(table.mediaSourceId),
+    index('program_media_library_id_index').on(table.libraryId),
     uniqueIndex(
       'program_source_type_external_source_id_external_key_unique',
     ).on(table.sourceType, table.externalSourceId, table.externalKey),
@@ -160,6 +165,6 @@ export type ProgramOrm = InferSelectModel<typeof Program>;
 // Make canonicalId required on insert.
 export type NewProgramDao = MarkNotNilable<
   Insertable<ProgramTable>,
-  'canonicalId' | 'mediaSourceId'
+  'canonicalId' | 'mediaSourceId' | 'state'
 >;
 export type ProgramDaoUpdate = Updateable<ProgramTable>;

@@ -176,11 +176,12 @@ export class LocalTvShowScanner extends FileSystemScanner {
     );
 
     const canonicalId = this.canonicalizer.getCanonicalId({
-      folder: showDirent,
+      folderName: fullPath,
+      folderStats: await fs.stat(fullPath),
       contents: canonicalFilesAndStats,
     });
 
-    await this.localMediaDB.upsertFolder(
+    const showFolder = await this.localMediaDB.upsertFolder(
       library,
       parentFolder?.uuid,
       fullPath,
@@ -248,6 +249,26 @@ export class LocalTvShowScanner extends FileSystemScanner {
       show,
       showDirent,
       allFiles.filter((dirent) => dirent.isFile()),
+      showFolder.folder.uuid,
+    );
+
+    const missingProgramIds: string[] = [];
+    for await (const program of this.programDB.getProgramInfoForMediaSourceLibraryAsync(
+      context.library.uuid,
+      'episode',
+    )) {
+      if (!(await fileExists(program.externalKey))) {
+        missingProgramIds.push(program.uuid);
+        this.logger.debug(
+          '%s no longer found on disk, marking as missing',
+          program.externalKey,
+        );
+      }
+    }
+
+    await this.programDB.updateProgramsState(missingProgramIds, 'missing');
+    await this.searchService.updatePrograms(
+      missingProgramIds.map((id) => ({ id, state: 'missing' })),
     );
   }
 
@@ -287,7 +308,8 @@ export class LocalTvShowScanner extends FileSystemScanner {
 
       const canonicalId = this.canonicalizer.getCanonicalId({
         contents: canonicalFilesAndStats,
-        folder: seasonDir,
+        folderName: fullPath,
+        folderStats: await fs.stat(fullPath),
       });
 
       const parentFolder = await this.localMediaDB.findFolder(
@@ -370,7 +392,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       await this.searchService.indexSeason(season);
 
       const epScanResult = await Result.attemptAsync(() =>
-        this.scanEpisodes(context, show, season, seasonDir),
+        this.scanEpisodes(context, show, season, seasonDir, folderId),
       );
 
       if (epScanResult.isFailure()) {
@@ -388,6 +410,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     show: Show,
     showDirent: Dirent,
     allFiles: Dirent[],
+    folderId: string,
   ) {
     const validFiles = seq.collect(allFiles, (dirent) => {
       if (!KnownVideoFileExtensions.has(extname(dirent.name))) {
@@ -470,7 +493,14 @@ export class LocalTvShowScanner extends FileSystemScanner {
       for (const [episodeFile, { episodes }] of episodeFiles) {
         for (const episode of episodes) {
           const episodeResult = await Result.attemptAsync(() =>
-            this.handleEpisodeFile(context, show, season, episodeFile, episode),
+            this.handleEpisodeFile(
+              context,
+              show,
+              season,
+              episodeFile,
+              folderId,
+              episode,
+            ),
           );
           if (episodeResult.isFailure()) {
             this.logger.error(
@@ -489,6 +519,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     show: Show,
     season: SeasonWithShow,
     seasonDirent: Dirent,
+    folderId: string,
   ) {
     const fullSeasonPath = path.join(
       seasonDirent.parentPath,
@@ -514,7 +545,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     for (const epFile of allFiles) {
       await wait();
       const epResult = await Result.attemptAsync(() =>
-        this.handleEpisodeFile(context, show, season, epFile),
+        this.handleEpisodeFile(context, show, season, epFile, folderId),
       );
 
       if (epResult.isFailure()) {
@@ -534,6 +565,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
     show: Show,
     season: SeasonWithShow,
     episodeDirent: Dirent,
+    folderId: string,
     episodeNumber?: number,
   ) {
     if (isUndefined(episodeNumber)) {
@@ -544,9 +576,16 @@ export class LocalTvShowScanner extends FileSystemScanner {
           `Could not extract episode number from filename ${episodeDirent.name}`,
         );
       }
-      // episodeNumber = seasonAndEp.episode;
+
       for (const num of seasonAndEp.episodes) {
-        await this.handleEpisodeFile(context, show, season, episodeDirent, num);
+        await this.handleEpisodeFile(
+          context,
+          show,
+          season,
+          episodeDirent,
+          folderId,
+          num,
+        );
       }
       return;
     }
@@ -598,6 +637,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       context.mediaSource,
       context.library,
       episode,
+      folderId,
     );
     artworkResult.filter(isDefined).forEach((art) => {
       episodeDao.artwork ??= [];
@@ -717,6 +757,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
         uuid: v4(),
         year: null,
         artwork: [],
+        state: 'ok',
       });
     }
 
@@ -767,6 +808,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
             directors: mapNfoToNamedEntity(episode.director),
             writers: mapNfoToNamedEntity(episode.credits),
             artwork: [], // Added later
+            state: 'ok',
           } satisfies EpisodeMetadata;
         })
     );

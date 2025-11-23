@@ -9,7 +9,8 @@ type DirentAndStats = {
 };
 
 export type FolderAndContents = {
-  folder: Dirent;
+  folderName: string;
+  folderStats: Stats;
   contents: DirentAndStats[];
 };
 
@@ -18,6 +19,8 @@ export class LocalFolderCanonicalizer
 {
   getCanonicalId(t: FolderAndContents): string {
     const sha = crypto.createHash('sha1');
+    sha.update(t.folderName);
+    sha.update(t.folderStats.mtimeMs.toString());
     for (const { dirent, stats } of sortBy(
       t.contents,
       ({ dirent: name }) => name,

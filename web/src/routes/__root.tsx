@@ -6,11 +6,13 @@ import { Link } from '@mui/material';
 import {
   Link as RouterLink,
   createRootRouteWithContext,
+  retainSearchParams,
 } from '@tanstack/react-router';
-import { search } from '@tunarr/shared/util';
+import { zodValidator } from '@tanstack/zod-adapter';
+import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/api';
-import { isEmpty, isUndefined } from 'lodash-es';
 import { z } from 'zod/v4';
+import { programSearchQueryOpts } from '../hooks/useProgramSearchQuery.ts';
 import { parseSearchQuery } from '../hooks/useSearchQueryParser.ts';
 import useStore from '../store/index.ts';
 
@@ -19,16 +21,20 @@ const searchQuerySchema = z.object({
 });
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  validateSearch: (searchParams) => {
-    const { query: searchString } = searchQuerySchema.parse(searchParams);
-    if (isUndefined(searchString) || isEmpty(searchString)) {
+  validateSearch: zodValidator(searchQuerySchema),
+  search: {
+    middlewares: [retainSearchParams(true)],
+  },
+  loader: async ({ context: { queryClient }, location: { search } }) => {
+    const parsed = search as z.infer<typeof searchQuerySchema>;
+    if (!isNonEmptyString(parsed.query)) {
       useStore.setState((s) => {
         s.currentSearchRequest = null;
       });
       return;
     }
 
-    const parseResult = parseSearchQuery(searchString);
+    const parseResult = parseSearchQuery(parsed.query);
 
     const searchRequest: SearchRequest = {
       query: '',
@@ -37,26 +43,22 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     };
 
     if (parseResult?.type === 'success') {
-      searchRequest.filter = search.parsedSearchToRequest(parseResult.query);
+      searchRequest.filter = tunarrSearch.parsedSearchToRequest(
+        parseResult.query,
+      );
       searchRequest.query = null;
     } else {
-      searchRequest.query = searchString;
+      searchRequest.query = parsed.query;
     }
 
+    await queryClient.prefetchInfiniteQuery(
+      programSearchQueryOpts(undefined, undefined, searchRequest),
+    );
     useStore.setState((s) => {
       s.currentSearchRequest = searchRequest;
     });
-
-    return {
-      query: searchString,
-    };
   },
-  component: () => (
-    <>
-      <Root />
-      <TanStackRouterDevtools />
-    </>
-  ),
+  component: RootPage,
   notFoundComponent: () => (
     <div>
       <p>Not found!</p>
@@ -74,3 +76,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     );
   },
 });
+
+function RootPage() {
+  console.log();
+  return (
+    <>
+      <Root />
+      <TanStackRouterDevtools />
+    </>
+  );
+}

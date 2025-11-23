@@ -72,6 +72,7 @@ export class ApiProgramConverters {
             }) satisfies MediaArtwork,
         ) ?? [],
       genres: doc.genres,
+      state: program.state,
     } satisfies Partial<TerminalProgram>;
 
     const identifiers = doc.externalIds.map((eid) => ({

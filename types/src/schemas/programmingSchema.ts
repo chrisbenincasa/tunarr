@@ -478,6 +478,7 @@ const BaseProgram = z.object({
   duration: z.number(),
   externalSubtitles: z.array(MediaSubtitles).nullish(),
   artwork: MediaArtwork.array(),
+  state: z.enum(['ok', 'missing']),
 });
 
 export const Movie = z.object({

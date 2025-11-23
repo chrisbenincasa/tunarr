@@ -11,7 +11,10 @@ import type {
   NewSingleOrMultiExternalId,
   ProgramExternalId,
 } from '@/db/schema/ProgramExternalId.js';
-import type { ProgramExternalIdSourceType } from '@/db/schema/base.js';
+import type {
+  ProgramExternalIdSourceType,
+  ProgramState,
+} from '@/db/schema/base.js';
 import type {
   MusicAlbumOrm,
   NewProgramGroupingWithRelations,
@@ -189,10 +192,23 @@ export interface IProgramDB {
     libraryId: string,
   ): Promise<ProgramWithRelations[]>;
 
-  getProgramCanonicalIdsForMediaSource(
+  getProgramInfoForMediaSource(
+    mediaSourceId: MediaSourceId,
+    type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
+  ): Promise<Dictionary<ProgramCanonicalIdLookupResult>>;
+
+  getProgramInfoForMediaSourceLibrary(
     mediaSourceLibraryId: string,
     type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
   ): Promise<Dictionary<ProgramCanonicalIdLookupResult>>;
+
+  getProgramInfoForMediaSourceLibraryAsync(
+    mediaSourceLibraryId: string,
+    type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
+  ): AsyncGenerator<ProgramCanonicalIdLookupResult>;
 
   /**
    * Returns a mapping of external ID (relative to the given media source)
@@ -205,6 +221,7 @@ export interface IProgramDB {
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,
     sourceType: StrictExclude<MediaSourceType, 'local'>,
+    parentFilter?: string,
   ): Promise<Dictionary<ProgramGroupingCanonicalIdLookupResult>>;
 
   upsertProgramGrouping(
@@ -226,6 +243,11 @@ export interface IProgramDB {
     groupId: string,
     groupTypeHint?: ProgramGroupingType,
   ): Promise<ProgramWithRelationsOrm[]>;
+
+  updateProgramsState(
+    programIds: string[],
+    newState: ProgramState,
+  ): Promise<void>;
 }
 
 export type WithChannelIdFilter<T> = T & {
@@ -243,6 +265,7 @@ export type ProgramGroupingCanonicalIdLookupResult = {
   uuid: string;
   canonicalId: string;
   libraryId: string;
+  externalKey: string;
 };
 
 export type ProgramGroupingExternalIdLookup = {

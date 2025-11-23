@@ -40,20 +40,13 @@ export const ChannelStreamModes = [
 ] as const;
 export type ChannelStreamMode = TupleToUnion<typeof ChannelStreamModes>;
 
-// export const DefaultChannelIcon = ChannelIconSchema.parse({});
-
 const ChannelIconSchema = z
   .object({
     path: z.string().catch(''),
     width: z.number().nonnegative().catch(0),
     duration: z.number().catch(0),
     position: z
-      .union([
-        z.literal('top-left'),
-        z.literal('top-right'),
-        z.literal('bottom-left'),
-        z.literal('bottom-right'),
-      ])
+      .enum(['top-left', 'top-right', 'bottom-left', 'bottom-right'])
       .catch('bottom-right'),
   })
   .catch({
@@ -81,12 +74,7 @@ export const ChannelWatermarkSchema = z.object({
   url: z.string().optional().catch(undefined),
   enabled: z.boolean().catch(false),
   position: z
-    .union([
-      z.literal('bottom-left'),
-      z.literal('bottom-right'),
-      z.literal('top-right'),
-      z.literal('top-left'),
-    ])
+    .enum(['bottom-left', 'bottom-right', 'top-right', 'top-left'])
     .catch('bottom-right'),
   width: z.number().nonnegative().catch(2), // percentage
   verticalMargin: z.number().nonnegative().catch(0),
@@ -114,7 +102,7 @@ export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
 export const ChannelOfflineSettingsSchema = z.object({
   picture: z.string().optional(),
   soundtrack: z.string().optional(),
-  mode: z.union([z.literal('pic'), z.literal('clip')]).catch('clip'),
+  mode: z.enum(['pic', 'clip']).catch('clip'),
 });
 
 export type ChannelOfflineSettings = z.infer<
@@ -143,3 +131,16 @@ export const MediaSourceType: MediaSourceMap = {
   Emby: 'emby',
   Local: 'local',
 } as const;
+
+export const ProgramStates = ['ok', 'missing'] as const;
+
+export type ProgramState = TupleToUnion<typeof ProgramStates>;
+
+type TupleEnumMap<T extends ReadonlyArray<string>> = {
+  [K in Capitalize<T[number]>]: Uncapitalize<K>;
+};
+
+export const ProgramState: TupleEnumMap<typeof ProgramStates> = {
+  Ok: 'ok',
+  Missing: 'missing',
+};

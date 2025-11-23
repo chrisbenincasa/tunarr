@@ -76,7 +76,7 @@ const MediaSourceLibraryTableActionCell = ({
 
   useEffect(() => {
     if (
-      prevScanState?.state === 'in_progress' &&
+      (!prevScanState || prevScanState?.state === 'in_progress') &&
       scanStateQuery.data?.state === 'not_scanning'
     ) {
       setIsRefreshing(false);
@@ -86,12 +86,7 @@ const MediaSourceLibraryTableActionCell = ({
         })
         .catch(console.error);
     }
-  }, [
-    library.id,
-    prevScanState?.state,
-    queryClient,
-    scanStateQuery.data?.state,
-  ]);
+  }, [library.id, prevScanState, queryClient, scanStateQuery.data?.state]);
 
   const link =
     mediaSource.type === 'local'

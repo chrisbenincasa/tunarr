@@ -241,6 +241,7 @@ export type SeasonInput = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         episodeNumber: number;
         summary: string | null;
     }>;
@@ -377,6 +378,7 @@ export type EpisodeInput = {
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
+    state: 'ok' | 'missing';
     episodeNumber: number;
     summary: string | null;
     season?: SeasonInput;
@@ -654,6 +656,7 @@ export type MusicAlbumInput = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         trackNumber: number;
     }>;
 };
@@ -792,6 +795,7 @@ export type MusicTrackInput = {
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
+    state: 'ok' | 'missing';
     trackNumber: number;
     album?: MusicAlbumInput;
     artist?: MusicArtistInput;
@@ -1089,6 +1093,7 @@ export type Season = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         episodeNumber: number;
         summary: string | null;
     }>;
@@ -1225,6 +1230,7 @@ export type Episode = {
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
+    state: 'ok' | 'missing';
     episodeNumber: number;
     summary: string | null;
     season?: Season;
@@ -1502,6 +1508,7 @@ export type MusicAlbum = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         trackNumber: number;
     }>;
 };
@@ -1640,6 +1647,7 @@ export type MusicTrack = {
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
+    state: 'ok' | 'missing';
     trackNumber: number;
     album?: MusicAlbum;
     artist?: MusicArtist;
@@ -11549,6 +11557,7 @@ export type PostApiProgramsSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -11687,6 +11696,7 @@ export type PostApiProgramsSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         } | {
             uuid: string;
             canonicalId: string;
@@ -11821,6 +11831,7 @@ export type PostApiProgramsSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -12255,6 +12266,7 @@ export type GetApiProgramsByIdResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -12393,6 +12405,7 @@ export type GetApiProgramsByIdResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
     } | {
         uuid: string;
         canonicalId: string;
@@ -12527,6 +12540,7 @@ export type GetApiProgramsByIdResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
     };
 };
 
@@ -16692,6 +16706,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -16830,6 +16845,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         } | {
             uuid: string;
             canonicalId: string;
@@ -16964,6 +16980,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         }>;
         size: number;
         offset?: number;
@@ -17356,6 +17373,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -17494,6 +17512,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
     } | {
         uuid: string;
         canonicalId: string;
@@ -17628,6 +17647,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
+        state: 'ok' | 'missing';
     }) | ({
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         uuid: string;
@@ -18310,6 +18330,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -18448,6 +18469,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         } | {
             uuid: string;
             canonicalId: string;
@@ -18582,6 +18604,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -18944,6 +18967,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
             summary: string | null;
             plot: string | null;
             tagline: string | null;
@@ -19082,6 +19106,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         } | {
             uuid: string;
             canonicalId: string;
@@ -19216,6 +19241,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
+            state: 'ok' | 'missing';
         }) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;

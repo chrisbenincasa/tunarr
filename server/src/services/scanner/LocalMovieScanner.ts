@@ -3,8 +3,7 @@ import { seq } from '@tunarr/shared/util';
 import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { isEmpty, isUndefined } from 'lodash-es';
-import type { Dirent } from 'node:fs';
+import { differenceWith, isEmpty, isUndefined, values } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match, P } from 'ts-pattern';
@@ -14,7 +13,7 @@ import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
-import { ProgramOrm } from '../../db/schema/Program.ts';
+import { ProgramOrm, ProgramType } from '../../db/schema/Program.ts';
 import { MovieNfoParser } from '../../nfo/MovieNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
 import { MediaSourceMovie } from '../../types/Media.ts';
@@ -76,6 +75,13 @@ export class LocalMovieScanner extends FileSystemScanner {
   }
 
   async scanPath(context: LocalScanContext): Promise<Result<void>> {
+    const rootResult = await Result.attemptAsync(() =>
+      this.scanDirectory(context.library.externalKey, context),
+    );
+    if (rootResult.isFailure()) {
+      return rootResult.recast();
+    }
+
     return Result.attemptAsync(() =>
       this.loopThroughDir(context.library.externalKey, context),
     );
@@ -95,8 +101,16 @@ export class LocalMovieScanner extends FileSystemScanner {
         );
         return;
       }
+
+      if (!dirent.isDirectory()) {
+        continue;
+      }
+
       try {
-        await this.scanDirectory(dirent, context);
+        await this.scanDirectory(
+          path.join(dirent.parentPath, dirent.name),
+          context,
+        );
       } finally {
         this.#pathsComplete++;
         const pctComplete =
@@ -112,14 +126,15 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
   }
 
-  private async scanDirectory(dirent: Dirent, context: LocalScanContext) {
+  private async scanDirectory(fullPath: string, context: LocalScanContext) {
     const { library, force } = context;
-    if (!dirent.isDirectory()) {
-      return;
-    }
+    // if (!dirent.isDirectory()) {
+    //   return;
+    // }
 
-    const parent = dirent.parentPath;
-    const fullPath = path.join(parent, dirent.name);
+    // const parent = dirent.parentPath;
+    // const fullPath = path.join(parent, dirent.name);
+    const parent = dirname(fullPath);
     if (!(await this.shouldScanDirectory(fullPath))) {
       return;
     }
@@ -148,7 +163,8 @@ export class LocalMovieScanner extends FileSystemScanner {
     );
 
     const canonicalId = this.canonicalizer.getCanonicalId({
-      folder: dirent,
+      folderName: fullPath,
+      folderStats: await fs.stat(fullPath),
       contents: canonicalFilesAndStats,
     });
 
@@ -196,9 +212,14 @@ export class LocalMovieScanner extends FileSystemScanner {
       this.logger.trace('Existing folder %s changed, scanning', fullPath);
     }
 
+    const seenPaths = new Set<string>();
     for (const videoFile of videoFiles) {
       const fullVideoFilePath = path.join(videoFile.parentPath, videoFile.name);
-      const result = await this.handleVideoFile(fullVideoFilePath, context);
+      const result = await this.handleVideoFile(
+        fullVideoFilePath,
+        folderModel.folder.uuid,
+        context,
+      );
       if (result.isFailure()) {
         this.logger.error(
           result.error,
@@ -207,10 +228,31 @@ export class LocalMovieScanner extends FileSystemScanner {
         );
       }
     }
+    const existingMovies =
+      await this.programDB.getProgramInfoForMediaSourceLibrary(
+        context.library.uuid,
+        ProgramType.Movie,
+      );
+    const missingMovies = differenceWith(
+      values(existingMovies),
+      [...seenPaths.values()],
+      (existing, seen) => existing.externalKey === seen,
+    );
+    await this.programDB.updateProgramsState(
+      missingMovies.map((movie) => movie.uuid),
+      'missing',
+    );
+    await this.searchService.updatePrograms(
+      missingMovies.map((movie) => ({
+        id: movie.uuid,
+        state: 'missing',
+      })),
+    );
   }
 
   private async handleVideoFile(
     fullVideoFilePath: string,
+    folderId: string,
     context: LocalScanContext,
   ): Promise<Result<void>> {
     try {
@@ -222,10 +264,6 @@ export class LocalMovieScanner extends FileSystemScanner {
       );
 
       const stat = await fs.stat(fullVideoFilePath);
-
-      // console.log('existing movie', existingMovie);
-      // const existingVersion = await this.getProgramVersion(fullVideoFilePath);
-      // const workingMovieId = existingMovie?.uuid ?? v4();
 
       const mediaItemResult = await this.getMediaItem(fullVideoFilePath);
 
@@ -279,6 +317,7 @@ export class LocalMovieScanner extends FileSystemScanner {
         context.mediaSource,
         context.library,
         movie,
+        folderId,
         stat.mtimeMs,
       );
 
@@ -391,6 +430,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       genres: movieNfo.genre?.map((g) => ({ name: g })) ?? [],
       writers: movieNfo.credits?.map((c) => ({ name: c })) ?? [],
       artwork: [], // Added later
+      state: 'ok',
     };
   }
 

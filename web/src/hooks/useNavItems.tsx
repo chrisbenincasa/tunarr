@@ -1,6 +1,7 @@
 import {
   BugReport,
   Computer,
+  Delete,
   Home,
   InfoOutlined,
   Notes,
@@ -87,6 +88,11 @@ export const useNavItems = () => {
             name: 'Custom Shows',
             path: '/library/custom-shows',
             icon: <Theaters />,
+          },
+          {
+            name: 'Trash',
+            path: '/library/trash',
+            icon: <Delete />,
           },
         ],
       },
