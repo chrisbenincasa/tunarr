@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { head, round } from 'lodash-es';
+import { differenceWith, head, round, values } from 'lodash-es';
 import type { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
@@ -56,22 +56,10 @@ export abstract class MediaSourceMovieLibraryScanner<
 
     const { mediaSource, library, force, pathFilter } = context;
     const existingPrograms =
-      await this.programDB.getProgramCanonicalIdsForMediaSource(
+      await this.programDB.getProgramInfoForMediaSourceLibrary(
         library.uuid,
         ProgramType.Movie,
       );
-
-    // const existingWithoutCanonicalIds = await run(async () => {
-    //   const allForMediaSource = await this.programDB.lookupByMediaSource(
-    //     mediaSource.type,
-    //     mediaSource.uuid,
-    //     'movie',
-    //   );
-    //   return groupByUniq(
-    //     allForMediaSource.filter((program) => !program.canonicalId),
-    //     (program) => program.externalKey,
-    //   );
-    // });
 
     const seenMovieIds = new Set<string>();
 
@@ -89,7 +77,7 @@ export abstract class MediaSourceMovieLibraryScanner<
         continue;
       }
 
-      const canonicalId = this.getCanonicalId(movie);
+      const canonicalId = movie.canonicalId;
       seenMovieIds.add(movie.externalId);
 
       const processedAmount = round(seenMovieIds.size / totalSize, 2) * 100.0;
@@ -166,6 +154,27 @@ export abstract class MediaSourceMovieLibraryScanner<
       }
     }
 
+    const missingMovies = differenceWith(
+      values(existingPrograms),
+      [...seenMovieIds.values()],
+      (existing, seen) => {
+        return existing.externalKey === seen;
+      },
+    );
+
+    await this.programDB.updateProgramsState(
+      missingMovies.map((movie) => movie.uuid),
+      'missing',
+    );
+
+    // Mark programs we didn't find as missing in the search index.
+    await this.searchService.updatePrograms(
+      missingMovies.map((movie) => ({
+        id: movie.uuid,
+        state: 'missing',
+      })),
+    );
+
     this.logger.debug('Completed scanning library %s', context.library.uuid);
     this.mediaSourceProgressService.scanEnded(context.library.uuid);
   }
@@ -184,8 +193,4 @@ export abstract class MediaSourceMovieLibraryScanner<
     libraryKey: string,
     context: ScanContext<ApiClientTypeT>,
   ): AsyncIterable<MovieT>;
-
-  protected abstract getCanonicalId(entity: MovieT): string;
-
-  protected abstract getExternalKey(entity: MovieT): string;
 }

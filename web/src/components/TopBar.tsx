@@ -29,7 +29,6 @@ import { isEmpty, isNull, last } from 'lodash-es';
 import type { ReactNode } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
-import { useSearchQueryParser } from '../hooks/useSearchQueryParser.ts';
 import { Route } from '../routes/__root.tsx';
 import { useSettings } from '../store/settings/selectors.ts';
 import { StyledMenu } from './base/StyledMenu.tsx';
@@ -93,7 +92,6 @@ export const TopBar = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const mobileLinksOpen = !isNull(anchorEl);
   const copyToClipboard = useCopyToClipboard();
-  const queryParser = useSearchQueryParser();
   const showSearchBar = useMemo(
     () => !last(matches)?.pathname.startsWith('/search'),
     [matches],
@@ -122,7 +120,7 @@ export const TopBar = () => {
         }).catch(console.error);
       }
     },
-    [navigate, queryParser, searchQuery],
+    [navigate, searchQuery],
   );
 
   const handleNavItemLinkClick = useCallback(

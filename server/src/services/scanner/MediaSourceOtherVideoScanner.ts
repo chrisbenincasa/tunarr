@@ -1,4 +1,4 @@
-import { head, round } from 'lodash-es';
+import { differenceWith, head, round, values } from 'lodash-es';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -45,7 +45,7 @@ export abstract class MediaSourceOtherVideoScanner<
     const { library, mediaSource, force } = context;
 
     const existingPrograms =
-      await this.programDB.getProgramCanonicalIdsForMediaSource(
+      await this.programDB.getProgramInfoForMediaSourceLibrary(
         library.uuid,
         ProgramType.OtherVideo,
       );
@@ -138,6 +138,23 @@ export abstract class MediaSourceOtherVideoScanner<
           this.logger.warn('No upserted video');
         }
       }
+
+      const missingVideos = differenceWith(
+        values(existingPrograms),
+        [...seenVideos.values()],
+        (existing, seen) => existing.externalKey === seen,
+      );
+
+      await this.programDB.updateProgramsState(
+        missingVideos.map((ep) => ep.uuid),
+        'missing',
+      );
+      await this.searchService.updatePrograms(
+        missingVideos.map((ep) => ({
+          id: ep.uuid,
+          state: 'missing',
+        })),
+      );
 
       this.logger.debug('Completed scanning library %s', context.library.uuid);
     } finally {

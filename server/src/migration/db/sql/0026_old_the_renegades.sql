@@ -1,0 +1,1 @@
+ALTER TABLE `program` ADD `state` text DEFAULT 'ok' NOT NULL;

@@ -1,5 +1,7 @@
 import type {
   IProgramDB,
+  ProgramCanonicalIdLookupResult,
+  ProgramGroupingCanonicalIdLookupResult,
   ProgramGroupingChildCounts,
   ProgramGroupingExternalIdLookup,
   UpsertResult,
@@ -150,7 +152,6 @@ import {
   NewProgramGroupingExternalId,
   NewSingleOrMultiProgramGroupingExternalId,
   ProgramGroupingExternalId,
-  ProgramGroupingExternalIdFieldsWithAlias,
   toInsertableProgramGroupingExternalId,
 } from './schema/ProgramGroupingExternalId.ts';
 import {
@@ -170,6 +171,7 @@ import {
   MediaSourceId,
   MediaSourceName,
   MediaSourceType,
+  ProgramState,
 } from './schema/base.js';
 import { DB } from './schema/db.ts';
 import type {
@@ -1673,60 +1675,178 @@ export class ProgramDB implements IProgramDB {
       .execute();
   }
 
-  async getProgramCanonicalIdsForMediaSource(
+  async getProgramInfoForMediaSource(
+    mediaSourceId: MediaSourceId,
+    type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
+  ) {
+    const results = await this.drizzleDB.query.program.findMany({
+      where: (fields, { eq, and, isNotNull }) => {
+        const parentField = match([type, parentFilter?.[0]])
+          .with(['episode', 'show'], () => fields.tvShowUuid)
+          .with(['episode', 'season'], () => fields.seasonUuid)
+          .with(['track', 'album'], () => fields.albumUuid)
+          .with(['track', 'artist'], () => fields.artistUuid)
+          .otherwise(() => null);
+
+        return and(
+          eq(fields.mediaSourceId, mediaSourceId),
+          eq(fields.type, type),
+          isNotNull(fields.canonicalId),
+          parentField && parentFilter
+            ? eq(parentField, parentFilter[1])
+            : undefined,
+        );
+      },
+    });
+
+    const grouped: Dictionary<ProgramCanonicalIdLookupResult> = {};
+    for (const result of results) {
+      if (!result.canonicalId || !result.libraryId) {
+        continue;
+      }
+      grouped[result.externalKey] = {
+        canonicalId: result.canonicalId,
+        externalKey: result.externalKey,
+        libraryId: result.libraryId,
+        uuid: result.uuid,
+      };
+    }
+
+    return grouped;
+  }
+
+  async getProgramInfoForMediaSourceLibrary(
     mediaSourceLibraryId: string,
     type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
   ) {
-    return this.db
-      .selectFrom('program')
-      .where('program.libraryId', '=', mediaSourceLibraryId)
-      .where('program.type', '=', type)
-      .where('program.canonicalId', 'is not', null)
-      .select([
-        'program.uuid',
-        'program.externalKey',
-        'program.canonicalId',
-        'program.libraryId',
-      ])
-      .$narrowType<{ canonicalId: string; libraryId: string }>()
-      .execute()
-      .then((result) => groupByUniq(result, (p) => p.externalKey));
+    const grouped: Dictionary<ProgramCanonicalIdLookupResult> = {};
+    for await (const result of this.getProgramInfoForMediaSourceLibraryAsync(
+      mediaSourceLibraryId,
+      type,
+      parentFilter,
+    )) {
+      if (!result.canonicalId || !result.libraryId) {
+        continue;
+      }
+      grouped[result.externalKey] = {
+        canonicalId: result.canonicalId,
+        externalKey: result.externalKey,
+        libraryId: result.libraryId,
+        uuid: result.uuid,
+      };
+    }
+
+    return grouped;
+  }
+
+  async *getProgramInfoForMediaSourceLibraryAsync(
+    mediaSourceLibraryId: string,
+    type: ProgramType,
+    parentFilter?: [ProgramGroupingType, string],
+  ): AsyncGenerator<ProgramCanonicalIdLookupResult> {
+    let lastId: Maybe<string>;
+    for (;;) {
+      const page = await this.drizzleDB.query.program.findMany({
+        where: (fields, { eq, and, isNotNull, gt }) => {
+          const parentField = match([type, parentFilter?.[0]])
+            .with(['episode', 'show'], () => fields.tvShowUuid)
+            .with(['episode', 'season'], () => fields.seasonUuid)
+            .with(['track', 'album'], () => fields.albumUuid)
+            .with(['track', 'artist'], () => fields.artistUuid)
+            .otherwise(() => null);
+
+          return and(
+            eq(fields.libraryId, mediaSourceLibraryId),
+            eq(fields.type, type),
+            isNotNull(fields.canonicalId),
+            parentField && parentFilter
+              ? eq(parentField, parentFilter[1])
+              : undefined,
+            lastId ? gt(fields.uuid, lastId) : undefined,
+          );
+        },
+        orderBy: (fields, ops) => ops.asc(fields.uuid),
+        columns: {
+          uuid: true,
+          canonicalId: true,
+          libraryId: true,
+          externalKey: true,
+        },
+        limit: 500,
+      });
+
+      if (page.length === 0) {
+        return;
+      }
+
+      lastId = last(page)?.uuid;
+      for (const item of page) {
+        if (item.canonicalId && item.libraryId) {
+          yield {
+            externalKey: item.externalKey,
+            canonicalId: item.canonicalId,
+            uuid: item.uuid,
+            libraryId: item.libraryId,
+          };
+        }
+      }
+    }
   }
 
   async getProgramGroupingCanonicalIds(
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,
     sourceType: StrictExclude<MediaSourceType, 'local'>,
+    parentFilter?: string,
   ) {
-    return this.db
-      .selectFrom('programGrouping')
-      .where('programGrouping.libraryId', '=', mediaSourceLibraryId)
-      .where('programGrouping.type', '=', type)
-      .where('programGrouping.canonicalId', 'is not', null)
-      .select((eb) =>
-        jsonArrayFrom(
-          eb
-            .selectFrom('programGroupingExternalId as eid')
-            .where('eid.sourceType', '=', sourceType)
-            .whereRef('eid.groupUuid', '=', 'programGrouping.uuid')
-            .select(
-              ProgramGroupingExternalIdFieldsWithAlias(
-                ['externalKey', 'mediaSourceId', 'sourceType'],
-                'eid',
-              ),
-            ),
-        ).as('externalIds'),
-      )
-      .select([
-        'programGrouping.uuid',
-        'programGrouping.canonicalId',
-        'programGrouping.libraryId',
-      ])
-      .$narrowType<{ canonicalId: string; libraryId: string }>()
-      .execute()
-      .then((result) =>
-        groupByUniq(result, (p) => head(p.externalIds)?.externalKey ?? ''),
-      );
+    const results = await this.drizzleDB.query.programGrouping.findMany({
+      where: (fields, { and, eq, isNotNull }) => {
+        const parentField = match(type)
+          // .returnType<ProgramGroupingType | null>()
+          .with('album', () => fields.artistUuid)
+          .with('season', () => fields.showUuid)
+          .otherwise(() => null);
+        return and(
+          eq(fields.libraryId, mediaSourceLibraryId),
+          eq(fields.type, type),
+          isNotNull(fields.canonicalId),
+          parentField && parentFilter
+            ? eq(parentField, parentFilter)
+            : undefined,
+        );
+      },
+      with: {
+        externalIds: {
+          where: (fields, { eq }) => eq(fields.sourceType, sourceType),
+        },
+      },
+      columns: {
+        uuid: true,
+        canonicalId: true,
+        libraryId: true,
+      },
+    });
+
+    const grouped: Dictionary<ProgramGroupingCanonicalIdLookupResult> = {};
+    for (const result of results) {
+      const key = head(result.externalIds)?.externalKey;
+      if (!key) {
+        continue;
+      }
+      if (!result.canonicalId) {
+        continue;
+      }
+      grouped[key] = {
+        canonicalId: result.canonicalId,
+        externalKey: key,
+        libraryId: result.libraryId!,
+        uuid: result.uuid,
+      };
+    }
+
+    return grouped;
   }
 
   async upsertProgramGrouping(
@@ -2250,6 +2370,25 @@ export class ProgramDB implements IProgramDB {
         externalIds: true,
       },
     });
+  }
+
+  async updateProgramsState(
+    programIds: string[],
+    newState: ProgramState,
+  ): Promise<void> {
+    if (programIds.length === 0) {
+      return;
+    }
+
+    for (const idChunk of chunk(programIds, 100)) {
+      await this.drizzleDB
+        .update(Program)
+        .set({
+          state: newState,
+        })
+        .where(inArray(Program.uuid, idChunk))
+        .execute();
+    }
   }
 
   private async handleProgramGroupings(

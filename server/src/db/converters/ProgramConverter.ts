@@ -197,6 +197,7 @@ export class ProgramConverter {
               type: art.artworkType,
             }) satisfies MediaArtwork,
         ) ?? [],
+      state: program.state,
     } satisfies Partial<TerminalProgram>;
 
     const typed = match(program)

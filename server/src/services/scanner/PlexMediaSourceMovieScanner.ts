@@ -77,12 +77,4 @@ export class PlexMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
   ): Promise<Result<PlexMovie>> {
     return apiClient.getMovie(incomingMovie.externalId);
   }
-
-  protected getCanonicalId(entity: PlexMovie): string {
-    return entity.canonicalId;
-  }
-
-  protected getExternalKey(entity: PlexMovie): string {
-    return entity.externalId;
-  }
 }

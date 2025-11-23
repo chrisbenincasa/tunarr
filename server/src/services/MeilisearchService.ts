@@ -1,5 +1,11 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
-import { FindChild, tag, Tag, TupleToUnion } from '@tunarr/types';
+import {
+  FindChild,
+  tag,
+  Tag,
+  TerminalProgram,
+  TupleToUnion,
+} from '@tunarr/types';
 import { SearchFilter } from '@tunarr/types/api';
 import {
   ExternalIdType,
@@ -28,9 +34,11 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
+import { MarkRequired } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import serverPackage from '../../package.json' with { type: 'json' };
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import { ProgramState } from '../db/schema/base.ts';
 import { ProgramType } from '../db/schema/Program.ts';
 import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
 import { ServerOptions } from '../globals.ts';
@@ -56,7 +64,7 @@ import {
 } from '../types/Media.ts';
 import { Path } from '../types/path.ts';
 import { Result } from '../types/result.ts';
-import { Maybe, Nullable } from '../types/util.ts';
+import { Maybe, Nilable, Nullable } from '../types/util.ts';
 import {
   ChildProcessHelper,
   ChildProcessWrapper,
@@ -142,6 +150,10 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'videoWidth',
     'audioChannels',
     'audioCodec',
+    'state',
+    'studio',
+    'parent.studio',
+    'grandparent.studio',
   ],
   sortable: [
     'title',
@@ -275,6 +287,7 @@ export type TerminalProgramSearchDocument<
   videoWidth?: number;
   audioCodec?: string;
   audioChannels?: number;
+  state: ProgramState;
 };
 
 export type ProgramSearchDocument =
@@ -632,6 +645,41 @@ export class MeilisearchService implements ISearchService {
           programs.map((p) => this.convertProgramToSearchDocument(p)),
           100,
         ),
+    );
+  }
+
+  async updateMovie(
+    movies: MarkRequired<
+      Partial<Movie & HasMediaSourceAndLibraryId>,
+      'uuid' | 'type'
+    >[],
+  ) {
+    if (isEmpty(movies)) {
+      return;
+    }
+
+    return await Promise.all(
+      this.#client
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .updateDocumentsInBatches(
+          movies.map((movie) =>
+            this.convertPartialProgramToSearchDocument(movie),
+          ),
+          100,
+        ),
+    );
+  }
+
+  async updatePrograms(
+    programs: MarkRequired<
+      Partial<TerminalProgramSearchDocument<ProgramType>>,
+      'id'
+    >[],
+  ) {
+    return await Promise.all(
+      this.#client
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .updateDocumentsInBatches(programs, 100),
     );
   }
 
@@ -1344,7 +1392,125 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
+  }
+
+  private convertPartialProgramToSearchDocument<
+    ProgramT extends MarkRequired<
+      Partial<TerminalProgram & HasMediaSourceAndLibraryId>,
+      'uuid' | 'type'
+    >,
+  >(
+    program: ProgramT,
+  ): Partial<TerminalProgramSearchDocument<NoInfer<ProgramT['type']>>> {
+    const validEids = program.identifiers
+      ?.map((eid) => ({
+        id: eid.id,
+        source: eid.type,
+        sourceId: eid.sourceId
+          ? encodeCaseSensitiveId(eid.sourceId)
+          : undefined,
+      }))
+      .filter((eid) => {
+        if (
+          isValidMultiExternalIdType(eid.source) &&
+          isNonEmptyString(eid.sourceId)
+        ) {
+          return true;
+        } else if (
+          isValidSingleExternalIdType(eid.source) &&
+          isEmpty(eid.sourceId)
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+    if (isEmpty(validEids)) {
+      this.logger.warn('No external ids for item id %s', program.uuid);
+    }
+
+    const mergedExternalIds = validEids?.map(
+      (eid) =>
+        `${eid.source}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
+    );
+
+    const width = program.mediaItem?.resolution?.widthPx;
+    const height = program.mediaItem?.resolution?.heightPx;
+    const videoStream = find(program.mediaItem?.streams, {
+      streamType: 'video',
+    });
+    const audioStream = find(program.mediaItem?.streams, {
+      streamType: 'audio',
+    });
+
+    let summary: Nilable<string>;
+    switch (program.type) {
+      case 'movie':
+      case 'episode':
+        summary = program?.summary;
+        break;
+      case 'track':
+      case 'other_video':
+      case 'music_video':
+      default:
+        summary = null;
+        break;
+    }
+
+    let rating: Nilable<string>;
+    switch (program.type) {
+      case 'movie':
+        rating = program.rating;
+        break;
+      case 'episode':
+        rating = program.season?.show?.rating ?? null;
+        break;
+      default:
+        break;
+    }
+
+    return {
+      id: program.uuid,
+      duration: program.duration,
+      externalIds: validEids,
+      externalIdsMerged: mergedExternalIds,
+      originalReleaseDate: Result.attempt(() => dayjs(program.releaseDate))
+        .map((_) => _.valueOf())
+        .getOrElse(() => null),
+      originalReleaseYear: program.year,
+      summary,
+      plot: null,
+      tagline: program.type === 'movie' ? program.tagline : null,
+      title: program.title,
+      titleReverse: program.title?.split('').reverse().join(''),
+      type: program.type,
+      index:
+        program.type === 'episode'
+          ? program.episodeNumber
+          : program.type === 'track'
+            ? program.trackNumber
+            : undefined,
+      rating,
+      genres: program.genres ?? [],
+      actors: program.actors ?? [],
+      director: program.directors ?? [],
+      writer: program.writers ?? [],
+      tags: program.tags,
+      mediaSourceId: program.mediaSourceId
+        ? encodeCaseSensitiveId(program.mediaSourceId)
+        : undefined,
+      libraryId: program.libraryId
+        ? encodeCaseSensitiveId(program.libraryId)
+        : undefined,
+      videoWidth: width,
+      videoHeight: height,
+      videoCodec: videoStream?.codec,
+      videoBitDepth: nullToUndefined(videoStream?.bitDepth),
+      audioCodec: audioStream?.codec,
+      audioChannels: nullToUndefined(audioStream?.channels),
+    }; // satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 
   private async syncIndexSettings(index: GenericTunarrSearchIndex) {

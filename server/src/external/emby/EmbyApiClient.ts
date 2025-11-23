@@ -961,6 +961,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('banner', movie, 'Banner'),
         this.embyArtworkProjection('thumbnail', movie, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1264,6 +1265,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('banner', episode, 'Banner'),
         this.embyArtworkProjection('thumbnail', episode, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1402,6 +1404,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('banner', track, 'Banner'),
         this.embyArtworkProjection('thumbnail', track, 'Thumb'),
       ]),
+      state: 'ok',
     } satisfies EmbyMusicTrack;
   }
 
@@ -1476,6 +1479,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('banner', video, 'Banner'),
         this.embyArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 
@@ -1550,6 +1554,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('banner', video, 'Banner'),
         this.embyArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
+      state: 'ok',
     };
   }
 

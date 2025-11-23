@@ -90,12 +90,4 @@ export class EmbyMediaSourceMovieScanner extends MediaSourceMovieLibraryScanner<
       .getChildItemCount(libraryKey, 'Movie')
       .then((_) => _.getOrThrow());
   }
-
-  protected getCanonicalId(entity: EmbyMovie): string {
-    return entity.canonicalId;
-  }
-
-  protected getExternalKey(entity: EmbyMovie): string {
-    return entity.externalId;
-  }
 }

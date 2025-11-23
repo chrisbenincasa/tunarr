@@ -22,13 +22,13 @@ export const NfoUniqueId = z.object({
   '@_default': z.stringbool().optional(),
 });
 
-const NfoAudioStream = z.object({
+export const NfoAudioStream = z.object({
   codec: z.string(),
   language: z.string(),
   channels: z.number(),
 });
 
-const NfoVideoStream = z.object({
+export const NfoVideoStream = z.object({
   codec: z.string(),
   aspect: z.number().or(z.string()).optional(),
   width: z.number(),
@@ -38,7 +38,7 @@ const NfoVideoStream = z.object({
   hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']).nullish().catch(''),
 });
 
-const NfoSubtitleStream = z.object({
+export const NfoSubtitleStream = z.object({
   language: z.string(),
 });
 

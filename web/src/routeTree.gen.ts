@@ -32,6 +32,7 @@ import { Route as ChannelsTestRouteImport } from './routes/channels_/test';
 import { Route as ChannelsNewRouteImport } from './routes/channels_/new';
 import { Route as ChannelsChannelIdRouteRouteImport } from './routes/channels_/$channelId/route';
 import { Route as Media_sourcesMediaSourceIdIndexRouteImport } from './routes/media_sources_/$mediaSourceId/index';
+import { Route as LibraryTrashIndexRouteImport } from './routes/library/trash_/index';
 import { Route as LibrarySmart_collectionsIndexRouteImport } from './routes/library/smart_collections/index';
 import { Route as ChannelsChannelIdIndexRouteImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewRouteImport } from './routes/settings/ffmpeg_/new';
@@ -173,6 +174,11 @@ const Media_sourcesMediaSourceIdIndexRoute =
     path: '/media_sources/$mediaSourceId/',
     getParentRoute: () => rootRouteImport,
   } as any);
+const LibraryTrashIndexRoute = LibraryTrashIndexRouteImport.update({
+  id: '/library/trash_/',
+  path: '/library/trash/',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LibrarySmart_collectionsIndexRoute =
   LibrarySmart_collectionsIndexRouteImport.update({
     id: '/library/smart_collections/',
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId/': typeof ChannelsChannelIdIndexRoute;
   '/library/smart_collections': typeof LibrarySmart_collectionsIndexRoute;
+  '/library/trash': typeof LibraryTrashIndexRoute;
   '/media_sources/$mediaSourceId': typeof Media_sourcesMediaSourceIdIndexRoute;
   '/channels/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
@@ -390,6 +397,7 @@ export interface FileRoutesByTo {
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId': typeof ChannelsChannelIdIndexRoute;
   '/library/smart_collections': typeof LibrarySmart_collectionsIndexRoute;
+  '/library/trash': typeof LibraryTrashIndexRoute;
   '/media_sources/$mediaSourceId': typeof Media_sourcesMediaSourceIdIndexRoute;
   '/channels/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/settings/ffmpeg_/new': typeof SettingsFfmpegNewRoute;
   '/channels_/$channelId/': typeof ChannelsChannelIdIndexRoute;
   '/library/smart_collections/': typeof LibrarySmart_collectionsIndexRoute;
+  '/library/trash_/': typeof LibraryTrashIndexRoute;
   '/media_sources_/$mediaSourceId/': typeof Media_sourcesMediaSourceIdIndexRoute;
   '/channels_/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels_/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg/new'
     | '/channels/$channelId/'
     | '/library/smart_collections'
+    | '/library/trash'
     | '/media_sources/$mediaSourceId'
     | '/channels/$channelId/programming/add'
     | '/channels/$channelId/programming/slot-editor'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg/new'
     | '/channels/$channelId'
     | '/library/smart_collections'
+    | '/library/trash'
     | '/media_sources/$mediaSourceId'
     | '/channels/$channelId/programming/add'
     | '/channels/$channelId/programming/slot-editor'
@@ -585,6 +596,7 @@ export interface FileRouteTypes {
     | '/settings/ffmpeg_/new'
     | '/channels_/$channelId/'
     | '/library/smart_collections/'
+    | '/library/trash_/'
     | '/media_sources_/$mediaSourceId/'
     | '/channels_/$channelId/programming/add'
     | '/channels_/$channelId/programming/slot-editor'
@@ -622,6 +634,7 @@ export interface RootRouteChildren {
   LibraryFillersNewRouteRoute: typeof LibraryFillersNewRouteRouteWithChildren;
   LibrarySmart_collectionsIdRoute: typeof LibrarySmart_collectionsIdRoute;
   LibrarySmart_collectionsIndexRoute: typeof LibrarySmart_collectionsIndexRoute;
+  LibraryTrashIndexRoute: typeof LibraryTrashIndexRoute;
   Media_sourcesMediaSourceIdIndexRoute: typeof Media_sourcesMediaSourceIdIndexRoute;
   Media_sourcesMediaSourceIdLibrariesLibraryIdRoute: typeof Media_sourcesMediaSourceIdLibrariesLibraryIdRoute;
 }
@@ -787,6 +800,13 @@ declare module '@tanstack/react-router' {
       path: '/media_sources/$mediaSourceId';
       fullPath: '/media_sources/$mediaSourceId';
       preLoaderRoute: typeof Media_sourcesMediaSourceIdIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/library/trash_/': {
+      id: '/library/trash_/';
+      path: '/library/trash';
+      fullPath: '/library/trash';
+      preLoaderRoute: typeof LibraryTrashIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/library/smart_collections/': {
@@ -1119,6 +1139,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryFillersNewRouteRoute: LibraryFillersNewRouteRouteWithChildren,
   LibrarySmart_collectionsIdRoute: LibrarySmart_collectionsIdRoute,
   LibrarySmart_collectionsIndexRoute: LibrarySmart_collectionsIndexRoute,
+  LibraryTrashIndexRoute: LibraryTrashIndexRoute,
   Media_sourcesMediaSourceIdIndexRoute: Media_sourcesMediaSourceIdIndexRoute,
   Media_sourcesMediaSourceIdLibrariesLibraryIdRoute:
     Media_sourcesMediaSourceIdLibrariesLibraryIdRoute,

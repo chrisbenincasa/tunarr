@@ -55,14 +55,19 @@ export const ProgramGrouping = sqliteTable(
     title: text().notNull(),
     type: text({ enum: ProgramGroupingTypes }).notNull(),
     year: integer(),
-    artistUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid),
-    showUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid),
-    libraryId: text().references(() => MediaSourceLibrary.uuid),
+    artistUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid, {
+      onDelete: 'cascade',
+    }),
+    showUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid, {
+      onDelete: 'cascade',
+    }),
+    libraryId: text().references(() => MediaSourceLibrary.uuid, {
+      onDelete: 'cascade',
+    }),
     sourceType: text({ enum: MediaSourceTypes }),
     externalKey: text(),
     mediaSourceId: text()
       .references(() => MediaSource.uuid, {
-        onUpdate: 'no action',
         onDelete: 'cascade',
       })
       .$type<MediaSourceId>(),
