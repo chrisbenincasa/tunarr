@@ -3,7 +3,7 @@ import { first, intersection, isObject, isString } from 'lodash-es';
 import { z } from 'zod/v4';
 
 const queryKeySchema = z.object({
-  tags: z.string().array(),
+  tags: z.string().array().optional(),
 });
 
 export function invalidateTaggedQueries(tagsToMatch: string | string[]) {
@@ -27,6 +27,8 @@ export function invalidateTaggedQueries(tagsToMatch: string | string[]) {
       console.warn(z.prettifyError(parseResult.error), key, query.queryKey);
       return false;
     }
+
+    console.log(query.queryKey, parseResult.data.tags, tagsToMatch);
 
     return intersection(parseResult.data.tags, tagsToMatch).length > 0;
   };

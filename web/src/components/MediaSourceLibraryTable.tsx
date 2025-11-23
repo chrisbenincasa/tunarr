@@ -1,25 +1,35 @@
-import { Radar, Refresh, VideoLibrary } from '@mui/icons-material';
+import {
+  HourglassTop,
+  Radar,
+  Refresh,
+  VideoLibrary,
+} from '@mui/icons-material';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
-import { usePrevious } from '@uidotdev/usehooks';
+import type { ScanProgress } from '@tunarr/types/api';
 import { capitalize, maxBy, some } from 'lodash-es';
 import type { MRT_ColumnDef } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getApiMediaLibrariesByLibraryIdQueryKey } from '../generated/@tanstack/react-query.gen.ts';
-import { invalidateTaggedQueries } from '../helpers/queryUtil.ts';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  getApiMediaLibrariesByLibraryIdQueryKey,
+  getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions,
+  getApiMediaSourcesQueryKey,
+} from '../generated/@tanstack/react-query.gen.ts';
 import {
   useLibraryScanState,
   useScanLibraryMutation,
 } from '../hooks/media-sources/mediaSourceLibraryHooks.ts';
 import { useMediaSources } from '../hooks/settingsHooks.ts';
 import { useDayjs } from '../hooks/useDayjs.ts';
+import { useQueryObserver } from '../hooks/useQueryObserver.ts';
+import type { Nullable } from '../types/util.ts';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
   mediaSource: MediaSourceSettings;
@@ -41,7 +51,9 @@ const MediaSourceLibraryTableActionCell = ({
     library.id,
     isRefreshing,
   );
-  const prevScanState = usePrevious(scanStateQuery.data);
+  const [prevScanState, setPrevScanState] =
+    useState<Nullable<ScanProgress['state']>>(null);
+
   const queryClient = useQueryClient();
 
   const startRefresh = useCallback(
@@ -74,19 +86,47 @@ const MediaSourceLibraryTableActionCell = ({
     [library.id, library.mediaSource.id, queryClient, refreshLibraryMutation],
   );
 
-  useEffect(() => {
-    if (
-      (!prevScanState || prevScanState?.state === 'in_progress') &&
-      scanStateQuery.data?.state === 'not_scanning'
-    ) {
-      setIsRefreshing(false);
-      queryClient
-        .invalidateQueries({
-          predicate: invalidateTaggedQueries('Media Source'),
-        })
-        .catch(console.error);
-    }
-  }, [library.id, prevScanState, queryClient, scanStateQuery.data?.state]);
+  const opts = useMemo(
+    () =>
+      getApiMediaSourcesByMediaSourceIdByLibraryIdStatusOptions({
+        path: {
+          mediaSourceId: mediaSource.id,
+          libraryId: library.id,
+        },
+      }),
+    [library.id, mediaSource.id],
+  );
+
+  useQueryObserver(
+    opts,
+    useCallback(
+      (result) => {
+        if (result.status !== 'success') {
+          return;
+        }
+
+        if (!isRefreshing) {
+          return;
+        }
+
+        if (
+          (prevScanState === 'in_progress' || prevScanState === 'queued') &&
+          result.data?.state === 'not_scanning'
+        ) {
+          setIsRefreshing(false);
+          setPrevScanState(null);
+          queryClient
+            .invalidateQueries({
+              queryKey: getApiMediaSourcesQueryKey(),
+            })
+            .catch(console.error);
+        } else {
+          setPrevScanState(result.data.state);
+        }
+      },
+      [isRefreshing, prevScanState, queryClient],
+    ),
+  );
 
   const link =
     mediaSource.type === 'local'
@@ -100,26 +140,45 @@ const MediaSourceLibraryTableActionCell = ({
           <VideoLibrary />
         </IconButton>
       </Tooltip>
-      <Tooltip placement="top" title={library.isLocked ? 'Scanning' : 'Scan'}>
+      <Tooltip
+        placement="top"
+        title={
+          scanStateQuery.data?.state === 'queued'
+            ? 'Queued'
+            : library.isLocked
+              ? 'Scanning'
+              : 'Scan'
+        }
+      >
         <span>
           <IconButton
             disabled={library.isLocked}
             onClick={() => startRefresh()}
           >
-            <Refresh
-              sx={{
-                animation: library.isLocked
-                  ? 'spin 2s linear infinite'
-                  : undefined,
-              }}
-            />
+            {scanStateQuery.data?.state === 'queued' ? (
+              <HourglassTop />
+            ) : (
+              <Refresh
+                sx={{
+                  animation: library.isLocked
+                    ? 'spin 2s linear infinite'
+                    : undefined,
+                }}
+              />
+            )}
           </IconButton>
         </span>
       </Tooltip>
       {!isRefreshing && (
         <Tooltip
           placement="top"
-          title={library.isLocked ? 'Scanning' : 'Force Scan'}
+          title={
+            scanStateQuery.data?.state === 'queued'
+              ? 'Queued'
+              : library.isLocked
+                ? 'Scanning'
+                : 'Scan'
+          }
         >
           <span>
             <IconButton
@@ -137,7 +196,7 @@ const MediaSourceLibraryTableActionCell = ({
           </span>
         </Tooltip>
       )}
-      {(isRefreshing || scanStateQuery.data?.state === 'in_progress') && (
+      {isRefreshing && (
         <Box
           component="span"
           sx={{
