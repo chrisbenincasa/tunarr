@@ -1180,7 +1180,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       title: plexSeason.title,
       sortTitle: titleToSortTitle(plexSeason.title),
       type: ProgramGroupingType.Season,
-      index: plexSeason.index,
+      index: plexSeason.index ?? 1, // Not great
       releaseDate: null,
       releaseDateString: null,
       plot: plexSeason.summary ?? null,
