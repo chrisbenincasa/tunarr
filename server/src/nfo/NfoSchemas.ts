@@ -24,7 +24,7 @@ export const NfoUniqueId = z.object({
 
 export const NfoAudioStream = z.object({
   codec: z.string(),
-  language: z.string(),
+  language: z.string().optional(),
   channels: z.number(),
 });
 
@@ -39,7 +39,7 @@ export const NfoVideoStream = z.object({
 });
 
 export const NfoSubtitleStream = z.object({
-  language: z.string(),
+  language: z.string().optional(),
 });
 
 export const NfoFileInfo = z.object({
