@@ -414,6 +414,7 @@ export class MeilisearchService implements ISearchService {
           '--db-path',
           `${this.dbPath}`,
           '--no-analytics',
+          '--experimental-dumpless-upgrade',
         ];
 
         const indexingRamSetting =
