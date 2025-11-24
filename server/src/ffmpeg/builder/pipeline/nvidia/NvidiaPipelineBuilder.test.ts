@@ -13,6 +13,7 @@ import {
   SubtitleMethods,
   VideoStream,
 } from '../../MediaStream.ts';
+import { ThreadCountOption } from '../../options/GlobalOption.ts';
 import {
   DefaultPipelineOptions,
   FfmpegState,
@@ -94,6 +95,9 @@ describe('NvidiaPipelineBuilder', () => {
       DefaultPipelineOptions,
     );
 
+    const thread = out.steps.find((step) => step instanceof ThreadCountOption);
+    expect(thread).toBeInstanceOf(ThreadCountOption);
+    expect(thread?.options()).toEqual(['-threads', '1']);
     console.log(out.getCommandArgs().join(' '));
   });
 
