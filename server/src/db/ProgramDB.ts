@@ -246,10 +246,12 @@ export class ProgramDB implements IProgramDB {
         externalIds: true,
         artwork: true,
         subtitles: true,
+        credits: true,
         versions: {
           with: {
             mediaStreams: true,
             mediaFiles: true,
+            chapters: true,
           },
         },
       },

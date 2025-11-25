@@ -20,13 +20,15 @@ export const Credit = sqliteTable(
     index: integer(),
     createdAt: integer({ mode: 'timestamp_ms' }),
     updatedAt: integer({ mode: 'timestamp_ms' }),
-
     programId: text().references(() => Program.uuid, { onDelete: 'cascade' }),
     groupingId: text().references(() => ProgramGrouping.uuid, {
       onDelete: 'cascade',
     }),
   },
-  (table) => [index('credit_program_id_idx').on(table.programId)],
+  (table) => [
+    index('credit_program_id_idx').on(table.programId),
+    index('credit_grouping_id_idx').on(table.groupingId),
+  ],
 );
 
 export const CreditRelations = relations(Credit, ({ many, one }) => ({

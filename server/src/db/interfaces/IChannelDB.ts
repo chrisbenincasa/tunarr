@@ -11,7 +11,7 @@ import type {
   ChannelOrmWithRelations,
   ChannelWithRelations,
   MusicArtistOrm,
-  ProgramWithRelations,
+  ProgramWithRelationsOrm,
   TvShowOrm,
 } from '@/db/schema/derivedTypes.js';
 import type { ChannelAndLineup } from '@/types/internal.js';
@@ -73,7 +73,7 @@ export interface IChannelDB {
     id: string,
     pageParams?: PageParams,
     typeFilter?: ContentProgramType,
-  ): Promise<ProgramWithRelations[]>;
+  ): Promise<PagedResult<ProgramWithRelationsOrm>>;
 
   getChannelProgramExternalIds(uuid: string): Promise<ProgramExternalId[]>;
 

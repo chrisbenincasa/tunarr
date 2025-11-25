@@ -29,6 +29,7 @@ import {
   MusicArtist,
   SaveableChannelSchema,
   Show as ShowSchema,
+  TerminalProgramSchema,
   TranscodeConfigSchema,
   TvGuideProgramSchema,
 } from '@tunarr/types/schemas';
@@ -49,6 +50,7 @@ import z from 'zod/v4';
 import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializedChannelScheduleCommand.ts';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
+import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
 import type { SessionType } from '../stream/Session.ts';
@@ -358,29 +360,32 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         tags: ['Channels'],
         response: {
-          200: z.array(ContentProgramSchema).readonly(),
+          200: PagedResult(z.array(TerminalProgramSchema)),
           404: z.void(),
         },
       },
     },
     async (req, res) => {
-      const programs = await req.serverCtx.channelDB.getChannelPrograms(
-        req.params.id,
-        {
-          offset: req.query.offset,
-          limit: req.query.limit,
-        },
-        req.query.type,
-      );
+      const { results: programs, total } =
+        await req.serverCtx.channelDB.getChannelPrograms(
+          req.params.id,
+          {
+            offset: req.query.offset,
+            limit: req.query.limit,
+          },
+          req.query.type,
+        );
 
-      return res.send(
-        seq.collect(programs, (program) =>
-          req.serverCtx.programConverter.programDaoToContentProgram(
-            program,
-            program.externalIds ?? [],
-          ),
-        ),
+      const materializer = container.get<MaterializeProgramsCommand>(
+        MaterializeProgramsCommand,
       );
+      const materialized = await materializer.execute(programs);
+
+      return res.send({
+        result: materialized,
+        size: materialized.length,
+        total,
+      });
     },
   );
 

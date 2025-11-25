@@ -2,12 +2,18 @@ import { Box } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type {
   ContentProgramParent,
+  Episode,
+  MusicAlbum,
   MusicArtist,
+  MusicTrack,
   ProgramOrFolder,
+  Season,
   Show,
+  TerminalProgram,
 } from '@tunarr/types';
+import type { PagedResult, ProgramChildrenResult } from '@tunarr/types/api';
 import { type ContentProgramType } from '@tunarr/types/schemas';
-import { identity, isEmpty, last, sumBy } from 'lodash-es';
+import { sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import {
   getApiChannelsByIdArtists,
@@ -87,12 +93,12 @@ export const ChannelProgramGrid = ({
         },
         throwOnError: true,
       }).then(({ data }) => data),
-    getNextPageParam: (pages, x) => {
-      if (pages.length > 0 && isEmpty(last(pages))) {
+    getNextPageParam: (currentPage, pages) => {
+      if ((currentPage.result?.length ?? 0) === 0) {
         return null;
       }
 
-      const totalSize = sumBy(x, (x) => x.length);
+      const totalSize = sumBy(pages, (page) => page.result.length);
       return totalSize;
     },
     initialPageParam: 0,
@@ -104,10 +110,7 @@ export const ChannelProgramGrid = ({
     queryKey: ['channels', channelId, 'programs', programType, 'infinite'],
     queryFn: async ({
       pageParam,
-    }): Promise<{
-      total: number;
-      result: Array<Show> | Array<MusicArtist>;
-    }> => {
+    }): Promise<PagedResult<Show[] | MusicArtist[]>> => {
       const prom = await (programType === 'show'
         ? getApiChannelsByIdShows({
             path: { id: channelId },
@@ -165,11 +168,10 @@ export const ChannelProgramGrid = ({
     enabled: gridType === 'nested',
   });
 
-  const renderParentProgramGridItem = useCallback(
-    (props: GridItemProps<ProgramOrFolder>) => (
+  const renderProgramGridItem = useCallback(
+    <T extends ProgramOrFolder>(props: GridItemProps<T>) => (
       <ProgramGridItem
         key={props.item.uuid}
-        // disableSelection={disableProgramSelection}
         disableSelection
         persisted
         {...props}
@@ -187,13 +189,13 @@ export const ChannelProgramGrid = ({
       }}
     >
       {gridType === 'parent' ? (
-        <MediaItemGrid
+        <MediaItemGrid<PagedResult<MusicArtist[] | Show[]>, MusicArtist | Show>
           infiniteQuery={nestedQuery}
+          extractItems={(page) => page.result}
           getPageDataSize={(page) => ({
             size: page.result.length,
             total: page.total,
           })}
-          extractItems={(page) => page.result}
           renderNestedGrid={(props) => (
             <ChannelProgramGrid
               channelId={channelId}
@@ -202,12 +204,15 @@ export const ChannelProgramGrid = ({
               parentId={props.parent?.uuid}
             />
           )}
-          renderGridItem={renderParentProgramGridItem}
+          renderGridItem={renderProgramGridItem}
           getItemKey={(p) => p.uuid}
           depth={depth}
         />
       ) : gridType === 'nested' ? (
-        <MediaItemGrid
+        <MediaItemGrid<
+          ProgramChildrenResult,
+          Season | Episode | MusicTrack | MusicAlbum
+        >
           infiniteQuery={childrenQuery}
           getPageDataSize={(page) => ({
             size: page.result.programs.length,
@@ -222,17 +227,22 @@ export const ChannelProgramGrid = ({
               parentId={props.parent?.uuid}
             />
           )}
-          renderGridItem={renderParentProgramGridItem}
+          renderGridItem={renderProgramGridItem}
           getItemKey={(p) => p.uuid}
           depth={depth}
         />
       ) : (
-        <MediaItemGrid
+        <MediaItemGrid<PagedResult<TerminalProgram[]>, TerminalProgram>
           infiniteQuery={terminalQuery}
-          getPageDataSize={(page) => ({ size: page.length })}
-          extractItems={identity}
+          getPageDataSize={(page) => ({
+            size: page.result.length,
+            total: page.total,
+          })}
+          extractItems={(page) => page.result}
           renderNestedGrid={() => null}
-          renderGridItem={renderParentProgramGridItem}
+          renderGridItem={(props: GridItemProps<TerminalProgram>) => {
+            return renderProgramGridItem(props);
+          }}
           getItemKey={(p) => p.uuid}
           depth={depth}
         />

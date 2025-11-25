@@ -726,7 +726,9 @@ export const TerminalProgramSchema = z.union([
   MusicVideo,
 ]);
 
-export const ItemOrFolder = ItemSchema.or(StructuralProgramGroupingSchema);
+export const ItemOrFolder = TerminalProgramSchema.or(ProgramGroupingSchema).or(
+  StructuralProgramGroupingSchema,
+);
 
 z.globalRegistry.add(Show, { id: 'Show' });
 z.globalRegistry.add(Season, { id: 'Season' });

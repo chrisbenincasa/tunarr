@@ -43,6 +43,7 @@ import {
   flatten,
   forEach,
   groupBy,
+  head,
   isEmpty,
   isNil,
   isNull,
@@ -106,7 +107,6 @@ import { calculateStartTimeOffsets } from './lineupUtil.ts';
 import {
   AllProgramGroupingFields,
   withFallbackPrograms,
-  withProgramExternalIds,
   withPrograms,
   withTrackAlbum,
   withTrackArtist,
@@ -145,7 +145,7 @@ import {
   MusicArtistOrm,
   MusicArtistWithExternalIds,
   ProgramGroupingOrmWithRelations,
-  ProgramWithRelations,
+  ProgramWithRelationsOrm,
   TvSeasonOrm,
   TvShowOrm,
 } from './schema/derivedTypes.js';
@@ -640,34 +640,63 @@ export class ChannelDB implements IChannelDB {
     };
   }
 
-  getChannelPrograms(
+  async getChannelPrograms(
     id: string,
     pageParams?: PageParams,
     typeFilter?: ContentProgramType,
-  ): Promise<ProgramWithRelations[]> {
-    return (
-      this.db
-        .selectFrom('channelPrograms')
-        .where('channelPrograms.channelUuid', '=', id)
-        // .select(eb => withPrograms(eb, defaultWithProgramOptions, qb => qb.$if(!!typeFilter, b => b.where('program.type', ))))
-        .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-        .$if(!!typeFilter, (eb) => eb.where('program.type', '=', typeFilter!))
-        .selectAll('program')
-        .select(withProgramExternalIds)
-        .select(withTrackAlbum)
-        .select(withTrackArtist)
-        .select(withTvSeason)
-        .select(withTvShow)
-        .orderBy('program.uuid asc')
-        // TODO: Implement as cursor
-        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-          eb.offset(pageParams!.offset),
-        )
-        .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-          eb.limit(pageParams!.limit),
-        )
-        .execute()
-    );
+  ): Promise<PagedResult<ProgramWithRelationsOrm>> {
+    let query = this.drizzleDB
+      .select({ programId: ChannelPrograms.programUuid, count: count() })
+      .from(ChannelPrograms)
+      .where(
+        and(
+          eq(ChannelPrograms.channelUuid, id),
+          typeFilter ? eq(Program.type, typeFilter) : undefined,
+        ),
+      )
+      .innerJoin(Program, eq(ChannelPrograms.programUuid, Program.uuid))
+      .orderBy(asc(ChannelPrograms.programUuid))
+      .$dynamic();
+
+    const countResult = head(await query.execute())?.count ?? 0;
+
+    if (pageParams) {
+      query = query.offset(pageParams.offset).limit(pageParams.limit);
+    }
+
+    const results = await query.execute();
+
+    const materialized: ProgramWithRelationsOrm[] = [];
+    for (const idChunk of chunk(
+      results.map(({ programId }) => programId),
+      100,
+    )) {
+      materialized.push(
+        ...(await this.drizzleDB.query.program.findMany({
+          where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
+          with: {
+            externalIds: true,
+            album: true,
+            artist: true,
+            season: true,
+            show: true,
+            artwork: true,
+            subtitles: true,
+            credits: true,
+            versions: {
+              with: {
+                mediaStreams: true,
+                mediaFiles: true,
+                chapters: true,
+              },
+            },
+          },
+          orderBy: (fields, { asc }) => asc(fields.uuid),
+        })),
+      );
+    }
+
+    return { results: materialized, total: countResult };
   }
 
   getChannelProgramExternalIds(uuid: string) {

@@ -52,7 +52,11 @@ export const Artwork = sqliteTable(
     createdAt: integer({ mode: 'timestamp_ms' }),
     updatedAt: integer({ mode: 'timestamp_ms' }),
   },
-  (table) => [index('artwork_program_idx').on(table.programId)],
+  (table) => [
+    index('artwork_program_idx').on(table.programId),
+    index('artwork_grouping_idx').on(table.groupingId),
+    index('artwork_credit_idx').on(table.creditId),
+  ],
 );
 
 export const ArtworkRelations = relations(Artwork, ({ one }) => ({

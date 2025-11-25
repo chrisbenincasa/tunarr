@@ -373,6 +373,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const db = container.get<DrizzleDBAccess>(KEYS.DrizzleDB);
+
       const dbRes = await db.query.program.findFirst({
         where: (program, { eq }) => eq(program.uuid, req.params.id),
         with: {

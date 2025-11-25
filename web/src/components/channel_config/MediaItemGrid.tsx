@@ -79,7 +79,7 @@ export interface GridInlineModalProps<ItemType> {
   depth: number;
 }
 
-export type MediaItemGridProps<PageDataType, ItemType> = {
+type MediaItemGridProps<PageDataType, ItemType> = {
   getPageDataSize: (page: PageDataType) => { total?: number; size: number };
   extractItems: (page: PageDataType) => ItemType[];
   getItemKey: (item: ItemType) => string;
