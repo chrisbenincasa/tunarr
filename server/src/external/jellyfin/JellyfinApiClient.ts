@@ -54,6 +54,7 @@ import {
   mapValues,
   omitBy,
   orderBy,
+  trimStart,
   union,
 } from 'lodash-es';
 import type { NonEmptyArray } from 'ts-essentials';
@@ -556,7 +557,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   ): Promise<QueryResult<string>> {
     try {
       const subtitlesResult = await this.doGet<string>({
-        url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${subtitleExt}`,
+        url: `/Videos/${itemId}/${mediaItemId}/Subtitles/${streamIndex}/${tickOffset}/Stream.${trimStart(subtitleExt, '.')}`,
         params: {
           userId: this.options.mediaSource.userId,
         },

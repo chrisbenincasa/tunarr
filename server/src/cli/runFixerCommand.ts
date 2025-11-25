@@ -2,7 +2,6 @@ import { container } from '@/container.js';
 import { BackfillProgramExternalIds } from '@/tasks/fixers/BackfillProgramExternalIds.js';
 import { EnsureTranscodeConfigIds } from '@/tasks/fixers/EnsureTranscodeConfigIds.js';
 import { AddPlexServerIdsFixer } from '@/tasks/fixers/addPlexServerIds.js';
-import { BackfillProgramGroupings } from '@/tasks/fixers/backfillProgramGroupings.js';
 import type Fixer from '@/tasks/fixers/fixer.js';
 import { MissingSeasonNumbersFixer } from '@/tasks/fixers/missingSeasonNumbersFixer.js';
 import { KEYS } from '@/types/inject.js';
@@ -14,7 +13,6 @@ import type { GlobalArgsType } from './types.ts';
 const FixerNames = [
   MissingSeasonNumbersFixer.name,
   AddPlexServerIdsFixer.name,
-  BackfillProgramGroupings.name,
   BackfillProgramExternalIds.name,
   EnsureTranscodeConfigIds.name,
 ] as const;

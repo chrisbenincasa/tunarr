@@ -63,7 +63,7 @@ describe('FfmpegCommandGenerator', () => {
       profile: 'main',
       pixelFormat,
       frameSize: FrameSize.create({ width: 640, height: 480 }),
-      sampleAspectRatio: null,
+      providedSampleAspectRatio: null,
       displayAspectRatio: '4/3',
     });
 

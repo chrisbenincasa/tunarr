@@ -6,6 +6,7 @@ import { getDefaultLogLevel } from '@/util/defaults.js';
 import { ifDefined } from '@/util/index.js';
 import {
   getEnvironmentLogLevel,
+  getPrettyStreamOpts,
   LoggerFactory,
 } from '@/util/logging/LoggerFactory.js';
 import TailFile from '@logdna/tail-file';
@@ -20,9 +21,11 @@ import {
 import type { BackupSettings } from '@tunarr/types/schemas';
 import { BackupSettingsSchema, HealthCheckSchema } from '@tunarr/types/schemas';
 import { identity, isError, isUndefined, map } from 'lodash-es';
-import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { join } from 'path/posix';
+import type { PrettyOptions } from 'pino-pretty';
+import pretty from 'pino-pretty';
 import split2 from 'split2';
 import { PassThrough } from 'stream';
 import type { DeepReadonly, Writable } from 'ts-essentials';
@@ -40,6 +43,8 @@ import {
   isPodman,
   isRunningInContainer,
 } from '../util/containerUtil.ts';
+import { streamFileBackwards } from '../util/fsUtil.ts';
+import { take } from '../util/streams.ts';
 
 export const systemApiRouter: RouterPluginAsyncCallback = async (
   fastify,
@@ -291,12 +296,74 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
   );
 
   fastify.get(
+    '/system/debug/logs/stream',
+    {
+      schema: {
+        querystring: z.object({
+          pretty: z.stringbool().optional().default(false),
+        }),
+      },
+    },
+    async (req, res) => {
+      const logFilePath = join(
+        req.serverCtx.settings.systemSettings().logging.logsDirectory,
+        'tunarr.log',
+      );
+
+      const tail = new TailFile(logFilePath, {
+        objectMode: req.query.pretty,
+      });
+
+      await tail
+        .on('tail_error', (err) => {
+          logger.error(err);
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw err;
+        })
+        .start();
+
+      let outStream: NodeJS.ReadableStream;
+      if (req.query.pretty) {
+        const out = new PassThrough();
+        const prettyStream: PrettyOptions = {
+          ...getPrettyStreamOpts(),
+          colorize: false,
+          destination: out,
+        };
+
+        const pstream = pretty.build(prettyStream);
+        tail.pipe(pstream);
+        outStream = out;
+      } else {
+        outStream = tail;
+      }
+
+      outStream.on('close', () => {
+        tail.quit().catch(console.error);
+      });
+
+      return res
+        .headers({
+          'content-type': req.query.pretty
+            ? 'text/plain'
+            : 'application/x-ndjson',
+          'transfer-encoding': 'chunked',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        })
+        .send(outStream);
+    },
+  );
+
+  fastify.get(
     '/system/debug/logs',
     {
       schema: {
         tags: ['System', 'Logs'],
         querystring: z.object({
           download: TruthyQueryParam.optional(),
+          lineLimit: z.coerce.number().positive().optional(),
+          pretty: z.stringbool().optional().default(false),
         }),
       },
     },
@@ -307,10 +374,32 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       );
 
       if (req.query.download) {
+        const gen = req.query.lineLimit
+          ? take(streamFileBackwards(logFilePath), req.query.lineLimit)
+          : streamFileBackwards(logFilePath);
+        let stream = Readable.from(gen).pipe(
+          new PassThrough({
+            transform(chunk: Buffer, _, callback) {
+              this.push(chunk.toString('utf-8') + '\n');
+              callback();
+            },
+          }),
+        );
+
+        if (req.query.pretty) {
+          const out = new PassThrough();
+          const prettyStream: PrettyOptions = {
+            ...getPrettyStreamOpts(),
+            colorize: false,
+            destination: out,
+          };
+          stream.pipe(pretty.build(prettyStream));
+          stream = out;
+        }
         return res
           .header('content-type', 'text/plain')
           .header('content-disposition', 'attachment; filename="tunarr.log"')
-          .send(createReadStream(logFilePath));
+          .send(stream);
       }
 
       const stat = await fs.stat(logFilePath);

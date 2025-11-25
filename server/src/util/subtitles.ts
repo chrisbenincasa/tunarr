@@ -15,7 +15,7 @@ type MinimalProgram = {
 export function subtitleCodecToExt(codec: string): Nullable<string> {
   return match(codec)
     .with(P.union('srt', 'subrip', 'mov_text'), () => 'srt')
-    .with('ass', () => '.ass')
+    .with('ass', () => 'ass')
     .with('webvtt', () => 'vtt')
     .otherwise(() => null);
 }

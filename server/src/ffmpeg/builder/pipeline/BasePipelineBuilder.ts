@@ -340,7 +340,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
 
     this.context.pipelineSteps = [
-      ...this.getThreadCountOption(ffmpegState),
       new NoStdInOption(),
       new HideBannerOption(),
       new NoStatsOption(),
@@ -409,6 +408,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (isVideoPipelineContext(this.context)) {
       this.buildVideoPipeline();
     }
+
+    this.context.pipelineSteps.unshift(
+      ...this.getThreadCountOption(ffmpegState),
+    );
 
     this.setSceneDetect();
 
@@ -605,9 +608,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
 
       if (!isNull(this.context.desiredAudioState.audioDuration)) {
-        this.audioInputSource?.filterSteps.push(
-          AudioPadFilter.create(this.context.desiredAudioState.audioDuration),
-        );
+        this.audioInputSource?.filterSteps.push(new AudioPadFilter());
       }
     }
   }

@@ -18,12 +18,13 @@ import { compact, isEmpty, isNull, isUndefined, round } from 'lodash-es';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useInterval } from 'usehooks-ts';
+import { betterHumanize } from '../../helpers/dayjs.ts';
 import { alternateColors, isNonEmptyString } from '../../helpers/util';
 import { useRandomProgramBackgroundColor } from '../../hooks/colorHooks.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
 import { useServerEvents } from '../../hooks/useServerEvents.ts';
 import { useTvGuides, useTvGuidesPrefetch } from '../../hooks/useTvGuide';
-import type { Maybe } from '../../types/util.ts';
+import type { Maybe, Nullable } from '../../types/util.ts';
 import TunarrLogo from '../TunarrLogo';
 import PaddedPaper from '../base/PaddedPaper';
 import { ChannelOptionsMenu } from '../channels/ChannelOptionsMenu.tsx';
@@ -286,14 +287,13 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
       const pct = round((+duration / +timelineDuration) * 100.0, 2);
 
       const isPlaying = dayjs().isBetween(programStart, programEnd);
-      let remainingTime = 0;
+      let remainingTime: Nullable<string> = null;
 
       if (isPlaying && !program.isPaused) {
-        remainingTime = programEnd.diff();
+        remainingTime = betterHumanize(dayjs.duration(programEnd.diff()));
+        console.log(programStart, programEnd, remainingTime);
       } else if (program.isPaused && !isUndefined(program.timeRemaining)) {
-        remainingTime = round(
-          dayjs.duration(program.timeRemaining).asMinutes(),
-        );
+        remainingTime = betterHumanize(dayjs.duration(program.timeRemaining));
       }
 
       const bg = randomBackgroundColor(program);
@@ -321,7 +321,7 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
                     </Box>
                   )}
                   <Box sx={{ fontSize: '12px' }}>
-                    {remainingTime ? ` (${remainingTime}m left)` : null}
+                    {remainingTime ? ` (${remainingTime} left)` : null}
                   </Box>
                 </>
               ))}

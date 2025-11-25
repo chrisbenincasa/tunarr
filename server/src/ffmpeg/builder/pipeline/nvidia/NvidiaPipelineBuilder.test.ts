@@ -13,6 +13,7 @@ import {
   SubtitleMethods,
   VideoStream,
 } from '../../MediaStream.ts';
+import { ThreadCountOption } from '../../options/GlobalOption.ts';
 import {
   DefaultPipelineOptions,
   FfmpegState,
@@ -37,7 +38,7 @@ describe('NvidiaPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -94,6 +95,9 @@ describe('NvidiaPipelineBuilder', () => {
       DefaultPipelineOptions,
     );
 
+    const thread = out.steps.find((step) => step instanceof ThreadCountOption);
+    expect(thread).toBeInstanceOf(ThreadCountOption);
+    expect(thread?.options()).toEqual(['-threads', '1']);
     console.log(out.getCommandArgs().join(' '));
   });
 
@@ -113,7 +117,7 @@ describe('NvidiaPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(352, 480),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: '1:1',
+        providedSampleAspectRatio: '1:1',
       }),
     );
 
@@ -173,7 +177,7 @@ describe('NvidiaPipelineBuilder', () => {
         frameSize: FrameSize.withDimensions(1920, 900),
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -253,7 +257,7 @@ describe('NvidiaPipelineBuilder', () => {
         frameSize: FrameSize.FHD,
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 
@@ -332,7 +336,7 @@ describe('NvidiaPipelineBuilder', () => {
         frameSize: FrameSize.SevenTwenty,
         index: 0,
         pixelFormat: new PixelFormatYuv420P(),
-        sampleAspectRatio: null,
+        providedSampleAspectRatio: null,
       }),
     );
 

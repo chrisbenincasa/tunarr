@@ -62,6 +62,37 @@ export type GetChildLoggerArgs = {
   className: string;
 } & Bindings;
 
+export function getPrettyStreamOpts(): PrettyOptions {
+  return {
+    // minimumLevel: logLevel === 'silent' ? undefined : logLevel,
+    translateTime: "SYS:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+    singleLine: true,
+    ignore: 'pid,hostname',
+    customLevels: {
+      http: 25,
+    },
+    customColors: {
+      http: 'blue',
+    },
+    useOnlyCustomProps: false,
+    messageFormat: (log, messageKey, _, { colors }) => {
+      return `${colors.white(log[messageKey] as string)}`;
+    },
+    customPrettifiers: {
+      time: (t) => {
+        return t as string;
+      },
+      level: (_level, _key, _log, { labelColorized }) => {
+        return `[${labelColorized.toLowerCase()}]`;
+      },
+      caller: (caller, _key, _log, { colors }) => {
+        return colors.green(caller as string);
+      },
+    },
+    colorize: true,
+  };
+}
+
 class LoggerFactoryImpl {
   private settingsDB: SettingsDB;
   private rootLogger: PinoLogger<ExtraLogLevels>;
@@ -218,37 +249,9 @@ class LoggerFactoryImpl {
   }
 
   private createStreams(logLevel: LogLevels): StreamEntry<LogLevels>[] {
-    const prettyOpts: PrettyOptions = {
-      // minimumLevel: logLevel === 'silent' ? undefined : logLevel,
-      translateTime: "SYS:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-      singleLine: true,
-      ignore: 'pid,hostname',
-      customLevels: {
-        http: 25,
-      },
-      customColors: {
-        http: 'blue',
-      },
-      useOnlyCustomProps: false,
-      messageFormat: (log, messageKey, _, { colors }) => {
-        return `${colors.white(log[messageKey] as string)}`;
-      },
-      customPrettifiers: {
-        time: (t) => {
-          return t as string;
-        },
-        level: (_level, _key, _log, { labelColorized }) => {
-          return `[${labelColorized.toLowerCase()}]`;
-        },
-        caller: (caller, _key, _log, { colors }) => {
-          return colors.green(caller as string);
-        },
-      },
-    };
-
     const streams: StreamEntry<LogLevels>[] = [
       {
-        stream: pretty(prettyOpts),
+        stream: pretty(getPrettyStreamOpts()),
         level: logLevel,
       },
     ];
@@ -257,23 +260,13 @@ class LoggerFactoryImpl {
     // require configuration.
     if (!isUndefined(this.settingsDB) && !isTest) {
       streams.push({
-        // stream: pino.destination({
-        // dest: join(
-        //   this.settingsDB.systemSettings().logging.logsDirectory,
-        //   'tunarr.log',
-        // ),
-        //   mkdir: true,
-        //   append: true,
-        // }),
-        stream: pretty({
-          ...prettyOpts,
-          destination: join(
+        stream: pino.destination({
+          dest: join(
             this.settingsDB.systemSettings().logging.logsDirectory,
             'tunarr.log',
           ),
           mkdir: true,
           append: true,
-          colorize: !!process.env['TUNARR_COLORIZE_LOG_FILE'],
         }),
         level: logLevel,
       });

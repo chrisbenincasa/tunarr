@@ -80,6 +80,7 @@ nav:
           - Plex: configure/clients/plex.md
           - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
+      - Search: misc/search.md
       - Common Issues: misc/common-issues.md
       - Troubleshooting: misc/troubleshooting.md
   - Development:
@@ -101,13 +102,14 @@ markdown_extensions:
   - pymdownx.snippets:
       auto_append:
         - docs-extras/includes/definitions.md
+  - tables
 
 extra_css:
   - stylesheets/extra.css
 
 extra:
   status:
-    alpha: Alpha
+    new: Alpha only!
 
 plugins:
   - glightbox
