@@ -177,7 +177,7 @@ const MediaSourceLibraryTableActionCell = ({
               ? 'Queued'
               : library.isLocked
                 ? 'Scanning'
-                : 'Scan'
+                : 'Force Scan'
           }
         >
           <span>
