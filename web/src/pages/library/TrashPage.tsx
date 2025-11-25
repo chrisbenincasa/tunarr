@@ -14,13 +14,40 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProgramType } from '@tunarr/types';
 import type { SearchFilter, SearchRequest } from '@tunarr/types/api';
+import { useSnackbar } from 'notistack';
 import { useMemo, useState } from 'react';
 import { LibraryProgramGrid } from '../../components/library/LibraryProgramGrid.tsx';
+import { deleteApiTrashMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { invalidateQueryPrefix } from '../../helpers/queryUtil.ts';
 
 export const TrashPage = () => {
   const [itemTypes, setItemTypes] = useState<ProgramType[]>([]);
+  const snackbar = useSnackbar();
+  const queryClient = useQueryClient();
+
+  const emptyTrashMut = useMutation({
+    ...deleteApiTrashMutation(),
+    onSuccess: async () => {
+      snackbar.enqueueSnackbar({
+        message: 'Successfully emptied trash.',
+        variant: 'success',
+      });
+      await queryClient.invalidateQueries({
+        predicate: invalidateQueryPrefix(['programs', 'search']),
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+      snackbar.enqueueSnackbar({
+        variant: 'error',
+        message:
+          'Encountered an error when emptying trash. Check console logs for details.',
+      });
+    },
+  });
 
   const request = useMemo<SearchRequest>(() => {
     const trashedFilter = {
@@ -99,7 +126,13 @@ export const TrashPage = () => {
             <MusicVideo sx={{ mr: 1 }} /> Music Videos
           </ToggleButton>
         </ToggleButtonGroup>
-        <Button startIcon={<Delete />} variant="contained" color="error">
+        <Button
+          disabled={emptyTrashMut.isPending}
+          onClick={() => emptyTrashMut.mutate({})}
+          startIcon={<Delete />}
+          variant="contained"
+          color="error"
+        >
           Empty Trash
         </Button>
       </Stack>

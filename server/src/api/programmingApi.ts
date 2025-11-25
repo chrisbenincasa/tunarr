@@ -62,18 +62,12 @@ import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroup
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { globalOptions } from '../globals.ts';
-import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
-import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 import { KEYS } from '../types/inject.ts';
-import type { Path } from '../types/path.ts';
 import type { Maybe } from '../types/util.ts';
-import {
-  isProgramGroupingDocument,
-  isTerminalProgramDocument,
-} from '../util/search.ts';
-import { ApiProgramConverters } from './ApiProgramConverters.ts';
+
+import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -116,115 +110,10 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await req.serverCtx.searchService.search('programs', {
-        query: req.body.query.query,
-        filter: req.body.query.filter,
-        paging: {
-          offset: req.body.page ?? 1,
-          limit: req.body.limit ?? 20,
-        },
-        mediaSourceId: req.body.mediaSourceId,
-        libraryId: req.body.libraryId,
-        // TODO not a great cast...
-        restrictSearchTo: req.body.query
-          .restrictSearchTo as Path<ProgramSearchDocument>[],
-        facets: ['type'],
-      });
-
-      const [programIds, groupingIds] = result.hits.reduce(
-        (acc, curr) => {
-          const [programs, groupings] = acc;
-          if (isProgramGroupingDocument(curr)) {
-            groupings.push(curr.id);
-          } else {
-            programs.push(curr.id);
-          }
-          return acc;
-        },
-        [[], []] as [string[], string[]],
-      );
-
-      const allMediaSources = await req.serverCtx.mediaSourceDB.getAll();
-      const allMediaSourcesById = groupByUniq(
-        allMediaSources,
-        (ms) => ms.uuid as string,
-      );
-      const allLibrariesById = groupByUniq(
-        allMediaSources.flatMap((ms) => ms.libraries),
-        (lib) => lib.uuid,
-      );
-
-      const [programs, groupings, groupingCounts] = await Promise.all([
-        req.serverCtx.programDB
-          .getProgramsByIds(programIds)
-          .then((res) => groupByUniq(res, (p) => p.uuid)),
-        req.serverCtx.programDB.getProgramGroupings(groupingIds),
-        req.serverCtx.programDB.getProgramGroupingChildCounts(groupingIds),
-      ]);
-
-      const results = seq.collect(result.hits, (program) => {
-        const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
-        const mediaSource = allMediaSourcesById[mediaSourceId];
-        if (!mediaSource) {
-          logger.debug(
-            'Could not find media source %s in DB for program ID %s',
-            mediaSourceId,
-            program.id,
-          );
-          return;
-        }
-        const libraryId = decodeCaseSensitiveId(program.libraryId);
-        const library = allLibrariesById[libraryId];
-        if (!library) {
-          logger.debug(
-            'COuld not find media source library %s in DB for program ID %s',
-            libraryId,
-            program.id,
-          );
-          return;
-        }
-
-        if (isProgramGroupingDocument(program)) {
-          if (groupings[program.id]) {
-            return ApiProgramConverters.convertProgramGroupingSearchResult(
-              program,
-              groupings[program.id],
-              groupingCounts[program.id],
-              mediaSource,
-              library,
-            );
-          } else {
-            logger.debug(
-              'Could not find program grouping %s in DB, but it exists in search index!',
-              program.id,
-            );
-          }
-        } else if (isTerminalProgramDocument(program)) {
-          if (programs[program.id]) {
-            return ApiProgramConverters.convertProgramSearchResult(
-              program,
-              programs[program.id],
-              mediaSource,
-              library,
-            );
-          } else {
-            logger.debug(
-              'Could not find program %s in DB, but it exists in search index!',
-              program.id,
-            );
-          }
-        }
-
-        return;
-      });
-
-      return res.send({
-        results,
-        page: result.page,
-        totalHits: result.totalHits,
-        totalPages: result.totalPages,
-        facetDistribution: result.facetDistribution,
-      });
+      const result = await container
+        .get<SearchProgramsCommand>(SearchProgramsCommand)
+        .execute(req.body);
+      return res.send(result);
     },
   );
 

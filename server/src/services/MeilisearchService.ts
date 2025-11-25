@@ -1158,6 +1158,13 @@ export class MeilisearchService implements ISearchService {
     return await this.#client.index(ProgramsIndex.name).deleteDocuments(ids);
   }
 
+  async deleteMissing() {
+    const filter = `state = "missing"`;
+    return await this.#client.index(ProgramsIndex.name).deleteDocuments({
+      filter,
+    });
+  }
+
   async deleteByMediaSourceIds(ids: string[]) {
     if (ids.length === 0) {
       return;
