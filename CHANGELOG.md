@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.0-alpha.25](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.24...v0.23.0-alpha.25) (2025-11-25)
+
+
+### Features
+
+* implement missing/trashed items ([#1481](https://github.com/chrisbenincasa/tunarr/issues/1481)) ([18cdbcb](https://github.com/chrisbenincasa/tunarr/commit/18cdbcb57de6cffaee3f53630c5df14d6557d2ca))
+
+
+### Bug Fixes
+
+* allow dumpless Meilisearch upgrades; bump to 1.27.0 ([ab82009](https://github.com/chrisbenincasa/tunarr/commit/ab820096a07e5cbff94cd2cd4f0ab33d9ce4a77a))
+* improve media source scanning UI state ([dc67e9e](https://github.com/chrisbenincasa/tunarr/commit/dc67e9e047c21f8b5aff36b950207cb42dc8f631))
+* make audio/subtitle language optional in nfo schemas ([18cdbcb](https://github.com/chrisbenincasa/tunarr/commit/18cdbcb57de6cffaee3f53630c5df14d6557d2ca))
+* make various Plex item index fields optional ([c198860](https://github.com/chrisbenincasa/tunarr/commit/c198860f7edcb5085cb73de77108aa622ec9dff0))
+* return TerminalProgram type from /channels/:id/programs ([d5405e0](https://github.com/chrisbenincasa/tunarr/commit/d5405e03ed6343515c840a1bef0ff4aed92e5126))
+
 ## [0.23.0-alpha.24](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.23...v0.23.0-alpha.24) (2025-11-20)
 
 
