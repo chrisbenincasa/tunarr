@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.16](https://github.com/chrisbenincasa/tunarr/compare/v0.22.15...v0.22.16) (2025-11-24)
+
+
+### Bug Fixes
+
+* dynamically calculate SAR when necessary ([69c6947](https://github.com/chrisbenincasa/tunarr/commit/69c6947d081193698afb10ae5c8a1b5058c1cfbc))
+* fix build with new sample aspect ratio fields ([80fccd2](https://github.com/chrisbenincasa/tunarr/commit/80fccd257a88158aff7715bead951a80a92c7a83))
+* fix tests after SAR changes ([944039e](https://github.com/chrisbenincasa/tunarr/commit/944039e00e5826c8f5bba4e94662e6baf5b3010a))
+* make duration_ts option on video streams in ffprobe output ([fe34da8](https://github.com/chrisbenincasa/tunarr/commit/fe34da871e5959269d99bab0879f8260e332d51d))
+* **streaming:** properly set decoder thread count to 1 for hwaccel pipelines ([72f128b](https://github.com/chrisbenincasa/tunarr/commit/72f128b39132f469561773f1b5cc554d201df01c))
+* **ui:** fix remaining time calculation and display in guide ([3c5ea7a](https://github.com/chrisbenincasa/tunarr/commit/3c5ea7a5780587d72375913f1f0efd0b48a3721f))
+
 ## [0.22.15](https://github.com/chrisbenincasa/tunarr/compare/v0.22.14...v0.22.15) (2025-11-16)
 
 
