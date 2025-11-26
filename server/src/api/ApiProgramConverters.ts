@@ -27,11 +27,16 @@ import type {
   TerminalProgramSearchDocument,
 } from '../services/MeilisearchService.ts';
 import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
-import type { Maybe } from '../types/util.ts';
+import type { Maybe, Nullable } from '../types/util.ts';
 import { isNonEmptyString } from '../util/index.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { titleToSortTitle } from '../util/programs.ts';
 
 export class ApiProgramConverters {
+  private static logger = LoggerFactory.child({
+    className: ApiProgramConverters.name,
+  });
+
   private constructor() {}
 
   static convertProgramSearchResult(
@@ -39,9 +44,9 @@ export class ApiProgramConverters {
     program: ProgramWithRelationsOrm,
     mediaSource: MediaSourceWithRelations,
     mediaLibrary: MediaSourceLibraryOrm,
-  ): TerminalProgram {
+  ): Nullable<TerminalProgram> {
     if (!program.canonicalId) {
-      throw new Error('Program did not have a canonical ID');
+      this.logger.warn(`Program %s doesn't have a canonicalId!`, program.uuid);
     }
 
     const externalId = doc.externalIds.find(
@@ -108,7 +113,7 @@ export class ApiProgramConverters {
             releaseDate,
             identifiers,
             episodeNumber: ep.index ?? 0,
-            canonicalId: program.canonicalId!,
+            canonicalId: program.canonicalId ?? '',
           }) satisfies Episode,
       )
       .with(
@@ -122,7 +127,7 @@ export class ApiProgramConverters {
             originalTitle: null,
             year,
             releaseDate,
-            canonicalId: program.canonicalId!,
+            canonicalId: program.canonicalId ?? '',
           }) satisfies Movie,
       )
       .with(
@@ -136,7 +141,7 @@ export class ApiProgramConverters {
             originalTitle: null,
             year,
             releaseDate,
-            canonicalId: program.canonicalId!,
+            canonicalId: program.canonicalId ?? '',
             trackNumber: doc.index ?? 0,
           }) satisfies MusicTrack,
       )
@@ -153,7 +158,7 @@ export class ApiProgramConverters {
             originalTitle: null,
             year,
             releaseDate,
-            canonicalId: program.canonicalId!,
+            canonicalId: program.canonicalId ?? '',
           }) satisfies OtherVideo,
       )
       .otherwise(() => null);
@@ -174,9 +179,13 @@ export class ApiProgramConverters {
     childCounts: Maybe<ProgramGroupingChildCounts>,
     mediaSource: MediaSourceWithRelations,
     mediaLibrary: MediaSourceLibraryOrm,
-  ): ProgramGrouping {
+  ): Nullable<ProgramGrouping> {
     if (!grouping.canonicalId) {
-      throw new Error(`No canonical id for grouping ${grouping.uuid}`);
+      this.logger.warn(
+        `Grouping %s (type = %s) doesn't have a canonicalId!`,
+        grouping.uuid,
+        grouping.type,
+      );
     }
 
     const childCount = childCounts?.childCount;
@@ -193,12 +202,12 @@ export class ApiProgramConverters {
     const uuid = doc.id;
     const studios = doc?.studio?.map(({ name }) => ({ name })) ?? [];
 
-    const externalId = doc.externalIds.find(
-      (eid) => eid.source === mediaSource.type,
-    )?.id;
+    const externalId =
+      doc.externalIds.find((eid) => eid.source === mediaSource.type)?.id ??
+      grouping.externalKey;
 
     if (!externalId && mediaSource.type !== 'local') {
-      throw new Error('');
+      throw new Error(`Program grouping ${grouping.uuid} has no external ID!`);
     }
 
     const base = {
@@ -210,7 +219,7 @@ export class ApiProgramConverters {
       releaseDateString: doc.originalReleaseDate
         ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
         : null,
-      externalId: externalId ?? grouping.externalKey ?? '',
+      externalId: externalId ?? '',
       sourceType: mediaSource.type,
       artwork:
         grouping.artwork?.map(
@@ -235,7 +244,7 @@ export class ApiProgramConverters {
             type: 'season',
             identifiers,
             uuid,
-            canonicalId: grouping.canonicalId!,
+            canonicalId: grouping.canonicalId ?? '',
             studios,
             year: doc.originalReleaseYear,
             childCount,
@@ -250,7 +259,7 @@ export class ApiProgramConverters {
             ...base,
             identifiers,
             uuid,
-            canonicalId: grouping.canonicalId!,
+            canonicalId: grouping.canonicalId ?? '',
             studios,
             year: doc.originalReleaseYear,
             childCount,
@@ -277,7 +286,7 @@ export class ApiProgramConverters {
             ...base,
             identifiers,
             uuid,
-            canonicalId: grouping.canonicalId!,
+            canonicalId: grouping.canonicalId ?? '',
             // studios,
             year: doc.originalReleaseYear,
             childCount,
@@ -292,7 +301,7 @@ export class ApiProgramConverters {
             ...base,
             identifiers,
             uuid,
-            canonicalId: grouping.canonicalId!,
+            canonicalId: grouping.canonicalId ?? '',
             childCount,
             grandchildCount,
           }) satisfies MusicArtist,

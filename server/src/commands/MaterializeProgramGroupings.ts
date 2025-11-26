@@ -12,11 +12,13 @@ import {
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { isProgramGroupingDocument } from '../util/search.ts';
 
 @injectable()
 export class MaterializeProgramGroupings {
   constructor(
+    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MeilisearchService) private searchService: MeilisearchService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -67,6 +69,13 @@ export class MaterializeProgramGroupings {
         ms,
         library,
       );
+      if (!apiItem) {
+        this.logger.warn(
+          'Unable to convert grouping %s to API representation',
+          group.uuid,
+        );
+        continue;
+      }
       apiGroups.push(apiItem);
     }
 

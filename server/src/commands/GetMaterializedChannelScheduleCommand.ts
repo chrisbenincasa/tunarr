@@ -288,7 +288,7 @@ export class GetMaterializedChannelScheduleCommand {
       );
 
       // This should always be true.
-      if (converted.type === 'show') {
+      if (converted?.type === 'show') {
         showsById[showId] = converted;
       }
     }
