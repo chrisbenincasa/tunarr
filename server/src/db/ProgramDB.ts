@@ -2161,10 +2161,15 @@ export class ProgramDB implements IProgramDB {
       title: incoming.title,
       summary: incoming.summary,
       icon: incoming.icon,
+      year: incoming.year,
       // relations
       artistUuid: incoming.artistUuid,
       showUuid: incoming.showUuid,
       canonicalId: incoming.canonicalId,
+      mediaSourceId: incoming.mediaSourceId,
+      libraryId: incoming.libraryId,
+      sourceType: incoming.sourceType,
+      externalKey: incoming.externalKey,
     };
 
     await tx
