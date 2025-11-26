@@ -33,3 +33,22 @@ export function invalidateTaggedQueries(tagsToMatch: string | string[]) {
     return intersection(parseResult.data.tags, tagsToMatch).length > 0;
   };
 }
+
+export function invalidateQueryPrefix(prefix: string[]) {
+  return (query: Query): boolean => {
+    const key = query.queryKey;
+    if (key.length < prefix.length) {
+      return false;
+    }
+
+    for (let i = 0; i < prefix.length; i++) {
+      const prePart = prefix[i];
+      const queryPart = key[i];
+      if (prePart !== queryPart) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+}

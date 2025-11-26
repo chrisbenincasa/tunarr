@@ -112,6 +112,7 @@ export const Program = sqliteTable(
       inArray(table.sourceType, table.sourceType.enumValues).inlineParams(),
     ),
     index('program_canonical_id_index').on(table.canonicalId),
+    index('program_state_index').on(table.state),
   ],
 );
 

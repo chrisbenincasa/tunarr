@@ -248,6 +248,8 @@ export interface IProgramDB {
     programIds: string[],
     newState: ProgramState,
   ): Promise<void>;
+
+  emptyTrashPrograms(): Promise<void>;
 }
 
 export type WithChannelIdFilter<T> = T & {

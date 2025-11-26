@@ -2164,6 +2164,7 @@ export class ProgramDB implements IProgramDB {
       // relations
       artistUuid: incoming.artistUuid,
       showUuid: incoming.showUuid,
+      canonicalId: incoming.canonicalId,
     };
 
     await tx
@@ -2391,6 +2392,10 @@ export class ProgramDB implements IProgramDB {
         .where(inArray(Program.uuid, idChunk))
         .execute();
     }
+  }
+
+  async emptyTrashPrograms() {
+    await this.drizzleDB.delete(Program).where(eq(Program.state, 'missing'));
   }
 
   private async handleProgramGroupings(
