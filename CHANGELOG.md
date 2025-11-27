@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.23.0-alpha.26](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.25...v0.23.0-alpha.26) (2025-11-26)
+
+
+### Features
+
+* implement emptying trash functionality ([#1484](https://github.com/chrisbenincasa/tunarr/issues/1484)) ([a6360b0](https://github.com/chrisbenincasa/tunarr/commit/a6360b0b22bcc0d62bfa5635fd7610c84dbaa304))
+
+
+### Bug Fixes
+
+* do not require canonicalId to return API program/grouping ([b2ea9f9](https://github.com/chrisbenincasa/tunarr/commit/b2ea9f9d969d4e8b4c4e9d239608494898d12e39))
+* ensure all fields are properly updated when upserting grouping ([b06f8e4](https://github.com/chrisbenincasa/tunarr/commit/b06f8e48af4601b8e1458b01b3dec767bc9475b2))
+* fix macos bundle for meilisearch ([62025c6](https://github.com/chrisbenincasa/tunarr/commit/62025c6d980bc94e84cbd1fa1d28ce9487c0f1e3))
+* **ui:** fix Force Scan toolip ([434fe3b](https://github.com/chrisbenincasa/tunarr/commit/434fe3b0b67ce8b92de4ec1f24568ce9db0a876c))
+
 ## [0.23.0-alpha.25](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.24...v0.23.0-alpha.25) (2025-11-25)
 
 
