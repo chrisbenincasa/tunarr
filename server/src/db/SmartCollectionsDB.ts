@@ -56,14 +56,13 @@ export class SmartCollectionsDB {
     collection: StrictOmit<NewSmartCollection, 'uuid'>,
   ): Promise<Result<SmartCollection>> {
     const parseResult = await this.parseSearchQueryString(collection.query);
-    if (parseResult.isFailure()) {
-      return parseResult.recast();
-    }
 
-    SmartCollectionsDB.cache.set(
-      collection.query,
-      search.parsedSearchToRequest(parseResult.get()),
-    );
+    parseResult.forEach((searchClause) => {
+      SmartCollectionsDB.cache.set(
+        collection.query,
+        search.parsedSearchToRequest(searchClause),
+      );
+    });
 
     return await Result.attemptAsync(() =>
       this.db
@@ -78,15 +77,14 @@ export class SmartCollectionsDB {
 
   async update(id: string, collection: Partial<NewSmartCollection>) {
     if (isNonEmptyString(collection.query)) {
-      const parseResult = await this.parseSearchQueryString(collection.query);
-      if (parseResult.isFailure()) {
-        return parseResult.recast();
-      }
-
-      SmartCollectionsDB.cache.set(
-        collection.query,
-        search.parsedSearchToRequest(parseResult.get()),
-      );
+      const query = collection.query;
+      const parseResult = await this.parseSearchQueryString(query);
+      parseResult.forEach((searchClause) => {
+        SmartCollectionsDB.cache.set(
+          query,
+          search.parsedSearchToRequest(searchClause),
+        );
+      });
     }
 
     return await Result.attemptAsync(() =>
@@ -117,20 +115,18 @@ export class SmartCollectionsDB {
       }
     }
 
-    let searchQuery = SmartCollectionsDB.cache.get<SearchFilter>(
+    let searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
       maybeCollection.query,
     );
-    if (!searchQuery) {
+    if (!searchFilter) {
       const parseResult = await this.parseSearchQueryString(
         maybeCollection.query,
       );
-      // This really shouldn't happen.
-      if (parseResult.isFailure()) {
-        throw parseResult.error;
-      }
 
-      searchQuery = search.parsedSearchToRequest(parseResult.get());
-      SmartCollectionsDB.cache.set(maybeCollection.query, searchQuery);
+      if (parseResult.isSuccess()) {
+        searchFilter = search.parsedSearchToRequest(parseResult.get());
+        SmartCollectionsDB.cache.set(maybeCollection.query, searchFilter);
+      }
     }
 
     let offset = 1; // Translates to page which is 1-indexed
@@ -138,9 +134,9 @@ export class SmartCollectionsDB {
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
         paging: { offset, limit: 100 },
-        filter: searchQuery,
+        query: searchFilter ? null : maybeCollection.query,
+        filter: searchFilter ? searchFilter : null,
       });
-      console.log(pageResult);
       if (pageResult.hits.length === 0 || pageResult.totalHits === 0) {
         break;
       }
