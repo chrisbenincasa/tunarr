@@ -6,8 +6,9 @@ import type { TaskId } from './Task.ts';
 import { Task } from './Task.ts';
 
 @injectable()
-export class RefreshMediaSourceLibraryTask extends Task {
-  public ID: string | Tag<TaskId, unknown>;
+export class RefreshMediaSourceLibraryTask extends Task<[], void> {
+  static ID = RefreshMediaSourceLibraryTask.name;
+  public ID: string | Tag<TaskId, unknown> = RefreshMediaSourceLibraryTask.ID;
 
   constructor(
     @inject(MediaSourceLibraryRefresher)
@@ -16,7 +17,7 @@ export class RefreshMediaSourceLibraryTask extends Task {
     super();
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(): Promise<void> {
     return await this.mediaSourceLibraryRefresher.refreshAll();
   }
 }

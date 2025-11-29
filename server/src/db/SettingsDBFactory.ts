@@ -63,6 +63,8 @@ export class SettingsDBFactory {
       if (freshSettings) {
         data.migration.legacyMigration = false;
       }
+      // New installs are fresh and have effectively "migrated"
+      data.migration.hasMigratedTo1_0 = freshSettings;
     });
 
     const settingsDB = new SettingsDB(

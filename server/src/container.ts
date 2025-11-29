@@ -48,6 +48,7 @@ import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLine
 import { ClearM3uCacheStartupTask } from './services/startup/ClearM3uCacheStartupTask.ts';
 import { GenerateGuideStartupTask } from './services/startup/GenerateGuideStartupTask.ts';
 import { LoadChannelCacheStartupTask } from './services/startup/LoadChannelCacheStartupTask.ts';
+import { RefreshLibrariesStartupTask } from './services/startup/RefreshLibrariesStartupTask.ts';
 import { ScheduleJobsStartupTask } from './services/startup/ScheduleJobsStartupTask.ts';
 import { SeedFfmpegInfoCache } from './services/startup/SeedFfmpegInfoCache.ts';
 import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevicesStartupTask.ts';
@@ -145,6 +146,7 @@ const RootModule = new ContainerModule((bind) => {
   bind(KEYS.StartupTask).to(GenerateGuideStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(LoadChannelCacheStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(StreamCacheMigratorStartupTask).inSingletonScope();
+  bind(KEYS.StartupTask).to(RefreshLibrariesStartupTask).inSingletonScope();
 
   if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, false)) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);

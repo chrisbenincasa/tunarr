@@ -42,7 +42,6 @@ import type {
   SubtitleExtractorTaskRequest,
 } from './SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
-import type { Task } from './Task.ts';
 
 export type ReconcileProgramDurationsTaskFactory = (
   request?: ReconcileProgramDurationsTaskRequest,
@@ -169,8 +168,6 @@ const TasksModule = new ContainerModule((bind) => {
   );
 
   bind<RefreshMediaSourceLibraryTask>(RefreshMediaSourceLibraryTask).toSelf();
-
-  bind<Task>(KEYS.StartupTasks).toService(RefreshMediaSourceLibraryTask);
 });
 
 export { TasksModule };

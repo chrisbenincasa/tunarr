@@ -70,6 +70,7 @@ export const MigrationStateSchema = z.object({
     .default(false)
     .describe('Whether a legacy migration was performed'),
   isFreshSettings: z.boolean().default(true).optional(),
+  hasMigratedTo1_0: z.boolean().optional().default(false),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -93,6 +94,7 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   version: 1,
   migration: {
     legacyMigration: false,
+    hasMigratedTo1_0: false,
   },
   settings: {
     clientId: uuidv4(),
