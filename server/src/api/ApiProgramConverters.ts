@@ -1,3 +1,4 @@
+import dayjs from '@/util/dayjs.js';
 import type {
   Actor,
   Episode,
@@ -12,7 +13,6 @@ import type {
   Show,
   TerminalProgram,
 } from '@tunarr/types';
-import dayjs from 'dayjs';
 import { orderBy } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
