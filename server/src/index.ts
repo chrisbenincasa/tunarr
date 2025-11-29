@@ -1,5 +1,5 @@
 import dotenv from '@dotenvx/dotenvx';
-dotenv.config({ debug: true, ignore: ['MISSING_ENV_FILE'] });
+dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
 
 import { bootstrapTunarr } from '@/bootstrap.js';
 import { setGlobalOptions } from '@/globals.js';
@@ -70,11 +70,6 @@ yargs(hideBin(process.argv))
     default: getDefaultDatabaseDirectory(),
     normalize: true,
     coerce: (db: string) => fileURLToPath(new URL(`file://${db}`)),
-  })
-  .option('force_migration', {
-    type: 'boolean',
-    desc: 'Forces a migration from a legacy dizquetv database. Useful for development and debugging. NOTE: This WILL override any settings you have!',
-    default: false,
   })
   .option('hide_banner', {
     type: 'boolean',
