@@ -1,7 +1,7 @@
 import dotenv from '@dotenvx/dotenvx';
-dotenv.config({ debug: true });
+dotenv.config({ debug: false });
 
-import { TanStackRouterVite } from '@tanstack/router-vite-plugin';
+import { tanstackRouter } from '@tanstack/router-vite-plugin';
 import react from '@vitejs/plugin-react-swc';
 import path from 'node:path';
 import { defineConfig } from 'vite';
@@ -31,7 +31,7 @@ const version = (() => {
 export default defineConfig({
   plugins: [
     react(),
-    TanStackRouterVite({
+    tanstackRouter({
       semicolons: true,
       routesDirectory: path.resolve(__dirname, './src/routes'),
     }),
