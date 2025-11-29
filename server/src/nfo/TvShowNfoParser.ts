@@ -14,7 +14,7 @@ const ArrayTags = [
 
 export class TvShowNfoParser extends BaseNfoParser<typeof TvShowNfoContainer> {
   constructor() {
-    super(TvShowNfoContainer);
+    super(TvShowNfoContainer, { parseTagValue: false });
   }
 
   protected override get arrayTags() {

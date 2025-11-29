@@ -1,3 +1,4 @@
+import type { X2jOptions } from 'fast-xml-parser';
 import { XMLParser } from 'fast-xml-parser';
 import { isNil } from 'lodash-es';
 import fs from 'node:fs/promises';
@@ -10,12 +11,16 @@ export abstract class BaseNfoParser<MediaTypeSchema extends z4.$ZodType>
 {
   protected parser: XMLParser;
 
-  constructor(protected schema: MediaTypeSchema) {
+  constructor(
+    protected schema: MediaTypeSchema,
+    opts?: X2jOptions,
+  ) {
     this.parser = new XMLParser({
       ignoreAttributes: false,
       isArray: (_, jPath) => {
         return this.arrayTags.includes(jPath);
       },
+      ...opts,
     });
   }
 

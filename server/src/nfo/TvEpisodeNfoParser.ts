@@ -19,7 +19,7 @@ export class TvEpisodeNfoParser extends BaseNfoParser<
   typeof TvEpisodeNfoContainer
 > {
   constructor() {
-    super(TvEpisodeNfoContainer);
+    super(TvEpisodeNfoContainer, { parseTagValue: false });
   }
 
   protected override get arrayTags() {

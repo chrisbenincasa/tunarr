@@ -25,15 +25,15 @@ export const NfoUniqueId = z.object({
 export const NfoAudioStream = z.object({
   codec: z.string(),
   language: z.string().optional(),
-  channels: z.number(),
+  channels: z.coerce.number(),
 });
 
 export const NfoVideoStream = z.object({
   codec: z.string(),
-  aspect: z.number().or(z.string()).optional(),
-  width: z.number(),
-  height: z.number(),
-  durationinseconds: z.number().optional(),
+  aspect: z.coerce.number().or(z.string()).optional(),
+  width: z.coerce.number(),
+  height: z.coerce.number(),
+  durationinseconds: z.coerce.number().optional(),
   stereomode: z.string().optional(),
   hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']).nullish().catch(''),
 });
@@ -53,7 +53,7 @@ export const NfoFileInfo = z.object({
 export const NfoActor = z.object({
   name: z.string(),
   role: z.string().nullish(),
-  order: z.number().optional(),
+  order: z.coerce.number().optional(),
   thumb: z.string().optional(),
 });
 
@@ -99,7 +99,7 @@ export const TvShowNfo = z.object({
   title: z.string(),
   originaltitle: z.string().optional(),
   sorttitle: z.string().optional(),
-  userrating: z.number().optional(),
+  userrating: z.coerce.number().optional(),
   outline: z.string().optional(),
   tagline: z.string().optional(),
   plot: z.string().optional(),
@@ -136,7 +136,7 @@ export const TvEpisodeNfo = z.object({
   title: z.string(),
   originaltitle: z.string().optional(),
   sorttitle: z.string().optional(),
-  userrating: z.number().optional(),
+  userrating: z.coerce.number().optional(),
   outline: z.string().optional(),
   tagline: z.string().optional(),
   plot: z.string().optional(),

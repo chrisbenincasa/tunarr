@@ -15,7 +15,7 @@ const ArrayTags = [
 
 export class MovieNfoParser extends BaseNfoParser<typeof MovieNfoContainer> {
   constructor() {
-    super(MovieNfoContainer);
+    super(MovieNfoContainer, { parseTagValue: false });
   }
 
   protected override get arrayTags() {

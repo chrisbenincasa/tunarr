@@ -28,7 +28,7 @@ export class OtherVideoNfoParser extends BaseNfoParser<
   typeof OtherVideoNfoContainer
 > {
   constructor() {
-    super(OtherVideoNfoContainer);
+    super(OtherVideoNfoContainer, { parseTagValue: false });
   }
 
   protected override get arrayTags() {
