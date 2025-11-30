@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import dayjs from 'dayjs';
-import { now, sumBy } from 'lodash-es';
+import { now, sum, sumBy } from 'lodash-es';
 import { instance, mock, verify, when } from 'ts-mockito';
 import { test as baseTest } from 'vitest';
-import { LineupItem } from '../db/derived_types/Lineup.ts';
+import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
@@ -16,7 +16,10 @@ import {
   createFakeProgram,
 } from '../testing/fakes/entityCreators.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
-import { StreamProgramCalculator } from './StreamProgramCalculator.ts';
+import {
+  calculateStreamDuration,
+  StreamProgramCalculator,
+} from './StreamProgramCalculator.ts';
 
 describe('StreamProgramCalculator', () => {
   baseTest('getCurrentLineupItem simple', async () => {
@@ -285,5 +288,92 @@ describe('StreamProgramCalculator', () => {
     verify(
       channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
     ).once();
+  });
+
+  describe('calculateStreamDuration', () => {
+    test('first channel cycle', () => {
+      const lineupItems: LineupItem[] = [
+        { type: 'content', id: '1', durationMs: 2000 },
+        { type: 'content', id: '2', durationMs: 3000 },
+        { type: 'content', id: '3', durationMs: 4000 },
+      ];
+      const offsets = calculateStartTimeOffsets(lineupItems);
+      const lineup: Lineup = {
+        version: 1,
+        items: lineupItems,
+        startTimeOffsets: offsets,
+        lastUpdated: now(),
+      };
+      const duration = sum(lineupItems.map((i) => i.durationMs));
+      // we are one "tick" into the 2nd show. there are 2 ticks
+      // remaining
+      // |--|---|----|
+      //     ^
+      const { streamDuration } = calculateStreamDuration(
+        3000,
+        0,
+        duration,
+        lineup,
+        0,
+      );
+      expect(streamDuration).toEqual(2000);
+    });
+
+    test('next channel cycle', () => {
+      const lineupItems: LineupItem[] = [
+        { type: 'content', id: '1', durationMs: 2000 },
+        { type: 'content', id: '2', durationMs: 3000 },
+        { type: 'content', id: '3', durationMs: 4000 },
+      ];
+      const offsets = calculateStartTimeOffsets(lineupItems);
+      const lineup: Lineup = {
+        version: 1,
+        items: lineupItems,
+        startTimeOffsets: offsets,
+        lastUpdated: now(),
+      };
+      const duration = sum(lineupItems.map((i) => i.durationMs));
+      // we are one "tick" into the 2nd show. there are 2 ticks
+      // remaining. the channel has cycled once
+      // |--|---|----|
+      //     ^
+      const { streamDuration } = calculateStreamDuration(
+        duration + 3000,
+        0,
+        duration,
+        lineup,
+        0,
+      );
+      expect(streamDuration).toEqual(2000);
+    });
+
+    test('loop appropriately on last item', () => {
+      const lineupItems: LineupItem[] = [
+        { type: 'content', id: '1', durationMs: 2000 },
+        { type: 'content', id: '2', durationMs: 3000 },
+        { type: 'content', id: '3', durationMs: 4000 },
+      ];
+      const offsets = calculateStartTimeOffsets(lineupItems);
+      const lineup: Lineup = {
+        version: 1,
+        items: lineupItems,
+        startTimeOffsets: offsets,
+        lastUpdated: now(),
+      };
+      const duration = sum(lineupItems.map((i) => i.durationMs));
+      // we are one "tick" into the 3rd show. there are 3 ticks
+      // remaining in the current program.
+      // |--|---|----|
+      //         ^
+      // The next program (after current finishes) is the first program in the channel
+      const { streamDuration } = calculateStreamDuration(
+        6_000,
+        0,
+        duration,
+        lineup,
+        0,
+      );
+      expect(streamDuration).toEqual(3000);
+    });
   });
 });
