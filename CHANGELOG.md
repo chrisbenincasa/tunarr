@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.23.0-alpha.27](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.26...v0.23.0-alpha.27) (2025-11-30)
+
+
+### Bug Fixes
+
+* allow saving "free query" searches as smart collections ([d55cdd9](https://github.com/chrisbenincasa/tunarr/commit/d55cdd9e2d99cfe63247dab6a114b8565c032cf3))
+* do not attempt to parse numbers from nfo files ([41f1307](https://github.com/chrisbenincasa/tunarr/commit/41f13071db93bf4c06a1a20e503062b0ad381a5a))
+* fix stream duration calculation in StreamProgramCalculator ([526417b](https://github.com/chrisbenincasa/tunarr/commit/526417bd901de3c615eb89bc2aa1e65e0412f18b))
+* run RefreshMediaSourceLibraries at startup; then once an hour afterwards ([ba96b3f](https://github.com/chrisbenincasa/tunarr/commit/ba96b3fac70c4029504a9cb2abd2f27b2b9e2d03))
+
 ## [0.23.0-alpha.26](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.25...v0.23.0-alpha.26) (2025-11-26)
 
 
