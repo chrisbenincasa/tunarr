@@ -23,6 +23,7 @@ import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
+import { devAssert } from '../util/debug.ts';
 import { isNonEmptyString } from '../util/index.js';
 import { wereThereTooManyAttempts } from './StreamThrottler.js';
 
@@ -93,14 +94,6 @@ export class StreamProgramCalculator {
     }
 
     const lineup = await this.channelDB.loadLineup(channel.uuid);
-
-    // if (lineup.onDemandConfig) {
-    //   startTime = this.onDemandService.getLiveTimestampForConfig(
-    //     lineup.onDemandConfig,
-    //     channel.startTime,
-    //     startTime,
-    //   );
-    // }
 
     let lineupItem: Maybe<StreamLineupItem>;
     let channelContext: Channel = channel;
@@ -242,35 +235,6 @@ export class StreamProgramCalculator {
       );
     }
 
-    // if (lineupItem) {
-    //   let upperBound = Number.MAX_SAFE_INTEGER;
-    //   const beginningOffset = lineupItem?.beginningOffset ?? 0;
-
-    //   //adjust upper bounds and record playbacks
-    //   for (let i = redirectChannels.length - 1; i >= 0; i--) {
-    //     const thisUpperBound = nth(upperBounds, i);
-    //     if (!isNil(thisUpperBound)) {
-    //       const nextBound = thisUpperBound + beginningOffset;
-    //       const prevBound = isNil(lineupItem.streamDuration)
-    //         ? upperBound
-    //         : Math.min(upperBound, lineupItem.streamDuration);
-    //       const newDuration = Math.min(nextBound, prevBound);
-
-    //       lineupItem = {
-    //         ...lineupItem,
-    //         streamDuration: newDuration,
-    //       };
-    //       upperBound = newDuration;
-    //     }
-
-    //     await this.channelCache.recordPlayback(
-    //       redirectChannels[i],
-    //       req.startTime,
-    //       lineupItem,
-    //     );
-    //   }
-    // }
-
     await this.channelCache.recordPlayback(
       channel.uuid,
       req.startTime,
@@ -318,55 +282,13 @@ export class StreamProgramCalculator {
       };
     }
 
-    let timeElapsed: number;
-    let currentProgramIndex: number = -1;
-
-    // This is an optimization. We should have precalculated offsets on the channel
-    // We can find the current playing index using binary search on these, just like
-    // when creating the TV guide.
-    const timeSinceStart = timestamp - channel.startTime;
-    // How far into the current program cycle are we.
-    const elapsed =
-      timeSinceStart < channel.duration
-        ? timeSinceStart
-        : timeSinceStart % channel.duration;
-
-    const programIndex =
-      channelLineup.startTimeOffsets.length === 1
-        ? 0
-        : binarySearchRange(channelLineup.startTimeOffsets, elapsed);
-
-    if (!isNull(programIndex)) {
-      currentProgramIndex = programIndex;
-      const foundOffset = channelLineup.startTimeOffsets[programIndex];
-      // Mark how far 'into' the channel we are.
-      timeElapsed = elapsed - foundOffset;
-      const program = channelLineup.items[programIndex];
-      if (timeElapsed > program.durationMs - SLACK) {
-        // Go to the next program if we're very close to the end
-        // of the current one. No sense in starting a brand new
-        // stream for a couple of seconds.
-        timeElapsed = 0;
-        currentProgramIndex = (programIndex + 1) % channelLineup.items.length;
-      }
-    } else {
-      // Throw below.
-      timeElapsed = 0;
-      currentProgramIndex = -1;
-    }
-
-    if (currentProgramIndex === -1) {
-      throw new Error('No program found; find algorithm messed up');
-    }
-
-    const currOffset = channelLineup.startTimeOffsets[currentProgramIndex];
-    const nextOffset =
-      currOffset +
-      channelLineup.items[
-        (currentProgramIndex + 1) % channelLineup.items.length
-      ].durationMs;
-
-    const streamDuration = nextOffset - currOffset - elapsed;
+    const { streamDuration, timeElapsed, currentProgramIndex } =
+      calculateStreamDuration(
+        timestamp,
+        channel.startTime,
+        channel.duration,
+        channelLineup,
+      );
 
     const lineupItem = channelLineup.items[currentProgramIndex];
     let program: StreamLineupItem;
@@ -630,4 +552,63 @@ export class StreamProgramCalculator {
       streamDuration,
     };
   }
+}
+
+export function calculateStreamDuration(
+  now: number,
+  channelStartTime: number,
+  channelDuration: number,
+  lineup: Lineup,
+  slackAmount: number = SLACK,
+) {
+  devAssert(now >= channelStartTime);
+  let timeElapsed: number;
+  let currentProgramIndex: number = -1;
+
+  // This is an optimization. We should have precalculated offsets on the channel
+  // We can find the current playing index using binary search on these, just like
+  // when creating the TV guide.
+  const timeSinceStart = now - channelStartTime;
+  // How far into the current program cycle are we.
+  const elapsed =
+    timeSinceStart < channelDuration
+      ? timeSinceStart
+      : timeSinceStart % channelDuration;
+
+  const programIndex =
+    lineup.startTimeOffsets.length === 1
+      ? 0
+      : binarySearchRange(lineup.startTimeOffsets, elapsed, true);
+
+  if (!isNull(programIndex)) {
+    currentProgramIndex = programIndex;
+    const foundOffset = lineup.startTimeOffsets[programIndex];
+    // Mark how far 'into' the program we are.
+    timeElapsed = elapsed - foundOffset;
+    const program = lineup.items[programIndex];
+    if (timeElapsed > program.durationMs - slackAmount) {
+      // Go to the next program if we're very close to the end
+      // of the current one. No sense in starting a brand new
+      // stream for a couple of seconds.
+      timeElapsed = 0;
+      currentProgramIndex = (programIndex + 1) % lineup.items.length;
+    }
+  } else {
+    // Throw below.
+    timeElapsed = 0;
+    currentProgramIndex = -1;
+  }
+
+  if (currentProgramIndex === -1) {
+    throw new Error('No program found; find algorithm messed up');
+  }
+
+  const currOffset = lineup.startTimeOffsets[currentProgramIndex];
+  const nextOffset = currOffset + lineup.items[currentProgramIndex].durationMs;
+
+  return {
+    streamDuration: nextOffset - currOffset - timeElapsed,
+    timeElapsed,
+    currentProgramIndex,
+  };
 }

@@ -353,6 +353,13 @@
 * allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
 * **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
+## [0.22.17](https://github.com/chrisbenincasa/tunarr/compare/v0.22.16...v0.22.17) (2025-11-26)
+
+
+### Bug Fixes
+
+* properly detect non-docker/podman container environments ([f8a2a24](https://github.com/chrisbenincasa/tunarr/commit/f8a2a2464ad889d763488a5580d780e9be18da6e)), closes [#1485](https://github.com/chrisbenincasa/tunarr/issues/1485)
+
 ## [0.22.16](https://github.com/chrisbenincasa/tunarr/compare/v0.22.15...v0.22.16) (2025-11-24)
 
 

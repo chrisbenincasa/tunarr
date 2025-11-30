@@ -115,6 +115,7 @@
     "fast-glob": "^3.3.3",
     "globals": "^15.15.0",
     "kysely-ctl": "^0.9.0",
+    "memfs": "^4.51.0",
     "node-abi": "^3.75.0",
     "prettier": "^3.6.2",
     "rimraf": "^5.0.10",
