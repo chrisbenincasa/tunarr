@@ -23,7 +23,6 @@ import {
   lighten,
   useTheme,
 } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
@@ -77,7 +76,6 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const skeletonBgColor = alpha(
     theme.palette.text.primary,
     theme.palette.mode === 'light' ? 0.11 : 0.13,
