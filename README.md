@@ -1,6 +1,6 @@
 # Tunarr
 
-![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen) ![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen) ![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)
+[![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen)](https://github.com/chrisbenincasa/tunarr/stargazers) [![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr) [![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr/tags)
 
 Create and configure live TV channels using media on your Plex, Jellyfin, or Emby servers.
 
