@@ -147,7 +147,7 @@ export const EditMediaSourceLibrariesDialog = ({
                   library.mediaType === 'music_videos'
                     ? 'Music Video libraries are not yet supported'
                     : library.isLocked
-                      ? 'Cannot disable libraries when they are locked'
+                      ? `Cannot ${library.enabled ? 'disable' : 'enable'} libraries when they are locked`
                       : null
                 }
               >

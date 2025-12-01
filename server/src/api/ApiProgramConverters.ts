@@ -239,9 +239,14 @@ export class ApiProgramConverters {
         { type: 'season' },
         (season) =>
           ({
-            ...season,
+            // ...season,
             ...base,
             type: 'season',
+            summary: season.summary,
+            plot: season.plot,
+            tagline: season.tagline,
+            tags: season.tags,
+            title: season.title,
             identifiers,
             uuid,
             canonicalId: grouping.canonicalId ?? '',
@@ -289,6 +294,153 @@ export class ApiProgramConverters {
             canonicalId: grouping.canonicalId ?? '',
             // studios,
             year: doc.originalReleaseYear,
+            childCount,
+            grandchildCount,
+          }) satisfies MusicAlbum,
+      )
+      .with(
+        { type: 'artist' },
+        (artist) =>
+          ({
+            ...artist,
+            ...base,
+            identifiers,
+            uuid,
+            canonicalId: grouping.canonicalId ?? '',
+            childCount,
+            grandchildCount,
+          }) satisfies MusicArtist,
+      )
+      .exhaustive();
+
+    return result;
+  }
+
+  static convertProgramGroupingDBResult(
+    grouping: ProgramGroupingOrmWithRelations,
+    maybeSearchDoc: ProgramGroupingSearchDocument,
+    childCounts: Maybe<ProgramGroupingChildCounts>,
+    mediaSource: MediaSourceWithRelations,
+    mediaLibrary: MediaSourceLibraryOrm,
+  ): Nullable<ProgramGrouping> {
+    if (!grouping.canonicalId) {
+      this.logger.warn(
+        `Grouping %s (type = %s) doesn't have a canonicalId!`,
+        grouping.uuid,
+        grouping.type,
+      );
+    }
+
+    const childCount = childCounts?.childCount;
+    const grandchildCount = childCounts?.grandchildCount;
+
+    const identifiers = grouping.externalIds.map((eid) => ({
+      id: eid.externalKey,
+      sourceId: eid.externalSourceId ?? undefined,
+      type: eid.sourceType,
+    }));
+
+    const uuid = grouping.uuid;
+    // TODO: Persist these in DB
+    const studios = maybeSearchDoc?.studio?.map(({ name }) => ({ name })) ?? [];
+
+    const externalId =
+      grouping.externalIds.find((eid) => eid.sourceType === mediaSource.type)
+        ?.externalKey ?? grouping.externalKey;
+
+    if (!externalId && mediaSource.type !== 'local') {
+      throw new Error(`Program grouping ${grouping.uuid} has no external ID!`);
+    }
+
+    const base = {
+      sortTitle: '',
+      mediaSourceId: mediaSource.uuid,
+      libraryId: mediaLibrary.uuid,
+      externalLibraryId: mediaLibrary.externalKey,
+      // TODO: These don't exist in DB yet.
+      releaseDate: maybeSearchDoc?.originalReleaseDate,
+      releaseDateString: maybeSearchDoc?.originalReleaseDate
+        ? dayjs(maybeSearchDoc?.originalReleaseDate).format('YYYY-MM-DD')
+        : null,
+      externalId: externalId ?? '',
+      sourceType: mediaSource.type,
+      artwork:
+        grouping.artwork?.map(
+          (art) =>
+            ({
+              id: art.uuid,
+              type: art.artworkType,
+              path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
+            }) satisfies MediaArtwork,
+        ) ?? [],
+      index: grouping.index ?? 0,
+      // TODO: Save these in DB
+      studios,
+      plot: maybeSearchDoc?.plot,
+      tagline: maybeSearchDoc?.tagline,
+      tags: maybeSearchDoc?.tags,
+    } satisfies Partial<ProgramGrouping>;
+
+    const result = match(grouping)
+      .returnType<ProgramGrouping>()
+      .with(
+        { type: 'season' },
+        (season) =>
+          ({
+            // ...season,
+            ...base,
+            type: 'season',
+            summary: season.summary,
+
+            title: season.title,
+            identifiers,
+            uuid,
+            canonicalId: grouping.canonicalId ?? '',
+            year: grouping.year,
+            childCount,
+            grandchildCount,
+          }) satisfies Season,
+      )
+      .with(
+        { type: 'show' },
+        (show) =>
+          ({
+            ...show,
+            ...base,
+            identifiers,
+            uuid,
+            canonicalId: grouping.canonicalId ?? '',
+            studios: [],
+            year: grouping.year,
+            childCount,
+            grandchildCount,
+            actors: orderBy(
+              grouping.credits?.filter((credit) => credit.type === 'cast'),
+              (credit, idx) => credit.index ?? idx,
+              'asc',
+            ).map(
+              (credit, index) =>
+                ({
+                  name: credit.name,
+                  order: index,
+                  role: credit.role,
+                }) satisfies Actor,
+            ),
+            // TODO: Save these in DB
+            genres: maybeSearchDoc?.genres,
+            rating: maybeSearchDoc?.rating,
+          }) satisfies Show,
+      )
+      .with(
+        { type: 'album' },
+        (album) =>
+          ({
+            ...album,
+            ...base,
+            identifiers,
+            uuid,
+            canonicalId: grouping.canonicalId ?? '',
+            year: grouping.year,
             childCount,
             grandchildCount,
           }) satisfies MusicAlbum,

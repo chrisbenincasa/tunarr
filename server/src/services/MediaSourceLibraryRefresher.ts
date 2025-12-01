@@ -53,18 +53,22 @@ export class MediaSourceLibraryRefresher {
       source = idOrSource;
     }
 
-    switch (source.type) {
-      case 'plex': {
-        await this.handlePlex(source);
-        break;
+    try {
+      switch (source.type) {
+        case 'plex': {
+          await this.handlePlex(source);
+          break;
+        }
+        case 'jellyfin':
+          await this.handleJellyfin(source);
+          break;
+        case 'emby':
+          await this.handleEmby(source);
+          break;
+        case 'local':
       }
-      case 'jellyfin':
-        await this.handleJellyfin(source);
-        break;
-      case 'emby':
-        await this.handleEmby(source);
-        break;
-      case 'local':
+    } catch (e) {
+      this.logger.error(e, 'Failed to refresh media source: %s', source.name);
     }
 
     return;

@@ -236,24 +236,6 @@ export const TimeSlotTable = () => {
         grow: true,
         size: 350,
       },
-      // {
-      //   header: '# of Programs',
-      //   id: 'programCount',
-      //   enableEditing: false,
-      //   Cell({ row }) {
-      //     const programming = row.original;
-      //     switch (programming.type) {
-      //       case 'movie':
-      //       case 'show':
-      //       case 'custom-show':
-      //       case 'filler':
-      //         return row.original.programCount;
-      //       case 'flex':
-      //       case 'redirect':
-      //         return '-';
-      //     }
-      //   },
-      // },
       {
         header: 'Order',
         accessorFn(originalRow) {

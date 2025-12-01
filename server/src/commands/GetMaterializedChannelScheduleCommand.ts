@@ -14,8 +14,10 @@ import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { ServerContext } from '../ServerContext.ts';
+import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { isShowProgramSearchDocument } from '../util/search.ts';
 
 type GetMaterializedChannelScheduleRequest = {
@@ -24,7 +26,10 @@ type GetMaterializedChannelScheduleRequest = {
 
 @injectable()
 export class GetMaterializedChannelScheduleCommand {
-  constructor(@inject(ServerContext) private serverContext: ServerContext) {}
+  constructor(
+    @inject(ServerContext) private serverContext: ServerContext,
+    @inject(KEYS.Logger) private logger: Logger,
+  ) {}
 
   async execute(
     request: GetMaterializedChannelScheduleRequest,
@@ -262,11 +267,8 @@ export class GetMaterializedChannelScheduleCommand {
     const showsById: Record<string, Show> = {};
     for (const [showId, dbShow] of Object.entries(showsFromDB)) {
       const searchDoc = resultsById[dbShow.uuid];
-      if (!searchDoc) {
-        continue;
-      }
 
-      if (!isShowProgramSearchDocument(searchDoc)) {
+      if (searchDoc && !isShowProgramSearchDocument(searchDoc)) {
         continue;
       }
 
@@ -279,9 +281,9 @@ export class GetMaterializedChannelScheduleCommand {
         continue;
       }
 
-      const converted = ApiProgramConverters.convertProgramGroupingSearchResult(
-        searchDoc,
+      const converted = ApiProgramConverters.convertProgramGroupingDBResult(
         dbShow,
+        searchDoc,
         counts[dbShow.uuid],
         ms,
         lib,
