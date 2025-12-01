@@ -36,8 +36,6 @@ export default function MediaDetailCard({ program }: Props) {
     return `${settings.backendUri}/api/programs/${program.uuid}/external-link`;
   }, [settings.backendUri, program]);
 
-  // const imageWidth = smallViewport ? '100%' : '100%';
-
   const getProgramDescription = useMemo(() => {
     return getProgramSummary(program);
   }, [program]);
@@ -144,7 +142,6 @@ export default function MediaDetailCard({ program }: Props) {
                 <Box
                   sx={{
                     width: '100%',
-                    // maxWidth: isMobile ? 'none' : 170,
                     height: 255,
                     boxShadow: 3,
                     cursor: 'pointer',
@@ -154,11 +151,7 @@ export default function MediaDetailCard({ program }: Props) {
                     borderRadius: '10px',
                     backgroundColor: 'grey.700',
                   }}
-                >
-                  {/* <Typography variant="h5" component="span">
-                    {getProgramTitle}
-                  </Typography> */}
-                </Box>
+                ></Box>
               ) : (
                 <Box
                   component="img"

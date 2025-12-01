@@ -189,15 +189,11 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
     [darkMode, depth, isModalOpen],
   );
 
-  const showInfo = useCallback(
-    (e: React.SyntheticEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      setDialogOpen(true);
-    },
-    [navigate, itemType, itemId, enableSelection],
-  );
+  const showInfo = useCallback((e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDialogOpen(true);
+  }, []);
 
   const hasChildren = (childCount ?? 0) > 0 || mayHaveChildren;
 
@@ -231,13 +227,10 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
               backgroundColor: backgroundColor,
               ...style,
             }}
-            onClick={
-              (e) =>
-                enableSelection
-                  ? hasChildren
-                    ? handleClick()
-                    : toggleItemSelect(e)
-                  : handleClick() //showInfo(e)
+            onClick={(e) =>
+              !enableSelection || hasChildren
+                ? handleClick()
+                : toggleItemSelect(e)
             }
             ref={ref}
           >

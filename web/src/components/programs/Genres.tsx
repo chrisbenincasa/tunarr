@@ -37,7 +37,6 @@ export default function Genres({ program }: Props) {
         style={{
           textDecoration: 'none',
           display: 'inline-block',
-          // marginLeft: 8,
         }}
         resetScroll={true}
       >

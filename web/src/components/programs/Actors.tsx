@@ -36,10 +36,9 @@ export default function Actors({ program }: Props) {
   };
 
   const allActors = getActors();
-  const actors = allActors?.slice(0, visibleCount); // 3. Slice the array to show only visible actors
+  const actors = allActors?.slice(0, visibleCount);
   const hasMore = allActors && allActors.length > visibleCount;
 
-  // 4. Handler for the "Load More" button
   const handleLoadMore = () => {
     setVisibleCount((prevCount) => prevCount + itemsToLoad);
   };

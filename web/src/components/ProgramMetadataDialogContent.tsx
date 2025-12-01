@@ -78,45 +78,6 @@ export const ProgramMetadataDialogContent = ({
     return null;
   }, [start, stop]);
 
-  // This gives us the ability to change the sort order of the itemInfoBar on a per item basis
-  // const itemInfoBar = useMemo(() => {
-  //   let sortOrder;
-
-  //   switch (program.type) {
-  //     case 'show':
-  //       sortOrder = [childCount, date, rating, genres, source]; // see why rating doesnt work
-  //       break;
-  //     case 'season':
-  //       sortOrder = [childCount, rating, genres, source];
-  //       break;
-  //     case 'episode':
-  //       sortOrder = [duration, rating, genres, source];
-  //       break;
-  //     case 'movie':
-  //       sortOrder = [duration, rating, date, source]; // Movies currently missing genres https://github.com/chrisbenincasa/tunarr/issues/1461
-  //       break;
-  //     case 'artist':
-  //       sortOrder = [childCount, genres, source];
-  //       break;
-  //     case 'album':
-  //       sortOrder = [childCount, genres, source];
-  //       break;
-  //     case 'track':
-  //       sortOrder = [duration, date, source];
-  //       break;
-  //     case 'other_video':
-  //       sortOrder = [date, source];
-  //       break;
-  //     case 'music_video':
-  //       sortOrder = [date, source];
-  //       break;
-  //     default:
-  //       sortOrder = [duration, rating, time, source, genres];
-  //   }
-
-  //   return sortOrder.filter(Boolean);
-  // }, [program.type, duration, date, rating, time, source, genres, childCount]);
-
   const displayTitle = !smallViewport ? program.title : null;
 
   return (
@@ -202,16 +163,6 @@ export const ProgramMetadataDialogContent = ({
             }}
           >
             <ProgramInfoBar program={program} time={time} />
-            {/* {itemInfoBar.map((chip, index) => (
-              <React.Fragment key={index}>
-                {chip}
-                {index < itemInfoBar.length - 1 && (
-                  <span className="separator">
-                    &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-                  </span>
-                )}
-              </React.Fragment>
-            ))} */}
           </Box>
           {summary ? (
             <Typography id="modal-modal-description" sx={{ mb: 1 }}>
