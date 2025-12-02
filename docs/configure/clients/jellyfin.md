@@ -1,3 +1,48 @@
 # Jellyfin
 
-TBD
+Once you have your channels created with programming/shows added, head over to Jellyfin > Hamburger Menu Icon  > Dashboard > Live TV > Add Tuner Device.
+
+![Plex settings](/assets/plex-settings.png)
+
+![Plex settings DVR](/assets/plex-settings-dvr.png)
+
+![Plex settings tuner](/assets/plex-settings-tuner.png)
+
+Jellyfin will ask for your tuner type - select HD Homerun. You can then select "Detect My Devices," and Jellyfin may already detect Tunarr and you might see your servers IP address. If it does not, you can fill in your info manually. Use the following format replacing serverIP with your servers IP address and chosen port (if using Docker): e.g. `http://serverIP:8000`
+
+Once you have entered your server's URL and port, you will have to add the XMLTV Guide. 
+
+1. First select Add Provider.
+2. Choose XMLTV.
+3. A screen asking for several items and categories will appear - you generally don't have to change these unless you know what you're doing. What we care about is the first "File or URL" textbox.
+4. In this textbox, use the following template replacing serverIP with your Tunarr servers IP address: e.g. `http://serverIP:8000/api/xmltv.xml`.
+
+If you only have one instance of Tunarr running, you can leave the "Enable for all tuner devices" checked. 
+
+If you have more than one instance, you can uncheck this and then apply this guide to only the tuners you select.
+
+⚠ You can overwrite tuners' channels if you apply more than one guide with the same channel mappings to all tuners. 
+
+Be careful hen assigning if this applies to you!
+
+![Plex settings tuner 2](/assets/plex-settings-tuner2.png)
+
+Select "Save" and Jellyfin should then return you to the Live TV screen and show you it is updating the guide info.
+
+![Plex settings XMLTV](/assets/plex-settings-xmltv.png)
+
+To see if your channels and settings were applied, go back to your main Jellyfin page by selecting the Home icon in the upper left with your server's name.
+
+![Plex settings channels](/assets/plex-settings-channels.png)
+
+You should now see a "Live TV" card in your My media section - select it!
+
+![Plex settings view guide](/assets/plex-settings-viewguide.png)
+
+From heer, you should see all shows that are playing on your channels under the Programs tab, or you can choose to see individual channels or guides from the other tabs.
+
+Play your channel by hovering over the channel icon and selecting the play icon.
+
+![Plex settings guide](/assets/plex-settings-guide.png)
+
+Happy watching!
