@@ -15,7 +15,13 @@ export default function VersionFooter() {
       <Box />
     </Skeleton>
   ) : (
-    <Box sx={{ paddingLeft: 2, paddingRight: 2 }}>
+    <Box
+      sx={{
+        paddingLeft: 2,
+        paddingRight: 2,
+        paddingBottom: import.meta.env.PROD ? 0 : 15, // This makes room for Tan Stack dev tool icons in bottom left
+      }}
+    >
       {versionError ? (
         <Typography
           component="p"

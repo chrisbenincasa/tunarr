@@ -178,15 +178,28 @@ export default function CustomShowsPage() {
   return (
     <Box>
       <Breadcrumbs />
-      <Box display="flex" mb={2}>
-        <Typography flexGrow={1} variant="h4">
-          Custom Shows
-        </Typography>
+      <Box
+        display="flex"
+        mb={2}
+        alignItems="flex-start"
+        flexDirection={{ xs: 'column', md: 'row' }}
+      >
+        <Box flexDirection={'column'} flexGrow={1}>
+          <Typography variant="h4">Custom Shows</Typography>
+
+          <Typography maxWidth={'800px'}>
+            {/* <Box display={'flex'} alignContent={'center'} sx={{ my: 2 }}> */}
+            Custom Shows are sequences of videos that represent a episodes of a
+            virtual TV show. When you add these shows to a channel, the schedule
+            tools will treat the videos as if they belonged to a single TV show.
+          </Typography>
+        </Box>
         <Button
           component={Link}
           to="/library/custom-shows/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
+          sx={{ alignSelf: 'end' }}
         >
           New
         </Button>

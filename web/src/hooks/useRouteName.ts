@@ -94,7 +94,7 @@ const useNamedRoutes = () => {
       },
       {
         matcher: /^\/library\/fillers$/g,
-        name: 'Fillers',
+        name: 'Filler Lists',
       },
       {
         matcher: new RegExp(
@@ -111,12 +111,20 @@ const useNamedRoutes = () => {
         name: 'New',
       },
       {
+        matcher: /^\/library\/smart_collections$/g,
+        name: 'Smart Collections',
+      },
+      {
         matcher: /^\/library\/custom-shows$/g,
         name: 'Custom Shows',
       },
       {
         matcher: /^\/library\/custom-shows\/new$/g,
         name: 'New',
+      },
+      {
+        matcher: /^\/library\/trash$/g,
+        name: 'Trash',
       },
       {
         matcher: new RegExp(

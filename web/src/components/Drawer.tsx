@@ -1,3 +1,4 @@
+import { useIsDarkMode } from '@/hooks/useTunarrTheme.ts';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Badge,
@@ -11,51 +12,65 @@ import {
   Drawer as MuiDrawer,
   Toolbar,
 } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
-import { useToggle } from '@uidotdev/usehooks';
-import { Transition } from 'notistack';
+import { useNavigate } from '@tanstack/react-router';
 import React, { useCallback, useRef, useState } from 'react';
 import type { NavItem } from '../hooks/useNavItems.tsx';
 import { useNavItems } from '../hooks/useNavItems.tsx';
 import VersionFooter from './VersionFooter.tsx';
 
-export const DrawerClosedWidth = 60;
-export const DrawerOpenWidth = 240;
-
-export type DrawerTransitionState = 'opening' | 'open' | 'closing' | 'closed';
-
-type Props = {
-  onOpen?: () => void;
-  onClose?: () => void;
-};
+export const DrawerWidth = 240;
 
 type ItemProps = {
   item: NavItem;
-  drawerState: DrawerTransitionState;
 };
 
-const DrawerItem = ({ item, drawerState }: ItemProps) => {
-  const [sublistOpen, setSublistOpen] = useState(false);
+const DrawerItem = ({ item }: ItemProps) => {
+  const navigate = useNavigate();
 
-  const childIn =
-    (drawerState === 'open' || drawerState === 'opening') &&
-    (sublistOpen || item.selected);
+  const isChildSelected =
+    item.children?.some((child) => child.selected) ?? false;
 
-  const handleOpenClick = useCallback((ev: React.MouseEvent) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    setSublistOpen((prev) => !prev);
-  }, []);
+  console.log(item);
+
+  const hasDisplayableChildren =
+    item.children?.some((child) => !child.hidden) ?? false;
+
+  const [sublistOpen, setSublistOpen] = useState(isChildSelected);
+
+  const handleOpenClick = useCallback(
+    (path: string | undefined, ev: React.MouseEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      // Only toggle the sublist state if the item has children.
+      if (item.children) {
+        setSublistOpen((prev) => !prev);
+      }
+
+      if (path) {
+        navigate({ to: path }).catch(console.warn);
+      }
+    },
+    [navigate, item.children],
+  );
+
+  const handleChildClick = useCallback(
+    (path: string | undefined) => {
+      if (path) {
+        navigate({ to: path }).catch(console.warn);
+      }
+    },
+    [navigate],
+  );
 
   return (
     <React.Fragment key={item.name}>
       <ListItemButton
-        to={item.path}
         key={item.name}
-        component={RouterLink}
-        selected={item.selected}
+        selected={item.selected || isChildSelected}
+        onClick={(ev) => handleOpenClick(item.path, ev)}
       >
-        {item.icon && item.badge && !childIn ? (
+        {item.icon && item.badge && !sublistOpen ? (
           <Badge
             badgeContent={item.badge.count}
             color={item.badge.color}
@@ -71,27 +86,26 @@ const DrawerItem = ({ item, drawerState }: ItemProps) => {
           <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
         )}
         <ListItemText primary={item.name} />
-        {item.children && !item.selected ? (
-          <ListItemIcon
-            sx={{ justifyContent: 'right' }}
-            onClick={handleOpenClick}
-          >
+        {item.children && hasDisplayableChildren ? (
+          <ListItemIcon sx={{ justifyContent: 'right' }}>
             {sublistOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemIcon>
         ) : null}
       </ListItemButton>
-      {item.children ? (
-        <Collapse in={childIn} timeout={100}>
+      {item.children && hasDisplayableChildren ? (
+        <Collapse in={sublistOpen} timeout={100}>
           <List component="div" disablePadding>
             {item.children
               .filter((item) => !item.hidden)
               .map((child) => (
                 <ListItemButton
                   key={child.name}
-                  to={child.path}
+                  // to={child.path}
                   sx={{ pl: 4 }}
-                  component={RouterLink}
+                  // component={RouterLink}
+
                   selected={child.selected}
+                  onClick={() => handleChildClick(child.path)}
                 >
                   {child.icon && child.badge ? (
                     <Badge
@@ -122,105 +136,56 @@ const DrawerItem = ({ item, drawerState }: ItemProps) => {
   );
 };
 
-export const Drawer = ({ onOpen, onClose }: Props) => {
-  const [drawerOpen, toggleDrawerOpen] = useToggle(false);
-  const [drawerState, setDrawerState] =
-    useState<DrawerTransitionState>('closed');
+export const Drawer = () => {
   const drawerRef = useRef(null);
-
   const navItems = useNavItems();
-
-  const handleStateChange = (state: DrawerTransitionState) => {
-    setDrawerState(state);
-    switch (state) {
-      case 'open':
-        onOpen?.();
-        break;
-      case 'closed':
-        onClose?.();
-        break;
-      case 'closing':
-        break;
-      default:
-        break;
-    }
-  };
+  const darkMode = useIsDarkMode();
 
   return (
-    <Transition
-      nodeRef={drawerRef}
-      in={drawerOpen}
-      timeout={300}
-      onEnter={() => handleStateChange('opening')}
-      onEntered={() => handleStateChange('open')}
-      onExiting={() => handleStateChange('closing')}
-      onExited={() => handleStateChange('closed')}
+    <MuiDrawer
+      ref={drawerRef}
+      sx={{
+        width: DrawerWidth,
+        flex: '0 0 auto',
+        '& .MuiDrawer-paper': {
+          width: DrawerWidth,
+        },
+        boxSizing: 'border-box',
+        p: 0,
+      }}
+      slotProps={{
+        paper: {
+          elevation: 4,
+          sx: {
+            boxShadow: 'none',
+            borderRight: darkMode ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
+          },
+        },
+      }}
+      variant="permanent"
+      anchor="left"
     >
-      {(state) => (
-        <MuiDrawer
-          ref={drawerRef}
+      <>
+        <Toolbar
           sx={{
-            width:
-              state === 'entered' || state === 'entering'
-                ? DrawerOpenWidth
-                : DrawerClosedWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width:
-                state === 'entered' || state === 'entering'
-                  ? DrawerOpenWidth
-                  : DrawerClosedWidth,
-              boxSizing: 'border-box',
-              p: 0,
-              transition: (theme) =>
-                theme.transitions.create('width', {
-                  easing: 'cubic-bezier(0.4,0,0.2,1)',
-                  duration: '.15s',
-                }),
-            },
-            WebkitTransitionDuration: '.15s',
-            WebkitTransitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
-            overflowX: 'hidden',
-            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            px: [1],
           }}
-          PaperProps={{
-            elevation: 4,
-          }}
-          variant="permanent"
-          anchor="left"
-          onMouseEnter={() => toggleDrawerOpen(true)}
-          onMouseLeave={() => toggleDrawerOpen(false)}
-        >
-          <>
-            <Toolbar
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                px: [1],
-              }}
-            ></Toolbar>
-            <Divider />
-            <List component="nav" sx={{ flex: '1 1 0%', overflowX: 'hidden' }}>
-              {navItems
-                .filter((item) => !item.hidden)
-                .map((item) => (
-                  <DrawerItem
-                    key={item.name}
-                    item={item}
-                    drawerState={drawerState}
-                  />
-                ))}
-              <Divider sx={{ my: 1 }} />
-            </List>
-            {(drawerState === 'open' || drawerState === 'opening') && (
-              <Box sx={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                <VersionFooter />
-              </Box>
-            )}
-          </>
-        </MuiDrawer>
-      )}
-    </Transition>
+        ></Toolbar>
+        <List component="nav" sx={{ flex: '1 1 0%', overflowX: 'hidden' }}>
+          {navItems
+            .filter((item) => !item.hidden)
+            .map((item) => (
+              <DrawerItem key={item.name} item={item} />
+            ))}
+          <Divider sx={{ my: 1 }} />
+        </List>
+        <Box sx={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
+          <VersionFooter />
+        </Box>
+      </>
+    </MuiDrawer>
   );
 };

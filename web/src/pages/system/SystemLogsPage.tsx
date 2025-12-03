@@ -9,7 +9,6 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import { useSettings } from '../../store/settings/selectors.ts';
 
 const ValidLogLevels = [
@@ -175,13 +174,13 @@ export function SystemLogsPage() {
   });
 
   return (
-    <PaddedPaper>
-      <Typography>
+    <>
+      <Typography sx={{ pb: 2 }}>
         Displays the last {logBuf.length} system log events. Use the buttons
         below to export these logs or download the entire log file for
         debugging.
       </Typography>
       <MaterialReactTable table={table} />
-    </PaddedPaper>
+    </>
   );
 }

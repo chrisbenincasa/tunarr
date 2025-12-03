@@ -1,3 +1,5 @@
+import PaddedPaper from '@/components/base/PaddedPaper.tsx';
+import Breadcrumbs from '@/components/Breadcrumbs.tsx';
 import {
   Delete,
   Movie,
@@ -92,51 +94,54 @@ export const TrashPage = () => {
   return (
     <Stack spacing={2}>
       <Box>
+        <Breadcrumbs />
         <Typography variant="h4">Trash</Typography>
-        <Typography>
+        <Box display={'flex'} alignContent={'center'} sx={{ mt: 1 }}>
           Trashed items are items that were previously scanned, but not found in
           a recent scan. This could be due to missing files or a media server no
           longer returning the item from its API. These items will be unplayable
           in channels in their current state. When the trash is emptied, their
           spots in channels will be replaced with flex.
-        </Typography>
+        </Box>
       </Box>
-      <Stack direction={'row'}>
-        <ToggleButtonGroup
-          color="primary"
-          value={itemTypes}
-          onChange={(_, newTypes) => setItemTypes(newTypes as ProgramType[])}
-          aria-label="Platform"
-          sx={{ flexGrow: 1 }}
-        >
-          <ToggleButton value="movie">
-            <Movie sx={{ mr: 1 }} /> Movies
-          </ToggleButton>
-          <ToggleButton value="episode">
-            {' '}
-            <Tv sx={{ mr: 1 }} /> Episodes
-          </ToggleButton>
-          <ToggleButton value="track">
-            <MusicNote sx={{ mr: 1 }} /> Tracks
-          </ToggleButton>
-          <ToggleButton value="other_video">
-            <Videocam sx={{ mr: 1 }} /> Other Videos
-          </ToggleButton>
-          <ToggleButton value="music_video">
-            <MusicVideo sx={{ mr: 1 }} /> Music Videos
-          </ToggleButton>
-        </ToggleButtonGroup>
-        <Button
-          disabled={emptyTrashMut.isPending}
-          onClick={() => emptyTrashMut.mutate({})}
-          startIcon={<Delete />}
-          variant="contained"
-          color="error"
-        >
-          Empty Trash
-        </Button>
-      </Stack>
-      <LibraryProgramGrid searchRequest={request} />;
+      <PaddedPaper>
+        <Stack direction={'row'}>
+          <ToggleButtonGroup
+            color="primary"
+            value={itemTypes}
+            onChange={(_, newTypes) => setItemTypes(newTypes as ProgramType[])}
+            aria-label="Platform"
+            sx={{ flexGrow: 1 }}
+          >
+            <ToggleButton value="movie">
+              <Movie sx={{ mr: 1 }} /> Movies
+            </ToggleButton>
+            <ToggleButton value="episode">
+              {' '}
+              <Tv sx={{ mr: 1 }} /> Episodes
+            </ToggleButton>
+            <ToggleButton value="track">
+              <MusicNote sx={{ mr: 1 }} /> Tracks
+            </ToggleButton>
+            <ToggleButton value="other_video">
+              <Videocam sx={{ mr: 1 }} /> Other Videos
+            </ToggleButton>
+            <ToggleButton value="music_video">
+              <MusicVideo sx={{ mr: 1 }} /> Music Videos
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            disabled={emptyTrashMut.isPending}
+            onClick={() => emptyTrashMut.mutate({})}
+            startIcon={<Delete />}
+            variant="contained"
+            color="error"
+          >
+            Empty Trash
+          </Button>
+        </Stack>
+        <LibraryProgramGrid searchRequest={request} />;
+      </PaddedPaper>
     </Stack>
   );
 };
