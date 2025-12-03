@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.23.0-alpha.28](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.27...v0.23.0-alpha.28) (2025-12-03)
+
+
+### Features
+
+* add credits API and use it for credit thumbs ([758fd64](https://github.com/chrisbenincasa/tunarr/commit/758fd642dbb5f3681af0c4846c77dd9873870e08))
+* new program page ([fde72a4](https://github.com/chrisbenincasa/tunarr/commit/fde72a49b29e8318d2463e766411165c779429b6))
+
+
+### Bug Fixes
+
+* lift 1k document restriction on structured queries ([28279e8](https://github.com/chrisbenincasa/tunarr/commit/28279e8fd8e1a326f835578efb3df24670e96083))
+* remove reliance on search index for program materialization ([#1494](https://github.com/chrisbenincasa/tunarr/issues/1494)) ([c5d2118](https://github.com/chrisbenincasa/tunarr/commit/c5d21187c9fe8ea3255c2bc9ba12dfd2cb3fe433))
+
+
+### UI Changes
+
+* consistent library page UX and always-visible drawer ([2c59729](https://github.com/chrisbenincasa/tunarr/commit/2c5972951b83b72eeb19d18847fd8b0f2e7dbcec))
+
 ## [0.23.0-alpha.27](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.26...v0.23.0-alpha.27) (2025-11-30)
 
 
