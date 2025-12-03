@@ -31,6 +31,7 @@ import type {
   NamedEntity,
   OtherVideo,
   OtherVideoMetadata,
+  Person,
   Playlist,
   ProgramGroupingSchema,
   Season,
@@ -149,6 +150,7 @@ export type Identifier = z.infer<typeof IdentifierSchema>;
 export type Actor = z.infer<typeof Actor>;
 export type Writer = z.infer<typeof Writer>;
 export type Director = z.infer<typeof Director>;
+export type Person = z.infer<typeof Person>;
 export type Studio = z.infer<typeof Studio>;
 export type Genre = z.infer<typeof Genre>;
 export type NamedEntity = z.infer<typeof NamedEntity>;

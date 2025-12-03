@@ -117,7 +117,7 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   mediaLibrary?: Nullable<MediaSourceLibraryOrm>;
   artwork?: Artwork[];
   subtitles?: ProgramSubtitles[];
-  credits?: Credit[];
+  credits?: CreditWithArtwork[];
   genres?: GenreEntityWithGenre[];
   studios?: StudioEntityWithStudio[];
 };
@@ -255,10 +255,14 @@ export type ProgramGroupingWithExternalIds = ProgramGrouping & {
   externalIds: ProgramGroupingExternalId[];
 };
 
+export type CreditWithArtwork = Credit & {
+  artwork?: Artwork[];
+};
+
 export type ProgramGroupingOrmWithRelations = ProgramGroupingOrm & {
   externalIds: ProgramGroupingExternalIdOrm[];
   artwork?: Artwork[];
-  credits?: Credit[];
+  credits?: CreditWithArtwork[];
   genres?: GenreEntityWithGenre[];
   studios?: StudioEntityWithStudio[];
 };

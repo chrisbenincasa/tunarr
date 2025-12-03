@@ -287,6 +287,10 @@ export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
 //
 
 export const NamedEntity = z.object({
+  // Sometimes these entities are persisted, in which case they
+  // have an ID that can be passed back to other API endpoints to
+  // get more information, like thumbnail URLs.
+  uuid: z.uuid().optional(),
   name: z.string(),
   externalInfo: z
     .object({
@@ -729,6 +733,12 @@ export const TerminalProgramSchema = z.union([
 export const ItemOrFolder = TerminalProgramSchema.or(ProgramGroupingSchema).or(
   StructuralProgramGroupingSchema,
 );
+
+export const Person = z.discriminatedUnion('type', [
+  Actor.extend({ type: z.literal('actor') }),
+  Writer.extend({ type: z.literal('writer') }),
+  Director.extend({ type: z.literal('director') }),
+]);
 
 z.globalRegistry.add(Show, { id: 'Show' });
 z.globalRegistry.add(Season, { id: 'Season' });

@@ -17,7 +17,9 @@ import type {
 import { orderBy } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
+import type { CreditType } from '../db/schema/Credit.ts';
 import type {
+  CreditWithArtwork,
   MediaSourceWithRelations,
   ProgramGroupingOrmWithRelations,
   ProgramWithRelationsOrm,
@@ -106,6 +108,9 @@ export class ApiProgramConverters {
       canonicalId: program.canonicalId ?? '',
       // TODO: Persist these to the DB
       tags: searchDoc?.tags ?? [],
+      actors: convertCreditWithArtwork(program.credits ?? [], 'cast'),
+      writers: convertCreditWithArtwork(program.credits ?? [], 'writer'),
+      directors: convertCreditWithArtwork(program.credits ?? [], 'director'),
     } satisfies Partial<TerminalProgram>;
 
     const result = match(program)
@@ -243,6 +248,7 @@ export class ApiProgramConverters {
       tagline: grouping.tagline,
       tags: doc?.tags ?? [],
       genres: grouping.genres?.map(({ genre }) => ({ name: genre.name })) ?? [],
+      actors: convertCreditWithArtwork(grouping.credits ?? [], 'cast'),
     } satisfies Partial<ProgramGrouping>;
 
     const result = match(grouping)
@@ -251,7 +257,6 @@ export class ApiProgramConverters {
         { type: 'season' },
         () =>
           ({
-            // ...season,
             ...base,
             type: 'season',
             studios,
@@ -269,18 +274,6 @@ export class ApiProgramConverters {
             childCount,
             grandchildCount,
             rating: grouping.rating,
-            actors: orderBy(
-              grouping.credits?.filter((credit) => credit.type === 'cast'),
-              (credit, idx) => credit.index ?? idx,
-              'asc',
-            ).map(
-              (credit, index) =>
-                ({
-                  name: credit.name,
-                  order: index,
-                  role: credit.role,
-                }) satisfies Actor,
-            ),
           }) satisfies Show,
       )
       .with(
@@ -307,4 +300,28 @@ export class ApiProgramConverters {
 
     return result;
   }
+}
+
+function convertCreditWithArtwork(
+  credits: CreditWithArtwork[],
+  creditType: CreditType,
+) {
+  return orderBy(
+    credits.filter((credit) => credit.type === creditType),
+    (credit, idx) => credit.index ?? idx,
+    'asc',
+  ).map((credit, index) => {
+    const maybeThumbPath = credit.artwork?.find(
+      (art) => art.artworkType === 'thumbnail',
+    )?.sourcePath;
+    const thumb =
+      maybeThumbPath && URL.canParse(maybeThumbPath) ? maybeThumbPath : null;
+    return {
+      uuid: credit.uuid,
+      name: credit.name,
+      order: index,
+      role: credit.role,
+      thumb,
+    } satisfies Actor;
+  });
 }

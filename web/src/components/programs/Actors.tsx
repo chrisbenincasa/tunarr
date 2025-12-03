@@ -10,6 +10,7 @@ import {
 import { Link } from '@tanstack/react-router';
 import type { ProgramGrouping, TerminalProgram } from '@tunarr/types';
 import { useState } from 'react';
+import { usePersonThumbnail } from '../../hooks/useThumbnailUrl.ts';
 
 type Props = {
   program: TerminalProgram | ProgramGrouping;
@@ -21,6 +22,8 @@ export default function Actors({ program }: Props) {
   const initialItemsToShow: number = 14; // to do: actually check how many items are needed to fill a row based on current screen dimensions
   const itemsToLoad: number = initialItemsToShow;
   const [visibleCount, setVisibleCount] = useState<number>(initialItemsToShow);
+
+  const thumbnailUrlFunc = usePersonThumbnail();
 
   const getActors = () => {
     switch (program?.type) {
@@ -92,7 +95,11 @@ export default function Actors({ program }: Props) {
               >
                 <Avatar
                   alt={actor.name}
-                  src={actor.thumb ? actor.thumb : undefined}
+                  src={
+                    thumbnailUrlFunc(actor, 'thumbnail') ??
+                    actor.thumb ??
+                    undefined
+                  }
                   sx={{
                     width: '100%',
                     height: 'auto',
