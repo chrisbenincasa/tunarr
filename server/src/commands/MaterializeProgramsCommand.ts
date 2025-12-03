@@ -5,20 +5,14 @@ import { NonEmptyArray } from 'ts-essentials';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
-import {
-  decodeCaseSensitiveId,
-  MeilisearchService,
-} from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { groupByUniq } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
-import { isTerminalProgramDocument } from '../util/search.ts';
 
 @injectable()
 export class MaterializeProgramsCommand {
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(MeilisearchService) private searchService: MeilisearchService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
   ) {}
 
@@ -36,41 +30,73 @@ export class MaterializeProgramsCommand {
     if (programs.length === 0) {
       return [];
     }
-    const ids = programs.map((p) => p.uuid);
-
-    const [searchDocs, mediaSources] = await Promise.all([
-      this.searchService
-        .getPrograms(ids)
-        .then((_) => groupByUniq(_, (doc) => doc.id)),
-      this.mediaSourceDB
-        .getAll()
-        .then((_) => groupByUniq(_, (ms) => untag<MediaSourceId>(ms.uuid))),
-    ]);
+    const mediaSources = await this.mediaSourceDB
+      .getAll()
+      .then((_) => groupByUniq(_, (ms) => untag<MediaSourceId>(ms.uuid)));
 
     const apiGroups: TerminalProgram[] = [];
-    for (const group of programs) {
-      const doc = searchDocs[group.uuid];
-      if (!doc || !isTerminalProgramDocument(doc)) continue;
-      const maybeId = group.mediaSourceId ? untag(group.mediaSourceId) : null;
-      const ms =
-        mediaSources[maybeId ?? decodeCaseSensitiveId(doc.mediaSourceId)];
-      if (!ms) continue;
+    for (const program of programs) {
+      // const doc = searchDocs[group.uuid];
+      // if (!doc || !isTerminalProgramDocument(doc)) continue;
+      const maybeId = program.mediaSourceId
+        ? untag(program.mediaSourceId)
+        : null;
+
+      if (!maybeId) {
+        this.logger.warn(
+          'Program (type %s) %s missing media_source_id. Try scanning',
+          program.type,
+          program.uuid,
+        );
+        continue;
+      }
+
+      const ms = mediaSources[maybeId];
+
+      if (!ms) {
+        this.logger.warn(
+          `Program (type = %s) %s has media source ID that doesn't exist in DB`,
+          program.type,
+          program.uuid,
+        );
+        continue;
+      }
+
       const library = ms.libraries.find(
-        (lib) =>
-          lib.uuid ===
-          (group.libraryId ?? decodeCaseSensitiveId(doc.libraryId)),
+        (lib) => lib.uuid === program.libraryId,
       );
-      if (!library) continue;
-      const apiItem = ApiProgramConverters.convertProgramSearchResult(
-        doc,
-        group,
+
+      if (!library) {
+        if (!program.libraryId) {
+          this.logger.warn(
+            'Program (type %s) %s does not have a library_id',
+            program.type,
+            program.uuid,
+          );
+        } else {
+          this.logger.warn(
+            `Program (type %s) %s has a library_id that is not associated with it's media source id (ID = %s)`,
+            program.type,
+            program.uuid,
+            ms.uuid,
+          );
+        }
+        continue;
+      }
+
+      // Specifically passing undefined for search doc now to avoid reliance on
+      // search
+      const apiItem = ApiProgramConverters.convertProgram(
+        program,
+        undefined,
         ms,
         library,
       );
+
       if (!apiItem) {
         this.logger.warn(
           'Unable to convert program grouping %s to API representation',
-          group.uuid,
+          program.uuid,
         );
         continue;
       }

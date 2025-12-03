@@ -1,13 +1,15 @@
 import type { LineupItem } from '@/db/derived_types/Lineup.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import { binarySearchRange } from '@/util/binarySearch.js';
 import type { ScheduledRedirectOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { isNull } from 'lodash-es';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedirectOperation> {
-  public apply(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
+  public apply(
+    channelAndLineup: LegacyChannelAndLineup,
+  ): Promise<LegacyChannelAndLineup> {
     // Check if the channel length is > 1 day. If not, we will extend the channel
     // with flex time in order to add at least one 'scheduled redirect' into the
     // lineup. Otherwise, this tool really does nothing

@@ -76,55 +76,55 @@ export class SearchProgramsCommand {
       this.programDB.getProgramGroupingChildCounts(groupingIds),
     ]);
 
-    const results = seq.collect(result.hits, (program) => {
-      const mediaSourceId = decodeCaseSensitiveId(program.mediaSourceId);
+    const results = seq.collect(result.hits, (searchDoc) => {
+      const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
       const mediaSource = allMediaSourcesById[mediaSourceId];
       if (!mediaSource) {
         this.logger.debug(
           'Could not find media source %s in DB for program ID %s',
           mediaSourceId,
-          program.id,
+          searchDoc.id,
         );
         return;
       }
-      const libraryId = decodeCaseSensitiveId(program.libraryId);
+      const libraryId = decodeCaseSensitiveId(searchDoc.libraryId);
       const library = allLibrariesById[libraryId];
       if (!library) {
         this.logger.debug(
           'COuld not find media source library %s in DB for program ID %s',
           libraryId,
-          program.id,
+          searchDoc.id,
         );
         return;
       }
 
-      if (isProgramGroupingDocument(program)) {
-        if (groupings[program.id]) {
-          return ApiProgramConverters.convertProgramGroupingSearchResult(
-            program,
-            groupings[program.id],
-            groupingCounts[program.id],
+      if (isProgramGroupingDocument(searchDoc)) {
+        if (groupings[searchDoc.id]) {
+          return ApiProgramConverters.convertProgramGrouping(
+            groupings[searchDoc.id],
+            searchDoc,
+            groupingCounts[searchDoc.id],
             mediaSource,
             library,
           );
         } else {
           this.logger.debug(
             'Could not find program grouping %s in DB, but it exists in search index!',
-            program.id,
+            searchDoc.id,
           );
         }
-      } else if (isTerminalProgramDocument(program)) {
-        if (programs[program.id]) {
-          return ApiProgramConverters.convertProgramSearchResult(
-            program,
-            programs[program.id],
+      } else if (isTerminalProgramDocument(searchDoc)) {
+        if (programs[searchDoc.id]) {
+          return ApiProgramConverters.convertProgram(
+            programs[searchDoc.id],
+            searchDoc,
             mediaSource,
             library,
           );
         } else {
           this.logger.debug(
             'Could not find program %s in DB, but it exists in search index!',
-            program.id,
+            searchDoc.id,
           );
         }
       }

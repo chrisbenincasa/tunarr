@@ -48,6 +48,7 @@ import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { NewArtwork } from '../schema/Artwork.ts';
 import { CreditType, NewCredit } from '../schema/Credit.ts';
+import { NewGenre } from '../schema/Genre.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import type { NewProgramDao } from '../schema/Program.ts';
@@ -55,6 +56,7 @@ import { ProgramType } from '../schema/Program.ts';
 import { NewProgramMediaFile } from '../schema/ProgramMediaFile.ts';
 import { NewProgramMediaStream } from '../schema/ProgramMediaStream.ts';
 import { NewProgramSubtitles } from '../schema/ProgramSubtitles.ts';
+import { NewStudio } from '../schema/Studio.ts';
 import { MediaSourceId, MediaSourceName } from '../schema/base.js';
 import {
   NewCreditWithArtwork,
@@ -215,6 +217,10 @@ export class ProgramDaoMinter {
       ),
       credits: seq.collect(movie.actors, (actor) =>
         this.mintCreditForActor(actor, programId, now),
+      ),
+      genres: seq.collect(movie.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(movie.studios, (studio) =>
+        this.mintStudio(studio.name),
       ),
     };
   }
@@ -451,6 +457,12 @@ export class ProgramDaoMinter {
         ) ?? []),
       ]),
       subtitles: this.mintSubtitles(programId, episode),
+      genres: seq.collect(episode.genres, (genre) =>
+        this.mintGenre(genre.name),
+      ),
+      studios: seq.collect(episode.studios, (studio) =>
+        this.mintStudio(studio.name),
+      ),
     };
   }
 
@@ -497,6 +509,10 @@ export class ProgramDaoMinter {
       ),
       credits: [],
       subtitles: [],
+      genres: seq.collect(track.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(track.studios, (studio) =>
+        this.mintStudio(studio.name),
+      ),
     };
   }
 
@@ -552,6 +568,10 @@ export class ProgramDaoMinter {
         ) ?? []),
       ]),
       subtitles: this.mintSubtitles(programId, video),
+      genres: seq.collect(video.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(video.studios, (studio) =>
+        this.mintStudio(studio.name),
+      ),
     };
   }
 
@@ -1089,6 +1109,20 @@ export class ProgramDaoMinter {
       createdAt: new Date(now),
       updatedAt: new Date(now),
       sourcePath: artwork.path!,
+    };
+  }
+
+  private mintGenre(genreName: string): NewGenre {
+    return {
+      uuid: v4(),
+      name: genreName,
+    };
+  }
+
+  private mintStudio(studioName: string): NewStudio {
+    return {
+      uuid: v4(),
+      name: studioName,
     };
   }
 }

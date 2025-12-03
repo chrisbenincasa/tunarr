@@ -1,4 +1,4 @@
-import type { Channel } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { DynamicContentConfigSource } from '@tunarr/types/api';
 import { Mutex, withTimeout } from 'async-mutex';
 
@@ -10,10 +10,10 @@ export abstract class ContentSourceUpdater<
   T extends DynamicContentConfigSource,
 > {
   protected initialized: boolean = false;
-  protected channel: Channel;
+  protected channel: ChannelOrm;
   protected config: T;
 
-  constructor(channel: Channel, config: T) {
+  constructor(channel: ChannelOrm, config: T) {
     this.channel = channel;
     this.config = config;
   }

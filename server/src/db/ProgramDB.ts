@@ -30,11 +30,27 @@ import {
   ChannelProgram,
   ContentProgram,
   isContentProgram,
+  untag,
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
+import { RunResult } from 'better-sqlite3';
 import dayjs from 'dayjs';
-import { and, asc, count, countDistinct, eq, inArray, sql } from 'drizzle-orm';
-import { SelectedFields, SQLiteSelectBuilder } from 'drizzle-orm/sqlite-core';
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  isNull as dbIsNull,
+  eq,
+  inArray,
+  or,
+  sql,
+} from 'drizzle-orm';
+import {
+  BaseSQLiteDatabase,
+  SelectedFields,
+  SQLiteSelectBuilder,
+} from 'drizzle-orm/sqlite-core';
 import { inject, injectable, interfaces } from 'inversify';
 import {
   CaseWhenBuilder,
@@ -43,7 +59,7 @@ import {
   NotNull,
   UpdateResult,
 } from 'kysely';
-import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   chunk,
   compact,
@@ -111,20 +127,20 @@ import {
 import { PageParams } from './interfaces/IChannelDB.ts';
 import {
   AllProgramFields,
-  AllProgramGroupingFields,
   ProgramUpsertFields,
   selectProgramsBuilder,
   withProgramByExternalId,
   withProgramExternalIds,
-  withProgramGroupingExternalIds,
-  withTrackAlbum,
-  withTrackArtist,
-  withTvSeason,
-  withTvShow,
 } from './programQueryHelpers.ts';
 import { Artwork, NewArtwork } from './schema/Artwork.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
 import { Credit, NewCredit } from './schema/Credit.ts';
+import {
+  EntityGenre,
+  Genre,
+  NewGenre,
+  NewGenreEntity,
+} from './schema/Genre.ts';
 import { RemoteMediaSourceType } from './schema/MediaSource.ts';
 import {
   NewProgramDao,
@@ -143,15 +159,16 @@ import {
 } from './schema/ProgramExternalId.ts';
 import {
   NewProgramGrouping,
+  NewProgramGroupingOrm,
   ProgramGrouping,
   ProgramGroupingType,
-  ProgramGroupingUpdate,
   type ProgramGroupingTypes,
 } from './schema/ProgramGrouping.ts';
 import {
   NewProgramGroupingExternalId,
   NewSingleOrMultiProgramGroupingExternalId,
   ProgramGroupingExternalId,
+  ProgramGroupingExternalIdOrm,
   toInsertableProgramGroupingExternalId,
 } from './schema/ProgramGroupingExternalId.ts';
 import {
@@ -168,6 +185,12 @@ import {
 } from './schema/ProgramSubtitles.ts';
 import { ProgramVersion } from './schema/ProgramVersion.ts';
 import {
+  NewStudio,
+  NewStudioEntity,
+  Studio,
+  StudioEntity,
+} from './schema/Studio.ts';
+import {
   MediaSourceId,
   MediaSourceName,
   MediaSourceType,
@@ -182,11 +205,10 @@ import type {
   ProgramGroupingOrmWithRelations,
   ProgramGroupingWithExternalIds,
   ProgramWithExternalIds,
-  ProgramWithRelations,
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from './schema/derivedTypes.ts';
-import { DrizzleDBAccess } from './schema/index.ts';
+import { DrizzleDBAccess, schema } from './schema/index.ts';
 
 type MintedNewProgramInfo = {
   program: NewProgramDao;
@@ -315,27 +337,6 @@ export class ProgramDB implements IProgramDB {
     return results;
   }
 
-  async getProgramsByIdsOld(
-    ids: string[],
-    batchSize: number = 500,
-  ): Promise<ProgramWithRelations[]> {
-    const results: ProgramWithRelations[] = [];
-    for (const idChunk of chunk(ids, batchSize)) {
-      const res = await this.db
-        .selectFrom('program')
-        .selectAll()
-        .select(withTrackAlbum)
-        .select(withTrackArtist)
-        .select(withTvSeason)
-        .select(withTvShow)
-        .select(withProgramExternalIds)
-        .where('program.uuid', 'in', idChunk)
-        .execute();
-      results.push(...res);
-    }
-    return results;
-  }
-
   async getProgramGrouping(id: string) {
     return this.drizzleDB.query.programGrouping.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
@@ -386,27 +387,49 @@ export class ProgramDB implements IProgramDB {
     return map;
   }
 
-  async getProgramGroupingByExternalId(eid: ProgramGroupingExternalIdLookup) {
-    return await this.db
-      .selectFrom('programGroupingExternalId')
-      .where('externalKey', '=', eid.externalKey)
-      .where('mediaSourceId', '=', eid.externalSourceId)
-      .where('sourceType', '=', eid.sourceType)
-      .select((eb) =>
-        jsonObjectFrom(
-          eb
-            .selectFrom('programGrouping')
-            .select(AllProgramGroupingFields)
-            .whereRef(
-              'programGrouping.uuid',
-              '=',
-              'programGroupingExternalId.groupUuid',
-            )
-            .select(withProgramGroupingExternalIds),
-        ).as('grouping'),
-      )
-      .executeTakeFirst()
+  async getProgramGroupingByExternalId(
+    eid: ProgramGroupingExternalIdLookup,
+  ): Promise<Maybe<ProgramGroupingOrmWithRelations>> {
+    return await this.drizzleDB.query.programGroupingExternalId
+      .findFirst({
+        where: (row, { and, or, eq }) =>
+          and(
+            eq(row.externalKey, eid.externalKey),
+            eq(row.sourceType, eid.sourceType),
+            or(
+              eq(row.externalSourceId, untag(eid.externalSourceId)),
+              eq(row.mediaSourceId, eid.externalSourceId),
+            ),
+          ),
+        with: {
+          grouping: {
+            with: {
+              externalIds: true,
+            },
+          },
+        },
+      })
       .then((result) => result?.grouping ?? undefined);
+    // return await this.db
+    //   .selectFrom('programGroupingExternalId')
+    //   .where('externalKey', '=', eid.externalKey)
+    //   .where('mediaSourceId', '=', eid.externalSourceId)
+    //   .where('sourceType', '=', eid.sourceType)
+    //   .select((eb) =>
+    //     jsonObjectFrom(
+    //       eb
+    //         .selectFrom('programGrouping')
+    //         .select(AllProgramGroupingFields)
+    //         .whereRef(
+    //           'programGrouping.uuid',
+    //           '=',
+    //           'programGroupingExternalId.groupUuid',
+    //         )
+    //         .select(withProgramGroupingExternalIds),
+    //     ).as('grouping'),
+    //   )
+    //   .executeTakeFirst()
+    //   .then((result) => result?.grouping ?? undefined);
   }
 
   async getProgramParent(
@@ -1131,6 +1154,8 @@ export class ProgramDB implements IProgramDB {
         const artworkToInsert: NewArtwork[] = [];
         const subtitlesToInsert: NewProgramSubtitles[] = [];
         const creditsToInsert: NewCredit[] = [];
+        const genresToInsert: Dictionary<NewGenre[]> = {};
+        const studiosToInsert: Dictionary<NewStudio[]> = {};
         for (const program of chunkResult) {
           const key = program.canonicalId;
           const request: Maybe<NewProgramWithRelations> =
@@ -1160,6 +1185,16 @@ export class ProgramDB implements IProgramDB {
             creditsToInsert.push(credit);
             artworkToInsert.push(...artwork);
           }
+
+          for (const genre of request?.genres ?? []) {
+            genresToInsert[program.uuid] ??= [];
+            genresToInsert[program.uuid]?.push(genre);
+          }
+
+          for (const studio of request?.studios ?? []) {
+            studiosToInsert[program.uuid] ??= [];
+            studiosToInsert[program.uuid]?.push(studio);
+          }
         }
 
         const externalIdsByProgramId =
@@ -1174,6 +1209,14 @@ export class ProgramDB implements IProgramDB {
         await this.upsertArtwork(artworkToInsert);
 
         await this.upsertSubtitles(subtitlesToInsert);
+
+        for (const [programId, genres] of Object.entries(genresToInsert)) {
+          await this.upsertProgramGenres(programId, genres);
+        }
+
+        for (const [programId, studios] of Object.entries(studiosToInsert)) {
+          await this.upsertProgramStudios(programId, studios);
+        }
 
         return chunkResult.map(
           (upsertedProgram) =>
@@ -1363,6 +1406,136 @@ export class ProgramDB implements IProgramDB {
         inserted.push(...batchResult);
       }
       return inserted;
+    });
+  }
+
+  async upsertProgramGenres(programId: string, genres: NewGenre[]) {
+    return this.upsertProgramGenresInternal('program', programId, genres);
+  }
+
+  async upsertProgramGroupingGenres(groupingId: string, genres: NewGenre[]) {
+    return this.upsertProgramGenresInternal('grouping', groupingId, genres);
+  }
+
+  private async upsertProgramGenresInternal(
+    entityType: 'program' | 'grouping',
+    joinId: string,
+    genres: NewGenre[],
+  ) {
+    if (genres.length === 0) {
+      return;
+    }
+
+    const incomingByName = groupByUniq(genres, (g) => g.name);
+    const existingGenresByName: Dictionary<Genre> = {};
+    for (const genreChunk of chunk(genres, 100)) {
+      const names = genreChunk.map((g) => g.name);
+      const results = await this.drizzleDB
+        .select()
+        .from(Genre)
+        .where(inArray(Genre.name, names));
+      for (const result of results) {
+        existingGenresByName[result.name] = result;
+      }
+    }
+
+    const newGenreNames = new Set(
+      difference(keys(incomingByName), keys(existingGenresByName)),
+    );
+
+    const relations: NewGenreEntity[] = [];
+    for (const name of Object.keys(incomingByName)) {
+      const genreId = newGenreNames.has(name)
+        ? incomingByName[name].uuid
+        : existingGenresByName[name].uuid;
+      relations.push({
+        genreId,
+        programId: entityType === 'program' ? joinId : null,
+        groupId: entityType === 'grouping' ? joinId : null,
+      });
+    }
+
+    return this.drizzleDB.transaction(async (tx) => {
+      const col =
+        entityType === 'grouping' ? EntityGenre.groupId : EntityGenre.programId;
+      await tx.delete(EntityGenre).where(eq(col, joinId));
+      if (newGenreNames.size > 0) {
+        await tx
+          .insert(Genre)
+          .values(
+            [...newGenreNames.values()].map((name) => incomingByName[name]),
+          )
+          .onConflictDoNothing();
+      }
+      if (relations.length > 0) {
+        await tx.insert(EntityGenre).values(relations).onConflictDoNothing();
+      }
+    });
+  }
+
+  async upsertProgramStudios(programId: string, studios: NewStudio[]) {
+    return this.upsertProgramStudiosInternal('program', programId, studios);
+  }
+
+  async upsertProgramGroupingStudios(groupingId: string, studios: NewStudio[]) {
+    return this.upsertProgramStudiosInternal('grouping', groupingId, studios);
+  }
+
+  private async upsertProgramStudiosInternal(
+    entityType: 'program' | 'grouping',
+    joinId: string,
+    studios: NewStudio[],
+  ) {
+    if (studios.length === 0) {
+      return;
+    }
+
+    const incomingByName = groupByUniq(studios, (g) => g.name);
+    const existingStudiosByName: Dictionary<Studio> = {};
+    for (const studioChunk of chunk(studios, 100)) {
+      const names = studioChunk.map((g) => g.name);
+      const results = await this.drizzleDB
+        .select()
+        .from(Studio)
+        .where(inArray(Studio.name, names));
+      for (const result of results) {
+        existingStudiosByName[result.name] = result;
+      }
+    }
+
+    const newStudioNames = new Set(
+      difference(keys(incomingByName), keys(existingStudiosByName)),
+    );
+
+    const relations: NewStudioEntity[] = [];
+    for (const name of Object.keys(incomingByName)) {
+      const studioId = newStudioNames.has(name)
+        ? incomingByName[name].uuid
+        : existingStudiosByName[name].uuid;
+      relations.push({
+        studioId,
+        programId: entityType === 'program' ? joinId : null,
+        groupId: entityType === 'grouping' ? joinId : null,
+      });
+    }
+
+    return this.drizzleDB.transaction(async (tx) => {
+      const col =
+        entityType === 'grouping'
+          ? StudioEntity.groupId
+          : StudioEntity.programId;
+      await tx.delete(StudioEntity).where(eq(col, joinId));
+      if (newStudioNames.size > 0) {
+        await tx
+          .insert(Studio)
+          .values(
+            [...newStudioNames.values()].map((name) => incomingByName[name]),
+          )
+          .onConflictDoNothing();
+      }
+      if (relations.length > 0) {
+        await tx.insert(StudioEntity).values(relations).onConflictDoNothing();
+      }
     });
   }
 
@@ -1855,7 +2028,7 @@ export class ProgramDB implements IProgramDB {
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     externalId: ProgramGroupingExternalIdLookup,
     forceUpdate: boolean = false,
-  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>> {
+  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>> {
     const { programGrouping: dao, externalIds } = newGroupingAndRelations;
     const existing = await this.getProgramGroupingByExternalId(externalId);
     if (existing) {
@@ -1870,12 +2043,13 @@ export class ProgramDB implements IProgramDB {
       const differentVersion = existing.canonicalId !== dao.canonicalId;
       const shouldUpdate =
         forceUpdate || differentVersion || missingAssociation;
+
       if (shouldUpdate) {
         dao.uuid = existing.uuid;
         externalIds.forEach((externalId) => {
           externalId.groupUuid = existing.uuid;
         });
-        await this.db.transaction().execute(async (tx) => {
+        await this.drizzleDB.transaction(async (tx) => {
           await this.updateProgramGrouping(
             newGroupingAndRelations,
             existing,
@@ -1906,6 +2080,16 @@ export class ProgramDB implements IProgramDB {
           ),
         );
 
+        await this.upsertProgramGroupingGenres(
+          existing.uuid,
+          newGroupingAndRelations.genres,
+        );
+
+        await this.upsertProgramGroupingStudios(
+          existing.uuid,
+          newGroupingAndRelations.studios,
+        );
+
         wasUpdated = true;
       }
 
@@ -1916,23 +2100,24 @@ export class ProgramDB implements IProgramDB {
       };
     }
 
-    const inserted = await this.db.transaction().execute(async (tx) => {
-      const grouping = await tx
-        .insertInto('programGrouping')
-        .values(omit(dao, 'externalIds'))
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      const insertedExternalIds: ProgramGroupingExternalId[] = [];
+    const inserted = await this.drizzleDB.transaction(async (tx) => {
+      const grouping = head(
+        await tx
+          .insert(ProgramGrouping)
+          .values(omit(dao, 'externalIds'))
+          .returning(),
+      )!;
+      const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
       if (externalIds.length > 0) {
         insertedExternalIds.push(
           ...(await tx
-            .insertInto('programGroupingExternalId')
+            .insert(ProgramGroupingExternalId)
             .values(
               externalIds.map((eid) =>
                 this.singleOrMultiProgramGroupingExternalIdToDao(eid),
               ),
             )
-            .returningAll()
+            .returning()
             .execute()),
         );
       }
@@ -1942,7 +2127,7 @@ export class ProgramDB implements IProgramDB {
         entity: {
           ...grouping,
           externalIds: insertedExternalIds,
-        } satisfies ProgramGroupingWithExternalIds,
+        } satisfies ProgramGroupingOrmWithRelations,
       };
     });
 
@@ -1963,13 +2148,23 @@ export class ProgramDB implements IProgramDB {
       ),
     );
 
+    await this.upsertProgramGroupingGenres(
+      inserted.entity.uuid,
+      newGroupingAndRelations.genres,
+    );
+
+    await this.upsertProgramGroupingStudios(
+      inserted.entity.uuid,
+      newGroupingAndRelations.studios,
+    );
+
     return inserted;
   }
 
   async upsertLocalProgramGrouping(
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     libraryId: string,
-  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>> {
+  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>> {
     const incomingYear = newGroupingAndRelations.programGrouping.year;
     const existingGrouping =
       await this.drizzleDB.query.programGrouping.findFirst({
@@ -2152,10 +2347,10 @@ export class ProgramDB implements IProgramDB {
 
   private async updateProgramGrouping(
     { programGrouping: incoming }: NewProgramGroupingWithRelations,
-    existing: ProgramGroupingWithExternalIds,
-    tx: Kysely<DB> = this.db,
+    existing: ProgramGroupingOrmWithRelations,
+    tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
   ) {
-    const update: ProgramGroupingUpdate = {
+    const update: NewProgramGroupingOrm = {
       ...omit(existing, 'externalIds'),
       index: incoming.index,
       title: incoming.title,
@@ -2170,20 +2365,24 @@ export class ProgramDB implements IProgramDB {
       libraryId: incoming.libraryId,
       sourceType: incoming.sourceType,
       externalKey: incoming.externalKey,
+      plot: incoming.plot,
+      rating: incoming.rating,
+      releaseDate: incoming.releaseDate,
+      tagline: incoming.tagline,
+      updatedAt: incoming.updatedAt,
     };
 
     await tx
-      .updateTable('programGrouping')
-      .where('uuid', '=', existing.uuid)
+      .update(ProgramGrouping)
       .set(update)
-      .limit(1)
-      .executeTakeFirstOrThrow();
+      .where(eq(ProgramGrouping.uuid, existing.uuid))
+      .limit(1);
   }
 
   private async updateProgramGroupingExternalIds(
     existingIds: ProgramGroupingExternalId[],
     newIds: NewSingleOrMultiProgramGroupingExternalId[],
-    tx: Kysely<DB> = this.db,
+    tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
   ) {
     devAssert(
       uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length === 1,
@@ -2224,21 +2423,29 @@ export class ProgramDB implements IProgramDB {
     );
     await Promise.all(
       chunk(deletedIds, 100).map((idChunk) => {
+        const clauses = idChunk.map((id) =>
+          and(
+            id.mediaSourceId
+              ? eq(ProgramGroupingExternalId.mediaSourceId, id.mediaSourceId)
+              : dbIsNull(ProgramGroupingExternalId.mediaSourceId),
+            id.libraryId
+              ? eq(ProgramGroupingExternalId.libraryId, id.libraryId)
+              : dbIsNull(ProgramGroupingExternalId.libraryId),
+            eq(ProgramGroupingExternalId.externalKey, id.externalKey),
+            id.externalSourceId
+              ? eq(
+                  ProgramGroupingExternalId.externalSourceId,
+                  id.externalSourceId,
+                )
+              : dbIsNull(ProgramGroupingExternalId.externalSourceId),
+            eq(ProgramGroupingExternalId.sourceType, id.sourceType),
+          ),
+        );
+
         return tx
-          .deleteFrom('programGroupingExternalId')
-          .where((eb) => {
-            const clauses = idChunk.map((id) =>
-              eb.and([
-                eb('mediaSourceId', '=', id.mediaSourceId),
-                eb('libraryId', '=', id.libraryId),
-                eb('externalKey', '=', id.externalKey),
-                eb('externalSourceId', '=', id.externalSourceId),
-                eb('sourceType', '=', id.sourceType),
-              ]),
-            );
-            return eb.or(clauses);
-          })
-          .executeTakeFirstOrThrow();
+          .delete(ProgramGroupingExternalId)
+          .where(or(...clauses))
+          .execute();
       }),
     );
 
@@ -2248,7 +2455,7 @@ export class ProgramDB implements IProgramDB {
 
     await Promise.all(
       chunk(addedIds, 100).map((idChunk) =>
-        this.upsertProgramGroupingExternalIdsChunk(idChunk, tx),
+        this.upsertProgramGroupingExternalIdsChunkOrm(idChunk, tx),
       ),
     );
   }
@@ -2909,6 +3116,95 @@ export class ProgramDB implements IProgramDB {
         }),
       );
     }
+  }
+
+  private async upsertProgramGroupingExternalIdsChunkOrm(
+    ids: (
+      | NewSingleOrMultiProgramGroupingExternalId
+      | NewProgramGroupingExternalId
+    )[],
+    tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
+  ): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+
+    const [singles, multiples] = partition(ids, (id) =>
+      isValidSingleExternalIdType(id.sourceType),
+    );
+
+    const promises: Promise<RunResult>[] = [];
+
+    if (singles.length > 0) {
+      promises.push(
+        tx
+          .insert(ProgramGroupingExternalId)
+          .values(singles.map(toInsertableProgramGroupingExternalId))
+          .onConflictDoUpdate({
+            target: [
+              ProgramGroupingExternalId.groupUuid,
+              ProgramGroupingExternalId.sourceType,
+            ],
+            targetWhere: sql`media_source_id is null`,
+            set: {
+              updatedAt: sql`excluded.updated_at`,
+              externalFilePath: sql`excluded.external_file_path`,
+              groupUuid: sql`excluded.group_uuid`,
+              externalKey: sql`excluded.external_key`,
+            },
+          })
+          .execute(),
+        // .onConflict((oc) =>
+        //   oc
+        //     .columns(['groupUuid', 'sourceType'])
+        //     .where('mediaSourceId', 'is', null)
+        //     .doUpdateSet((eb) => ({
+        //       updatedAt: eb.ref('excluded.updatedAt'),
+        //       externalFilePath: eb.ref('excluded.externalFilePath'),
+        //       groupUuid: eb.ref('excluded.groupUuid'),
+        //       externalKey: eb.ref('excluded.externalKey'),
+        //     })),
+        // )
+        // .executeTakeFirstOrThrow(),
+      );
+    }
+
+    if (multiples.length > 0) {
+      promises.push(
+        tx
+          .insert(ProgramGroupingExternalId)
+          .values(multiples.map(toInsertableProgramGroupingExternalId))
+          .onConflictDoUpdate({
+            target: [
+              ProgramGroupingExternalId.groupUuid,
+              ProgramGroupingExternalId.sourceType,
+              ProgramGroupingExternalId.mediaSourceId,
+            ],
+            targetWhere: sql`media_source_id is not null`,
+            set: {
+              updatedAt: sql`excluded.updated_at`,
+              externalFilePath: sql`excluded.external_file_path`,
+              groupUuid: sql`excluded.group_uuid`,
+              externalKey: sql`excluded.external_key`,
+            },
+          })
+          .execute(),
+        // .onConflict((oc) =>
+        //   oc
+        //     .columns(['groupUuid', 'sourceType', 'mediaSourceId'])
+        //     .where('mediaSourceId', 'is not', null)
+        //     .doUpdateSet((eb) => ({
+        //       updatedAt: eb.ref('excluded.updatedAt'),
+        //       externalFilePath: eb.ref('excluded.externalFilePath'),
+        //       groupUuid: eb.ref('excluded.groupUuid'),
+        //       externalKey: eb.ref('excluded.externalKey'),
+        //     })),
+        // )
+        // .executeTakeFirstOrThrow(),
+      );
+    }
+
+    await Promise.all(promises);
   }
 
   private async upsertProgramGroupingExternalIdsChunk(

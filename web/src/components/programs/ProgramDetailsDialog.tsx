@@ -1,7 +1,7 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { useIsDarkMode } from '@/hooks/useTunarrTheme.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
-import { Close } from '@mui/icons-material';
+import { Close, MoreVert, Refresh } from '@mui/icons-material';
 import {
   Box,
   Dialog,
@@ -9,6 +9,10 @@ import {
   DialogTitle,
   IconButton,
   LinearProgress,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Skeleton,
   Stack,
   Tab,
@@ -16,18 +20,22 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ProgramLike, TupleToUnion } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
-import { find, merge } from 'lodash-es';
-import { Suspense, useMemo, useState } from 'react';
+import { find, isEqual, merge } from 'lodash-es';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { DeepRequired } from 'ts-essentials';
 import {
   getApiProgramGroupingsByIdOptions,
+  getApiProgramGroupingsByIdQueryKey,
   getApiProgramsByIdOptions,
+  postApiMoviesByIdScanMutation,
+  postApiShowsByIdScanMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
+import type { Nullable } from '../../types/util.ts';
 import { ProgramMetadataDialogContent } from '../ProgramMetadataDialogContent.tsx';
 import { ProgramStreamDetails } from '../ProgramStreamDetails.tsx';
 import { RawProgramDetails } from '../RawProgramDetails.tsx';
@@ -67,6 +75,9 @@ export default function ProgramDetailsDialog({
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = useIsDarkMode();
+  const [moreMenuAnchorEl, setMoreMenuAnchorEl] =
+    useState<Nullable<HTMLElement>>(null);
+  const moreMenuOpen = !!moreMenuAnchorEl;
 
   const visibility = useMemo(
     () => merge(DefaultPanelVisibility, panelVisibility),
@@ -125,6 +136,60 @@ export default function ProgramDetailsDialog({
     }
   }, [programData]);
 
+  const queryClient = useQueryClient();
+  const clearQueryCache = useCallback(() => {
+    return queryClient.invalidateQueries({
+      predicate: (key) => {
+        return (
+          isEqual(
+            key,
+            getApiProgramGroupingsByIdQueryKey({ path: { id: programId } }),
+          ) ||
+          isEqual(key, getApiProgramsByIdOptions({ path: { id: programId } }))
+        );
+      },
+    });
+  }, [programId, queryClient]);
+
+  const showScanMut = useMutation({
+    ...postApiShowsByIdScanMutation(),
+    onSuccess: () => {
+      return clearQueryCache();
+    },
+  });
+
+  const movieScanMut = useMutation({
+    ...postApiMoviesByIdScanMutation(),
+    onSuccess: () => {
+      return clearQueryCache();
+    },
+  });
+
+  const scanItem = useCallback(() => {
+    switch (programType) {
+      case 'movie': {
+        movieScanMut.mutate({ path: { id: programId } }, {});
+        break;
+      }
+      case 'show': {
+        showScanMut.mutate({
+          path: { id: programId },
+        });
+        break;
+      }
+      case 'season':
+      case 'episode':
+      case 'album':
+      case 'artist':
+      case 'track':
+      case 'music_video':
+      case 'other_video':
+        break;
+    }
+
+    setMoreMenuAnchorEl(null);
+  }, [movieScanMut, programId, programType, showScanMut]);
+
   return (
     <Dialog
       open={open}
@@ -160,6 +225,28 @@ export default function ProgramDetailsDialog({
           sx={{ display: 'flex', alignItems: 'center' }}
         >
           <Box sx={{ flex: 1 }}>{title}</Box>
+          {programType === 'show' || programType === 'movie' ? (
+            <IconButton
+              onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
+              sx={{ mr: 1 }}
+            >
+              <MoreVert />
+            </IconButton>
+          ) : null}
+          <Menu
+            anchorEl={moreMenuAnchorEl}
+            open={moreMenuOpen}
+            onClose={() => setMoreMenuAnchorEl(null)}
+          >
+            {/* <MenuList>
+            </MenuList> */}
+            <MenuItem onClick={() => scanItem()}>
+              <ListItemIcon>
+                <Refresh fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Scan</ListItemText>
+            </MenuItem>
+          </Menu>
           <IconButton
             edge="start"
             color="inherit"

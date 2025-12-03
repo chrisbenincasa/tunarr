@@ -167,6 +167,13 @@ export class DirectMigrationProvider implements MigrationProvider {
             Migration1764022266_AddCreditGroupingIndex,
           migration1764022464_AddArtworkIndexes:
             Migration1764022464_AddArtworkIndexes,
+          migration1764695284_AddProgramGroupingMetadata:
+            makeKyselyMigrationFromSqlFile('./sql/0029_hard_arachne.sql'),
+          migration1764710105_AddGenreAndStudios:
+            makeKyselyMigrationFromSqlFile('./sql/0030_redundant_glorian.sql'),
+          migration1764773318: makeKyselyMigrationFromSqlFile(
+            './sql/0031_bitter_dormammu.sql',
+          ),
         },
         wrapWithTransaction,
       ),

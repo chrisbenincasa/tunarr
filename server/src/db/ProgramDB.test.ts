@@ -43,7 +43,6 @@ const testWithDb = test.extend<Fixture>({
     const dbResult = await tmp.dir({ unsafeCleanup: true });
     setGlobalOptions({
       database: dbResult.path,
-      force_migration: false,
       log_level: 'debug',
       verbose: 0,
     });

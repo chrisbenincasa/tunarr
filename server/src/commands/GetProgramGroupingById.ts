@@ -41,6 +41,16 @@ export class GetProgramGroupingById {
             artwork: true,
           },
         },
+        genres: {
+          with: {
+            genre: true,
+          },
+        },
+        studios: {
+          with: {
+            studio: true,
+          },
+        },
       },
     });
 

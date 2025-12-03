@@ -1,6 +1,6 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ProgramGrouping } from '@tunarr/types';
-import { differenceWith, flatten, round, values } from 'lodash-es';
+import { differenceWith, flatten, isEmpty, round, values } from 'lodash-es';
 import type { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -124,34 +124,36 @@ export abstract class MediaSourceTvShowLibraryScanner<
       }
     }
 
-    const missingShows = differenceWith(
-      values(existingShowsByExternalId),
-      [...seenShows.values()],
-      (existing, seen) => {
-        return existing.externalKey === seen;
-      },
-    );
+    if (isEmpty(context.pathFilter)) {
+      const missingShows = differenceWith(
+        values(existingShowsByExternalId),
+        [...seenShows.values()],
+        (existing, seen) => {
+          return existing.externalKey === seen;
+        },
+      );
 
-    const missingEpisodes = flatten(
-      await Promise.all(
-        missingShows.map((show) =>
-          this.programDB.getProgramGroupingDescendants(show.uuid),
+      const missingEpisodes = flatten(
+        await Promise.all(
+          missingShows.map((show) =>
+            this.programDB.getProgramGroupingDescendants(show.uuid),
+          ),
         ),
-      ),
-    );
+      );
 
-    await this.programDB.updateProgramsState(
-      missingEpisodes.map((ep) => ep.uuid),
-      'missing',
-    );
+      await this.programDB.updateProgramsState(
+        missingEpisodes.map((ep) => ep.uuid),
+        'missing',
+      );
 
-    // Mark programs we didn't find as missing in the search index.
-    await this.searchService.updatePrograms(
-      missingEpisodes.map((ep) => ({
-        id: ep.uuid,
-        state: 'missing',
-      })),
-    );
+      // Mark programs we didn't find as missing in the search index.
+      await this.searchService.updatePrograms(
+        missingEpisodes.map((ep) => ({
+          id: ep.uuid,
+          state: 'missing',
+        })),
+      );
+    }
 
     this.mediaSourceProgressService.scanEnded(library.uuid);
   }
@@ -297,34 +299,36 @@ export abstract class MediaSourceTvShowLibraryScanner<
         }
       }
 
-      const missingShows = differenceWith(
-        values(existingSeasons),
-        [...seenSeasons.values()],
-        (existing, seen) => {
-          return existing.externalKey === seen;
-        },
-      );
+      if (isEmpty(scanContext.pathFilter)) {
+        const missingShows = differenceWith(
+          values(existingSeasons),
+          [...seenSeasons.values()],
+          (existing, seen) => {
+            return existing.externalKey === seen;
+          },
+        );
 
-      const missingEpisodes = flatten(
-        await Promise.all(
-          missingShows.map((show) =>
-            this.programDB.getProgramGroupingDescendants(show.uuid),
+        const missingEpisodes = flatten(
+          await Promise.all(
+            missingShows.map((show) =>
+              this.programDB.getProgramGroupingDescendants(show.uuid),
+            ),
           ),
-        ),
-      );
+        );
 
-      await this.programDB.updateProgramsState(
-        missingEpisodes.map((movie) => movie.uuid),
-        'missing',
-      );
+        await this.programDB.updateProgramsState(
+          missingEpisodes.map((movie) => movie.uuid),
+          'missing',
+        );
 
-      // Mark programs we didn't find as missing in the search index.
-      await this.searchService.updatePrograms(
-        missingEpisodes.map((movie) => ({
-          id: movie.uuid,
-          state: 'missing',
-        })),
-      );
+        // Mark programs we didn't find as missing in the search index.
+        await this.searchService.updatePrograms(
+          missingEpisodes.map((movie) => ({
+            id: movie.uuid,
+            state: 'missing',
+          })),
+        );
+      }
     });
   }
 
@@ -507,22 +511,24 @@ export abstract class MediaSourceTvShowLibraryScanner<
         }
       }
 
-      const missingEpisodes = differenceWith(
-        values(existing),
-        [...seenEpisodes.values()],
-        (existing, seen) => existing.externalKey === seen,
-      );
+      if (isEmpty(scanContext.pathFilter)) {
+        const missingEpisodes = differenceWith(
+          values(existing),
+          [...seenEpisodes.values()],
+          (existing, seen) => existing.externalKey === seen,
+        );
 
-      await this.programDB.updateProgramsState(
-        missingEpisodes.map((ep) => ep.uuid),
-        'missing',
-      );
-      await this.searchService.updatePrograms(
-        missingEpisodes.map((ep) => ({
-          id: ep.uuid,
-          state: 'missing',
-        })),
-      );
+        await this.programDB.updateProgramsState(
+          missingEpisodes.map((ep) => ep.uuid),
+          'missing',
+        );
+        await this.searchService.updatePrograms(
+          missingEpisodes.map((ep) => ({
+            id: ep.uuid,
+            state: 'missing',
+          })),
+        );
+      }
     });
   }
 

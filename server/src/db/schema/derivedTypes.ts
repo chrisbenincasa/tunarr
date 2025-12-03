@@ -8,6 +8,7 @@ import type { Channel, ChannelOrm } from './Channel.ts';
 import type { ChannelFillerShow } from './ChannelFillerShow.ts';
 import type { Credit, NewCredit } from './Credit.ts';
 import type { FillerShow } from './FillerShow.ts';
+import type { Genre, GenreEntity, NewGenre } from './Genre.ts';
 import type {
   LocalMediaSourcePath,
   LocalMediaSourcePathOrm,
@@ -37,6 +38,7 @@ import type {
 } from './ProgramExternalId.ts';
 import type {
   NewProgramGrouping,
+  NewProgramGroupingOrm,
   ProgramGrouping,
   ProgramGroupingOrm,
   ProgramGroupingType,
@@ -66,6 +68,7 @@ import type {
   ProgramVersion,
   ProgramVersionOrm,
 } from './ProgramVersion.ts';
+import type { NewStudio, Studio, StudioEntity } from './Studio.ts';
 import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
 
 export type ProgramVersionWithRelations = ProgramVersion & {
@@ -95,11 +98,19 @@ export type ProgramWithRelations = ProgramDao & {
   mediaLibrary?: Nullable<MediaSourceLibrary>;
 };
 
+export type GenreEntityWithGenre = GenreEntity & {
+  genre: Genre;
+};
+
+export type StudioEntityWithStudio = StudioEntity & {
+  studio: Studio;
+};
+
 export type ProgramWithRelationsOrm = ProgramOrm & {
-  show?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
-  season?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
-  artist?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
-  album?: DeepNullable<Partial<ProgramGroupingWithExternalIds>> | null;
+  show?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
+  season?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
+  artist?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
+  album?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
   // Require minimum data from externalId
   externalIds?: ProgramExternalIdOrm[];
   versions?: ProgramVersionOrmWithRelations[];
@@ -107,6 +118,8 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   artwork?: Artwork[];
   subtitles?: ProgramSubtitles[];
   credits?: Credit[];
+  genres?: GenreEntityWithGenre[];
+  studios?: StudioEntityWithStudio[];
 };
 
 export type SpecificProgramOrmType<
@@ -222,6 +235,8 @@ export type NewProgramWithRelations<Type extends ProgramType = ProgramType> = {
   artwork: NewArtwork[];
   subtitles: NewProgramSubtitles[];
   credits: NewCreditWithArtwork[];
+  genres: NewGenre[];
+  studios: NewStudio[];
 };
 
 export type NewProgramWithExternalIds = NewProgramDao & {
@@ -244,6 +259,8 @@ export type ProgramGroupingOrmWithRelations = ProgramGroupingOrm & {
   externalIds: ProgramGroupingExternalIdOrm[];
   artwork?: Artwork[];
   credits?: Credit[];
+  genres?: GenreEntityWithGenre[];
+  studios?: StudioEntityWithStudio[];
 };
 
 type SpecificSubtype<
@@ -252,24 +269,24 @@ type SpecificSubtype<
 > = StrictOmit<BaseType, 'type'> & { type: Value };
 
 export type TvSeasonWithExternalIds = SpecificSubtype<
-  ProgramGroupingWithExternalIds,
+  ProgramGroupingOrmWithRelations,
   'season'
 >;
 
 export type TvShowWithExternalIds = SpecificSubtype<
-  ProgramGroupingWithExternalIds,
+  ProgramGroupingOrmWithRelations,
   'show'
 > & {
   seasons?: TvSeasonWithExternalIds[];
 };
 
 export type MusicAlbumWithExternalIds = SpecificSubtype<
-  ProgramGroupingWithExternalIds,
+  ProgramGroupingOrmWithRelations,
   'album'
 >;
 
 export type MusicArtistWithExternalIds = SpecificSubtype<
-  ProgramGroupingWithExternalIds,
+  ProgramGroupingOrmWithRelations,
   'artist'
 > & {
   albums?: MusicAlbumWithExternalIds[];
@@ -315,10 +332,12 @@ export type NewProgramGroupingWithExternalIds = NewProgramGrouping &
 export type NewProgramGroupingWithRelations<
   Typ extends ProgramGroupingType = ProgramGroupingType,
 > = {
-  programGrouping: SpecificProgramGroupingType<Typ, NewProgramGrouping>;
+  programGrouping: SpecificProgramGroupingType<Typ, NewProgramGroupingOrm>;
   externalIds: NewSingleOrMultiProgramGroupingExternalId[];
   artwork: NewArtwork[];
   credits: NewCreditWithArtwork[];
+  genres: NewGenre[];
+  studios: NewStudio[];
 };
 
 export type NewTvShow = SpecificProgramGroupingType<'show', NewProgramGrouping>;

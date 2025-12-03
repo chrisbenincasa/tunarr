@@ -1,6 +1,6 @@
 import { DynamicContentConfigSource } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
-import { Channel } from '../db/schema/Channel.ts';
+import { ChannelOrm } from '../db/schema/Channel.ts';
 import type { ContentSourceUpdaterFactory } from '../services/dynamic_channels/DynamicChannelsModule.ts';
 import { KEYS } from '../types/inject.ts';
 import { Task } from './Task.ts';
@@ -11,7 +11,7 @@ export class DynamicChannelUpdaterFactory {
   private contentSourceUpdaterFactory: ContentSourceUpdaterFactory;
 
   getTask(
-    channel: Channel,
+    channel: ChannelOrm,
     contentSourceDef: DynamicContentConfigSource,
   ): Task {
     // Have to capture 'this' before returning the anonymous class.

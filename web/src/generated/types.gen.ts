@@ -13396,6 +13396,68 @@ export type GetApiProgrammingShowsByIdSeasonsResponses = {
     200: unknown;
 };
 
+export type PostApiMoviesByIdScanData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/movies/{id}/scan';
+};
+
+export type PostApiMoviesByIdScanErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+    /**
+     * Default Response
+     */
+    404: unknown;
+    /**
+     * Default Response
+     */
+    500: unknown;
+};
+
+export type PostApiMoviesByIdScanResponses = {
+    /**
+     * Default Response
+     */
+    202: unknown;
+};
+
+export type PostApiShowsByIdScanData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/shows/{id}/scan';
+};
+
+export type PostApiShowsByIdScanErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+    /**
+     * Default Response
+     */
+    404: unknown;
+    /**
+     * Default Response
+     */
+    500: unknown;
+};
+
+export type PostApiShowsByIdScanResponses = {
+    /**
+     * Default Response
+     */
+    202: unknown;
+};
+
 export type GetApiDebugJellyfinLibrariesData = {
     body?: never;
     path?: never;
@@ -16222,6 +16284,7 @@ export type GetApiSystemMigrationStateResponses = {
          */
         legacyMigration: boolean;
         isFreshSettings?: boolean;
+        hasMigratedTo1_0: boolean;
     };
 };
 

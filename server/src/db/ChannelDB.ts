@@ -1,5 +1,6 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
 import {
+  ChannelAndLineup,
   ChannelAndRawLineup,
   type IChannelDB,
 } from '@/db/interfaces/IChannelDB.js';
@@ -53,6 +54,7 @@ import {
   map,
   mapValues,
   nth,
+  omit,
   omitBy,
   partition,
   reject,
@@ -71,7 +73,6 @@ import { v4 } from 'uuid';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import { FileSystemService } from '../services/FileSystemService.ts';
-import { ChannelAndLineup } from '../types/internal.ts';
 import {
   createManyRelationAgg,
   mapRawJsonRelationResult,
@@ -116,9 +117,9 @@ import {
 import { Artwork } from './schema/Artwork.ts';
 import {
   Channel,
+  ChannelOrm,
   ChannelUpdate,
   NewChannel,
-  Channel as RawChannel,
 } from './schema/Channel.ts';
 import { NewChannelFillerShow } from './schema/ChannelFillerShow.ts';
 import {
@@ -127,7 +128,6 @@ import {
 } from './schema/ChannelPrograms.ts';
 import { Program, ProgramType } from './schema/Program.ts';
 import {
-  MinimalProgramGroupingFields,
   ProgramGrouping,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
@@ -138,6 +138,7 @@ import {
 } from './schema/SubtitlePreferences.ts';
 import { DB } from './schema/db.ts';
 import {
+  ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
   ChannelWithPrograms,
   ChannelWithRelations,
@@ -261,6 +262,14 @@ export class ChannelDB implements IChannelDB {
       .select('uuid')
       .executeTakeFirst();
     return !isNil(channel);
+  }
+
+  getChannelOrm(id: string | number): Promise<Maybe<ChannelOrm>> {
+    return this.drizzleDB.query.channels.findFirst({
+      where: (channel, { eq }) => {
+        return isString(id) ? eq(channel.uuid, id) : eq(channel.number, id);
+      },
+    });
   }
 
   getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
@@ -597,43 +606,6 @@ export class ChannelDB implements IChannelDB {
       }
     }
 
-    // const baseQuery = this.db
-    //   .selectFrom('channelPrograms')
-    //   .where('channelPrograms.channelUuid', '=', id)
-    //   .innerJoin('program', 'channelPrograms.programUuid', 'program.uuid')
-    //   .innerJoin(
-    //     'programGrouping',
-    //     'program.artistUuid',
-    //     'programGrouping.uuid',
-    //   )
-    //   .where('program.type', '=', ProgramType.Track)
-    //   .where('program.artistUuid', 'is not', null)
-    //   .where('programGrouping.type', '=', ProgramGroupingType.Artist);
-
-    // const countPromise = baseQuery
-    //   .select((eb) =>
-    //     eb.fn.count<number>('programGrouping.uuid').distinct().as('count'),
-    //   )
-    //   .executeTakeFirstOrThrow();
-    // const artistsPromise = baseQuery
-    //   .selectAll('programGrouping')
-    //   .select(withProgramGroupingExternalIds)
-    //   .select(withMusicArtistAlbums)
-    //   .groupBy('program.artistUuid')
-    //   .orderBy('programGrouping.uuid asc')
-    //   .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-    //     eb.offset(pageParams!.offset),
-    //   )
-    //   .$if(!!pageParams && pageParams.limit >= 0, (eb) =>
-    //     eb.limit(pageParams!.limit),
-    //   )
-    //   .execute() as Promise<MusicArtistWithExternalIds[]>;
-
-    // const [{ count }, artists] = await Promise.all([
-    //   countPromise,
-    //   artistsPromise,
-    // ]);
-
     return {
       total: sum((await countPromise).map(({ count }) => count)),
       results: artists,
@@ -904,13 +876,13 @@ export class ChannelDB implements IChannelDB {
     };
   }
 
-  async copyChannel(id: string): Promise<ChannelAndLineup> {
-    const existingChannel = await this.loadChannelAndLineup(id);
-    if (!existingChannel) {
+  async copyChannel(id: string): Promise<ChannelAndLineup<Channel>> {
+    const channel = await this.getChannel(id);
+    if (!channel) {
       throw new Error(`Cannot copy channel: channel ID: ${id} not found`);
     }
 
-    const { channel, lineup } = existingChannel;
+    const lineup = await this.loadLineup(id);
 
     const newChannelId = v4();
     const now = +dayjs();
@@ -1080,41 +1052,74 @@ export class ChannelDB implements IChannelDB {
     }
   }
 
-  getAllChannels(pageParams?: PageParams): Promise<Channel[]> {
-    return this.db
-      .selectFrom('channel')
-      .selectAll()
-      .orderBy('channel.number asc')
-      .$if(isDefined(pageParams) && pageParams.offset >= 0, (qb) =>
-        qb
-          .offset(pageParams!.offset)
-          .$if(pageParams!.limit >= 0, (qb) => qb.limit(pageParams!.limit)),
-      )
+  getAllChannels(): Promise<ChannelOrm[]> {
+    return this.drizzleDB.query.channels
+      .findMany({
+        orderBy: (fields, { asc }) => asc(fields.number),
+      })
       .execute();
+    // return this.db
+    //   .selectFrom('channel')
+    //   .selectAll()
+    //   .orderBy('channel.number asc')
+    //   .$if(isDefined(pageParams) && pageParams.offset >= 0, (qb) =>
+    //     qb
+    //       .offset(pageParams!.offset)
+    //       .$if(pageParams!.limit >= 0, (qb) => qb.limit(pageParams!.limit)),
+    //   )
+    //   .execute();
   }
 
-  async getAllChannelsAndPrograms(): Promise<ChannelWithPrograms[]> {
-    return await this.db
-      .selectFrom('channel')
-      .selectAll(['channel'])
-      .leftJoin(
-        'channelPrograms',
-        'channelPrograms.channelUuid',
-        'channel.uuid',
-      )
-      .select((eb) => [
-        withPrograms(eb, {
-          joins: {
-            trackAlbum: MinimalProgramGroupingFields,
-            trackArtist: MinimalProgramGroupingFields,
-            tvShow: MinimalProgramGroupingFields,
-            tvSeason: MinimalProgramGroupingFields,
+  async getAllChannelsAndPrograms(): Promise<ChannelOrmWithPrograms[]> {
+    return await this.drizzleDB.query.channels
+      .findMany({
+        with: {
+          channelPrograms: {
+            with: {
+              program: {
+                with: {
+                  album: true,
+                  artist: true,
+                  show: true,
+                  season: true,
+                  externalIds: true,
+                },
+              },
+            },
           },
-        }),
-      ])
-      .groupBy('channel.uuid')
-      .orderBy('channel.number asc')
-      .execute();
+        },
+        orderBy: (fields, { asc }) => asc(fields.number),
+      })
+      .then((result) => {
+        return result.map((channel) => {
+          const withoutJoinTable = omit(channel, 'channelPrograms');
+          return {
+            ...withoutJoinTable,
+            programs: channel.channelPrograms.map((cp) => cp.program),
+          } satisfies ChannelOrmWithPrograms;
+        });
+      });
+    // return await this.db
+    //   .selectFrom('channel')
+    //   .selectAll(['channel'])
+    //   .leftJoin(
+    //     'channelPrograms',
+    //     'channelPrograms.channelUuid',
+    //     'channel.uuid',
+    //   )
+    //   .select((eb) => [
+    //     withPrograms(eb, {
+    //       joins: {
+    //         trackAlbum: MinimalProgramGroupingFields,
+    //         trackArtist: MinimalProgramGroupingFields,
+    //         tvShow: MinimalProgramGroupingFields,
+    //         tvSeason: MinimalProgramGroupingFields,
+    //       },
+    //     }),
+    //   ])
+    //   .groupBy('channel.uuid')
+    //   .orderBy('channel.number asc')
+    //   .execute();
   }
 
   async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
@@ -1397,14 +1402,14 @@ export class ChannelDB implements IChannelDB {
   }
 
   async setChannelPrograms(
-    channel: RawChannel,
+    channel: Channel,
     lineup: readonly LineupItem[],
-  ): Promise<RawChannel | null>;
+  ): Promise<Channel | null>;
   async setChannelPrograms(
-    channel: string | RawChannel,
+    channel: string | Channel,
     lineup: readonly LineupItem[],
     startTime?: number,
-  ): Promise<RawChannel | null> {
+  ): Promise<Channel | null> {
     const loadedChannel = await run(async () => {
       if (isString(channel)) {
         return await this.getChannel(channel);
@@ -1485,11 +1490,11 @@ export class ChannelDB implements IChannelDB {
           lineup: await this.loadLineup(channel.uuid),
         };
       },
-      (prev, { channel, lineup }) => ({
-        ...prev,
-        [channel.uuid]: { channel, lineup },
-      }),
-      {} as Record<string, { channel: ChannelWithPrograms; lineup: Lineup }>,
+      (prev, { channel, lineup }) => {
+        prev[channel.uuid] = { channel, lineup };
+        return prev;
+      },
+      {} as Record<string, { channel: ChannelOrmWithPrograms; lineup: Lineup }>,
     );
   }
 
@@ -1525,7 +1530,7 @@ export class ChannelDB implements IChannelDB {
 
   async loadChannelAndLineup(
     channelId: string,
-  ): Promise<{ channel: Channel; lineup: Lineup } | null> {
+  ): Promise<ChannelAndLineup<Channel> | null> {
     const channel = await this.getChannel(channelId);
     if (isNil(channel)) {
       return null;
@@ -1539,8 +1544,8 @@ export class ChannelDB implements IChannelDB {
 
   async loadChannelWithProgamsAndLineup(
     channelId: string,
-  ): Promise<{ channel: ChannelWithPrograms; lineup: Lineup } | null> {
-    const channel = await this.getChannelAndProgramsOld(channelId);
+  ): Promise<{ channel: ChannelOrmWithPrograms; lineup: Lineup } | null> {
+    const channel = await this.getChannelAndPrograms(channelId);
     if (isNil(channel)) {
       return null;
     }
@@ -1813,12 +1818,14 @@ export class ChannelDB implements IChannelDB {
   }
 
   findChannelsForProgramId(programId: string) {
-    return this.db
-      .selectFrom('channelPrograms')
-      .where('channelPrograms.programUuid', '=', programId)
-      .innerJoin('channel', 'channel.uuid', 'channelPrograms.channelUuid')
-      .selectAll('channel')
-      .execute();
+    return this.drizzleDB.query.channelPrograms
+      .findMany({
+        where: (cp, { eq }) => eq(cp.programUuid, programId),
+        with: {
+          channel: true,
+        },
+      })
+      .then((result) => result.map((row) => row.channel));
   }
 
   private async createLineup(channelId: string) {

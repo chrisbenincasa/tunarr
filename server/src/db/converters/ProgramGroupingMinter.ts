@@ -31,12 +31,14 @@ import {
   NewCreditWithArtwork,
   NewProgramGroupingWithRelations,
 } from '../schema/derivedTypes.js';
+import { NewGenre } from '../schema/Genre.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import {
   ProgramGroupingType,
   type NewProgramGrouping,
 } from '../schema/ProgramGrouping.ts';
+import { NewStudio } from '../schema/Studio.ts';
 
 @injectable()
 export class ProgramGroupingMinter {
@@ -183,12 +185,18 @@ export class ProgramGroupingMinter {
         // index: show.index,
         title: show.title,
         summary: show.summary ?? show.plot,
-        year: show.year,
         libraryId: mediaSourceLibrary.uuid,
         canonicalId: show.canonicalId,
         sourceType: mediaSource.type,
         mediaSourceId: mediaSource.uuid,
         externalKey: show.externalId,
+        plot: show.plot,
+        releaseDate: show.releaseDate ? dayjs(show.releaseDate).toDate() : null,
+        tagline: show.tagline,
+        year:
+          show.year ??
+          (show.releaseDate ? dayjs(show.releaseDate).year() : null),
+        rating: show.rating,
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
         mediaSource,
@@ -211,6 +219,10 @@ export class ProgramGroupingMinter {
         ),
       credits: show.actors.map((actor) =>
         this.mintCreditForActor(actor, groupingId, +now),
+      ),
+      genres: seq.collect(show.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(show.studios, (studio) =>
+        this.mintStudio(studio.name),
       ),
     };
   }
@@ -274,6 +286,8 @@ export class ProgramGroupingMinter {
         sourceType: mediaSource.type,
         mediaSourceId: mediaSource.uuid,
         externalKey: artist.externalId,
+        plot: artist.plot,
+        tagline: artist.tagline,
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
         mediaSource,
@@ -295,6 +309,8 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
+      genres: seq.collect(artist.genres, (genre) => this.mintGenre(genre.name)),
+      studios: [],
     };
   }
 
@@ -321,6 +337,14 @@ export class ProgramGroupingMinter {
         mediaSourceId: mediaSource.uuid,
         externalKey: season.externalId,
         showUuid: season.show?.uuid,
+        plot: season.plot,
+        releaseDate: season.releaseDate
+          ? dayjs(season.releaseDate).toDate()
+          : null,
+        tagline: season.tagline,
+        year:
+          season.year ??
+          (season.releaseDate ? dayjs(season.releaseDate).year() : null),
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
         mediaSource,
@@ -342,6 +366,10 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
+      genres: seq.collect(season.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(season.studios, (studio) =>
+        this.mintStudio(studio.name),
+      ),
     };
   }
 
@@ -366,6 +394,14 @@ export class ProgramGroupingMinter {
         sourceType: mediaSource.type,
         mediaSourceId: mediaSource.uuid,
         externalKey: album.externalId,
+        plot: album.plot,
+        releaseDate: album.releaseDate
+          ? dayjs(album.releaseDate).toDate()
+          : null,
+        tagline: album.tagline,
+        year:
+          album.year ??
+          (album.releaseDate ? dayjs(album.releaseDate).year() : null),
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
         mediaSource,
@@ -387,6 +423,10 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
+      genres: seq.collect(album.genres, (genre) => this.mintGenre(genre.name)),
+      studios: seq.collect(album.studios, (studio) =>
+        this.mintStudio(studio.name),
+      ),
     };
   }
 
@@ -423,5 +463,19 @@ export class ProgramGroupingMinter {
 
       return;
     });
+  }
+
+  private mintGenre(genreName: string): NewGenre {
+    return {
+      uuid: v4(),
+      name: genreName,
+    };
+  }
+
+  private mintStudio(studioName: string): NewStudio {
+    return {
+      uuid: v4(),
+      name: studioName,
+    };
   }
 }

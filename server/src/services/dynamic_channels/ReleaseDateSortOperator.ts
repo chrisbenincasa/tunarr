@@ -1,7 +1,7 @@
 import { isContentItem } from '@/db/derived_types/Lineup.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import type { ReleaseDateSortOrderOperation } from '@tunarr/types/api';
 import { filter, isNull, sortBy } from 'lodash-es';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 import { LineupCreatorContext } from './LineupCreatorContext.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';
 
@@ -9,7 +9,7 @@ export class ReleaseDateSortOperator extends SchedulingOperator<ReleaseDateSortO
   public async apply({
     channel,
     lineup,
-  }: ChannelAndLineup): Promise<ChannelAndLineup> {
+  }: LegacyChannelAndLineup): Promise<LegacyChannelAndLineup> {
     const ctx = LineupCreatorContext.getContext();
     // We should only ever have content items in dynamic scheduler anyway
     const workingPrograms = filter(lineup.items, isContentItem);

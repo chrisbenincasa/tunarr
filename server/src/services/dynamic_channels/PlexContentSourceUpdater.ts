@@ -1,6 +1,6 @@
 import type { PendingProgram } from '@/db/derived_types/Lineup.js';
 import type { MediaSourceDB } from '@/db/mediaSourceDB.js';
-import type { Channel } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
 import { Timer } from '@/util/Timer.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -28,7 +28,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     private channelDB: IChannelDB,
     private programDB: IProgramDB,
     private mediaSourceDB: MediaSourceDB,
-    channel: Channel,
+    channel: ChannelOrm,
     config: DynamicContentConfigPlexSource,
   ) {
     super(channel, config);

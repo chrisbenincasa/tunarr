@@ -15,6 +15,7 @@ import { Artwork } from './Artwork.ts';
 import type { MediaSourceName } from './base.ts';
 import { MediaSourceTypes, ProgramStates, type MediaSourceId } from './base.ts';
 import { Credit } from './Credit.ts';
+import { EntityGenre } from './Genre.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { LocalMediaFolder } from './LocalMediaFolder.ts';
 import { LocalMediaSourcePath } from './LocalMediaSourcePath.ts';
@@ -24,6 +25,7 @@ import { ProgramExternalId } from './ProgramExternalId.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramSubtitles } from './ProgramSubtitles.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
+import { StudioEntity } from './Studio.ts';
 
 export const ProgramTypes = [
   'movie',
@@ -82,6 +84,8 @@ export const Program = sqliteTable(
     showTitle: text(),
     sourceType: text({ enum: MediaSourceTypes }).notNull(),
     summary: text(),
+    plot: text(),
+    tagline: text(),
     title: text().notNull(),
     tvShowUuid: text().references(() => ProgramGrouping.uuid),
     type: text({ enum: ProgramTypes }).notNull(),
@@ -158,6 +162,8 @@ export const ProgramRelations = relations(Program, ({ many, one }) => ({
   artwork: many(Artwork),
   subtitles: many(ProgramSubtitles),
   credits: many(Credit),
+  genres: many(EntityGenre),
+  studios: many(StudioEntity),
 }));
 
 export type ProgramTable = KyselifyBetter<typeof Program>;

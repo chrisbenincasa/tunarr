@@ -61,11 +61,6 @@ export interface IProgramDB {
     batchSize?: number,
   ): Promise<ProgramWithRelationsOrm[]>;
 
-  getProgramsByIdsOld(
-    ids: string[],
-    batchSize?: number,
-  ): Promise<ProgramWithRelations[]>;
-
   getProgramGrouping(
     id: string,
   ): Promise<Maybe<ProgramGroupingOrmWithRelations>>;
@@ -76,7 +71,7 @@ export interface IProgramDB {
 
   getProgramGroupingByExternalId(
     eid: ProgramGroupingExternalIdLookup,
-  ): Promise<Maybe<ProgramGroupingWithExternalIds>>;
+  ): Promise<Maybe<ProgramGroupingOrmWithRelations>>;
 
   getProgramParent(
     programId: string,
@@ -228,12 +223,12 @@ export interface IProgramDB {
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     externalId: ProgramGroupingExternalIdLookup,
     forceUpdate?: boolean,
-  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>>;
+  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>>;
 
   upsertLocalProgramGrouping(
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     libraryId: string,
-  ): Promise<UpsertResult<ProgramGroupingWithExternalIds>>;
+  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>>;
 
   getProgramGroupingChildCounts(
     groupIds: string[],

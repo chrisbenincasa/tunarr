@@ -7,7 +7,10 @@ import { ProgramTypes } from '../../db/schema/Program.ts';
 import type { MinimalProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
 import type { MediaSourceName } from '../../db/schema/base.js';
 import { type MediaSourceId } from '../../db/schema/base.js';
-import type { ProgramWithExternalIds } from '../../db/schema/derivedTypes.js';
+import type {
+  ProgramWithExternalIds,
+  ProgramWithRelationsOrm,
+} from '../../db/schema/derivedTypes.js';
 
 export function createChannel(overrides?: Partial<Channel>): Channel {
   return {
@@ -44,4 +47,33 @@ export function createFakeProgram(
     summary: faker.lorem.sentences(),
     ...(overrides ?? {}),
   } satisfies ProgramWithExternalIds;
+}
+
+export function createFakeProgramOrm(
+  overrides?: Partial<ProgramWithRelationsOrm>,
+): ProgramWithRelationsOrm {
+  const uuid = faker.string.uuid();
+  return {
+    uuid: uuid, // programId2,
+    duration: faker.number.int({ min: 1 }), //lineup[1].durationMs,
+    year: faker.date.past().getFullYear(),
+    title: faker.music.songName(),
+    externalIds: [
+      {
+        sourceType: faker.helpers.arrayElement(MultiExternalIdType),
+        externalKey: faker.string.alphanumeric(),
+        externalSourceId: tag<MediaSourceName>(faker.string.alphanumeric()),
+        mediaSourceId: tag<MediaSourceId>(faker.string.uuid()),
+        createdAt: 0,
+        uuid: faker.string.uuid(),
+        updatedAt: 0,
+        programUuid: uuid,
+        directFilePath: null,
+        externalFilePath: null,
+      },
+    ],
+    type: faker.helpers.arrayElement(ProgramTypes),
+    summary: faker.lorem.sentences(),
+    ...(overrides ?? {}),
+  } satisfies ProgramWithRelationsOrm;
 }

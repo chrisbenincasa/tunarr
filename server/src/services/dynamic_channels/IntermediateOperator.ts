@@ -1,9 +1,11 @@
 import type { NamedFunc } from '@/types/func.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import { last } from 'lodash-es';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 import { calculateStartTimeOffsets } from '../../db/lineupUtil.ts';
 
-function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
+function fix(
+  channelAndLineup: LegacyChannelAndLineup,
+): Promise<LegacyChannelAndLineup> {
   const { channel, lineup } = channelAndLineup;
   // Recalculate startTimeOffsets
   lineup.startTimeOffsets = calculateStartTimeOffsets(lineup.items);
@@ -17,8 +19,8 @@ function fix(channelAndLineup: ChannelAndLineup): Promise<ChannelAndLineup> {
 // each operator as an updated and correct view of the current state
 // of the channel lineup
 export const IntermediateOperator: NamedFunc<
-  ChannelAndLineup,
-  Promise<ChannelAndLineup>
+  LegacyChannelAndLineup,
+  Promise<LegacyChannelAndLineup>
 > = {
   name: 'FixStartTimeOffsets',
   apply: fix,

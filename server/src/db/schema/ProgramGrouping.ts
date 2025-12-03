@@ -1,5 +1,5 @@
 import { type TupleToUnion } from '@tunarr/types';
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray, relations } from 'drizzle-orm';
 import {
   type AnySQLiteColumn,
@@ -15,12 +15,14 @@ import { Artwork } from './Artwork.ts';
 import type { MediaSourceId } from './base.ts';
 import { MediaSourceTypes } from './base.ts';
 import { Credit } from './Credit.ts';
+import { EntityGenre } from './Genre.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource } from './MediaSource.ts';
 import { MediaSourceLibrary } from './MediaSourceLibrary.ts';
 import { Program } from './Program.ts';
 import type { ProgramGroupingTable as RawProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
+import { StudioEntity } from './Studio.ts';
 
 export const ProgramGroupingType = {
   Show: 'show',
@@ -52,9 +54,22 @@ export const ProgramGrouping = sqliteTable(
     icon: text(),
     index: integer(),
     summary: text(),
+    plot: text(),
+    tagline: text(),
     title: text().notNull(),
     type: text({ enum: ProgramGroupingTypes }).notNull(),
     year: integer(),
+    releaseDate: integer({ mode: 'timestamp_ms' }),
+    rating: text(), // content rating
+    sourceType: text({ enum: MediaSourceTypes }),
+    externalKey: text(),
+
+    // Relations
+    mediaSourceId: text()
+      .references(() => MediaSource.uuid, {
+        onDelete: 'cascade',
+      })
+      .$type<MediaSourceId>(),
     artistUuid: text().references((): AnySQLiteColumn => ProgramGrouping.uuid, {
       onDelete: 'cascade',
     }),
@@ -64,13 +79,6 @@ export const ProgramGrouping = sqliteTable(
     libraryId: text().references(() => MediaSourceLibrary.uuid, {
       onDelete: 'cascade',
     }),
-    sourceType: text({ enum: MediaSourceTypes }),
-    externalKey: text(),
-    mediaSourceId: text()
-      .references(() => MediaSource.uuid, {
-        onDelete: 'cascade',
-      })
-      .$type<MediaSourceId>(),
   },
   (table) => [
     index('program_grouping_show_uuid_index').on(table.showUuid),
@@ -106,11 +114,9 @@ export const ProgramGroupingRelations = relations(
       fields: [ProgramGrouping.mediaSourceId],
       references: [MediaSource.uuid],
     }),
-    // localMediaSourcePath: one(LocalMediaSourcePath, {
-    //   fields: [ProgramGrouping.mediaSourcePathId],
-    //   references: [LocalMediaSourcePath.uuid],
-    // }),
     credits: many(Credit),
+    genres: many(EntityGenre),
+    studios: many(StudioEntity),
   }),
 );
 
@@ -120,35 +126,12 @@ export type NewProgramGrouping = MarkRequiredNotNull<
   Insertable<ProgramGroupingTable>,
   'canonicalId' | 'libraryId' | 'mediaSourceId' | 'sourceType' | 'externalKey'
 >;
+export type NewProgramGroupingOrm = MarkRequiredNotNull<
+  InferInsertModel<typeof ProgramGrouping>,
+  'canonicalId' | 'libraryId' | 'mediaSourceId' | 'sourceType' | 'externalKey'
+>;
 export type ProgramGroupingUpdate = Updateable<ProgramGroupingTable>;
 export type ProgramGroupingOrm = InferSelectModel<typeof ProgramGrouping>;
 
-const ProgramGroupingKeys: (keyof RawProgramGrouping)[] = [
-  'artistUuid',
-  'createdAt',
-  'icon',
-  'index',
-  'showUuid',
-  'summary',
-  'title',
-  'type',
-  'updatedAt',
-  'uuid',
-  'year',
-];
-
-// TODO move this definition to the ProgramGrouping DAO file
-
-export const AllProgramGroupingFieldsAliased = <Alias extends string>(
-  alias: Alias,
-): ProgramGroupingFields<Alias> =>
-  ProgramGroupingKeys.map((key) => `${alias}.${key}` as const);
-
-export const MinimalProgramGroupingFields: ProgramGroupingFields = [
-  'programGrouping.uuid',
-  'programGrouping.title',
-  'programGrouping.year',
-  // 'programGrouping.index',
-];
 export type ProgramGroupingFields<Alias extends string = 'programGrouping'> =
   readonly `${Alias}.${keyof RawProgramGrouping}`[];
