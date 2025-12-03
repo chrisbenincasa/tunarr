@@ -1,9 +1,9 @@
 import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
-import { ProgramOrFolder } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
 import { isEmpty, map } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { ProgramHierarchyHookReturn } from '../../hooks/channel_config/useProgramHierarchy.ts';
+import type { ProgramHierarchyHookReturn } from '../../hooks/channel_config/useProgramHierarchy.ts';
 
 type Props = ProgramHierarchyHookReturn<ProgramOrFolder>;
 

@@ -4,7 +4,7 @@ import {
 } from '@/store/programmingSelector/selectors.ts';
 import { PlexMediaSourceLibraryViewType } from '@/store/programmingSelector/store.ts';
 import { Box, Tab, Tabs, Tooltip } from '@mui/material';
-import { ProgramOrFolder } from '@tunarr/types';
+import type { ProgramOrFolder } from '@tunarr/types';
 import { filter, isNil } from 'lodash-es';
 import React, { useCallback, useRef } from 'react';
 import { P, match } from 'ts-pattern';

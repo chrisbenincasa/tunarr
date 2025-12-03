@@ -1,4 +1,4 @@
-import { prettyItemDuration } from '@/helpers/util.ts';
+import { getProgramSummary } from '@/helpers/programUtil.ts';
 import { OpenInNew } from '@mui/icons-material';
 import {
   Box,
@@ -9,28 +9,14 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  getChildCount,
-  getChildItemType,
-  isTerminalItemType,
-  type ProgramGrouping,
-  type TerminalProgram,
-} from '@tunarr/types';
+import { type ProgramGrouping, type TerminalProgram } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { capitalize, isUndefined } from 'lodash-es';
-import pluralize from 'pluralize';
+import { capitalize } from 'lodash-es';
 import type { ReactEventHandler } from 'react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { match, P } from 'ts-pattern';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSettings } from '../store/settings/selectors.ts';
-import type { Maybe } from '../types/util.ts';
+import ProgramInfoBar from './programs/ProgramInfoBar.tsx';
 
 type Props = {
   program: TerminalProgram | ProgramGrouping;
@@ -63,6 +49,10 @@ export const ProgramMetadataDialogContent = ({
     return `${settings.backendUri}/api/programs/${program.uuid}/external-link`;
   }, [settings.backendUri, program]);
 
+  const programLink = useMemo(() => {
+    return `${window.location.origin}/web/media/${program.type}/${program.uuid}`;
+  }, [program]);
+
   useEffect(() => {
     setThumbLoadState('loading');
   }, [thumbnailImage]);
@@ -76,102 +66,8 @@ export const ProgramMetadataDialogContent = ({
     setThumbLoadState('error');
   }, []);
 
-  const rating = useMemo(() => {
-    if (program.type === 'episode' || program.type === 'season') {
-      return program.show?.rating;
-    }
-
-    if (program.type === 'show' || program.type === 'movie') {
-      return program.rating;
-    }
-  }, [program]);
-
   const summary = useMemo(() => {
-    switch (program.type) {
-      case 'movie':
-      case 'show':
-        return program.plot ?? program.summary;
-      case 'episode':
-        return program.summary;
-      case 'season':
-        return program.show?.plot;
-      case 'artist':
-        return program.summary;
-      case 'album':
-        return program.plot;
-      default:
-        return '';
-    }
-  }, [program]);
-
-  const genres = useMemo(() => {
-    return match(program)
-      .returnType<Maybe<string>>()
-      .with(
-        { type: P.union('episode', 'season'), show: P.nonNullable },
-        ({ show }) =>
-          show.genres
-            .map((g) => g.name)
-            .slice(0, 3)
-            .join(', '),
-      )
-      .with(
-        { type: P.union('album', 'track'), artist: P.nonNullable },
-        ({ artist }) =>
-          artist.genres
-            ?.map((g) => g.name)
-            .slice(0, 3)
-            .join(', '),
-      )
-      .with({ genres: [P._, ...P.array()] }, ({ genres }) =>
-        genres
-          .map((g) => g.name)
-          .slice(0, 3)
-          .join(','),
-      )
-      .otherwise(() => undefined);
-  }, [program]);
-
-  const duration = useMemo(() => {
-    if (isTerminalItemType(program)) {
-      return prettyItemDuration(program.duration);
-    }
-
-    return;
-  }, [program]);
-
-  const date = useMemo(() => {
-    let dateValue;
-    const dateFormat = 'MMMM D, YYYY';
-
-    switch (program.type) {
-      case 'movie':
-      case 'show':
-      case 'other_video':
-      case 'music_video':
-        dateValue = program.year;
-        break;
-      case 'season':
-        dateValue = program.show?.releaseDate
-          ? dayjs(program.show?.releaseDate).format(dateFormat)
-          : '';
-        break;
-      case 'episode':
-      case 'album':
-      case 'track':
-        dateValue = program.releaseDate
-          ? dayjs(program.releaseDate).format(dateFormat)
-          : '';
-        break;
-      default:
-        return '';
-    }
-
-    return dateValue;
-  }, [program]);
-
-  const source = useMemo(() => {
-    return capitalize(program.sourceType);
+    return getProgramSummary(program);
   }, [program]);
 
   const time = useMemo(() => {
@@ -181,58 +77,6 @@ export const ProgramMetadataDialogContent = ({
 
     return null;
   }, [start, stop]);
-  console.log(program);
-
-  const childCount = useMemo(() => {
-    const count = getChildCount(program);
-
-    if (isUndefined(count)) {
-      return;
-    }
-
-    const itemType = getChildItemType(program.type);
-
-    return `${count} ${pluralize(itemType, count)}`;
-  }, [program]);
-
-  // This gives us the ability to change the sort order of the itemInfoBar on a per item basis
-  const itemInfoBar = useMemo(() => {
-    let sortOrder;
-
-    switch (program.type) {
-      case 'show':
-        sortOrder = [childCount, date, rating, genres, source]; // see why rating doesnt work
-        break;
-      case 'season':
-        sortOrder = [childCount, rating, genres, source];
-        break;
-      case 'episode':
-        sortOrder = [duration, rating, genres, source];
-        break;
-      case 'movie':
-        sortOrder = [duration, rating, date, source]; // Movies currently missing genres https://github.com/chrisbenincasa/tunarr/issues/1461
-        break;
-      case 'artist':
-        sortOrder = [childCount, genres, source];
-        break;
-      case 'album':
-        sortOrder = [childCount, genres, source];
-        break;
-      case 'track':
-        sortOrder = [duration, date, source];
-        break;
-      case 'other_video':
-        sortOrder = [date, source];
-        break;
-      case 'music_video':
-        sortOrder = [date, source];
-        break;
-      default:
-        sortOrder = [duration, rating, time, source, genres];
-    }
-
-    return sortOrder.filter(Boolean);
-  }, [program.type, duration, date, rating, time, source, genres, childCount]);
 
   const displayTitle = !smallViewport ? program.title : null;
 
@@ -292,6 +136,16 @@ export const ProgramMetadataDialogContent = ({
               View in {capitalize(program.sourceType)}
             </Button>
           )}
+          <Button
+            component="a"
+            href={programLink}
+            size="small"
+            variant="contained"
+            fullWidth
+            sx={{ mt: 1 }}
+          >
+            View Full Details
+          </Button>
         </Box>
         <Box>
           {displayTitle ? (
@@ -308,16 +162,7 @@ export const ProgramMetadataDialogContent = ({
               textAlign: ['center', 'left'],
             }}
           >
-            {itemInfoBar.map((chip, index) => (
-              <React.Fragment key={index}>
-                {chip}
-                {index < itemInfoBar.length - 1 && (
-                  <span className="separator">
-                    &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
+            <ProgramInfoBar program={program} time={time} />
           </Box>
           {summary ? (
             <Typography id="modal-modal-description" sx={{ mb: 1 }}>

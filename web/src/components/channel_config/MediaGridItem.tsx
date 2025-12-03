@@ -80,9 +80,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
     theme.palette.text.primary,
     theme.palette.mode === 'light' ? 0.11 : 0.13,
   );
-
   const [dialogOpen, setDialogOpen] = useState(false);
-
   const darkMode = useIsDarkMode();
 
   const {
@@ -216,7 +214,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
             component={Grid}
             key={itemId}
             sx={{
-              cursor: enableSelection || hasChildren ? 'pointer' : 'default',
+              cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
               flexGrow: 1,
@@ -227,7 +225,11 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
               backgroundColor: backgroundColor,
               ...style,
             }}
-            onClick={(e) => (hasChildren ? handleClick() : toggleItemSelect(e))}
+            onClick={(e) =>
+              !enableSelection || hasChildren
+                ? handleClick()
+                : toggleItemSelect(e)
+            }
             ref={ref}
           >
             {isTerminalItemType(item) && item.state === 'missing' && (
@@ -262,8 +264,8 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
                   '&:hover': {
                     backgroundColor: (theme) =>
                       theme.palette.mode === 'dark'
-                        ? 'rgba(0, 0, 0, 1)'
-                        : 'rgba(255, 255, 255, 1)',
+                        ? 'rgba(0, 0, 0, 0.7)'
+                        : 'rgba(255, 255, 255, 0.7)',
                   },
                 }}
               />

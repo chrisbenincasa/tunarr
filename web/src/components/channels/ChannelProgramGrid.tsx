@@ -122,6 +122,7 @@ export const ChannelProgramGrid = ({
             query: { offset: pageParam, limit: 50 },
             throwOnError: true,
           }));
+
       return prom.data;
     },
     getNextPageParam: (currentPage, pages) => {

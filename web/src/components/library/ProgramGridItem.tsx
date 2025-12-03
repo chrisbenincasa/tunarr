@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { isTerminalItemType } from '@tunarr/types';
 import { forwardRef, useCallback, useMemo, type ForwardedRef } from 'react';
@@ -14,6 +15,7 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
 ) => {
   const { item, index, moveModal, disableSelection, persisted = false } = props;
   const currentServer = useCurrentMediaSource();
+  const navigate = useNavigate();
 
   const isMusicItem = useCallback(
     (item: ProgramOrFolder) => ['artist', 'album', 'track'].includes(item.type),
@@ -29,9 +31,17 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
     moveModal(index, item);
   }, [index, item, moveModal]);
 
-  const handleItemClick = useCallback(() => {
-    moveModalToItem();
-  }, [moveModalToItem]);
+  const handleItemClick = useCallback(async () => {
+    if (disableSelection) {
+      await navigate({
+        to: `/media/${item.type}/${item.uuid}`,
+        replace: false,
+        resetScroll: true,
+      });
+    } else {
+      moveModalToItem();
+    }
+  }, [disableSelection, moveModalToItem, item.type, item.uuid, navigate]);
 
   const thumbnailUrlFunc = useThumbnailUrl();
 

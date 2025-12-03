@@ -1,6 +1,9 @@
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
-import { ProgramOrFolder } from '@tunarr/types';
-import { PagedResult } from '@tunarr/types/api';
+import type {
+  InfiniteData,
+  UseInfiniteQueryResult,
+} from '@tanstack/react-query';
+import type { ProgramOrFolder } from '@tunarr/types';
+import type { PagedResult } from '@tunarr/types/api';
 import { last } from 'lodash-es';
 import { useCallback } from 'react';
 import { match, P } from 'ts-pattern';
