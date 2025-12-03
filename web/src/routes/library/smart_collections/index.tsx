@@ -16,9 +16,7 @@ function RouteComponent() {
     <Box>
       <Breadcrumbs />
       <Box flexDirection={'column'} flexGrow={1} mb={2}>
-        <Typography variant="h4" gutterBottom>
-          Smart Collections
-        </Typography>
+        <Typography variant="h4">Smart Collections</Typography>
         <Typography>
           Smart Collections are self-updating content lists. You set the query
           and the collection automatically adds any new content from your

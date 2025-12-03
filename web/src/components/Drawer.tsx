@@ -30,8 +30,6 @@ const DrawerItem = ({ item }: ItemProps) => {
   const isChildSelected =
     item.children?.some((child) => child.selected) ?? false;
 
-  console.log(item);
-
   const hasDisplayableChildren =
     item.children?.some((child) => !child.hidden) ?? false;
 
