@@ -1,6 +1,5 @@
 import type { LineupItem } from '@/db/derived_types/Lineup.js';
 import type { Channel } from '@/db/schema/Channel.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import { scale } from '@/util/index.js';
 import type { AddPaddingOperation } from '@tunarr/types/api';
 import dayjs from 'dayjs';
@@ -13,6 +12,7 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 import { SchedulingOperator } from './SchedulingOperator.ts';
 
 export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPaddingOperation> {
@@ -20,7 +20,7 @@ export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPadding
   public async apply({
     channel,
     lineup,
-  }: ChannelAndLineup): Promise<ChannelAndLineup> {
+  }: LegacyChannelAndLineup): Promise<LegacyChannelAndLineup> {
     const { newStartTime, newProgramList } = this.padStartTimes(
       channel,
       lineup.items,

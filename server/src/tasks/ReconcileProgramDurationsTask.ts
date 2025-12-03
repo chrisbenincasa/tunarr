@@ -17,7 +17,7 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
-import { Channel } from '../db/schema/Channel.ts';
+import { ChannelOrm } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
 import { Task, TaskMetadata } from './Task.ts';
 
@@ -64,7 +64,7 @@ export class ReconcileProgramDurationsTask extends Task {
     // is the source-of-truth duration.
     const cachedPrograms: Record<string, number> = {};
 
-    let channels: Channel[];
+    let channels: ChannelOrm[];
     if (this.programId) {
       channels = await this.channelDB.findChannelsForProgramId(this.programId);
     } else {

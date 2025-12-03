@@ -1,4 +1,7 @@
-import { dbChannelToApiChannel } from '@/db/converters/channelConverters.js';
+import {
+  dbChannelToApiChannel,
+  ormChannelToApiChannel,
+} from '@/db/converters/channelConverters.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
@@ -53,8 +56,8 @@ import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroup
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
 import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
+import type { LegacyChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { SessionType } from '../stream/Session.ts';
-import type { ChannelAndLineup } from '../types/internal.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams } from '../types/schemas.ts';
 
@@ -128,7 +131,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             [] as ChannelSession[],
           );
           return {
-            ...dbChannelToApiChannel(channelAndLineup),
+            ...ormChannelToApiChannel(channelAndLineup),
             sessions: apiSessions,
           };
         }),
@@ -214,7 +217,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const body: CreateChannelRequest = req.body;
-      let insertResult: Result<ChannelAndLineup>;
+      let insertResult: Result<LegacyChannelAndLineup>;
       switch (body.type) {
         case 'copy':
           insertResult = await Result.attemptAsync(() =>

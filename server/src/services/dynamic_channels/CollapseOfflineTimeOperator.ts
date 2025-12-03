@@ -1,6 +1,6 @@
 import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
 import type { Func } from '@/types/func.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 
 export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
   const newLineup: LineupItem[] = [];
@@ -39,11 +39,11 @@ export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
 }
 
 export const CollapseOfflineTimeOperator: Func<
-  ChannelAndLineup,
-  Promise<ChannelAndLineup>
+  LegacyChannelAndLineup,
+  Promise<LegacyChannelAndLineup>
 > & { name: string } = {
   name: 'CollapseOfflineTimeOperator',
-  apply: ({ channel, lineup }: ChannelAndLineup) =>
+  apply: ({ channel, lineup }: LegacyChannelAndLineup) =>
     collapseOfflineTime(lineup).then((newLineup) => ({
       channel,
       lineup: newLineup,

@@ -4,7 +4,7 @@ import type {
   LineupItem,
   PendingProgram,
 } from '@/db/derived_types/Lineup.js';
-import type { Channel } from '@/db/schema/Channel.js';
+import type { Channel, ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramDao } from '@/db/schema/Program.js';
 import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
@@ -14,7 +14,6 @@ import type {
   ProgramWithRelationsOrm,
   TvShowOrm,
 } from '@/db/schema/derivedTypes.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import type {
   MarkNullable,
   Maybe,
@@ -32,11 +31,18 @@ import type { MarkOptional, MarkRequired } from 'ts-essentials';
 import type { Json } from '../../types/schemas.ts';
 import type { ChannelSubtitlePreferences } from '../schema/SubtitlePreferences.ts';
 
-export type ChannnelAndLineup = { channel: Channel; lineup: Lineup };
-export type ChannelAndRawLineup = { channel: Channel; lineup: Json };
+// TODO: I hate this type and it will go away ASAP. This is solely for compat between kysely and drizzle types
+export type ChannelAndLineup<ChannelType = ChannelOrm> = {
+  channel: ChannelType;
+  lineup: Lineup;
+};
+export type LegacyChannelAndLineup = ChannelAndLineup<Channel>;
+export type ChannelAndRawLineup = { channel: ChannelOrm; lineup: Json };
 
 export interface IChannelDB {
   channelExists(channelId: string): Promise<boolean>;
+
+  getChannelOrm(id: string | number): Promise<Maybe<ChannelOrm>>;
 
   getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
   getChannel(
@@ -52,7 +58,7 @@ export interface IChannelDB {
     id: string | number,
   ): ChannelQueryBuilder<ChannelWithRelations>;
 
-  getAllChannels(pageParams?: PageParams): Promise<Channel[]>;
+  getAllChannels(): Promise<ChannelOrm[]>;
 
   getChannelAndPrograms(
     uuid: string,
@@ -79,7 +85,7 @@ export interface IChannelDB {
 
   getChannelFallbackPrograms(uuid: string): Promise<ProgramDao[]>;
 
-  saveChannel(createReq: SaveableChannel): Promise<ChannnelAndLineup>;
+  saveChannel(createReq: SaveableChannel): Promise<ChannelAndLineup<Channel>>;
 
   deleteChannel(
     channelId: string,
@@ -89,9 +95,9 @@ export interface IChannelDB {
   updateChannel(
     id: string,
     updateReq: SaveableChannel,
-  ): Promise<ChannelAndLineup>;
+  ): Promise<ChannelAndLineup<Channel>>;
 
-  copyChannel(id: string): Promise<ChannelAndLineup>;
+  copyChannel(id: string): Promise<ChannelAndLineup<Channel>>;
 
   loadLineup(channelId: string, forceRead?: boolean): Promise<Lineup>;
 
@@ -131,11 +137,13 @@ export interface IChannelDB {
 
   loadAllLineupConfigs(
     forceRead?: boolean,
-  ): Promise<Record<string, ChannnelAndLineup>>;
+  ): Promise<Record<string, ChannelAndLineup>>;
 
   loadAllRawLineups(): Promise<Record<string, ChannelAndRawLineup>>;
 
-  loadChannelAndLineup(channelId: string): Promise<ChannnelAndLineup | null>;
+  loadChannelAndLineup(
+    channelId: string,
+  ): Promise<ChannelAndLineup<Channel> | null>;
 
   addPendingPrograms(
     channelId: string,
@@ -164,7 +172,7 @@ export interface IChannelDB {
     limit?: number,
   ): Promise<ChannelProgramming | null>;
 
-  findChannelsForProgramId(programId: string): Promise<Channel[]>;
+  findChannelsForProgramId(programId: string): Promise<ChannelOrm[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
   MarkNullable<

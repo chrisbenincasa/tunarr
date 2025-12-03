@@ -47,9 +47,11 @@ import {
   isOfflineItem,
   isRedirectItem,
 } from '../derived_types/Lineup.js';
-import { Channel } from '../schema/Channel.ts';
+import { Channel, ChannelOrm } from '../schema/Channel.ts';
 import { DB } from '../schema/db.ts';
 import type {
+  ChannelOrmWithPrograms,
+  ChannelOrmWithRelations,
   ChannelWithPrograms,
   ChannelWithRelations,
   GeneralizedProgramGroupingWithExternalIds,
@@ -70,6 +72,67 @@ export class ProgramConverter {
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
   ) {}
+
+  lineupItemToChannelProgramOrm(
+    channel: ChannelOrmWithRelations,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<ChannelOrm>,
+      'uuid' | 'number' | 'name'
+    >[], // TODO fix this up...
+    preMaterializedProgram?: ProgramWithRelationsOrm,
+  ): ChannelProgram | null;
+  lineupItemToChannelProgramOrm(
+    channel: ChannelOrmWithPrograms,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<ChannelOrm>,
+      'uuid' | 'number' | 'name'
+    >[], // TODO fix this up...
+    preMaterializedProgram?: ProgramWithRelationsOrm,
+  ): ChannelProgram | null;
+  lineupItemToChannelProgramOrm(
+    channel: ChannelOrmWithRelations | ChannelOrmWithPrograms,
+    item: LineupItem,
+    channelReferences: MarkRequired<
+      DeepPartial<ChannelOrm>,
+      'uuid' | 'number' | 'name'
+    >[], // TODO fix this up...
+    preMaterializedProgram?: ProgramWithRelationsOrm,
+  ): ChannelProgram | null {
+    if (isOfflineItem(item)) {
+      return this.offlineLineupItemToProgram(channel, item);
+    } else if (isRedirectItem(item)) {
+      const redirectChannel = find(channelReferences, { uuid: item.channel });
+      if (isNil(redirectChannel)) {
+        this.logger.warn(
+          'Dangling redirect channel reference. Source channel = %s, target channel = %s',
+          channel.uuid,
+          item.channel,
+        );
+        return this.offlineLineupItemToProgram(channel, {
+          type: 'offline',
+          durationMs: item.durationMs,
+        });
+      }
+      return this.redirectLineupItemToProgram(item, redirectChannel);
+    } else if (item.type === 'content') {
+      const program =
+        preMaterializedProgram && preMaterializedProgram.uuid === item.id
+          ? preMaterializedProgram
+          : channel.programs?.find((p) => p.uuid === item.id);
+      if (isNil(program) || isNil(program.mediaSourceId)) {
+        return null;
+      }
+
+      return this.programOrmToContentProgram(
+        program,
+        program.externalIds ?? [], // TODO fill in external IDs here
+      );
+    }
+
+    return null;
+  }
 
   lineupItemToChannelProgram(
     channel: ChannelWithRelations,
@@ -604,7 +667,7 @@ export class ProgramConverter {
   }
 
   offlineLineupItemToProgram(
-    channel: ChannelWithRelations,
+    channel: ChannelWithRelations | ChannelOrmWithRelations,
     program: OfflineItem,
     persisted: boolean = true,
   ): FlexProgram {
@@ -618,11 +681,14 @@ export class ProgramConverter {
 
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<Channel | ChannelOrm>, 'name' | 'number'>,
   ): RedirectProgram;
   redirectLineupItemToProgram(
     item: RedirectItem,
-    channel?: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
+    channel?: MarkRequired<
+      DeepPartial<Channel | ChannelOrm>,
+      'name' | 'number'
+    >,
   ): Promise<RedirectProgram> | RedirectProgram {
     const loadedChannel = isNil(channel)
       ? this.db
@@ -640,7 +706,7 @@ export class ProgramConverter {
 
   private toRedirectChannelInternal(
     item: RedirectItem,
-    channel: MarkRequired<DeepPartial<Channel>, 'name' | 'number'>,
+    channel: MarkRequired<DeepPartial<Channel | ChannelOrm>, 'name' | 'number'>,
   ): RedirectProgram {
     return {
       persisted: true,

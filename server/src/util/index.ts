@@ -1,5 +1,5 @@
 import type { Func } from '@/types/func.js';
-import type { MarkNonNullable, Nilable, Try } from '@/types/util.js';
+import type { MarkNonNullable, Maybe, Nilable, Try } from '@/types/util.js';
 import { createExternalId } from '@tunarr/shared';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -627,4 +627,13 @@ export function unzip<T, U>(tups: [T, U][]): [T[], U[]] {
     right.push(u);
   }
   return [left, right];
+}
+
+export function firstDefined<T>(...values: Nilable<T>[]): Maybe<T> {
+  for (const value of values) {
+    if (value) {
+      return value;
+    }
+  }
+  return;
 }

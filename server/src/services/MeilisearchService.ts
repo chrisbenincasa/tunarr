@@ -25,6 +25,7 @@ import {
   MeiliSearch,
   MeiliSearchApiError,
   ResourceResults,
+  SearchParams,
   Settings,
   Task,
 } from 'meilisearch';
@@ -1078,7 +1079,7 @@ export class MeilisearchService implements ISearchService {
       limit: request.paging?.limit,
       attributesToSearchOn: request.restrictSearchTo ?? undefined,
       facets: request.facets ?? undefined,
-    };
+    } satisfies SearchParams;
 
     this.logger.debug(
       'Issuing search: query = %s, filter: %O (parsed: %O)',

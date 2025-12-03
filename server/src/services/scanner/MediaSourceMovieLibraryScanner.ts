@@ -1,5 +1,5 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
-import { differenceWith, head, round, values } from 'lodash-es';
+import { differenceWith, head, isEmpty, round, values } from 'lodash-es';
 import type { ProgramConverter } from '../../db/converters/ProgramConverter.ts';
 import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
@@ -154,26 +154,28 @@ export abstract class MediaSourceMovieLibraryScanner<
       }
     }
 
-    const missingMovies = differenceWith(
-      values(existingPrograms),
-      [...seenMovieIds.values()],
-      (existing, seen) => {
-        return existing.externalKey === seen;
-      },
-    );
+    if (isEmpty(context.pathFilter)) {
+      const missingMovies = differenceWith(
+        values(existingPrograms),
+        [...seenMovieIds.values()],
+        (existing, seen) => {
+          return existing.externalKey === seen;
+        },
+      );
 
-    await this.programDB.updateProgramsState(
-      missingMovies.map((movie) => movie.uuid),
-      'missing',
-    );
+      await this.programDB.updateProgramsState(
+        missingMovies.map((movie) => movie.uuid),
+        'missing',
+      );
 
-    // Mark programs we didn't find as missing in the search index.
-    await this.searchService.updatePrograms(
-      missingMovies.map((movie) => ({
-        id: movie.uuid,
-        state: 'missing',
-      })),
-    );
+      // Mark programs we didn't find as missing in the search index.
+      await this.searchService.updatePrograms(
+        missingMovies.map((movie) => ({
+          id: movie.uuid,
+          state: 'missing',
+        })),
+      );
+    }
 
     this.logger.debug('Completed scanning library %s', context.library.uuid);
     this.mediaSourceProgressService.scanEnded(context.library.uuid);

@@ -1,5 +1,5 @@
-import type { ChannelAndLineup } from '@/types/internal.js';
 import type { SchedulingOperation } from '@tunarr/types/api';
+import type { LegacyChannelAndLineup } from '../../db/interfaces/IChannelDB.ts';
 
 // A SchedulingOperator takes a set of lineup items
 // and returns a set of lineup items. The operator
@@ -15,6 +15,6 @@ export abstract class SchedulingOperator<
   }
 
   public abstract apply(
-    channelAndLineup: ChannelAndLineup,
-  ): Promise<ChannelAndLineup>;
+    channelAndLineup: LegacyChannelAndLineup,
+  ): Promise<LegacyChannelAndLineup>;
 }

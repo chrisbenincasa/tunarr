@@ -11,12 +11,11 @@ import {
 import { inject, injectable } from 'inversify';
 import { uniqBy } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
-import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
+import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { ServerContext } from '../ServerContext.ts';
 import { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
-import { isShowProgramSearchDocument } from '../util/search.ts';
+import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
 type GetMaterializedChannelScheduleRequest = {
   channelId: string;
@@ -24,7 +23,11 @@ type GetMaterializedChannelScheduleRequest = {
 
 @injectable()
 export class GetMaterializedChannelScheduleCommand {
-  constructor(@inject(ServerContext) private serverContext: ServerContext) {}
+  constructor(
+    @inject(ServerContext) private serverContext: ServerContext,
+    @inject(MaterializeProgramGroupings)
+    private materializeProgramGroupings: MaterializeProgramGroupings,
+  ) {}
 
   async execute(
     request: GetMaterializedChannelScheduleRequest,
@@ -128,7 +131,7 @@ export class GetMaterializedChannelScheduleCommand {
             return {
               ...slot,
 
-              channel: dbChannelToApiChannel(channel),
+              channel: ormChannelToApiChannel(channel),
             } satisfies MaterializedRedirectTimeSlot;
           })
           .otherwise((slot) => slot);
@@ -227,7 +230,7 @@ export class GetMaterializedChannelScheduleCommand {
             }
             return {
               ...slot,
-              channel: dbChannelToApiChannel(channel),
+              channel: ormChannelToApiChannel(channel),
             };
           })
           .with({ type: 'smart-collection' }, (slot) => {
@@ -246,51 +249,17 @@ export class GetMaterializedChannelScheduleCommand {
   private async materializeShows(showIds: string[]) {
     const showsFromDB =
       await this.serverContext.programDB.getProgramGroupings(showIds);
-    const counts =
-      await this.serverContext.programDB.getProgramGroupingChildCounts(showIds);
-    const results = await this.serverContext.searchService.getPrograms(
-      Object.keys(showsFromDB),
-    );
 
-    const resultsById = groupByUniq(results, (doc) => doc.id);
-
-    const mediaSources = groupByUniq(
-      await this.serverContext.mediaSourceDB.getAll(),
-      (ms) => ms.uuid as string,
+    const materialized = await this.materializeProgramGroupings.execute(
+      Object.values(showsFromDB),
     );
 
     const showsById: Record<string, Show> = {};
-    for (const [showId, dbShow] of Object.entries(showsFromDB)) {
-      const searchDoc = resultsById[dbShow.uuid];
-      if (!searchDoc) {
+    for (const grouping of materialized) {
+      if (grouping.type !== 'show') {
         continue;
       }
-
-      if (!isShowProgramSearchDocument(searchDoc)) {
-        continue;
-      }
-
-      const ms = mediaSources[dbShow.mediaSourceId ?? ''];
-      if (!ms) {
-        continue;
-      }
-      const lib = ms.libraries.find((lib) => lib.uuid === dbShow.libraryId);
-      if (!lib) {
-        continue;
-      }
-
-      const converted = ApiProgramConverters.convertProgramGroupingSearchResult(
-        searchDoc,
-        dbShow,
-        counts[dbShow.uuid],
-        ms,
-        lib,
-      );
-
-      // This should always be true.
-      if (converted?.type === 'show') {
-        showsById[showId] = converted;
-      }
+      showsById[grouping.uuid] = grouping;
     }
 
     return showsById;

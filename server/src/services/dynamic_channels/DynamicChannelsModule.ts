@@ -3,14 +3,14 @@ import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { Channel } from '../../db/schema/Channel.ts';
+import type { ChannelOrm } from '../../db/schema/Channel.ts';
 import { KEYS } from '../../types/inject.ts';
 import { bindFactoryFunc } from '../../util/inject.ts';
 import type { ContentSourceUpdater } from './ContentSourceUpdater.ts';
 import { PlexContentSourceUpdater } from './PlexContentSourceUpdater.ts';
 
 export type ContentSourceUpdaterFactory = (
-  channel: Channel,
+  channel: ChannelOrm,
   config: DynamicContentConfigSource,
 ) => ContentSourceUpdater<DynamicContentConfigSource>;
 

@@ -34,10 +34,6 @@ import type {
   ProgramGroupingFields,
   ProgramGroupingUpdate,
 } from './schema/ProgramGrouping.ts';
-import {
-  AllProgramGroupingFieldsAliased,
-  ProgramGroupingType,
-} from './schema/ProgramGrouping.ts';
 import type { ProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
 import { ProgramGroupingExternalIdFieldsWithAlias } from './schema/ProgramGroupingExternalId.ts';
 import type { DB } from './schema/db.ts';
@@ -114,46 +110,6 @@ export function withTvSeason(
       .where('program.type', '=', ProgramType.Episode)
       .orderBy('uuid'),
   ).as('tvSeason');
-}
-
-export function withTvShowSeasons(
-  eb: ExpressionBuilder<DB, 'programGrouping'>,
-  fields: ProgramGroupingFields<'season'> = AllProgramGroupingFieldsAliased(
-    'season',
-  ),
-  includeExternalIds: boolean = false,
-) {
-  return jsonArrayFrom(
-    eb
-      .selectFrom('programGrouping as season')
-      .select(fields)
-      .$if(includeExternalIds, (qb) =>
-        qb.select((eb) => withProgramGroupingExternalIds(eb)),
-      )
-      .whereRef('programGrouping.uuid', '=', 'season.showUuid')
-      .where('season.type', '=', ProgramGroupingType.Season)
-      .orderBy(['season.index asc', 'season.uuid asc']),
-  ).as('seasons');
-}
-
-export function withMusicArtistAlbums(
-  eb: ExpressionBuilder<DB, 'programGrouping'>,
-  fields: ProgramGroupingFields<'album'> = AllProgramGroupingFieldsAliased(
-    'album',
-  ),
-  includeExternalIds: boolean = false,
-) {
-  return jsonArrayFrom(
-    eb
-      .selectFrom('programGrouping as album')
-      .select(fields)
-      .$if(includeExternalIds, (qb) =>
-        qb.select((eb) => withProgramGroupingExternalIds(eb)),
-      )
-      .whereRef('programGrouping.uuid', '=', 'album.showUuid')
-      .where('album.type', '=', ProgramGroupingType.Album)
-      .orderBy(['album.index asc', 'album.uuid asc']),
-  ).as('albums');
 }
 
 export function withTrackArtist(
@@ -323,6 +279,8 @@ export const AllProgramFields = [
   'program.localMediaFolderId',
   'program.localMediaSourcePathId',
   'program.state',
+  'program.tagline',
+  'program.plot',
 ] as const;
 
 type ProgramUpsertFields = StrictExclude<
@@ -380,6 +338,10 @@ export const AllProgramGroupingFields = [
   'programGrouping.sourceType',
   'programGrouping.mediaSourceId',
   'programGrouping.externalKey',
+  'programGrouping.releaseDate',
+  'programGrouping.rating',
+  'programGrouping.tagline',
+  'programGrouping.plot',
 ] as const;
 
 const ProgramGroupingUpsertIgnoreFields = [

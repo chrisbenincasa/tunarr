@@ -27,7 +27,6 @@ import { Kysely } from 'kysely';
 import {
   compact,
   filter,
-  find,
   first,
   flatMap,
   includes,
@@ -49,12 +48,16 @@ import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
-import { Channel } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
 import type {
-  ChannelWithPrograms,
-  ChannelWithRelations,
+  ChannelOrmWithPrograms,
+  ChannelOrmWithRelations,
 } from '../db/schema/derivedTypes.ts';
+import {
+  FlexGuideItem,
+  MaterializedGuideItem,
+  ProgramGuideItem,
+} from '../types/guide.ts';
 import dayjs from '../util/dayjs.ts';
 import {
   deepCopy,
@@ -64,7 +67,6 @@ import {
   run,
   wait,
 } from '../util/index.ts';
-import { booleanToNumber } from '../util/sqliteUtil.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
@@ -95,12 +97,12 @@ export type TvGuideChannel = {
 };
 
 export type ChannelPrograms = {
-  channel: ChannelWithPrograms;
+  channel: ChannelOrmWithPrograms;
   programs: GuideItem[];
 };
 
 type ChannelWithLineup = {
-  channel: ChannelWithPrograms;
+  channel: ChannelOrmWithPrograms;
   lineup: Lineup;
 };
 
@@ -283,7 +285,7 @@ export class TVGuideService {
     updatedChannelId: string,
     recalculateGuide: boolean = false,
   ) {
-    const channel = await this.channelDB.getChannel(updatedChannelId);
+    const channel = await this.channelDB.getChannelOrm(updatedChannelId);
     if (isNil(channel)) {
       this.logger.warn(
         'Could not find channel with id %s when attempting to update cached XMLTV channels',
@@ -948,21 +950,12 @@ export class TVGuideService {
   }
 
   private async writeXmlTv() {
-    // Materialize the guide to write out the XML.
-    const allChannels: Channel[] = await run(() => {
-      // In the case of updating a channel we have initialize
-      // this list
-      if (!isEmpty(this.channelsById)) {
-        return map(values(this.channelsById), 'channel');
-      }
-      return this.channelDB.getAllChannels();
-    });
     await this.xmltv.write(
       map(values(this.cachedGuide), ({ channel, programs }) => {
         return {
           channel,
           programs: map(programs, (program) =>
-            this.materializeGuideItem(channel, program, allChannels),
+            this.materializeGuideItem(channel, program),
           ),
         };
       }),
@@ -1027,7 +1020,7 @@ export class TVGuideService {
     );
 
     const materializedPrograms = groupByUniqProp(
-      await this.programDB.getProgramsByIdsOld(programIds),
+      await this.programDB.getProgramsByIds(programIds),
       'uuid',
     );
 
@@ -1041,7 +1034,7 @@ export class TVGuideService {
           return this.guideItemToProgram(
             channel,
             program,
-            this.programConverter.lineupItemToChannelProgram(
+            this.programConverter.lineupItemToChannelProgramOrm(
               channel,
               program.lineupItem,
               allChannels,
@@ -1056,7 +1049,7 @@ export class TVGuideService {
   }
 
   private guideItemToProgram(
-    channel: ChannelWithRelations,
+    channel: ChannelOrmWithRelations,
     guideItem: GuideItem,
     materializedItem: ChannelProgram | null,
   ): TvGuideProgram {
@@ -1125,46 +1118,93 @@ export class TVGuideService {
   }
 
   private materializeGuideItem(
-    channel: ChannelWithPrograms,
+    channel: ChannelOrmWithPrograms,
     currentProgram: GuideItem,
-    allChannels: Channel[],
-  ): TvGuideProgram {
-    const materializedProgram =
-      this.programConverter.lineupItemToChannelProgram(
-        channel,
-        currentProgram.lineupItem,
-        allChannels,
-        currentProgram.lineupItem.type === 'content'
-          ? find(
-              this.channelsById[
-                isNonEmptyString(currentProgram.redirectChannelId)
-                  ? currentProgram.redirectChannelId
-                  : channel.uuid
-              ]?.channel.programs,
-              (p) =>
-                currentProgram.lineupItem.type === 'content' &&
-                p.uuid === currentProgram.lineupItem.id,
-            )
-          : undefined,
-      );
+  ): MaterializedGuideItem {
+    const isPaused =
+      currentProgram.isPaused &&
+      (currentProgram.lineupItem.type === 'content' ||
+        currentProgram.lineupItem.type === 'offline');
+    const baseItem = {
+      durationMs: currentProgram.lineupItem.durationMs,
+      start: currentProgram.startTimeMs,
+      stop: currentProgram.startTimeMs + currentProgram.lineupItem.durationMs,
+      isPaused,
+    } as const;
 
-    if (currentProgram.lineupItem.type === 'content' && !materializedProgram) {
-      this.logger.warn(
-        'Could not materialize content program ID = %s. If this issue persists, please try restarting Tunarr.',
-        currentProgram.lineupItem.id,
-      );
-    }
+    return match(currentProgram.lineupItem)
+      .returnType<MaterializedGuideItem>()
+      .with({ type: 'content' }, (content) => {
+        const targetChannelId =
+          currentProgram.redirectChannelId ?? channel.uuid;
+        const backingProgram = this.channelsById[
+          targetChannelId
+        ]?.channel.programs.find((program) => program.uuid === content.id);
 
-    return this.guideItemToProgram(
-      channel,
-      currentProgram,
-      materializedProgram,
-    );
+        let programming: ProgramGuideItem | FlexGuideItem;
+        if (!backingProgram) {
+          programming = {
+            type: 'flex',
+          };
+        } else {
+          programming = {
+            type: 'program',
+            program: backingProgram,
+          };
+        }
+
+        let title = match(programming)
+          .with({ type: 'flex' }, () =>
+            isNonEmptyString(channel.guideFlexTitle)
+              ? channel.guideFlexTitle
+              : channel.name,
+          )
+          .with({ type: 'program' }, (p) => p.program.title)
+          .exhaustive();
+        if (isPaused) {
+          title += ' (paused)';
+        }
+
+        return {
+          ...baseItem,
+          title,
+          programming,
+        };
+      })
+      .with({ type: 'offline' }, () => {
+        let title = isNonEmptyString(channel.guideFlexTitle)
+          ? channel.guideFlexTitle
+          : channel.name;
+        if (isPaused) {
+          title += ' (paused)';
+        }
+
+        return {
+          ...baseItem,
+          title,
+          programming: {
+            type: 'flex',
+          },
+        };
+      })
+      .with({ type: 'redirect' }, (redirect) => {
+        const backingChannel = this.channelsById[redirect.channel];
+        return {
+          ...baseItem,
+          programming: {
+            channelId: backingChannel.channel.uuid,
+            channelName: backingChannel.channel.name,
+            channelNumber: backingChannel.channel.number,
+            type: 'redirect',
+          },
+        };
+      })
+      .exhaustive();
   }
 
   private async makePlaceholderChannel(): Promise<ChannelPrograms> {
     const currentUpdateTimeMs = +dayjs();
-    const channel: ChannelWithPrograms = {
+    const channel: ChannelOrmWithPrograms = {
       uuid: PlaceholderChannelId,
       name: 'Tunarr',
       icon: {
@@ -1173,11 +1213,11 @@ export class TVGuideService {
         duration: 0,
         position: 'bottom-right',
       },
-      disableFillerOverlay: 0, //false, cast?
+      disableFillerOverlay: false,
       number: 0,
       guideMinimumDuration: 0,
       duration: 0,
-      stealth: 0, //false, cast?
+      stealth: false,
       startTime: 0,
       offline: {
         picture: undefined,
@@ -1200,7 +1240,7 @@ export class TVGuideService {
           .orderBy('isDefault desc')
           .executeTakeFirstOrThrow()
       ).uuid,
-      subtitlesEnabled: booleanToNumber(false),
+      subtitlesEnabled: false,
     };
 
     // Placeholder channel with random ID.
@@ -1222,7 +1262,7 @@ export class TVGuideService {
 
 function isProgramOffline(
   program: Maybe<LineupItem>,
-  channel: ChannelWithPrograms,
+  channel: ChannelOrmWithPrograms,
 ): boolean {
   return (
     !isUndefined(program) &&

@@ -1,7 +1,6 @@
 import type { Lineup } from '@/db/derived_types/Lineup.js';
 import { isContentItem } from '@/db/derived_types/Lineup.js';
 import type { Func } from '@/types/func.js';
-import type { ChannelAndLineup } from '@/types/internal.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
 import type { SchedulingOperation } from '@tunarr/types/api';
@@ -16,7 +15,10 @@ import {
   reject,
   sortBy,
 } from 'lodash-es';
-import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import {
+  IChannelDB,
+  LegacyChannelAndLineup,
+} from '../../db/interfaces/IChannelDB.ts';
 import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
@@ -124,7 +126,9 @@ export class LineupCreator {
     return;
   }
 
-  private async applySchedulingOperations(channelAndLineup: ChannelAndLineup) {
+  private async applySchedulingOperations(
+    channelAndLineup: LegacyChannelAndLineup,
+  ) {
     return await this.createScheduleOperationPipeline(
       channelAndLineup.lineup.schedulingOperations ?? [],
     )(channelAndLineup);
@@ -135,7 +139,9 @@ export class LineupCreator {
   // function
   private createScheduleOperationPipeline(
     ops: SchedulingOperation[],
-  ): (channelAndLineup: ChannelAndLineup) => Promise<ChannelAndLineup> {
+  ): (
+    channelAndLineup: LegacyChannelAndLineup,
+  ) => Promise<LegacyChannelAndLineup> {
     const seenIds = new Set<string>();
     const dedupedOps = reject(ops, (op) => {
       if (op.allowMultiple) {
@@ -158,7 +164,7 @@ export class LineupCreator {
     );
 
     const pipeline = intersperse<
-      Func<ChannelAndLineup, Promise<ChannelAndLineup>>
+      Func<LegacyChannelAndLineup, Promise<LegacyChannelAndLineup>>
     >(
       operations,
       // TODO: We may only need to collapse offline time once right before the

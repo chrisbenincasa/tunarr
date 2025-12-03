@@ -9,7 +9,7 @@
   "main": "src/index.ts",
   "bin": "dist/bundle.cjs",
   "scripts": {
-    "build-dev": "cross-env NODE_ENV=development tsc -p tsconfig.build.json --noEmit --watch",
+    "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit --watch",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
     "bundle": "dotenv -- tsx scripts/bundle.ts",
     "make-bin": "dotenv -- tsx scripts/make-bin.ts",

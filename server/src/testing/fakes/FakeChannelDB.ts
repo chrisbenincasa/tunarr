@@ -13,8 +13,8 @@ import type {
   PendingProgram,
 } from '../../db/derived_types/Lineup.ts';
 import type {
+  ChannelAndLineup,
   ChannelAndRawLineup,
-  ChannnelAndLineup,
   IChannelDB,
   PageParams,
   UpdateChannelLineupRequest,
@@ -30,7 +30,6 @@ import type {
 import type { ProgramDao } from '../../db/schema/Program.ts';
 import type { ProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
 import type { ChannelSubtitlePreferences } from '../../db/schema/SubtitlePreferences.ts';
-import type { ChannelAndLineup } from '../../types/internal.ts';
 import type { Maybe, Nullable, PagedResult } from '../../types/util.ts';
 
 export class FakeChannelDB implements IChannelDB {
@@ -89,7 +88,7 @@ export class FakeChannelDB implements IChannelDB {
   getChannelFallbackPrograms(uuid: string): Promise<ProgramDao[]> {
     throw new Error('Method not implemented.');
   }
-  saveChannel(createReq: SaveableChannel): Promise<ChannnelAndLineup> {
+  saveChannel(createReq: SaveableChannel): Promise<ChannelAndLineup> {
     throw new Error('Method not implemented.');
   }
   deleteChannel(
@@ -148,13 +147,13 @@ export class FakeChannelDB implements IChannelDB {
   }
   loadAllLineupConfigs(
     forceRead?: boolean,
-  ): Promise<Record<string, ChannnelAndLineup>> {
+  ): Promise<Record<string, ChannelAndLineup>> {
     throw new Error('Method not implemented.');
   }
   loadAllRawLineups(): Promise<Record<string, ChannelAndRawLineup>> {
     throw new Error('Method not implemented.');
   }
-  loadChannelAndLineup(channelId: string): Promise<ChannnelAndLineup | null> {
+  loadChannelAndLineup(channelId: string): Promise<ChannelAndLineup | null> {
     throw new Error('Method not implemented.');
   }
   addPendingPrograms(

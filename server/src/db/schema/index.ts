@@ -24,6 +24,7 @@ import {
   FillerShowContent,
   FillerShowContentRelations,
 } from './FillerShowContent.ts';
+import { EntityGenre, Genre, GenreRelations } from './Genre.ts';
 import {
   LocalMediaFolder,
   LocalMediaFolderRelations,
@@ -69,6 +70,7 @@ import {
 } from './ProgramSubtitles.ts';
 import { ProgramVersion, ProgramVersionRelations } from './ProgramVersion.ts';
 import { SmartCollection } from './SmartCollection.ts';
+import { Studio, StudioEntity, StudioRelations } from './Studio.ts';
 
 // export { Program } from './Program.ts';
 
@@ -123,6 +125,12 @@ export const schema = {
   smartCollection: SmartCollection,
   credit: Credit,
   creditRelations: CreditRelations,
+  genre: Genre,
+  genreEntity: EntityGenre,
+  genreRelations: GenreRelations,
+  studio: Studio,
+  studioEntity: StudioEntity,
+  studioRelations: StudioRelations,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

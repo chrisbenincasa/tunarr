@@ -2,6 +2,7 @@ import dayjs from '@/util/dayjs.js';
 import type {
   Actor,
   Episode,
+  Identifier,
   MediaArtwork,
   Movie,
   MusicAlbum,
@@ -26,7 +27,6 @@ import type {
   ProgramGroupingSearchDocument,
   TerminalProgramSearchDocument,
 } from '../services/MeilisearchService.ts';
-import { decodeCaseSensitiveId } from '../services/MeilisearchService.ts';
 import type { Maybe, Nullable } from '../types/util.ts';
 import { isNonEmptyString } from '../util/index.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
@@ -39,9 +39,9 @@ export class ApiProgramConverters {
 
   private constructor() {}
 
-  static convertProgramSearchResult(
-    doc: TerminalProgramSearchDocument,
+  static convertProgram(
     program: ProgramWithRelationsOrm,
+    searchDoc: Maybe<TerminalProgramSearchDocument>,
     mediaSource: MediaSourceWithRelations,
     mediaLibrary: MediaSourceLibraryOrm,
   ): Nullable<TerminalProgram> {
@@ -49,21 +49,37 @@ export class ApiProgramConverters {
       this.logger.warn(`Program %s doesn't have a canonicalId!`, program.uuid);
     }
 
-    const externalId = doc.externalIds.find(
-      (eid) => eid.source === mediaSource.type,
-    )?.id;
+    const externalId = program.externalKey;
+
     if (!externalId && program.sourceType !== 'local') {
       throw new Error('No external Id found');
     }
+
+    const parsed = dayjs(
+      program.originalAirDate,
+      [`YYYY-MM-DDTHH:mm:ssZ`, `YYYY-MM-DD`],
+      true,
+    );
+    const releaseDate = parsed.isValid() ? +parsed : null;
+    const year = program.year ?? (parsed.isValid() ? parsed.year() : null);
+
+    const identifiers =
+      program.externalIds?.map((eid) => ({
+        id: eid.externalKey,
+        sourceId: isNonEmptyString(eid.mediaSourceId)
+          ? eid.mediaSourceId
+          : undefined,
+        type: eid.sourceType,
+      })) ?? [];
+
+    const uuid = program.uuid;
 
     const base = {
       mediaSourceId: mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
-      releaseDate: doc.originalReleaseDate,
-      releaseDateString: doc.originalReleaseDate
-        ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
-        : null,
+      releaseDate: releaseDate,
+      releaseDateString: program.originalAirDate,
       externalId: externalId ?? program.externalKey,
       sourceType: mediaSource.type,
       sortTitle: titleToSortTitle(program.title),
@@ -76,89 +92,70 @@ export class ApiProgramConverters {
               path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
             }) satisfies MediaArtwork,
         ) ?? [],
-      genres: doc.genres,
+      genres: program.genres
+        ?.map((g) => g.genre)
+        .map((genre) => ({
+          name: genre.name,
+        })),
       state: program.state,
+      uuid,
+      identifiers,
+      year,
+      title: program.title,
+      duration: program.duration,
+      canonicalId: program.canonicalId ?? '',
+      // TODO: Persist these to the DB
+      tags: searchDoc?.tags ?? [],
     } satisfies Partial<TerminalProgram>;
 
-    const identifiers = doc.externalIds.map((eid) => ({
-      id: eid.id,
-      sourceId: isNonEmptyString(eid.sourceId)
-        ? decodeCaseSensitiveId(eid.sourceId)
-        : undefined,
-      type: eid.source,
-    }));
-
-    const uuid = doc.id;
-    const year =
-      doc.originalReleaseYear ??
-      (doc.originalReleaseDate && doc.originalReleaseDate > 0
-        ? dayjs(doc.originalReleaseDate).year()
-        : null);
-    const releaseDate =
-      doc.originalReleaseDate && doc.originalReleaseDate > 0
-        ? doc.originalReleaseDate
-        : null;
-
-    const result = match(doc)
+    const result = match(program)
       .returnType<TerminalProgram | null>()
       .with(
         { type: 'episode' },
         (ep) =>
           ({
-            ...ep,
             ...base,
-            uuid,
+            type: 'episode',
+            summary: ep.summary,
             originalTitle: null,
-            year,
-            releaseDate,
-            identifiers,
-            episodeNumber: ep.index ?? 0,
-            canonicalId: program.canonicalId ?? '',
+            episodeNumber: ep.episode ?? 0,
           }) satisfies Episode,
       )
       .with(
         { type: 'movie' },
         (movie) =>
           ({
-            ...movie,
             ...base,
-            identifiers,
-            uuid,
+            type: 'movie',
             originalTitle: null,
-            year,
-            releaseDate,
-            canonicalId: program.canonicalId ?? '',
+            plot: movie.plot,
+            rating: movie.rating,
+            summary: movie.summary,
+            tagline: movie.tagline,
+            tags: [],
           }) satisfies Movie,
       )
       .with(
         { type: 'track' },
-        (track) =>
+        () =>
           ({
-            ...track,
             ...base,
-            identifiers,
-            uuid,
+            type: 'track',
             originalTitle: null,
-            year,
-            releaseDate,
-            canonicalId: program.canonicalId ?? '',
-            trackNumber: doc.index ?? 0,
+            trackNumber: program.episode ?? 0,
+            tags: [],
           }) satisfies MusicTrack,
       )
       .with(
         {
           type: 'other_video',
         },
-        (video) =>
+        () =>
           ({
-            ...video,
             ...base,
-            identifiers,
-            uuid,
+            type: 'other_video',
             originalTitle: null,
-            year,
-            releaseDate,
-            canonicalId: program.canonicalId ?? '',
+            tags: [],
           }) satisfies OtherVideo,
       )
       .otherwise(() => null);
@@ -166,16 +163,16 @@ export class ApiProgramConverters {
     if (!result) {
       throw new Error(
         'Could not convert program result for incoming document: ' +
-          JSON.stringify(doc),
+          JSON.stringify(program),
       );
     }
 
     return result;
   }
 
-  static convertProgramGroupingSearchResult(
-    doc: ProgramGroupingSearchDocument,
+  static convertProgramGrouping(
     grouping: ProgramGroupingOrmWithRelations,
+    doc: Maybe<ProgramGroupingSearchDocument>,
     childCounts: Maybe<ProgramGroupingChildCounts>,
     mediaSource: MediaSourceWithRelations,
     mediaLibrary: MediaSourceLibraryOrm,
@@ -191,34 +188,39 @@ export class ApiProgramConverters {
     const childCount = childCounts?.childCount;
     const grandchildCount = childCounts?.grandchildCount;
 
-    const identifiers = doc.externalIds.map((eid) => ({
-      id: eid.id,
-      sourceId: isNonEmptyString(eid.sourceId)
-        ? decodeCaseSensitiveId(eid.sourceId)
-        : undefined,
-      type: eid.source,
-    }));
+    const identifiers = grouping.externalIds.map(
+      (eid) =>
+        ({
+          id: eid.externalKey,
+          sourceId: eid.mediaSourceId ?? undefined,
+          type: eid.sourceType,
+        }) satisfies Identifier,
+    );
 
-    const uuid = doc.id;
-    const studios = doc?.studio?.map(({ name }) => ({ name })) ?? [];
+    const uuid = grouping.uuid;
+    const studios =
+      grouping?.studios?.map(({ studio }) => ({ name: studio.name })) ?? [];
 
     const externalId =
-      doc.externalIds.find((eid) => eid.source === mediaSource.type)?.id ??
-      grouping.externalKey;
+      grouping.externalKey ??
+      grouping.externalIds.find((eid) => eid.sourceType === mediaSource.type)
+        ?.externalKey;
 
     if (!externalId && mediaSource.type !== 'local') {
       throw new Error(`Program grouping ${grouping.uuid} has no external ID!`);
     }
+
+    const releaseDateObj = grouping.releaseDate
+      ? dayjs(grouping.releaseDate)
+      : null;
 
     const base = {
       sortTitle: '',
       mediaSourceId: mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
       externalLibraryId: mediaLibrary.externalKey,
-      releaseDate: doc.originalReleaseDate,
-      releaseDateString: doc.originalReleaseDate
-        ? dayjs(doc.originalReleaseDate).format('YYYY-MM-DD')
-        : null,
+      releaseDate: releaseDateObj?.valueOf() ?? null,
+      releaseDateString: releaseDateObj?.format('YYYY-MM-DD') ?? null,
       externalId: externalId ?? '',
       sourceType: mediaSource.type,
       artwork:
@@ -230,40 +232,43 @@ export class ApiProgramConverters {
               path: URL.canParse(art.sourcePath) ? art.sourcePath : null,
             }) satisfies MediaArtwork,
         ) ?? [],
-      index: grouping.index ?? doc.index ?? 0,
+      index: grouping.index ?? 0,
+      uuid,
+      identifiers,
+      year: releaseDateObj?.year() ?? null,
+      canonicalId: grouping.canonicalId ?? '',
+      title: grouping.title,
+      summary: grouping.summary,
+      plot: grouping.plot,
+      tagline: grouping.tagline,
+      tags: doc?.tags ?? [],
+      genres: grouping.genres?.map(({ genre }) => ({ name: genre.name })) ?? [],
     } satisfies Partial<ProgramGrouping>;
 
-    const result = match(doc)
+    const result = match(grouping)
       .returnType<ProgramGrouping>()
       .with(
         { type: 'season' },
-        (season) =>
+        () =>
           ({
-            ...season,
+            // ...season,
             ...base,
             type: 'season',
-            identifiers,
-            uuid,
-            canonicalId: grouping.canonicalId ?? '',
             studios,
-            year: doc.originalReleaseYear,
             childCount,
             grandchildCount,
           }) satisfies Season,
       )
       .with(
         { type: 'show' },
-        (show) =>
+        () =>
           ({
-            ...show,
             ...base,
-            identifiers,
-            uuid,
-            canonicalId: grouping.canonicalId ?? '',
+            type: 'show',
             studios,
-            year: doc.originalReleaseYear,
             childCount,
             grandchildCount,
+            rating: grouping.rating,
             actors: orderBy(
               grouping.credits?.filter((credit) => credit.type === 'cast'),
               (credit, idx) => credit.index ?? idx,
@@ -280,28 +285,20 @@ export class ApiProgramConverters {
       )
       .with(
         { type: 'album' },
-        (album) =>
+        () =>
           ({
-            ...album,
             ...base,
-            identifiers,
-            uuid,
-            canonicalId: grouping.canonicalId ?? '',
-            // studios,
-            year: doc.originalReleaseYear,
+            type: 'album',
             childCount,
             grandchildCount,
           }) satisfies MusicAlbum,
       )
       .with(
         { type: 'artist' },
-        (artist) =>
+        () =>
           ({
-            ...artist,
             ...base,
-            identifiers,
-            uuid,
-            canonicalId: grouping.canonicalId ?? '',
+            type: 'artist',
             childCount,
             grandchildCount,
           }) satisfies MusicArtist,

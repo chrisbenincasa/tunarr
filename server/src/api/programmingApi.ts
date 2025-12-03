@@ -281,6 +281,16 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               mediaFiles: true,
             },
           },
+          genres: {
+            with: {
+              genre: true,
+            },
+          },
+          studios: {
+            with: {
+              studio: true,
+            },
+          },
         },
       });
 
@@ -1171,6 +1181,96 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         .orderBy('programGrouping.index asc')
         .execute();
       return res.send(result);
+    },
+  );
+
+  fastify.post(
+    '/movies/:id/scan',
+    {
+      schema: {
+        params: z.object({
+          id: z.uuid(),
+        }),
+        response: {
+          202: z.void(),
+          400: z.void(),
+          404: z.void(),
+          500: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const program = await req.serverCtx.programDB.getProgramById(
+        req.params.id,
+      );
+      if (!program) {
+        return res.status(404).send();
+      }
+
+      if (
+        program.type !== 'movie' ||
+        !program.libraryId ||
+        !program.externalKey
+      ) {
+        return res.status(400).send();
+      }
+
+      const queued = await req.serverCtx.mediaSourceScanCoordinator.add({
+        forceScan: true,
+        libraryId: program.libraryId,
+        pathFilter: program.externalKey,
+      });
+
+      if (!queued) {
+        return res.status(500).send();
+      }
+
+      return res.status(202).send();
+    },
+  );
+
+  fastify.post(
+    '/shows/:id/scan',
+    {
+      schema: {
+        params: z.object({
+          id: z.uuid(),
+        }),
+        response: {
+          202: z.void(),
+          400: z.void(),
+          404: z.void(),
+          500: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const program = await req.serverCtx.programDB.getProgramGrouping(
+        req.params.id,
+      );
+      if (!program) {
+        return res.status(404).send();
+      }
+
+      if (
+        program.type !== 'show' ||
+        !program.libraryId ||
+        !program.externalKey
+      ) {
+        return res.status(400).send();
+      }
+
+      const queued = await req.serverCtx.mediaSourceScanCoordinator.add({
+        forceScan: true,
+        libraryId: program.libraryId,
+        pathFilter: program.externalKey,
+      });
+
+      if (!queued) {
+        return res.status(500).send();
+      }
+
+      return res.status(202).send();
     },
   );
 };
