@@ -1,5 +1,6 @@
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type {
   MediaSourceContentType,
   MediaSourceLibrary,
@@ -20,6 +21,7 @@ import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierar
 import { getChildSearchFilter } from '../../hooks/useProgramSearch.ts';
 import useStore from '../../store/index.ts';
 import { addKnownMediaForServer } from '../../store/programmingSelector/actions.ts';
+import type { Maybe } from '../../types/util.ts';
 import type { RenderNestedGrid } from '../channel_config/MediaItemGrid.tsx';
 import {
   MediaItemGrid,
@@ -137,14 +139,20 @@ export const LibraryProgramGrid = ({
       return data;
     },
     getNextPageParam: (last) => {
+      const isFreeQuery = isNonEmptyString(query.query);
       const nextPage = last.page + 1;
-      // We can't always trust the total hits. Meilisearch
-      // by default maxes out at 1000. You can configure this
-      // but it makes search slow. We just keep querying until
-      // there are no more results!
-      if (last.totalHits < 1_000 && nextPage > last.totalPages) {
-        return;
-      } else if (last.totalHits >= 1_000 && last.results.length === 0) {
+
+      if (isFreeQuery) {
+        // We can't always trust the total hits. Meilisearch
+        // by default maxes out at 1000 for search requests.
+        // You can configure this but it makes search slow. We
+        // just keep querying until there are no more results!
+        if (last.totalHits < 1_000 && nextPage > last.totalPages) {
+          return;
+        } else if (last.totalHits >= 1_000 && last.results.length === 0) {
+          return;
+        }
+      } else if (last.results.length === 0) {
         return;
       }
 
@@ -157,7 +165,7 @@ export const LibraryProgramGrid = ({
       }
       return prevPage;
     },
-    initialPageParam: 1,
+    initialPageParam: undefined as Maybe<number>,
     staleTime: 0,
   });
 
@@ -209,7 +217,10 @@ export const LibraryProgramGrid = ({
     <Box sx={{ mt: 1 }}>
       {depth === 0 && !isUndefined(totalHits) && (
         <Typography textAlign="right" variant="subtitle2">
-          Total hits: {totalHits >= 1000 ? '>1000' : totalHits}
+          Total hits:{' '}
+          {isNonEmptyString(query.query) && totalHits >= 1000
+            ? '>1000'
+            : totalHits}
         </Typography>
       )}
       {search.isLoading && <LinearProgress />}

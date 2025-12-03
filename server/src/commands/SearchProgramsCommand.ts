@@ -1,6 +1,7 @@
 import { seq } from '@tunarr/shared/util';
 import { ProgramSearchRequest, ProgramSearchResponse } from '@tunarr/types/api';
 import { inject } from 'inversify';
+import { isEmpty } from 'lodash-es';
 import z from 'zod';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
@@ -30,12 +31,13 @@ export class SearchProgramsCommand {
   async execute(
     req: z.infer<typeof ProgramSearchRequest>,
   ): Promise<ProgramSearchResponse> {
+    const limit = req.limit ?? 20;
     const result = await this.searchService.search('programs', {
       query: req.query.query,
       filter: req.query.filter,
       paging: {
-        offset: req.page ?? 1,
-        limit: req.limit ?? 20,
+        page: isEmpty(req.query.query) ? (req.page ?? 0) : (req.page ?? 1),
+        limit,
       },
       mediaSourceId: req.mediaSourceId,
       libraryId: req.libraryId,
@@ -45,7 +47,7 @@ export class SearchProgramsCommand {
       facets: ['type'],
     });
 
-    const [programIds, groupingIds] = result.hits.reduce(
+    const [programIds, groupingIds] = result.results.reduce(
       (acc, curr) => {
         const [programs, groupings] = acc;
         if (isProgramGroupingDocument(curr)) {
@@ -76,7 +78,7 @@ export class SearchProgramsCommand {
       this.programDB.getProgramGroupingChildCounts(groupingIds),
     ]);
 
-    const results = seq.collect(result.hits, (searchDoc) => {
+    const results = seq.collect(result.results, (searchDoc) => {
       const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
       const mediaSource = allMediaSourcesById[mediaSourceId];
       if (!mediaSource) {
@@ -134,10 +136,17 @@ export class SearchProgramsCommand {
 
     return {
       results,
-      page: result.page,
-      totalHits: result.totalHits,
-      totalPages: result.totalPages,
-      facetDistribution: result.facetDistribution,
+      page:
+        result.type === 'search'
+          ? result.page
+          : Math.floor((result.offset ?? 0) / (result.limit ?? 20)),
+      totalHits: result.type === 'search' ? result.totalHits : result.total,
+      totalPages:
+        result.type === 'search'
+          ? result.totalPages
+          : Math.ceil(result.total / limit),
+      facetDistribution:
+        result.type === 'search' ? result.facetDistribution : undefined,
     };
   }
 }

@@ -22,6 +22,8 @@ import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
 import {
   EnqueuedTask,
+  FacetDistribution,
+  FacetStats,
   MeiliSearch,
   MeiliSearchApiError,
   ResourceResults,
@@ -324,10 +326,33 @@ type SearchRequest<
   mediaSourceId?: string | null;
   libraryId?: string | null;
   paging: {
-    offset: number;
+    page: number;
     limit: number;
   };
 };
+
+export type FreeSearchResponse<DocumentType extends Record<string, unknown>> = {
+  type: 'search';
+  results: DocumentType[];
+  facetDistribution?: FacetDistribution;
+  facetStats?: FacetStats;
+  totalHits: number;
+  hitsPerPage: number;
+  page: number;
+  totalPages: number;
+};
+
+export type FilterResponse<DocumentType extends Record<string, unknown>> = {
+  type: 'filter';
+  results: DocumentType[];
+  limit?: number;
+  offset?: number;
+  total: number;
+};
+
+export type SearchResponse<DocumentType extends Record<string, unknown>> =
+  | FreeSearchResponse<DocumentType>
+  | FilterResponse<DocumentType>;
 
 export type FacetSearchRequest = {
   facetName: string;
@@ -1042,7 +1067,10 @@ export class MeilisearchService implements ISearchService {
       string,
       unknown
     > = IndexDocumentTypeByName<IndexName>,
-  >(indexName: IndexName, request: SearchRequest<IndexTypeByName<IndexName>>) {
+  >(
+    indexName: IndexName,
+    request: SearchRequest<IndexTypeByName<IndexName>>,
+  ): Promise<SearchResponse<IndexDocumentTypeT>> {
     const index = IndexesByName[indexName];
     let filter: Maybe<string>;
     if (request.filter) {
@@ -1073,24 +1101,53 @@ export class MeilisearchService implements ISearchService {
       }
     }
 
-    const req = {
-      filter,
-      page: request.paging?.offset,
-      limit: request.paging?.limit,
-      attributesToSearchOn: request.restrictSearchTo ?? undefined,
-      facets: request.facets ?? undefined,
-    } satisfies SearchParams;
+    if (isNonEmptyString(request.query)) {
+      const req = {
+        filter,
+        page: request.paging?.page,
+        limit: request.paging?.limit,
+        attributesToSearchOn: request.restrictSearchTo ?? undefined,
+        facets: request.facets ?? undefined,
+      } satisfies SearchParams;
 
-    this.logger.debug(
-      'Issuing search: query = %s, filter: %O (parsed: %O)',
-      request.query,
-      request.filter ?? {},
-      req,
-    );
+      this.logger.debug(
+        'Issuing search: query = %s, filter: %O (parsed: %O)',
+        request.query,
+        request.filter ?? {},
+        req,
+      );
 
-    return this.client()
-      .index<IndexDocumentTypeT>(index.name)
-      .search(request.query, req);
+      const searchResults = await this.client()
+        .index<IndexDocumentTypeT>(index.name)
+        .search(request.query, req);
+      return {
+        type: 'search',
+        ...searchResults,
+        results: searchResults.hits,
+      };
+    } else {
+      const offset = request.paging
+        ? request.paging.page * request.paging.limit
+        : undefined;
+      this.logger.debug(
+        'Issuing get documents request: filter: "%s". offset: %d limit %d',
+        filter ?? '',
+        offset ?? 0,
+        request.paging?.limit ?? -1,
+      );
+
+      const results = await this.client()
+        .index<IndexDocumentTypeT>(index.name)
+        .getDocuments({
+          filter: filter,
+          limit: request.paging?.limit,
+          offset,
+        });
+      return {
+        type: 'filter',
+        ...results,
+      };
+    }
   }
 
   async facetSearch<IndexName extends keyof typeof IndexesByName>(

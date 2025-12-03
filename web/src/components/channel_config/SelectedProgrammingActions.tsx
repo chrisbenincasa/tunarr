@@ -38,6 +38,7 @@ import {
   addSelectedMedia,
   clearSelectedMedia,
 } from '../../store/programmingSelector/actions.ts';
+import type { Maybe } from '../../types/util.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon.tsx';
 
 type Props = {
@@ -78,18 +79,19 @@ export default function SelectedProgrammingActions({
   );
 
   const selectAllItems = useCallback(() => {
-    if (!isNil(selectedServer) && !isNil(selectedLibrary)) {
+    console.log('hello ', selectedServer, selectedLibrary);
+    if (!isNil(selectedServer)) {
       removeAllItems();
       setSelectAllLoading(true);
-      let prom: Promise<void>;
+      let prom: Maybe<Promise<void>>;
 
       if (
-        selectedLibrary.type === Imported ||
+        selectedLibrary?.type === Imported ||
         selectedServer.type === 'local'
       ) {
         prom = enumerateSyncedItems(
           selectedServer.id,
-          selectedLibrary.type === Imported ? selectedLibrary.view.id : null,
+          selectedLibrary?.type === Imported ? selectedLibrary.view.id : null,
           currentSearchRequest,
         ).then((res) => {
           const selectedMedia = res.map((program) =>
@@ -107,8 +109,8 @@ export default function SelectedProgrammingActions({
                 persisted: true,
                 mediaSource: selectedServer,
                 libraryId:
-                  selectedLibrary.type === Imported
-                    ? selectedLibrary.view.id
+                  selectedLibrary?.type === Imported
+                    ? selectedLibrary?.view.id
                     : '',
               }))
               .exhaustive(),
@@ -116,7 +118,7 @@ export default function SelectedProgrammingActions({
           addSelectedMedia(selectedMedia);
           addKnownMediaForServer(selectedServer.id, res);
         });
-      } else {
+      } else if (!isNil(selectedLibrary)) {
         switch (selectedServer.type) {
           case Plex:
             prom = directPlexSearchFn().then((response) => {
@@ -193,6 +195,11 @@ export default function SelectedProgrammingActions({
             break;
           }
         }
+      }
+
+      if (!prom) {
+        console.error('Could not determine how to selected all items.');
+        return;
       }
 
       prom

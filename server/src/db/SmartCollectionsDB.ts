@@ -129,19 +129,19 @@ export class SmartCollectionsDB {
       }
     }
 
-    let offset = 1; // Translates to page which is 1-indexed
+    let page = isNonEmptyString(maybeCollection.query) ? 1 : 0;
     const results: ProgramSearchDocument[] = [];
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
-        paging: { offset, limit: 100 },
+        paging: { page, limit: 100 },
         query: searchFilter ? null : maybeCollection.query,
         filter: searchFilter ? searchFilter : null,
       });
-      if (pageResult.hits.length === 0 || pageResult.totalHits === 0) {
+      if (pageResult.results.length === 0) {
         break;
       }
-      results.push(...pageResult.hits);
-      offset += pageResult.hits.length;
+      results.push(...pageResult.results);
+      page++;
     }
 
     return results;

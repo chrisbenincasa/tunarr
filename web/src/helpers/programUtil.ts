@@ -57,7 +57,7 @@ export async function enumerateSyncedItems(
   searchRequest: Nullable<SearchRequest>,
 ) {
   const results: ProgramOrFolder[] = [];
-  const loop = async (page: number = 1): Promise<ProgramOrFolder[]> => {
+  const loop = async (page?: number): Promise<ProgramOrFolder[]> => {
     const result = await postApiProgramsSearch({
       body: {
         mediaSourceId,
@@ -79,7 +79,7 @@ export async function enumerateSyncedItems(
 
     results.push(...result.data.results);
 
-    return loop(page + 1);
+    return loop(result.data.page + 1);
   };
 
   return loop();

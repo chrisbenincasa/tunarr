@@ -372,7 +372,6 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         req.params.libraryId === 'all'
           ? progressService.getScanProgress(req.params.mediaSourceId)
           : progressService.getScanProgress(req.params.libraryId);
-      console.log(progress);
 
       const response = match(progress)
         .returnType<ScanProgress>()

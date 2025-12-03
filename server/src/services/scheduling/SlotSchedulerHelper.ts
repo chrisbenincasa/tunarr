@@ -240,7 +240,9 @@ export class SlotSchedulerHelper {
     });
   }
 
-  async materializeSmartCollections(slots: BaseSlot[]) {
+  async materializeSmartCollections(
+    slots: BaseSlot[],
+  ): Promise<Record<string, ProgramWithRelationsOrm[]>> {
     const collectionIds = uniq(
       seq.collect(slots, (slot) => {
         if (slot.type !== 'smart-collection') {
