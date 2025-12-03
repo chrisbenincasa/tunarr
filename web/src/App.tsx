@@ -9,6 +9,7 @@ import { BottomNavBar } from './components/BottomNavBar.tsx';
 import { Drawer } from './components/Drawer.tsx';
 import { TopBar } from './components/TopBar.tsx';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
+import { useIsDarkMode } from './hooks/useTunarrTheme.ts';
 import { useVersion } from './hooks/useVersion.tsx';
 import { strings } from './strings.ts';
 
@@ -18,11 +19,18 @@ export function Root({ children }: { children?: React.ReactNode }) {
   const { data: version } = useVersion();
 
   const theme = useTheme();
+  const darkMode = useIsDarkMode();
 
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        backgroundColor: darkMode ? 'transparent' : '#f5fafc',
+        minHeight: '100vh',
+      }}
+    >
       <CssBaseline />
 
       <TopBar />
@@ -33,7 +41,6 @@ export function Root({ children }: { children?: React.ReactNode }) {
           flexGrow: 1,
           // height: '100vh', // Uncommenting this breaks any use of scrollTo()
           // overflow: 'auto', // Commenting out to support position: sticky
-          ml: [undefined, '60px'],
         }}
       >
         <Toolbar />
@@ -46,6 +53,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
             px: [undefined, 5],
             pb: [4, undefined],
             maxWidth: 'calc(100vw - 25px)',
+            flexGrow: 1,
           }}
         >
           {version?.ffmpeg === 'unknown' ? (

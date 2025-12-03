@@ -70,7 +70,7 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
           </Tabs>
         </Box>
 
-        <Box sx={{ p: [1, 3] }}>
+        <Box sx={{ py: [1, 2] }}>
           <Suspense fallback={<LinearProgress />}>
             <Outlet />
           </Suspense>

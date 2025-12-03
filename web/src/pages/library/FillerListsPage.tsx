@@ -9,6 +9,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Link,
   Tooltip,
 } from '@mui/material';
 import Box from '@mui/material/Box';
@@ -17,7 +18,7 @@ import Paper from '@mui/material/Paper';
 import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
 import { type FillerList } from '@tunarr/types';
 import { find } from 'lodash-es';
 import {
@@ -123,7 +124,7 @@ export default function FillerListsPage() {
           <Tooltip title="Edit" placement="top">
             <IconButton
               to={`/library/fillers/${filler.id}/edit`}
-              component={Link}
+              component={RouterLink}
             >
               <Edit />
             </IconButton>
@@ -166,6 +167,18 @@ export default function FillerListsPage() {
     enableRowActions: true,
     layoutMode: 'grid',
     renderRowActions: renderActionCell,
+    renderEmptyRowsFallback() {
+      return (
+        <Typography
+          sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
+        >
+          You have no Filler Lists. Create your first Filler List{' '}
+          <Link component={RouterLink} to="/library/fillers/new">
+            here.
+          </Link>
+        </Typography>
+      );
+    },
     muiTableBodyRowProps: ({ row }) => ({
       sx: {
         cursor: 'pointer',
@@ -187,19 +200,29 @@ export default function FillerListsPage() {
     <Box>
       <Breadcrumbs />
       {renderConfirmationDialog()}
-      <Box display="flex" mb={2}>
-        <Typography flexGrow={1} variant="h4">
-          Filler Lists
-        </Typography>
+      <Box display="flex" mb={2} alignItems="flex-start">
+        <Box flexDirection={'column'} flexGrow={1}>
+          <Typography flexGrow={1} variant="h4">
+            Filler Lists
+          </Typography>
+          <Typography maxWidth={'800px'}>
+            Filler lists are collections of videos that you may want to play
+            during 'flex' time segments. Flex is time within a channel that does
+            not have a program scheduled (usually used for padding).
+          </Typography>
+        </Box>
+
         <Button
-          component={Link}
+          component={RouterLink}
           to="/library/fillers/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
+          sx={{ alignSelf: 'end' }}
         >
           New
         </Button>
       </Box>
+
       <TableContainer component={Paper} sx={{ width: '100%' }}>
         <MaterialReactTable table={table} />
       </TableContainer>

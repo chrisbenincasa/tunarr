@@ -1,6 +1,5 @@
 import Changelog from '@/assets/CHANGELOG.md?raw';
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
-import PaddedPaper from '@/components/base/PaddedPaper';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useM3ULink } from '@/hooks/useM3ULink';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks';
@@ -19,6 +18,7 @@ import {
 import {
   Box,
   Button,
+  Divider,
   IconButton,
   type IconButtonProps,
   LinearProgress,
@@ -212,195 +212,204 @@ export const StatusPage = () => {
   return (
     <Box>
       <Stack gap={2} useFlexGap>
-        <PaddedPaper>
-          <Typography sx={{ mb: 1 }} variant="h5">
-            System Health
-          </Typography>
-          {systemHealthQuery.isLoading && <LinearProgress />}
-          {renderHealthCheckResults()}
-        </PaddedPaper>
-        <PaddedPaper>
-          <Typography sx={{ mb: 1 }} variant="h5">
-            System Info
-          </Typography>
-          {systemSettings.isLoading && <LinearProgress />}
-          {systemSettings.data && (
-            <Table>
-              <TableBody>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>Tunarr Backend URL:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>
-                      <Link href={actualBackendUri} target="_blank">
-                        {actualBackendUri}
-                      </Link>
-                      <CopyToClipboardButton content={actualBackendUri} />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <Typography>
-                      <strong>Search Server URL:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>
-                      <Link
-                        href={systemSettings.data.searchServerAddress}
-                        target="_blank"
+        <Stack gap={2} useFlexGap direction={['column', 'row']}>
+          <Box sx={{ pb: 2, flex: 1 }}>
+            <Typography sx={{ mb: 1 }} variant="h5">
+              System Health
+            </Typography>
+            {systemHealthQuery.isLoading && <LinearProgress />}
+            {renderHealthCheckResults()}
+          </Box>
+          <Divider orientation={'vertical'} flexItem={true} />
+          {/* <PaddedPaper> */}
+
+          <Box sx={{ pb: 2, flex: 1 }}>
+            <Typography sx={{ mb: 1 }} variant="h5">
+              System Info
+            </Typography>
+            {systemSettings.isLoading && <LinearProgress />}
+            {systemSettings.data && (
+              <Table>
+                <TableBody>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>Tunarr Backend URL:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        <Link href={actualBackendUri} target="_blank">
+                          {actualBackendUri}
+                        </Link>
+                        <CopyToClipboardButton content={actualBackendUri} />
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <Typography>
+                        <strong>Search Server URL:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        <Link
+                          href={systemSettings.data.searchServerAddress}
+                          target="_blank"
+                        >
+                          {systemSettings.data.searchServerAddress}
+                        </Link>
+                        <CopyToClipboardButton
+                          content={systemSettings.data.searchServerAddress}
+                        />
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>XMLTV Link:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        <Link href={xmlTvLink} target="_blank">
+                          {xmlTvLink}
+                        </Link>
+                        <CopyToClipboardButton content={xmlTvLink} />
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>Channels M3U Link:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        <Link href={m3uLink} target="_blank">
+                          {m3uLink}
+                        </Link>
+                        <CopyToClipboardButton content={m3uLink} />
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>Data Directory:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        sx={{ display: 'flex', alignItems: 'center' }}
                       >
-                        {systemSettings.data.searchServerAddress}
-                      </Link>
-                      <CopyToClipboardButton
-                        content={systemSettings.data.searchServerAddress}
-                      />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>XMLTV Link:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>
-                      <Link href={xmlTvLink} target="_blank">
-                        {xmlTvLink}
-                      </Link>
-                      <CopyToClipboardButton content={xmlTvLink} />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>Channels M3U Link:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>
-                      <Link href={m3uLink} target="_blank">
-                        {m3uLink}
-                      </Link>
-                      <CopyToClipboardButton content={m3uLink} />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>Data Directory:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                      <span>{systemSettings.data.dataDirectory}</span>
-                      <CopyToClipboardButton
-                        content={systemSettings.data.dataDirectory}
-                      />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>Logs Directory:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                      <span>{systemSettings.data.logging.logsDirectory}</span>
-                      <CopyToClipboardButton
-                        content={systemSettings.data.logging.logsDirectory}
-                      />
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-                <TableRow hover>
-                  <TableCell>
-                    <Typography>
-                      <strong>Backups:</strong>
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>
-                      {isEmpty(systemSettings.data.backup.configurations)
-                        ? 'Disabled'
-                        : 'Enabled'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          )}
-        </PaddedPaper>
-        <PaddedPaper sx={{ maxHeight: 400, overflowY: 'scroll' }}>
-          <Box>
-            {map(
-              take(ChunkedChangelog, changelogLinesVisible),
-              (chunk, idx) => (
-                <Markdown
-                  key={`chunk_${idx}`}
-                  components={{
-                    h1: ({ children }) => (
-                      <Typography variant="h4" gutterBottom>
-                        {children}
+                        <span>{systemSettings.data.dataDirectory}</span>
+                        <CopyToClipboardButton
+                          content={systemSettings.data.dataDirectory}
+                        />
                       </Typography>
-                    ),
-                    h2: ({ children }) => (
-                      <Typography variant="h5" gutterBottom>
-                        {children}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>Logs Directory:</strong>
                       </Typography>
-                    ),
-                    h3: ({ children }) => (
-                      <Typography variant="h6" gutterBottom>
-                        {children}
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        sx={{ display: 'flex', alignItems: 'center' }}
+                      >
+                        <span>{systemSettings.data.logging.logsDirectory}</span>
+                        <CopyToClipboardButton
+                          content={systemSettings.data.logging.logsDirectory}
+                        />
                       </Typography>
-                    ),
-                    text: ({ children }) => (
-                      <Typography variant="body1">{children}</Typography>
-                    ),
-                    a: ({ children, href }) => (
-                      <Link href={href} target="_blank">
-                        {children}
-                      </Link>
-                    ),
-                  }}
-                >
-                  {chunk}
-                </Markdown>
-              ),
+                    </TableCell>
+                  </TableRow>
+                  <TableRow hover>
+                    <TableCell>
+                      <Typography>
+                        <strong>Backups:</strong>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        {isEmpty(systemSettings.data.backup.configurations)
+                          ? 'Disabled'
+                          : 'Enabled'}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             )}
           </Box>
-          {changlogPending && <LinearProgress />}
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'center',
-              py: 2,
-            }}
-          >
-            <Button
-              variant="contained"
-              startIcon={<Refresh />}
-              onClick={() =>
-                startChangelogTransition(() =>
-                  setChangelogLinesVisible((prev) => prev + 10),
-                )
-              }
-              disabled={changelogLinesVisible >= ChunkedChangelog.length}
+        </Stack>
+        {/* </PaddedPaper> */}
+        {/* <PaddedPaper sx={{ maxHeight: 400, overflowY: 'scroll' }}> */}
+        <Divider orientation={'horizontal'} />
+
+        <Box>
+          {map(take(ChunkedChangelog, changelogLinesVisible), (chunk, idx) => (
+            <Markdown
+              key={`chunk_${idx}`}
+              components={{
+                h1: ({ children }) => (
+                  <Typography variant="h4" gutterBottom>
+                    {children}
+                  </Typography>
+                ),
+                h2: ({ children }) => (
+                  <Typography variant="h5" gutterBottom>
+                    {children}
+                  </Typography>
+                ),
+                h3: ({ children }) => (
+                  <Typography variant="h6" gutterBottom>
+                    {children}
+                  </Typography>
+                ),
+                text: ({ children }) => (
+                  <Typography variant="body1">{children}</Typography>
+                ),
+                a: ({ children, href }) => (
+                  <Link href={href} target="_blank">
+                    {children}
+                  </Link>
+                ),
+              }}
             >
-              Load More
-            </Button>
-          </Box>
-        </PaddedPaper>
+              {chunk}
+            </Markdown>
+          ))}
+        </Box>
+        {changlogPending && <LinearProgress />}
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            py: 2,
+          }}
+        >
+          <Button
+            variant="contained"
+            startIcon={<Refresh />}
+            onClick={() =>
+              startChangelogTransition(() =>
+                setChangelogLinesVisible((prev) => prev + 10),
+              )
+            }
+            disabled={changelogLinesVisible >= ChunkedChangelog.length}
+          >
+            Load More
+          </Button>
+        </Box>
+        {/* </PaddedPaper> */}
       </Stack>
     </Box>
   );

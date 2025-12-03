@@ -1,4 +1,11 @@
-import { Box, LinearProgress, Tab, Tabs, Typography } from '@mui/material';
+import {
+  Box,
+  LinearProgress,
+  Paper,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
 import { Link, Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
 
@@ -13,21 +20,39 @@ export const SystemLayout = ({ currentTab }: Props) => {
       <Typography variant="h3" mb={2}>
         System
       </Typography>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={currentTab} variant="scrollable" allowScrollButtonsMobile>
-          <Tab label="Status" value="/" to="/system" component={Link} />
-          <Tab
-            label="Debug"
-            value="/debug"
-            to="/system/debug"
-            component={Link}
-          />
-          <Tab label="Logs" value="/logs" to="/system/logs" component={Link} />
-        </Tabs>
-        <Suspense fallback={<LinearProgress />}>
-          <Outlet />
-        </Suspense>
-      </Box>
+      <Paper sx={{ p: [1, 2] }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={currentTab}
+            variant="scrollable"
+            allowScrollButtonsMobile
+            sx={{
+              '& .MuiTabs-scrollButtons.Mui-disabled': {
+                opacity: 0.2,
+              },
+            }}
+          >
+            <Tab label="Status" value="/" to="/system" component={Link} />
+            <Tab
+              label="Debug"
+              value="/debug"
+              to="/system/debug"
+              component={Link}
+            />
+            <Tab
+              label="Logs"
+              value="/logs"
+              to="/system/logs"
+              component={Link}
+            />
+          </Tabs>
+          <Box sx={{ py: [1, 3] }}>
+            <Suspense fallback={<LinearProgress />}>
+              <Outlet />
+            </Suspense>
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 };

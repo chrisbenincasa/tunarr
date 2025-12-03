@@ -4,9 +4,17 @@ import {
   Refresh,
   VideoLibrary,
 } from '@mui/icons-material';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Link as MuiLink,
+  Paper,
+  TableContainer,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Link, Link as RouterLink } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { ScanProgress } from '@tunarr/types/api';
@@ -308,5 +316,17 @@ export const MediaSourceLibraryTable = () => {
     positionActionsColumn: 'last',
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <MaterialReactTable table={table} />
+      </TableContainer>
+      <Typography variant="body2" align="center">
+        Don't see the library you want here? Ensure it is enabled in the{' '}
+        <MuiLink component={Link} to="/settings/sources">
+          Media Source Settings.
+        </MuiLink>
+      </Typography>
+    </>
+  );
 };

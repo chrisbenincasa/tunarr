@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Collapse,
+  Divider,
   LinearProgress,
   Stack,
   Typography,
@@ -15,7 +16,6 @@ import {
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
-import PaddedPaper from '../../components/base/PaddedPaper.tsx';
 import {
   getApiSystemDebugEnvOptions,
   getApiSystemDebugNvidiaOptions,
@@ -95,86 +95,84 @@ export const SystemDebugPage = () => {
 
   return (
     <Stack spacing={2}>
-      <PaddedPaper>
-        <Stack spacing={2}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-              Nvidia Capabilities
-            </Typography>
-            {nvidiaCapabilitiesResult && (
-              <Button
-                onClick={() => copyToClipboard(nvidiaCapabilitiesResult)}
-                startIcon={<CopyAll />}
-              >
-                Copy
-              </Button>
-            )}
+      <Stack spacing={2}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
+            Nvidia Capabilities
+          </Typography>
+          {nvidiaCapabilitiesResult && (
             <Button
-              startIcon={checkNvidiaEnabled ? <Refresh /> : <Search />}
-              onClick={() => handleCheckNvidia()}
-              variant="contained"
-            >
-              Check
-            </Button>
-          </Box>
-          {isLoadingNvidiaCapabilities && <LinearProgress />}
-          <Collapse in={!isUndefined(nvidiaCapabilitiesResult)}>
-            <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
-              <pre>{nvidiaCapabilitiesResult}</pre>
-            </Box>
-          </Collapse>
-        </Stack>
-      </PaddedPaper>
-      <PaddedPaper>
-        <Stack spacing={2}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-              VAAPI Capabilities
-            </Typography>
-            {vappiCapabilitiesResult && (
-              <Button
-                onClick={() => copyToClipboard(vappiCapabilitiesResult)}
-                startIcon={<CopyAll />}
-              >
-                Copy
-              </Button>
-            )}
-            <Button
-              startIcon={checkVaapiEnabled ? <Refresh /> : <Search />}
-              onClick={() => handleCheckVaapi()}
-              variant="contained"
-            >
-              Check
-            </Button>
-          </Box>
-          {isLoadingVaapiCapabilities && <LinearProgress />}
-          <Collapse in={!isUndefined(vappiCapabilitiesResult)}>
-            <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
-              <pre>{vappiCapabilitiesResult}</pre>
-            </Box>
-          </Collapse>
-        </Stack>
-      </PaddedPaper>
-      <PaddedPaper>
-        <Stack spacing={2}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
-              System Environment
-            </Typography>
-            <Button
-              onClick={() =>
-                copyToClipboard(JSON.stringify(envData.data, undefined, 4))
-              }
+              onClick={() => copyToClipboard(nvidiaCapabilitiesResult)}
               startIcon={<CopyAll />}
             >
               Copy
             </Button>
-          </Box>
+          )}
+          <Button
+            startIcon={checkNvidiaEnabled ? <Refresh /> : <Search />}
+            onClick={() => handleCheckNvidia()}
+            variant="contained"
+          >
+            Check
+          </Button>
+        </Box>
+        {isLoadingNvidiaCapabilities && <LinearProgress />}
+        <Collapse in={!isUndefined(nvidiaCapabilitiesResult)}>
           <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
-            <pre>{JSON.stringify(envData.data, undefined, 4)}</pre>
+            <pre>{nvidiaCapabilitiesResult}</pre>
           </Box>
-        </Stack>
-      </PaddedPaper>
+        </Collapse>
+      </Stack>
+      <Divider />
+
+      <Stack spacing={2}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
+            VAAPI Capabilities
+          </Typography>
+          {vappiCapabilitiesResult && (
+            <Button
+              onClick={() => copyToClipboard(vappiCapabilitiesResult)}
+              startIcon={<CopyAll />}
+            >
+              Copy
+            </Button>
+          )}
+          <Button
+            startIcon={checkVaapiEnabled ? <Refresh /> : <Search />}
+            onClick={() => handleCheckVaapi()}
+            variant="contained"
+          >
+            Check
+          </Button>
+        </Box>
+        {isLoadingVaapiCapabilities && <LinearProgress />}
+        <Collapse in={!isUndefined(vappiCapabilitiesResult)}>
+          <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
+            <pre>{vappiCapabilitiesResult}</pre>
+          </Box>
+        </Collapse>
+      </Stack>
+      <Divider />
+
+      <Stack spacing={2}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Typography sx={{ mb: 1, flexGrow: 1 }} variant="h5">
+            System Environment
+          </Typography>
+          <Button
+            onClick={() =>
+              copyToClipboard(JSON.stringify(envData.data, undefined, 4))
+            }
+            startIcon={<CopyAll />}
+          >
+            Copy
+          </Button>
+        </Box>
+        <Box sx={{ maxHeight: 500, overflowY: 'scroll' }}>
+          <pre>{JSON.stringify(envData.data, undefined, 4)}</pre>
+        </Box>
+      </Stack>
     </Stack>
   );
 };

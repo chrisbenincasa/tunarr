@@ -193,10 +193,16 @@ export const TopBar = () => {
       sx={{
         p: 0,
         zIndex: (theme) => theme.zIndex.drawer + 1,
+        boxShadow: 'none',
       }}
     >
-      <Toolbar>
-        <Link underline="none" color="inherit" to="/" component={RouterLink}>
+      <Toolbar sx={{ px: 2 }} disableGutters>
+        <Link
+          underline="none"
+          color="inherit"
+          to="/guide"
+          component={RouterLink}
+        >
           <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />
         </Link>
         <Typography
@@ -206,7 +212,12 @@ export const TopBar = () => {
           color="inherit"
           sx={{ pl: 1 }}
         >
-          <Link underline="none" color="inherit" to="/" component={RouterLink}>
+          <Link
+            underline="none"
+            color="inherit"
+            to="/guide"
+            component={RouterLink}
+          >
             Tunarr
           </Link>
         </Typography>

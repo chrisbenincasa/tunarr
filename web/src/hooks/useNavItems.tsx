@@ -1,10 +1,7 @@
 import {
-  BugReport,
   Computer,
   Delete,
   Home,
-  InfoOutlined,
-  Notes,
   Preview,
   Psychology,
   Settings,
@@ -70,12 +67,12 @@ export const useNavItems = () => {
       },
       // { name: 'Watch', path: '/watch', hidden: true, icon: <LiveTv /> },
       {
-        name: 'Media',
+        name: 'Library',
         path: '/library',
         icon: <VideoLibrary />,
         children: [
           {
-            name: 'Filler',
+            name: 'Filler Lists',
             path: '/library/fillers',
             icon: <Preview />,
           },
@@ -110,23 +107,17 @@ export const useNavItems = () => {
           {
             name: 'Status',
             path: '/system',
-            icon: <InfoOutlined />,
-            badge: highestSev
-              ? {
-                  count: sevCount,
-                  color: highestSev === 'error' ? 'error' : 'warning',
-                }
-              : undefined,
+            hidden: true,
           },
           {
             name: 'Debug',
             path: '/system/debug',
-            icon: <BugReport />,
+            hidden: true,
           },
           {
             name: 'Logs',
             path: '/system/logs',
-            icon: <Notes />,
+            hidden: true,
           },
         ],
       },
@@ -134,6 +125,33 @@ export const useNavItems = () => {
         name: 'Settings',
         path: '/settings/general',
         icon: <Settings />,
+        children: [
+          {
+            name: 'xmltv',
+            path: '/settings/xmltv',
+            hidden: true,
+          },
+          {
+            name: 'ffmpeg',
+            path: '/settings/ffmpeg',
+            hidden: true,
+          },
+          {
+            name: 'sources',
+            path: '/settings/sources',
+            hidden: true,
+          },
+          {
+            name: 'hdhr',
+            path: '/settings/hdhr',
+            hidden: true,
+          },
+          {
+            name: 'tasks',
+            path: '/settings/tasks',
+            hidden: true,
+          },
+        ],
       },
     ];
 
