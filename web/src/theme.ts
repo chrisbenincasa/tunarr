@@ -2,10 +2,6 @@ import { type PaletteOptions, createTheme } from '@mui/material';
 
 const LightTheme: PaletteOptions = {
   mode: 'light',
-  // background: {
-  //   default: '#fff',
-  //   paper: '#fff', //f5fafc
-  // },
   primary: {
     main: '#008c93',
   },

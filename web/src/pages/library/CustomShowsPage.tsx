@@ -188,7 +188,6 @@ export default function CustomShowsPage() {
           <Typography variant="h4">Custom Shows</Typography>
 
           <Typography maxWidth={'800px'}>
-            {/* <Box display={'flex'} alignContent={'center'} sx={{ my: 2 }}> */}
             Custom Shows are sequences of videos that represent a episodes of a
             virtual TV show. When you add these shows to a channel, the schedule
             tools will treat the videos as if they belonged to a single TV show.

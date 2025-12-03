@@ -98,10 +98,7 @@ const DrawerItem = ({ item }: ItemProps) => {
               .map((child) => (
                 <ListItemButton
                   key={child.name}
-                  // to={child.path}
                   sx={{ pl: 4 }}
-                  // component={RouterLink}
-
                   selected={child.selected}
                   onClick={() => handleChildClick(child.path)}
                 >
