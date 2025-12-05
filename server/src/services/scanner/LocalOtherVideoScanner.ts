@@ -8,17 +8,21 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { isNil } from 'lodash-es';
+import { chunk, compact, isNil } from 'lodash-es';
 import { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import {
+  IProgramDB,
+  ProgramCanonicalIdLookupResult,
+} from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { ArtworkType } from '../../db/schema/Artwork.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import {
   OtherVideoNfo,
   unwrapOtherVideoNfoContainer,
@@ -86,7 +90,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
   }
 
   async scanPath(context: LocalScanContext): Promise<Result<void>> {
-    return Result.attemptAsync(async () => {
+    const scanResult = await Result.attemptAsync(async () => {
       // Queue the root of the library.
       this.#queue.push(context.library.externalKey);
 
@@ -151,6 +155,43 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
           progressPct * 100.0,
         );
       }
+    });
+
+    if (scanResult.isFailure() || this.state === 'canceled') {
+      return scanResult;
+    }
+
+    // Look for missing movies.
+    return Result.attemptAsync(async () => {
+      // Look for missing movies.
+      const existingMovies =
+        await this.programDB.getProgramInfoForMediaSourceLibrary(
+          context.library.uuid,
+          ProgramType.OtherVideo,
+        );
+
+      const missingMovies: ProgramCanonicalIdLookupResult[] = [];
+      for (const videoChunk of chunk(Object.values(existingMovies), 100)) {
+        const results = videoChunk.map(async (movie) => {
+          const exists = await fileExists(movie.externalKey);
+          if (!exists) {
+            return movie;
+          }
+          return;
+        });
+        missingMovies.push(...compact(await Promise.all(results)));
+      }
+
+      await this.programDB.updateProgramsState(
+        missingMovies.map((movie) => movie.uuid),
+        'missing',
+      );
+      await this.searchService.updatePrograms(
+        missingMovies.map((movie) => ({
+          id: movie.uuid,
+          state: 'missing',
+        })),
+      );
     });
   }
 

@@ -3,14 +3,17 @@ import { seq } from '@tunarr/shared/util';
 import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { differenceWith, isEmpty, isUndefined, values } from 'lodash-es';
+import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import {
+  IProgramDB,
+  ProgramCanonicalIdLookupResult,
+} from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { Artwork, ArtworkType } from '../../db/schema/Artwork.ts';
 import { ProgramOrm, ProgramType } from '../../db/schema/Program.ts';
@@ -76,14 +79,63 @@ export class LocalMovieScanner extends FileSystemScanner {
 
   async scanPath(context: LocalScanContext): Promise<Result<void>> {
     const rootResult = await Result.attemptAsync(() =>
-      this.scanDirectory(context.library.externalKey, context),
+      // Only scan for files in the root directory.
+      this.scanDirectory(
+        context.library.externalKey,
+        context,
+        /* recurse= */ false,
+      ),
     );
+
     if (rootResult.isFailure()) {
-      return rootResult.recast();
+      this.logger.error(
+        'Error while scanning for files in root folder of library: %s. Continuing',
+        context.library.externalKey,
+      );
     }
 
-    return Result.attemptAsync(() =>
+    const recursiveResult = await Result.attemptAsync(() =>
       this.loopThroughDir(context.library.externalKey, context),
+    );
+
+    if (this.state === 'canceled') {
+      return Result.all([rootResult, recursiveResult]).map(() => void 0);
+    }
+
+    const markMissingResult = await Result.attemptAsync(async () => {
+      // Look for missing movies.
+      const existingMovies =
+        await this.programDB.getProgramInfoForMediaSourceLibrary(
+          context.library.uuid,
+          ProgramType.Movie,
+        );
+
+      const missingMovies: ProgramCanonicalIdLookupResult[] = [];
+      for (const movieChunk of chunk(Object.values(existingMovies), 100)) {
+        const results = movieChunk.map(async (movie) => {
+          const exists = await fileExists(movie.externalKey);
+          if (!exists) {
+            return movie;
+          }
+          return;
+        });
+        missingMovies.push(...compact(await Promise.all(results)));
+      }
+
+      await this.programDB.updateProgramsState(
+        missingMovies.map((movie) => movie.uuid),
+        'missing',
+      );
+      await this.searchService.updatePrograms(
+        missingMovies.map((movie) => ({
+          id: movie.uuid,
+          state: 'missing',
+        })),
+      );
+    });
+
+    return Result.all([rootResult, recursiveResult, markMissingResult]).map(
+      () => void 0,
     );
   }
 
@@ -126,14 +178,12 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
   }
 
-  private async scanDirectory(fullPath: string, context: LocalScanContext) {
+  private async scanDirectory(
+    fullPath: string,
+    context: LocalScanContext,
+    recurse: boolean = true,
+  ) {
     const { library, force } = context;
-    // if (!dirent.isDirectory()) {
-    //   return;
-    // }
-
-    // const parent = dirent.parentPath;
-    // const fullPath = path.join(parent, dirent.name);
     const parent = dirname(fullPath);
     if (!(await this.shouldScanDirectory(fullPath))) {
       return;
@@ -177,7 +227,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       canonicalId,
     );
 
-    if (videoFiles.length === 0) {
+    if (videoFiles.length === 0 && recurse) {
       for (const subdir of await fs.readdir(fullPath, {
         withFileTypes: true,
       })) {
@@ -212,7 +262,6 @@ export class LocalMovieScanner extends FileSystemScanner {
       this.logger.trace('Existing folder %s changed, scanning', fullPath);
     }
 
-    const seenPaths = new Set<string>();
     for (const videoFile of videoFiles) {
       const fullVideoFilePath = path.join(videoFile.parentPath, videoFile.name);
       const result = await this.handleVideoFile(
@@ -228,26 +277,6 @@ export class LocalMovieScanner extends FileSystemScanner {
         );
       }
     }
-    const existingMovies =
-      await this.programDB.getProgramInfoForMediaSourceLibrary(
-        context.library.uuid,
-        ProgramType.Movie,
-      );
-    const missingMovies = differenceWith(
-      values(existingMovies),
-      [...seenPaths.values()],
-      (existing, seen) => existing.externalKey === seen,
-    );
-    await this.programDB.updateProgramsState(
-      missingMovies.map((movie) => movie.uuid),
-      'missing',
-    );
-    await this.searchService.updatePrograms(
-      missingMovies.map((movie) => ({
-        id: movie.uuid,
-        state: 'missing',
-      })),
-    );
   }
 
   private async handleVideoFile(

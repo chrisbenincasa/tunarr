@@ -10,7 +10,16 @@ import {
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import { entries, groupBy, isNil, isNull, isUndefined, range } from 'lodash-es';
+import {
+  chunk,
+  compact,
+  entries,
+  groupBy,
+  isNil,
+  isNull,
+  isUndefined,
+  range,
+} from 'lodash-es';
 import { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
@@ -19,10 +28,14 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
-import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import {
+  IProgramDB,
+  ProgramCanonicalIdLookupResult,
+} from '../../db/interfaces/IProgramDB.ts';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { ArtworkType } from '../../db/schema/Artwork.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import { TvEpisodeNfoParser } from '../../nfo/TvEpisodeNfoParser.ts';
 import { TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
 import { FfprobeStreamDetails } from '../../stream/FfprobeStreamDetails.ts';
@@ -92,7 +105,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
   }
 
   async scanPath(context: LocalScanContext): Promise<Result<void>> {
-    return Result.attemptAsync(async () => {
+    const scanResult = await Result.attemptAsync(async () => {
       const showFolders = await this.getAllScannableSubdirectories(
         context.library.externalKey,
       );
@@ -139,6 +152,44 @@ export class LocalTvShowScanner extends FileSystemScanner {
         this.#pathCount--;
       }
     });
+
+    if (scanResult.isFailure() || this.state === 'canceled') {
+      return scanResult;
+    }
+
+    const markMissingResult = await Result.attemptAsync(async () => {
+      // Look for missing episodes.
+      const existingMovies =
+        await this.programDB.getProgramInfoForMediaSourceLibrary(
+          context.library.uuid,
+          ProgramType.Episode,
+        );
+
+      const missingMovies: ProgramCanonicalIdLookupResult[] = [];
+      for (const episodeChunk of chunk(Object.values(existingMovies), 100)) {
+        const results = episodeChunk.map(async (movie) => {
+          const exists = await fileExists(movie.externalKey);
+          if (!exists) {
+            return movie;
+          }
+          return;
+        });
+        missingMovies.push(...compact(await Promise.all(results)));
+      }
+
+      await this.programDB.updateProgramsState(
+        missingMovies.map((movie) => movie.uuid),
+        'missing',
+      );
+      await this.searchService.updatePrograms(
+        missingMovies.map((movie) => ({
+          id: movie.uuid,
+          state: 'missing',
+        })),
+      );
+    });
+
+    return Result.all([scanResult, markMissingResult]).map(() => void 0);
   }
 
   private async scanShowFolder(showDirent: Dirent, context: LocalScanContext) {
@@ -158,6 +209,8 @@ export class LocalTvShowScanner extends FileSystemScanner {
       library.externalKey,
     );
     const fullPath = path.join(showDirent.parentPath, showDirent.name);
+    const thisFolder = await this.localMediaDB.findFolder(library, fullPath);
+
     const allFiles = await fs.readdir(fullPath, { withFileTypes: true });
 
     // Calculate the folder's canonical ID from its contents and update
@@ -180,6 +233,33 @@ export class LocalTvShowScanner extends FileSystemScanner {
       folderStats: await fs.stat(fullPath),
       contents: canonicalFilesAndStats,
     });
+
+    let shouldScan = false;
+    let isNew = false;
+    let folderId: string;
+    if (!thisFolder) {
+      shouldScan = true;
+      const folderResult = await this.localMediaDB.upsertFolder(
+        context.library,
+        parentFolder?.uuid,
+        fullPath,
+        canonicalId,
+      );
+      isNew = folderResult.isNew;
+      folderId = folderResult.folder.uuid;
+    } else if (thisFolder.canonicalId !== canonicalId) {
+      shouldScan = true;
+      folderId = thisFolder.uuid;
+    } else {
+      folderId = thisFolder.uuid;
+    }
+
+    shouldScan = shouldScan || context.force;
+
+    if (!shouldScan) {
+      this.logger.debug('Skipping unchanged folder %s', fullPath);
+      return;
+    }
 
     const showFolder = await this.localMediaDB.upsertFolder(
       library,
@@ -251,24 +331,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
       showFolder.folder.uuid,
     );
 
-    const missingProgramIds: string[] = [];
-    for await (const program of this.programDB.getProgramInfoForMediaSourceLibraryAsync(
-      context.library.uuid,
-      'episode',
-    )) {
-      if (!(await fileExists(program.externalKey))) {
-        missingProgramIds.push(program.uuid);
-        this.logger.debug(
-          '%s no longer found on disk, marking as missing',
-          program.externalKey,
-        );
-      }
+    if (!isNew) {
+      await this.localMediaDB.setCanonicalId(folderId, canonicalId);
     }
-
-    await this.programDB.updateProgramsState(missingProgramIds, 'missing');
-    await this.searchService.updatePrograms(
-      missingProgramIds.map((id) => ({ id, state: 'missing' })),
-    );
   }
 
   private async scanSeasons(
