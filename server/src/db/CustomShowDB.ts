@@ -50,6 +50,20 @@ export class CustomShowDB {
       return [];
     }
 
+    return this.drizzle.query.customShow
+      .findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, ids),
+        with: {
+          content: true,
+        },
+      })
+      .then((results) => {
+        return results.map((result) => ({
+          ...result,
+          contentCount: result.content.length,
+        }));
+      });
+
     return this.db
       .selectFrom('customShow')
       .where('customShow.uuid', 'in', ids)

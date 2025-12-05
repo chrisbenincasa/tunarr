@@ -305,7 +305,6 @@ export class LocalMovieScanner extends FileSystemScanner {
         libraryId: context.library.uuid,
         duration: mediaItemResult.get().duration,
         mediaItem: mediaItemResult.get(),
-        externalLibraryId: context.library.externalKey, // Meh
         externalId: fullVideoFilePath,
         canonicalId: '',
         externalSubtitles: subtitlesResult.getOrElse([]),

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ChannelSchema } from '../schemas/channelSchema.js';
+import { SmartCollection } from '../schemas/collectionsSchema.js';
 import { CustomShowSchema } from '../schemas/customShowsSchema.js';
 import { FillerListSchema } from '../schemas/fillerSchema.js';
 import { Show } from '../schemas/programmingSchema.js';
@@ -32,7 +33,15 @@ export const ShowProgrammingTimeSlotSchema = z.object({
 
 export const MaterializedShowTimeSlot = z.object({
   ...ShowProgrammingTimeSlotSchema.shape,
-  show: Show,
+  show: Show.nullable(),
+  missingShow: z
+    .object({
+      title: z.string().optional(),
+    })
+    .optional()
+    .describe(
+      'A show that existed in the DB at schedule time, but no longer exists.',
+    ),
 });
 
 export const FlexProgrammingTimeSlotSchema = z.object({
@@ -45,8 +54,10 @@ export const RedirectProgrammingTimeSlotSchema =
 
 export const MaterializedRedirectTimeSlot = z.object({
   ...RedirectProgrammingTimeSlotSchema.shape,
-  channel: ChannelSchema,
+  channel: ChannelSchema.nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
+
 export type MaterializedRedirectTimeSlot = z.infer<
   typeof MaterializedRedirectTimeSlot
 >;
@@ -56,7 +67,11 @@ export const CustomShowProgrammingTimeSlotSchema =
 
 export const MaterializedCustomShowTimeSlot = z.object({
   ...CustomShowProgrammingTimeSlotSchema.shape,
-  customShow: CustomShowSchema.omit({ programs: true, totalDuration: true }),
+  customShow: CustomShowSchema.omit({
+    programs: true,
+    totalDuration: true,
+  }).nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type MaterializedCustomShowTimeSlot = z.infer<
@@ -68,7 +83,8 @@ export const FillerShowProgrammingTimeSlotSchema =
 
 export const MaterializedFillerTimeSlot = z.object({
   ...FillerShowProgrammingTimeSlotSchema.shape,
-  fillerList: FillerListSchema.omit({ programs: true }),
+  fillerList: FillerListSchema.omit({ programs: true }).nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type MaterializedFillerTimeSlot = z.infer<
@@ -78,6 +94,12 @@ export type MaterializedFillerTimeSlot = z.infer<
 export const SmartCollectionTimeSlot = z.object({
   ...BaseTimeSlot.shape,
   ...SmartCollectionProgrammingSlot.shape,
+});
+
+export const MaterializedSmartCollectionTimeSlot = z.object({
+  ...SmartCollectionTimeSlot.shape,
+  smartCollection: SmartCollection.nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type MovieProgrammingTimeSlot = z.infer<
@@ -123,7 +145,7 @@ export const MaterializedTimeSlot = z.discriminatedUnion('type', [
   MaterializedRedirectTimeSlot,
   MaterializedCustomShowTimeSlot,
   MaterializedFillerTimeSlot,
-  SmartCollectionTimeSlot,
+  MaterializedSmartCollectionTimeSlot,
 ]);
 
 export type MaterializedTimeSlot = z.infer<typeof MaterializedTimeSlot>;

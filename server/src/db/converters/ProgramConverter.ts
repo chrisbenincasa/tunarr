@@ -225,7 +225,6 @@ export class ProgramConverter {
       canonicalId: program.canonicalId,
       libraryId: program.libraryId,
       externalId: program.externalKey,
-      externalLibraryId: program.mediaLibrary?.externalKey ?? '',
       identifiers: program.externalIds.map(
         (eid) =>
           ({

@@ -6,7 +6,12 @@ import {
   SlotFiller,
   SlotProgrammingFillerOrder,
 } from '@tunarr/types/api';
-import { Show } from '@tunarr/types/schemas';
+import {
+  CustomShowSchema,
+  FillerListSchema,
+  Show,
+  SmartCollection,
+} from '@tunarr/types/schemas';
 import z from 'zod';
 import type { TimeSlotForm } from './TimeSlotModels.ts';
 
@@ -21,6 +26,11 @@ export const CommonMovieSlotViewModel = z.object({
 export const CommonCustomShowSlotViewModel = z.object({
   type: z.literal('custom-show'),
   customShowId: z.uuid(),
+  customShow: CustomShowSchema.omit({
+    programs: true,
+    totalDuration: true,
+  }).nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type CommonCustomShowSlotViewModel = z.infer<
@@ -34,6 +44,8 @@ export const CommonFillerSlotViewModel = z.object({
   durationWeighting: z.enum(['linear', 'log']),
   decayFactor: z.number().gte(0).lt(1),
   recoveryFactor: z.number().gte(0).lt(1),
+  fillerList: FillerListSchema.nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type CommonFillerSlotViewModel = z.infer<
@@ -45,6 +57,11 @@ export const CommonShowSlotViewModel = z.object({
   type: z.literal('show'),
   showId: z.string(),
   show: Show.nullable(),
+  missingShow: z
+    .object({
+      title: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type CommonShowSlotViewModel = z.infer<typeof CommonShowSlotViewModel>;
@@ -61,6 +78,8 @@ export const CommonRedirectSlotViewModel = z.object({
 export const CommonSmartCollectionViewModel = z.object({
   type: z.literal('smart-collection'),
   smartCollectionId: z.uuid(),
+  smartCollection: SmartCollection.nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export type CommonSmartCollectionViewModel = z.infer<

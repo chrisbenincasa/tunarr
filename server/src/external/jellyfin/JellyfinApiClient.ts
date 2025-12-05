@@ -1028,7 +1028,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: movie.RunTimeTicks / 10_000,
       externalId: movie.Id,
@@ -1235,7 +1234,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         series,
         this.options.mediaSource.uuid,
       ),
-      externalLibraryId: '',
       childCount: series.ChildCount ?? undefined,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', series, 'Primary'),
@@ -1292,7 +1290,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       ),
       index:
         season.IndexNumber ?? getSeasonNumberFromPath(season.Path ?? '') ?? 0,
-      externalLibraryId: '',
       childCount: season.ChildCount ?? undefined,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', season, 'Primary'),
@@ -1374,7 +1371,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.options.mediaSource.uuid,
       ),
       duration: episode.RunTimeTicks / 10_000,
-      externalLibraryId: '',
       artwork: compact([
         this.jellyfinArtworkProjection('poster', episode, 'Primary'),
         this.jellyfinArtworkProjection('banner', episode, 'Banner'),
@@ -1403,7 +1399,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tags: artist.Tags ?? [],
       type: 'artist',
       uuid: v4(),
-      externalLibraryId: '',
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: artist.ChildCount ?? undefined,
@@ -1451,7 +1446,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         }
         return;
       }),
-      externalLibraryId: '',
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: album.ChildCount ?? undefined,
@@ -1513,7 +1507,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             : null,
         ) ?? [],
       duration: track.RunTimeTicks / 10_000,
-      externalLibraryId: '',
       releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
       artwork: compact([
@@ -1593,7 +1586,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
@@ -1674,7 +1666,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,

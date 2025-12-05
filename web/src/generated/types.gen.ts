@@ -4,7 +4,6 @@ export type ShowInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -68,7 +67,6 @@ export type SeasonInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -119,7 +117,6 @@ export type SeasonInput = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -261,7 +258,6 @@ export type EpisodeInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -404,7 +400,6 @@ export type MusicArtistInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -442,7 +437,6 @@ export type MusicArtistInput = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -495,7 +489,6 @@ export type MusicAlbumInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -546,7 +539,6 @@ export type MusicAlbumInput = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -690,7 +682,6 @@ export type MusicTrackInput = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -886,7 +877,6 @@ export type Show = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -950,7 +940,6 @@ export type Season = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -1001,7 +990,6 @@ export type Season = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -1143,7 +1131,6 @@ export type Episode = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -1286,7 +1273,6 @@ export type MusicArtist = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -1324,7 +1310,6 @@ export type MusicArtist = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -1377,7 +1362,6 @@ export type MusicAlbum = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -1428,7 +1412,6 @@ export type MusicAlbum = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -1572,7 +1555,6 @@ export type MusicTrack = {
     uuid: string;
     canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    externalLibraryId: string;
     /**
      * Unique identifier for this item in the external media source
      */
@@ -2542,7 +2524,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -2686,7 +2667,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -2826,7 +2806,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -7817,7 +7796,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
-                show: Show;
+                show: Show | null;
+                /**
+                 * A show that existed in the DB at schedule time, but no longer exists.
+                 */
+                missingShow?: {
+                    title?: string;
+                };
             } | {
                 startTime: number;
                 type: 'flex';
@@ -7932,7 +7917,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
-                };
+                } | null;
+                isMissing: boolean;
             } | {
                 type: 'custom-show';
                 customShowId: string;
@@ -7948,7 +7934,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     id: string;
                     name: string;
                     contentCount: number;
-                };
+                } | null;
+                isMissing: boolean;
             } | {
                 type: 'filler';
                 fillerListId: string;
@@ -7961,7 +7948,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                     id: string;
                     name: string;
                     contentCount: number;
-                };
+                } | null;
+                isMissing: boolean;
             } | {
                 startTime: number;
                 type: 'smart-collection';
@@ -7973,6 +7961,12 @@ export type GetApiChannelsByIdScheduleResponses = {
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
                 }>;
+                smartCollection: {
+                    uuid: string;
+                    name: string;
+                    query: string;
+                } | null;
+                isMissing: boolean;
             }>;
             timeZoneOffset: number;
             startTomorrow?: boolean;
@@ -8023,7 +8017,13 @@ export type GetApiChannelsByIdScheduleResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
-                show: Show;
+                show: Show | null;
+                /**
+                 * A show that existed in the DB at schedule time, but no longer exists.
+                 */
+                missingShow?: {
+                    title?: string;
+                };
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -8158,7 +8158,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
-                };
+                } | null;
+                isMissing: boolean;
             } | {
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
@@ -8180,6 +8181,12 @@ export type GetApiChannelsByIdScheduleResponses = {
                 direction: 'asc' | 'desc';
                 type: 'custom-show';
                 customShowId: string;
+                customShow: {
+                    id: string;
+                    name: string;
+                    contentCount: number;
+                } | null;
+                isMissing: boolean;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -8198,6 +8205,12 @@ export type GetApiChannelsByIdScheduleResponses = {
                 durationWeighting: 'linear' | 'log';
                 decayFactor: number;
                 recoveryFactor: number;
+                fillerList: {
+                    id: string;
+                    name: string;
+                    contentCount: number;
+                } | null;
+                isMissing: boolean;
             } | {
                 filler?: Array<{
                     types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback'>;
@@ -11762,7 +11775,6 @@ export type PostApiProgramsSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -11906,7 +11918,6 @@ export type PostApiProgramsSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -12046,7 +12057,6 @@ export type PostApiProgramsSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -12486,7 +12496,6 @@ export type GetApiProgramsByIdResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -12630,7 +12639,6 @@ export type GetApiProgramsByIdResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -12770,7 +12778,6 @@ export type GetApiProgramsByIdResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -17022,7 +17029,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -17166,7 +17172,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -17306,7 +17311,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -17704,7 +17708,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -17848,7 +17851,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -17988,7 +17990,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         uuid: string;
         canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        externalLibraryId: string;
         /**
          * Unique identifier for this item in the external media source
          */
@@ -18676,7 +18677,6 @@ export type GetJellyfinLibraryItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -18820,7 +18820,6 @@ export type GetJellyfinLibraryItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -18960,7 +18959,6 @@ export type GetJellyfinLibraryItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -19328,7 +19326,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -19472,7 +19469,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -19612,7 +19608,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -19856,7 +19851,6 @@ export type GetApiTrashResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -20000,7 +19994,6 @@ export type GetApiTrashResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -20140,7 +20133,6 @@ export type GetApiTrashResponses = {
             uuid: string;
             canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalLibraryId: string;
             /**
              * Unique identifier for this item in the external media source
              */
@@ -20461,6 +20453,92 @@ export type PutApiSmartCollectionsByIdResponses = {
 };
 
 export type PutApiSmartCollectionsByIdResponse = PutApiSmartCollectionsByIdResponses[keyof PutApiSmartCollectionsByIdResponses];
+
+export type GetApiCreditsByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        type?: 'cast' | 'director' | 'writer' | 'producer';
+    };
+    url: '/api/credits/{id}';
+};
+
+export type GetApiCreditsByIdErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiCreditsByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        order?: number | null;
+        role?: string | null;
+        thumb?: string | null;
+        type: 'actor';
+    } | {
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+        type: 'writer';
+    } | {
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+        type: 'director';
+    };
+};
+
+export type GetApiCreditsByIdResponse = GetApiCreditsByIdResponses[keyof GetApiCreditsByIdResponses];
+
+export type GetApiCreditsByIdArtworkByArtworkTypeData = {
+    body?: never;
+    path: {
+        id: string;
+        artworkType: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+    };
+    query?: {
+        type?: 'cast' | 'director' | 'writer' | 'producer';
+    };
+    url: '/api/credits/{id}/artwork/{artworkType}';
+};
+
+export type GetApiCreditsByIdArtworkByArtworkTypeErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiCreditsByIdArtworkByArtworkTypeResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
 
 export type GetApiVersionData = {
     body?: never;

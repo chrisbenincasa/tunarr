@@ -112,6 +112,8 @@ export const EditTimeSlotDialogContent = ({
             direction: 'asc',
             customShowId: opt!.customShowId,
             title: opt!.description,
+            customShow: null,
+            isMissing: false,
           };
         })
         .with('movie', () => ({
@@ -133,6 +135,8 @@ export const EditTimeSlotDialogContent = ({
             recoveryFactor: 0.05,
             fillerListId: opt?.value ?? '',
             startTime,
+            fillerList: null,
+            isMissing: false,
           };
         })
         .with('flex', () => ({
@@ -172,6 +176,8 @@ export const EditTimeSlotDialogContent = ({
             order: 'next',
             direction: 'asc',
             smartCollectionId: opt?.collectionId ?? '',
+            smartCollection: null,
+            isMissing: false,
           };
         })
         .exhaustive();

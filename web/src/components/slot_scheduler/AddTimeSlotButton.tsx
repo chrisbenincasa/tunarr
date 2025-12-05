@@ -61,6 +61,7 @@ export const AddTimeSlotButton = ({
     } as const;
 
     let newSlot: TimeSlotViewModel;
+
     if (optionsByType['show'] && !isEmpty(optionsByType['show'])) {
       const opts: ShowProgramOption[] = optionsByType[
         'show'
@@ -83,6 +84,8 @@ export const AddTimeSlotButton = ({
         ...baseSlot,
         type: 'custom-show',
         customShowId: sortBy(opts, (opt) => opt.value)?.[0].customShowId,
+        customShow: null,
+        isMissing: false,
       };
     } else if (optionsByType['filler'] && !isEmpty(optionsByType['filler'])) {
       const opts: FillerProgramOption[] = optionsByType[
@@ -97,6 +100,8 @@ export const AddTimeSlotButton = ({
         durationWeighting: 'linear',
         recoveryFactor: 0.05,
         order: 'shuffle_prefer_short',
+        fillerList: null,
+        isMissing: false,
       };
     } else if (optionsByType['movie'] && !isEmpty(optionsByType['movie'])) {
       newSlot = {

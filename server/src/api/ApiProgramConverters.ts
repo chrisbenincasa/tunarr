@@ -79,7 +79,7 @@ export class ApiProgramConverters {
     const base = {
       mediaSourceId: mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
+      // externalLibraryId: mediaLibrary.externalKey,
       releaseDate: releaseDate,
       releaseDateString: program.originalAirDate,
       externalId: externalId ?? program.externalKey,
@@ -223,7 +223,7 @@ export class ApiProgramConverters {
       sortTitle: '',
       mediaSourceId: mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
+      // externalLibraryId: mediaLibrary.externalKey,
       releaseDate: releaseDateObj?.valueOf() ?? null,
       releaseDateString: releaseDateObj?.format('YYYY-MM-DD') ?? null,
       externalId: externalId ?? '',

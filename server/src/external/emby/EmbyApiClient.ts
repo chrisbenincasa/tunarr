@@ -952,7 +952,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: movie.RunTimeTicks / 10_000,
       externalId: movie.Id,
@@ -1125,7 +1124,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         series,
         this.options.mediaSource.uuid,
       ),
-      externalLibraryId: '',
       childCount: series.ChildCount ?? undefined,
       artwork: compact([
         this.embyArtworkProjection('poster', series, 'Primary'),
@@ -1180,7 +1178,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       ),
       index:
         season.IndexNumber ?? getSeasonNumberFromPath(season.Path ?? '') ?? 0,
-      externalLibraryId: '',
       childCount: season.ChildCount ?? undefined,
       artwork: compact([
         this.embyArtworkProjection('poster', season, 'Primary'),
@@ -1259,7 +1256,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.options.mediaSource.uuid,
       ),
       duration: episode.RunTimeTicks / 10_000,
-      externalLibraryId: '',
       artwork: compact([
         this.embyArtworkProjection('poster', episode, 'Primary'),
         this.embyArtworkProjection('banner', episode, 'Banner'),
@@ -1289,7 +1285,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tags: artist.Tags ?? [],
       type: 'artist',
       uuid: v4(),
-      externalLibraryId: '',
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: artist.ChildCount ?? undefined,
@@ -1334,7 +1329,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         }
         return;
       }),
-      externalLibraryId: '',
       libraryId: '',
       mediaSourceId: this.options.mediaSource.uuid,
       childCount: album.ChildCount ?? undefined,
@@ -1396,7 +1390,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             : null,
         ) ?? [],
       duration: track.RunTimeTicks / 10_000,
-      externalLibraryId: '',
       releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
       artwork: compact([
@@ -1470,7 +1463,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,
@@ -1545,7 +1537,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.options.mediaSource.uuid,
       ),
       mediaSourceId: this.options.mediaSource.uuid,
-      externalLibraryId: '',
       libraryId: '', // We can't know this at this point...
       duration: video.RunTimeTicks / 10_000,
       externalId: video.Id,

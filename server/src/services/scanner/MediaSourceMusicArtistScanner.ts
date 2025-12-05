@@ -88,11 +88,12 @@ export abstract class MediaSourceMusicArtistScanner<
     this.mediaSourceProgressService.scanStarted(context.library.uuid);
 
     const { library } = context;
-    const existingArtists = await this.programDB.getProgramGroupingCanonicalIds(
-      library.uuid,
-      ProgramGroupingType.Artist,
-      this.mediaSourceType,
-    );
+    const existingArtists =
+      await this.programDB.getExistingProgramGroupingDetails(
+        library.uuid,
+        ProgramGroupingType.Artist,
+        this.mediaSourceType,
+      );
     const seenArtists = new Set<string>();
 
     const totalSize = await this.getLibrarySize(library.externalKey, context);
@@ -136,7 +137,7 @@ export abstract class MediaSourceMusicArtistScanner<
       }
     }
 
-    const missingShows = differenceWith(
+    const missingArtists = differenceWith(
       values(existingArtists),
       [...seenArtists.values()],
       (existing, seen) => {
@@ -144,25 +145,42 @@ export abstract class MediaSourceMusicArtistScanner<
       },
     );
 
-    const missingEpisodes = flatten(
+    const missingAlbums = flatten(
       await Promise.all(
-        missingShows.map((show) =>
-          this.programDB.getProgramGroupingDescendants(show.uuid),
+        missingArtists.map((show) =>
+          this.programDB.getChildren(show.uuid, ProgramGroupingType.Artist),
         ),
       ),
     );
 
-    await this.programDB.updateProgramsState(
-      missingEpisodes.map((movie) => movie.uuid),
-      'missing',
+    const missingTracks = flatten(
+      await Promise.all(
+        missingArtists.map((show) =>
+          this.programDB.getProgramGroupingDescendants(
+            show.uuid,
+            ProgramGroupingType.Artist,
+          ),
+        ),
+      ),
     );
+
+    const missingAlbumIds = missingAlbums.flatMap((album) =>
+      album.results.map((a) => a.uuid),
+    );
+    await this.programDB.updateGroupingsState(missingAlbumIds, 'missing');
+
+    const missingTrackIds = missingTracks.map((track) => track.uuid);
+    await this.programDB.updateProgramsState(missingTrackIds, 'missing');
 
     // Mark programs we didn't find as missing in the search index.
     await this.searchService.updatePrograms(
-      missingEpisodes.map((movie) => ({
-        id: movie.uuid,
-        state: 'missing',
-      })),
+      missingAlbumIds
+        .concat(missingTrackIds)
+        .concat(missingArtists.map((artist) => artist.uuid))
+        .map((id) => ({
+          id,
+          state: 'missing',
+        })),
     );
 
     this.mediaSourceProgressService.scanEnded(library.uuid);
@@ -190,7 +208,8 @@ export abstract class MediaSourceMusicArtistScanner<
     const needsDeepScan =
       context.force ||
       !existingArtist ||
-      artist.canonicalId !== existingArtist.canonicalId;
+      (existingArtist.canonicalId &&
+        artist.canonicalId !== existingArtist.canonicalId);
 
     if (!needsDeepScan) {
       const existing = await this.getProgramGroupingByIdCommand.execute(
@@ -261,7 +280,7 @@ export abstract class MediaSourceMusicArtistScanner<
     return Result.attemptAsync(async () => {
       const { library } = scanContext;
       const existingAlbums =
-        await this.programDB.getProgramGroupingCanonicalIds(
+        await this.programDB.getExistingProgramGroupingDetails(
           library.uuid,
           ProgramGroupingType.Album,
           this.mediaSourceType,
@@ -317,20 +336,24 @@ export abstract class MediaSourceMusicArtistScanner<
       const missingTracks = flatten(
         await Promise.all(
           missingSeasons.map((track) =>
-            this.programDB.getProgramGroupingDescendants(track.uuid),
+            this.programDB.getProgramGroupingDescendants(
+              track.uuid,
+              ProgramGroupingType.Album,
+            ),
           ),
         ),
       );
 
-      await this.programDB.updateProgramsState(
-        missingTracks.map((track) => track.uuid),
-        'missing',
-      );
+      const missingAlbumIds = missingSeasons.map((season) => season.uuid);
+      await this.programDB.updateGroupingsState(missingAlbumIds, 'missing');
+
+      const missingTrackIds = missingTracks.map((track) => track.uuid);
+      await this.programDB.updateProgramsState(missingTrackIds, 'missing');
 
       // Mark programs we didn't find as missing in the search index.
       await this.searchService.updatePrograms(
-        missingTracks.map((track) => ({
-          id: track.uuid,
+        missingAlbumIds.concat(missingTrackIds).map((id) => ({
+          id,
           state: 'missing',
         })),
       );
@@ -340,7 +363,7 @@ export abstract class MediaSourceMusicArtistScanner<
   protected async updateAlbum(
     album: AlbumT,
     artist: ArtistT,
-    existingSeason: Maybe<ProgramGroupingCanonicalIdLookupResult>,
+    existingAlbum: Maybe<ProgramGroupingCanonicalIdLookupResult>,
     scanContext: ScanContext<ApiClientTypeT>,
   ): Promise<
     Result<Maybe<AlbumWithArtist<AlbumT, ArtistT> & HasMediaSourceAndLibraryId>>
@@ -362,12 +385,13 @@ export abstract class MediaSourceMusicArtistScanner<
 
     const needsUpdate =
       scanContext.force ||
-      !existingSeason ||
-      fullAlbum.canonicalId !== existingSeason.canonicalId;
+      !existingAlbum ||
+      (existingAlbum.canonicalId &&
+        fullAlbum.canonicalId !== existingAlbum.canonicalId);
 
     if (!needsUpdate) {
       const existing = await this.getProgramGroupingByIdCommand.execute(
-        existingSeason.uuid,
+        existingAlbum.uuid,
       );
       if (existing && this.isAlbumT(existing)) {
         const returnAlbum: AlbumWithArtist<AlbumT, ArtistT> &

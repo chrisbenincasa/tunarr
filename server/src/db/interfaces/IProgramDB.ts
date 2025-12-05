@@ -27,7 +27,12 @@ import type {
   ProgramWithRelationsOrm,
   TvSeasonOrm,
 } from '@/db/schema/derivedTypes.js';
-import type { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
+import type {
+  MarkNonNullable,
+  Maybe,
+  Nullable,
+  PagedResult,
+} from '@/types/util.js';
 import type { ChannelProgram } from '@tunarr/types';
 import type {
   Dictionary,
@@ -212,7 +217,7 @@ export interface IProgramDB {
    * @param type
    * @param sourceType
    */
-  getProgramGroupingCanonicalIds(
+  getExistingProgramGroupingDetails(
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,
     sourceType: StrictExclude<MediaSourceType, 'local'>,
@@ -244,6 +249,11 @@ export interface IProgramDB {
     newState: ProgramState,
   ): Promise<void>;
 
+  updateGroupingsState(
+    groupingIds: string[],
+    newState: ProgramState,
+  ): Promise<void>;
+
   emptyTrashPrograms(): Promise<void>;
 }
 
@@ -253,14 +263,16 @@ export type WithChannelIdFilter<T> = T & {
 
 export type ProgramCanonicalIdLookupResult = {
   uuid: string;
-  canonicalId: string;
-  libraryId: string;
+  // Pre-alpha programs will not have this on first run
+  canonicalId: Nullable<string>;
+  // Pre-alpha programs will not have this on first run
+  libraryId: Nullable<string>;
   externalKey: string;
 };
 
 export type ProgramGroupingCanonicalIdLookupResult = {
   uuid: string;
-  canonicalId: string;
+  canonicalId: Nullable<string>;
   libraryId: string;
   externalKey: string;
 };

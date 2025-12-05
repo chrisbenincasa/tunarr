@@ -1,0 +1,1 @@
+ALTER TABLE `program_grouping` ADD `state` text DEFAULT 'ok' NOT NULL;

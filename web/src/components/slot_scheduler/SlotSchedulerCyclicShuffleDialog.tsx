@@ -123,6 +123,8 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
         order: 'next',
         customShowId: cs.customShowId,
         weight: 100,
+        customShow: null,
+        isMissing: false,
       });
     }
 
@@ -140,6 +142,8 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
         recoveryFactor: 0.05,
         fillerListId: f.fillerListId,
         weight: 100,
+        fillerList: null,
+        isMissing: false,
       });
     }
 

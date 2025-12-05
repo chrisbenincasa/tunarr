@@ -339,7 +339,7 @@ const BaseItem = z.object({
   uuid: z.uuid(),
   canonicalId: z.string(),
   sourceType: SourceTypeSchema,
-  externalLibraryId: z.string(),
+  // externalLibraryId: z.string(),
   externalId: z
     .string()
     .describe('Unique identifier for this item in the external media source'),

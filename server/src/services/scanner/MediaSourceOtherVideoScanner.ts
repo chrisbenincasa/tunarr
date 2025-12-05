@@ -84,15 +84,17 @@ export abstract class MediaSourceOtherVideoScanner<
           processedAmount,
         );
 
+        const existingVideo = existingPrograms[externalKey];
         if (
           !force &&
-          existingPrograms[externalKey] &&
-          existingPrograms[externalKey].canonicalId === fullMetadata.canonicalId
+          existingVideo &&
+          existingVideo.canonicalId &&
+          existingVideo.canonicalId === fullMetadata.canonicalId
         ) {
           this.logger.debug(
             'Found an unchanged program: rating key = %s, program ID = %s',
             externalKey,
-            existingPrograms[externalKey].uuid,
+            existingVideo.uuid,
           );
           continue;
         }

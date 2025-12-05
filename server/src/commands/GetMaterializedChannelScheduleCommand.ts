@@ -1,20 +1,26 @@
 import { seq } from '@tunarr/shared/util';
 import { Show } from '@tunarr/types';
 import {
+  MaterializedCustomShowRandomSlot,
   MaterializedCustomShowTimeSlot,
   MaterializedFillerTimeSlot,
   MaterializedRedirectTimeSlot,
   MaterializedSchedule,
   MaterializedSlot,
   MaterializedTimeSlot,
+  RandomSlot,
+  TimeSlot,
 } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
-import { uniqBy } from 'lodash-es';
+import { uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
+import { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { ServerContext } from '../ServerContext.ts';
+import { KEYS } from '../types/inject.ts';
 import { Maybe } from '../types/util.ts';
 import { groupByUniq } from '../util/index.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
 type GetMaterializedChannelScheduleRequest = {
@@ -27,6 +33,7 @@ export class GetMaterializedChannelScheduleCommand {
     @inject(ServerContext) private serverContext: ServerContext,
     @inject(MaterializeProgramGroupings)
     private materializeProgramGroupings: MaterializeProgramGroupings,
+    @inject(KEYS.Logger) private logger: Logger,
   ) {}
 
   async execute(
@@ -44,28 +51,49 @@ export class GetMaterializedChannelScheduleCommand {
     if (schedule.type === 'time') {
       const slotsByType = seq.groupBy(schedule.slots, (slot) => slot.type);
 
-      const materializedShows = await this.materializeShows(
-        uniqBy(
-          slotsByType.show?.filter((slot) => slot.type === 'show'),
-          (slot) => slot.showId,
-        ).map((slot) => slot.showId),
-      );
-
-      const materializedFiller = await this.materializeFiller(
-        uniqBy(
-          slotsByType.filler?.filter((slot) => slot.type === 'filler'),
-          (slot) => slot.fillerListId,
-        ).map((slot) => slot.fillerListId),
-      );
-
-      const materializedCustomShows = await this.materializeCustomShows(
-        uniqBy(
-          slotsByType['custom-show']?.filter(
-            (slot) => slot.type === 'custom-show',
+      const [
+        materializedShows,
+        materializedFiller,
+        materializedCustomShows,
+        smartCollections,
+      ] = await Promise.all([
+        this.materializeShows(
+          uniq(
+            getTimeSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'show',
+              (show) => show.showId,
+            ),
           ),
-          (slot) => slot.customShowId,
-        ).map((slot) => slot.customShowId),
-      );
+        ),
+        this.materializeFiller(
+          uniq(
+            getTimeSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'filler',
+              (filler) => filler.fillerListId,
+            ),
+          ),
+        ),
+        this.materializeCustomShows(
+          uniq(
+            getTimeSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'custom-show',
+              (cs) => cs.customShowId,
+            ),
+          ),
+        ),
+        this.materializeSmartCollections(
+          uniq(
+            getTimeSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'smart-collection',
+              (sc) => sc.smartCollectionId,
+            ),
+          ),
+        ),
+      ]);
 
       const redirectSlots =
         slotsByType['redirect']?.filter((slot) => slot.type === 'redirect') ??
@@ -79,12 +107,20 @@ export class GetMaterializedChannelScheduleCommand {
         return match(slot)
           .returnType<MaterializedTimeSlot>()
           .with({ type: 'show' }, (showSlot) => {
-            const show = materializedShows[showSlot.showId];
-            if (!show) {
-              throw new Error(
+            const { show, raw } = materializedShows[showSlot.showId];
+            if (!show || raw.state === 'missing') {
+              this.logger.error(
                 `Could not materialize show with ID ${showSlot.showId} from schedule!`,
               );
+              return {
+                ...showSlot,
+                show: null,
+                missingShow: {
+                  title: raw.title,
+                },
+              } satisfies MaterializedTimeSlot;
             }
+
             return {
               ...showSlot,
               show,
@@ -93,46 +129,61 @@ export class GetMaterializedChannelScheduleCommand {
           .with({ type: 'filler' }, (slot) => {
             const filler = materializedFiller[slot.fillerListId];
             if (!filler) {
-              throw new Error(
-                `Could not materialize filler with ID ${slot.fillerListId} from schedule!`,
+              this.logger.warn(
+                'Filler with ID %s not found in database, but it scheduled in a time slot',
+                slot.fillerListId,
               );
             }
             return {
               ...slot,
-              fillerList: {
-                contentCount: filler.contentCount,
-                id: filler.uuid,
-                name: filler.name,
-              },
+              fillerList: filler
+                ? {
+                    contentCount: filler.contentCount,
+                    id: filler.uuid,
+                    name: filler.name,
+                  }
+                : null,
+              isMissing: !filler,
             } satisfies MaterializedFillerTimeSlot;
           })
           .with({ type: 'custom-show' }, (slot) => {
             const customShow = materializedCustomShows[slot.customShowId];
             if (!customShow) {
-              throw new Error(
-                `Could not materialize custom show with ID ${slot.customShowId} from schedule!`,
+              this.logger.warn(
+                'Custom show with ID %s not found in database, but is scheduled in a time slot',
+                slot.customShowId,
               );
             }
             return {
               ...slot,
-              customShow: {
-                ...customShow,
-                id: customShow.uuid,
-              },
+              customShow: customShow
+                ? {
+                    ...customShow,
+                    id: customShow.uuid,
+                  }
+                : null,
+              isMissing: !customShow,
             } satisfies MaterializedCustomShowTimeSlot;
           })
           .with({ type: 'redirect' }, (slot) => {
             const channel = channels[slot.channelId];
             if (!channel) {
-              throw new Error(
-                `Could not materialize redirect channel with ID ${slot.channelId} from schedule!`,
+              this.logger.warn(
+                'Channel with ID %s not found in database, but is scheduled in a slot',
               );
             }
             return {
               ...slot,
-
-              channel: ormChannelToApiChannel(channel),
+              channel: ormChannelToApiChannel(channel) ?? null,
+              isMissing: !channel,
             } satisfies MaterializedRedirectTimeSlot;
+          })
+          .with({ type: 'smart-collection' }, (slot) => {
+            return {
+              ...slot,
+              smartCollection: smartCollections[slot.smartCollectionId] ?? null,
+              isMissing: !smartCollections[slot.smartCollectionId],
+            };
           })
           .otherwise((slot) => slot);
       });
@@ -143,29 +194,49 @@ export class GetMaterializedChannelScheduleCommand {
       };
     } else {
       const slotsByType = seq.groupBy(schedule.slots, (slot) => slot.type);
-
-      const materializedShows = await this.materializeShows(
-        uniqBy(
-          slotsByType.show?.filter((slot) => slot.type === 'show'),
-          (slot) => slot.showId,
-        ).map((slot) => slot.showId),
-      );
-
-      const materializedFiller = await this.materializeFiller(
-        uniqBy(
-          slotsByType.filler?.filter((slot) => slot.type === 'filler'),
-          (slot) => slot.fillerListId,
-        ).map((slot) => slot.fillerListId),
-      );
-
-      const materializedCustomShows = await this.materializeCustomShows(
-        uniqBy(
-          slotsByType['custom-show']?.filter(
-            (slot) => slot.type === 'custom-show',
+      const [
+        materializedShows,
+        materializedFiller,
+        materializedCustomShows,
+        smartCollections,
+      ] = await Promise.all([
+        this.materializeShows(
+          uniq(
+            getSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'show',
+              (show) => show.showId,
+            ),
           ),
-          (slot) => slot.customShowId,
-        ).map((slot) => slot.customShowId),
-      );
+        ),
+        this.materializeFiller(
+          uniq(
+            getSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'filler',
+              (filler) => filler.fillerListId,
+            ),
+          ),
+        ),
+        this.materializeCustomShows(
+          uniq(
+            getSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'custom-show',
+              (cs) => cs.customShowId,
+            ),
+          ),
+        ),
+        this.materializeSmartCollections(
+          uniq(
+            getSlotIdsForType(
+              schedule.slots,
+              (slot) => slot.type === 'smart-collection',
+              (sc) => sc.smartCollectionId,
+            ),
+          ),
+        ),
+      ]);
 
       const redirectSlots =
         slotsByType['redirect']?.filter((slot) => slot.type === 'redirect') ??
@@ -179,12 +250,17 @@ export class GetMaterializedChannelScheduleCommand {
         return match(slot)
           .returnType<MaterializedSlot>()
           .with({ type: 'show' }, (showSlot) => {
-            const show = materializedShows[showSlot.showId];
+            const { show } = materializedShows[showSlot.showId];
             if (!show) {
-              throw new Error(
+              this.logger.error(
                 `Could not materialize show with ID ${showSlot.showId} from schedule!`,
               );
+              return {
+                ...showSlot,
+                show: null,
+              } satisfies MaterializedSlot;
             }
+
             return {
               ...showSlot,
               show,
@@ -193,48 +269,61 @@ export class GetMaterializedChannelScheduleCommand {
           .with({ type: 'filler' }, (slot) => {
             const filler = materializedFiller[slot.fillerListId];
             if (!filler) {
-              throw new Error(
-                `Could not materialize filler with ID ${slot.fillerListId} from schedule!`,
+              this.logger.warn(
+                'Filler with ID %s not found in database, but it scheduled in a slot',
+                slot.fillerListId,
               );
             }
             return {
               ...slot,
-              fillerList: {
-                contentCount: filler.contentCount,
-                id: filler.uuid,
-                name: filler.name,
-              },
+              fillerList: filler
+                ? {
+                    contentCount: filler.contentCount,
+                    id: filler.uuid,
+                    name: filler.name,
+                  }
+                : null,
+              isMissing: !filler,
             };
           })
           .with({ type: 'custom-show' }, (slot) => {
             const customShow = materializedCustomShows[slot.customShowId];
             if (!customShow) {
-              throw new Error(
-                `Could not materialize custom show with ID ${slot.customShowId} from schedule!`,
+              this.logger.warn(
+                'Custom show with ID %s not found in database, but is scheduled in a slot',
+                slot.customShowId,
               );
             }
             return {
               ...slot,
-              customShow: {
-                ...customShow,
-                id: customShow.uuid,
-              },
-            };
+              customShow: customShow
+                ? {
+                    ...customShow,
+                    id: customShow.uuid,
+                  }
+                : null,
+              isMissing: !customShow,
+            } satisfies MaterializedCustomShowRandomSlot;
           })
           .with({ type: 'redirect' }, (slot) => {
             const channel = channels[slot.channelId];
             if (!channel) {
-              throw new Error(
-                `Could not materialize redirect channel with ID ${slot.channelId} from schedule!`,
+              this.logger.warn(
+                'Channel with ID %s not found in database, but is scheduled in a slot',
               );
             }
             return {
               ...slot,
-              channel: ormChannelToApiChannel(channel),
+              channel: ormChannelToApiChannel(channel) ?? null,
+              isMissing: !channel,
             };
           })
           .with({ type: 'smart-collection' }, (slot) => {
-            return slot;
+            return {
+              ...slot,
+              smartCollection: smartCollections[slot.smartCollectionId] ?? null,
+              isMissing: !smartCollections[slot.smartCollectionId],
+            };
           })
           .otherwise((slot) => slot);
       });
@@ -246,22 +335,30 @@ export class GetMaterializedChannelScheduleCommand {
     }
   }
 
-  private async materializeShows(showIds: string[]) {
+  private async materializeShows(
+    showIds: string[],
+  ): Promise<Record<string, ShowAndRawShow>> {
     const showsFromDB =
       await this.serverContext.programDB.getProgramGroupings(showIds);
 
-    const materialized = await this.materializeProgramGroupings.execute(
-      Object.values(showsFromDB),
+    const materialized = groupByUniq(
+      await this.materializeProgramGroupings.execute(
+        Object.values(showsFromDB),
+      ),
+      (group) => group.uuid,
     );
 
-    const showsById: Record<string, Show> = {};
-    for (const grouping of materialized) {
-      if (grouping.type !== 'show') {
+    const showsById: Record<string, ShowAndRawShow> = {};
+    for (const [id, dbShow] of Object.entries(showsFromDB)) {
+      if (dbShow.type !== 'show') {
         continue;
       }
-      showsById[grouping.uuid] = grouping;
+      const materializedShow = materialized[id];
+      showsById[id] = {
+        show: materializedShow?.type === 'show' ? materializedShow : undefined,
+        raw: dbShow,
+      };
     }
-
     return showsById;
   }
 
@@ -275,4 +372,31 @@ export class GetMaterializedChannelScheduleCommand {
     const customShows = await this.serverContext.customShowDB.getShows(showIds);
     return groupByUniq(customShows, (cs) => cs.uuid);
   }
+
+  private async materializeSmartCollections(smartCollections: string[]) {
+    const collections =
+      await this.serverContext.smartCollectionsDB.getByIds(smartCollections);
+    return groupByUniq(collections, (coll) => coll.uuid);
+  }
+}
+
+type ShowAndRawShow = {
+  show: Maybe<Show>;
+  raw: ProgramGroupingOrmWithRelations;
+};
+
+function getTimeSlotIdsForType<SlotTypeT extends TimeSlot>(
+  slots: TimeSlot[],
+  pred: (slot: TimeSlot) => slot is SlotTypeT,
+  extractor: (slot: SlotTypeT) => string,
+) {
+  return slots.filter(pred).map(extractor);
+}
+
+function getSlotIdsForType<SlotTypeT extends RandomSlot>(
+  slots: RandomSlot[],
+  pred: (slot: RandomSlot) => slot is SlotTypeT,
+  extractor: (slot: SlotTypeT) => string,
+) {
+  return slots.filter(pred).map(extractor);
 }

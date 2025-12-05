@@ -208,7 +208,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
       ...showMetadata,
       canonicalId: '',
       externalId: fullPath,
-      externalLibraryId: '',
       libraryId: library.uuid,
       mediaSourceId: context.mediaSource.uuid,
     };
@@ -355,7 +354,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
         ...seasonMetadata,
         canonicalId: '',
         externalId: fullPath,
-        externalLibraryId: context.library.externalKey,
         libraryId: context.library.uuid,
         mediaSourceId: context.mediaSource.uuid,
         show,
@@ -448,7 +446,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
         ...seasonMetadata,
         canonicalId: '',
         externalId: `${show.externalId}/_S${seasonNumber}_flat`,
-        externalLibraryId: context.library.externalKey,
         libraryId: context.library.uuid,
         mediaSourceId: context.mediaSource.uuid,
         show,
@@ -623,7 +620,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
       mediaSourceId: context.mediaSource.uuid,
       libraryId: context.library.uuid,
       canonicalId: '',
-      externalLibraryId: context.library.externalKey, // Meh
       externalSubtitles: subtitles.filter(
         (sub) => sub.subtitleType === 'sidecar',
       ),
@@ -997,7 +993,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       title: `Season ${seasonNumber}`,
       tags: [],
       identifiers: [],
-      // externalLibraryId: '',
+
       plot: null,
       sourceType: 'local',
       // Can we derive this from the first episode?

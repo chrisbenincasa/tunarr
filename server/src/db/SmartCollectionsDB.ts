@@ -46,6 +46,16 @@ export class SmartCollectionsDB {
     });
   }
 
+  async getByIds(ids: string[]) {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return await this.db.query.smartCollection.findMany({
+      where: (fields, { inArray }) => inArray(fields.uuid, ids),
+    });
+  }
+
   async delete(id: string) {
     return await this.db
       .delete(SmartCollection)

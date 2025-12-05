@@ -13,7 +13,7 @@ import type { Insertable, Selectable, Updateable } from 'kysely';
 import type { MarkRequiredNotNull } from '../../types/util.ts';
 import { Artwork } from './Artwork.ts';
 import type { MediaSourceId } from './base.ts';
-import { MediaSourceTypes } from './base.ts';
+import { MediaSourceTypes, ProgramStates } from './base.ts';
 import { Credit } from './Credit.ts';
 import { EntityGenre } from './Genre.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
@@ -79,6 +79,7 @@ export const ProgramGrouping = sqliteTable(
     libraryId: text().references(() => MediaSourceLibrary.uuid, {
       onDelete: 'cascade',
     }),
+    state: text({ enum: ProgramStates }).notNull().default('ok'),
   },
   (table) => [
     index('program_grouping_show_uuid_index').on(table.showUuid),

@@ -13,6 +13,7 @@ export const useSlotName = () => {
         case 'show':
           return (
             slot.show?.title ??
+            slot.missingShow?.title ??
             find(programOptions, { showId: slot.showId })?.description
           );
         case 'flex':
@@ -21,21 +22,27 @@ export const useSlotName = () => {
           return find(programOptions, { channelId: slot.channelId })
             ?.description;
         case 'custom-show': {
-          const showName = find(programOptions, {
-            customShowId: slot.customShowId,
-          })?.description;
+          const showName =
+            slot.customShow?.name ??
+            find(programOptions, {
+              customShowId: slot.customShowId,
+            })?.description;
           return `Custom Show - ${showName}`;
         }
         case 'filler': {
-          const showName = find(programOptions, {
-            fillerListId: slot.fillerListId,
-          })?.description;
+          const showName =
+            slot.fillerList?.name ??
+            find(programOptions, {
+              fillerListId: slot.fillerListId,
+            })?.description;
           return `Filler - ${showName}`;
         }
         case 'smart-collection': {
-          const collectionName = find(programOptions, {
-            collectionId: slot.smartCollectionId,
-          })?.description;
+          const collectionName =
+            slot.smartCollection?.name ??
+            find(programOptions, {
+              collectionId: slot.smartCollectionId,
+            })?.description;
           return `Smart Collection - ${collectionName}`;
         }
       }

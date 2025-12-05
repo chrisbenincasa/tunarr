@@ -1118,7 +1118,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(plexShow),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
       title: plexShow.title,
       type: ProgramGroupingType.Show,
@@ -1175,7 +1174,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(plexSeason),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
       title: plexSeason.title,
       sortTitle: titleToSortTitle(plexSeason.title),
@@ -1222,7 +1220,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
               ? titleToSortTitle(plexSeason.parentTitle)
               : '',
             externalId: plexSeason.parentRatingKey,
-            externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexSeason.parentRatingKey
                 ? {
@@ -1289,7 +1286,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(plexEpisode),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
       type: ProgramType.Episode,
       sourceType: MediaSourceType.Plex,
       title: plexEpisode.title,
@@ -1341,7 +1337,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       season: plexEpisode.parentRatingKey
         ? {
             externalId: plexEpisode.parentRatingKey,
-            externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexEpisode.parentRatingKey
                 ? {
@@ -1382,7 +1377,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             show: plexEpisode.grandparentRatingKey
               ? ({
                   externalId: plexEpisode.grandparentRatingKey,
-                  externalLibraryId: mediaLibrary.externalKey,
                   identifiers: compact([
                     plexEpisode.grandparentRatingKey
                       ? {
@@ -1611,7 +1605,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(plexArtist),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
       sourceType: MediaSourceType.Plex,
       title: plexArtist.title,
       sortTitle: titleToSortTitle(plexArtist.title),
@@ -1728,7 +1721,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(plexTrack),
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: mediaLibrary.uuid,
-      externalLibraryId: mediaLibrary.externalKey,
       type: ProgramType.Track,
       sourceType: MediaSourceType.Plex,
       title: plexTrack.title,
@@ -1776,7 +1768,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       album: plexTrack.parentRatingKey
         ? {
             externalId: plexTrack.parentRatingKey,
-            externalLibraryId: mediaLibrary.externalKey,
             identifiers: compact([
               plexTrack.parentRatingKey
                 ? {
@@ -1817,7 +1808,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             artist: plexTrack.grandparentRatingKey
               ? ({
                   externalId: plexTrack.grandparentRatingKey,
-                  externalLibraryId: mediaLibrary.externalKey,
                   identifiers: compact([
                     plexTrack.grandparentRatingKey
                       ? {

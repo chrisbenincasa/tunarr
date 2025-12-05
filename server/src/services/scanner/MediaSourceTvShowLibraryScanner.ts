@@ -72,7 +72,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
 
     const { library, pathFilter } = context;
     const existingShowsByExternalId =
-      await this.programDB.getProgramGroupingCanonicalIds(
+      await this.programDB.getExistingProgramGroupingDetails(
         library.uuid,
         ProgramGroupingType.Show,
         this.mediaSourceType,
@@ -133,23 +133,37 @@ export abstract class MediaSourceTvShowLibraryScanner<
         },
       );
 
-      const missingEpisodes = flatten(
+      const missingSeasons = flatten(
         await Promise.all(
           missingShows.map((show) =>
-            this.programDB.getProgramGroupingDescendants(show.uuid),
+            this.programDB.getChildren(show.uuid, ProgramGroupingType.Show),
           ),
         ),
       );
 
-      await this.programDB.updateProgramsState(
-        missingEpisodes.map((ep) => ep.uuid),
-        'missing',
+      const missingEpisodes = flatten(
+        await Promise.all(
+          missingShows.map((show) =>
+            this.programDB.getProgramGroupingDescendants(
+              show.uuid,
+              ProgramGroupingType.Show,
+            ),
+          ),
+        ),
       );
+
+      const missingGroupingIds = missingSeasons
+        .flatMap((season) => season.results.map((s) => s.uuid))
+        .concat(missingShows.map((show) => show.uuid));
+      await this.programDB.updateGroupingsState(missingGroupingIds, 'missing');
+
+      const missingEpisodeIds = missingEpisodes.map((ep) => ep.uuid);
+      await this.programDB.updateProgramsState(missingEpisodeIds, 'missing');
 
       // Mark programs we didn't find as missing in the search index.
       await this.searchService.updatePrograms(
-        missingEpisodes.map((ep) => ({
-          id: ep.uuid,
+        missingEpisodeIds.concat(missingGroupingIds).map((id) => ({
+          id,
           state: 'missing',
         })),
       );
@@ -180,7 +194,8 @@ export abstract class MediaSourceTvShowLibraryScanner<
     const needsDeepScan =
       context.force ||
       !existingShow ||
-      show.canonicalId !== existingShow.canonicalId;
+      (existingShow.canonicalId &&
+        show.canonicalId !== existingShow.canonicalId);
 
     if (!needsDeepScan) {
       const existing = await this.getProgramGroupingByIdCommand.execute(
@@ -251,7 +266,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
     return Result.attemptAsync(async () => {
       const { library } = scanContext;
       const existingSeasons =
-        await this.programDB.getProgramGroupingCanonicalIds(
+        await this.programDB.getExistingProgramGroupingDetails(
           library.uuid,
           ProgramGroupingType.Season,
           this.mediaSourceType,
@@ -300,7 +315,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
       }
 
       if (isEmpty(scanContext.pathFilter)) {
-        const missingShows = differenceWith(
+        const missingSeasons = differenceWith(
           values(existingSeasons),
           [...seenSeasons.values()],
           (existing, seen) => {
@@ -310,21 +325,22 @@ export abstract class MediaSourceTvShowLibraryScanner<
 
         const missingEpisodes = flatten(
           await Promise.all(
-            missingShows.map((show) =>
+            missingSeasons.map((show) =>
               this.programDB.getProgramGroupingDescendants(show.uuid),
             ),
           ),
         );
 
-        await this.programDB.updateProgramsState(
-          missingEpisodes.map((movie) => movie.uuid),
-          'missing',
-        );
+        const missingSeasonIds = missingSeasons.map((season) => season.uuid);
+        await this.programDB.updateGroupingsState(missingSeasonIds, 'missing');
+
+        const missingEpisodeIds = missingEpisodes.map((movie) => movie.uuid);
+        await this.programDB.updateProgramsState(missingEpisodeIds, 'missing');
 
         // Mark programs we didn't find as missing in the search index.
         await this.searchService.updatePrograms(
-          missingEpisodes.map((movie) => ({
-            id: movie.uuid,
+          missingEpisodeIds.concat(missingSeasonIds).map((id) => ({
+            id,
             state: 'missing',
           })),
         );

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { ChannelSchema } from '../schemas/channelSchema.js';
+import { CustomShowSchema } from '../schemas/customShowsSchema.js';
+import { FillerListSchema } from '../schemas/fillerSchema.js';
 import { Show } from '../schemas/programmingSchema.js';
 import {
   BaseSlotOrdering,
@@ -60,7 +62,15 @@ export const ShowProgrammingRandomSlotSchema = z.object({
 
 export const MaterializedShowRandomSlot = z.object({
   ...ShowProgrammingRandomSlotSchema.shape,
-  show: Show,
+  show: Show.nullable(),
+  missingShow: z
+    .object({
+      title: z.string().optional(),
+    })
+    .optional()
+    .describe(
+      'A show that existed in the DB at schedule time, but no longer exists.',
+    ),
 });
 
 export const FlexProgrammingRandomSlotSchema = z.object({
@@ -75,19 +85,39 @@ export const RedirectProgrammingRandomSlotSchema = z.object({
 
 export const MaterializedRedirectRandomSlot = z.object({
   ...RedirectProgrammingRandomSlotSchema.shape,
-  channel: ChannelSchema,
+  channel: ChannelSchema.nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
-export const CustomShowProgrammingRandomSchema = z.object({
+export const CustomShowProgrammingRandomSlotSchema = z.object({
   ...Slot.shape,
   ...BaseRandomSlotSchema.shape,
   ...BaseSlotOrdering.shape,
   ...CustomShowProgrammingSlotSchema.shape,
 });
 
+export const MaterializedCustomShowRandomSlot = z.object({
+  ...CustomShowProgrammingRandomSlotSchema.shape,
+  customShow: CustomShowSchema.omit({
+    programs: true,
+    totalDuration: true,
+  }).nullable(),
+  isMissing: z.boolean().optional().default(false),
+});
+
+export type MaterializedCustomShowRandomSlot = z.infer<
+  typeof MaterializedCustomShowRandomSlot
+>;
+
 export const FillerProgrammingRandomSlotSchema = z.object({
   ...BaseRandomSlotSchema.shape,
   ...FillerProgrammingSlotSchema.shape,
+});
+
+export const MaterializedFillerRandomSlotSchema = z.object({
+  ...FillerProgrammingRandomSlotSchema.shape,
+  fillerList: FillerListSchema.omit({ programs: true }).nullable(),
+  isMissing: z.boolean().optional().default(false),
 });
 
 export const SmartCollectionRandomSlot = z.object({
@@ -114,7 +144,7 @@ export type RedirectProgrammingRandomSlot = z.infer<
 >;
 
 export type CustomShowProgrammingRandom = z.infer<
-  typeof CustomShowProgrammingRandomSchema
+  typeof CustomShowProgrammingRandomSlotSchema
 >;
 
 export type SmartCollectionRandomSlot = z.infer<
@@ -126,7 +156,7 @@ export const RandomSlotSchema = z.discriminatedUnion('type', [
   ShowProgrammingRandomSlotSchema,
   FlexProgrammingRandomSlotSchema,
   RedirectProgrammingRandomSlotSchema,
-  CustomShowProgrammingRandomSchema,
+  CustomShowProgrammingRandomSlotSchema,
   FillerProgrammingRandomSlotSchema,
   SmartCollectionRandomSlot,
 ]);
@@ -138,8 +168,8 @@ export const MaterializedSlot = z.discriminatedUnion('type', [
   MaterializedShowRandomSlot,
   FlexProgrammingRandomSlotSchema,
   MaterializedRedirectRandomSlot,
-  CustomShowProgrammingRandomSchema,
-  FillerProgrammingRandomSlotSchema,
+  MaterializedCustomShowRandomSlot,
+  MaterializedFillerRandomSlotSchema,
   SmartCollectionRandomSlot,
 ]);
 

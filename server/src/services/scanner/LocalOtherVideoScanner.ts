@@ -292,7 +292,6 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       mediaSourceId: context.mediaSource.uuid,
       libraryId: context.library.uuid,
       canonicalId: '',
-      externalLibraryId: context.library.externalKey, // Meh
       externalSubtitles: subtitles.filter(
         (sub) => sub.subtitleType === 'sidecar',
       ),

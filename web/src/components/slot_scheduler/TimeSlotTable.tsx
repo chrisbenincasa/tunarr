@@ -44,6 +44,7 @@ import {
 } from 'material-react-table';
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
+import { match, P } from 'ts-pattern';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
@@ -204,8 +205,37 @@ export const TimeSlotTable = () => {
                 </IconButton>
               </Tooltip>
             );
+          } else if (row.original.type === 'show' && row.original.missingShow) {
+            return (
+              <Tooltip title="This show is marked as missing in the database.">
+                <Warning sx={{ fontSize: 'inherit' }} color="warning" />
+              </Tooltip>
+            );
           }
-          return null;
+
+          return match(row.original)
+            .with({ type: 'show', missingShow: P.nonNullable }, () => (
+              <Tooltip title="This show is marked as missing in the database.">
+                <Warning sx={{ fontSize: 'inherit' }} color="warning" />
+              </Tooltip>
+            ))
+            .with(
+              {
+                type: P.union('custom-show', 'filler', 'smart-collection'),
+                isMissing: true,
+              },
+              (slot) => (
+                <Tooltip
+                  title={`This ${slot.type
+                    .split('-')
+                    .map((s) => capitalize(s))
+                    .join(' ')} is marked as missing in the database.`}
+                >
+                  <Warning sx={{ fontSize: 'inherit' }} color="warning" />
+                </Tooltip>
+              ),
+            )
+            .otherwise(() => null);
         },
         size: 40,
         enableHiding: false,

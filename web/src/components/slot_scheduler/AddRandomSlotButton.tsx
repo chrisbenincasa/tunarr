@@ -82,6 +82,8 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
         type: 'custom-show',
         customShowId: cs.customShowId,
         order: 'next',
+        customShow: null,
+        isMissing: false,
       }))
       .with({ type: 'filler' }, (f) => ({
         ...baseSlot,
@@ -91,6 +93,8 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
         durationWeighting: 'linear',
         recoveryFactor: 0.05,
         order: 'shuffle_prefer_short',
+        fillerList: null,
+        isMissing: false,
       }))
       .with({ type: 'show' }, (s) => ({
         ...baseSlot,
@@ -115,6 +119,8 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
         type: 'smart-collection',
         smartCollectionId: c.collectionId,
         order: 'next',
+        smartCollection: null,
+        isMissing: false,
       }))
       .exhaustive();
 

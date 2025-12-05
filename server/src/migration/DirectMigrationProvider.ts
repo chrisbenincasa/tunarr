@@ -174,6 +174,10 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1764773318: makeKyselyMigrationFromSqlFile(
             './sql/0031_bitter_dormammu.sql',
           ),
+          // Add program grouping state,
+          migration1764870206: makeKyselyMigrationFromSqlFile(
+            './sql/0032_vengeful_network.sql',
+          ),
         },
         wrapWithTransaction,
       ),

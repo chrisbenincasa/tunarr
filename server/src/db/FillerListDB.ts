@@ -73,22 +73,19 @@ export class FillerDB implements IFillerListDB {
       return [];
     }
 
-    return this.db
-      .selectFrom('fillerShow')
-      .where('uuid', 'in', ids)
-      .innerJoin(
-        'fillerShowContent',
-        'fillerShow.uuid',
-        'fillerShowContent.fillerShowUuid',
-      )
-      .selectAll('fillerShow')
-      .select((eb) =>
-        eb.fn
-          .count<number>('fillerShowContent.programUuid')
-          .distinct()
-          .as('contentCount'),
-      )
-      .execute();
+    return this.drizzle.query.fillerShows
+      .findMany({
+        where: (fields, { inArray }) => inArray(fields.uuid, ids),
+        with: {
+          fillerShowContent: true,
+        },
+      })
+      .then((result) =>
+        result.map((r) => ({
+          ...r,
+          contentCount: r.fillerShowContent.length,
+        })),
+      );
   }
 
   async saveFiller(

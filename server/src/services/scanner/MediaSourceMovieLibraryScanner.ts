@@ -65,7 +65,7 @@ export abstract class MediaSourceMovieLibraryScanner<
 
     const totalSize = await this.getLibrarySize(library.externalKey, context);
 
-    for await (const movie of this.getLibraryContents(
+    for await (const incomingMovie of this.getLibraryContents(
       library.externalKey,
       context,
     )) {
@@ -73,12 +73,14 @@ export abstract class MediaSourceMovieLibraryScanner<
         return;
       }
 
-      if (isNonEmptyString(pathFilter) && movie.externalId !== pathFilter) {
+      if (
+        isNonEmptyString(pathFilter) &&
+        incomingMovie.externalId !== pathFilter
+      ) {
         continue;
       }
 
-      const canonicalId = movie.canonicalId;
-      seenMovieIds.add(movie.externalId);
+      seenMovieIds.add(incomingMovie.externalId);
 
       const processedAmount = round(seenMovieIds.size / totalSize, 2) * 100.0;
 
@@ -87,28 +89,30 @@ export abstract class MediaSourceMovieLibraryScanner<
         processedAmount,
       );
 
-      const fullMovieResult = await this.scanMovie(context, movie);
+      const fullMovieResult = await this.scanMovie(context, incomingMovie);
 
       if (fullMovieResult.isFailure()) {
         this.logger.warn(
           fullMovieResult.error,
           'Error querying full movie metadata for ID = %s',
-          movie.externalId,
+          incomingMovie.externalId,
         );
         continue;
       }
 
       const fullMovie = fullMovieResult.get();
 
+      const existingMovie = existingPrograms[fullMovie.externalId];
       if (
         !force &&
-        existingPrograms[fullMovie.externalId] &&
-        existingPrograms[fullMovie.externalId].canonicalId === canonicalId
+        existingMovie &&
+        existingMovie.canonicalId &&
+        existingMovie.canonicalId === incomingMovie.canonicalId
       ) {
         this.logger.debug(
           'Found an unchanged program: rating key = %s, program ID = %s',
           fullMovie.externalId,
-          existingPrograms[fullMovie.externalId].uuid,
+          existingMovie.uuid,
         );
         continue;
       }
@@ -126,7 +130,7 @@ export abstract class MediaSourceMovieLibraryScanner<
         this.logger.warn(
           upsertResult.error,
           'Error while processing movie (%O)',
-          movie,
+          incomingMovie,
         );
 
         continue;

@@ -225,6 +225,13 @@
       "when": 1764773306714,
       "tag": "0031_bitter_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1764870200476,
+      "tag": "0032_vengeful_network",
+      "breakpoints": true
     }
   ]
 }

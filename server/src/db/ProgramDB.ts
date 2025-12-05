@@ -1902,9 +1902,6 @@ export class ProgramDB implements IProgramDB {
       type,
       parentFilter,
     )) {
-      if (!result.canonicalId || !result.libraryId) {
-        continue;
-      }
       grouped[result.externalKey] = {
         canonicalId: result.canonicalId,
         externalKey: result.externalKey,
@@ -1958,19 +1955,17 @@ export class ProgramDB implements IProgramDB {
 
       lastId = last(page)?.uuid;
       for (const item of page) {
-        if (item.canonicalId && item.libraryId) {
-          yield {
-            externalKey: item.externalKey,
-            canonicalId: item.canonicalId,
-            uuid: item.uuid,
-            libraryId: item.libraryId,
-          };
-        }
+        yield {
+          externalKey: item.externalKey,
+          canonicalId: item.canonicalId,
+          uuid: item.uuid,
+          libraryId: item.libraryId,
+        };
       }
     }
   }
 
-  async getProgramGroupingCanonicalIds(
+  async getExistingProgramGroupingDetails(
     mediaSourceLibraryId: string,
     type: ProgramGroupingType,
     sourceType: StrictExclude<MediaSourceType, 'local'>,
@@ -2001,18 +1996,17 @@ export class ProgramDB implements IProgramDB {
         uuid: true,
         canonicalId: true,
         libraryId: true,
+        externalKey: true,
       },
     });
 
     const grouped: Dictionary<ProgramGroupingCanonicalIdLookupResult> = {};
     for (const result of results) {
-      const key = head(result.externalIds)?.externalKey;
+      const key = result.externalKey ?? head(result.externalIds)?.externalKey;
       if (!key) {
         continue;
       }
-      if (!result.canonicalId) {
-        continue;
-      }
+
       grouped[key] = {
         canonicalId: result.canonicalId,
         externalKey: key,
@@ -2602,6 +2596,25 @@ export class ProgramDB implements IProgramDB {
           state: newState,
         })
         .where(inArray(Program.uuid, idChunk))
+        .execute();
+    }
+  }
+
+  async updateGroupingsState(
+    groupingIds: string[],
+    newState: ProgramState,
+  ): Promise<void> {
+    if (groupingIds.length === 0) {
+      return;
+    }
+
+    for (const idChunk of chunk(groupingIds, 100)) {
+      await this.drizzleDB
+        .update(ProgramGrouping)
+        .set({
+          state: newState,
+        })
+        .where(inArray(ProgramGrouping.uuid, idChunk))
         .execute();
     }
   }

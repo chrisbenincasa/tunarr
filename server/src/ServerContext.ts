@@ -10,6 +10,7 @@ import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
+import { SmartCollectionsDB } from './db/SmartCollectionsDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
 import { MediaSourceDB } from './db/mediaSourceDB.ts';
@@ -89,6 +90,9 @@ export class ServerContext {
 
   @inject(ImageCache)
   public readonly imageCache!: ImageCache;
+
+  @inject(SmartCollectionsDB)
+  public readonly smartCollectionsDB!: SmartCollectionsDB;
 }
 
 export class ServerRequestContext {
