@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.23.0-alpha.29](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.28...v0.23.0-alpha.29) (2025-12-05)
+
+
+### Bug Fixes
+
+* actually delete smart collections when requested ([e285655](https://github.com/chrisbenincasa/tunarr/commit/e285655daf592bc4e13e4b6bacc2e8d68e094c5a))
+* allow viewing slot schedulers even with missing programming ([7993bb5](https://github.com/chrisbenincasa/tunarr/commit/7993bb53c29d13b83b30169776698b837c7364c4))
+* fix horizontal page scroll ([#1497](https://github.com/chrisbenincasa/tunarr/issues/1497)) ([308bf3d](https://github.com/chrisbenincasa/tunarr/commit/308bf3d5013364d0b173664ae0f45323978255d6))
+
 ## [0.23.0-alpha.28](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.27...v0.23.0-alpha.28) (2025-12-03)
 
 

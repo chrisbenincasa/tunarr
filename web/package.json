@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/web",
-  "version": "0.23.0-alpha.28",
+  "version": "0.23.0-alpha.29",
   "private": true,
   "type": "module",
   "scripts": {
