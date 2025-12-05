@@ -10,10 +10,11 @@ type RouteCallback = (s: State, maybeEntityId?: string) => string | undefined;
 type Route = {
   matcher: RegExp;
   name: string | RouteCallback;
+  to?: string;
   isLink?: boolean;
 };
 
-type RouteDetails = { name: Maybe<string>; isLink: boolean };
+type RouteDetails = { name: Maybe<string>; isLink: boolean; to?: string };
 
 const entityPageMatcher = (entity: string, path: string) => {
   const pathPart = isNonEmptyString(path) ? `/${path}` : '';
@@ -147,6 +148,7 @@ const useNamedRoutes = () => {
       {
         matcher: /^\/media_sources$/g,
         name: 'Media Sources',
+        to: '/library',
       },
       {
         matcher: entityPageMatcher('media_sources', ''),
@@ -185,6 +187,7 @@ export const useGetRouteDetails = () => {
       return {
         name,
         isLink: route.isLink ?? true,
+        to: route.to,
       } satisfies RouteDetails;
     },
     [namedRoutes, store],

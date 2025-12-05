@@ -7,7 +7,7 @@ import type { MarkOptional } from 'ts-essentials';
 import type z from 'zod';
 import { useSettings } from '../store/settings/selectors.ts';
 
-export const useThumbnailUrl = () => {
+export const useGetArtworkUrl = () => {
   const settings = useSettings();
   return useCallback(
     (
@@ -34,7 +34,7 @@ export const useThumbnailUrl = () => {
   );
 };
 
-export const usePersonThumbnail = () => {
+export const useGetPersonArtwork = () => {
   const settings = useSettings();
   return useCallback(
     (

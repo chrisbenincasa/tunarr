@@ -1,25 +1,19 @@
-import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import type {
-  MusicTrack,
-  ProgramGrouping,
-  TerminalProgram,
-} from '@tunarr/types';
+import type { MusicAlbum, MusicTrack } from '@tunarr/types';
 import { useState } from 'react';
+import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
 
 type Props = {
-  program: TerminalProgram | ProgramGrouping;
+  program: MusicAlbum;
 };
 
 export default function Tracks({ program }: Props) {
-  const settings = useSettings();
   const navigate = useNavigate();
 
   const [posterError, setPosterError] = useState(false);
 
-  const tracks =
-    program.type === 'album' && program.tracks ? program.tracks : [];
+  const tracks = program.tracks ?? [];
 
   const handleNavigation = async (track: MusicTrack) => {
     await navigate({
@@ -28,6 +22,8 @@ export default function Tracks({ program }: Props) {
       resetScroll: true,
     });
   };
+
+  const getArtworkUrl = useGetArtworkUrl();
 
   return (
     <>
@@ -91,7 +87,7 @@ export default function Tracks({ program }: Props) {
                   <Box
                     alt={track.title}
                     component={'img'}
-                    src={`${settings.backendUri}/api/programs/${track.uuid}/artwork/poster`}
+                    src={getArtworkUrl(track) ?? undefined}
                     sx={{
                       width: '100%',
                       height: 'auto',

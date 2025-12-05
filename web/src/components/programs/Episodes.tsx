@@ -1,19 +1,14 @@
-import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import type {
-  EpisodeMetadata,
-  ProgramGrouping,
-  TerminalProgram,
-} from '@tunarr/types';
+import type { Episode, EpisodeMetadata, Season } from '@tunarr/types';
 import { useState } from 'react';
+import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
 
 type Props = {
-  program: TerminalProgram | ProgramGrouping;
+  program: Season;
 };
 
 export default function Episodes({ program }: Props) {
-  const settings = useSettings();
   const navigate = useNavigate();
 
   const [posterError, setPosterError] = useState(false);
@@ -28,6 +23,8 @@ export default function Episodes({ program }: Props) {
       resetScroll: true,
     });
   };
+
+  const getArtworkUrl = useGetArtworkUrl();
 
   return (
     <>
@@ -51,7 +48,7 @@ export default function Episodes({ program }: Props) {
         }}
       >
         {episodes.length > 0 &&
-          episodes.map((episode: EpisodeMetadata, index: number) => (
+          episodes.map((episode: Episode, index: number) => (
             <Box
               key={index}
               sx={{
@@ -91,7 +88,7 @@ export default function Episodes({ program }: Props) {
                   <Box
                     alt={episode.title}
                     component={'img'}
-                    src={`${settings.backendUri}/api/programs/${episode.uuid}/artwork/poster`}
+                    src={getArtworkUrl(episode) ?? undefined}
                     sx={{
                       width: '100%',
                       height: 'auto',
@@ -115,6 +112,10 @@ export default function Episodes({ program }: Props) {
                       maxWidth: '100%',
                     }}
                   >
+                    {episode.season
+                      ? Math.max(episode.season.index, 0) *
+                        episode.episodeNumber
+                      : ''}
                     {episode.title}
                   </Typography>
                 </>

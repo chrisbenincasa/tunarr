@@ -230,34 +230,56 @@ export const MediaSourceLibraryTable = () => {
         header: 'Source Type',
         id: 'type',
         accessorFn: ({ type }) => capitalize(type),
-        size: 100,
+        // size: 100,
         enableSorting: false,
-      },
-      {
-        header: 'Source Name',
-        id: 'sourceName',
-        accessorFn: ({ mediaSource: { name } }) => name,
-        size: 150,
         grow: false,
       },
       {
         header: 'Name',
-        accessorKey: 'name',
-        size: 150,
-        grow: false,
+        id: 'name',
+        accessorFn(originalRow) {
+          if (originalRow.type === 'local') {
+            return originalRow.name;
+          } else {
+            return `${originalRow.mediaSource.name} - ${originalRow.name}`;
+          }
+        },
+        // size: 150,
+        // grow: false,
       },
       {
         header: 'Media Type',
         id: 'mediaType',
         accessorFn: ({ mediaType }) => prettifySnakeCaseString(mediaType),
-        size: 150,
-        grow: false,
+        // size: 150,
+        // grow: false,
       },
       {
         header: 'Last Synced',
         id: 'lastUpdated',
         accessorFn: ({ lastScannedAt }) =>
           lastScannedAt ? dayjs(lastScannedAt).format('LLL') : '-',
+      },
+      {
+        header: '',
+        id: 'actions',
+        grow: true,
+        enableColumnFilter: false,
+        enableColumnActions: false,
+        muiTableBodyCellProps: {
+          sx: {
+            flexDirection: 'row',
+          },
+          align: 'right',
+        },
+        Cell: (props) => {
+          return (
+            <MediaSourceLibraryTableActionCell
+              mediaSource={props.row.original.mediaSource}
+              library={props.row.original}
+            />
+          );
+        },
       },
     ];
   }, [dayjs]);
@@ -292,8 +314,8 @@ export const MediaSourceLibraryTable = () => {
   const table = useMaterialReactTable({
     data,
     columns,
-    layoutMode: 'grid',
-    enableRowActions: true,
+    // layoutMode: 'grid',
+    // enableRowActions: true,
     displayColumnDefOptions: {
       'mrt-row-actions': {
         grow: true,

@@ -10,11 +10,16 @@ import {
 } from '@/generated/@tanstack/react-query.gen.ts';
 import { Box, Paper } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
+import type { ProgramGrouping, TerminalProgram } from '@tunarr/types';
+import { isGroupingItemType, isTerminalItemType } from '@tunarr/types';
 import { Route } from '../../routes/media_/$programType.$programId.tsx';
 
 export const ProgramPage = () => {
-  const { programId, programType } = Route.useParams();
+  const { programId, programType: rawProgramType } = Route.useParams();
+  // TODO: Figure out why TS can't deduce this type.
+  const programType = rawProgramType as
+    | TerminalProgram['type']
+    | ProgramGrouping['type'];
 
   const query = useQuery({
     ...getApiProgramsByIdOptions({
@@ -31,12 +36,11 @@ export const ProgramPage = () => {
         id: programId,
       },
     }),
-    enabled:
-      !isTerminalItemType(programType) && !isStructuralItemType(programType),
+    enabled: isGroupingItemType(programType),
   });
 
-  const programData = query?.data || parentQuery?.data;
-  const isLoading = query.isLoading || parentQuery.isLoading;
+  const programData = query?.data ?? parentQuery?.data;
+  const isLoading = query.isLoading ?? parentQuery.isLoading;
 
   return (
     !isLoading &&
@@ -48,10 +52,10 @@ export const ProgramPage = () => {
         }}
       >
         <MediaDetailCard program={programData} />
-        {programType === 'show' && <Seasons program={programData} />}
-        {programType === 'season' && <Episodes program={programData} />}
-        {programType === 'artist' && <Albums program={programData} />}
-        {programType === 'album' && <Tracks program={programData} />}
+        {programData?.type === 'show' && <Seasons program={programData} />}
+        {programData?.type === 'season' && <Episodes program={programData} />}
+        {programData?.type === 'artist' && <Albums program={programData} />}
+        {programData?.type === 'album' && <Tracks program={programData} />}
         <Actors program={programData} />
       </Box>
     )

@@ -340,6 +340,24 @@ export function isTerminalItemType(
   );
 }
 
+export function isGroupingItemType(
+  type: string,
+): type is ProgramGrouping['type'];
+export function isGroupingItemType(
+  program: ProgramOrFolder | Library,
+): program is ProgramGrouping;
+export function isGroupingItemType(
+  program: ProgramOrFolder | Library | string,
+): boolean {
+  const type = typeof program === 'string' ? program : program.type;
+  return (
+    type === 'show' ||
+    type === 'season' ||
+    type === 'artist' ||
+    type === 'album'
+  );
+}
+
 export function isStructuralItemType(
   type: string,
 ): type is StructuralProgramGrouping['type'];

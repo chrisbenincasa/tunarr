@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { isTerminalItemType } from '@tunarr/types';
 import { forwardRef, useCallback, useMemo, type ForwardedRef } from 'react';
-import { useThumbnailUrl } from '../../hooks/useThumbnailUrl.ts';
+import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
 import { useCurrentMediaSource } from '../../store/programmingSelector/selectors.ts';
 import type { GridItemMetadata } from '../channel_config/MediaGridItem.tsx';
 import { MediaGridItem } from '../channel_config/MediaGridItem.tsx';
@@ -43,7 +43,7 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
     }
   }, [disableSelection, moveModalToItem, item.type, item.uuid, navigate]);
 
-  const thumbnailUrlFunc = useThumbnailUrl();
+  const thumbnailUrlFunc = useGetArtworkUrl();
 
   const metadata = useMemo(
     () =>

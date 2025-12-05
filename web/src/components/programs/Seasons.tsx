@@ -1,15 +1,11 @@
 import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import type {
-  ProgramGrouping,
-  SeasonMetadata,
-  TerminalProgram,
-} from '@tunarr/types';
+import type { Season, SeasonMetadata, Show } from '@tunarr/types';
 import { useState } from 'react';
 
 type Props = {
-  program: TerminalProgram | ProgramGrouping;
+  program: Show;
 };
 
 export default function Seasons({ program }: Props) {
@@ -18,8 +14,7 @@ export default function Seasons({ program }: Props) {
 
   const [posterError, setPosterError] = useState(false);
 
-  const seasons =
-    program.type === 'show' && program.seasons ? program.seasons : [];
+  const seasons = program.seasons ?? [];
 
   const handleNavigation = async (season: SeasonMetadata) => {
     await navigate({
@@ -49,77 +44,76 @@ export default function Seasons({ program }: Props) {
           mt: 2,
         }}
       >
-        {seasons.length > 0 &&
-          seasons.map((season: SeasonMetadata, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                width: '100%',
-                transition: 'transform 0.2s',
-                cursor: 'pointer',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                },
-              }}
-            >
-              {posterError ? (
+        {seasons.map((season: Season, index: number) => (
+          <Box
+            key={index}
+            sx={{
+              width: '100%',
+              transition: 'transform 0.2s',
+              cursor: 'pointer',
+              '&:hover': {
+                transform: 'scale(1.05)',
+              },
+            }}
+          >
+            {posterError ? (
+              <Box
+                sx={{
+                  width: 170,
+                  height: 255,
+                  boxShadow: 3,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '10px',
+                  backgroundColor: 'grey.700',
+                }}
+                onClick={() => handleNavigation(season)}
+              >
+                <Typography
+                  variant="h5"
+                  component="span"
+                  sx={{ color: 'white' }}
+                >
+                  {`S${index + 1}`}
+                </Typography>
+              </Box>
+            ) : (
+              <>
                 <Box
+                  alt={season.title}
+                  component={'img'}
+                  src={`${settings.backendUri}/api/programs/${season.uuid}/artwork/poster`}
                   sx={{
-                    width: 170,
-                    height: 255,
+                    width: '100%',
+                    height: 'auto',
                     boxShadow: 3,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     borderRadius: '10px',
-                    backgroundColor: 'grey.700',
                   }}
                   onClick={() => handleNavigation(season)}
-                >
-                  <Typography
-                    variant="h5"
-                    component="span"
-                    sx={{ color: 'white' }}
-                  >
-                    {`S${index + 1}`}
-                  </Typography>
-                </Box>
-              ) : (
-                <>
-                  <Box
-                    alt={season.title}
-                    component={'img'}
-                    src={`${settings.backendUri}/api/programs/${season.uuid}/artwork/poster`}
-                    sx={{
-                      width: '100%',
-                      height: 'auto',
-                      boxShadow: 3,
-                      borderRadius: '10px',
-                    }}
-                    onClick={() => handleNavigation(season)}
-                    onError={() => setPosterError(true)}
-                  />
-                </>
-              )}
-              <Typography
-                variant="caption"
-                component="h3"
-                title={season.title}
-                sx={{
-                  marginTop: 0.5,
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
-                {season.title}
-              </Typography>
-            </Box>
-          ))}
+                  onError={() => setPosterError(true)}
+                />
+              </>
+            )}
+            <Typography
+              variant="caption"
+              component="h3"
+              title={season.title}
+              sx={{
+                marginTop: 0.5,
+                textAlign: 'center',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
+              {season.title}
+            </Typography>
+          </Box>
+        ))}
       </Grid>
     </>
   );

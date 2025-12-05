@@ -10,7 +10,7 @@ import {
 import { Link } from '@tanstack/react-router';
 import type { ProgramGrouping, TerminalProgram } from '@tunarr/types';
 import { useState } from 'react';
-import { usePersonThumbnail } from '../../hooks/useThumbnailUrl.ts';
+import { useGetPersonArtwork } from '../../hooks/useThumbnailUrl.ts';
 
 type Props = {
   program: TerminalProgram | ProgramGrouping;
@@ -23,7 +23,7 @@ export default function Actors({ program }: Props) {
   const itemsToLoad: number = initialItemsToShow;
   const [visibleCount, setVisibleCount] = useState<number>(initialItemsToShow);
 
-  const thumbnailUrlFunc = usePersonThumbnail();
+  const thumbnailUrlFunc = useGetPersonArtwork();
 
   const getActors = () => {
     switch (program?.type) {

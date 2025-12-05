@@ -1,15 +1,11 @@
 import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import type {
-  MusicAlbum,
-  ProgramGrouping,
-  TerminalProgram,
-} from '@tunarr/types';
+import type { MusicAlbum, MusicArtist } from '@tunarr/types';
 import { useState } from 'react';
 
 type Props = {
-  program: TerminalProgram | ProgramGrouping;
+  program: MusicArtist;
 };
 
 export default function Albums({ program }: Props) {

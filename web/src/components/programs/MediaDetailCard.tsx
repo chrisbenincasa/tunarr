@@ -4,7 +4,6 @@ import { OpenInNew } from '@mui/icons-material';
 import {
   Box,
   Button,
-  Grid,
   Stack,
   Typography,
   useMediaQuery,
@@ -18,6 +17,7 @@ import {
 } from '@tunarr/types';
 import { capitalize } from 'lodash-es';
 import { useMemo, useState } from 'react';
+import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
 import ProgramInfoBar from './ProgramInfoBar';
 
 type Props = {
@@ -59,6 +59,8 @@ export default function MediaDetailCard({ program }: Props) {
   const toggleExpanded = () => {
     setIsExpanded((prev) => !prev);
   };
+
+  const getArtworkUrl = useGetArtworkUrl();
 
   const getProgramTitle = useMemo(() => {
     let title, type, uuid;
@@ -123,94 +125,94 @@ export default function MediaDetailCard({ program }: Props) {
   }, [program]);
 
   return (
-    <Grid container spacing={isMobile ? 3 : 5}>
-      <Stack direction={'column'}>
-        <Stack
-          direction="row"
-          spacing={smallViewport ? 0 : 2}
-          flexDirection={isMobile ? 'column' : 'row'}
-          flexWrap={'nowrap'}
+    // <Grid container spacing={isMobile ? 3 : 5}>
+    <Box>
+      <Stack direction={'column'}></Stack>
+      <Stack
+        direction="row"
+        spacing={smallViewport ? 0 : 2}
+        flexDirection={isMobile ? 'column' : 'row'}
+        flexWrap={'nowrap'}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            maxWidth: isMobile ? 'none' : 400,
+          }}
         >
-          <Grid>
-            <Box
+          <Box>
+            {posterError ? (
+              <Box
+                sx={{
+                  width: '100%',
+                  height: 255,
+                  boxShadow: 3,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '10px',
+                  backgroundColor: 'grey.700',
+                }}
+              ></Box>
+            ) : (
+              <Box
+                component="img"
+                src={getArtworkUrl(program) ?? undefined}
+                alt={`${program.title} Poster`}
+                onError={() => setPosterError(true)}
+                width={'100%'}
+                sx={{
+                  borderRadius: '10px',
+                }}
+              />
+            )}
+          </Box>
+
+          {program.sourceType !== 'local' && externalLink && (
+            <Button
+              variant="contained"
+              component="a"
+              target="_blank"
+              href={externalLink}
+              endIcon={<OpenInNew />}
               sx={{
-                position: 'relative',
-                maxWidth: isMobile ? 'none' : 225,
+                '&:hover': {
+                  opacity: 0.9,
+                },
+                width: '100%',
+                marginY: 1,
               }}
             >
-              {posterError ? (
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: 255,
-                    boxShadow: 3,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '10px',
-                    backgroundColor: 'grey.700',
-                  }}
-                ></Box>
-              ) : (
-                <Box
-                  component="img"
-                  src={`${settings.backendUri}/api/programs/${program.uuid}/artwork/poster`}
-                  alt={`${program.title} Poster`}
-                  onError={() => setPosterError(true)}
-                  width={'100%'}
-                  sx={{
-                    borderRadius: '10px',
-                  }}
-                />
-              )}
-            </Box>
+              {`Open in ${capitalize(program.sourceType)}`}
+            </Button>
+          )}
+        </Box>
+        <Box maxWidth={700}>
+          <Stack spacing={1}>
+            {getProgramTitle}
 
-            {externalLink && (
-              <Button
-                variant="contained"
-                component="a"
-                target="_blank"
-                href={externalLink}
-                endIcon={<OpenInNew />}
-                sx={{
-                  '&:hover': {
-                    opacity: 0.9,
-                  },
-                  width: '100%',
-                  marginY: 1,
-                }}
-              >
-                {`Open in ${capitalize(program.sourceType)}`}
+            <Stack
+              direction="row"
+              alignItems="center"
+              sx={{
+                borderTop: `1px solid`,
+                borderBottom: `1px solid`,
+                paddingY: 1,
+                flexWrap: 'wrap',
+              }}
+            >
+              <ProgramInfoBar program={program} />
+            </Stack>
+            <Typography>{displayText}</Typography>
+            {isLongDescription && (
+              <Button variant="contained" onClick={toggleExpanded}>
+                {isExpanded ? 'Read Less' : 'Read More'}
               </Button>
             )}
-          </Grid>
-          <Grid maxWidth={700}>
-            <Stack spacing={1}>
-              {getProgramTitle}
-
-              <Stack
-                direction="row"
-                alignItems="center"
-                sx={{
-                  borderTop: `1px solid`,
-                  borderBottom: `1px solid`,
-                  paddingY: 1,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <ProgramInfoBar program={program} />
-              </Stack>
-              <Typography>{displayText}</Typography>
-              {isLongDescription && (
-                <Button variant="contained" onClick={toggleExpanded}>
-                  {isExpanded ? 'Read Less' : 'Read More'}
-                </Button>
-              )}
-            </Stack>
-          </Grid>
-        </Stack>
+          </Stack>
+        </Box>
       </Stack>
-    </Grid>
+    </Box>
   );
 }

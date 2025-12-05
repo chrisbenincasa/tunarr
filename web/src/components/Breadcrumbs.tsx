@@ -62,7 +62,7 @@ export default function Breadcrumbs(props: Props) {
               {thisRouteName ?? trimmedText ?? ''}
             </Typography>
           ) : (
-            <Link component={RouterLink} to={to} key={to}>
+            <Link component={RouterLink} to={route?.to ?? to} key={to}>
               {trimmedText}
             </Link>
           );
