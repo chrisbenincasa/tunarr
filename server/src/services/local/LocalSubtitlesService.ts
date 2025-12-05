@@ -2,18 +2,19 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import { MediaSubtitles } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import fs from 'node:fs/promises';
-import path, { basename, dirname, extname } from 'node:path';
+import { basename, dirname, extname } from 'node:path';
 import { match, P } from 'ts-pattern';
 import { KEYS } from '../../types/inject.ts';
-import { Logger } from '../../util/logging/LoggerFactory.ts';
+import { Nullable } from '../../types/util.ts';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { LanguageService } from '../LanguageService.ts';
 
 @injectable()
 export class LocalSubtitlesService {
-  constructor(
-    @inject(LanguageService) private languageService: LanguageService,
-    @inject(KEYS.Logger) private logger: Logger,
-  ) {}
+  private static logger = LoggerFactory.child({
+    className: LocalSubtitlesService.name,
+  });
+  constructor(@inject(KEYS.Logger) private logger: Logger) {}
 
   async findExternalSubtitles(fullItemPath: string) {
     const subtitles: MediaSubtitles[] = [];
@@ -29,60 +30,81 @@ export class LocalSubtitlesService {
         continue;
       }
 
-      const codec = match(extname(dirent.name))
-        .with(P.union('.ssa', '.ass'), () => 'ass')
-        .with('.srt', () => 'subrip')
-        .with('.vtt', () => 'webvtt')
-        .otherwise(() => null);
+      const filename = basename(dirent.name, extname(dirent.name));
+      const parsedSubtitles = LocalSubtitlesService.parseSubtitleFilePath(
+        itemName,
+        filename,
+      );
 
-      if (!codec) {
+      if (!parsedSubtitles) {
+        this.logger.debug('');
         continue;
       }
 
-      const filename = basename(dirent.name, extname(dirent.name));
-      // Subtitles generally are meant to be in the form {media_name}.{lang}(.{opts})*.{codec_ext}
-      // At this point we've removed the codec_ext and we want to read out the options in the filename
-      // and then derive the language.
-      const [lang = '', ...opts] = filename
-        .replace(itemName, '')
-        .toLowerCase()
-        .split('.')
-        .filter((s) => s.length > 0);
-
-      const sdh =
-        opts.includes('hi') || opts.includes('cc') || opts.includes('sdh');
-      const forced = opts.includes('forced');
-
-      const maybeLang3B = this.languageService.getAlpha3TCode(lang);
-
-      if (isNonEmptyString(maybeLang3B)) {
-        subtitles.push({
-          codec,
-          language: maybeLang3B,
-          subtitleType: 'sidecar',
-          default: false,
-          forced,
-          sdh,
-          path: path.join(dirent.parentPath, dirent.name),
-        });
-      } else {
-        this.logger.warn(
-          'Found unknown subtitle language (%s) for file: %s',
-          lang,
-          dirent.name,
-        );
-        subtitles.push({
-          codec,
-          language: lang,
-          subtitleType: 'sidecar',
-          default: false,
-          forced,
-          sdh,
-          path: path.join(dirent.parentPath, dirent.name),
-        });
-      }
+      subtitles.push(parsedSubtitles);
     }
 
     return subtitles;
+  }
+
+  static parseSubtitleFilePath(
+    originalItemPath: string,
+    fullPath: string,
+  ): Nullable<MediaSubtitles> {
+    const itemName = basename(originalItemPath, extname(originalItemPath));
+    const fileName = basename(fullPath);
+    const codec = match(extname(fileName))
+      .with(P.union('.ssa', '.ass'), () => 'ass')
+      .with('.srt', () => 'subrip')
+      .with('.vtt', () => 'webvtt')
+      .otherwise(() => null);
+
+    if (!codec) {
+      return null;
+    }
+
+    // Subtitles generally are meant to be in the form {media_name}.{lang}(.{opts})*.{codec_ext}
+    // At this point we've removed the codec_ext and we want to read out the options in the filename
+    // and then derive the language.
+    const [lang = '', ...opts] = fileName
+      .replace(itemName, '')
+      .toLowerCase()
+      .split('.')
+      .filter((s) => s.length > 0);
+
+    const sdh =
+      opts.includes('hi') || opts.includes('cc') || opts.includes('sdh');
+    const forced = opts.includes('forced');
+
+    const maybeLang3B = LanguageService.getAlpha3TCode(
+      lang.split(/[-_]/)?.[0] ?? lang,
+    );
+
+    if (isNonEmptyString(maybeLang3B)) {
+      return {
+        codec,
+        language: maybeLang3B,
+        subtitleType: 'sidecar',
+        default: false,
+        forced,
+        sdh,
+        path: fullPath,
+      };
+    } else {
+      this.logger.debug(
+        'Found unknown subtitle language (%s) for file: %s',
+        lang,
+        fullPath,
+      );
+      return {
+        codec,
+        language: lang,
+        subtitleType: 'sidecar',
+        default: false,
+        forced,
+        sdh,
+        path: fullPath,
+      };
+    }
   }
 }
