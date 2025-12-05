@@ -61,7 +61,7 @@ export class SmartCollectionsApiController {
             id: z.uuid(),
           }),
           response: {
-            200: SmartCollection,
+            204: z.void(),
             404: z.void(),
           },
         },
@@ -73,7 +73,8 @@ export class SmartCollectionsApiController {
         if (!smartCollection) {
           return res.status(404).send();
         }
-        return res.send(smartCollection);
+        await this.smartCollectionDB.delete(smartCollection.uuid);
+        return res.status(204).send();
       },
     );
 

@@ -121,6 +121,7 @@ export const SmartCollectionsTable = () => {
           handleDeleteSmartCollection(deletingSmartCollection!.uuid)
         }
         title={`Delete "${deletingSmartCollection?.name}"`}
+        body={`Are you sure you want to delete Smart Collection "${deletingSmartCollection?.name}"?`}
       />
     </>
   );

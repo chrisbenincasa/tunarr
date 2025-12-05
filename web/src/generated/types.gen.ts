@@ -20384,14 +20384,8 @@ export type DeleteApiSmartCollectionsByIdResponses = {
     /**
      * Default Response
      */
-    200: {
-        uuid: string;
-        name: string;
-        query: string;
-    };
+    204: unknown;
 };
-
-export type DeleteApiSmartCollectionsByIdResponse = DeleteApiSmartCollectionsByIdResponses[keyof DeleteApiSmartCollectionsByIdResponses];
 
 export type GetApiSmartCollectionsByIdData = {
     body?: never;
