@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0-alpha.30](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.29...v0.23.0-alpha.30) (2025-12-05)
+
+
+### Bug Fixes
+
+* fix missing item checking for local scanners ([ecfb621](https://github.com/chrisbenincasa/tunarr/commit/ecfb621b715b6a521cf290547f538d47b3bf6bf4))
+* standardize on artwork hooks on new program detail pages ([2d0c112](https://github.com/chrisbenincasa/tunarr/commit/2d0c1121e09b20e9b22f1a06bd3999d587b9e8b5))
+
 ## [0.23.0-alpha.29](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.28...v0.23.0-alpha.29) (2025-12-05)
 
 
