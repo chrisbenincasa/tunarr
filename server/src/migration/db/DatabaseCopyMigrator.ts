@@ -27,6 +27,7 @@ export class DatabaseCopyMigrator {
     this.logger.debug('Migrating to temp DB %s', tmpPath);
     const tempDBConn = this.dbAccess.getOrCreateConnection(tmpPath);
     const tempDB = tempDBConn.kysely;
+    await new SqliteDatabaseBackup().backup(currentDbPath, tmpPath);
     await tempDBConn.runDBMigrations(migrateTo);
 
     const oldDB = this.dbAccess.getOrCreateKyselyDatabase(currentDbPath);

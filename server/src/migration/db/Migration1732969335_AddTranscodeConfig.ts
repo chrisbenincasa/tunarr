@@ -99,6 +99,7 @@ export default {
         .returning('uuid')
         .executeTakeFirstOrThrow()
     ).uuid;
+    console.log('created default config');
 
     const allChannels = await db.selectFrom('channel').selectAll().execute();
 
