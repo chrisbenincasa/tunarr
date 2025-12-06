@@ -9,9 +9,20 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { useCallback } from 'react';
+import type { Nullable } from '../../../types/util.ts';
 
 export const WebSettings = () => {
   const locale = useStore((state) => state.settings.ui.i18n.locale);
+
+  const handleUiLocaleChange = useCallback(
+    (value: Nullable<SupportedLocales>) => {
+      if (value) {
+        setUiLocale(value);
+      }
+    },
+    [],
+  );
 
   return (
     <Stack spacing={2}>
@@ -27,7 +38,9 @@ export const WebSettings = () => {
         <ToggleButtonGroup
           value={locale}
           exclusive
-          onChange={(_, value) => setUiLocale(value as SupportedLocales)}
+          onChange={(_, value) =>
+            handleUiLocaleChange(value as Nullable<SupportedLocales>)
+          }
           aria-label="text alignment"
         >
           <ToggleButton value="en" aria-label="left aligned">
