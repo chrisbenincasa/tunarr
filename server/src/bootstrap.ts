@@ -79,5 +79,18 @@ export async function bootstrapTunarr(
     await conn.runDBMigrations();
   }
 
+  const dbDirContents = await fs.readdir(opts.databaseDirectory);
+  const migrationBackups = dbDirContents
+    .filter((entry) => entry.match(/db-(\d+)\.bak/))
+    .sort();
+  // Keep all but last 3
+  const backupsToDelete = migrationBackups.slice(0, -3);
+
+  await Promise.all(
+    backupsToDelete.map((backup) =>
+      fs.unlink(path.join(opts.databaseDirectory, backup)),
+    ),
+  );
+
   LoggerFactory.initialize(settingsDb);
 }

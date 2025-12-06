@@ -27,8 +27,16 @@ export class DatabaseCopyMigrator {
     this.logger.debug('Migrating to temp DB %s', tmpPath);
     const tempDBConn = this.dbAccess.getOrCreateConnection(tmpPath);
     const tempDB = tempDBConn.kysely;
+
+    // Copy the existing DB to the new target
     await new SqliteDatabaseBackup().backup(currentDbPath, tmpPath);
     await tempDBConn.runDBMigrations(migrateTo);
+
+    // Backup the old DB
+    await new SqliteDatabaseBackup().backup(
+      currentDbPath,
+      `${replace(currentDbPath, '.db', '')}-${+dayjs()}.bak`,
+    );
 
     const oldDB = this.dbAccess.getOrCreateKyselyDatabase(currentDbPath);
     const oldTables = await this.getTables(oldDB);
@@ -64,11 +72,6 @@ export class DatabaseCopyMigrator {
     await sql`END;`.execute(tempDB);
     await sql`PRAGMA foreign_keys = ON;`.execute(tempDB);
     await sql`PRAGMA defer_foreign_keys = OFF;`.execute(tempDB);
-
-    await new SqliteDatabaseBackup().backup(
-      currentDbPath,
-      `${replace(currentDbPath, '.db', '')}-${+dayjs()}.bak`,
-    );
 
     // Explicitly close both connections to close underlying files
     // Required to do before the copy of the tmp DB, in Windows
