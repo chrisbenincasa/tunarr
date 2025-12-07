@@ -81,6 +81,7 @@ import {
 import { fileExists } from '../util/fsUtil.ts';
 import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
+import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
 
 type FlattenArrayTypes<T> = {
@@ -375,6 +376,7 @@ export class MeilisearchService implements ISearchService {
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,
+    @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {}
 
   getPort() {
@@ -469,7 +471,7 @@ export class MeilisearchService implements ISearchService {
             .asMinutes()
             .toFixed(0),
           '--snapshot-dir',
-          this.snapshotPath,
+          this.fileSystemService.getMsSnapshotsPath(),
         );
 
         if (
@@ -1619,10 +1621,6 @@ export class MeilisearchService implements ISearchService {
 
   private get dbPath() {
     return path.join(this.serverOptions.databaseDirectory, 'data.ms');
-  }
-
-  private get snapshotPath() {
-    return path.join(this.serverOptions.databaseDirectory, 'ms-snapshots');
   }
 }
 

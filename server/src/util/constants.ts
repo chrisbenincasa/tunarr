@@ -10,3 +10,4 @@ export const ThumbnailCacheFolderName = 'thumbs';
 export const WatermarkCacheFolderName = 'watermarks';
 export const ImagesFolderName = 'images';
 export const ChannelLineupsFolderName = 'channel-lineups';
+export const SearchSnapshotsFolderName = 'ms-snapshots';

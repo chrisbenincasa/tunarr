@@ -4,6 +4,8 @@ import { GlobalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
 import {
   CacheFolderName,
+  ChannelLineupsFolderName,
+  SearchSnapshotsFolderName,
   SubtitlesCacheFolderName,
 } from '../util/constants.ts';
 
@@ -28,8 +30,15 @@ export class FileSystemService {
   getChannelLineupPath(channelId: string): string {
     return path.join(
       this.globalOptions.databaseDirectory,
-      'channel-lineups',
+      ChannelLineupsFolderName,
       `${channelId}.json`,
+    );
+  }
+
+  getMsSnapshotsPath() {
+    return path.join(
+      this.globalOptions.databaseDirectory,
+      SearchSnapshotsFolderName,
     );
   }
 }

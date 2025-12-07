@@ -12,11 +12,13 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { dbOptions, GlobalOptions } from '../../globals.ts';
+import { FileSystemService } from '../../services/FileSystemService.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   CacheFolderName,
   ChannelLineupsFolderName,
   ImagesFolderName,
+  SearchSnapshotsFolderName,
   SettingsJsonFilename,
 } from '../../util/constants.ts';
 import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
@@ -34,6 +36,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   constructor(
     @inject(KEYS.SettingsDB) settings: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
+    @inject(FileSystemService) private fileSystemService: FileSystemService,
   ) {
     super(settings);
   }
@@ -119,6 +122,10 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       )
       .directory(getDatabasePath(ImagesFolderName), ImagesFolderName)
       .directory(getDatabasePath(CacheFolderName), CacheFolderName)
+      .directory(
+        this.fileSystemService.getMsSnapshotsPath(),
+        SearchSnapshotsFolderName,
+      )
       .glob('*.xml', { cwd: getDatabasePath('') });
     await archive.finalize();
 
