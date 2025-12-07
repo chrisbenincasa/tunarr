@@ -1238,6 +1238,11 @@ export class MeilisearchService implements ISearchService {
     });
   }
 
+  async createSnapshot() {
+    const taskResult = await this.#client.createSnapshot();
+    return taskResult.taskUid;
+  }
+
   async monitorTask(id: number) {
     let task = await this.#client.tasks.getTask(id);
     if (!task) {

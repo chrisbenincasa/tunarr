@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { dbOptions, GlobalOptions } from '../../globals.ts';
 import { FileSystemService } from '../../services/FileSystemService.ts';
+import { MeilisearchService } from '../../services/MeilisearchService.ts';
 import { KEYS } from '../../types/inject.ts';
 import {
   CacheFolderName,
@@ -37,6 +38,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     @inject(KEYS.SettingsDB) settings: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
+    @inject(MeilisearchService) private searchService: MeilisearchService,
   ) {
     super(settings);
   }
@@ -105,11 +107,17 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
     archive.pipe(outStream);
 
     const sqlBackup = new SqliteDatabaseBackup();
-    const sqlBackupFile = await sqlBackup.backup(
+    const sqlBackupFilePromise = sqlBackup.backup(
       dbOptions().dbName,
       // TODO: have a constant for this
       path.join(tempDir, 'db.db'),
     );
+
+    const snapshotTaskId = await this.searchService.createSnapshot();
+    const [sqlBackupFile] = await Promise.all([
+      sqlBackupFilePromise,
+      this.searchService.monitorTask(snapshotTaskId),
+    ]);
 
     archive
       .file(sqlBackupFile, { name: 'db.db' })
