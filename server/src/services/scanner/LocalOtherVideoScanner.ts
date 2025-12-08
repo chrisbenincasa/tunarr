@@ -499,7 +499,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       await FileSystemScanner.locateArtworkForPossibleNames(possibleNames);
 
     if (!foundPath) {
-      this.logger.warn(
+      this.logger.debug(
         'Could not find season artwork path at %s for art type %s',
         pathPart,
         artworkType,

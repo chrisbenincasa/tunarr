@@ -487,7 +487,7 @@ export class LocalMovieScanner extends FileSystemScanner {
   ) {
     const artworkPath = await this.getArtworkPath(fullMoviePath, artworkType);
     if (!artworkPath) {
-      this.logger.warn(
+      this.logger.debug(
         'Could not locate artwork type %s for file %s',
         artworkType,
         fullMoviePath,

@@ -1386,7 +1386,7 @@ export class MeilisearchService implements ISearchService {
         return false;
       });
 
-    if (isEmpty(validEids)) {
+    if (isEmpty(validEids) && program.sourceType !== 'local') {
       this.logger.warn('No external ids for item id %s', program.uuid);
     }
 

@@ -961,7 +961,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       await FileSystemScanner.locateArtworkForPossibleNames(possibleNames);
 
     if (!foundPath) {
-      this.logger.warn(
+      this.logger.debug(
         'Could not find season artwork path at %s for season number %d and art type %s',
         showFolderPath,
         seasonNumber,
@@ -1018,8 +1018,8 @@ export class LocalTvShowScanner extends FileSystemScanner {
       await FileSystemScanner.locateArtworkForPossibleNames(possibleNames);
 
     if (!foundPath) {
-      this.logger.warn(
-        'Could not find season artwork path at %s for art type %s',
+      this.logger.debug(
+        'Could not find episode artwork path at %s for art type %s',
         pathPart,
         artworkType,
       );
