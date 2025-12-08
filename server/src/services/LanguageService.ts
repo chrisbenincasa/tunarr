@@ -17,20 +17,20 @@ export class LanguageService {
     return languages.isValid(code);
   }
 
-  getAlpha3TCode(input: string) {
+  static getAlpha3TCode(input: string) {
     input = input.toLowerCase().trim();
-    if (LanguageService.Known3TCodes.has(input)) {
+    if (this.Known3TCodes.has(input)) {
       return input;
     }
 
-    if (LanguageService.Known3BCodes.has(input)) {
+    if (this.Known3BCodes.has(input)) {
       const alpha2 = languages.alpha3TToAlpha2(input);
       if (alpha2) {
         return languages.alpha2ToAlpha3T(alpha2);
       }
     }
 
-    if (LanguageService.Known2Codes.has(input)) {
+    if (this.Known2Codes.has(input)) {
       return languages.alpha2ToAlpha3T(input);
     }
 

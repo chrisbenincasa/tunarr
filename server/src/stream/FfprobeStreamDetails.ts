@@ -36,10 +36,7 @@ type FfprobeStreamDetailsRequest = {
 export class FfprobeStreamDetails
   implements StreamDetailsFetcher<FfprobeStreamDetailsRequest>
 {
-  constructor(
-    @inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo,
-    @inject(LanguageService) private languageService: LanguageService,
-  ) {}
+  constructor(@inject(FfmpegInfo) private ffmpegInfo: FfmpegInfo) {}
 
   async getStream({
     path,
@@ -114,7 +111,7 @@ export class FfprobeStreamDetails
               ? lang
               : undefined,
           languageCodeISO6392: lang
-            ? this.languageService.getAlpha3TCode(lang)
+            ? LanguageService.getAlpha3TCode(lang)
             : undefined,
           profile: audioStream.profile,
         } satisfies AudioStreamDetails;
