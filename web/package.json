@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/web",
-  "version": "0.22.17",
+  "version": "0.22.18",
   "private": true,
   "type": "module",
   "scripts": {
