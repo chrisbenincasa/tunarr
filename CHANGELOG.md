@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0-alpha.31](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.30...v0.23.0-alpha.31) (2025-12-08)
+
+
+### Bug Fixes
+
+* ensure search index snapshots are included in backups ([af63a41](https://github.com/chrisbenincasa/tunarr/commit/af63a41467e85c5bd31b2025a9a4c149ff814099))
+* ensure UI cannot unset 12/24 hour clock ([49fa52b](https://github.com/chrisbenincasa/tunarr/commit/49fa52b30c484ce79748e4c097c38d5ff40e49e1)), closes [#1504](https://github.com/chrisbenincasa/tunarr/issues/1504)
+* only keep the last 3 DB copy migration backup files ([a61de3b](https://github.com/chrisbenincasa/tunarr/commit/a61de3b881cac61db6c04fc7f952652f5bc2d47d))
+* properly materialize smart collections with structured filters when scheudling slots ([58b71a6](https://github.com/chrisbenincasa/tunarr/commit/58b71a6a133c8be55fb6bdc178b441a2014ea22f))
+* simplify database copy migrations ([9804863](https://github.com/chrisbenincasa/tunarr/commit/98048634546918364d42872bb5d4f272bb9ffc01))
+* take search index snapshot during backup task ([a3e885c](https://github.com/chrisbenincasa/tunarr/commit/a3e885c67eafd47f16336539d10913eaab5d6a61))
+
 ## [0.23.0-alpha.30](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.29...v0.23.0-alpha.30) (2025-12-05)
 
 
