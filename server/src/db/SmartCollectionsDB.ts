@@ -139,7 +139,7 @@ export class SmartCollectionsDB {
       }
     }
 
-    let page = isNonEmptyString(maybeCollection.query) ? 1 : 0;
+    let page = searchFilter ? 0 : 1;
     const results: ProgramSearchDocument[] = [];
     for (;;) {
       const pageResult = await this.searchService.search('programs', {

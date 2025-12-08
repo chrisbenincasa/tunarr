@@ -94,19 +94,6 @@ export async function scheduleTimeSlots(
 ): Promise<TimeSlotScheduleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
-  // const condensedProgramsById: Record<string, CondensedChannelProgram> = {};
-  // for (const program of channelProgramming) {
-  //   if (isContentProgram(program)) {
-  //     contentProgramsById[program.uniqueId] = program;
-  //     condensedProgramsById[program.uniqueId] = condense(program);
-  //   } else if (
-  //     (isCustomProgram(program) && program.program?.id) ||
-  //     (isFillerProgram(program) && program.program?.id)
-  //   ) {
-  //     contentProgramsById[program.program.id] = program.program;
-  //     condensedProgramsById[program.program.id] = condense(program.program);
-  //   }
-  // }
 
   // Load programs
   // TODO: include redirects and custom programs!
@@ -116,7 +103,6 @@ export async function scheduleTimeSlots(
     createProgramMap(allPrograms),
     random,
   );
-  console.log(contentProgramIteratorsById);
 
   const periodDuration = dayjs.duration(1, schedule.period);
   const periodMs = dayjs.duration(1, schedule.period).asMilliseconds();
