@@ -1,7 +1,6 @@
 import { queryClient } from '@/queryClient';
 import useStore from '@/store';
 import {
-  clearCurrentCustomShow,
   moveProgramInCustomShow,
   resetCustomShowProgramming,
   updateCurrentCustomShow,
@@ -77,13 +76,14 @@ export function EditCustomShowsForm({
       data: CustomShowForm & { programs: UICustomShowProgram[] },
     ) => {
       if (isNew) {
-        return createCustomShow({ body: data });
+        return createCustomShow({ body: data, throwOnError: true });
       } else {
         return putApiCustomShowsById({
           path: {
             id: customShow.id,
           },
           body: data,
+          throwOnError: true,
         });
       }
     },
@@ -92,8 +92,6 @@ export function EditCustomShowsForm({
         queryKey: getApiCustomShowsQueryKey(),
         exact: false,
       });
-      clearCurrentCustomShow();
-      navigate({ to: '/library/custom-shows' }).catch(console.warn);
     },
   });
 
