@@ -1193,7 +1193,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           202: z.void(),
-          400: z.void(),
+          400: z.void().or(z.string()),
           404: z.void(),
           500: z.void(),
         },
@@ -1215,11 +1215,24 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send();
       }
 
-      const queued = await req.serverCtx.mediaSourceScanCoordinator.add({
-        forceScan: true,
-        libraryId: program.libraryId,
-        pathFilter: program.externalKey,
-      });
+      if (program.sourceType === 'local' && !program.mediaSourceId) {
+        return res
+          .status(400)
+          .send(`Progarm ID = ${program.uuid} did not have a media source id!`);
+      }
+
+      const queued =
+        program.sourceType === 'local'
+          ? await req.serverCtx.mediaSourceScanCoordinator.addLocal({
+              forceScan: true,
+              mediaSourceId: program.mediaSourceId!,
+              pathFilter: program.externalKey,
+            })
+          : await req.serverCtx.mediaSourceScanCoordinator.add({
+              forceScan: true,
+              libraryId: program.libraryId,
+              pathFilter: program.externalKey,
+            });
 
       if (!queued) {
         return res.status(500).send();
@@ -1238,7 +1251,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           202: z.void(),
-          400: z.void(),
+          400: z.void().or(z.string()),
           404: z.void(),
           500: z.void(),
         },
@@ -1260,11 +1273,26 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send();
       }
 
-      const queued = await req.serverCtx.mediaSourceScanCoordinator.add({
-        forceScan: true,
-        libraryId: program.libraryId,
-        pathFilter: program.externalKey,
-      });
+      if (program.sourceType === 'local' && !program.mediaSourceId) {
+        return res
+          .status(400)
+          .send(
+            `Grouping ID = ${program.uuid} did not have a media source id!`,
+          );
+      }
+
+      const queued =
+        program.sourceType === 'local'
+          ? await req.serverCtx.mediaSourceScanCoordinator.addLocal({
+              forceScan: true,
+              mediaSourceId: program.mediaSourceId!,
+              pathFilter: program.externalKey,
+            })
+          : await req.serverCtx.mediaSourceScanCoordinator.add({
+              forceScan: true,
+              libraryId: program.libraryId,
+              pathFilter: program.externalKey,
+            });
 
       if (!queued) {
         return res.status(500).send();

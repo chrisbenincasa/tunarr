@@ -410,26 +410,6 @@ export class ProgramDB implements IProgramDB {
         },
       })
       .then((result) => result?.grouping ?? undefined);
-    // return await this.db
-    //   .selectFrom('programGroupingExternalId')
-    //   .where('externalKey', '=', eid.externalKey)
-    //   .where('mediaSourceId', '=', eid.externalSourceId)
-    //   .where('sourceType', '=', eid.sourceType)
-    //   .select((eb) =>
-    //     jsonObjectFrom(
-    //       eb
-    //         .selectFrom('programGrouping')
-    //         .select(AllProgramGroupingFields)
-    //         .whereRef(
-    //           'programGrouping.uuid',
-    //           '=',
-    //           'programGroupingExternalId.groupUuid',
-    //         )
-    //         .select(withProgramGroupingExternalIds),
-    //     ).as('grouping'),
-    //   )
-    //   .executeTakeFirst()
-    //   .then((result) => result?.grouping ?? undefined);
   }
 
   async getProgramParent(
@@ -2020,148 +2000,16 @@ export class ProgramDB implements IProgramDB {
 
   async upsertProgramGrouping(
     newGroupingAndRelations: NewProgramGroupingWithRelations,
-    externalId: ProgramGroupingExternalIdLookup,
     forceUpdate: boolean = false,
   ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>> {
+    let entity: Maybe<ProgramGroupingOrmWithRelations>;
+    let shouldUpdate = forceUpdate;
+    let wasInserted = false,
+      wasUpdated = false;
     const { programGrouping: dao, externalIds } = newGroupingAndRelations;
-    const existing = await this.getProgramGroupingByExternalId(externalId);
-    if (existing) {
-      let wasUpdated = false;
-      const missingAssociation =
-        (existing.type === 'season' &&
-          dao.showUuid &&
-          dao.showUuid !== existing.showUuid) ||
-        (existing.type === 'album' &&
-          dao.artistUuid &&
-          dao.artistUuid !== existing.artistUuid);
-      const differentVersion = existing.canonicalId !== dao.canonicalId;
-      const shouldUpdate =
-        forceUpdate || differentVersion || missingAssociation;
-
-      if (shouldUpdate) {
-        dao.uuid = existing.uuid;
-        externalIds.forEach((externalId) => {
-          externalId.groupUuid = existing.uuid;
-        });
-        await this.drizzleDB.transaction(async (tx) => {
-          await this.updateProgramGrouping(
-            newGroupingAndRelations,
-            existing,
-            tx,
-          );
-          await this.updateProgramGroupingExternalIds(
-            existing.externalIds,
-            externalIds,
-            tx,
-          );
-        });
-
-        newGroupingAndRelations.credits.forEach((credit) => {
-          credit.credit.groupingId = existing.uuid;
-        });
-
-        newGroupingAndRelations.artwork.forEach((artwork) => {
-          artwork.groupingId = existing.uuid;
-        });
-
-        await this.upsertCredits(
-          newGroupingAndRelations.credits.map(({ credit }) => credit),
-        );
-
-        await this.upsertArtwork(
-          newGroupingAndRelations.artwork.concat(
-            newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
-          ),
-        );
-
-        await this.upsertProgramGroupingGenres(
-          existing.uuid,
-          newGroupingAndRelations.genres,
-        );
-
-        await this.upsertProgramGroupingStudios(
-          existing.uuid,
-          newGroupingAndRelations.studios,
-        );
-
-        wasUpdated = true;
-      }
-
-      return {
-        entity: existing,
-        wasInserted: false,
-        wasUpdated,
-      };
-    }
-
-    const inserted = await this.drizzleDB.transaction(async (tx) => {
-      const grouping = head(
-        await tx
-          .insert(ProgramGrouping)
-          .values(omit(dao, 'externalIds'))
-          .returning(),
-      )!;
-      const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
-      if (externalIds.length > 0) {
-        insertedExternalIds.push(
-          ...(await tx
-            .insert(ProgramGroupingExternalId)
-            .values(
-              externalIds.map((eid) =>
-                this.singleOrMultiProgramGroupingExternalIdToDao(eid),
-              ),
-            )
-            .returning()
-            .execute()),
-        );
-      }
-      return {
-        wasInserted: true,
-        wasUpdated: false,
-        entity: {
-          ...grouping,
-          externalIds: insertedExternalIds,
-        } satisfies ProgramGroupingOrmWithRelations,
-      };
-    });
-
-    newGroupingAndRelations.credits.forEach((credit) => {
-      credit.credit.groupingId = inserted.entity.uuid;
-    });
-
-    newGroupingAndRelations.artwork.forEach((artwork) => {
-      artwork.groupingId = inserted.entity.uuid;
-    });
-
-    await this.upsertCredits(
-      newGroupingAndRelations.credits.map(({ credit }) => credit),
-    );
-    await this.upsertArtwork(
-      newGroupingAndRelations.artwork.concat(
-        newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
-      ),
-    );
-
-    await this.upsertProgramGroupingGenres(
-      inserted.entity.uuid,
-      newGroupingAndRelations.genres,
-    );
-
-    await this.upsertProgramGroupingStudios(
-      inserted.entity.uuid,
-      newGroupingAndRelations.studios,
-    );
-
-    return inserted;
-  }
-
-  async upsertLocalProgramGrouping(
-    newGroupingAndRelations: NewProgramGroupingWithRelations,
-    libraryId: string,
-  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>> {
-    const incomingYear = newGroupingAndRelations.programGrouping.year;
-    const existingGrouping =
-      await this.drizzleDB.query.programGrouping.findFirst({
+    if (dao.sourceType === 'local') {
+      const incomingYear = newGroupingAndRelations.programGrouping.year;
+      entity = await this.drizzleDB.query.programGrouping.findFirst({
         where: (fields, { eq, and, isNull }) => {
           const parentClause = match(newGroupingAndRelations.programGrouping)
             .with({ type: 'season', showUuid: P.nonNullable }, (season) =>
@@ -2175,7 +2023,10 @@ export class ProgramDB implements IProgramDB {
             ])
             .otherwise(() => []);
           return and(
-            eq(fields.libraryId, libraryId),
+            eq(
+              fields.libraryId,
+              newGroupingAndRelations.programGrouping.libraryId,
+            ),
             eq(fields.title, newGroupingAndRelations.programGrouping.title),
             eq(fields.type, newGroupingAndRelations.programGrouping.type),
             eq(fields.sourceType, 'local'),
@@ -2189,122 +2040,108 @@ export class ProgramDB implements IProgramDB {
           externalIds: true,
         },
       });
+    } else {
+      entity = await this.getProgramGroupingByExternalId({
+        sourceType: dao.sourceType,
+        externalKey: dao.externalKey,
+        externalSourceId: dao.mediaSourceId,
+      });
+      if (entity) {
+        // let wasUpdated = false;
+        const missingAssociation =
+          (entity.type === 'season' &&
+            isDefined(dao.showUuid) &&
+            dao.showUuid !== entity.showUuid) ||
+          (entity.type === 'album' &&
+            isDefined(dao.artistUuid) &&
+            dao.artistUuid !== entity.artistUuid);
+        const differentVersion = entity.canonicalId !== dao.canonicalId;
+        shouldUpdate ||= differentVersion || missingAssociation;
+      }
+    }
 
-    if (existingGrouping) {
-      newGroupingAndRelations.programGrouping.uuid = existingGrouping.uuid;
-      newGroupingAndRelations.externalIds.forEach((eid) => {
-        eid.groupUuid = existingGrouping.uuid;
-      });
-      newGroupingAndRelations.artwork.forEach((art) => {
-        art.groupingId = existingGrouping.uuid;
-      });
-      newGroupingAndRelations.credits.forEach(({ credit }) => {
-        credit.groupingId = existingGrouping.uuid;
+    if (entity && shouldUpdate) {
+      newGroupingAndRelations.programGrouping.uuid = entity.uuid;
+      for (const externalId of newGroupingAndRelations.externalIds) {
+        externalId.groupUuid = entity.uuid;
+      }
+      await this.drizzleDB.transaction(async (tx) => {
+        await this.updateProgramGrouping(newGroupingAndRelations, entity!, tx);
+        await this.updateProgramGroupingExternalIds(
+          entity!.externalIds,
+          externalIds,
+          tx,
+        );
       });
 
-      const [grouping, externalIds] = await this.drizzleDB.transaction(
-        async (tx) => {
-          const grouping = head(
-            await tx
-              .update(ProgramGrouping)
-              .set(
-                omit(newGroupingAndRelations.programGrouping, [
-                  'uuid',
-                  'createdAt',
-                ]),
-              )
-              .where(eq(ProgramGrouping.uuid, existingGrouping.uuid))
-              .returning(),
-          )!;
+      wasUpdated = true;
+    } else if (!entity) {
+      entity = await this.drizzleDB.transaction(async (tx) => {
+        const grouping = head(
           await tx
-            .delete(ProgramGroupingExternalId)
-            .where(
-              eq(ProgramGroupingExternalId.groupUuid, existingGrouping.uuid),
-            );
-          const externalIds =
-            newGroupingAndRelations.externalIds.length > 0
-              ? await tx
-                  .insert(ProgramGroupingExternalId)
-                  .values(newGroupingAndRelations.externalIds)
-                  .returning()
-              : [];
-          return [grouping, externalIds];
-        },
-      );
+            .insert(ProgramGrouping)
+            .values(omit(dao, 'externalIds'))
+            .returning(),
+        )!;
+        const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
+        if (externalIds.length > 0) {
+          insertedExternalIds.push(
+            ...(await tx
+              .insert(ProgramGroupingExternalId)
+              .values(
+                externalIds.map((eid) =>
+                  this.singleOrMultiProgramGroupingExternalIdToDao(eid),
+                ),
+              )
+              .returning()
+              .execute()),
+          );
+        }
 
-      newGroupingAndRelations.artwork.forEach((art) => {
-        art.groupingId = grouping.uuid;
+        return {
+          ...grouping,
+          externalIds: insertedExternalIds,
+        } satisfies ProgramGroupingOrmWithRelations;
       });
 
-      newGroupingAndRelations.credits.forEach(({ credit }) => {
-        credit.groupingId = grouping.uuid;
+      wasInserted = true;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      newGroupingAndRelations.credits.forEach((credit) => {
+        credit.credit.groupingId = entity.uuid;
+      });
+
+      newGroupingAndRelations.artwork.forEach((artwork) => {
+        artwork.groupingId = entity.uuid;
       });
 
       await this.upsertCredits(
         newGroupingAndRelations.credits.map(({ credit }) => credit),
       );
+
       await this.upsertArtwork(
         newGroupingAndRelations.artwork.concat(
           newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
         ),
       );
 
-      return {
-        entity: {
-          ...grouping,
-          externalIds,
-        },
-        wasInserted: false,
-        wasUpdated: true,
-      };
+      await this.upsertProgramGroupingGenres(
+        entity.uuid,
+        newGroupingAndRelations.genres,
+      );
+
+      await this.upsertProgramGroupingStudios(
+        entity.uuid,
+        newGroupingAndRelations.studios,
+      );
     }
 
-    const [grouping, externalIds] = await this.drizzleDB.transaction(
-      async (tx) => {
-        const grouping = head(
-          await tx
-            .insert(ProgramGrouping)
-            .values(newGroupingAndRelations.programGrouping)
-            .returning(),
-        )!;
-        let externalIds: ProgramGroupingExternalId[] = [];
-        if (newGroupingAndRelations.externalIds.length > 0) {
-          newGroupingAndRelations.externalIds.forEach((eid) => {
-            eid.groupUuid = grouping.uuid;
-          });
-          externalIds = await tx
-            .insert(ProgramGroupingExternalId)
-            .values(newGroupingAndRelations.externalIds)
-            .returning();
-        }
-        return [grouping, externalIds];
-      },
-    );
-
-    newGroupingAndRelations.artwork.forEach((art) => {
-      art.groupingId = grouping.uuid;
-    });
-
-    newGroupingAndRelations.credits.forEach(({ credit }) => {
-      credit.groupingId = grouping.uuid;
-    });
-
-    await this.upsertCredits(
-      newGroupingAndRelations.credits.map(({ credit }) => credit),
-    );
-    await this.upsertArtwork(
-      newGroupingAndRelations.artwork.concat(
-        newGroupingAndRelations.credits.flatMap(({ artwork }) => artwork),
-      ),
-    );
-
     return {
-      entity: {
-        ...grouping,
-        externalIds,
-      },
-      wasInserted: true,
-      wasUpdated: false,
+      entity,
+      wasInserted,
+      wasUpdated,
     };
   }
 
@@ -2379,10 +2216,10 @@ export class ProgramDB implements IProgramDB {
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
   ) {
     devAssert(
-      uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length === 1,
+      uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length <= 1,
     );
-    devAssert(uniq(existingIds.map((id) => id.libraryId)).length === 1);
-    devAssert(uniq(newIds.map((id) => id.libraryId)).length === 1);
+    devAssert(uniq(existingIds.map((id) => id.libraryId)).length <= 1);
+    devAssert(uniq(newIds.map((id) => id.libraryId)).length <= 1);
 
     const newByUniqueId: Record<
       string,

@@ -219,15 +219,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
     groupingAndRelations.programGrouping.libraryId = context.library.uuid;
 
     const upsertResult = await Result.attemptAsync(() =>
-      this.programDB.upsertProgramGrouping(
-        groupingAndRelations,
-        {
-          externalKey: this.getEntityExternalKey(show),
-          externalSourceId: mediaSource.uuid,
-          sourceType: this.mediaSourceType,
-        },
-        context.force,
-      ),
+      this.programDB.upsertProgramGrouping(groupingAndRelations, context.force),
     );
 
     if (upsertResult.isFailure()) {
@@ -409,11 +401,6 @@ export abstract class MediaSourceTvShowLibraryScanner<
     const upsertResult = await Result.attemptAsync(() =>
       this.programDB.upsertProgramGrouping(
         seasonAndRelations,
-        {
-          externalKey: fullSeason.externalId,
-          externalSourceId: mediaSource.uuid,
-          sourceType: this.mediaSourceType,
-        },
         scanContext.force,
       ),
     );

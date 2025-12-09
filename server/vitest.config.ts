@@ -19,6 +19,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
     },
+    typecheck: {
+      tsconfig: 'tsconfig.test.json',
+    },
   },
   define: {
     'import.meta.vitest': false,

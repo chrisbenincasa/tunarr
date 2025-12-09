@@ -385,7 +385,6 @@ export abstract class FileSystemScanner {
         return name;
       }
     }
-    console.log('Could not find anything, %O', [...allNames]);
     return;
   }
 }

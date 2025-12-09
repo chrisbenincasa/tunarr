@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Tunarr is a live TV channel creation platform that allows users to create custom TV channels using media from Plex, Jellyfin, or Emby servers. It's a TypeScript monorepo using pnpm workspaces and Turbo for task running.
+Tunarr is a live TV channel creation platform that allows users to create custom TV channels using media from local files or remote media servers such as Plex, Jellyfin, or Emby servers. It's a TypeScript monorepo using pnpm workspaces and Turbo for task running.
 
 ## Repository Structure
 
@@ -15,9 +15,14 @@ This is a monorepo with four main packages:
 - **types** (`@tunarr/types`): Shared TypeScript types and Zod schemas
 - **shared** (`@tunarr/shared`): Utility functions shared between server and web
 
+## Code Style
+
+- Never cast types using `as any`
+
 ## Development Setup
 
 ### Package Manager & Task Runner
+
 - Use **pnpm** (v9.12.3) for all dependency management - never use npm or yarn
 - Use **Turbo** for running tasks across the monorepo
 - Node.js version: 22 (specified in package.json engines)
@@ -46,6 +51,9 @@ pnpm fmt
 # Lint changed files only
 pnpm lint-changed
 
+# Run the typechecker
+pnpm turbo typecheck
+
 # Server-specific commands
 cd server
 pnpm dev              # Start server with tsx watch
@@ -67,6 +75,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
 ### Server Architecture
 
 **Framework & Dependencies:**
+
 - **Fastify** for HTTP server with Zod-based type provider
 - **Inversify** for dependency injection (IoC container in `container.ts`)
 - **Kysely** + **Drizzle ORM** for database access (dual ORM approach, migrating to Drizzle)
@@ -75,6 +84,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
 - **Zod** for schema validation
 
 **Key Directories:**
+
 - `api/` - Fastify route handlers organized by domain (channels, plex, jellyfin, etc.)
 - `db/` - Database layer with both Kysely and Drizzle implementations
   - `schema/` - Database schema definitions
@@ -93,6 +103,7 @@ pnpm regen-routes     # Regenerate TanStack Router routes
 
 **Dependency Injection:**
 The server uses Inversify for DI. Service registration happens in module files:
+
 - `container.ts` - Root container and module registration
 - `DBModule.ts` - Database services
 - `ServicesModule.ts` - Business services
@@ -103,6 +114,7 @@ To inject dependencies, use the `@injectable()` decorator and constructor inject
 
 **Database:**
 The codebase uses both Kysely (legacy) and Drizzle ORM (current/future):
+
 - Schema is defined in `db/schema/` using Drizzle
 - Most queries still use Kysely but new code should use Drizzle
 - Access via `DBAccess` which provides both `db` (Kysely) and `drizzle` (Drizzle) instances
@@ -111,6 +123,7 @@ The codebase uses both Kysely (legacy) and Drizzle ORM (current/future):
 ### Web Architecture
 
 **Framework & Libraries:**
+
 - **React 18** with TypeScript
 - **Vite** for bundling and dev server
 - **Material-UI (MUI)** v7 for components
@@ -121,6 +134,7 @@ The codebase uses both Kysely (legacy) and Drizzle ORM (current/future):
 - **Zod** for form/data validation
 
 **Key Directories:**
+
 - `routes/` - File-based routing (generates `routeTree.gen.ts`)
 - `components/` - Reusable React components
 - `hooks/` - Custom React hooks
@@ -134,11 +148,13 @@ The web app uses a generated API client (`generated/`) created from the server's
 ### Shared Packages
 
 **@tunarr/types:**
+
 - Type definitions and Zod schemas shared between server and web
 - Organized by domain: `plex/`, `jellyfin/`, `emby/`, `api/`, `schemas/`
 - Build with `pnpm build` to generate `.d.ts` and `.js` files
 
 **@tunarr/shared:**
+
 - Utility functions for both server and web
 - Notable: Custom DSL parser for scheduling/filtering (uses Chevrotain)
 
@@ -159,24 +175,28 @@ The web app uses a generated API client (`generated/`) created from the server's
 ## Important Implementation Notes
 
 ### When Working with Database Code:
+
 - Prefer Drizzle ORM for new queries over Kysely
 - Both ORMs access the same SQLite database via `DBAccess`
 - Database interfaces are in `db/interfaces/` - implement these for new DB access classes
 - Use dependency injection to get database instances
 
 ### When Working with Streaming:
+
 - Streaming logic is complex - see `stream/` directory
 - Sessions are managed by `SessionManager`
 - Different stream types: `VideoStream`, `ConcatStream`, `DirectStreamSession`
 - FFmpeg pipeline is built using builder pattern in `ffmpeg/builder/`
 
 ### When Working with External Media Sources:
+
 - External API clients are in `external/` (Plex, Jellyfin, Emby)
 - Canonicalization logic converts external media to Tunarr's internal format
 - Media scanning is handled by scanner services in `services/scanner/`
 - Media source libraries are refreshed via `MediaSourceLibraryRefresher`
 
 ### When Adding API Endpoints:
+
 1. Define route in `server/src/api/{domain}Api.ts`
 2. Use Fastify + Zod type provider for type-safe requests/responses
 3. Register in `api/index.ts`
@@ -184,6 +204,7 @@ The web app uses a generated API client (`generated/`) created from the server's
 5. Regenerate web client: `cd web && pnpm generate-client`
 
 ### When Working with NFO Files:
+
 - NFO parsing is in `server/src/nfo/`
 - Different parsers for different media types (TV shows, movies, etc.)
 - Uses Zod schemas defined in `NfoSchemas.ts`

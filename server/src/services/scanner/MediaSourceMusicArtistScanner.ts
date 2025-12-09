@@ -233,15 +233,7 @@ export abstract class MediaSourceMusicArtistScanner<
     groupingAndRelations.programGrouping.libraryId = context.library.uuid;
 
     const upsertResult = await Result.attemptAsync(() =>
-      this.programDB.upsertProgramGrouping(
-        groupingAndRelations,
-        {
-          externalKey: this.getEntityExternalKey(artist),
-          externalSourceId: mediaSource.uuid,
-          sourceType: this.mediaSourceType,
-        },
-        context.force,
-      ),
+      this.programDB.upsertProgramGrouping(groupingAndRelations, context.force),
     );
 
     if (upsertResult.isFailure()) {
@@ -423,11 +415,6 @@ export abstract class MediaSourceMusicArtistScanner<
     const upsertResult = await Result.attemptAsync(() =>
       this.programDB.upsertProgramGrouping(
         albumAndRelations,
-        {
-          externalKey: fullAlbum.externalId,
-          externalSourceId: mediaSource.uuid,
-          sourceType: this.mediaSourceType,
-        },
         scanContext.force,
       ),
     );

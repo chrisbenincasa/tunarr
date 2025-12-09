@@ -226,13 +226,7 @@ export interface IProgramDB {
 
   upsertProgramGrouping(
     newGroupingAndRelations: NewProgramGroupingWithRelations,
-    externalId: ProgramGroupingExternalIdLookup,
     forceUpdate?: boolean,
-  ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>>;
-
-  upsertLocalProgramGrouping(
-    newGroupingAndRelations: NewProgramGroupingWithRelations,
-    libraryId: string,
   ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>>;
 
   getProgramGroupingChildCounts(
