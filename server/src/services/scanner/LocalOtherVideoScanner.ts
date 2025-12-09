@@ -163,6 +163,9 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     // Look for missing movies.
     return Result.attemptAsync(async () => {
+      if (isNonEmptyString(context.pathFilter)) {
+        return;
+      }
       // Look for missing movies.
       const existingMovies =
         await this.programDB.getProgramInfoForMediaSourceLibrary(

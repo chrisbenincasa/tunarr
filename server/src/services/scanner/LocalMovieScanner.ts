@@ -1,5 +1,5 @@
 import { MovieNfo } from '@/nfo/NfoSchemas.js';
-import { seq } from '@tunarr/shared/util';
+import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import { Actor, Director, Identifier, MovieMetadata } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
@@ -103,6 +103,9 @@ export class LocalMovieScanner extends FileSystemScanner {
     }
 
     const markMissingResult = await Result.attemptAsync(async () => {
+      if (isNonEmptyString(context.pathFilter)) {
+        return;
+      }
       // Look for missing movies.
       const existingMovies =
         await this.programDB.getProgramInfoForMediaSourceLibrary(

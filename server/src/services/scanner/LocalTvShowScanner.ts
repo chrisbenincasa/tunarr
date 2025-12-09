@@ -120,11 +120,11 @@ export class LocalTvShowScanner extends FileSystemScanner {
           return;
         }
 
+        const fullPath = path.join(showFolder.parentPath, showFolder.name);
+
         if (
           isNonEmptyString(context.pathFilter) &&
-          !showFolder.name
-            .toLowerCase()
-            .startsWith(context.pathFilter.toLowerCase())
+          !fullPath.toLowerCase().startsWith(context.pathFilter.toLowerCase())
         ) {
           continue;
         }
@@ -136,7 +136,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
           this.logger.error(
             result.error,
             'Failed to scan show directory %s',
-            path.join(showFolder.parentPath, showFolder.name),
+            fullPath,
           );
         }
 
@@ -158,6 +158,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
     }
 
     const markMissingResult = await Result.attemptAsync(async () => {
+      if (isNonEmptyString(context.pathFilter)) {
+        return;
+      }
       // Look for missing episodes.
       const existingMovies =
         await this.programDB.getProgramInfoForMediaSourceLibrary(
@@ -310,9 +313,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
       }),
     );
 
-    const upsertedShow = await this.programDB.upsertLocalProgramGrouping(
+    const upsertedShow = await this.programDB.upsertProgramGrouping(
       mintedShow,
-      context.library.uuid,
+      context.force,
     );
 
     show.uuid = upsertedShow.entity.uuid;
@@ -445,9 +448,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
         seasonDao.artwork.push(poster);
       });
 
-      const upsertedSeason = await this.programDB.upsertLocalProgramGrouping(
+      const upsertedSeason = await this.programDB.upsertProgramGrouping(
         seasonDao,
-        context.library.uuid,
+        context.force,
       );
 
       season.uuid = upsertedSeason.entity.uuid;
@@ -536,9 +539,9 @@ export class LocalTvShowScanner extends FileSystemScanner {
         seasonDao.artwork.push(poster);
       });
 
-      const upsertedSeason = await this.programDB.upsertLocalProgramGrouping(
+      const upsertedSeason = await this.programDB.upsertProgramGrouping(
         seasonDao,
-        context.library.uuid,
+        context.force,
       );
       season.uuid = upsertedSeason.entity.uuid;
 
