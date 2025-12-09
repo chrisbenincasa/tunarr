@@ -41,7 +41,7 @@ type Props = {
 };
 
 export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
-  const { onLibraryChange } = useProgrammingSelectionContext();
+  const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
 
@@ -86,9 +86,9 @@ export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
       }
 
       setProgrammingListLibrary({ type: Imported, view: library });
-      onLibraryChange(library.id);
+      onSourceChange({ libraryId: library.id });
     },
-    [libraries, selectedServer, onLibraryChange],
+    [selectedServer, libraries, onSourceChange],
   );
 
   return (

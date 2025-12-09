@@ -1,12 +1,12 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { find, isNil, map } from 'lodash-es';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useContext, useEffect } from 'react';
+import { ProgrammingSelectionContext } from '../../../context/ProgrammingSelectionContext.ts';
 import { Plex } from '../../../helpers/constants.ts';
 import {
   usePlexLibraries,
   usePlexPlaylists,
 } from '../../../hooks/plex/usePlex.ts';
-import { Route } from '../../../routes/channels_/$channelId/programming/add.tsx';
 import useStore from '../../../store/index.ts';
 import {
   addKnownMediaForServer,
@@ -21,7 +21,7 @@ type Props = {
 export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
-  const navigate = Route.useNavigate();
+  const selectionCtx = useContext(ProgrammingSelectionContext);
 
   const { data: plexLibraryChildren } = usePlexLibraries(
     selectedServer?.id ?? '',
@@ -54,17 +54,15 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
           type: Plex,
           view: { type: 'library', library },
         });
-        navigate({
-          search: {
-            mediaSourceId: selectedServer.id,
-            libraryId: library.uuid,
-          },
-        }).catch(console.error);
+        selectionCtx?.onSourceChange({
+          mediaSourceId: selectedServer.id,
+          libraryId: library.uuid,
+        });
       } else {
         console.warn('Not found in local store', libraryUuid);
       }
     },
-    [knownMedia, navigate, plexPlaylists, selectedServer],
+    [knownMedia, plexPlaylists, selectionCtx, selectedServer],
   );
 
   useEffect(() => {
@@ -86,20 +84,18 @@ export const PlexLibrarySelector = ({ initialLibraryId }: Props) => {
             library: initialLibrary ?? plexLibraryChildren[0],
           },
         });
-        navigate({
-          search: {
-            libraryId: plexLibraryChildren[0].externalId,
-            mediaSourceId: selectedServer.id,
-          },
-        }).catch(console.error);
+        selectionCtx?.onSourceChange({
+          libraryId: plexLibraryChildren[0].externalId,
+          mediaSourceId: selectedServer.id,
+        });
       }
     }
   }, [
     initialLibraryId,
-    navigate,
     plexLibraryChildren,
     selectedLibrary,
     selectedServer,
+    selectionCtx,
   ]);
 
   const selectedPlexLibrary =

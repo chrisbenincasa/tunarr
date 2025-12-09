@@ -17,8 +17,7 @@ function FillerProgrammingSelectorPage() {
         onAddMediaSuccess: () => {
           navigate({ to: '..' }).catch(console.error);
         },
-        onMediaSourceChange: noop,
-        onLibraryChange: noop,
+        onSourceChange: noop,
         onSearchChange: noop,
         entityType: 'filler-list',
       }}

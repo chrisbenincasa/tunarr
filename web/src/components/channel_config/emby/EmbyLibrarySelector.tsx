@@ -13,7 +13,7 @@ type Props = {
 };
 
 export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
-  const { onLibraryChange } = useProgrammingSelectionContext();
+  const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
 
@@ -40,7 +40,7 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
           type: Emby,
           view,
         });
-        onLibraryChange(view.externalId);
+        onSourceChange({ libraryId: view.externalId });
       }
       // addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
     }
@@ -49,7 +49,7 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
     embyLibraries,
     selectedLibrary,
     selectedServer,
-    onLibraryChange,
+    onSourceChange,
   ]);
 
   const handleLibraryChange = useCallback(
@@ -63,10 +63,10 @@ export const EmbyLibrarySelector = ({ initialLibraryId }: Props) => {
           type: Emby,
           view,
         });
-        onLibraryChange(view.externalId);
+        onSourceChange({ libraryId: view.externalId });
       }
     },
-    [embyLibraries, onLibraryChange, selectedServer],
+    [embyLibraries, onSourceChange, selectedServer],
   );
 
   return (

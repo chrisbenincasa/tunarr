@@ -33,11 +33,7 @@
     "openapi-ts.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
-    "src/components/slot_scheduler/RandomSlotFormContext.tsx",
-    "./src/components/slot_scheduler/TimeSlotFormContext.tsx",
-    "./src/providers/DayjsContext.tsx",
-    "./src/components/library/extractSubtitle.tsx",
-    "./src/router.tsx",
+    "./src/router.d.ts",
   ],
   "include": [
     "./src/**/*.ts",

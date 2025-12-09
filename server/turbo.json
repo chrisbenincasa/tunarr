@@ -23,8 +23,12 @@
     "lint": {
       "dependsOn": ["lint-staged"]
     },
+    "install-meilisearch": {
+      "inputs": ["./scripts/download-meilisearch.ts"],
+      "cache": false
+    },
     "dev": {
-      "dependsOn": ["@tunarr/shared#build"],
+      "dependsOn": ["install-meilisearch", "@tunarr/shared#build"],
       "persistent": true,
       "cache": false,
       "interruptible": true

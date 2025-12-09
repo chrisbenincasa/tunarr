@@ -18,8 +18,7 @@ function CustomShowProgrammingSelectorPage() {
           navigate({ to: '..' }).catch(console.error);
         },
         entityType: 'custom-show',
-        onMediaSourceChange: noop,
-        onLibraryChange: noop,
+        onSourceChange: noop,
         onSearchChange: noop,
       }}
     >

@@ -56,7 +56,7 @@ export const ProgrammingSelector = ({
   initialLibraryId,
   toggleOrSetSelectedProgramsDrawer,
 }: Props) => {
-  const { entityType, onMediaSourceChange } = useProgrammingSelectionContext();
+  const { entityType, onSourceChange } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
   const selectedServer = useStore((s) => s.currentMediaSource);
@@ -101,11 +101,11 @@ export const ProgrammingSelector = ({
         if (server) {
           setProgrammingListingServer(server);
           setMediaSource(server.name);
-          onMediaSourceChange(server.id);
+          onSourceChange({ mediaSourceId: server.id });
         }
       }
     },
-    [mediaSources, onMediaSourceChange],
+    [mediaSources, onSourceChange],
   );
 
   const renderMediaSourcePrograms = () => {

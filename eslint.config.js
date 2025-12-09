@@ -61,7 +61,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['web/src/**/*.tsx', 'web/src/**/*.ts'],
+    files: ['web/src/**/*.tsx', 'web/src/**/*.ts', 'web/src/**/*.d.ts'],
     ...reactRecommended,
     extends: [jsxRuntime],
     plugins: {

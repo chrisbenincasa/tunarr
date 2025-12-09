@@ -4,6 +4,7 @@ import { type AddedMedia } from '../types/index.ts';
 import { type Nullable } from '../types/util.ts';
 
 type EntityType = 'channel' | 'filler-list' | 'custom-show';
+type MediaSourceChange = { mediaSourceId?: string; libraryId?: string };
 
 export type ProgrammingSelectionContextType = {
   onAddSelectedMedia: (programs: AddedMedia[]) => void;
@@ -11,8 +12,7 @@ export type ProgrammingSelectionContextType = {
   entityType: EntityType;
   initialMediaSourceId?: string;
   initialLibraryId?: string;
-  onMediaSourceChange: (mediaSourceId: string) => void;
-  onLibraryChange: (libraryId: string) => void;
+  onSourceChange: (change: MediaSourceChange) => void;
   onSearchChange: (searchRequest: SearchRequest) => void;
 };
 

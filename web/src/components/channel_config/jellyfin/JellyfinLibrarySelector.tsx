@@ -14,17 +14,15 @@ import {
   setProgrammingGenre,
   setProgrammingListLibrary,
 } from '../../../store/programmingSelector/actions.ts';
-import { useKnownMedia } from '../../../store/programmingSelector/selectors.ts';
 
 type Props = {
   initialLibraryId?: string;
 };
 
 export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
-  const { onLibraryChange } = useProgrammingSelectionContext();
+  const { onSourceChange } = useProgrammingSelectionContext();
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
-  const knownMedia = useKnownMedia();
   const selectedGenre = useStore((s) => s.currentMediaGenre);
 
   const { data: jellyfinLibraries } = useJellyfinUserLibraries(
@@ -56,7 +54,7 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
           type: Jellyfin,
           view,
         });
-        onLibraryChange(view.externalId);
+        onSourceChange({ libraryId: view.externalId });
       }
       // addKnownMediaForJellyfinServer(selectedServer.id, [...jellyfinLibraries]);
     }
@@ -65,7 +63,7 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
     jellyfinLibraries,
     selectedLibrary,
     selectedServer,
-    onLibraryChange,
+    onSourceChange,
   ]);
 
   const handleLibraryChange = useCallback(
@@ -81,10 +79,10 @@ export const JellyfinLibrarySelector = ({ initialLibraryId }: Props) => {
           type: Jellyfin,
           view,
         });
-        onLibraryChange(view.externalId);
+        onSourceChange({ libraryId: view.externalId });
       }
     },
-    [knownMedia, selectedServer],
+    [jellyfinLibraries, onSourceChange, selectedServer],
   );
 
   const renderGenreChoices = () => {

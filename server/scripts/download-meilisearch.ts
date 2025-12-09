@@ -99,6 +99,11 @@ async function needsToDownloadNewBinary() {
       }
     }
   }
+  try {
+    await fs.mkdir('./bin');
+  } catch {
+    console.debug('./bin already exists...');
+  }
   return shouldDownload;
 }
 

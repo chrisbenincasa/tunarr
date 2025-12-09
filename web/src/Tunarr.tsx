@@ -11,7 +11,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerEventsProvider } from './components/server_events/ServerEventsProvider.tsx';
 import { TunarrApiProvider } from './context/TunarrApiContext.tsx';
 import { queryClient } from './queryClient.ts';
-import { router } from './router.tsx';
+import { router } from './router.ts';
 import { Theme } from './theme.ts';
 
 export const Tunarr = () => {

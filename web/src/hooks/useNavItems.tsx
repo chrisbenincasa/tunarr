@@ -1,3 +1,4 @@
+import type { router } from '@/router.ts';
 import {
   Computer,
   Delete,
@@ -11,7 +12,6 @@ import {
   VideoLibrary,
 } from '@mui/icons-material';
 import type { BadgeProps } from '@mui/material';
-import type { Register } from '@tanstack/react-router';
 import { useRouterState } from '@tanstack/react-router';
 import { countBy, last, trimEnd } from 'lodash-es';
 import { useCallback, useMemo, type ReactNode } from 'react';
@@ -83,7 +83,7 @@ export const useNavItems = () => {
           },
           {
             name: 'Custom Shows',
-            path: '/library/custom-shows',
+            path: '/library/custom-shows' as const,
             icon: <Theaters />,
           },
           {
@@ -163,7 +163,7 @@ export const useNavItems = () => {
 
 export interface NavItem {
   name: string;
-  path: keyof Register['router']['routesByPath'];
+  path: keyof (typeof router)['routesByPath'];
   hidden?: boolean;
   children?: NavItem[];
   icon?: ReactNode;
