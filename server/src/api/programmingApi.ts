@@ -9,6 +9,7 @@ import {
   groupByUniq,
   groupByUniqAndMap,
   ifDefined,
+  inConstArr,
   isNonEmptyString,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -54,7 +55,8 @@ import {
 } from '../db/programQueryHelpers.ts';
 import type { Artwork } from '../db/schema/Artwork.ts';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
-import type { MediaSourceId } from '../db/schema/base.js';
+import type { RemoteSourceType } from '../db/schema/base.js';
+import { RemoteSourceTypes, type MediaSourceId } from '../db/schema/base.js';
 
 import { match } from 'ts-pattern';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
@@ -1000,15 +1002,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (req, res) => {
       const [sourceType, rawServerId, id] = req.params.externalId;
-      const sourceTypeParsed = programSourceTypeFromString(sourceType);
-      if (isUndefined(sourceTypeParsed)) {
+      if (!inConstArr(RemoteSourceTypes, sourceType)) {
         return res
           .status(400)
           .send({ message: 'Invalid sourceType ' + sourceType });
       }
 
       const result = await req.serverCtx.programDB.lookupByExternalIds(
-        new Set([[sourceType, tag(rawServerId), id]]),
+        new Set([[sourceType as RemoteSourceType, tag(rawServerId), id]]),
       );
       const program = first(values(result));
 
@@ -1046,9 +1047,14 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
     async (req, res) => {
       const ids = req.body.externalIds
         .values()
+        .filter(([source]) => inConstArr(RemoteSourceTypes, source))
         .map(
           ([source, sourceId, id]) =>
-            [source, tag<MediaSourceId>(sourceId), id] as const,
+            [source, tag<MediaSourceId>(sourceId), id] as [
+              RemoteSourceType,
+              MediaSourceId,
+              string,
+            ],
         )
         .toArray();
       const results = await req.serverCtx.programDB.lookupByExternalIds(

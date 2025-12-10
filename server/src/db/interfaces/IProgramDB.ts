@@ -1,5 +1,4 @@
 import type { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type { ProgramSourceType } from '@/db/custom_types/ProgramSourceType.js';
 import type {
   NewProgramDao,
   ProgramDao,
@@ -14,6 +13,7 @@ import type {
 import type {
   ProgramExternalIdSourceType,
   ProgramState,
+  RemoteSourceType,
 } from '@/db/schema/base.js';
 import type {
   MusicAlbumOrm,
@@ -112,15 +112,15 @@ export interface IProgramDB {
   >;
 
   lookupByExternalId(eid: {
-    sourceType: ProgramSourceType;
+    sourceType: RemoteSourceType;
     externalSourceId: string;
     externalKey: string;
   }): Promise<Maybe<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>>>;
 
   lookupByExternalIds(
     ids:
-      | Set<[string, MediaSourceId, string]>
-      | Set<readonly [string, MediaSourceId, string]>,
+      | Set<[RemoteSourceType, MediaSourceId, string]>
+      | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize?: number,
   ): Promise<MarkRequired<ProgramWithRelationsOrm, 'externalIds'>[]>;
 

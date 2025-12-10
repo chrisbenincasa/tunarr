@@ -27,7 +27,8 @@ const logLevels: Record<LogLevels, number> = {
 let _globalOptions: GlobalOptions | undefined;
 let _serverOptions: ServerOptions | undefined;
 
-export const setGlobalOptions = once((runtimeOptions: GlobalArgsType) => {
+// Can overrwrite global options! Used only for tests!
+export const setGlobalOptionsUnchecked = (runtimeOptions: GlobalArgsType) => {
   let logLevel: LogLevels = runtimeOptions.log_level;
   if (!isUndefined(runtimeOptions.verbose) && runtimeOptions.verbose > 0) {
     const level = Math.max(runtimeOptions.verbose, 4);
@@ -40,12 +41,14 @@ export const setGlobalOptions = once((runtimeOptions: GlobalArgsType) => {
     }
   }
 
-  _globalOptions = {
+  return (_globalOptions = {
     ...runtimeOptions,
     databaseDirectory: resolve(process.cwd(), runtimeOptions.database),
     log_level: logLevel,
-  };
-});
+  });
+};
+
+export const setGlobalOptions = once(setGlobalOptionsUnchecked);
 
 export const globalOptions = () => {
   if (isUndefined(_globalOptions)) {
@@ -55,14 +58,16 @@ export const globalOptions = () => {
   return _globalOptions;
 };
 
-export const setServerOptions = once((runtimeOptions: ServerArgsType) => {
+export const setServerOptionsUnchecked = (runtimeOptions: ServerArgsType) => {
   setGlobalOptions(runtimeOptions);
   _serverOptions = {
     ...globalOptions(),
     ...runtimeOptions,
   };
   return _serverOptions;
-});
+};
+
+export const setServerOptions = once(setServerOptionsUnchecked);
 
 export const serverOptions = () => {
   if (isUndefined(_serverOptions)) {

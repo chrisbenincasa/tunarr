@@ -188,6 +188,10 @@ export function createProgramMap(
           (ep) => `show.${ep.show.uuid}`,
         )
         .with(
+          { type: 'episode', tvShowUuid: P.when(isNonEmptyString) },
+          (ep) => `show.${ep.tvShowUuid}`,
+        )
+        .with(
           { type: 'track', artist: { uuid: P.when(isNonEmptyString) } },
           (track) => `artist.${track.artist.uuid}`,
         )

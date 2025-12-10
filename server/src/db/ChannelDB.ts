@@ -1,4 +1,5 @@
 import { ChannelQueryBuilder } from '@/db/ChannelQueryBuilder.js';
+import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import {
   ChannelAndLineup,
   ChannelAndRawLineup,
@@ -6,6 +7,7 @@ import {
 } from '@/db/interfaces/IChannelDB.js';
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import { globalOptions } from '@/globals.js';
+import { FileSystemService } from '@/services/FileSystemService.js';
 import { CacheImageService } from '@/services/cacheImageService.js';
 import { ChannelNotFoundError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
@@ -72,7 +74,6 @@ import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { IWorkerPool } from '../interfaces/IWorkerPool.ts';
-import { FileSystemService } from '../services/FileSystemService.ts';
 import {
   createManyRelationAgg,
   mapRawJsonRelationResult,
@@ -87,7 +88,6 @@ import {
   programExternalIdString,
   run,
 } from '../util/index.ts';
-import { ProgramConverter } from './converters/ProgramConverter.ts';
 import {
   ContentItem,
   CurrentLineupSchemaVersion,
@@ -874,6 +874,17 @@ export class ChannelDB implements IChannelDB {
       channel: (await this.getChannel(id, true))!,
       lineup: await this.loadLineup(id),
     };
+  }
+
+  private updateChannelDuration(id: string, newDur: number) {
+    return this.drizzleDB
+      .update(Channel)
+      .set({
+        duration: newDur,
+      })
+      .where(eq(Channel.uuid, id))
+      .limit(1)
+      .execute();
   }
 
   async copyChannel(id: string): Promise<ChannelAndLineup<Channel>> {
@@ -1739,6 +1750,11 @@ export class ChannelDB implements IChannelDB {
 
       data.lastUpdated = dayjs().valueOf();
     });
+
+    if (isDefined(newLineup.items)) {
+      const newDur = sum(newLineup.items.map((item) => item.durationMs));
+      await this.updateChannelDuration(channelId, newDur);
+    }
     return db.data;
   }
 

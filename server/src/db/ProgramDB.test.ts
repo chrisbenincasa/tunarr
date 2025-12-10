@@ -23,19 +23,26 @@ import {
 import {
   NewCreditWithArtwork,
   NewProgramGroupingWithRelations,
+  NewProgramWithRelations,
   SpecificProgramGroupingType,
 } from './schema/derivedTypes.ts';
 import { NewGenre } from './schema/Genre.ts';
-import { MediaSource, MediaSourceOrm } from './schema/MediaSource.ts';
+import { DrizzleDBAccess } from './schema/index.ts';
+import {
+  MediaSource,
+  MediaSourceOrm,
+  NewMediaSourceOrm,
+} from './schema/MediaSource.ts';
 import {
   MediaSourceLibrary,
   MediaSourceLibraryOrm,
 } from './schema/MediaSourceLibrary.ts';
+import { NewProgramDao, ProgramType } from './schema/Program.ts';
 import {
   NewProgramGroupingOrm,
   ProgramGroupingType,
 } from './schema/ProgramGrouping.ts';
-import { NewSingleOrMultiProgramGroupingExternalId } from './schema/ProgramGroupingExternalId.ts';
+import { NewMultiProgramGroupingId } from './schema/ProgramGroupingExternalId.ts';
 import { NewStudio } from './schema/Studio.ts';
 
 export function jsonObject<T extends SelectedFields>(shape: T) {
@@ -67,7 +74,7 @@ export function jsonAggObject<T extends SelectedFields>(shape: T) {
 type Fixture = {
   db: string;
   programDb: IProgramDB;
-  drizzle: any;
+  drizzle: DrizzleDBAccess;
 };
 
 const test = baseTest.extend<Fixture>({
@@ -82,7 +89,7 @@ const test = baseTest.extend<Fixture>({
     await use(dbResult.path);
     await dbResult.cleanup();
   },
-  programDb: async ({ db }, use) => {
+  programDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
     const logger = LoggerFactory.child({ className: 'ProgramDB' });
 
@@ -100,7 +107,7 @@ const test = baseTest.extend<Fixture>({
 
     await use(programDb);
   },
-  drizzle: async ({ db }, use) => {
+  drizzle: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
     await use(dbAccess.drizzle!);
   },
@@ -108,7 +115,8 @@ const test = baseTest.extend<Fixture>({
 
 // Test helper functions
 async function createTestMediaSourceLibrary(
-  drizzle: any,
+  drizzle: DrizzleDBAccess,
+  overrides?: Partial<NewMediaSourceOrm>,
 ): Promise<MediaSourceLibraryOrm> {
   // First create a media source
   const mediaSource = {
@@ -126,6 +134,7 @@ async function createTestMediaSourceLibrary(
     username: null,
     userId: null,
     mediaType: null,
+    ...(overrides ?? {}),
   } satisfies MediaSourceOrm;
 
   await drizzle.insert(MediaSource).values(mediaSource);
@@ -182,12 +191,72 @@ function createBaseProgramGrouping<Typ extends ProgramGroupingType>(
   } as const;
 }
 
+function createBaseProgram(
+  type: ProgramType,
+  libraryId: string,
+  sourceType: MediaSourceType = 'local',
+  overrides?: Partial<NewProgramDao>,
+): NewProgramDao {
+  const now = +dayjs();
+  return {
+    uuid: v4(),
+    canonicalId: v4(),
+    createdAt: now,
+    updatedAt: now,
+    albumName: null,
+    albumUuid: null,
+    artistName: null,
+    artistUuid: null,
+    duration: faker.number.int({ min: 60000, max: 7200000 }), // 1 minute to 2 hours in ms
+    episode: type === 'episode' ? faker.number.int({ min: 1, max: 24 }) : null,
+    episodeIcon: null,
+    externalKey:
+      sourceType === 'local'
+        ? faker.system.filePath()
+        : faker.string.alphanumeric(10),
+    externalSourceId: tag(faker.string.alphanumeric(8)),
+    mediaSourceId: tag<MediaSourceId>(v4()),
+    libraryId,
+    localMediaFolderId: null,
+    localMediaSourcePathId: null,
+    filePath: sourceType === 'local' ? faker.system.filePath() : null,
+    grandparentExternalKey: null,
+    icon: null,
+    originalAirDate: null,
+    parentExternalKey: null,
+    plexFilePath: null,
+    plexRatingKey: null,
+    rating: null,
+    seasonIcon: null,
+    seasonNumber:
+      type === 'episode' ? faker.number.int({ min: 1, max: 10 }) : null,
+    seasonUuid: null,
+    showIcon: null,
+    showTitle: type === 'episode' ? faker.word.words(3) : null,
+    sourceType,
+    summary: faker.lorem.paragraph(),
+    plot: null,
+    tagline: null,
+    title:
+      type === 'movie'
+        ? faker.word.words(3)
+        : type === 'track'
+          ? faker.music.songName()
+          : faker.lorem.words(4),
+    tvShowUuid: null,
+    type,
+    year: faker.date.past().getFullYear(),
+    state: 'ok',
+    ...overrides,
+  };
+}
+
 function createGroupingExternalId(
   groupUuid: string,
   sourceType: Exclude<ProgramExternalIdSourceType, 'local'> = 'plex',
   mediaSourceId: string | MediaSourceId = v4(),
   externalKey: string = faker.string.alphanumeric(10),
-): NewSingleOrMultiProgramGroupingExternalId {
+): NewMultiProgramGroupingId {
   return {
     type: 'multi',
     uuid: v4(),
@@ -1187,6 +1256,504 @@ describe('ProgramDB', () => {
         expect(result.wasInserted).toBe(true);
         expect(result.entity.index).toBeNull();
       });
+    });
+  });
+
+  describe('Program State Management (trash/missing)', () => {
+    test('should update programs state to missing', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create test programs
+
+      const program1Grouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+            title: 'Test Show 1',
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const result1 = await programDb.upsertProgramGrouping(program1Grouping);
+
+      const program2Grouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+            title: 'Test Show 2',
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const result2 = await programDb.upsertProgramGrouping(program2Grouping);
+
+      // Update state to missing
+      await programDb.updateGroupingsState(
+        [result1.entity.uuid, result2.entity.uuid],
+        'missing',
+      );
+
+      // Verify state was updated
+      const updated1 = await programDb.getProgramGrouping(result1.entity.uuid);
+      const updated2 = await programDb.getProgramGrouping(result2.entity.uuid);
+
+      expect(updated1?.state).toBe('missing');
+      expect(updated2?.state).toBe('missing');
+    });
+
+    test('should handle empty array in updateProgramsState', async ({
+      programDb,
+    }) => {
+      // Should not throw with empty array
+      await expect(
+        programDb.updateProgramsState([], 'missing'),
+      ).resolves.not.toThrow();
+    });
+
+    test('should handle empty array in updateGroupingsState', async ({
+      programDb,
+    }) => {
+      // Should not throw with empty array
+      await expect(
+        programDb.updateGroupingsState([], 'missing'),
+      ).resolves.not.toThrow();
+    });
+
+    test('should update programs state back to active', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source and library
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create test grouping
+      const programGrouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+            title: 'Test Show',
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const result = await programDb.upsertProgramGrouping(programGrouping);
+
+      // Mark as missing
+      await programDb.updateGroupingsState([result.entity.uuid], 'missing');
+
+      // Restore to active
+      await programDb.updateGroupingsState([result.entity.uuid], 'ok');
+
+      // Verify state was updated back to active
+      const updated = await programDb.getProgramGrouping(result.entity.uuid);
+      expect(updated?.state).toBe('ok');
+    });
+
+    test('should batch update large number of program states', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create 150 groupings (more than batch size of 100)
+      const groupingIds: string[] = [];
+      for (let i = 0; i < 150; i++) {
+        const grouping: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'show',
+            library.uuid,
+            'plex',
+            {
+              title: `Test Show ${i}`,
+              mediaSourceId: library.mediaSourceId,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+        };
+
+        const result = await programDb.upsertProgramGrouping(grouping);
+        groupingIds.push(result.entity.uuid);
+      }
+
+      // Update all states (should batch automatically)
+      await programDb.updateGroupingsState(groupingIds, 'missing');
+
+      // Verify all were updated
+      for (const id of groupingIds.slice(0, 10)) {
+        // Check first 10
+        const grouping = await programDb.getProgramGrouping(id);
+        expect(grouping?.state).toBe('missing');
+      }
+    });
+  });
+
+  describe('Program External ID Operations', () => {
+    test('should lookup program by external ID', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create grouping with external ID
+      const programGrouping = createBaseProgramGrouping(
+        'show',
+        library.uuid,
+        'plex',
+        {
+          title: `Test Show`,
+          mediaSourceId: library.mediaSourceId,
+        },
+      );
+      const externalId = createGroupingExternalId(
+        programGrouping.uuid,
+        'plex',
+        library.mediaSourceId,
+        programGrouping.externalKey,
+      );
+
+      const grouping: NewProgramGroupingWithRelations = {
+        programGrouping,
+        externalIds: [externalId],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const result = await programDb.upsertProgramGrouping(grouping);
+
+      // Lookup by external ID
+      const found = await programDb.getProgramGroupingByExternalId({
+        externalSourceId: externalId.mediaSourceId,
+        externalKey: externalId.externalKey,
+        sourceType: 'plex',
+      });
+
+      expect(found).toBeDefined();
+      expect(found?.uuid).toBe(result.entity.uuid);
+      expect(found?.title).toBe('Test Show');
+    });
+  });
+
+  describe('Program Parent-Child Relationships', () => {
+    // Skip for now - this method requires inserting a program for each child grouping
+    // in order to work
+    test.skip('should get children of a show', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create show
+      const showGrouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const showResult = await programDb.upsertProgramGrouping(showGrouping);
+
+      // Create seasons
+      const season1: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'season',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+            index: 1,
+            showUuid: showGrouping.programGrouping.uuid,
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const season2: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'season',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+            index: 2,
+            showUuid: showGrouping.programGrouping.uuid,
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      await programDb.upsertProgramGrouping(season1);
+      await programDb.upsertProgramGrouping(season2);
+
+      // Get children
+      const children = await programDb.getChildren(
+        showResult.entity.uuid,
+        'show',
+      );
+
+      expect(children.results).toHaveLength(2);
+      expect(children.results.some((c) => c.title === 'Season 1')).toBe(true);
+      expect(children.results.some((c) => c.title === 'Season 2')).toBe(true);
+    });
+
+    test('should get child counts for groupings', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create show
+      const showGrouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const showResult = await programDb.upsertProgramGrouping(showGrouping);
+
+      // Create 3 seasons
+      for (let i = 1; i <= 3; i++) {
+        const season: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'season',
+            library.uuid,
+            'plex',
+            {
+              mediaSourceId: library.mediaSourceId,
+              index: i,
+              showUuid: showGrouping.programGrouping.uuid,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+        };
+        await programDb.upsertProgramGrouping(season);
+      }
+
+      // Get child counts
+      const counts = await programDb.getProgramGroupingChildCounts([
+        showResult.entity.uuid,
+      ]);
+
+      const showCount = counts[showResult.entity.uuid];
+      expect(showCount?.childCount).toBe(3);
+    });
+
+    test('should get descendants of a show', async ({ programDb, drizzle }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      // Create show
+      const showGrouping: NewProgramGroupingWithRelations = {
+        programGrouping: createBaseProgramGrouping(
+          'show',
+          library.uuid,
+          'plex',
+          {
+            mediaSourceId: library.mediaSourceId,
+          },
+        ),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      const showResult = await programDb.upsertProgramGrouping(showGrouping);
+
+      // Create season with episodes would go here
+      const episode: NewProgramWithRelations = {
+        program: createBaseProgram('episode', library.uuid, 'plex', {
+          mediaSourceId: library.mediaSourceId,
+          tvShowUuid: showGrouping.programGrouping.uuid,
+          episode: 1,
+        }),
+        externalIds: [],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+        versions: [],
+        subtitles: [],
+      };
+
+      await programDb.upsertPrograms([episode]);
+
+      // await programDb.upsertProgramGrouping(season);
+
+      // Get descendants (should include seasons)
+      const descendants = await programDb.getProgramGroupingDescendants(
+        showResult.entity.uuid,
+      );
+
+      expect(descendants.length).toBeGreaterThan(0);
+      expect(descendants[0].uuid).toEqual(episode.program.uuid);
+    });
+  });
+
+  describe('Idempotency and Concurrent Operations', () => {
+    test('should handle multiple upserts of same grouping idempotently', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programGrouping = createBaseProgramGrouping(
+        'show',
+        library.uuid,
+        'plex',
+        {
+          mediaSourceId: library.mediaSourceId,
+        },
+      );
+      const grouping: NewProgramGroupingWithRelations = {
+        programGrouping,
+        externalIds: [
+          createGroupingExternalId(
+            programGrouping.uuid,
+            'plex',
+            programGrouping.mediaSourceId,
+            programGrouping.externalKey,
+          ),
+        ],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      // First upsert
+      const result1 = await programDb.upsertProgramGrouping(grouping);
+      expect(result1.wasInserted).toBe(true);
+
+      // Second upsert with same external ID
+      const result2 = await programDb.upsertProgramGrouping(grouping);
+      expect(result2.wasInserted).toBe(false);
+      expect(result2.entity.uuid).toBe(result1.entity.uuid);
+
+      // Third upsert
+      const result3 = await programDb.upsertProgramGrouping(grouping);
+      expect(result3.wasInserted).toBe(false);
+      expect(result3.entity.uuid).toBe(result1.entity.uuid);
+    });
+
+    test('should handle forceUpdate correctly', async ({
+      programDb,
+      drizzle,
+    }) => {
+      // Create media source
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const programGrouping = createBaseProgramGrouping(
+        'show',
+        library.uuid,
+        'local',
+        {
+          mediaSourceId: library.mediaSourceId,
+        },
+      );
+      const grouping: NewProgramGroupingWithRelations = {
+        programGrouping,
+        externalIds: [
+          // createGroupingExternalId(
+          //   programGrouping.uuid,
+          //   'plex',
+          //   programGrouping.mediaSourceId,
+          //   programGrouping.externalKey,
+          // ),
+        ],
+        genres: [],
+        studios: [],
+        artwork: [],
+        credits: [],
+      };
+
+      // Initial insert
+      const result1 = await programDb.upsertProgramGrouping(grouping);
+
+      // Update with forceUpdate
+      const updatedGrouping: NewProgramGroupingWithRelations = {
+        ...grouping,
+        programGrouping: {
+          ...grouping.programGrouping,
+          title: 'Updated Title',
+        },
+      };
+
+      const result2 = await programDb.upsertProgramGrouping(
+        updatedGrouping,
+        true, // forceUpdate
+      );
+
+      expect(result2.entity.uuid).toBe(result1.entity.uuid);
+      expect(result2.entity.title).toBe('Updated Title');
     });
   });
 });
