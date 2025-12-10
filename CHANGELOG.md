@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.23.0-alpha.32](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.31...v0.23.0-alpha.32) (2025-12-10)
+
+
+### Bug Fixes
+
+* allow using non-synced sources in filler / custom-shows ([6b27a07](https://github.com/chrisbenincasa/tunarr/commit/6b27a070c473d08862f18d07067bef4398c3f697))
+* do not mark missing items in local scanners when using pathFilter ([d4ed522](https://github.com/chrisbenincasa/tunarr/commit/d4ed522aec5fe6e417db07070bcaa3cf36113cd2))
+* handle different language formats when parsing subtitle filenames ([#1507](https://github.com/chrisbenincasa/tunarr/issues/1507)) ([b88fb47](https://github.com/chrisbenincasa/tunarr/commit/b88fb47c878dbc9e9065a6855f9e1efddde388db))
+* properly display thumbnails for non-synced sources ([d1e66c5](https://github.com/chrisbenincasa/tunarr/commit/d1e66c5fe41729334f2ab018c7bc5a05b81ed9dd))
+
 ## [0.23.0-alpha.31](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.30...v0.23.0-alpha.31) (2025-12-08)
 
 
