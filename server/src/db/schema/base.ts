@@ -32,6 +32,10 @@ export type ProgramExternalIdSourceType = TupleToUnion<
   typeof ProgramExternalIdSourceTypes
 >;
 
+export const RemoteSourceTypes = ['plex', 'jellyfin', 'emby'] as const;
+
+export type RemoteSourceType = TupleToUnion<typeof RemoteSourceTypes>;
+
 export const ChannelStreamModes = [
   'hls',
   'hls_slower',

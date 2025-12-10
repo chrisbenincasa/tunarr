@@ -81,15 +81,18 @@ export type ProgramGroupingExternalId =
   Selectable<ProgramGroupingExternalIdTable>;
 export type NewProgramGroupingExternalId =
   Insertable<ProgramGroupingExternalIdTable>;
+export type NewSingleProgramGroupingExternalId = StrictOmit<
+  Insertable<ProgramGroupingExternalIdTable>,
+  'externalSourceId' | 'mediaSourceId'
+> & { type: 'single' };
+export type NewMultiProgramGroupingId = MarkNotNilable<
+  Insertable<ProgramGroupingExternalIdTable>,
+  'externalSourceId' | 'mediaSourceId'
+> & { type: 'multi' };
 export type NewSingleOrMultiProgramGroupingExternalId =
-  | (StrictOmit<
-      Insertable<ProgramGroupingExternalIdTable>,
-      'externalSourceId' | 'mediaSourceId'
-    > & { type: 'single' })
-  | (MarkNotNilable<
-      Insertable<ProgramGroupingExternalIdTable>,
-      'externalSourceId' | 'mediaSourceId'
-    > & { type: 'multi' });
+  | NewSingleProgramGroupingExternalId
+  | NewMultiProgramGroupingId;
+
 export type ProgramGroupingExternalIdOrm = InferSelectModel<
   typeof ProgramGroupingExternalId
 >;

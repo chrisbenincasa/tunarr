@@ -161,6 +161,7 @@ import {
   NewProgramGrouping,
   NewProgramGroupingOrm,
   ProgramGrouping,
+  ProgramGroupingOrm,
   ProgramGroupingType,
   type ProgramGroupingTypes,
 } from './schema/ProgramGrouping.ts';
@@ -195,6 +196,7 @@ import {
   MediaSourceName,
   MediaSourceType,
   ProgramState,
+  RemoteSourceType,
 } from './schema/base.js';
 import { DB } from './schema/db.ts';
 import type {
@@ -709,7 +711,7 @@ export class ProgramDB implements IProgramDB {
   }
 
   async lookupByExternalId(eid: {
-    sourceType: ProgramSourceType;
+    sourceType: RemoteSourceType;
     externalSourceId: MediaSourceId;
     externalKey: string;
   }) {
@@ -722,8 +724,8 @@ export class ProgramDB implements IProgramDB {
 
   async lookupByExternalIds(
     ids:
-      | Set<[string, MediaSourceId, string]>
-      | Set<readonly [string, MediaSourceId, string]>,
+      | Set<[RemoteSourceType, MediaSourceId, string]>
+      | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
     chunkSize: number = 200,
   ) {
     const allIds = [...ids];
@@ -734,7 +736,7 @@ export class ProgramDB implements IProgramDB {
           const ands = idChunk.map(([ps, es, ek]) =>
             and(
               eq(fields.externalKey, ek),
-              eq(fields.sourceType, programSourceTypeFromString(ps)!),
+              eq(fields.sourceType, ps),
               eq(fields.mediaSourceId, es),
             ),
           );
@@ -2002,12 +2004,16 @@ export class ProgramDB implements IProgramDB {
     newGroupingAndRelations: NewProgramGroupingWithRelations,
     forceUpdate: boolean = false,
   ): Promise<UpsertResult<ProgramGroupingOrmWithRelations>> {
-    let entity: Maybe<ProgramGroupingOrmWithRelations>;
+    let entity: Maybe<ProgramGroupingOrmWithRelations> =
+      await this.getProgramGrouping(
+        newGroupingAndRelations.programGrouping.uuid,
+      );
     let shouldUpdate = forceUpdate;
     let wasInserted = false,
       wasUpdated = false;
     const { programGrouping: dao, externalIds } = newGroupingAndRelations;
-    if (dao.sourceType === 'local') {
+
+    if (!entity && dao.sourceType === 'local') {
       const incomingYear = newGroupingAndRelations.programGrouping.year;
       entity = await this.drizzleDB.query.programGrouping.findFirst({
         where: (fields, { eq, and, isNull }) => {
@@ -2040,7 +2046,7 @@ export class ProgramDB implements IProgramDB {
           externalIds: true,
         },
       });
-    } else {
+    } else if (!entity && dao.sourceType !== 'local') {
       entity = await this.getProgramGroupingByExternalId({
         sourceType: dao.sourceType,
         externalKey: dao.externalKey,
@@ -2065,13 +2071,21 @@ export class ProgramDB implements IProgramDB {
       for (const externalId of newGroupingAndRelations.externalIds) {
         externalId.groupUuid = entity.uuid;
       }
-      await this.drizzleDB.transaction(async (tx) => {
-        await this.updateProgramGrouping(newGroupingAndRelations, entity!, tx);
-        await this.updateProgramGroupingExternalIds(
+      entity = await this.drizzleDB.transaction(async (tx) => {
+        const updated = await this.updateProgramGrouping(
+          newGroupingAndRelations,
+          entity!,
+          tx,
+        );
+        const upsertedExternalIds = await this.updateProgramGroupingExternalIds(
           entity!.externalIds,
           externalIds,
           tx,
         );
+        return {
+          ...updated,
+          externalIds: upsertedExternalIds,
+        } satisfies ProgramGroupingOrmWithRelations;
       });
 
       wasUpdated = true;
@@ -2180,7 +2194,7 @@ export class ProgramDB implements IProgramDB {
     { programGrouping: incoming }: NewProgramGroupingWithRelations,
     existing: ProgramGroupingOrmWithRelations,
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ) {
+  ): Promise<ProgramGroupingOrm> {
     const update: NewProgramGroupingOrm = {
       ...omit(existing, 'externalIds'),
       index: incoming.index,
@@ -2203,18 +2217,21 @@ export class ProgramDB implements IProgramDB {
       updatedAt: incoming.updatedAt,
     };
 
-    await tx
-      .update(ProgramGrouping)
-      .set(update)
-      .where(eq(ProgramGrouping.uuid, existing.uuid))
-      .limit(1);
+    return head(
+      await tx
+        .update(ProgramGrouping)
+        .set(update)
+        .where(eq(ProgramGrouping.uuid, existing.uuid))
+        .limit(1)
+        .returning(),
+    )!;
   }
 
   private async updateProgramGroupingExternalIds(
     existingIds: ProgramGroupingExternalId[],
     newIds: NewSingleOrMultiProgramGroupingExternalId[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ) {
+  ): Promise<ProgramGroupingExternalIdOrm[]> {
     devAssert(
       uniq(seq.collect(existingIds, (id) => id.mediaSourceId)).length <= 1,
     );
@@ -2284,11 +2301,11 @@ export class ProgramDB implements IProgramDB {
       (key) => newByUniqueId[key],
     );
 
-    await Promise.all(
+    return await Promise.all(
       chunk(addedIds, 100).map((idChunk) =>
         this.upsertProgramGroupingExternalIdsChunkOrm(idChunk, tx),
       ),
-    );
+    ).then((_) => _.flat());
   }
 
   async getProgramGroupingChildCounts(groupingIds: string[]) {
@@ -2974,16 +2991,16 @@ export class ProgramDB implements IProgramDB {
       | NewProgramGroupingExternalId
     )[],
     tx: BaseSQLiteDatabase<'sync', RunResult, typeof schema> = this.drizzleDB,
-  ): Promise<void> {
+  ): Promise<ProgramGroupingExternalIdOrm[]> {
     if (ids.length === 0) {
-      return;
+      return [];
     }
 
     const [singles, multiples] = partition(ids, (id) =>
       isValidSingleExternalIdType(id.sourceType),
     );
 
-    const promises: Promise<RunResult>[] = [];
+    const promises: Promise<ProgramGroupingExternalIdOrm[]>[] = [];
 
     if (singles.length > 0) {
       promises.push(
@@ -3003,6 +3020,7 @@ export class ProgramDB implements IProgramDB {
               externalKey: sql`excluded.external_key`,
             },
           })
+          .returning()
           .execute(),
         // .onConflict((oc) =>
         //   oc
@@ -3038,6 +3056,7 @@ export class ProgramDB implements IProgramDB {
               externalKey: sql`excluded.external_key`,
             },
           })
+          .returning()
           .execute(),
         // .onConflict((oc) =>
         //   oc
@@ -3054,7 +3073,7 @@ export class ProgramDB implements IProgramDB {
       );
     }
 
-    await Promise.all(promises);
+    return (await Promise.all(promises)).flat();
   }
 
   private async upsertProgramGroupingExternalIdsChunk(

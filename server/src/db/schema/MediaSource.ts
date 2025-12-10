@@ -1,5 +1,5 @@
 import type { TupleToUnion } from '@tunarr/types';
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray, relations } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Updateable } from 'kysely';
@@ -72,6 +72,7 @@ export const MediaSourceFields: (keyof MediaSourceTable)[] = [
 export type MediaSourceTable = KyselifyBetter<typeof MediaSource>;
 export type MediaSource = Selectable<MediaSourceTable>;
 export type MediaSourceOrm = InferSelectModel<typeof MediaSource>;
+export type NewMediaSourceOrm = InferInsertModel<typeof MediaSource>;
 export type NewMediaSource = Insertable<MediaSourceTable>;
 export type MediaSourceUpdate = Updateable<MediaSourceTable>;
 
