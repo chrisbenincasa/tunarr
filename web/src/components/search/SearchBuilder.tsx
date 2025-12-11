@@ -1,5 +1,6 @@
 import { Checklist, Clear, Save, Search } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   IconButton,
   InputAdornment,
@@ -48,6 +49,7 @@ export function SearchBuilder({
   >(AllSearchRestrictKeys);
   const [smartCollectionModalOpen, toggleSmartCollectionModal] =
     useToggle(false);
+  const [isStructuredSearch, setIsStructuredSearch] = useState(false);
 
   const formMethods = useForm<SearchRequest>({
     defaultValues: {
@@ -62,8 +64,12 @@ export function SearchBuilder({
 
   const expr = useMemo(() => {
     if (isNonEmptyString(query)) {
-      return getSearchExpression(query);
+      const result = getSearchExpression(query);
+      const isStructured = result?.type === 'success';
+      setIsStructuredSearch(isStructured);
+      return result;
     }
+    setIsStructuredSearch(false);
     return;
   }, [query, getSearchExpression]);
 
@@ -181,6 +187,15 @@ export function SearchBuilder({
               />
             )}
           />
+          {!isStructuredSearch && (
+            <Alert severity="info">
+              Tunarr is interpretting this query as a "free text" query. This
+              means the query is taken verbatim and searched across all fields.
+              If you are intending to use a "structured" query (e.g. &nbsp;
+              <code>title:"ABC"</code>) and are seeing this message, there is a
+              syntax error or unsupported field in your query.
+            </Alert>
+          )}
         </Stack>
       </Box>
       <CreateSmartCollectionDialog
