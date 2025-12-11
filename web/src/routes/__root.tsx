@@ -19,13 +19,15 @@ const searchQuerySchema = z.object({
   query: z.string().optional().catch(undefined),
 });
 
+export type RootSearchQueryParams = z.infer<typeof searchQuerySchema>;
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   validateSearch: zodValidator(searchQuerySchema),
   search: {
     middlewares: [retainSearchParams(['query'])],
   },
   loader: async ({ context: { queryClient }, location: { search } }) => {
-    const parsed = search as z.infer<typeof searchQuerySchema>;
+    const parsed = search as RootSearchQueryParams;
     if (!isNonEmptyString(parsed.query)) {
       useStore.setState((s) => {
         s.currentSearchRequest = null;

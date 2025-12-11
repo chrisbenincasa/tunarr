@@ -11,6 +11,7 @@ import {
   useDeleteSmartCollection,
   useSmartCollections,
 } from '../../hooks/smartCollectionHooks.ts';
+import type { RootSearchQueryParams } from '../../routes/__root.tsx';
 import { Route } from '../../routes/__root.tsx';
 import type { Maybe } from '../../types/util.ts';
 import { RouterButtonLink } from '../base/RouterButtonLink.tsx';
@@ -76,7 +77,10 @@ export const SmartCollectionsTable = () => {
           <RouterButtonLink
             variant="contained"
             to="/search"
-            search={(prev) => ({ ...prev, query: undefined })}
+            search={(prev: RootSearchQueryParams) => ({
+              ...prev,
+              query: undefined,
+            })}
             startIcon={<Search />}
           >
             Create
