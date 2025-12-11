@@ -72,13 +72,17 @@ export class HlsSession extends BaseHlsSession {
           );
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
-            this.logger.debug('Deleting old segments from stream');
+            this.logger.debug(
+              'Deleting old segments from stream (channel id = %s, number = %d)',
+              this.channel.uuid,
+              this.channel.number,
+            );
             this.deleteOldSegments(trimResult.sequence).catch((e) =>
               this.logger.error(e),
             );
             this.#lastDelete = now;
           } else {
-            this.logger.debug(
+            this.logger.trace(
               'Has only been %d seconds since last playlist trim, skipping',
               dayjs.duration(now.diff(this.#lastDelete)).asSeconds(),
             );

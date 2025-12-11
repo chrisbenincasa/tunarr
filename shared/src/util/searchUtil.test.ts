@@ -332,4 +332,28 @@ describe('parsedSearchToRequest', () => {
       },
     } satisfies SearchFilter);
   });
+
+  describe('show virtual fields', () => {
+    test('parse show_title', () => {
+      const input = 'show_title:"The Twilight Zone"';
+      const query = parseAndCheckExpression(input);
+      expect(query).toMatchObject({
+        type: 'single_query',
+        field: 'show_title',
+        op: '=',
+        value: 'The Twilight Zone',
+      } satisfies SearchClause);
+    });
+
+    test('parse show_genre', () => {
+      const input = 'show_genre:comedy';
+      const query = parseAndCheckExpression(input);
+      expect(query).toMatchObject({
+        type: 'single_query',
+        field: 'show_genre',
+        op: '=',
+        value: 'comedy',
+      } satisfies SearchClause);
+    });
+  });
 });

@@ -37,7 +37,6 @@ export class LocalSubtitlesService {
       );
 
       if (!parsedSubtitles) {
-        this.logger.debug('');
         continue;
       }
 

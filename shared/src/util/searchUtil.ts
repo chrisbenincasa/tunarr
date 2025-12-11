@@ -44,6 +44,9 @@ const StringFields = [
   'tags',
   'rating',
   'type',
+  'show_title',
+  'show_genre',
+  'show_tag',
 ] as const;
 
 const StringField = createToken({
@@ -878,6 +881,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       }
     }
     case 'single_query': {
+      console.log(input.field);
       const key: string = virtualFieldToIndexField[input.field] ?? input.field;
 
       return {
