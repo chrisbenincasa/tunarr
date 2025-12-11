@@ -1271,12 +1271,22 @@ export class MeilisearchService implements ISearchService {
       }
     }
 
-    this.logger.info(
-      'Task %d completed with status %s. %O',
-      id,
-      task.status,
-      task.details ?? {},
-    );
+    if (task.error) {
+      this.logger.warn(
+        task.error,
+        'Task %d completed with status %s. %O',
+        id,
+        task.status,
+        task.details ?? {},
+      );
+    } else {
+      this.logger.info(
+        'Task %d completed with status %s. %O',
+        id,
+        task.status,
+        task.details ?? {},
+      );
+    }
   }
 
   private buildFilterExpression(
