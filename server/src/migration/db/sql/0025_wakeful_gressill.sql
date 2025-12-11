@@ -1,4 +1,34 @@
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
+PRAGMA defer_foreign_keys=ON;--> statement-breakpoint
+CREATE TABLE `__new_program_grouping` (
+	`uuid` text PRIMARY KEY NOT NULL,
+	`canonical_id` text,
+	`created_at` integer,
+	`updated_at` integer,
+	`icon` text,
+	`index` integer,
+	`summary` text,
+	`title` text NOT NULL,
+	`type` text NOT NULL,
+	`year` integer,
+	`artist_uuid` text,
+	`show_uuid` text,
+	`library_id` text,
+	`source_type` text,
+	`external_key` text,
+	`media_source_id` text,
+	FOREIGN KEY (`artist_uuid`) REFERENCES `program_grouping`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`show_uuid`) REFERENCES `program_grouping`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`library_id`) REFERENCES `media_source_library`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`media_source_id`) REFERENCES `media_source`(`uuid`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "type_check" CHECK("__new_program_grouping"."type" in ('show', 'season', 'artist', 'album'))
+);
+--> statement-breakpoint
+INSERT INTO `__new_program_grouping`("uuid", "canonical_id", "created_at", "updated_at", "icon", "index", "summary", "title", "type", "year", "artist_uuid", "show_uuid", "library_id", "source_type", "external_key", "media_source_id") SELECT "uuid", "canonical_id", "created_at", "updated_at", "icon", "index", "summary", "title", "type", "year", "artist_uuid", "show_uuid", "library_id", "source_type", "external_key", "media_source_id" FROM `program_grouping`;--> statement-breakpoint
+DROP TABLE `program_grouping`;--> statement-breakpoint
+ALTER TABLE `__new_program_grouping` RENAME TO `program_grouping`;--> statement-breakpoint
+CREATE INDEX `program_grouping_show_uuid_index` ON `program_grouping` (`show_uuid`);--> statement-breakpoint
+CREATE INDEX `program_grouping_artist_uuid_index` ON `program_grouping` (`artist_uuid`);--> statement-breakpoint
 CREATE TABLE `__new_program` (
 	`uuid` text PRIMARY KEY NOT NULL,
 	`created_at` integer,
@@ -60,33 +90,5 @@ CREATE INDEX `program_media_library_id_index` ON `program` (`library_id`);--> st
 CREATE UNIQUE INDEX `program_source_type_external_source_id_external_key_unique` ON `program` (`source_type`,`external_source_id`,`external_key`);--> statement-breakpoint
 CREATE UNIQUE INDEX `program_source_type_media_source_external_key_unique` ON `program` (`source_type`,`media_source_id`,`external_key`);--> statement-breakpoint
 CREATE INDEX `program_canonical_id_index` ON `program` (`canonical_id`);--> statement-breakpoint
-CREATE TABLE `__new_program_grouping` (
-	`uuid` text PRIMARY KEY NOT NULL,
-	`canonical_id` text,
-	`created_at` integer,
-	`updated_at` integer,
-	`icon` text,
-	`index` integer,
-	`summary` text,
-	`title` text NOT NULL,
-	`type` text NOT NULL,
-	`year` integer,
-	`artist_uuid` text,
-	`show_uuid` text,
-	`library_id` text,
-	`source_type` text,
-	`external_key` text,
-	`media_source_id` text,
-	FOREIGN KEY (`artist_uuid`) REFERENCES `program_grouping`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`show_uuid`) REFERENCES `program_grouping`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`library_id`) REFERENCES `media_source_library`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`media_source_id`) REFERENCES `media_source`(`uuid`) ON UPDATE no action ON DELETE cascade,
-	CONSTRAINT "type_check" CHECK("__new_program_grouping"."type" in ('show', 'season', 'artist', 'album'))
-);
---> statement-breakpoint
-INSERT INTO `__new_program_grouping`("uuid", "canonical_id", "created_at", "updated_at", "icon", "index", "summary", "title", "type", "year", "artist_uuid", "show_uuid", "library_id", "source_type", "external_key", "media_source_id") SELECT "uuid", "canonical_id", "created_at", "updated_at", "icon", "index", "summary", "title", "type", "year", "artist_uuid", "show_uuid", "library_id", "source_type", "external_key", "media_source_id" FROM `program_grouping`;--> statement-breakpoint
-DROP TABLE `program_grouping`;--> statement-breakpoint
-ALTER TABLE `__new_program_grouping` RENAME TO `program_grouping`;--> statement-breakpoint
-CREATE INDEX `program_grouping_show_uuid_index` ON `program_grouping` (`show_uuid`);--> statement-breakpoint
-CREATE INDEX `program_grouping_artist_uuid_index` ON `program_grouping` (`artist_uuid`);--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
+PRAGMA defer_foreign_keys=OFF;--> statement-breakpoint

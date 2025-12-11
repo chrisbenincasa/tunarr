@@ -59,12 +59,12 @@ export const RunServerCommand: CommandModule<GlobalArgsType, ServerArgsType> = {
     setServerOptions({ ...opts, port: portToUse });
 
     process.on('uncaughtException', (err) => {
-      LoggerFactory.root.error(err, 'Uncaught exception');
+      console.error(err, 'Uncaught exception');
       LoggerFactory.root.flush();
     });
 
     process.on('unhandledRejection', (err) => {
-      LoggerFactory.root.error(err, 'Uncaught exception');
+      console.error(err, 'Uncaught exception');
       LoggerFactory.root.flush();
     });
 
