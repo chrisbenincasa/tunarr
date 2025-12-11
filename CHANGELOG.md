@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.34](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.33...v0.23.0-alpha.34) (2025-12-11)
+
+
+### Bug Fixes
+
+* another fix for foreign keys migration; defer checking ([9d8ff9c](https://github.com/chrisbenincasa/tunarr/commit/9d8ff9c6fcadb3c46ed7a268740cad7102a53891))
+
 ## [0.23.0-alpha.33](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.32...v0.23.0-alpha.33) (2025-12-11)
 
 
