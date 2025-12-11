@@ -1,20 +1,32 @@
 # Jellyfin
 
-Once you have your channels created with programming/shows added, head over to Jellyfin > Hamburger Menu Icon  > Dashboard > Live TV > Add Tuner Device.
+Once you have your channels created with programming/shows added, head over to Jellyfin. The following pictures show step-by-step how connect Tunarr to your Jellyfin server.
 
-![Jellyfin Hamburger](/assets/Jellyfin-home-menu.png)
+<figure markdown="span">
+    ![Jellyfin Hamburger](/assets/Jellyfin-home-menu.png)
+    <figcaption>1. Locate "Hamburger" menu on the Jellyfin homepage</figcaption>
+</figure>
 
-![Jellyfin Admin Dash](/assets/Jellyfin-admin-dashboard.png)
+<figure markdown="span">
+    ![Jellyfin Admin Dash](/assets/Jellyfin-admin-dashboard.png)
+    <figcaption>2. Locate the "Dashboard" menu item under "Administration"</figcaption>
+</figure>
+<figure markdown="span">
+    ![Jellyfin Live TV Setup](/assets/Jellyfin-live-tv-options.png)
+    <figcaption>3. Locate the "Live TV" menu item under "Live TV" in the sidebar</figcaption>
+</figure>
 
-![Jellyfin Live TV Setup](/assets/Jellyfin-live-tv-options.png)
+<hr/>
+At this point, Jellyfin will ask for your tuner type - we recdommend selecting HD Homerun. 
 
-Jellyfin will ask for your tuner type - select HD Homerun. 
+!!! note
+    Tunarr supports M3U and HDHR style connections from clients. However, some users have experienced stability issues at program boundaries when using Tunarr as an M3U tuner in Jellyfin. This seems to occur when Jellyfin is _not_ transcoding / remuxing the incoming stream and seems related to the following issues: [jellyfin/jellyfin-ffmpeg#57](https://github.com/jellyfin/jellyfin-ffmpeg/issues/57) and [trac.ffmpeg.org/ticket/5419](https://trac.ffmpeg.org/ticket/5419)
 
 ![Jellyfin Add HD Homerun](/assets/Jellyfin-add-hdh.png)
 
 You can then select "Detect My Devices," and Jellyfin may already detect Tunarr and you might see your servers IP address. If it does not, you can fill in your info manually. Use the following format replacing serverIP with your servers IP address and chosen port (if using Docker): e.g. `http://serverIP:8000`
 
-![Jellyfin HDH Setup](/assets/Jellyfin-tuner-setup.png)
+![Jellyfin HDHR Setup](/assets/Jellyfin-tuner-setup.png)
 
 Once you have entered your server's URL and port, you will have to add the XMLTV Guide. 
 

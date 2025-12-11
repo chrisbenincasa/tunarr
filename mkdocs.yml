@@ -43,13 +43,19 @@ nav:
       - Install: getting-started/installation.md
       - Run: getting-started/run.md
       - Setup: getting-started/setup.md
+      - Migration:
+          - Migrate to 1.0: getting-started/migration/migrate-to-1.md
   - Configure:
       - Media Sources:
           - configure/media_sources/index.md
           - Plex: configure/media_sources/plex.md
           - Jellyfin: configure/media_sources/jellyfin.md
           - Emby: configure/media_sources/emby.md
-          - Local: configure/media_sources/local.md
+          - Local:
+              - configure/media_sources/local/index.md
+              - Movies: configure/media_sources/local/movies.md
+              - Shows: configure/media_sources/local/shows.md
+              - Other Video: configure/media_sources/local/other_videos.md
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md

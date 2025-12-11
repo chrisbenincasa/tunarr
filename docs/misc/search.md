@@ -23,7 +23,7 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `:` or `=` | Equals | `title:"30 Rock"`|
 | `<` or `<=` | Starts With | `title <= A` |
 | `!=` | Not Equals | `title != "Sesame Street"` |
-| `contains` | Contains | `title contains Hours` |
+| `~` | Contains | `title ~ Hours` |
 | `in` | Set includes | `title in ["30 Rock", "Arrested Development"]` |
 
 ## Number & Date
