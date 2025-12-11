@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0-alpha.33](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.32...v0.23.0-alpha.33) (2025-12-11)
+
+
+### Features
+
+* add parent directory as tag for other video libraries ([7d6890f](https://github.com/chrisbenincasa/tunarr/commit/7d6890f1255ba6b29dfccb0734af051ad8ebddf2))
+
+
+### Bug Fixes
+
+* fix migration splitting for broken migration ([bcd72d7](https://github.com/chrisbenincasa/tunarr/commit/bcd72d71548baab2616ece9e1f2bc64766113171))
+
 ## [0.23.0-alpha.32](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.31...v0.23.0-alpha.32) (2025-12-10)
 
 
