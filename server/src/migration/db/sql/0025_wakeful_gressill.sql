@@ -88,5 +88,5 @@ INSERT INTO `__new_program_grouping`("uuid", "canonical_id", "created_at", "upda
 DROP TABLE `program_grouping`;--> statement-breakpoint
 ALTER TABLE `__new_program_grouping` RENAME TO `program_grouping`;--> statement-breakpoint
 CREATE INDEX `program_grouping_show_uuid_index` ON `program_grouping` (`show_uuid`);--> statement-breakpoint
-CREATE INDEX `program_grouping_artist_uuid_index` ON `program_grouping` (`artist_uuid`);
+CREATE INDEX `program_grouping_artist_uuid_index` ON `program_grouping` (`artist_uuid`);--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
