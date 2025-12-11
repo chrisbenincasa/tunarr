@@ -1,6 +1,5 @@
-import { Delete, Edit, Search } from '@mui/icons-material';
-import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Delete, Edit, Search, Visibility } from '@mui/icons-material';
+import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SmartCollection } from '@tunarr/types';
 import {
@@ -14,6 +13,8 @@ import {
 } from '../../hooks/smartCollectionHooks.ts';
 import { Route } from '../../routes/__root.tsx';
 import type { Maybe } from '../../types/util.ts';
+import { RouterButtonLink } from '../base/RouterButtonLink.tsx';
+import { RouterLink } from '../base/RouterLink.tsx';
 import { DeleteConfirmationDialog } from '../DeleteConfirmationDialog.tsx';
 import { EditSmartCollectionDialog } from './EditSmartCollectionDialog.tsx';
 
@@ -54,10 +55,7 @@ export const SmartCollectionsTable = () => {
           sx={{ py: '2rem', textAlign: 'center', fontStyle: 'italic' }}
         >
           You have no smart collections. Smart collections can be created on the{' '}
-          <Link component={RouterLink} to="/search">
-            search
-          </Link>{' '}
-          page.
+          <RouterLink to="/search">search</RouterLink> page.
         </Typography>
       );
     },
@@ -72,10 +70,24 @@ export const SmartCollectionsTable = () => {
         visibleInShowHideMenu: false,
       },
     },
+    renderTopToolbarCustomActions() {
+      return (
+        <Stack direction="row" alignItems="center" gap={2} useFlexGap>
+          <RouterButtonLink
+            variant="contained"
+            to="/search"
+            search={(prev) => ({ ...prev, query: undefined })}
+            startIcon={<Search />}
+          >
+            Create
+          </RouterButtonLink>
+        </Stack>
+      );
+    },
     renderRowActions: ({ row }) => {
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Tooltip title="Search" placement="top">
+          <Tooltip title="View Collection" placement="top">
             <IconButton
               onClick={() =>
                 navigate({
@@ -84,7 +96,7 @@ export const SmartCollectionsTable = () => {
                 })
               }
             >
-              <Search />
+              <Visibility />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit" placement="top">

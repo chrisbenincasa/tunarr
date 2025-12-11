@@ -9,12 +9,13 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { isEmpty } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, { useEffect } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import ConnectMediaSources from '../../components/settings/ConnectMediaSources.tsx';
 import { useMediaSources } from '../../hooks/settingsHooks.ts';
 import { useVersion } from '../../hooks/useVersion.tsx';
@@ -173,14 +174,13 @@ export default function WelcomePage() {
                     variant="filled"
                     severity="warning"
                     action={
-                      <Button
-                        component={RouterLink}
+                      <RouterButtonLink
                         to={`/settings/ffmpeg`}
                         color="inherit"
                         startIcon={<Edit />}
                       >
                         Edit
-                      </Button>
+                      </RouterButtonLink>
                     }
                   >
                     FFMPEG is not detected.

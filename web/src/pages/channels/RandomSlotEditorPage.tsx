@@ -16,7 +16,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { seq } from '@tunarr/shared/util';
 import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
@@ -36,6 +35,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FormProvider, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import PaddedPaper from '../../components/base/PaddedPaper';
+import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import ChannelLineupList from '../../components/channel_config/ChannelLineupList.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
@@ -239,15 +239,14 @@ export default function RandomSlotEditorPage() {
       />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Box flexGrow={1}>
-          <Button
+          <RouterButtonLink
             variant="outlined"
             to=".."
-            component={RouterLink}
             startIcon={<ArrowBack />}
             sx={{ justifyContent: 'flex-start' }}
           >
             Back to Programming
-          </Button>
+          </RouterButtonLink>
         </Box>
         {isDirty && (
           <Button variant="contained" onClick={() => resetLineupToSaved()}>

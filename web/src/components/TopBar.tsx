@@ -23,7 +23,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Link as RouterLink, useMatches } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty, isNull, last } from 'lodash-es';
 import type { ReactNode } from 'react';
@@ -31,6 +31,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard.ts';
 import { Route } from '../routes/__root.tsx';
 import { useSettings } from '../store/settings/selectors.ts';
+import { RouterLink } from './base/RouterLink.tsx';
 import { StyledMenu } from './base/StyledMenu.tsx';
 import DarkModeButton from './settings/DarkModeButton.tsx';
 import TunarrLogo from './TunarrLogo.tsx';
@@ -197,14 +198,9 @@ export const TopBar = () => {
       }}
     >
       <Toolbar sx={{ px: 2 }} disableGutters>
-        <Link
-          underline="none"
-          color="inherit"
-          to="/guide"
-          component={RouterLink}
-        >
+        <RouterLink underline="none" color="inherit" to="/guide">
           <TunarrLogo style={{ marginTop: '0.4em', width: '40px' }} />
-        </Link>
+        </RouterLink>
         <Typography
           variant="h6"
           component="h1"
@@ -212,14 +208,9 @@ export const TopBar = () => {
           color="inherit"
           sx={{ pl: 1 }}
         >
-          <Link
-            underline="none"
-            color="inherit"
-            to="/guide"
-            component={RouterLink}
-          >
+          <RouterLink underline="none" color="inherit" to="/guide">
             Tunarr
-          </Link>
+          </RouterLink>
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
         {!smallViewport && showSearchBar && (

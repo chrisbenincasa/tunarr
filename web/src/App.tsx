@@ -1,10 +1,12 @@
-import { Alert, Box, Button, Link, Toolbar, useTheme } from '@mui/material';
+import { Alert, Box, Toolbar, useTheme } from '@mui/material';
 import Container from '@mui/material/Container';
 import CssBaseline from '@mui/material/CssBaseline';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Outlet, Link as RouterLink } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import React from 'react';
 import './App.css';
+import { RouterButtonLink } from './components/base/RouterButtonLink.tsx';
+import { RouterLink } from './components/base/RouterLink.tsx';
 import { BottomNavBar } from './components/BottomNavBar.tsx';
 import { Drawer } from './components/Drawer.tsx';
 import { TopBar } from './components/TopBar.tsx';
@@ -62,16 +64,15 @@ export function Root({ children }: { children?: React.ReactNode }) {
               severity="error"
               sx={{ my: 2, display: 'flex', flexGrow: 1, width: '100%' }}
               action={
-                <Button
+                <RouterButtonLink
                   to={'/settings/ffmpeg'}
-                  component={RouterLink}
                   size="small"
                   sx={{
                     color: 'inherit',
                   }}
                 >
                   Fix
-                </Button>
+                </RouterButtonLink>
               }
             >
               {strings.FFMPEG_MISSING}
@@ -87,9 +88,7 @@ export function Root({ children }: { children?: React.ReactNode }) {
 export default function App() {
   return (
     <>
-      <Link to={'/channels'} component={RouterLink}>
-        Channels
-      </Link>
+      <RouterLink to={'/channels'}>Channels</RouterLink>
     </>
   );
 }

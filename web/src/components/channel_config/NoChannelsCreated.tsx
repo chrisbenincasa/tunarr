@@ -1,8 +1,8 @@
 import SettingsRemoteIcon from '@mui/icons-material/SettingsRemote';
-import { Box, Button, Typography } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Box, Typography } from '@mui/material';
 import { useChannels } from '../../hooks/useChannels';
 import PaddedPaper from '../base/PaddedPaper';
+import { RouterButtonLink } from '../base/RouterButtonLink.tsx';
 
 export default function NoChannelsCreated() {
   const { isFetching: channelsFetching, data: channels } = useChannels();
@@ -24,18 +24,17 @@ export default function NoChannelsCreated() {
           <Typography variant="h5">
             You haven't created any channels yet.
           </Typography>
-          <Button
+          <RouterButtonLink
             variant="contained"
             sx={{
               my: 2,
               maxWidth: 350,
               textAlign: 'center',
             }}
-            component={RouterLink}
             to="/channels/new"
           >
             Create a Channel
-          </Button>
+          </RouterButtonLink>
         </Box>
       </PaddedPaper>
     )

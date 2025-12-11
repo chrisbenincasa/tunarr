@@ -1,12 +1,11 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { MediaSubtitles } from '@tunarr/types';
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import { basename, dirname, extname } from 'node:path';
 import { match, P } from 'ts-pattern';
-import { KEYS } from '../../types/inject.ts';
 import { Nullable } from '../../types/util.ts';
-import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import { LanguageService } from '../LanguageService.ts';
 
 @injectable()
@@ -14,7 +13,7 @@ export class LocalSubtitlesService {
   private static logger = LoggerFactory.child({
     className: LocalSubtitlesService.name,
   });
-  constructor(@inject(KEYS.Logger) private logger: Logger) {}
+  constructor() {}
 
   async findExternalSubtitles(fullItemPath: string) {
     const subtitles: MediaSubtitles[] = [];

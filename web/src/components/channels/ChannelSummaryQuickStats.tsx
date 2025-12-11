@@ -1,6 +1,5 @@
 import { Launch } from '@mui/icons-material';
-import { Box, Grid, Link, Paper, Stack, Typography } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
+import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
 import type { ChannelStreamMode } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
@@ -10,6 +9,7 @@ import { match } from 'ts-pattern';
 import { pluralizeWithCount } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
+import { RouterLink } from '../base/RouterLink.tsx';
 
 const ChannelStreamModeToPrettyString: Record<ChannelStreamMode, string> = {
   hls: 'HLS',
@@ -107,13 +107,13 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
         <Box sx={{ flex: 1 }}>
           <Typography variant="overline">
             Transcode Config{' '}
-            <Link
-              component={RouterLink}
-              to={`/settings/ffmpeg/${transcodeConfig?.id ?? ''}`}
+            <RouterLink
+              to={`/settings/ffmpeg/$configId`}
+              params={{ configId: transcodeConfig?.id ?? '' }}
             >
               {' '}
               <Launch sx={{ fontSize: 'inherit' }} />
-            </Link>
+            </RouterLink>
           </Typography>
           <Typography
             sx={{

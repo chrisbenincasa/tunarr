@@ -4,14 +4,12 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
-  Link,
   MenuItem,
   Select,
   Stack,
   Switch,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/api';
 import { capitalize, find, isEmpty, isUndefined, map, some } from 'lodash-es';
@@ -33,6 +31,7 @@ import {
   setProgrammingListingServer,
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
+import { RouterLink } from '../base/RouterLink.tsx';
 import { LibrarySearch } from '../library/LibrarySearch.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
@@ -120,14 +119,9 @@ export const ProgrammingSelector = ({
         <Alert severity="error">
           This media source has no enabled or scanned libraries. Enable
           libraries for this source on the{' '}
-          <Link component={RouterLink} href="/settings/sources">
-            Media Sources
-          </Link>{' '}
-          page or manually trigger scans on the{' '}
-          <Link component={RouterLink} href="/library">
-            Library
-          </Link>{' '}
-          page.
+          <RouterLink to="/settings/sources">Media Sources</RouterLink> page or
+          manually trigger scans on the{' '}
+          <RouterLink to="/library">Library</RouterLink> page.
         </Alert>
       );
     }

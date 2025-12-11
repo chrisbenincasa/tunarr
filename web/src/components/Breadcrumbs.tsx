@@ -1,14 +1,14 @@
 import type { BreadcrumbsProps } from '@mui/material';
 import {
-  Link,
   Breadcrumbs as MUIBreadcrumbs,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Link as RouterLink, useLocation } from '@tanstack/react-router';
+import { useLocation } from '@tanstack/react-router';
 import { isEmpty, map, reject } from 'lodash-es';
 import { useGetRouteDetails } from '../hooks/useRouteName.ts';
+import { RouterLink } from './base/RouterLink.tsx';
 
 type Props = BreadcrumbsProps & {
   thisRouteName?: string;
@@ -62,9 +62,9 @@ export default function Breadcrumbs(props: Props) {
               {thisRouteName ?? trimmedText ?? ''}
             </Typography>
           ) : (
-            <Link component={RouterLink} to={route?.to ?? to} key={to}>
+            <RouterLink to={route?.to ?? to} key={to}>
               {trimmedText}
-            </Link>
+            </RouterLink>
           );
         })}
       </MUIBreadcrumbs>

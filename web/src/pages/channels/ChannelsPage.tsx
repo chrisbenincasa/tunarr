@@ -17,7 +17,6 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
-  Link,
   Paper,
   TableContainer,
   Tooltip,
@@ -27,7 +26,7 @@ import {
 import { green, red, yellow } from '@mui/material/colors';
 import { styled, useTheme } from '@mui/material/styles';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import type { PaginationState, VisibilityState } from '@tanstack/react-table';
 import type { ChannelSession } from '@tunarr/types';
 import {
@@ -46,6 +45,11 @@ import {
 import pluralize from 'pluralize';
 import React, { useEffect, useMemo, useState } from 'react';
 import TunarrLogo from '../../components/TunarrLogo.tsx';
+import {
+  RouterButtonLink,
+  RouterIconButtonLink,
+} from '../../components/base/RouterButtonLink.tsx';
+import { RouterLink } from '../../components/base/RouterLink.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
@@ -242,13 +246,13 @@ export default function ChannelsPage() {
         {renderChannelMenu(channel)}
         {!mediumViewport && (
           <Tooltip title="Edit Channel Settings" placement="top">
-            <IconButton
-              to={`/channels/${channel.id}/edit`}
-              component={RouterLink}
+            <RouterIconButtonLink
+              to={'/channels/$channelId/edit'}
+              params={{ channelId: channel.id }}
               onClick={(e) => e.stopPropagation()}
             >
               <Edit />
-            </IconButton>
+            </RouterIconButtonLink>
           </Tooltip>
         )}
         <IconButton
@@ -387,13 +391,13 @@ export default function ChannelsPage() {
           }
 
           return (
-            <Link
-              to={`/settings/ffmpeg/${conf.id}`}
+            <RouterLink
+              to="/settings/ffmpeg/$configId"
+              params={{ configId: conf.id }}
               onClick={(e) => e.stopPropagation()}
-              component={RouterLink}
             >
               {conf.name}
-            </Link>
+            </RouterLink>
           );
         },
         enableSorting: false,
@@ -445,14 +449,13 @@ export default function ChannelsPage() {
         <Typography flexGrow={1} variant="h3">
           Channels
         </Typography>
-        <Button
-          component={RouterLink}
+        <RouterButtonLink
           to="/channels/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
         >
           New
-        </Button>
+        </RouterButtonLink>
       </Box>
 
       <TableContainer component={Paper} sx={{ width: '100%' }}>

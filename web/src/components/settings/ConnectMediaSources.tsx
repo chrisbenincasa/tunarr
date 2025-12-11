@@ -7,7 +7,6 @@ import {
   Box,
   Card,
   CardContent,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -15,7 +14,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
+import { RouterIconButtonLink } from '../base/RouterButtonLink.tsx';
 
 export default function ConnectMediaSources(props: CardProps) {
   const {
@@ -56,13 +55,12 @@ export default function ConnectMediaSources(props: CardProps) {
                         </TableCell>
                         <TableCell>{server.name}</TableCell>
                         <TableCell>
-                          <IconButton
-                            component={RouterLink}
+                          <RouterIconButtonLink
                             to={`/settings/sources`}
                             color="primary"
                           >
                             <Edit />
-                          </IconButton>
+                          </RouterIconButtonLink>
                         </TableCell>
                       </TableRow>
                     );

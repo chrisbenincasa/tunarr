@@ -16,7 +16,6 @@ import {
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { Link as RouterLink } from '@tanstack/react-router';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -25,6 +24,7 @@ import { typedProperty } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import useStore from '../../store/index.ts';
+import { RouterLink } from '../base/RouterLink.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import {
   CheckboxFormController,
@@ -169,9 +169,9 @@ export default function ChannelTranscodingConfig() {
               <FormHelperText>
                 Choose the transcode configuration to use for this channel.
                 Configure transcode configurations on the{' '}
-                <Link component={RouterLink} to="/settings/ffmpeg">
+                <RouterLink to="/settings/ffmpeg">
                   FFmpeg settings page
-                </Link>
+                </RouterLink>
                 .
               </FormHelperText>
             </FormControl>

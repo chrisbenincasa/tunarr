@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, Link as RouterLink } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary, MediaSourceSettings } from '@tunarr/types';
 import type { ScanProgress } from '@tunarr/types/api';
@@ -38,6 +38,7 @@ import { useMediaSources } from '../hooks/settingsHooks.ts';
 import { useDayjs } from '../hooks/useDayjs.ts';
 import { useQueryObserver } from '../hooks/useQueryObserver.ts';
 import type { Nullable } from '../types/util.ts';
+import { RouterIconButtonLink } from './base/RouterButtonLink.tsx';
 
 type MediaSourceLibraryRow = MediaSourceLibrary & {
   mediaSource: MediaSourceSettings;
@@ -136,17 +137,24 @@ const MediaSourceLibraryTableActionCell = ({
     ),
   );
 
-  const link =
-    mediaSource.type === 'local'
-      ? (`/media_sources/${mediaSource.id}` as const)
-      : (`/media_sources/${mediaSource.id}/libraries/${library.id}` as const);
-
   return (
     <>
       <Tooltip placement="top" title="View Library">
-        <IconButton component={RouterLink} to={link}>
-          <VideoLibrary />
-        </IconButton>
+        {mediaSource.type === 'local' ? (
+          <RouterIconButtonLink
+            to="/media_sources/$mediaSourceId"
+            params={{ mediaSourceId: mediaSource.id }}
+          >
+            <VideoLibrary />
+          </RouterIconButtonLink>
+        ) : (
+          <RouterIconButtonLink
+            to={'/media_sources/$mediaSourceId/libraries/$libraryId'}
+            params={{ mediaSourceId: mediaSource.id, libraryId: library.id }}
+          >
+            <VideoLibrary />
+          </RouterIconButtonLink>
+        )}
       </Tooltip>
       <Tooltip
         placement="top"

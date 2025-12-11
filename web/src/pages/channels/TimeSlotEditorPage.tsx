@@ -37,7 +37,6 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink } from '@tanstack/react-router';
 import { dayjsMod } from '@tunarr/shared';
 import type {
   MaterializedTimeSlotSchedule,
@@ -62,6 +61,7 @@ import { useCallback, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';
+import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
@@ -483,15 +483,14 @@ export default function TimeSlotEditorPage() {
       />
       <Box sx={{ display: 'flex', justifyContent: 'end', pt: 1, columnGap: 1 }}>
         <Box flexGrow={1}>
-          <Button
+          <RouterButtonLink
             variant="outlined"
             to=".."
-            component={RouterLink}
             startIcon={<ArrowBack />}
             sx={{ justifyContent: 'flex-start' }}
           >
             Back to Programming
-          </Button>
+          </RouterButtonLink>
         </Box>
         {isDirty && (
           <Button variant="contained" onClick={() => resetLineupToSaved()}>

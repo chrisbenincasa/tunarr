@@ -9,7 +9,6 @@ import {
   Grid,
   IconButton,
   InputLabel,
-  Link,
   MenuItem,
   Select,
   Skeleton,
@@ -19,7 +18,6 @@ import {
   Typography,
 } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Link as RouterLink } from '@tanstack/react-router';
 import {
   find,
   isNumber,
@@ -39,6 +37,7 @@ import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
+import { RouterLink } from '../base/RouterLink.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
 
@@ -267,10 +266,8 @@ export function ChannelFlexConfig() {
       return (
         <Typography>
           You haven't created any filler lists yet! Go to the{' '}
-          <Link component={RouterLink} to="/library/fillers">
-            Filler Lists
-          </Link>{' '}
-          page to create one.
+          <RouterLink to="/library/fillers">Filler Lists</RouterLink> page to
+          create one.
         </Typography>
       );
     }
