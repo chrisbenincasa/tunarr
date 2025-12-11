@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0-alpha.35](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.34...v0.23.0-alpha.35) (2025-12-11)
+
+
+### Bug Fixes
+
+* allow parsing virtual show_* fields in search ([0dcd7d7](https://github.com/chrisbenincasa/tunarr/commit/0dcd7d7d6d4b2c5d35109e38381c6974d8cdffeb))
+
 ## [0.23.0-alpha.34](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.33...v0.23.0-alpha.34) (2025-12-11)
 
 
