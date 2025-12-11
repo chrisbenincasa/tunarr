@@ -318,6 +318,8 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     const metadata = (await this.loadVideoMetadata(fullFilePath)).getOrThrow();
 
+    metadata.tags.push(file.parentPath);
+
     // Artwork
     const artworkResult = await this.scanVideoArtwork(
       file,

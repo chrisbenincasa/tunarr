@@ -51,7 +51,6 @@ CREATE TABLE `__new_program` (
 INSERT INTO `__new_program`("uuid", "created_at", "updated_at", "album_name", "album_uuid", "artist_name", "artist_uuid", "canonical_id", "duration", "episode", "episode_icon", "external_key", "external_source_id", "media_source_id", "library_id", "local_media_folder_id", "local_media_source_path_id", "file_path", "grandparent_external_key", "icon", "original_air_date", "parent_external_key", "plex_file_path", "plex_rating_key", "rating", "season_icon", "season_number", "season_uuid", "show_icon", "show_title", "source_type", "summary", "title", "tv_show_uuid", "type", "year") SELECT "uuid", "created_at", "updated_at", "album_name", "album_uuid", "artist_name", "artist_uuid", "canonical_id", "duration", "episode", "episode_icon", "external_key", "external_source_id", "media_source_id", "library_id", "local_media_folder_id", "local_media_source_path_id", "file_path", "grandparent_external_key", "icon", "original_air_date", "parent_external_key", "plex_file_path", "plex_rating_key", "rating", "season_icon", "season_number", "season_uuid", "show_icon", "show_title", "source_type", "summary", "title", "tv_show_uuid", "type", "year" FROM `program`;--> statement-breakpoint
 DROP TABLE `program`;--> statement-breakpoint
 ALTER TABLE `__new_program` RENAME TO `program`;--> statement-breakpoint
-PRAGMA foreign_keys=ON;--> statement-breakpoint
 CREATE INDEX `program_season_uuid_index` ON `program` (`season_uuid`);--> statement-breakpoint
 CREATE INDEX `program_tv_show_uuid_index` ON `program` (`tv_show_uuid`);--> statement-breakpoint
 CREATE INDEX `program_album_uuid_index` ON `program` (`album_uuid`);--> statement-breakpoint
@@ -90,3 +89,4 @@ DROP TABLE `program_grouping`;--> statement-breakpoint
 ALTER TABLE `__new_program_grouping` RENAME TO `program_grouping`;--> statement-breakpoint
 CREATE INDEX `program_grouping_show_uuid_index` ON `program_grouping` (`show_uuid`);--> statement-breakpoint
 CREATE INDEX `program_grouping_artist_uuid_index` ON `program_grouping` (`artist_uuid`);
+PRAGMA foreign_keys=ON;--> statement-breakpoint
