@@ -4,12 +4,16 @@ import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
+import { DrizzleDBAccess } from '@/db/schema/index.ts';
+import { ProgramGroupingTypes } from '@/db/schema/ProgramGrouping.ts';
+import { match } from 'ts-pattern';
 
 @injectable()
 export class BackfillMediaSourceIdFixer extends Fixer {
   constructor(
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {
     super();
   }
@@ -74,5 +78,44 @@ export class BackfillMediaSourceIdFixer extends Fixer {
         'jellyfin',
       ])
       .execute();
+
+    for (const typ of ProgramGroupingTypes) {
+      const field = match(typ)
+        .returnType<'albumUuid' | 'artistUuid' | 'seasonUuid' | 'tvShowUuid'>()
+        .with('album', () => 'albumUuid')
+        .with('artist', () => 'artistUuid')
+        .with('season', () => 'seasonUuid')
+        .with('show', () => 'tvShowUuid')
+        .exhaustive();
+
+      await this.db
+        .updateTable('programGrouping')
+        .set({
+          mediaSourceId: (eb) =>
+            eb
+              .selectFrom('program')
+              .where('program.mediaSourceId', 'is not', null)
+              .whereRef(`program.${field}`, '=', 'programGrouping.uuid')
+              .select('program.mediaSourceId')
+              .limit(1),
+        })
+        .where('programGrouping.mediaSourceId', 'is', null)
+        .where('programGrouping.type', '=', typ)
+        .execute();
+
+      await this.db
+        .updateTable('programGrouping')
+        .set({
+          sourceType: (eb) =>
+            eb
+              .selectFrom('program')
+              .whereRef(`program.${field}`, '=', 'programGrouping.uuid')
+              .select('program.sourceType')
+              .limit(1),
+        })
+        .where('programGrouping.sourceType', 'is', null)
+        .where('programGrouping.type', '=', typ)
+        .execute();
+    }
   }
 }
