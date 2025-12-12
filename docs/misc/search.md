@@ -71,3 +71,6 @@ Fields available for search:
 | `audio_channels` | `number` | Whole number audio channels | `2`, `5.1` => `6` | 
 | `release_year` | `number` | Program release year | `1990` |
 | `release_date` | `date` | Program's original release date | `1990-12-05` (`YYYY-MM-DD` or `YYYYMMDD`) |
+| `show_title` | `string` | Title of the show a program belongs to (only applicable to episodes) | 30 Rock |
+| `show_genre` | `string` | Genre of the show a program belongs to (only applicable to episodes) | comedy |
+| `show_tag` | `string` | Tag on the show the program belongs to (only applicable to episodes) | - |

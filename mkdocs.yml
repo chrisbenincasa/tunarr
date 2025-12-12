@@ -1,6 +1,7 @@
 site_name: Tunarr
 repo_name: chrisbenincasa/tunarr
 repo_url: https://github.com/chrisbenincasa/tunarr
+edit_uri: edit/dev/docs/
 site_url: https://tunarr.com/
 theme:
   name: material
@@ -35,6 +36,8 @@ theme:
     - content.code.copy
     - content.code.select
     - content.tooltips
+    - content.action.edit
+    - content.action.view
 
 nav:
   - Home: index.md
@@ -81,6 +84,7 @@ nav:
           - configure/library/index.md
           - Filler: configure/library/filler.md
           - Custom Shows: configure/library/custom-shows.md
+          - Smart Collections: configure/library/smart-collections.md
       - Clients:
           - configure/clients/index.md
           - Plex: configure/clients/plex.md
@@ -88,7 +92,7 @@ nav:
   - Misc.:
       - Search: misc/search.md
       - Common Issues: misc/common-issues.md
-      - Troubleshooting: misc/troubleshooting.md
+      #- Troubleshooting: misc/troubleshooting.md
   - Development:
       - Contributing: dev/contributing.md
 
