@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.22.19](https://github.com/chrisbenincasa/tunarr/compare/v0.22.18...v0.22.19) (2025-12-12)
+
+
+### Features
+
+* add parent directory as tag for other video libraries ([7d6890f](https://github.com/chrisbenincasa/tunarr/commit/7d6890f1255ba6b29dfccb0734af051ad8ebddf2))
+* support negation of IN queries ([63f23ac](https://github.com/chrisbenincasa/tunarr/commit/63f23acbba4fe62198859f6cba532ab95471574b)), closes [#1514](https://github.com/chrisbenincasa/tunarr/issues/1514)
+
+
+### Bug Fixes
+
+* allow parsing virtual show_* fields in search ([0dcd7d7](https://github.com/chrisbenincasa/tunarr/commit/0dcd7d7d6d4b2c5d35109e38381c6974d8cdffeb))
+* allow using non-synced sources in filler / custom-shows ([6b27a07](https://github.com/chrisbenincasa/tunarr/commit/6b27a070c473d08862f18d07067bef4398c3f697))
+* another fix for foreign keys migration; defer checking ([9d8ff9c](https://github.com/chrisbenincasa/tunarr/commit/9d8ff9c6fcadb3c46ed7a268740cad7102a53891))
+* backfill program_grouping.media_source_id in fixer ([f049a81](https://github.com/chrisbenincasa/tunarr/commit/f049a81204f24fb77fae9850a9d609ca32aac26a))
+* do not mark missing items in local scanners when using pathFilter ([d4ed522](https://github.com/chrisbenincasa/tunarr/commit/d4ed522aec5fe6e417db07070bcaa3cf36113cd2))
+* fix mediaSourceDB#setMediaSourceUserInfo early exit clause ([71ef775](https://github.com/chrisbenincasa/tunarr/commit/71ef775cdbc5738b97edc77c9262eed3a9028b49))
+* fix migration splitting for broken migration ([bcd72d7](https://github.com/chrisbenincasa/tunarr/commit/bcd72d71548baab2616ece9e1f2bc64766113171))
+* handle different language formats when parsing subtitle filenames ([#1507](https://github.com/chrisbenincasa/tunarr/issues/1507)) ([b88fb47](https://github.com/chrisbenincasa/tunarr/commit/b88fb47c878dbc9e9065a6855f9e1efddde388db))
+* properly display thumbnails for non-synced sources ([d1e66c5](https://github.com/chrisbenincasa/tunarr/commit/d1e66c5fe41729334f2ab018c7bc5a05b81ed9dd))
+
+
+### UI Changes
+
+* add link to search page from smart collections page ([dc3e932](https://github.com/chrisbenincasa/tunarr/commit/dc3e932f5326063350e61a56ca8d6d9c5fa06f2c))
+* add warning for structured vs free queries ([714982f](https://github.com/chrisbenincasa/tunarr/commit/714982f3ca95722e68273cf00f6ea838bdf6f060))
+
 ## [0.23.0-alpha.35](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.34...v0.23.0-alpha.35) (2025-12-11)
 
 
