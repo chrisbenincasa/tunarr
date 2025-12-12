@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/chrisbenincasa/tunarr/compare/v1.0.0...v1.0.1) (2025-12-12)
+
+
+### Bug Fixes
+
+* only use thumbnail paths directly if they are http/https ([3e3a89c](https://github.com/chrisbenincasa/tunarr/commit/3e3a89c8ab2a2f57d7d8c7a8dff7b90d27a02881))
+
 ## [1.0.0](https://github.com/chrisbenincasa/tunarr/compare/v0.22.18...v1.0.0) (2025-12-12)
 
 ### ⚠ BREAKING CHANGES
