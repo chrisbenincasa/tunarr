@@ -348,7 +348,7 @@ export class MediaSourceDB {
     mediaSourceId: MediaSourceId,
     info: MediaSourceUserInfo,
   ) {
-    if (isNonEmptyString(info.userId) && isNonEmptyString(info.username)) {
+    if (isEmpty(info.userId) && isEmpty(info.username)) {
       return;
     }
 
