@@ -2,7 +2,14 @@ import { z } from 'zod/v4';
 import type { MediaSourceLibrary } from '../MediaSourceSettings.js';
 import type { TupleToUnion } from '../util.js';
 
-const StringOperators = ['=', '!=', 'contains', 'starts with', 'in'] as const;
+const StringOperators = [
+  '=',
+  '!=',
+  'contains',
+  'starts with',
+  'in',
+  'not in',
+] as const;
 export type StringOperators = TupleToUnion<typeof StringOperators>;
 
 const NumericOperators = ['=', '!=', '<', '>', '<=', '>=', 'to'] as const;

@@ -844,13 +844,13 @@ export type SearchFilterInput = {
         key: string;
         name: string;
         type: 'string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in';
+        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
         name: string;
         type: 'facted_string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in';
+        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
@@ -1717,13 +1717,13 @@ export type SearchFilter = {
         key: string;
         name: string;
         type: 'string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in';
+        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
         name: string;
         type: 'facted_string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in';
+        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
@@ -13521,7 +13521,7 @@ export type PostApiMoviesByIdScanErrors = {
     /**
      * Default Response
      */
-    400: unknown;
+    400: string;
     /**
      * Default Response
      */
@@ -13531,6 +13531,8 @@ export type PostApiMoviesByIdScanErrors = {
      */
     500: unknown;
 };
+
+export type PostApiMoviesByIdScanError = PostApiMoviesByIdScanErrors[keyof PostApiMoviesByIdScanErrors];
 
 export type PostApiMoviesByIdScanResponses = {
     /**
@@ -13552,7 +13554,7 @@ export type PostApiShowsByIdScanErrors = {
     /**
      * Default Response
      */
-    400: unknown;
+    400: string;
     /**
      * Default Response
      */
@@ -13562,6 +13564,8 @@ export type PostApiShowsByIdScanErrors = {
      */
     500: unknown;
 };
+
+export type PostApiShowsByIdScanError = PostApiShowsByIdScanErrors[keyof PostApiShowsByIdScanErrors];
 
 export type PostApiShowsByIdScanResponses = {
     /**

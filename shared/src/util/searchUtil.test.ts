@@ -44,6 +44,18 @@ describe('search parser', () => {
     } satisfies SearchClause);
   });
 
+  test('parse NOT IN', () => {
+    const input = 'genre NOT IN [comedy, horror]';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+        type: 'single_query',
+        field: 'genre',
+        op: 'in',
+        negate: true,
+        value: ['comedy', 'horror'],
+      } satisfies SearchClause)
+  })
+
   test('parse string fields', () => {
     const input =
       'library_id = ddd327c3-aea2-4b27-a2c0-a8ce190d25d0 AND title <= A';

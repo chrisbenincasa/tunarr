@@ -149,6 +149,8 @@ const GreaterThanOrEqualOperator = createToken({
 });
 const GreaterThanOperator = createToken({ name: 'GTOperator', pattern: />/ });
 
+const NotOperator = createToken({ name: 'NotOperator', pattern: /not/i });
+
 const InOperator = createToken({ name: 'InOperator', pattern: /in/i });
 
 const BetweenOperator = createToken({
@@ -172,6 +174,7 @@ const allTokens = [
   NeqOperator,
   LessThanOperator,
   GreaterThanOperator,
+  NotOperator,
   InOperator,
   BetweenOperator,
   ContainsOperator,
@@ -189,7 +192,7 @@ const allTokens = [
 
 const SearchExpressionLexer = new Lexer(allTokens);
 
-const StringOps = ['=', '!=', '<', '<=', 'in', 'contains'] as const;
+const StringOps = ['=', '!=', '<', '<=', 'in', 'not in', 'contains'] as const;
 type StringOps = TupleToUnion<typeof StringOps>;
 const NumericOps = ['=', '!=', '<', '<=', '>', '>=', 'between'] as const;
 type NumericOps = TupleToUnion<typeof NumericOps>;
@@ -203,6 +206,7 @@ const StringOpToApiType = {
   '=': '=',
   contains: 'contains',
   in: 'in',
+  'not in': 'not in',
 } satisfies Record<StringOps, StringOperators>;
 
 const NumericOpToApiType = {
@@ -226,6 +230,7 @@ export type SingleStringSearchQuery = {
   field: string;
   op: StringOps;
   value: string | NonEmptyArray<string>;
+  negate?: boolean
 };
 
 export type SingleNumericQuery =
@@ -400,7 +405,11 @@ export class SearchParser extends EmbeddedActionsParser {
   });
 
   private stringOperator = this.RULE('string_operator', () => {
-    return this.OR<{ op: StringOps; value: string | NonEmptyArray<string> }>([
+    return this.OR<{
+      op: StringOps;
+      value: string | NonEmptyArray<string>;
+      negate?: boolean;
+    }>([
       {
         ALT: () => {
           const op = this.OR2<StringOps>([
@@ -437,8 +446,12 @@ export class SearchParser extends EmbeddedActionsParser {
       },
       {
         ALT: () => {
-          const op = this.CONSUME(InOperator).image.toLowerCase() as 'in';
-          this.CONSUME2(OpenArray);
+          let negate = false;
+          if (this.OPTION(() => this.CONSUME(NotOperator))) {
+            negate = true;
+          }
+          const op = this.CONSUME2(InOperator).image.toLowerCase() as 'in';
+          this.CONSUME3(OpenArray);
           const values: string[] = [];
           this.AT_LEAST_ONE_SEP({
             DEF: () => {
@@ -446,9 +459,9 @@ export class SearchParser extends EmbeddedActionsParser {
             },
             SEP: Comma,
           });
-          this.CONSUME2(CloseArray);
+          this.CONSUME4(CloseArray);
           // Safe because of "at least one" above
-          return { op, value: values as NonEmptyArray<string> };
+          return { op, value: values as NonEmptyArray<string>, negate };
         },
       },
     ]);
@@ -626,12 +639,13 @@ export class SearchParser extends EmbeddedActionsParser {
 
   private singleStringSearch = this.RULE('singleStringSearch', () => {
     const field = this.CONSUME(StringField, { LABEL: 'field' }).image;
-    const { op, value } = this.SUBRULE(this.stringOperator, { LABEL: 'op' });
+    const { op, value, negate } = this.SUBRULE(this.stringOperator, { LABEL: 'op' });
     return {
       type: 'single_query' as const,
       field,
       op,
       value,
+      negate,
     } satisfies SingleStringSearchQuery;
   });
 
@@ -881,7 +895,6 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       }
     }
     case 'single_query': {
-      console.log(input.field);
       const key: string = virtualFieldToIndexField[input.field] ?? input.field;
 
       return {

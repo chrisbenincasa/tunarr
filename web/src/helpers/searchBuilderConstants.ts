@@ -90,6 +90,7 @@ const OperatorLabelByFieldType = {
     'starts with': 'starts with',
     contains: 'contains',
     in: 'in',
+    'not in': 'not in',
   },
   string: {
     '!=': '!=',
@@ -97,6 +98,7 @@ const OperatorLabelByFieldType = {
     'starts with': 'starts with',
     contains: 'contains',
     in: 'in',
+    'not in': 'not in',
   },
 } satisfies OperatorLabelMap;
 

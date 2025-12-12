@@ -10,7 +10,7 @@
   "scripts": {
     "bundle": "tsc",
     "build": "tsc --declaration",
-    "build-dev": "tsup --dts --watch",
+    "build-dev": "tsc --declaration --watch",
     "clean": "rimraf ./dist/",
     "dev": "tsc --declaration --watch",
     "generate-search-diagram": "tsx scripts/generate_search_diagram.ts",

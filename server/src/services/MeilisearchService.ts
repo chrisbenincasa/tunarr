@@ -6,7 +6,7 @@ import {
   TerminalProgram,
   TupleToUnion,
 } from '@tunarr/types';
-import { SearchFilter } from '@tunarr/types/api';
+import { SearchFilter, StringOperators } from '@tunarr/types/api';
 import {
   ExternalIdType,
   isValidMultiExternalIdType,
@@ -1076,7 +1076,7 @@ export class MeilisearchService implements ISearchService {
     const index = IndexesByName[indexName];
     let filter: Maybe<string>;
     if (request.filter) {
-      filter = this.buildFilterExpression(index, request.filter);
+      filter = MeilisearchService.buildFilterExpression(index, request.filter);
     }
 
     if (
@@ -1160,7 +1160,7 @@ export class MeilisearchService implements ISearchService {
 
     let filter: Maybe<string>;
     if (request.filter) {
-      filter = this.buildFilterExpression(index, request.filter);
+      filter = MeilisearchService.buildFilterExpression(index, request.filter);
     }
 
     if (
@@ -1289,9 +1289,10 @@ export class MeilisearchService implements ISearchService {
     }
   }
 
-  private buildFilterExpression(
+  static buildFilterExpression(
     index: GenericTunarrSearchIndex,
     query: SearchFilter,
+    depth: number = 0,
     buf: string = '',
   ) {
     let v: string = '';
@@ -1302,17 +1303,21 @@ export class MeilisearchService implements ISearchService {
         }
 
         const op = query.op.toUpperCase();
-        const children = query.children.map((q) =>
-          this.buildFilterExpression(index, q),
-        );
+        const children = query.children
+          .map((q) => this.buildFilterExpression(index, q, depth + 1))
+          .filter(isNonEmptyString);
         v = children.join(` ${op} `);
+        // Nested grouped get parents to ensure the original intent is kept
+        if (depth > 0 && children.length > 1) {
+          v = `(${v})`;
+        }
         break;
       }
       case 'value': {
         const maybeOpAndValue = match(query.fieldSpec)
           .with(
             { type: P.union('facted_string', 'string'), value: P.array() },
-            ({ value }) => {
+            ({ value, op }) => {
               const filteredValue = seq.collect(value, (v) =>
                 isNonEmptyString(v) ? v : null,
               );
@@ -1324,18 +1329,24 @@ export class MeilisearchService implements ISearchService {
                 )
                   ? encodeCaseSensitiveId(filteredValue[0])
                   : filteredValue[0];
-                const op =
-                  query.fieldSpec.op.trim().toLowerCase() === 'in'
-                    ? '='
-                    : query.fieldSpec.op.trim();
-                return `${op.toUpperCase()} '${v}'`;
-              } else {
+                const mappedOp = match(op)
+                  .returnType<StringOperators>()
+                  .with('in', () => '=')
+                  .with('not in', () => '!=')
+                  .otherwise(() => op);
+                return `${mappedOp.toUpperCase()} '${v}'`;
+              } else if (op === 'in' || op === 'not in') {
+                const searchOperator = op.toUpperCase();
                 const v = index.caseSensitiveFilters?.includes(
                   query.fieldSpec.key,
                 )
                   ? filteredValue.map(encodeCaseSensitiveId)
                   : filteredValue;
-                return `IN [${v.map((_) => `'${_}'`).join(', ')}]`;
+                return `${searchOperator} [${v.map((_) => `'${_}'`).join(', ')}]`;
+              } else {
+                throw new Error(
+                  `Unsupported search value configuration: ${JSON.stringify(query.fieldSpec)}`,
+                );
               }
             },
           )
