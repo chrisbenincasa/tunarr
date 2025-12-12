@@ -24,7 +24,8 @@ Tunarr's search feature different typed fields, such as `string`, `number`, and 
 | `<` or `<=` | Starts With | `title <= A` |
 | `!=` | Not Equals | `title != "Sesame Street"` |
 | `~` | Contains | `title ~ Hours` |
-| `in` | Set includes | `title in ["30 Rock", "Arrested Development"]` |
+| `in` | Set includes | `title IN ["30 Rock", "Arrested Development"]` |
+| `not in` | Set excludes | `genre NOT IN [comedy, horror]` |
 
 ## Number & Date
 
