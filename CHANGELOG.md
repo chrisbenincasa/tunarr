@@ -1,176 +1,92 @@
 # Changelog
 
-## [0.23.0-alpha.35](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.34...v0.23.0-alpha.35) (2025-12-11)
+## [1.0.0](https://github.com/chrisbenincasa/tunarr/compare/v0.22.18...v1.0.0) (2025-12-12)
+
+### ⚠ BREAKING CHANGES
+
+* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448))
+* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436))
+* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406))
+
+### Features
+
+* media library scanner + full library search ([4dd117c](https://github.com/chrisbenincasa/tunarr/commit/4dd117cb694950ffe125c8c65d53d6fb01dc2bac))
+* add parent directory as tag for other video libraries ([7d6890f](https://github.com/chrisbenincasa/tunarr/commit/7d6890f1255ba6b29dfccb0734af051ad8ebddf2))
+* support negation of IN queries ([63f23ac](https://github.com/chrisbenincasa/tunarr/commit/63f23acbba4fe62198859f6cba532ab95471574b)), closes [#1514](https://github.com/chrisbenincasa/tunarr/issues/1514)
+* add credits API and use it for credit thumbs ([758fd64](https://github.com/chrisbenincasa/tunarr/commit/758fd642dbb5f3681af0c4846c77dd9873870e08))
+* new program page ([fde72a4](https://github.com/chrisbenincasa/tunarr/commit/fde72a49b29e8318d2463e766411165c779429b6))
+* implement emptying trash functionality ([#1484](https://github.com/chrisbenincasa/tunarr/issues/1484)) ([a6360b0](https://github.com/chrisbenincasa/tunarr/commit/a6360b0b22bcc0d62bfa5635fd7610c84dbaa304))
+* implement missing/trashed items ([#1481](https://github.com/chrisbenincasa/tunarr/issues/1481)) ([18cdbcb](https://github.com/chrisbenincasa/tunarr/commit/18cdbcb57de6cffaee3f53630c5df14d6557d2ca))
+* add search server link to status page ([9ff38ce](https://github.com/chrisbenincasa/tunarr/commit/9ff38ce35e4b6408d61c7ff04fed0aa41d8d7ff0))
+* allow manually purging dangling documents from search index ([2ddf07e](https://github.com/chrisbenincasa/tunarr/commit/2ddf07edc1c5a75460114e57d469d2b0452fd692))
+* search parser overhaul ([fa6db00](https://github.com/chrisbenincasa/tunarr/commit/fa6db00f27c57ea0bfa7b1196b1d1fee1503d06d))
+* add local media scanner for "other video" library type ([#1474](https://github.com/chrisbenincasa/tunarr/issues/1474)) ([efff4b8](https://github.com/chrisbenincasa/tunarr/commit/efff4b826e7dedfc725acbc316076eeeb1fb9ac6))
+* expose max-indexing-threads advanced option for search ([0b30a62](https://github.com/chrisbenincasa/tunarr/commit/0b30a62b72898edfe5a1f9e1784bdec0234de079))
+* hookup scanner cancellation and do it in graceful shutdown ([de5ca88](https://github.com/chrisbenincasa/tunarr/commit/de5ca88e59068fd9a9fe7891d2f54f2f350487ac))
+* persist artwork and credits extracted from media source scanning ([#1450](https://github.com/chrisbenincasa/tunarr/issues/1450)) ([9c82432](https://github.com/chrisbenincasa/tunarr/commit/9c8243282618ac26caef4b238f836dd93488f601))
+* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448)) ([b26a0ba](https://github.com/chrisbenincasa/tunarr/commit/b26a0ba6223803952ee7fb4f30ee1504db1c8dbf))
+* add basic fallback metadata extraction for local media ([45a9643](https://github.com/chrisbenincasa/tunarr/commit/45a9643909bb5e0a14289b818b3eae0030553c4d)), closes [#1428](https://github.com/chrisbenincasa/tunarr/issues/1428)
+* allow scheduling shows that are not part of channel lineup ([#1440](https://github.com/chrisbenincasa/tunarr/issues/1440)) ([83bf854](https://github.com/chrisbenincasa/tunarr/commit/83bf85496b00d502e58ba39f74bc79d0ef3aef51))
+* support smart collection slots in both slot editors ([#1442](https://github.com/chrisbenincasa/tunarr/issues/1442)) ([2c6ef93](https://github.com/chrisbenincasa/tunarr/commit/2c6ef93b56861f7d229470d568b86d975ad5b2a3))
+* add search bar to top bar ([#1432](https://github.com/chrisbenincasa/tunarr/issues/1432)) ([de41188](https://github.com/chrisbenincasa/tunarr/commit/de41188963d31eefaf897b93d683bb0c565efd34))
+* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436)) ([5183eae](https://github.com/chrisbenincasa/tunarr/commit/5183eae8e06141f58afb7b5085584ff5bb4e724d))
+* adds new channel options button across pages ([#1425](https://github.com/chrisbenincasa/tunarr/issues/1425)) ([1c9c99c](https://github.com/chrisbenincasa/tunarr/commit/1c9c99cfd0123de8b67972fa314f622bc20dc1bd))
+* add ability to randomly sort by whole show ([#1415](https://github.com/chrisbenincasa/tunarr/issues/1415)) ([3fc743a](https://github.com/chrisbenincasa/tunarr/commit/3fc743ab9188defb1ad29ea59689a31882d1f14a))
+* allow basic configuration of library scan interval ([b3af495](https://github.com/chrisbenincasa/tunarr/commit/b3af495cfa01aa3f6de6a62f77da36b4247fe44d))
+* allow configuring path replacements per-server ([#1412](https://github.com/chrisbenincasa/tunarr/issues/1412)) ([8a0b8b8](https://github.com/chrisbenincasa/tunarr/commit/8a0b8b831ea9b7c7f42a7764c18919ee521947e2))
+* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406)) ([a748408](https://github.com/chrisbenincasa/tunarr/commit/a748408fcc5f727f88dc9ea836a2f5ecba7f3aa8))
+* save program media versions to DB ([#1379](https://github.com/chrisbenincasa/tunarr/issues/1379)) ([b7b9d91](https://github.com/chrisbenincasa/tunarr/commit/b7b9d914c2c94cdb49dc6dbb200d41db960f3bfc))
+* support for syncing / scanning Other Video libraries in Plex/Jellyfin ([1ea6e8a](https://github.com/chrisbenincasa/tunarr/commit/1ea6e8a1970a8ead827579550748532306fea41b))
 
 
 ### Bug Fixes
 
 * allow parsing virtual show_* fields in search ([0dcd7d7](https://github.com/chrisbenincasa/tunarr/commit/0dcd7d7d6d4b2c5d35109e38381c6974d8cdffeb))
-
-## [0.23.0-alpha.34](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.33...v0.23.0-alpha.34) (2025-12-11)
-
-
-### Bug Fixes
-
-* another fix for foreign keys migration; defer checking ([9d8ff9c](https://github.com/chrisbenincasa/tunarr/commit/9d8ff9c6fcadb3c46ed7a268740cad7102a53891))
-
-## [0.23.0-alpha.33](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.32...v0.23.0-alpha.33) (2025-12-11)
-
-
-### Features
-
-* add parent directory as tag for other video libraries ([7d6890f](https://github.com/chrisbenincasa/tunarr/commit/7d6890f1255ba6b29dfccb0734af051ad8ebddf2))
-
-
-### Bug Fixes
-
-* fix migration splitting for broken migration ([bcd72d7](https://github.com/chrisbenincasa/tunarr/commit/bcd72d71548baab2616ece9e1f2bc64766113171))
-
-## [0.23.0-alpha.32](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.31...v0.23.0-alpha.32) (2025-12-10)
-
-
-### Bug Fixes
-
 * allow using non-synced sources in filler / custom-shows ([6b27a07](https://github.com/chrisbenincasa/tunarr/commit/6b27a070c473d08862f18d07067bef4398c3f697))
+* another fix for foreign keys migration; defer checking ([9d8ff9c](https://github.com/chrisbenincasa/tunarr/commit/9d8ff9c6fcadb3c46ed7a268740cad7102a53891))
+* backfill program_grouping.media_source_id in fixer ([f049a81](https://github.com/chrisbenincasa/tunarr/commit/f049a81204f24fb77fae9850a9d609ca32aac26a))
 * do not mark missing items in local scanners when using pathFilter ([d4ed522](https://github.com/chrisbenincasa/tunarr/commit/d4ed522aec5fe6e417db07070bcaa3cf36113cd2))
+* fix mediaSourceDB#setMediaSourceUserInfo early exit clause ([71ef775](https://github.com/chrisbenincasa/tunarr/commit/71ef775cdbc5738b97edc77c9262eed3a9028b49))
+* fix migration splitting for broken migration ([bcd72d7](https://github.com/chrisbenincasa/tunarr/commit/bcd72d71548baab2616ece9e1f2bc64766113171))
 * handle different language formats when parsing subtitle filenames ([#1507](https://github.com/chrisbenincasa/tunarr/issues/1507)) ([b88fb47](https://github.com/chrisbenincasa/tunarr/commit/b88fb47c878dbc9e9065a6855f9e1efddde388db))
 * properly display thumbnails for non-synced sources ([d1e66c5](https://github.com/chrisbenincasa/tunarr/commit/d1e66c5fe41729334f2ab018c7bc5a05b81ed9dd))
-
-## [0.23.0-alpha.31](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.30...v0.23.0-alpha.31) (2025-12-08)
-
-
-### Bug Fixes
-
 * ensure search index snapshots are included in backups ([af63a41](https://github.com/chrisbenincasa/tunarr/commit/af63a41467e85c5bd31b2025a9a4c149ff814099))
 * ensure UI cannot unset 12/24 hour clock ([49fa52b](https://github.com/chrisbenincasa/tunarr/commit/49fa52b30c484ce79748e4c097c38d5ff40e49e1)), closes [#1504](https://github.com/chrisbenincasa/tunarr/issues/1504)
 * only keep the last 3 DB copy migration backup files ([a61de3b](https://github.com/chrisbenincasa/tunarr/commit/a61de3b881cac61db6c04fc7f952652f5bc2d47d))
 * properly materialize smart collections with structured filters when scheudling slots ([58b71a6](https://github.com/chrisbenincasa/tunarr/commit/58b71a6a133c8be55fb6bdc178b441a2014ea22f))
 * simplify database copy migrations ([9804863](https://github.com/chrisbenincasa/tunarr/commit/98048634546918364d42872bb5d4f272bb9ffc01))
 * take search index snapshot during backup task ([a3e885c](https://github.com/chrisbenincasa/tunarr/commit/a3e885c67eafd47f16336539d10913eaab5d6a61))
-
-## [0.23.0-alpha.30](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.29...v0.23.0-alpha.30) (2025-12-05)
-
-
-### Bug Fixes
-
 * fix missing item checking for local scanners ([ecfb621](https://github.com/chrisbenincasa/tunarr/commit/ecfb621b715b6a521cf290547f538d47b3bf6bf4))
 * standardize on artwork hooks on new program detail pages ([2d0c112](https://github.com/chrisbenincasa/tunarr/commit/2d0c1121e09b20e9b22f1a06bd3999d587b9e8b5))
-
-## [0.23.0-alpha.29](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.28...v0.23.0-alpha.29) (2025-12-05)
-
-
-### Bug Fixes
-
 * actually delete smart collections when requested ([e285655](https://github.com/chrisbenincasa/tunarr/commit/e285655daf592bc4e13e4b6bacc2e8d68e094c5a))
 * allow viewing slot schedulers even with missing programming ([7993bb5](https://github.com/chrisbenincasa/tunarr/commit/7993bb53c29d13b83b30169776698b837c7364c4))
 * fix horizontal page scroll ([#1497](https://github.com/chrisbenincasa/tunarr/issues/1497)) ([308bf3d](https://github.com/chrisbenincasa/tunarr/commit/308bf3d5013364d0b173664ae0f45323978255d6))
-
-## [0.23.0-alpha.28](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.27...v0.23.0-alpha.28) (2025-12-03)
-
-
-### Features
-
-* add credits API and use it for credit thumbs ([758fd64](https://github.com/chrisbenincasa/tunarr/commit/758fd642dbb5f3681af0c4846c77dd9873870e08))
-* new program page ([fde72a4](https://github.com/chrisbenincasa/tunarr/commit/fde72a49b29e8318d2463e766411165c779429b6))
-
-
-### Bug Fixes
-
 * lift 1k document restriction on structured queries ([28279e8](https://github.com/chrisbenincasa/tunarr/commit/28279e8fd8e1a326f835578efb3df24670e96083))
 * remove reliance on search index for program materialization ([#1494](https://github.com/chrisbenincasa/tunarr/issues/1494)) ([c5d2118](https://github.com/chrisbenincasa/tunarr/commit/c5d21187c9fe8ea3255c2bc9ba12dfd2cb3fe433))
-
-
-### UI Changes
-
-* consistent library page UX and always-visible drawer ([2c59729](https://github.com/chrisbenincasa/tunarr/commit/2c5972951b83b72eeb19d18847fd8b0f2e7dbcec))
-
-## [0.23.0-alpha.27](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.26...v0.23.0-alpha.27) (2025-11-30)
-
-
-### Bug Fixes
-
 * allow saving "free query" searches as smart collections ([d55cdd9](https://github.com/chrisbenincasa/tunarr/commit/d55cdd9e2d99cfe63247dab6a114b8565c032cf3))
 * do not attempt to parse numbers from nfo files ([41f1307](https://github.com/chrisbenincasa/tunarr/commit/41f13071db93bf4c06a1a20e503062b0ad381a5a))
 * fix stream duration calculation in StreamProgramCalculator ([526417b](https://github.com/chrisbenincasa/tunarr/commit/526417bd901de3c615eb89bc2aa1e65e0412f18b))
 * run RefreshMediaSourceLibraries at startup; then once an hour afterwards ([ba96b3f](https://github.com/chrisbenincasa/tunarr/commit/ba96b3fac70c4029504a9cb2abd2f27b2b9e2d03))
-
-## [0.23.0-alpha.26](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.25...v0.23.0-alpha.26) (2025-11-26)
-
-
-### Features
-
-* implement emptying trash functionality ([#1484](https://github.com/chrisbenincasa/tunarr/issues/1484)) ([a6360b0](https://github.com/chrisbenincasa/tunarr/commit/a6360b0b22bcc0d62bfa5635fd7610c84dbaa304))
-
-
-### Bug Fixes
-
 * do not require canonicalId to return API program/grouping ([b2ea9f9](https://github.com/chrisbenincasa/tunarr/commit/b2ea9f9d969d4e8b4c4e9d239608494898d12e39))
 * ensure all fields are properly updated when upserting grouping ([b06f8e4](https://github.com/chrisbenincasa/tunarr/commit/b06f8e48af4601b8e1458b01b3dec767bc9475b2))
 * fix macos bundle for meilisearch ([62025c6](https://github.com/chrisbenincasa/tunarr/commit/62025c6d980bc94e84cbd1fa1d28ce9487c0f1e3))
 * **ui:** fix Force Scan toolip ([434fe3b](https://github.com/chrisbenincasa/tunarr/commit/434fe3b0b67ce8b92de4ec1f24568ce9db0a876c))
-
-## [0.23.0-alpha.25](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.24...v0.23.0-alpha.25) (2025-11-25)
-
-
-### Features
-
-* implement missing/trashed items ([#1481](https://github.com/chrisbenincasa/tunarr/issues/1481)) ([18cdbcb](https://github.com/chrisbenincasa/tunarr/commit/18cdbcb57de6cffaee3f53630c5df14d6557d2ca))
-
-
-### Bug Fixes
-
 * allow dumpless Meilisearch upgrades; bump to 1.27.0 ([ab82009](https://github.com/chrisbenincasa/tunarr/commit/ab820096a07e5cbff94cd2cd4f0ab33d9ce4a77a))
 * improve media source scanning UI state ([dc67e9e](https://github.com/chrisbenincasa/tunarr/commit/dc67e9e047c21f8b5aff36b950207cb42dc8f631))
 * make audio/subtitle language optional in nfo schemas ([18cdbcb](https://github.com/chrisbenincasa/tunarr/commit/18cdbcb57de6cffaee3f53630c5df14d6557d2ca))
 * make various Plex item index fields optional ([c198860](https://github.com/chrisbenincasa/tunarr/commit/c198860f7edcb5085cb73de77108aa622ec9dff0))
 * return TerminalProgram type from /channels/:id/programs ([d5405e0](https://github.com/chrisbenincasa/tunarr/commit/d5405e03ed6343515c840a1bef0ff4aed92e5126))
-
-## [0.23.0-alpha.24](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.23...v0.23.0-alpha.24) (2025-11-20)
-
-
-### Features
-
-* add search server link to status page ([9ff38ce](https://github.com/chrisbenincasa/tunarr/commit/9ff38ce35e4b6408d61c7ff04fed0aa41d8d7ff0))
-* allow manually purging dangling documents from search index ([2ddf07e](https://github.com/chrisbenincasa/tunarr/commit/2ddf07edc1c5a75460114e57d469d2b0452fd692))
-* search parser overhaul ([fa6db00](https://github.com/chrisbenincasa/tunarr/commit/fa6db00f27c57ea0bfa7b1196b1d1fee1503d06d))
-
-
-### Bug Fixes
-
 * add missing RemoveDanglingProgramsFromSearchTask ([96650ee](https://github.com/chrisbenincasa/tunarr/commit/96650ee0de7c08882bd8359f71ff782ea7e9afd0))
 * delete items from search index when media source is deleted ([de995c7](https://github.com/chrisbenincasa/tunarr/commit/de995c7a0bfdbde5d3530a42f8e57e92c86f801f))
 * ensure PlexApiClient uses dayjs from server impl ([0dc0b60](https://github.com/chrisbenincasa/tunarr/commit/0dc0b60f426ecf22b0ab47dd29a1ed0ecd3d942b))
 * fix JF/Emby stream path building ([db5e6bc](https://github.com/chrisbenincasa/tunarr/commit/db5e6bcf0ce5cd54839e5362d8f5a458cbe77953))
 * index additional denormalized details ([4ac97a5](https://github.com/chrisbenincasa/tunarr/commit/4ac97a5f8c738c252fcd78770e63f4f766b2cd58))
 * properly persist media source path replacements on save ([2744ad0](https://github.com/chrisbenincasa/tunarr/commit/2744ad01e53c47aec3de57c5a0544b143fa85c56))
-
-## [0.23.0-alpha.23](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.22...v0.23.0-alpha.23) (2025-11-18)
-
-
-### Features
-
-* add local media scanner for "other video" library type ([#1474](https://github.com/chrisbenincasa/tunarr/issues/1474)) ([efff4b8](https://github.com/chrisbenincasa/tunarr/commit/efff4b826e7dedfc725acbc316076eeeb1fb9ac6))
-
-
-### Bug Fixes
-
 * allow query from top search bar even if not a structured query ([04cfe0c](https://github.com/chrisbenincasa/tunarr/commit/04cfe0cf420ae9235b99a7b9d7a9be0fbae621e4))
 * implement proper dirty checking in media source other video scanner ([4fed159](https://github.com/chrisbenincasa/tunarr/commit/4fed159f4ca1b452e83426a8166ac909442511a2))
 * include child relations for program groupings in API ([8c4634c](https://github.com/chrisbenincasa/tunarr/commit/8c4634c115b49382ea9fcfba638b130613f28d2c))
 * pass relevant media source token when loading external images ([7b65ff5](https://github.com/chrisbenincasa/tunarr/commit/7b65ff5ad77ac58d057bce55e8dcdb58736299b3)), closes [#1469](https://github.com/chrisbenincasa/tunarr/issues/1469)
 * proper implementation of dirty checking during media source scanning ([857f656](https://github.com/chrisbenincasa/tunarr/commit/857f6563fdffb2444f210d58d24f727cb90ff351))
-
-## [0.23.0-alpha.22](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.21...v0.23.0-alpha.22) (2025-11-10)
-
-
-### Features
-
-* expose max-indexing-threads advanced option for search ([0b30a62](https://github.com/chrisbenincasa/tunarr/commit/0b30a62b72898edfe5a1f9e1784bdec0234de079))
-* hookup scanner cancellation and do it in graceful shutdown ([de5ca88](https://github.com/chrisbenincasa/tunarr/commit/de5ca88e59068fd9a9fe7891d2f54f2f350487ac))
-
-
-### Bug Fixes
-
 * add derivedtypes update - forgot to save this file ([2f0c882](https://github.com/chrisbenincasa/tunarr/commit/2f0c882774e5accd34c91a0d92c48d75843bb26b))
 * allow 0 as a track number index ([ff17084](https://github.com/chrisbenincasa/tunarr/commit/ff17084eade2d53532124f792d4812210fac8a1b)), closes [#1462](https://github.com/chrisbenincasa/tunarr/issues/1462)
 * always report input on API schema parse errors ([5c20e72](https://github.com/chrisbenincasa/tunarr/commit/5c20e72a3054494a3470656751e8a9387cc1ccdf))
@@ -190,151 +106,24 @@
 * return full parent/grandparent details from getProgramById API ([66c03b2](https://github.com/chrisbenincasa/tunarr/commit/66c03b235c001f1f7ed029ee76a3e252696ce575))
 * return terminal program genres in /programs/:id endpoint ([957f0ce](https://github.com/chrisbenincasa/tunarr/commit/957f0ce2a321dde7b374cfde8279ca7b07ccf68e)), closes [#1461](https://github.com/chrisbenincasa/tunarr/issues/1461)
 * revert better-sqlite update ([e0f7162](https://github.com/chrisbenincasa/tunarr/commit/e0f71627601d3d1bef0b0c4d5029dbdb865037a2))
-
-## [0.23.0-alpha.21](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.20...v0.23.0-alpha.21) (2025-11-04)
-
-
-### ⚠ BREAKING CHANGES
-
-* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448))
-
-### Features
-
-* persist artwork and credits extracted from media source scanning ([#1450](https://github.com/chrisbenincasa/tunarr/issues/1450)) ([9c82432](https://github.com/chrisbenincasa/tunarr/commit/9c8243282618ac26caef4b238f836dd93488f601))
-* persist cast/crew and their artwork to the DB ([#1448](https://github.com/chrisbenincasa/tunarr/issues/1448)) ([b26a0ba](https://github.com/chrisbenincasa/tunarr/commit/b26a0ba6223803952ee7fb4f30ee1504db1c8dbf))
-
-
-### Bug Fixes
-
 * allow for space between season / episode numbers ([2d4be84](https://github.com/chrisbenincasa/tunarr/commit/2d4be84f7e79f6ae55accf85ce6253ff734c312e))
 * fix season/episode regex regressions with fallback regex ([0ab464f](https://github.com/chrisbenincasa/tunarr/commit/0ab464fa2f5172deaaf8d280c24de3cf86a8d107))
 * make actor.role optional when parsing nfo ([5633933](https://github.com/chrisbenincasa/tunarr/commit/563393304661d7e9e99aaf1a4c29d0cf683b6d30))
 * parse but ignore bin_data streams in with ffprobe ([24b7fbb](https://github.com/chrisbenincasa/tunarr/commit/24b7fbb09366ec266158b1d5680e47e13fb18454))
 * support parsing season/episode numbers in the form 4x03 ([84979a6](https://github.com/chrisbenincasa/tunarr/commit/84979a67312574876fb8c95ed23e911f0cc451d2))
-
-## [0.23.0-alpha.20](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.19...v0.23.0-alpha.20) (2025-11-01)
-
-
-### Bug Fixes
-
 * accept both string or number for aspect ratio in NFO files ([eba9f89](https://github.com/chrisbenincasa/tunarr/commit/eba9f89244a68530fd8c8e4cba0cb019ce42910f))
 * reset local media settings dialog state on close ([6c614e8](https://github.com/chrisbenincasa/tunarr/commit/6c614e84dc141ded751292d70708e696b553fc0b))
-
-## [0.23.0-alpha.19](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.18...v0.23.0-alpha.19) (2025-10-31)
-
-
-### Features
-
-* add basic fallback metadata extraction for local media ([45a9643](https://github.com/chrisbenincasa/tunarr/commit/45a9643909bb5e0a14289b818b3eae0030553c4d)), closes [#1428](https://github.com/chrisbenincasa/tunarr/issues/1428)
-* allow scheduling shows that are not part of channel lineup ([#1440](https://github.com/chrisbenincasa/tunarr/issues/1440)) ([83bf854](https://github.com/chrisbenincasa/tunarr/commit/83bf85496b00d502e58ba39f74bc79d0ef3aef51))
-* support smart collection slots in both slot editors ([#1442](https://github.com/chrisbenincasa/tunarr/issues/1442)) ([2c6ef93](https://github.com/chrisbenincasa/tunarr/commit/2c6ef93b56861f7d229470d568b86d975ad5b2a3))
-
-
-### Bug Fixes
-
 * do not require episode nfo files to have the uniqueid field ([6342a03](https://github.com/chrisbenincasa/tunarr/commit/6342a039c37946a3f19ef7afdb91677d3e2a0bb7))
 * make videodetails nfo parsing more persmissive ([c611297](https://github.com/chrisbenincasa/tunarr/commit/c6112975308bdefc7acb99c35a9add63f710e9a0))
-
-## [0.23.0-alpha.18](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.17...v0.23.0-alpha.18) (2025-10-27)
-
-
-### ⚠ BREAKING CHANGES
-
-* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436))
-
-### Features
-
-* add search bar to top bar ([#1432](https://github.com/chrisbenincasa/tunarr/issues/1432)) ([de41188](https://github.com/chrisbenincasa/tunarr/commit/de41188963d31eefaf897b93d683bb0c565efd34))
-* introduce smart collections ([#1436](https://github.com/chrisbenincasa/tunarr/issues/1436)) ([5183eae](https://github.com/chrisbenincasa/tunarr/commit/5183eae8e06141f58afb7b5085584ff5bb4e724d))
-
-## [0.23.0-alpha.17](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.16...v0.23.0-alpha.17) (2025-10-22)
-
-
-### Features
-
-* adds new channel options button across pages ([#1425](https://github.com/chrisbenincasa/tunarr/issues/1425)) ([1c9c99c](https://github.com/chrisbenincasa/tunarr/commit/1c9c99cfd0123de8b67972fa314f622bc20dc1bd))
-
-
-### Bug Fixes
-
 * do not crash if there is no stream-cache to migrate ([abb708a](https://github.com/chrisbenincasa/tunarr/commit/abb708a689e39bf48ce623f1c8320d3bfcac4e53))
 * make durationinseconds optional; we dont even use this field currently ([46ceea1](https://github.com/chrisbenincasa/tunarr/commit/46ceea145358b741dafd86926ddc710fba914b4f))
-
-## [0.23.0-alpha.16](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.15...v0.23.0-alpha.16) (2025-10-20)
-
-
-### Bug Fixes
-
 * fix jellyfin and emby streaming ([5bf3e84](https://github.com/chrisbenincasa/tunarr/commit/5bf3e849c964eb98c59bb99fe5807561fca14733))
 * more permissive nfo parsing ([66369b9](https://github.com/chrisbenincasa/tunarr/commit/66369b9e241e76ce1a2d6f59e4b1de79b46614d5))
-
-## [0.23.0-alpha.15](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.14...v0.23.0-alpha.15) (2025-10-20)
-
-
-### Bug Fixes
-
 * remove dependency on sharp until we can figure out x-platform packaging ([f4433f6](https://github.com/chrisbenincasa/tunarr/commit/f4433f6648791f99a4f2ee327e9f851579e9d3ec))
-
-## [0.23.0-alpha.14](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.13...v0.23.0-alpha.14) (2025-10-18)
-
-
-### Bug Fixes
-
 * fix binary release and bump node to 22.20.0 ([6475f85](https://github.com/chrisbenincasa/tunarr/commit/6475f8594d696efc0a1564bd4a14d043db3d999e))
-
-## [0.23.0-alpha.13](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.12...v0.23.0-alpha.13) (2025-10-18)
-
-
-### Bug Fixes
-
-* fix build ([6e175df](https://github.com/chrisbenincasa/tunarr/commit/6e175df88973ca2940d1cfb7a340fcc6fb9e036d))
-
-## [0.23.0-alpha.12](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.11...v0.23.0-alpha.12) (2025-10-18)
-
-
-### Features
-
-* add ability to randomly sort by whole show ([#1415](https://github.com/chrisbenincasa/tunarr/issues/1415)) ([3fc743a](https://github.com/chrisbenincasa/tunarr/commit/3fc743ab9188defb1ad29ea59689a31882d1f14a))
-
-
-### Bug Fixes
-
 * fix adding music items for non-synced libraries ([7a1f6f0](https://github.com/chrisbenincasa/tunarr/commit/7a1f6f08219ec9a3e5492d03048e288f9a10243a))
 * fix db associations with scanned audio libraries ([ea2edc5](https://github.com/chrisbenincasa/tunarr/commit/ea2edc5403769a45340050053e8548f02183e450))
-
-## [0.23.0-alpha.11](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.10...v0.23.0-alpha.11) (2025-10-16)
-
-
-### Features
-
-* allow basic configuration of library scan interval ([b3af495](https://github.com/chrisbenincasa/tunarr/commit/b3af495cfa01aa3f6de6a62f77da36b4247fe44d))
-
-## [0.23.0-alpha.10](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.9...v0.23.0-alpha.10) (2025-10-16)
-
-
-### Features
-
-* allow configuring path replacements per-server ([#1412](https://github.com/chrisbenincasa/tunarr/issues/1412)) ([8a0b8b8](https://github.com/chrisbenincasa/tunarr/commit/8a0b8b831ea9b7c7f42a7764c18919ee521947e2))
-
-
-### Bug Fixes
-
 * properly upsert program grouping external ids ([8462143](https://github.com/chrisbenincasa/tunarr/commit/8462143c23c2353452c546f1209d322a4f7d8877))
-
-## [0.23.0-alpha.9](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.8...v0.23.0-alpha.9) (2025-10-14)
-
-
-### ⚠ BREAKING CHANGES
-
-* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406))
-
-### Features
-
-* implement local media libraries ([#1406](https://github.com/chrisbenincasa/tunarr/issues/1406)) ([a748408](https://github.com/chrisbenincasa/tunarr/commit/a748408fcc5f727f88dc9ea836a2f5ecba7f3aa8))
-
-
-### Bug Fixes
-
 * fix meilisearch grabber script to accept x64/x86_64 args for mac download ([415121e](https://github.com/chrisbenincasa/tunarr/commit/415121e5962a1e7fec86f2a84a64c6a1aa227130))
 * **streaming:** convert to proper pixel format before cuda upload + scale ([091e7bd](https://github.com/chrisbenincasa/tunarr/commit/091e7bd290bcc25114db6b789db9b86decebbd0d))
 * **streaming:** do not apply hwdownload filter in cuda pipeline if not on hardware ([5726d6e](https://github.com/chrisbenincasa/tunarr/commit/5726d6ecf89eea051c1babf621fe89f8b6c0aad4))
@@ -344,37 +133,9 @@
 * treat ffprobe format_long_name as optional ([c656d24](https://github.com/chrisbenincasa/tunarr/commit/c656d24c7ae4f1efdccb34deabb755bea7d1c01d))
 * **ui:** allow viewing stream details of custom / filler programs ([af87a17](https://github.com/chrisbenincasa/tunarr/commit/af87a17b43bdc4d567a1f130d784f0c25cea5f36))
 * use proper generic other_video scanning type for inject ([e44d55d](https://github.com/chrisbenincasa/tunarr/commit/e44d55d84048cbcc7e7b21161d7264f4a46627c6))
-
-
-### UI Changes
-
-* cleaning up some mobile styling ([#1405](https://github.com/chrisbenincasa/tunarr/issues/1405)) ([9a79146](https://github.com/chrisbenincasa/tunarr/commit/9a791467df48c44367ac6d6244d6e6932f6e0764))
-
-## [0.23.0-alpha.8](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.7...v0.23.0-alpha.8) (2025-09-19)
-
-
-### Features
-
-* save program media versions to DB ([#1379](https://github.com/chrisbenincasa/tunarr/issues/1379)) ([b7b9d91](https://github.com/chrisbenincasa/tunarr/commit/b7b9d914c2c94cdb49dc6dbb200d41db960f3bfc))
-* support for syncing / scanning Other Video libraries in Plex/Jellyfin ([1ea6e8a](https://github.com/chrisbenincasa/tunarr/commit/1ea6e8a1970a8ead827579550748532306fea41b))
-
-
-### Bug Fixes
-
 * allow querying of other/music video types in UI ([dd494fc](https://github.com/chrisbenincasa/tunarr/commit/dd494fc6836739d2f2a8f48e03374900070794df))
 * fix non-synced item enumeration when adding programming ([5a8acb7](https://github.com/chrisbenincasa/tunarr/commit/5a8acb75962999d5d7812a1381062957f7dfa306))
 * **search:** make various stream metadata params filterable ([f5590f4](https://github.com/chrisbenincasa/tunarr/commit/f5590f4c7a2cc07b74b9dc15bc7664638858f3bb))
-
-## [0.23.0-alpha.7](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.6...v0.23.0-alpha.7) (2025-09-17)
-
-
-### Features
-
-* add search hit counter to program grid ([bddca22](https://github.com/chrisbenincasa/tunarr/commit/bddca22a7541db39b309661523e85e9fb68fabb3))
-
-
-### Bug Fixes
-
 * bundle and start meilisearch properly on macOS ([32d2e23](https://github.com/chrisbenincasa/tunarr/commit/32d2e2360dee3adb1dba1ea660a0289004e4e2e4))
 * do not use github api to pull meilisearch releases ([169503c](https://github.com/chrisbenincasa/tunarr/commit/169503cb950932701d2527815ded3277429cfa2e))
 * ensure we do not save duplicate libraries by external_id ([071be3b](https://github.com/chrisbenincasa/tunarr/commit/071be3bd197093b2581b101de8818be46e0ff6df))
@@ -383,69 +144,13 @@
 * **ui:** allow switching non-synced JF/Emby libraries ([0d812ed](https://github.com/chrisbenincasa/tunarr/commit/0d812eda2cc250e81e87d84b8ef471729ac2a727))
 * **ui:** properly show selection state on imported items ([fff1f6c](https://github.com/chrisbenincasa/tunarr/commit/fff1f6cb519cddde432ae79f7b5ae55313e34d4f))
 
-## [0.23.0-alpha.6](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.5...v0.23.0-alpha.6) (2025-09-16)
+### UI Changes
 
+* add link to search page from smart collections page ([dc3e932](https://github.com/chrisbenincasa/tunarr/commit/dc3e932f5326063350e61a56ca8d6d9c5fa06f2c))
+* add warning for structured vs free queries ([714982f](https://github.com/chrisbenincasa/tunarr/commit/714982f3ca95722e68273cf00f6ea838bdf6f060))
+* consistent library page UX and always-visible drawer ([2c59729](https://github.com/chrisbenincasa/tunarr/commit/2c5972951b83b72eeb19d18847fd8b0f2e7dbcec))
+* cleaning up some mobile styling ([#1405](https://github.com/chrisbenincasa/tunarr/issues/1405)) ([9a79146](https://github.com/chrisbenincasa/tunarr/commit/9a791467df48c44367ac6d6244d6e6932f6e0764))
 
-### Bug Fixes
-
-* meilisearch paths...again ([92fdad2](https://github.com/chrisbenincasa/tunarr/commit/92fdad2f4f2d81a56bd021c762dbc87685611d83))
-
-## [0.23.0-alpha.5](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.4...v0.23.0-alpha.5) (2025-09-16)
-
-
-### Bug Fixes
-
-* pass just arch string to meilisearch downloader ([2c6af77](https://github.com/chrisbenincasa/tunarr/commit/2c6af7797eec14ede06cefa0fb114378d3b5432f))
-
-## [0.23.0-alpha.4](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.3...v0.23.0-alpha.4) (2025-09-16)
-
-
-### Bug Fixes
-
-* unclear why platform/arch is suddenly broken ([18c794e](https://github.com/chrisbenincasa/tunarr/commit/18c794eab7159df74f7b54037bcb5a30c76233e5))
-
-## [0.23.0-alpha.3](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.2...v0.23.0-alpha.3) (2025-09-16)
-
-
-### Bug Fixes
-
-* create release archives with bundled meilisearch ([c96a19f](https://github.com/chrisbenincasa/tunarr/commit/c96a19f1a58ade276c309fa082617a8e35085a06))
-* link meilisearch binary in Dockerfile ([44c02bf](https://github.com/chrisbenincasa/tunarr/commit/44c02bfef66a987b03246fe5c9db7b754db2d236))
-
-## [0.23.0-alpha.2](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha.1...v0.23.0-alpha.2) (2025-09-16)
-
-
-### chore
-
-* release 0.23.0-alpha.2 ([3e59558](https://github.com/chrisbenincasa/tunarr/commit/3e59558bca98a72ef21724112747caefe459e477))
-
-## [0.23.0-alpha.1](https://github.com/chrisbenincasa/tunarr/compare/v0.23.0-alpha...v0.23.0-alpha.1) (2025-09-15)
-
-
-### ⚠ BREAKING CHANGES
-
-* fix bundler
-
-### chore
-
-* fix bundler ([b04ce96](https://github.com/chrisbenincasa/tunarr/commit/b04ce9673d53433fb2265d381459da37866714b5))
-
-## [0.23.0-alpha](https://github.com/chrisbenincasa/tunarr/compare/v0.22.2...v0.23.0-alpha) (2025-09-15)
-
-
-### ⚠ BREAKING CHANGES
-
-* 
-
-### Features
-
-* media library scanner + full library search ([4dd117c](https://github.com/chrisbenincasa/tunarr/commit/4dd117cb694950ffe125c8c65d53d6fb01dc2bac))
-
-
-### Bug Fixes
-
-* allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
-* **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
 ## [0.22.18](https://github.com/chrisbenincasa/tunarr/compare/v0.22.17...v0.22.18) (2025-12-08)
 
