@@ -31,7 +31,13 @@ export const useGetArtworkUrl = () => {
             (art) => isNonEmptyString(art.path) && URL.canParse(art.path),
           )?.path;
           if (path) {
-            return path;
+            const parsedPath = URL.parse(path);
+            if (
+              parsedPath?.protocol === 'http' ||
+              parsedPath?.protocol === 'https'
+            ) {
+              return path;
+            }
           }
 
           return `${settings.backendUri}/api/programs/${item.uuid}/artwork/${type}`;
