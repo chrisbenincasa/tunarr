@@ -4,8 +4,7 @@ import { DB } from '../../db/schema/db.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
-import { DrizzleDBAccess } from '@/db/schema/index.ts';
-import { ProgramGroupingTypes } from '@/db/schema/ProgramGrouping.ts';
+import { ProgramGroupingTypes } from '@/db/schema/ProgramGrouping.js';
 import { match } from 'ts-pattern';
 
 @injectable()
@@ -13,7 +12,6 @@ export class BackfillMediaSourceIdFixer extends Fixer {
   constructor(
     @inject(KEYS.Logger) protected logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
-    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
   ) {
     super();
   }
