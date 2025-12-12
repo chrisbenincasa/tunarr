@@ -76,4 +76,18 @@ First change the "Stream Path" mode to "Direct"
 
 Then, configure your stream path. Tunarr uses prefix-matching for the "original" path to replace.
 
+
 <figure markdown="span">
+    ![](../../assets/media_source_path_replacement_old.png)
+</figure>
+
+### Configuring Path Replacements (alpha)
+
+!!! info
+    Alpha versions allow configuring path replacements per-media-source.
+
+To configure path replacements (Option 2), click on the "Edit" button on the Media Source row. From here, you can add one or more path replace patterns to potentially apply to incoming media.
+
+<figure markdown="span">
+    ![](../../assets/media_source_path_replace.png)
+</figure>

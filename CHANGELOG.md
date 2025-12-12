@@ -447,6 +447,14 @@
 * allow selecting parent Jellyfin items in list view ([9756e35](https://github.com/chrisbenincasa/tunarr/commit/9756e35008e36b0acb95f726bebd04f6ed706c78))
 * **streaming:** change how QSV is initialized on Windows ([1dbec53](https://github.com/chrisbenincasa/tunarr/commit/1dbec5357bed545869a685b02bfa5440a3649243))
 
+## [0.22.18](https://github.com/chrisbenincasa/tunarr/compare/v0.22.17...v0.22.18) (2025-12-08)
+
+
+### Bug Fixes
+
+* fix stream duration calculation in StreamProgramCalculator ([526417b](https://github.com/chrisbenincasa/tunarr/commit/526417bd901de3c615eb89bc2aa1e65e0412f18b))
+* only generate in range indexes ([bcb7542](https://github.com/chrisbenincasa/tunarr/commit/bcb7542d817144fc51e795814633ae2cf1267ed8))
+
 ## [0.22.17](https://github.com/chrisbenincasa/tunarr/compare/v0.22.16...v0.22.17) (2025-11-26)
 
 

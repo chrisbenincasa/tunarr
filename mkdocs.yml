@@ -1,6 +1,7 @@
 site_name: Tunarr
 repo_name: chrisbenincasa/tunarr
 repo_url: https://github.com/chrisbenincasa/tunarr
+edit_uri: edit/dev/docs/
 site_url: https://tunarr.com/
 theme:
   name: material
@@ -35,6 +36,8 @@ theme:
     - content.code.copy
     - content.code.select
     - content.tooltips
+    - content.action.edit
+    - content.action.view
 
 nav:
   - Home: index.md
@@ -43,13 +46,19 @@ nav:
       - Install: getting-started/installation.md
       - Run: getting-started/run.md
       - Setup: getting-started/setup.md
+      - Migration:
+          - Migrate to 1.0: getting-started/migration/migrate-to-1.md
   - Configure:
       - Media Sources:
           - configure/media_sources/index.md
           - Plex: configure/media_sources/plex.md
           - Jellyfin: configure/media_sources/jellyfin.md
           - Emby: configure/media_sources/emby.md
-          - Local: configure/media_sources/local.md
+          - Local:
+              - configure/media_sources/local/index.md
+              - Movies: configure/media_sources/local/movies.md
+              - Shows: configure/media_sources/local/shows.md
+              - Other Video: configure/media_sources/local/other_videos.md
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
@@ -75,6 +84,7 @@ nav:
           - configure/library/index.md
           - Filler: configure/library/filler.md
           - Custom Shows: configure/library/custom-shows.md
+          - Smart Collections: configure/library/smart-collections.md
       - Clients:
           - configure/clients/index.md
           - Plex: configure/clients/plex.md
@@ -82,7 +92,7 @@ nav:
   - Misc.:
       - Search: misc/search.md
       - Common Issues: misc/common-issues.md
-      - Troubleshooting: misc/troubleshooting.md
+      #- Troubleshooting: misc/troubleshooting.md
   - Development:
       - Contributing: dev/contributing.md
 

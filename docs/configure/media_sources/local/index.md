@@ -13,9 +13,10 @@ Tunarr traverses folders for Local Media Sources to discover metadata and media 
 
 Currently, Tunarr supports the following media types for Local sources:
 
-1. Movies
+1. [Movies](/configure/media_sources/local/movies)
 2. Shows
-
-# Metadata
+3. "Other" Videos (unstructured)
 
 ## Generating Metadata
+
+There are many ways to generate NFO files for consumption by Tunarr if your media does not already have them. Popular *arr stack programs, Jellyfin, and Emby all support writing out NFO files for media.

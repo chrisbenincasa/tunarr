@@ -43,7 +43,7 @@ export function useCyclicShuffle() {
     );
 
     const currIndexes = mapValues(groupedContent, (c) =>
-      random.integer(0, c.length),
+      random.integer(0, c.length - 1),
     );
 
     const cycledShows: UIChannelProgram[] = [];
