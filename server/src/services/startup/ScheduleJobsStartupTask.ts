@@ -14,7 +14,7 @@ import {
 } from '../../tasks/SubtitleExtractorTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { KEYS } from '../../types/inject.ts';
-import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import {
   GlobalScheduler,
   hoursCrontab,
@@ -29,7 +29,10 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
   id = ScheduleJobsStartupTask.name;
   dependencies = [ChannelLineupMigratorStartupTask.name];
 
-  constructor(@inject(KEYS.SettingsDB) private settingsDB: ISettingsDB) {
+  constructor(
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(KEYS.Logger) private logger: Logger,
+  ) {
     super();
   }
 
@@ -141,7 +144,7 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
         (job) => job.runAtStartup,
       ),
       (job) => {
-        LoggerFactory.root.debug('Running task %s', job.name);
+        this.logger.debug('Running startup task %s', job.name);
         job
           .runNow(true)
           .catch((e) =>

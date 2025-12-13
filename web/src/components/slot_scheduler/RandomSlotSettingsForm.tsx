@@ -184,7 +184,7 @@ export const RandomSlotSettingsForm = ({
               <strong>None:</strong> slots are picked in the order they are
               specified in the table (i.e. not randomly)
               <br />
-              <strong>Uniform:</strong> all slots have an equal chancel to be
+              <strong>Uniform:</strong> all slots have an equal chance to be
               picked.
               <br />
               <strong>Weighted:</strong> each slot is picked with a specified

@@ -102,6 +102,7 @@ export abstract class BaseApiClient<
         Accept: 'application/json',
         ...(options.extraHeaders ?? {}),
       },
+      timeout: 10_000,
     });
 
     if (options.queueOpts) {

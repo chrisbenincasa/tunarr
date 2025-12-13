@@ -57,7 +57,7 @@ export class StartupService {
           );
         } else {
           this.#taskPromisesById[task.id] = new Promise((resolve, reject) => {
-            this.logger.debug('Running startup task %s', task.id);
+            this.logger.info('Running startup task %s', task.id);
             task.start();
             task.wait().then(resolve).catch(reject);
           });
