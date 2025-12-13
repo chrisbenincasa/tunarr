@@ -48,13 +48,13 @@ describe('search parser', () => {
     const input = 'genre NOT IN [comedy, horror]';
     const query = parseAndCheckExpression(input);
     expect(query).toMatchObject({
-        type: 'single_query',
-        field: 'genre',
-        op: 'in',
-        negate: true,
-        value: ['comedy', 'horror'],
-      } satisfies SearchClause)
-  })
+      type: 'single_query',
+      field: 'genre',
+      op: 'in',
+      negate: true,
+      value: ['comedy', 'horror'],
+    } satisfies SearchClause);
+  });
 
   test('parse string fields', () => {
     const input =
@@ -355,6 +355,18 @@ describe('parsedSearchToRequest', () => {
         op: '=',
         value: 'The Twilight Zone',
       } satisfies SearchClause);
+
+      const request = parsedSearchToRequest(query);
+      expect(request).toMatchObject({
+        type: 'value',
+        fieldSpec: {
+          key: 'grandparent.title',
+          name: '',
+          op: '=',
+          type: 'string',
+          value: ['The Twilight Zone'],
+        },
+      } satisfies SearchFilter);
     });
 
     test('parse show_genre', () => {
@@ -366,6 +378,17 @@ describe('parsedSearchToRequest', () => {
         op: '=',
         value: 'comedy',
       } satisfies SearchClause);
+      const request = parsedSearchToRequest(query);
+      expect(request).toMatchObject({
+        type: 'value',
+        fieldSpec: {
+          key: 'grandparent.genres',
+          name: '',
+          op: '=',
+          type: 'string',
+          value: ['comedy'],
+        },
+      } satisfies SearchFilter);
     });
   });
 });
