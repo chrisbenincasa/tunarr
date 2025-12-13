@@ -298,10 +298,10 @@ export const virtualFieldToIndexField: Record<string, string> = {
   seconds: 'duration',
   // This isn't really true, since this could map to multiple fields
   // TODO: Make grouping-tyhpe specific subdocs
-  show_genre: 'grandparent.genre',
+  show_genre: 'grandparent.genres',
   show_title: 'grandparent.title',
   show_tag: 'grandparent.tag',
-  grandparent_genre: 'grandparent.genre',
+  grandparent_genre: 'grandparent.genres',
   video_height: 'videoHeight',
   video_width: 'videoWidth',
 };
