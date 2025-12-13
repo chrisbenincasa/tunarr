@@ -4,6 +4,7 @@ import { Server } from './Server.ts';
 import { StartupService } from './services/StartupService.ts';
 import { KEYS } from './types/inject.ts';
 import { Logger } from './util/logging/LoggerFactory.ts';
+import { getTunarrVersion } from './util/version.ts';
 
 @injectable()
 export class App {
@@ -15,6 +16,7 @@ export class App {
   ) {}
 
   async start() {
+    this.logger.info('Starting Tunarr version %s', getTunarrVersion());
     this.logger.info(
       'Using Tunarr database directory: %s',
       this.globalOptions.databaseDirectory,
