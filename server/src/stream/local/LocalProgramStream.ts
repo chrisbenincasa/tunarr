@@ -138,20 +138,19 @@ export class LocalProgramStream extends ProgramStream {
         }) satisfies AudioStreamDetails,
     );
 
-    const subtitleStreamDetails: SubtitleStreamDetails[] = streamsByType[
-      'subtitles'
-    ]?.map(
-      (subtitle) =>
-        ({
-          codec: subtitle.codec,
-          default: subtitle.default,
-          forced: subtitle.forced,
-          sdh: false, // TODO:
-          type: 'embedded',
-          index: subtitle.index,
-          languageCodeISO6392: nullToUndefined(subtitle.language),
-        }) satisfies SubtitleStreamDetails,
-    );
+    const subtitleStreamDetails: SubtitleStreamDetails[] =
+      streamsByType['subtitles']?.map(
+        (subtitle) =>
+          ({
+            codec: subtitle.codec,
+            default: subtitle.default,
+            forced: subtitle.forced,
+            sdh: false, // TODO:
+            type: 'embedded',
+            index: subtitle.index,
+            languageCodeISO6392: nullToUndefined(subtitle.language),
+          }) satisfies SubtitleStreamDetails,
+      ) ?? [];
 
     subtitleStreamDetails.push(
       ...(program.subtitles
