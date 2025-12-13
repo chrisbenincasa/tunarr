@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.2](https://github.com/chrisbenincasa/tunarr/compare/v1.0.1...v1.0.2) (2025-12-13)
+
+
+### Bug Fixes
+
+* allow playing local program streams that have no subtitle streams ([6dc2adc](https://github.com/chrisbenincasa/tunarr/commit/6dc2adc455238b29f9a3ca6d132f746b7a01580e))
+* fix video_(height|width) virtual field mappings ([4f38e37](https://github.com/chrisbenincasa/tunarr/commit/4f38e3790bc5ac2efa83cb5fe51c3e6f5aab9298))
+* remove duplicate shuffle entry in smart collection slot editor dialog ([b77f871](https://github.com/chrisbenincasa/tunarr/commit/b77f871d6552c3e59f4e086bd9e10c00b625b400))
+
+
+### UI Changes
+
+* fix typo in Slot editor ([821c9f1](https://github.com/chrisbenincasa/tunarr/commit/821c9f1171918b6810fe55d62e8517a044ec833c))
+
 ## [1.0.1](https://github.com/chrisbenincasa/tunarr/compare/v1.0.0...v1.0.1) (2025-12-12)
 
 
