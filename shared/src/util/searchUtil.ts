@@ -230,7 +230,7 @@ export type SingleStringSearchQuery = {
   field: string;
   op: StringOps;
   value: string | NonEmptyArray<string>;
-  negate?: boolean
+  negate?: boolean;
 };
 
 export type SingleNumericQuery =
@@ -302,6 +302,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   show_title: 'grandparent.title',
   show_tag: 'grandparent.tag',
   grandparent_genre: 'grandparent.genre',
+  video_height: 'videoHeight',
+  video_width: 'videoWidth',
 };
 
 function normalizeReleaseDate(value: string) {
@@ -639,7 +641,9 @@ export class SearchParser extends EmbeddedActionsParser {
 
   private singleStringSearch = this.RULE('singleStringSearch', () => {
     const field = this.CONSUME(StringField, { LABEL: 'field' }).image;
-    const { op, value, negate } = this.SUBRULE(this.stringOperator, { LABEL: 'op' });
+    const { op, value, negate } = this.SUBRULE(this.stringOperator, {
+      LABEL: 'op',
+    });
     return {
       type: 'single_query' as const,
       field,
