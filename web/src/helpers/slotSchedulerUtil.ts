@@ -218,7 +218,6 @@ export function slotOrderOptions(
       ShuffleSortOpt,
       NextEpSortOpt,
       OrderedShuffleSortOpt,
-      ShuffleSortOpt,
     ])
     .exhaustive();
 }
