@@ -32,11 +32,10 @@ export abstract class SlotImpl<
   ) {
     if (slotMayHaveFiller(this.slot) && this.slot.filler) {
       for (const filler of this.slot.filler) {
-        if (!this.fillerIteratorsByListId[filler.fillerListId]) {
+        const it = this.fillerIteratorsByListId[filler.fillerListId];
+        if (!it) {
           continue;
         }
-
-        const it = this.fillerIteratorsByListId[filler.fillerListId];
 
         for (const type of filler.types) {
           if (this.fillerIteratorsByType[type]) {

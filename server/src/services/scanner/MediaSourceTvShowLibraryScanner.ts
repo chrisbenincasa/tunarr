@@ -500,10 +500,10 @@ export abstract class MediaSourceTvShowLibraryScanner<
         try {
           const [upsertResult] = await this.programDB.upsertPrograms([dao]);
 
-          this.logger.trace('Upserted episode ID %s', upsertResult.uuid);
+          this.logger.trace('Upserted episode ID %s', upsertResult!.uuid);
 
           await this.searchService.indexEpisodes([
-            { ...episodeWithJoins, uuid: upsertResult.uuid },
+            { ...episodeWithJoins, uuid: upsertResult!.uuid },
           ]);
         } catch (e) {
           this.logger.warn(

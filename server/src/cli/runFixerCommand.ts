@@ -35,7 +35,7 @@ export const RunFixerCommand: CommandModule<
         await groupByUniq(
           container.getAll<Fixer>(KEYS.Fixer),
           (fixer) => fixer.constructor.name,
-        )[argv.fixer].run();
+        )[argv.fixer]?.run();
       } catch (e) {
         console.error('Fixer failed', e);
         throw e;

@@ -1429,8 +1429,8 @@ export class ProgramDB implements IProgramDB {
     const relations: NewGenreEntity[] = [];
     for (const name of Object.keys(incomingByName)) {
       const genreId = newGenreNames.has(name)
-        ? incomingByName[name].uuid
-        : existingGenresByName[name].uuid;
+        ? incomingByName[name]!.uuid
+        : existingGenresByName[name]!.uuid;
       relations.push({
         genreId,
         programId: entityType === 'program' ? joinId : null,
@@ -1446,7 +1446,7 @@ export class ProgramDB implements IProgramDB {
         await tx
           .insert(Genre)
           .values(
-            [...newGenreNames.values()].map((name) => incomingByName[name]),
+            [...newGenreNames.values()].map((name) => incomingByName[name]!),
           )
           .onConflictDoNothing();
       }
@@ -1493,8 +1493,8 @@ export class ProgramDB implements IProgramDB {
     const relations: NewStudioEntity[] = [];
     for (const name of Object.keys(incomingByName)) {
       const studioId = newStudioNames.has(name)
-        ? incomingByName[name].uuid
-        : existingStudiosByName[name].uuid;
+        ? incomingByName[name]!.uuid
+        : existingStudiosByName[name]!.uuid;
       relations.push({
         studioId,
         programId: entityType === 'program' ? joinId : null,
@@ -1512,7 +1512,7 @@ export class ProgramDB implements IProgramDB {
         await tx
           .insert(Studio)
           .values(
-            [...newStudioNames.values()].map((name) => incomingByName[name]),
+            [...newStudioNames.values()].map((name) => incomingByName[name]!),
           )
           .onConflictDoNothing();
       }
@@ -2268,7 +2268,7 @@ export class ProgramDB implements IProgramDB {
 
     // TODO: This stinks, consider adding a unique ID
     const deletedIds = [...deletedUniqueKeys.values()].map(
-      (key) => existingByUniqueId[key],
+      (key) => existingByUniqueId[key]!,
     );
     await Promise.all(
       chunk(deletedIds, 100).map((idChunk) => {
@@ -2299,7 +2299,7 @@ export class ProgramDB implements IProgramDB {
     );
 
     const addedIds = [...addedUniqueKeys.union(updatedKeys).values()].map(
-      (key) => newByUniqueId[key],
+      (key) => newByUniqueId[key]!,
     );
 
     return await Promise.all(
@@ -2709,7 +2709,7 @@ export class ProgramDB implements IProgramDB {
       }
 
       const grandparentGrouping = ProgramGroupingMinter.mintGrandparentGrouping(
-        matchingPrograms[0].programWithHierarchy,
+        matchingPrograms[0]!.programWithHierarchy,
       );
 
       if (isNull(grandparentGrouping)) {
@@ -2772,7 +2772,7 @@ export class ProgramDB implements IProgramDB {
         );
 
         const parentGrouping = ProgramGroupingMinter.mintParentGrouping(
-          programs[0].programWithHierarchy,
+          programs[0]!.programWithHierarchy,
         );
 
         if (!parentGrouping) {
@@ -2798,7 +2798,7 @@ export class ProgramDB implements IProgramDB {
         groupings.push(parentGrouping);
         externalIds.push(
           ...ProgramGroupingMinter.mintGroupingExternalIds(
-            programs[0].programWithHierarchy,
+            programs[0]!.programWithHierarchy,
             parentGrouping.uuid,
             mediaSourceName,
             mediaSourceId,
@@ -2810,7 +2810,7 @@ export class ProgramDB implements IProgramDB {
       groupings.push(grandparentGrouping);
       externalIds.push(
         ...ProgramGroupingMinter.mintGroupingExternalIds(
-          matchingPrograms[0].programWithHierarchy,
+          matchingPrograms[0]!.programWithHierarchy,
           grandparentGrouping.uuid,
           mediaSourceName,
           mediaSourceId,
@@ -2884,7 +2884,7 @@ export class ProgramDB implements IProgramDB {
                       (acc, curr) =>
                         acc
                           .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].tvShowUuid),
+                          .then(upsertedProgramById[curr]!.tvShowUuid),
                       eb.case() as unknown as ProgramRelationCaseBuilder,
                     )
                       .else(eb.ref('program.tvShowUuid'))
@@ -2912,7 +2912,7 @@ export class ProgramDB implements IProgramDB {
                       (acc, curr) =>
                         acc
                           .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].seasonUuid),
+                          .then(upsertedProgramById[curr]!.seasonUuid),
                       eb.case() as unknown as ProgramRelationCaseBuilder,
                     )
                       .else(eb.ref('program.seasonUuid'))
@@ -2940,7 +2940,7 @@ export class ProgramDB implements IProgramDB {
                       (acc, curr) =>
                         acc
                           .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].artistUuid),
+                          .then(upsertedProgramById[curr]!.artistUuid),
                       eb.case() as unknown as ProgramRelationCaseBuilder,
                     )
                       .else(eb.ref('program.artistUuid'))
@@ -2968,7 +2968,7 @@ export class ProgramDB implements IProgramDB {
                       (acc, curr) =>
                         acc
                           .when('program.uuid', '=', curr)
-                          .then(upsertedProgramById[curr].albumUuid),
+                          .then(upsertedProgramById[curr]!.albumUuid),
                       eb.case() as unknown as ProgramRelationCaseBuilder,
                     )
                       .else(eb.ref('program.albumUuid'))

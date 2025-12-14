@@ -1,5 +1,6 @@
 import { isArray } from 'lodash-es';
 import z from 'zod/v4';
+import type { Nilable } from './util.ts';
 
 export const TruthyQueryParam = z
   .union([
@@ -22,7 +23,7 @@ export type JsonObject = {
   [key: string]: Json;
 };
 
-export function isJsonObject(t: Json): t is JsonObject {
+export function isJsonObject(t: Nilable<Json>): t is JsonObject {
   return !(
     (typeof t !== 'object' && typeof t !== 'function') ||
     t === null ||

@@ -307,7 +307,7 @@ export function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
   }
   const n = Array<T>(value.length);
   for (let index = 0; index < value.length; index++) {
-    const element = value[index];
+    const element = value[index]!;
     n[index] = deepCopy(element);
   }
   return n;

@@ -103,8 +103,8 @@ export type FfprobeSubtitleStream = z.infer<typeof FfprobeSubtitleStreamSchema>;
 function parsePossibleFractionToFloat(s: string) {
   if (s.includes('/')) {
     const [num, den] = split(s, '/', 2);
-    const numD = parseIntOrNull(num);
-    const denD = parseIntOrNull(den);
+    const numD = parseIntOrNull(num!);
+    const denD = parseIntOrNull(den!);
     if (!isNull(numD) && !isNull(denD) && denD !== 0) {
       return numD / denD;
     }

@@ -34,6 +34,9 @@ export class ConnectionTracker<
 
   removeConnection(token: string) {
     const conn = this.#connections[token];
+    if (!conn) {
+      return null;
+    }
     const deleted = delete this.#connections[token];
     const lastHeartbeat = this.#heartbeats[token] ?? +dayjs();
     delete this.#heartbeats[token];

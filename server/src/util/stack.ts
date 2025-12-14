@@ -12,7 +12,7 @@ export class Stack<T> {
     if (this.isEmpty()) {
       return null;
     }
-    return this.#data[this.#data.length - 1];
+    return this.#data[this.#data.length - 1]!;
   }
 
   isEmpty(): boolean {
@@ -32,7 +32,7 @@ export class Stack<T> {
     return {
       next: function () {
         if (idx < arr.length) {
-          return { value: arr[idx++], done: false };
+          return { value: arr[idx++]!, done: false };
         } else {
           return { value: undefined, done: true };
         }

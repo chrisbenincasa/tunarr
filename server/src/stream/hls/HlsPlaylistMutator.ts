@@ -73,11 +73,11 @@ export class HlsPlaylistMutator {
 
     while (
       i < playlistLines.length &&
-      !playlistLines[i].startsWith('#EXTINF:')
+      !playlistLines[i]!.startsWith('#EXTINF:')
     ) {
-      const line = playlistLines[i];
+      const line = playlistLines[i]!;
       if (line.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE')) {
-        const parsed = parseInt(line.split(':')[1]);
+        const parsed = parseInt(line.split(':')[1]!);
         if (!isNaN(parsed)) {
           discontinuitySeq = parsed;
         }
@@ -102,8 +102,8 @@ export class HlsPlaylistMutator {
       }
 
       // EXTINF
-      const duration = parseFloat(trimEnd(line.trim(), ',').split(':')[1]);
-      items.push(new PlaylistSegment(currentTime, line, playlistLines[i + 2]));
+      const duration = parseFloat(trimEnd(line.trim(), ',').split(':')[1]!);
+      items.push(new PlaylistSegment(currentTime, line, playlistLines[i + 2]!));
 
       currentTime = currentTime.add(duration, 'seconds');
       i += 3;
@@ -168,12 +168,12 @@ export class HlsPlaylistMutator {
     ];
 
     for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+      const item = items[i]!;
       switch (item.type) {
         case 'discontinuity':
           if (
             i === items.length - 1 ||
-            (allSegments as PlaylistLine[]).includes(items[i + 1])
+            (allSegments as PlaylistLine[]).includes(items[i + 1]!)
           ) {
             lines.push('#EXT-X-DISCONTINUITY');
           }

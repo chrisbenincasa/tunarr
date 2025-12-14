@@ -1904,8 +1904,11 @@ function emptyMediaItem(item: PlexTerminalMedia): Maybe<MediaItem> {
     (m) => m.id,
   )!;
   const part = media.Part[0];
+  if (!part) {
+    return;
+  }
 
-  const duration = part.duration ?? media.duration;
+  const duration = part?.duration ?? media.duration;
 
   if (isNil(duration) || duration <= 0) {
     return;

@@ -21,7 +21,7 @@ export function binarySearch(
   let mid: number, cmp: number;
   while (low <= high) {
     mid = low + ((high - low) >>> 1);
-    cmp = comparator(seq[mid], target, { low, high });
+    cmp = comparator(seq[mid]!, target, { low, high });
     if (cmp < 0) {
       low = mid + 1;
     } else if (cmp > 0) {
@@ -42,13 +42,13 @@ export function binarySearchRange(
   let low = 0,
     high = seq.length - 1;
   const sorted = isSorted ? sortBy(seq) : seq;
-  if (seq.length === 0 || target < 0 || target > sorted[seq.length - 1]) {
+  if (seq.length === 0 || target < 0 || target > sorted[seq.length - 1]!) {
     return null;
   }
 
   while (low + 1 < high) {
     const mid = low + ((high - low) >>> 1);
-    if (sorted[mid] > target) {
+    if (sorted[mid]! > target) {
       high = mid;
     } else {
       low = mid;

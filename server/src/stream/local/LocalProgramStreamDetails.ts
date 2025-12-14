@@ -56,40 +56,42 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
     const displayAspectRatio =
       firstVersion.displayAspectRatio ??
       `${firstVersion.width}/${firstVersion.height}`;
-    const videoStreamDetails = streamsByType['video'].map(
-      (videoStream) =>
-        ({
-          displayAspectRatio,
-          height: firstVersion.height,
-          sampleAspectRatio: nullToUndefined(firstVersion.sampleAspectRatio),
-          width: firstVersion.width,
-          anamorphic: extractIsAnamorphic(
-            firstVersion.width,
-            firstVersion.height,
+    const videoStreamDetails =
+      streamsByType['video']?.map(
+        (videoStream) =>
+          ({
             displayAspectRatio,
-          ),
-          bitDepth: nullToUndefined(videoStream.bitsPerSample),
-          codec: videoStream.codec,
-          framerate: nullToUndefined(firstVersion.frameRate),
-          profile: nullToUndefined(videoStream.profile),
-          scanType: nullToUndefined(firstVersion.scanKind),
-          streamIndex: videoStream.index,
-        }) satisfies VideoStreamDetails,
-    );
+            height: firstVersion.height,
+            sampleAspectRatio: nullToUndefined(firstVersion.sampleAspectRatio),
+            width: firstVersion.width,
+            anamorphic: extractIsAnamorphic(
+              firstVersion.width,
+              firstVersion.height,
+              displayAspectRatio,
+            ),
+            bitDepth: nullToUndefined(videoStream.bitsPerSample),
+            codec: videoStream.codec,
+            framerate: nullToUndefined(firstVersion.frameRate),
+            profile: nullToUndefined(videoStream.profile),
+            scanType: nullToUndefined(firstVersion.scanKind),
+            streamIndex: videoStream.index,
+          }) satisfies VideoStreamDetails,
+      ) ?? [];
 
-    const audioStreamDetails = streamsByType['audio'].map(
-      (audioStream) =>
-        ({
-          channels: nullToUndefined(audioStream.channels),
-          codec: audioStream.codec,
-          default: audioStream.default,
-          forced: audioStream.forced,
-          index: audioStream.index,
-          languageCodeISO6392: nullToUndefined(audioStream.language),
-          profile: nullToUndefined(audioStream.profile),
-          title: nullToUndefined(audioStream.title),
-        }) satisfies AudioStreamDetails,
-    );
+    const audioStreamDetails =
+      streamsByType['audio']?.map(
+        (audioStream) =>
+          ({
+            channels: nullToUndefined(audioStream.channels),
+            codec: audioStream.codec,
+            default: audioStream.default,
+            forced: audioStream.forced,
+            index: audioStream.index,
+            languageCodeISO6392: nullToUndefined(audioStream.language),
+            profile: nullToUndefined(audioStream.profile),
+            title: nullToUndefined(audioStream.title),
+          }) satisfies AudioStreamDetails,
+      ) ?? [];
 
     const subtitleStreamDetails =
       streamsByType['subtitles']?.map(

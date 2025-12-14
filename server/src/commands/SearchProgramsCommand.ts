@@ -103,7 +103,7 @@ export class SearchProgramsCommand {
       if (isProgramGroupingDocument(searchDoc)) {
         if (groupings[searchDoc.id]) {
           return ApiProgramConverters.convertProgramGrouping(
-            groupings[searchDoc.id],
+            groupings[searchDoc.id]!,
             searchDoc,
             groupingCounts[searchDoc.id],
             mediaSource,
@@ -118,7 +118,7 @@ export class SearchProgramsCommand {
       } else if (isTerminalProgramDocument(searchDoc)) {
         if (programs[searchDoc.id]) {
           return ApiProgramConverters.convertProgram(
-            programs[searchDoc.id],
+            programs[searchDoc.id]!,
             searchDoc,
             mediaSource,
             library,

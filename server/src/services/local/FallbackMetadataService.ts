@@ -65,10 +65,10 @@ export class FallbackMetadataService {
       return metadata;
     }
 
-    metadata.title = matches[1].trim();
+    metadata.title = matches[1]?.trim() ?? title;
     metadata.sortTitle = metadata.title;
 
-    const maybeYear = parseIntOrNull(matches[2]);
+    const maybeYear = parseIntOrNull(matches[2] ?? '');
 
     if (!isNull(maybeYear)) {
       metadata.year = maybeYear;
@@ -77,11 +77,11 @@ export class FallbackMetadataService {
     const metadataExtractorRegex = /[({[](.*?)[)}\]]/g;
 
     for (const match of filename.matchAll(metadataExtractorRegex)) {
-      const service = match?.[1].toLowerCase().trim().split('-', 2) ?? '';
+      const service = match?.[1]?.toLowerCase().trim().split('-', 2) ?? '';
       if (['imdb', 'tmdb'].includes(service?.[0] ?? '')) {
         if (service.length === 2) {
           metadata.identifiers.push({
-            id: service[1].trim(),
+            id: service[1]!.trim(),
             type: service[0] === 'imdb' ? 'imdb' : 'tmdb',
           });
         }

@@ -23,7 +23,7 @@ import {
 import { createEntropy, MersenneTwister19937, Random } from 'random-js';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { Nilable } from '../../types/util.ts';
-import { isNonEmptyArray } from '../../util/index.ts';
+import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
 import {
   slotIteratorKey,
   type IterationState,
@@ -88,7 +88,7 @@ class ScheduleContext {
       (slot) =>
         new RandomSlotImpl(
           slot,
-          this.#programmingIteratorsById[slotIteratorKey(slot)],
+          this.#programmingIteratorsById[slotIteratorKey(slot)]!,
           this.#random,
           slotFillerIterators(slot, this.programmingIteratorsById),
         ),
@@ -154,7 +154,7 @@ class ScheduleContext {
   }
 
   getNextSequentialSlot() {
-    const slot = this.#sortedSlots[this.#currentSlotIndex];
+    const slot = this.#sortedSlots[this.#currentSlotIndex]!;
     this.#currentSlotIndex =
       (this.#currentSlotIndex + 1) % this.#sortedSlots.length;
     return slot;
@@ -510,7 +510,7 @@ export class RandomSlotScheduler {
       });
 
       if (tailFilter) {
-        paddedPrograms[paddedPrograms.length - 1].filler.tail = tailFilter;
+        paddedPrograms[paddedPrograms.length - 1]!.filler.tail = tailFilter;
       }
 
       return paddedPrograms;
@@ -530,8 +530,7 @@ export class RandomSlotScheduler {
     let n = 0;
     let currSlot: RandomSlotImpl | null = null;
     let minNextTime = context.timeCursor.add(24, 'days');
-    for (let i = 0; i < context.sortedSlots.length; i++) {
-      const slot = context.sortedSlots[i];
+    for (const [slot, i] of zipWithIndex(context.sortedSlots)) {
       const slotLastPlayed = context.getSlotLastPlayedTime(i);
       // Default next time to play a program
       if (!isNil(slotLastPlayed)) {

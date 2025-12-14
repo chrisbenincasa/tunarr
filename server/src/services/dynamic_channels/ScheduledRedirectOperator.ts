@@ -50,7 +50,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
 
       if (!isNull(idx)) {
         // console.log(idx);
-        const programStart = channelStart.add(newOffsets[idx]);
+        const programStart = channelStart.add(newOffsets[idx]!);
         const untilRedirect = dayjs.duration(redirectStart.diff(programStart));
 
         let addedDuration = 0;
@@ -65,7 +65,7 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
           newOffsets.splice(
             idx + 1,
             0,
-            newOffsets[idx] + untilRedirect.asMilliseconds(),
+            newOffsets[idx]! + untilRedirect.asMilliseconds(),
           );
           idx++;
         }
@@ -79,12 +79,12 @@ export class ScheduledRedirectOperator extends SchedulingOperator<ScheduledRedir
           durationMs: this.config.duration,
         });
 
-        newOffsets.splice(idx + 1, 0, newOffsets[idx] + this.config.duration);
+        newOffsets.splice(idx + 1, 0, newOffsets[idx]! + this.config.duration);
 
         // Scale the remaining offsets by the amount of duraiton we added overall
         // to the lineup (optional flex + redirect).
         for (let i = idx + 1; i < newOffsets.length; i++) {
-          newOffsets[i] += addedDuration;
+          newOffsets[i]! += addedDuration;
         }
       }
 

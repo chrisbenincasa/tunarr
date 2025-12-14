@@ -83,7 +83,7 @@ export class VideoStream implements MediaStream {
       let dar = parseFloat(this.displayAspectRatio);
       if (isNaN(dar)) {
         const [num, den] = this.displayAspectRatio.split(':');
-        dar = parseFloat(num) / parseFloat(den);
+        dar = parseFloat(num!) / parseFloat(den!);
       }
 
       const res = this.frameSize.width / this.frameSize.height;
@@ -98,11 +98,11 @@ export class VideoStream implements MediaStream {
 
     const [num, den] = inputSar.split(':').map((s) => parseFloat(s));
     const formattedNum = Number.isInteger(num)
-      ? num.toString()
-      : num.toFixed(12);
+      ? num!.toString()
+      : num!.toFixed(12);
     const formattedDen = Number.isInteger(den)
-      ? den.toString()
-      : den.toFixed(12);
+      ? den!.toString()
+      : den!.toFixed(12);
     return `${formattedNum}:${formattedDen}`;
   }
 
@@ -150,7 +150,7 @@ export class VideoStream implements MediaStream {
       let dar = parseFloat(this.displayAspectRatio);
       if (isNaN(dar)) {
         const [num, den] = this.displayAspectRatio.split(':');
-        dar = parseFloat(num) / parseFloat(den);
+        dar = parseFloat(num!) / parseFloat(den!);
       }
 
       const res = this.frameSize.width / this.frameSize.height;
@@ -158,7 +158,7 @@ export class VideoStream implements MediaStream {
     }
 
     const [num, den] = this.sampleAspectRatio.split(':');
-    return parseFloat(num) / parseFloat(den);
+    return parseFloat(num!) / parseFloat(den!);
   }
 
   getNumericFrameRateOrDefault(defaultRate: number = 24) {

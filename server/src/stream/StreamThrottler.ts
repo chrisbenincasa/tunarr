@@ -50,7 +50,9 @@ export function wereThereTooManyAttempts(
     clearTimeout(obj.timer);
   }
   previous.timer = setTimeout(() => {
-    cache[sessionToken].timer = null;
+    if (obj) {
+      obj.timer = null;
+    }
     delete cache[sessionToken];
   }, constants.TOO_FREQUENT * 5);
 
@@ -60,7 +62,9 @@ export function wereThereTooManyAttempts(
     //certainly too frequent
     result = equalItems(previous.lineupItem, lineupItem);
   }
-  cache[sessionToken].t0 = t1;
-  cache[sessionToken].lineupItem = lineupItem;
+  if (obj) {
+    obj.t0 = t1;
+    obj.lineupItem = lineupItem;
+  }
   return result;
 }

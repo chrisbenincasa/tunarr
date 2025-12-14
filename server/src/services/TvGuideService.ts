@@ -309,7 +309,7 @@ export class TVGuideService {
 
     // Keep the refs to the existing programs since they didn't change
     // as part of this operation.
-    this.cachedGuide[channel.uuid].channel = channel;
+    cachedLineup.channel = channel;
 
     // Some setting changed that means we should recalculate the guide
     // i.e. a channel setting and not the lineup or associated programming
@@ -326,7 +326,7 @@ export class TVGuideService {
         channel.uuid,
         false,
         true,
-        this.lastUpdateTime[channel.uuid] ?? now,
+        this.lastUpdateTime[channel.uuid] ?? +now,
       );
     }
 
@@ -487,11 +487,11 @@ export class TVGuideService {
         );
       }
 
-      const lineupItem = lineup.items[targetIndex];
+      const lineupItem = lineup.items[targetIndex]!;
 
       return {
         index: targetIndex,
-        startTimeMs: startOfCycle + accumulate[targetIndex],
+        startTimeMs: startOfCycle + accumulate[targetIndex]!,
         lineupItem,
       };
     }
@@ -530,7 +530,7 @@ export class TVGuideService {
       if (
         previousProgram.lineupItem.durationMs > constants.SLACK &&
         previousProgram.lineupItem.durationMs <
-          lineup.items[previousProgram.index].durationMs
+          lineup.items[previousProgram.index]!.durationMs
       ) {
         return;
       }
@@ -543,7 +543,7 @@ export class TVGuideService {
       // This generally happens after we've figured out the first program in
       // the schedule.
       const index = nextProgramIndex;
-      const lineupItem = lineup.items[index];
+      const lineupItem = lineup.items[index]!;
 
       playing = {
         index,
@@ -640,7 +640,7 @@ export class TVGuideService {
       playing.lineupItem = {
         ...playing.lineupItem,
         durationMs:
-          this.currentEndTime[channelWithLineup.channel.uuid] -
+          this.currentEndTime[channelWithLineup.channel.uuid]! -
           currentUpdateTimeMs,
       };
     }
@@ -860,11 +860,11 @@ export class TVGuideService {
     }
 
     result.programs = [];
-    for (let i = 0; i < programs.length; i++) {
+    for (const program of programs) {
       await wait();
-      if (isProgramOffline(programs[i].lineupItem, channelWithLineup.channel)) {
-        let start = programs[i].startTimeMs;
-        let duration = programs[i].lineupItem.durationMs;
+      if (isProgramOffline(program.lineupItem, channelWithLineup.channel)) {
+        let start = program.startTimeMs;
+        let duration = program.lineupItem.durationMs;
         if (start <= currentUpdateTimeMs) {
           const M = 5 * 60 * 1000;
           const newStart = currentUpdateTimeMs - (currentUpdateTimeMs % M);
@@ -883,7 +883,7 @@ export class TVGuideService {
             d = duration;
           }
           const offlineItem = {
-            ...programs[i],
+            ...program,
             startTimeMs: start,
             lineupItem: {
               durationMs: d,
@@ -897,7 +897,7 @@ export class TVGuideService {
           result.programs.push(offlineItem);
         }
       } else {
-        result.programs.push(programs[i]);
+        result.programs.push(program);
       }
     }
 
@@ -908,11 +908,11 @@ export class TVGuideService {
     channelId: string,
   ): Promise<ChannelPrograms> {
     devAssert(!isEmpty(this.accumulateTable));
-    const currentUpdateTimeMs = this.currentUpdateTime[channelId];
-    const channelToUpdate = this.channelsById[channelId];
+    const currentUpdateTimeMs = this.currentUpdateTime[channelId]!;
+    const channelToUpdate = this.channelsById[channelId]!;
     return this.getChannelPrograms(
       currentUpdateTimeMs,
-      this.currentEndTime[channelToUpdate.channel.uuid],
+      this.currentEndTime[channelToUpdate.channel.uuid]!,
       channelToUpdate,
     );
   }
@@ -922,7 +922,7 @@ export class TVGuideService {
     writeXmlTv: boolean,
   ) {
     const thisGuideLength =
-      this.currentEndTime[channelId] - this.currentUpdateTime[channelId];
+      this.currentEndTime[channelId]! - this.currentUpdateTime[channelId]!;
     const dur = dayjs.duration(thisGuideLength).humanize();
     this.logger.debug('Building Channel %s for %s', channelId, dur);
     await retry(
@@ -933,7 +933,10 @@ export class TVGuideService {
             async () => {
               this.cachedGuide[channelId] =
                 await this.buildGuideInternal(channelId);
-              if (writeXmlTv && !this.channelsById[channelId].channel.stealth) {
+              if (
+                writeXmlTv &&
+                !this.channelsById[channelId]!.channel.stealth
+              ) {
                 await this.writeXmlTv();
               }
             },
@@ -941,8 +944,8 @@ export class TVGuideService {
         } catch (err) {
           this.logger.error(err, 'Unable to update internal guide data');
         } finally {
-          this.lastUpdateTime[channelId] = this.currentUpdateTime[channelId];
-          this.lastEndTime[channelId] = this.currentEndTime[channelId];
+          this.lastUpdateTime[channelId] = this.currentUpdateTime[channelId]!;
+          this.lastEndTime[channelId] = this.currentEndTime[channelId]!;
           this.currentUpdateTime[channelId] = -1;
         }
       },
@@ -1215,7 +1218,7 @@ export class TVGuideService {
         };
       })
       .with({ type: 'redirect' }, (redirect) => {
-        const backingChannel = this.channelsById[redirect.channel];
+        const backingChannel = this.channelsById[redirect.channel]!;
         return {
           ...baseItem,
           programming: {

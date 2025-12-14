@@ -10,7 +10,7 @@ export class TunarrSubprocessService {
   constructor() {}
 
   createWorker(opts: WorkerOptions = {}) {
-    return new TsWorker(process.argv[1], {
+    return new TsWorker(process.argv[1]!, {
       ...opts,
       argv: ['--hide_banner', 'start-worker'],
     });

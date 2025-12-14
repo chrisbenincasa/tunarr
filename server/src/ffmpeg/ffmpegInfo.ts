@@ -132,7 +132,7 @@ export class FfmpegInfo {
       );
       return { versionString: 'unknown', isUnknown: true };
     }
-    const versionString = m[1];
+    const versionString = m[1]!;
 
     const extractedNums = versionString.match(VersionNumberExtractionPattern);
 
@@ -178,7 +178,7 @@ export class FfmpegInfo {
       );
       return map(
         reject(matchingLines, (arr) => arr.length < 3),
-        (arr) => ({ ffmpegName: arr[1], name: arr[2] }),
+        (arr) => ({ ffmpegName: arr[1]!, name: arr[2]! }),
       );
     });
   }
@@ -198,7 +198,7 @@ export class FfmpegInfo {
 
       return map(
         reject(matchingLines, (arr) => arr.length < 3),
-        (arr) => ({ ffmpegName: arr[1], name: arr[2] }),
+        (arr) => ({ ffmpegName: arr[1]!, name: arr[2]! }),
       );
     });
   }

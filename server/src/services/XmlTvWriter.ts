@@ -62,11 +62,11 @@ export class XmlTvWriter {
       generatorInfoName: 'tunarr',
       date: new Date(),
       channels: map(channels, ({ channel }) =>
-        this.makeXmlTvChannel(channel, xmlChannelIdById[channel.uuid]),
+        this.makeXmlTvChannel(channel, xmlChannelIdById[channel.uuid]!),
       ),
       programmes: flatMap(channels, ({ channel, programs }) =>
         map(programs, (p) =>
-          this.makeXmlTvProgram(p, xmlChannelIdById[channel.uuid]),
+          this.makeXmlTvProgram(p, xmlChannelIdById[channel.uuid]!),
         ),
       ),
     } satisfies Xmltv;

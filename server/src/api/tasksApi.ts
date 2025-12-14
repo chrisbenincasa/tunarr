@@ -39,7 +39,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
 
           // TODO: We're goingn to have to figure out a better way
           // to represnt this in the API
-          const task = tasks[0];
+          const task = tasks[0]!;
 
           const lastExecution = task.lastExecution
             ? dayjs(task.lastExecution)
@@ -121,7 +121,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(202).send();
         }
       } else {
-        const task = tasks[0];
+        const task = tasks[0]!;
         if (task.running) {
           return res.status(400).send({ message: 'Task already running' });
         }

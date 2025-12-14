@@ -290,7 +290,7 @@ export class StreamProgramCalculator {
         channelLineup,
       );
 
-    const lineupItem = channelLineup.items[currentProgramIndex];
+    const lineupItem = channelLineup.items[currentProgramIndex]!;
     let program: StreamLineupItem;
     switch (lineupItem.type) {
       case 'content': {
@@ -582,10 +582,10 @@ export function calculateStreamDuration(
 
   if (!isNull(programIndex)) {
     currentProgramIndex = programIndex;
-    const foundOffset = lineup.startTimeOffsets[programIndex];
+    const foundOffset = lineup.startTimeOffsets[programIndex]!;
     // Mark how far 'into' the program we are.
     timeElapsed = elapsed - foundOffset;
-    const program = lineup.items[programIndex];
+    const program = lineup.items[programIndex]!;
     if (timeElapsed > program.durationMs - slackAmount) {
       // Go to the next program if we're very close to the end
       // of the current one. No sense in starting a brand new
@@ -603,8 +603,8 @@ export function calculateStreamDuration(
     throw new Error('No program found; find algorithm messed up');
   }
 
-  const currOffset = lineup.startTimeOffsets[currentProgramIndex];
-  const nextOffset = currOffset + lineup.items[currentProgramIndex].durationMs;
+  const currOffset = lineup.startTimeOffsets[currentProgramIndex]!;
+  const nextOffset = currOffset + lineup.items[currentProgramIndex]!.durationMs;
 
   return {
     streamDuration: nextOffset - currOffset - timeElapsed,

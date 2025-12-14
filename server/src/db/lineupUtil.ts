@@ -7,7 +7,7 @@ export function calculateStartTimeOffsets(
   return reduce(
     lineup,
     (acc, item, index) => {
-      acc.push(acc[index] + item.durationMs);
+      acc.push(acc[index]! + item.durationMs);
       return acc;
     },
     [0],

@@ -418,17 +418,18 @@ export class MeilisearchService implements ISearchService {
         );
 
         // There should really only be one, but OK.
-        if (processInfo.length > 0 && processInfo[0].name === 'meilisearch') {
+        if (processInfo.length > 0 && processInfo[0]!.name === 'meilisearch') {
+          const matchingProcess = processInfo[0]!;
           this.logger.debug(
             'Killing existing Meilisearch service on port %d',
             this.port,
           );
-          process.kill(processInfo[0].pid);
+          process.kill(matchingProcess.pid);
 
           await retry(async () => {
             const results = await findProcess.default(
               'pid',
-              processInfo[0].pid,
+              matchingProcess.pid,
             );
             if (results.length > 0) {
               throw new Error('Meilisearch process is not dead yet...');
@@ -1327,7 +1328,7 @@ export class MeilisearchService implements ISearchService {
                 const v = index.caseSensitiveFilters?.includes(
                   query.fieldSpec.key,
                 )
-                  ? encodeCaseSensitiveId(filteredValue[0])
+                  ? encodeCaseSensitiveId(filteredValue[0]!)
                   : filteredValue[0];
                 const mappedOp = match(op)
                   .returnType<StringOperators>()

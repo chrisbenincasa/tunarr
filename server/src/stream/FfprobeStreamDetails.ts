@@ -186,8 +186,8 @@ function extractIsAnamorphic(
 ) {
   const resolutionRatio = width / height;
   const [numS, denS] = aspectRatioString.split(':');
-  const num = parseFloat(numS);
-  const den = parseFloat(denS);
+  const num = parseFloat(numS!);
+  const den = parseFloat(denS!);
   if (isNaN(num) || isNaN(den)) {
     return false;
   }

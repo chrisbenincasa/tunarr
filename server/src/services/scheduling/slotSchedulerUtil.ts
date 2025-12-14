@@ -584,7 +584,7 @@ export function distributeFlex(
   const div = Math.floor(remainingTime / padMs);
   const mod = remainingTime % padMs;
   // Add leftover flex to end
-  const lastProgram = relevantPrograms[relevantPrograms.length - 1];
+  const lastProgram = relevantPrograms[relevantPrograms.length - 1]!;
   lastProgram.padMs += mod;
   // lastProgram.totalDuration += mod;
 
@@ -601,7 +601,7 @@ export function distributeFlex(
       q++;
     }
     const extraPadding = q * padMs;
-    const program = relevantPrograms[sortedPads[i].index];
+    const program = relevantPrograms[sortedPads[i]!.index]!;
     program.padMs += extraPadding;
     // program.totalDuration += extraPadding;
   });
@@ -633,7 +633,7 @@ export function addHeadAndTailFillerToSlot(
   }
 
   // Save the last item's pad.
-  const lastItemPad = contentPrograms[contentPrograms.length - 1].padMs;
+  const lastItemPad = contentPrograms[contentPrograms.length - 1]!.padMs;
   // Temporarily add it to the remaining time
   // remainingTime += lastItemPad;
   if (
@@ -651,9 +651,9 @@ export function addHeadAndTailFillerToSlot(
 
     if (filler) {
       // Play the tail filler right after
-      contentPrograms[contentPrograms.length - 1].padMs = 0;
+      contentPrograms[contentPrograms.length - 1]!.padMs = 0;
       remainingTime = remainingTime + lastItemPad - filler.duration;
-      contentPrograms[contentPrograms.length - 1].filler.tail = filler;
+      contentPrograms[contentPrograms.length - 1]!.filler.tail = filler;
     }
   } else {
     // Remove the extra pad if necessary
@@ -673,8 +673,7 @@ export function maybeAddFillerOfTypeOld(
     return { nextPrograms: contentPrograms, nextRemainingTime: remainingTime };
   }
 
-  for (let i = 0; i < contentPrograms.length; i++) {
-    const program = contentPrograms[i];
+  for (const program of contentPrograms) {
     const totalTime = remainingTime + Math.max(program.padMs, 0);
     if (totalTime <= 0) {
       break;

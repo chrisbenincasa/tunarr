@@ -118,7 +118,7 @@ export class FillerDB implements IFillerListDB {
           ({
             fillerShowUuid: filler.uuid,
             programUuid: p.id!,
-            index: programIndexById[p.id!],
+            index: programIndexById[p.id!]!,
           }) satisfies NewFillerShowContent,
       );
       const newFillerShowContent = map(
@@ -127,7 +127,7 @@ export class FillerDB implements IFillerListDB {
           ({
             fillerShowUuid: filler.uuid,
             programUuid: p.uuid,
-            index: programIndexById[programExternalIdString(p)],
+            index: programIndexById[programExternalIdString(p)]!,
           }) satisfies NewFillerShowContent,
       );
 
@@ -185,7 +185,7 @@ export class FillerDB implements IFillerListDB {
         ({
           fillerShowUuid: filler.uuid,
           programUuid: p.id!,
-          index: programIndexById[p.id!],
+          index: programIndexById[p.id!]!,
         }) satisfies NewFillerShowContent,
     );
     const newFillerShowContent = map(
@@ -194,7 +194,7 @@ export class FillerDB implements IFillerListDB {
         ({
           fillerShowUuid: filler.uuid,
           programUuid: p.uuid,
-          index: programIndexById[programExternalIdString(p)],
+          index: programIndexById[programExternalIdString(p)]!,
         }) satisfies NewFillerShowContent,
     );
 

@@ -277,7 +277,7 @@ export abstract class Session<
     const [aliveConnections, staleConnections] = partition(
       keys(this.connections()),
       (token) =>
-        now - this.lastHeartbeat(token) <
+        now - this.lastHeartbeat(token)! <
         (this.sessionOptions.stalenessMs ?? 30_000),
     );
 

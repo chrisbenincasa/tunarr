@@ -208,7 +208,7 @@ export class MediaSourceApiFactory {
   private requestCacheEnabledForServer(id: string) {
     return isBoolean(this.#requestCacheEnabled)
       ? this.#requestCacheEnabled
-      : this.#requestCacheEnabled[id];
+      : (this.#requestCacheEnabled[id] ?? false);
   }
 
   private getCacheKey(type: MediaSourceType, uri: string, accessToken: string) {
