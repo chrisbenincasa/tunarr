@@ -435,7 +435,7 @@ export class LocalMovieScanner extends FileSystemScanner {
 
     const directors = seq.collect(movieNfo.director, (director) => {
       return {
-        name: director,
+        name: typeof director === 'string' ? director : director['#text'],
       } satisfies Director;
     });
 
@@ -459,7 +459,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       directors,
       studios: movieNfo.studio ? [{ name: movieNfo.studio }] : [],
       genres: movieNfo.genre?.map((g) => ({ name: g })) ?? [],
-      writers: movieNfo.credits?.map((c) => ({ name: c })) ?? [],
+      writers: movieNfo.credits?.map((c) => ({ name: typeof c === 'string' ? c : c['#text'] })) ?? [],
       artwork: [], // Added later
       state: 'ok',
     };
