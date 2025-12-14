@@ -231,35 +231,32 @@ export class XmlTvWriter {
             _value: `${seasonNumber - 1}.${episodeNumber - 1}.0/1`,
           });
         }
-
-        const query: string[] = [];
-        const useShowPoster =
-          this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-        if (program.type === 'episode' && useShowPoster) {
-          query.push(`useShowPoster=${useShowPoster}`);
-        }
-
-        let idToUse = program.uuid;
-        if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
-          idToUse = program.album.uuid;
-        }
-
-        partial.image = [
-          {
-            _value: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
-              '&amp;',
-            )}`,
-            size: 3,
-          },
-        ];
-        partial.icon = [
-          {
-            src: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
-              '&amp;',
-            )}`,
-          },
-        ];
       }
+
+      const query: string[] = [];
+      const useShowPoster =
+        this.settingsDB.xmlTvSettings().useShowPoster ?? false;
+      if (program.type === 'episode' && useShowPoster) {
+        query.push(`useShowPoster=${useShowPoster}`);
+      }
+      let idToUse = program.uuid;
+      if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
+        idToUse = program.album.uuid;
+      }
+
+      partial.image = [
+        {
+          _value: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
+            '&amp;',
+          )}`,
+          size: 3,
+        },
+      ];
+      partial.icon = [
+        {
+          src: `{{host}}/api/programs/${idToUse}/thumb?${query.join('&amp;')}`,
+        },
+      ];
     }
 
     return partial;
