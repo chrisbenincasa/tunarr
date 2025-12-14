@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/chrisbenincasa/tunarr/compare/v1.0.2...v1.0.3) (2025-12-14)
+
+
+### Bug Fixes
+
+* ensure artwork is always generated for xmltv, not just for episodes ([49e99d9](https://github.com/chrisbenincasa/tunarr/commit/49e99d9b3fc651514dcb18a7ad84aea47fad7f8c))
+* properly map virtual search fields grandparent_genre and show_genre to grandparent.genres ([078cc31](https://github.com/chrisbenincasa/tunarr/commit/078cc31f637cb1c956f469fe9f112c9239129b72))
+
 ## [1.0.2](https://github.com/chrisbenincasa/tunarr/compare/v1.0.1...v1.0.2) (2025-12-13)
 
 
