@@ -1,8 +1,8 @@
-import { isNonEmptyString, seq } from '@tunarr/shared/util';
+import { seq } from '@tunarr/shared/util';
 import type { Actor, NamedEntity } from '@tunarr/types';
 import { isNull, last, orderBy } from 'lodash-es';
 import { basename, extname } from 'node:path';
-import type { NfoActor } from '../../nfo/NfoSchemas.ts';
+import type { NfoActor, NfoFieldWithAttrs } from '../../nfo/NfoSchemas.ts';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
 
@@ -79,10 +79,10 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
   return;
 }
 
-export function mapNfoToNamedEntity(names: Nilable<string[]>) {
-  return seq.collect(names?.filter(isNonEmptyString), (name) => {
+export function mapNfoToNamedEntity(names: Nilable<Array<string | NfoFieldWithAttrs>>) {
+  return seq.collect(names?.filter(n => !!n), (name) => {
     return {
-      name,
+      name: typeof name === 'string' ? name : name['#text'],
     } satisfies NamedEntity;
   });
 }
