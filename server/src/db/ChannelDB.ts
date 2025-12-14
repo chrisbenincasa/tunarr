@@ -1494,7 +1494,7 @@ export class ChannelDB implements IChannelDB {
 
   async loadAllLineups() {
     return mapReduceAsyncSeq(
-      await this.getAllChannelsAndPrograms(),
+      await this.getAllChannels(),
       async (channel) => {
         return {
           channel,
@@ -1505,7 +1505,7 @@ export class ChannelDB implements IChannelDB {
         prev[channel.uuid] = { channel, lineup };
         return prev;
       },
-      {} as Record<string, { channel: ChannelOrmWithPrograms; lineup: Lineup }>,
+      {} as Record<string, { channel: ChannelOrm; lineup: Lineup }>,
     );
   }
 

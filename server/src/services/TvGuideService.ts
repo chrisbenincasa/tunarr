@@ -41,17 +41,20 @@ import {
   nth,
   sumBy,
   uniq,
-  values,
+  uniqBy,
 } from 'lodash-es';
 import { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
+import { ChannelOrm } from '../db/schema/Channel.ts';
+import { ProgramOrm } from '../db/schema/Program.ts';
 import { DB } from '../db/schema/db.ts';
 import type {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
+  ProgramWithRelationsOrm,
 } from '../db/schema/derivedTypes.ts';
 import {
   FlexGuideItem,
@@ -61,6 +64,7 @@ import {
 import dayjs from '../util/dayjs.ts';
 import {
   deepCopy,
+  groupByUniq,
   groupByUniqProp,
   isDefined,
   isNonEmptyString,
@@ -70,6 +74,10 @@ import {
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
+
+export type ChannelAndPrograms = ChannelOrm & {
+  programs: Pick<ProgramOrm, 'uuid'>[];
+};
 
 // LineupItem + optional index + startTime
 type GuideItem = {
@@ -97,12 +105,12 @@ export type TvGuideChannel = {
 };
 
 export type ChannelPrograms = {
-  channel: ChannelOrmWithPrograms;
+  channel: ChannelOrm;
   programs: GuideItem[];
 };
 
 type ChannelWithLineup = {
-  channel: ChannelOrmWithPrograms;
+  channel: ChannelOrm;
   lineup: Lineup;
 };
 
@@ -299,13 +307,9 @@ export class TVGuideService {
       return;
     }
 
-    const existingChannel = this.cachedGuide[channel.uuid].channel;
     // Keep the refs to the existing programs since they didn't change
     // as part of this operation.
-    this.cachedGuide[channel.uuid].channel = {
-      ...channel,
-      programs: existingChannel.programs,
-    };
+    this.cachedGuide[channel.uuid].channel = channel;
 
     // Some setting changed that means we should recalculate the guide
     // i.e. a channel setting and not the lineup or associated programming
@@ -388,6 +392,7 @@ export class TVGuideService {
   ) {
     return this.locks.getOrCreateLock(channelId).then((lock) =>
       lock.runExclusive(async () => {
+        this.logger.info('Building guide info for channel %s', channelId);
         devAssert(!isEmpty(this.channelsById));
         const now = startTime;
         const lastUpdateTime = this.lastUpdateTime[channelId] ?? 0;
@@ -950,16 +955,26 @@ export class TVGuideService {
   }
 
   private async writeXmlTv() {
-    await this.xmltv.write(
-      map(values(this.cachedGuide), ({ channel, programs }) => {
+    const allProgramsById: Record<string, ProgramWithRelationsOrm> = {};
+    for (const { programs } of Object.values(this.cachedGuide)) {
+      const programsById = await this.getAllCurrentGuidePrograms(programs);
+      for (const [id, program] of Object.entries(programsById)) {
+        allProgramsById[id] = program;
+      }
+    }
+
+    const materializedGuide = Object.values(this.cachedGuide).map(
+      ({ channel, programs }) => {
         return {
           channel,
-          programs: map(programs, (program) =>
-            this.materializeGuideItem(channel, program),
+          programs: programs.map((program) =>
+            this.materializeGuideItem(channel, program, allProgramsById),
           ),
         };
-      }),
+      },
     );
+
+    await this.xmltv.write(materializedGuide);
 
     const now = dayjs();
     this.eventService.push({
@@ -1117,9 +1132,25 @@ export class TVGuideService {
     return program;
   }
 
+  private async getAllCurrentGuidePrograms(guideItems: GuideItem[]) {
+    const contentItems = uniqBy(
+      guideItems
+        .map((item) => item.lineupItem)
+        .filter((item) => item.type === 'content'),
+      (item) => item.id,
+    );
+    return groupByUniq(
+      await this.programDB.getProgramsByIds(
+        contentItems.map((item) => item.id),
+      ),
+      (prg) => prg.uuid,
+    );
+  }
+
   private materializeGuideItem(
-    channel: ChannelOrmWithPrograms,
+    channel: ChannelOrm,
     currentProgram: GuideItem,
+    materializedPrograms: Record<string, ProgramWithRelationsOrm>,
   ): MaterializedGuideItem {
     const isPaused =
       currentProgram.isPaused &&
@@ -1135,11 +1166,7 @@ export class TVGuideService {
     return match(currentProgram.lineupItem)
       .returnType<MaterializedGuideItem>()
       .with({ type: 'content' }, (content) => {
-        const targetChannelId =
-          currentProgram.redirectChannelId ?? channel.uuid;
-        const backingProgram = this.channelsById[
-          targetChannelId
-        ]?.channel.programs.find((program) => program.uuid === content.id);
+        const backingProgram = materializedPrograms[content.id];
 
         let programming: ProgramGuideItem | FlexGuideItem;
         if (!backingProgram) {
@@ -1262,7 +1289,7 @@ export class TVGuideService {
 
 function isProgramOffline(
   program: Maybe<LineupItem>,
-  channel: ChannelOrmWithPrograms,
+  channel: ChannelOrm,
 ): boolean {
   return (
     !isUndefined(program) &&

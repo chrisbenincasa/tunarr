@@ -319,6 +319,7 @@ export class ProgramDB implements IProgramDB {
 
   async getProgramsByIds(
     ids: string[] | readonly string[],
+    // joins: DBQueryConfig<'many', true, (typeof schema)['programRelations']>['with'],
     batchSize: number = 500,
   ): Promise<ProgramWithRelationsOrm[]> {
     const results: ProgramWithRelationsOrm[] = [];
