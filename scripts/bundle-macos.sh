@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 BINARY_NAME="$1"
 SCRIPT_FOLDER=$(dirname "${BASH_SOURCE[0]}")
