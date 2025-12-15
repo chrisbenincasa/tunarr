@@ -30,7 +30,6 @@ export const Route = createFileRoute('/channels_/$channelId/programming/add')({
 });
 
 function ChannelProgrammingSelectorPage() {
-  const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { mediaSourceId, libraryId } = Route.useSearch();
   return (
@@ -43,11 +42,15 @@ function ChannelProgrammingSelectorPage() {
         entityType: 'channel',
         onSourceChange: useCallback(
           ({ mediaSourceId, libraryId }) => {
-            navigate({ search: { ...search, mediaSourceId, libraryId } }).catch(
-              console.error,
-            );
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                mediaSourceId: mediaSourceId ?? prev.mediaSourceId,
+                libraryId: libraryId ?? prev.libraryId,
+              }),
+            }).catch(console.error);
           },
-          [navigate, search],
+          [navigate],
         ),
         onSearchChange: noop,
       }}
