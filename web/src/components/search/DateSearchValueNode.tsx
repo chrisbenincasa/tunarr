@@ -1,12 +1,12 @@
 import { Stack } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import type { MediaSourceLibrary } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
 import { type DateSearchField } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
+import { SearchForm } from './SearchInput.tsx';
 
 type Props = {
   field: DateSearchField;
@@ -15,7 +15,7 @@ type Props = {
 };
 
 export function DateSearchValueNode({ field, formKey }: Props) {
-  const { control } = useFormContext<SearchRequest>();
+  const { control } = useFormContext<SearchForm>();
 
   if (isNumber(field.value)) {
     return (
@@ -39,7 +39,7 @@ export function DateSearchValueNode({ field, formKey }: Props) {
     );
   } else {
     return (
-      <Stack direction="row">
+      <Stack direction="row" gap={1}>
         <Controller
           control={control}
           name={`${formKey}.value.0`}

@@ -72,6 +72,7 @@ async function needsToDownloadNewBinary(targetPath: string) {
   let shouldDownload = !exists;
   if (exists) {
     // check version against package
+    console.log(`${targetPath} --version`);
     const stdout = execSync(`${targetPath} --version`).toString('utf-8').trim();
     const extractedVersionMatch = /meilisearch\s*(\d+\.\d+\.\d+).*/.exec(
       stdout,
@@ -223,4 +224,14 @@ if (process.argv[1] === import.meta.filename) {
     args.platform as NodeJS.Platform,
     args.arch,
   );
+  if (args.outPath === DefaultOutPath) {
+    const archPath = `${DefaultOutPath}-${args.platform}-${args.arch}`;
+    if (await fileExists(archPath)) {
+      await fs.unlink(archPath);
+      await fs.symlink(args.outPath, archPath);
+      console.log(
+        `Symlinked arch-specific path ${archPath} to ${args.outPath}`,
+      );
+    }
+  }
 }

@@ -52,6 +52,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     useStore.setState((s) => {
       s.currentSearchRequest = searchRequest;
     });
+
+    return {
+      searchRequest,
+    };
   },
   component: RootPage,
   notFoundComponent: () => (
@@ -71,7 +75,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootPage() {
-  console.log();
   return (
     <>
       <Root />
