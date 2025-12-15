@@ -20,5 +20,6 @@ cp -R "$REPO_ROOT/macos/Tunarr/build/Release/Tunarr.app" "$APP_NAME"
 popd || exit
 
 cp -a "$REPO_ROOT/server/bin/$BINARY_NAME" "$APP_NAME/Contents/MacOS/tunarr-macos"
+file "$REPO_ROOT/server/bin/meilisearch-$3"
 cp -a "$REPO_ROOT/server/bin/meilisearch-$3" "$APP_NAME/Contents/MacOS/meilisearch"
 chmod +x "$APP_NAME/Contents/MacOS/tunarr-macos" "$APP_NAME/Contents/MacOS/meilisearch"
