@@ -167,13 +167,15 @@ export async function grabMeilisearch(
     return;
   }
 
+  const downloadUrl = getMeilisearchDownloadUrl(
+    wantedVersion,
+    meilisearchPlatformAndArch.meilisearchPlatform,
+    meilisearchPlatformAndArch.meilisearchArch,
+  );
+  console.log(`Downloading meilisearch from ${downloadUrl}`);
   const outStream = await axios.request<stream.Readable>({
     method: 'get',
-    url: getMeilisearchDownloadUrl(
-      wantedVersion,
-      meilisearchPlatformAndArch.meilisearchPlatform,
-      meilisearchPlatformAndArch.meilisearchArch,
-    ),
+    url: downloadUrl,
     responseType: 'stream',
   });
 

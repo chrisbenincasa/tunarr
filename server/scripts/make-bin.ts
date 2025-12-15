@@ -124,8 +124,8 @@ for (const arch of args.target) {
         const url = getBetterSqlite3DownloadUrl(
           serverPackage.dependencies['better-sqlite3'],
           nodeAbi.getAbi(NODE_VERSION, 'node'),
-          osString,
-          archString,
+          osString!,
+          archString!,
         );
         console.log(`Downloading prebuilt better-sqlite3 ${url} ...`);
         return axios.get<stream.Readable>(url, {
