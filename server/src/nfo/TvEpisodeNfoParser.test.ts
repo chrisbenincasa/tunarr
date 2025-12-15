@@ -9,7 +9,8 @@ describe('TvEpisodeNfoParser', () => {
 
     const output = result.get();
 
-    expect(output.episodedetails[0].credits).length(1)
+    expect(output.episodedetails[0].credits).length(3);
+    expect(output.episodedetails[0].director).length(2);
 
     console.log(output.episodedetails);
   });

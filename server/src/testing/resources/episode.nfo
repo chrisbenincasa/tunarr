@@ -39,7 +39,10 @@
     <genre>Mystery</genre>
     <genre>Drama</genre>
     <credits imdbid="nm2356614">Jac Schaeffer</credits>
-    <director>Matt Shakman</director>
+    <credits>Peter Cameron</credits>
+    <credits>Mackenzie Dohr</credits>
+    <director imdbid="nm0787687">Matt Shakman</director>
+    <director>Matt Shakman 2</director>
     <premiered>2021-01-15</premiered>
     <year>2021</year>
     <status></status>
