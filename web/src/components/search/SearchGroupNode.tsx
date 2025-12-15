@@ -11,6 +11,7 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
 import type { SearchFilter } from '@tunarr/types/api';
 import { map } from 'lodash-es';
@@ -35,7 +36,9 @@ export function SearchGroupNode({
   library,
 }: GroupNodeProps) {
   const { control } = useFormContext();
-  const prefix = `${formKey}.` as const;
+  const prefix = isNonEmptyString(formKey)
+    ? (`${formKey}.` as const)
+    : ('' as const);
   const getFieldName = useGetFieldName(formKey);
 
   const {

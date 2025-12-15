@@ -950,14 +950,21 @@ export function searchFilterToString(
       if (isNumber(input.fieldSpec.value)) {
         valueString = input.fieldSpec.value.toString();
       } else if (input.fieldSpec.value.length === 1) {
-        return `${input.fieldSpec.key} ${input.fieldSpec.op} ${input.fieldSpec.value[0]}`;
+        const value = input.fieldSpec.value[0];
+        let repr: string;
+        if (value.includes(' ')) {
+          repr = `"${value}"`;
+        } else {
+          repr = value;
+        }
+        return `${input.fieldSpec.key} ${input.fieldSpec.op} ${repr}`;
       } else {
         const components: string[] = [];
         for (const x of input.fieldSpec.value) {
           if (isNumber(x)) {
             components.push(x.toString());
           } else {
-            components.push(x);
+            components.push(x.includes(' ') ? `"${x}"` : x);
           }
         }
         valueString = `[${components.join(', ')}]`;
