@@ -1856,8 +1856,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
     try {
       const url = new URL(path, this.options.mediaSource.uri).href;
+      // Explicitly returning empty ID because we cannot know if this artwork is
+      // persisted yet or not.
       return {
-        id: v4(),
         type: artworkType,
         path: url,
       };

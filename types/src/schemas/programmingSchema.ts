@@ -448,7 +448,7 @@ export const MediaArtworkType = z.enum([
 ]);
 
 export const MediaArtwork = z.object({
-  id: z.uuid(),
+  id: z.uuid().optional(), // Empty if artwork is not persisted
   type: MediaArtworkType,
   path: z.string().nullish(),
 });

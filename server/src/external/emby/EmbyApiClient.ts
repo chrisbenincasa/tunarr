@@ -1563,7 +1563,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       this.options.mediaSource.uri,
     ).href;
     return {
-      id: v4(),
+      // Explicitly return an empty ID because we cannot know if artwork is persisted or not at this point
       type: artworkType,
       path: url,
     };

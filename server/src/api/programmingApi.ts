@@ -10,6 +10,7 @@ import {
   groupByUniqAndMap,
   ifDefined,
   inConstArr,
+  isHttpUrl,
   isNonEmptyString,
 } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -70,6 +71,7 @@ import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
 
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
+import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z
@@ -426,28 +428,27 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           trimStart(path.replace(globalOptions().databaseDirectory, ''), '/'),
           { contentType: true },
         );
-      } else if (URL.canParse(art.sourcePath)) {
+      } else if (isHttpUrl(art.sourcePath)) {
         if (!program.mediaSourceId) {
           return res.status(404).send();
         }
         const mediaSource = await req.serverCtx.mediaSourceDB.getById(
           program.mediaSourceId,
         );
-        if (!mediaSource) {
-          return res.status(404).send();
-        }
 
         const url = URL.parse(art.sourcePath)!;
-        switch (mediaSource.type) {
-          case 'plex':
-            url?.searchParams.append('X-Plex-Token', mediaSource.accessToken);
-            break;
-          case 'jellyfin':
-          case 'emby':
-            url?.searchParams.append('X-Emby-Token', mediaSource.accessToken);
-            break;
-          case 'local':
-            break;
+        if (mediaSource) {
+          switch (mediaSource.type) {
+            case 'plex':
+              url?.searchParams.append('X-Plex-Token', mediaSource.accessToken);
+              break;
+            case 'jellyfin':
+            case 'emby':
+              url?.searchParams.append('X-Emby-Token', mediaSource.accessToken);
+              break;
+            case 'local':
+              break;
+          }
         }
 
         return res.redirect(url.toString());
@@ -716,6 +717,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         req.serverCtx.programDB.getProgramById(req.params.id),
         req.serverCtx.programDB.getProgramGrouping(req.params.id),
       ]);
+
       if (isNil(program) && isNil(grouping)) {
         return res.status(404).send('ID not found');
       }
@@ -844,6 +846,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 upscale: req.query.upscale.toString(),
               }),
             );
+          case 'emby':
+            return handleResult(
+              mediaSource,
+              EmbyApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: keyToUse,
+                accessToken: mediaSource.accessToken,
+              }),
+            );
           default:
             return res.status(405).send();
         }
@@ -897,6 +908,15 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
                 height: req.query.height,
                 width: req.query.width,
                 upscale: req.query.upscale.toString(),
+              }),
+            );
+          case 'emby':
+            return handleResult(
+              mediaSource,
+              EmbyApiClient.getThumbUrl({
+                uri: mediaSource.uri,
+                itemKey: source.externalKey,
+                accessToken: mediaSource.accessToken,
               }),
             );
           default:

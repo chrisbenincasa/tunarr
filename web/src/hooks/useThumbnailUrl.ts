@@ -26,15 +26,23 @@ export const useGetArtworkUrl = () => {
       for (const type of artworkCheckOrder) {
         const matchingArt = artByType[type];
         if (!isEmpty(matchingArt)) {
+          const persistedArt = matchingArt.find((art) =>
+            isNonEmptyString(art.id),
+          );
+          if (persistedArt) {
+            return `${settings.backendUri}/api/programs/${item.uuid}/artwork/${type}`;
+          }
+
           // TODO: Remove when syncing is required and all artwork is persisted.
           const path = matchingArt.find(
-            (art) => isNonEmptyString(art.path) && URL.canParse(art.path),
+            (art) =>
+              isNonEmptyString(art.path) && URL.canParse(art.path) && !art.id,
           )?.path;
           if (path) {
             const parsedPath = URL.parse(path);
             if (
-              parsedPath?.protocol === 'http' ||
-              parsedPath?.protocol === 'https'
+              parsedPath?.protocol.startsWith('http') ||
+              parsedPath?.protocol.startsWith('https')
             ) {
               return path;
             }

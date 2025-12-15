@@ -307,8 +307,8 @@ export function deepCopyArray<T>(value: T[] | undefined): T[] | undefined {
   }
   const n = Array<T>(value.length);
   for (let index = 0; index < value.length; index++) {
-    const element = value[index]!;
-    n[index] = deepCopy(element);
+    const element = value[index];
+    n[index] = deepCopy(element)!;
   }
   return n;
 }
@@ -636,4 +636,12 @@ export function firstDefined<T>(...values: Nilable<T>[]): Maybe<T> {
     }
   }
   return;
+}
+
+export function isHttpUrl(input: string): boolean {
+  if (!URL.canParse(input)) {
+    return false;
+  }
+  const parsed = URL.parse(input);
+  return parsed?.protocol.startsWith('http') ?? false;
 }

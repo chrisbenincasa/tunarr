@@ -33,7 +33,7 @@ export type ShowInput = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -96,7 +96,7 @@ export type SeasonInput = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -244,7 +244,7 @@ export type SeasonInput = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -385,7 +385,7 @@ export type EpisodeInput = {
         path?: string | null;
     }> | null;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -429,7 +429,7 @@ export type MusicArtistInput = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -466,7 +466,7 @@ export type MusicArtistInput = {
         childCount?: number;
         grandchildCount?: number;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -518,7 +518,7 @@ export type MusicAlbumInput = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -669,7 +669,7 @@ export type MusicAlbumInput = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -812,7 +812,7 @@ export type MusicTrackInput = {
         path?: string | null;
     }> | null;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -906,7 +906,7 @@ export type Show = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -969,7 +969,7 @@ export type Season = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -1117,7 +1117,7 @@ export type Season = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -1258,7 +1258,7 @@ export type Episode = {
         path?: string | null;
     }> | null;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -1302,7 +1302,7 @@ export type MusicArtist = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -1339,7 +1339,7 @@ export type MusicArtist = {
         childCount?: number;
         grandchildCount?: number;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -1391,7 +1391,7 @@ export type MusicAlbum = {
     childCount?: number;
     grandchildCount?: number;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -1542,7 +1542,7 @@ export type MusicAlbum = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -1685,7 +1685,7 @@ export type MusicTrack = {
         path?: string | null;
     }> | null;
     artwork: Array<{
-        id: string;
+        id?: string;
         type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
         path?: string | null;
     }>;
@@ -2654,7 +2654,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -2797,7 +2797,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -2936,7 +2936,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -11905,7 +11905,7 @@ export type PostApiProgramsSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -12048,7 +12048,7 @@ export type PostApiProgramsSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -12187,7 +12187,7 @@ export type PostApiProgramsSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -12626,7 +12626,7 @@ export type GetApiProgramsByIdResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -12769,7 +12769,7 @@ export type GetApiProgramsByIdResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -12908,7 +12908,7 @@ export type GetApiProgramsByIdResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -17163,7 +17163,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -17306,7 +17306,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -17445,7 +17445,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -17842,7 +17842,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -17985,7 +17985,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -18124,7 +18124,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             path?: string | null;
         }> | null;
         artwork: Array<{
-            id: string;
+            id?: string;
             type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
             path?: string | null;
         }>;
@@ -18811,7 +18811,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -18954,7 +18954,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -19093,7 +19093,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -19460,7 +19460,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -19603,7 +19603,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -19742,7 +19742,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -19985,7 +19985,7 @@ export type GetApiTrashResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -20128,7 +20128,7 @@ export type GetApiTrashResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;
@@ -20267,7 +20267,7 @@ export type GetApiTrashResponses = {
                 path?: string | null;
             }> | null;
             artwork: Array<{
-                id: string;
+                id?: string;
                 type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
                 path?: string | null;
             }>;

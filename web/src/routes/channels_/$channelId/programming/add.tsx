@@ -43,7 +43,7 @@ function ChannelProgrammingSelectorPage() {
         onSourceChange: useCallback(
           ({ mediaSourceId, libraryId }) => {
             navigate({
-              search: (prev) => ({
+              search: (prev: z.infer<typeof channelProgrammingSchema>) => ({
                 ...prev,
                 mediaSourceId: mediaSourceId ?? prev.mediaSourceId,
                 libraryId: libraryId ?? prev.libraryId,
