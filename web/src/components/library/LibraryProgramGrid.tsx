@@ -106,7 +106,6 @@ export const LibraryProgramGrid = ({
         typeFilter(mediaType),
       )
       .otherwise(() => null);
-    console.log(filter);
 
     return {
       query: searchRequest?.query,
