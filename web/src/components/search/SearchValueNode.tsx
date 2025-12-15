@@ -9,21 +9,18 @@ import {
   TextField,
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import type {
-  SearchField,
-  SearchFilterValueNode,
-  SearchRequest,
-} from '@tunarr/types/api';
+import type { SearchField, SearchFilterValueNode } from '@tunarr/types/api';
 import { OperatorsByType } from '@tunarr/types/api';
 import { find, flatten, get, isArray, isNumber, map } from 'lodash-es';
 import { useCallback, useEffect } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import {
-  SearchFieldSpec,
+  SearchFieldSpecs,
   getOperatorLabel,
 } from '../../helpers/searchBuilderConstants.ts';
 import { useGetFieldName } from '../../hooks/searchBuilderHooks.ts';
 import type { FieldPrefix } from '../../types/SearchBuilder.ts';
+import type { SearchForm } from '../library/SearchInput.tsx';
 import { DateSearchValueNode } from './DateSearchValueNode.tsx';
 import { FacetStringValueSearchNode } from './FacetStringValueSearchNode.tsx';
 import type { GroupNodeProps } from './SearchGroupNode.tsx';
@@ -35,7 +32,7 @@ type ValueNodeProps = GroupNodeProps & {
 
 export function SearchValueNode(props: ValueNodeProps) {
   const { library, depth, index, formKey, only, remove } = props;
-  const { control, watch, setValue } = useFormContext<SearchRequest>();
+  const { control, watch, setValue } = useFormContext<SearchForm>();
   const selfValue = watch(formKey) as SearchFilterValueNode;
   const getFieldName = useGetFieldName(formKey);
 
@@ -60,7 +57,7 @@ export function SearchValueNode(props: ValueNodeProps) {
 
   const handleFieldChange = useCallback(
     (newField: string) => {
-      const field = find(SearchFieldSpec, (_, k) => k === newField);
+      const field = find(SearchFieldSpecs, (_, k) => k === newField);
       if (!field) {
         return;
       }
@@ -82,7 +79,7 @@ export function SearchValueNode(props: ValueNodeProps) {
             type: field.type,
             name: field.name,
             op: '=',
-            value: [''],
+            value: [],
           };
           break;
         case 'date':
@@ -93,9 +90,21 @@ export function SearchValueNode(props: ValueNodeProps) {
             op: '=',
             value: 0,
           };
+          break;
+        case 'numeric':
+          fieldSpec = {
+            key: field.key,
+            type: field.type,
+            name: field.name,
+            op: '=',
+            value: 0,
+          };
       }
 
-      setValue(getFieldName('fieldSpec'), fieldSpec, { shouldTouch: true });
+      setValue(getFieldName('fieldSpec'), fieldSpec, {
+        shouldTouch: true,
+        shouldDirty: true,
+      });
     },
     [getFieldName, setValue],
   );
@@ -129,8 +138,44 @@ export function SearchValueNode(props: ValueNodeProps) {
     ],
   );
 
+  const handleValueChange = useCallback(
+    (
+      fieldId: string,
+      value: string,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      const targetField = Object.values(SearchFieldSpecs).find(
+        (spec) => (spec.alias ?? spec.key) === fieldId,
+      );
+      if (!targetField) {
+        return;
+      }
+      if (selfValue.fieldSpec.type === 'numeric') {
+        if (targetField.normalizer) {
+          originalOnChange(targetField.normalizer(value));
+        } else {
+          const parsed = parseInt(value);
+          if (isNaN(parsed)) {
+            return;
+          }
+          originalOnChange(parsed);
+        }
+      } else {
+        if (targetField.normalizer) {
+          originalOnChange(targetField.normalizer(value));
+        } else {
+          originalOnChange(value);
+        }
+      }
+    },
+    [selfValue.fieldSpec.type],
+  );
+
   const renderValueInput = () => {
     const fieldSpec = selfValue.fieldSpec;
+    const matchingSpec = Object.values(SearchFieldSpecs).find(
+      (spec) => spec.alias ?? spec.key,
+    );
     if (fieldSpec.type === 'facted_string') {
       return (
         <FacetStringValueSearchNode
@@ -157,7 +202,9 @@ export function SearchValueNode(props: ValueNodeProps) {
               label="Value"
               size="small"
               {...field}
-              onChange={(e) => field.onChange([e.target.value])}
+              onChange={(e) =>
+                handleValueChange(e.target.value, field.onChange)
+              }
             />
           )}
         />
@@ -187,13 +234,11 @@ export function SearchValueNode(props: ValueNodeProps) {
               {...field}
               onChange={(e) => handleFieldChange(e.target.value)}
             >
-              {seq.collectMapValues(SearchFieldSpec, (spec, field) => {
+              {seq.collectMapValues(SearchFieldSpecs, (spec, field) => {
                 if (
                   library &&
                   isArray(spec.visibleForLibraryTypes) &&
-                  !(spec.visibleForLibraryTypes as string[]).includes(
-                    library.mediaType,
-                  )
+                  !spec.visibleForLibraryTypes.includes(library.mediaType)
                 ) {
                   return null;
                 }

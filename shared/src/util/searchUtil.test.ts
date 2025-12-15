@@ -44,6 +44,18 @@ describe('search parser', () => {
     } satisfies SearchClause);
   });
 
+  test('parse values with other keywords', () => {
+    const query = parseAndCheckExpression(
+      'title IN ["Rick and Morty", "Murder, She Wrote", "Not Real"]',
+    );
+    expect(query).toMatchObject<SearchClause>({
+      type: 'single_query',
+      field: 'title',
+      op: 'in',
+      value: ['Rick and Morty', 'Murder, She Wrote', 'Not Real'],
+    });
+  });
+
   test('parse NOT IN', () => {
     const input = 'genre NOT IN [comedy, horror]';
     const query = parseAndCheckExpression(input);

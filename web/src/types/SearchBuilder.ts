@@ -1,8 +1,8 @@
 import type { OperatorsByType } from '@tunarr/types/api';
 import { type SearchField } from '@tunarr/types/api';
 
-type Root = 'filter';
-type Child = `filter.children.${number}`;
+type Root = 'filter.filter';
+type Child = `${Root}.children.${number}`;
 
 export type FieldPrefix = Root | Child;
 

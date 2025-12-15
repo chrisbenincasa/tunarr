@@ -77,7 +77,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootPage() {
-  console.log();
   return (
     <>
       <Root />

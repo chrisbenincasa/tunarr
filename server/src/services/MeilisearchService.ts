@@ -481,7 +481,7 @@ export class MeilisearchService implements ISearchService {
         if (
           !isWindows() &&
           getBooleanEnvVar(
-            TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY,
+            TUNARR_ENV_VARS.SEARCH_REDUCE_INDEXER_MEMORY_USAGE,
             os.platform() === 'linux',
           )
         ) {
@@ -1335,13 +1335,13 @@ export class MeilisearchService implements ISearchService {
                   query.fieldSpec.key,
                 )
                   ? encodeCaseSensitiveId(filteredValue[0]!)
-                  : filteredValue[0];
+                  : filteredValue[0]!;
                 const mappedOp = match(op)
                   .returnType<StringOperators>()
                   .with('in', () => '=')
                   .with('not in', () => '!=')
                   .otherwise(() => op);
-                return `${mappedOp.toUpperCase()} '${v}'`;
+                return `${mappedOp.toUpperCase()} '${v.replaceAll(`'`, `\\'`)}'`;
               } else if (op === 'in' || op === 'not in') {
                 const searchOperator = op.toUpperCase();
                 const v = index.caseSensitiveFilters?.includes(

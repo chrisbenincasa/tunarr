@@ -58,7 +58,6 @@ function ChannelProgrammingSelectorPage() {
       <ProgrammingSelectorPage
         initialMediaSourceId={mediaSourceId}
         initialLibraryId={libraryId}
-        // initialSearchRequest={parsedSearchRequest}
       />
     </ProgrammingSelectionContext.Provider>
   );

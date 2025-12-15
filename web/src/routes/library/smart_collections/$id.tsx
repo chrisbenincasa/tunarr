@@ -1,8 +1,11 @@
 import { Stack, Typography } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { LibrarySearch } from '../../../components/library/LibrarySearch.tsx';
+import { useCallback } from 'react';
+import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
+import { SearchFilterBuilder } from '../../../components/search/SearchFilterBuilder.tsx';
 import { getApiSmartCollectionsByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
 export const Route = createFileRoute('/library/smart_collections/$id')({
   loader: async ({ context, params }) => {
@@ -27,10 +30,11 @@ function RouteComponent() {
       <Typography variant="h4">
         Smart Collection: {smartCollection.name}
       </Typography>
-      <LibrarySearch
-        disableProgramSelection
-        initialSearchQuery={smartCollection.query}
+      <SearchFilterBuilder
+        onSearch={useCallback((req) => setSearchRequest(req), [])}
+        initialQuery={smartCollection.query}
       />
+      <LibraryProgramGrid />
     </Stack>
   );
 }
