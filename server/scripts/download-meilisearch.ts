@@ -187,6 +187,9 @@ export async function grabMeilisearch(
 
   if (targetPath) {
     await copyToTarget(targetPath);
+    console.log(
+      'Successfully copied meilisearch to configured target: ' + targetPath,
+    );
     return targetPath;
   }
 

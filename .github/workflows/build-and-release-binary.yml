@@ -6,7 +6,7 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
   schedule:
-    - cron: '0 13-21/2 * * *' # every 2 hours during US Eastern daytime
+    - cron: "0 13-21/2 * * *" # every 2 hours during US Eastern daytime
 
 jobs:
   typecheck:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -63,12 +63,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
-      
-      - name: 'Create env file'
+
+      - name: "Create env file"
         run: |
           touch .env
           echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> .env
@@ -126,12 +126,12 @@ jobs:
           npm install -g corepack@latest
           corepack enable && corepack enable pnpm
           pnpm --version
-      
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         shell: bash
@@ -145,7 +145,7 @@ jobs:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_P12_PASSWORD }}
 
-      - name: 'Create env file'
+      - name: "Create env file"
         run: |
           touch .env
           echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> .env
@@ -174,7 +174,7 @@ jobs:
 
       - name: Bundle web
         run: pnpm turbo bundle --filter=@tunarr/web
-      
+
       - name: Build Executable
         run: pnpm turbo make-bin -- --target ${{matrix.os.target}}
 
@@ -184,11 +184,11 @@ jobs:
           brew install coreutils
           plutil -replace CFBundleShortVersionString -string "$TUNARR_VERSION" macos/Tunarr/Tunarr/Info.plist
           plutil -replace CFBundleVersion -string "$TUNARR_VERSION" macos/Tunarr/Tunarr/Info.plist
-          
+
           if [[ "$TUNARR_EDGE_BUILD" == "true" || "$TUNARR_EDGE_BUILD" == "1" ]]; then
-            scripts/bundle-macos.sh "tunarr-${{ matrix.os.target }}" "${{ matrix.os.arch }}"
+            scripts/bundle-macos.sh "tunarr-${{ matrix.os.target }}" "${{ matrix.os.arch }}" "${{matrix.os.target}}"
           else
-            scripts/bundle-macos.sh "tunarr-${{ env.TUNARR_VERSION }}-${{ matrix.os.target }}" "${{ matrix.os.arch }}"
+            scripts/bundle-macos.sh "tunarr-${{ env.TUNARR_VERSION }}-${{ matrix.os.target }}" "${{ matrix.os.arch }}" "${{matrix.os.target}}"
           fi
 
       - name: Sign
@@ -223,7 +223,7 @@ jobs:
         shell: bash
         run: |
           mv Tunarr.dmg "${{env.RELEASE_NAME}}.dmg"
-      
+
       - name: Upload Edge Binary
         uses: softprops/action-gh-release@v2
         with:

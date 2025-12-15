@@ -142,6 +142,9 @@ for (const arch of args.target) {
           throw new Error(`Unrecognized osString ${osString}`);
         });
 
+      console.log(
+        `Downloading meilisearch (platform ${nodePlatform}, arch ${archString})`,
+      );
       const meilisearchBinaryPath = await grabMeilisearch(
         nodePlatform,
         archString,
