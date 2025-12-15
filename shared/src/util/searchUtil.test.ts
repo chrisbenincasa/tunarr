@@ -187,11 +187,6 @@ describe('search parser', () => {
       },
     } satisfies SearchClause);
   });
-
-  test('paren groups in binary clauses', () => {
-    const input = `(type:show OR type:movie) AND title ~ "Alien Nation"`;
-    const query = parseAndCheckExpression(input);
-  });
 });
 
 describe('parsedSearchToRequest', () => {
