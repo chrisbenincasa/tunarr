@@ -1,4 +1,4 @@
-import type { TunarrDBMigration } from './util.ts';
+import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
 import { processSqlMigrationFile } from './util.ts';
 
 export default {
@@ -22,4 +22,4 @@ export default {
     }
   },
   fullCopy: false,
-} satisfies TunarrDBMigration;
+} satisfies TunarrDatabaseMigration;
