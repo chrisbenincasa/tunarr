@@ -187,6 +187,11 @@ describe('search parser', () => {
       },
     } satisfies SearchClause);
   });
+
+  test('paren groups in binary clauses', () => {
+    const input = `(type:show OR type:movie) AND title ~ "Alien Nation"`;
+    const query = parseAndCheckExpression(input);
+  });
 });
 
 describe('parsedSearchToRequest', () => {
@@ -341,6 +346,28 @@ describe('parsedSearchToRequest', () => {
         op: '<=',
         type: 'numeric',
         value: 30 * 60 * 1000,
+      },
+    } satisfies SearchFilter);
+  });
+
+  test('negates queries', () => {
+    const parsed = {
+      type: 'single_query',
+      field: 'genre',
+      op: 'in',
+      negate: true,
+      value: ['comedy', 'horror'],
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(parsed);
+    expect(request).toEqual({
+      type: 'value',
+      fieldSpec: {
+        key: 'genres.name',
+        name: '',
+        op: 'not in',
+        type: 'string',
+        value: ['comedy', 'horror'],
       },
     } satisfies SearchFilter);
   });
