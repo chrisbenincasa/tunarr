@@ -1,13 +1,10 @@
-import { CompiledQuery, type Kysely, type Migration } from 'kysely';
+import { CompiledQuery, type Kysely } from 'kysely';
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import path from 'path';
 import { isNonEmptyString } from '../../util/index.ts';
-
-export interface TunarrDBMigration extends Migration {
-  fullCopy: boolean;
-}
+import type { TunarrDatabaseMigration } from '../DirectMigrationProvider.ts';
 
 export async function columnExists(
   db: Kysely<unknown>,
@@ -57,7 +54,7 @@ export async function processSqlMigrationFile(
 export function makeKyselyMigrationFromSqlFile(
   filePath: string,
   fullCopy: boolean = false,
-): TunarrDBMigration {
+): TunarrDatabaseMigration {
   return {
     fullCopy,
     async up(db) {
