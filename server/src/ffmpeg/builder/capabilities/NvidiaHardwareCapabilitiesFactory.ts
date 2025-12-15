@@ -150,8 +150,8 @@ export class NvidiaGpuDetectionHelper {
 
 export function parseNvidiaModelAndArchitecture(ffmpegDebugLine: string) {
   const archMatch = ffmpegDebugLine.match(NvidiaGpuArchPattern);
-  if (archMatch) {
-    const archString = archMatch[1];
+  if (archMatch && archMatch.length > 1) {
+    const archString = archMatch[1]!;
     const archNum = parseInt(archString.replaceAll('.', ''));
     const model =
       nth(ffmpegDebugLine.match(NvidiaGpuModelPattern), 1)?.trim() ?? 'unknown';

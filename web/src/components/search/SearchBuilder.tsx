@@ -64,6 +64,7 @@ export function SearchBuilder({
 
   const expr = useMemo(() => {
     if (isNonEmptyString(query)) {
+      console.log(query);
       const result = getSearchExpression(query);
       const isStructured = result?.type === 'success';
       setIsStructuredSearch(isStructured);
@@ -187,7 +188,7 @@ export function SearchBuilder({
               />
             )}
           />
-          {!isStructuredSearch && (
+          {!isStructuredSearch && isNonEmptyString(query) && (
             <Alert severity="info">
               Tunarr is interpretting this query as a "free text" query. This
               means the query is taken verbatim and searched across all fields.

@@ -138,7 +138,7 @@ export class CustomShowDB {
           ({
             customShowUuid: show.uuid,
             contentUuid: p.id!,
-            index: programIndexById[p.id!],
+            index: programIndexById[p.id!]!,
           }) satisfies NewCustomShowContent,
       );
 
@@ -148,7 +148,7 @@ export class CustomShowDB {
           ({
             customShowUuid: show.uuid,
             contentUuid: p.uuid,
-            index: programIndexById[programExternalIdString(p)],
+            index: programIndexById[programExternalIdString(p)]!,
           }) satisfies NewCustomShowContent,
       );
 
@@ -208,7 +208,7 @@ export class CustomShowDB {
         ({
           customShowUuid: show.uuid,
           contentUuid: p.id!,
-          index: programIndexById[p.id!],
+          index: programIndexById[p.id!]!,
         }) satisfies NewCustomShowContent,
     );
     const newCustomShowContent = map(
@@ -217,7 +217,7 @@ export class CustomShowDB {
         ({
           customShowUuid: show.uuid,
           contentUuid: p.uuid,
-          index: programIndexById[programExternalIdString(p)],
+          index: programIndexById[programExternalIdString(p)]!,
         }) satisfies NewCustomShowContent,
     );
 

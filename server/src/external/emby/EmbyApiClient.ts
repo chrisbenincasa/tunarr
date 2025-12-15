@@ -101,7 +101,7 @@ const RequiredLibraryFields = [
   'Genres',
   // 'Tags',
   'DateCreated',
-  // 'Etag',
+  'Etag',
   'Overview',
   'Taglines',
   'Studios',
@@ -973,7 +973,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return;
     }
 
-    const source = find(sources, { Protocol: 'File' }) ?? sources[0];
+    const source = find(sources, { Protocol: 'File' }) ?? sources[0]!;
 
     if (isEmpty(source.MediaStreams)) {
       this.logger.warn('No media streams!');
@@ -1674,7 +1674,7 @@ function getSeasonNumberFromPath(path: string): Nullable<number> {
 
   const match = path.match(seasonRe);
   if (match && match.length > 1) {
-    num = parseInt(match[1]);
+    num = parseInt(match[1]!);
     if (!isNull(num)) return num;
   }
 

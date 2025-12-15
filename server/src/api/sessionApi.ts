@@ -30,8 +30,8 @@ export const sessionApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       for (const sessionKey of Object.keys(allSessions)) {
         const session = allSessions[sessionKey as SessionKey];
         const [id, type] = sessionKey.split(/_(.+)?/, 2);
-        sessions[id] ??= [];
-        sessions[id].push({
+        sessions[id!] ??= [];
+        sessions[id!]!.push({
           type: type as SessionType,
           numConnections: session?.numConnections() ?? 0,
           state: session?.state ?? 'unknown',

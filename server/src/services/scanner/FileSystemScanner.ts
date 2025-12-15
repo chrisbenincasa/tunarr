@@ -75,7 +75,7 @@ export abstract class FileSystemScanner {
     );
 
     for (let i = 0; i < req.mediaSource.libraries.length; i++) {
-      const localPath = req.mediaSource.libraries[i];
+      const localPath = req.mediaSource.libraries[i]!;
       this.mediaSourceProgressService.scanStarted(req.mediaSource.uuid);
       try {
         await this.scanPath({

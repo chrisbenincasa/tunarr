@@ -53,7 +53,7 @@ export class WeightedFillerProgramIterator
     const weightSum = sum(rawWeights);
     const normalizedWeights = rawWeights.map((weight) => weight / weightSum);
     programs.forEach((p, idx) => {
-      this.weightsById.set(p.uuid, normalizedWeights[idx]);
+      this.weightsById.set(p.uuid, normalizedWeights[idx]!);
     });
     // TODO: Precalculate slices because we know all of the relevant
     // slot lengths at creation time. Then we don't have to calculate
@@ -62,8 +62,8 @@ export class WeightedFillerProgramIterator
       (p, i) =>
         ({
           program: p,
-          currentWeight: normalizedWeights[i],
-          originalWeight: normalizedWeights[i],
+          currentWeight: normalizedWeights[i]!,
+          originalWeight: normalizedWeights[i]!,
         }) satisfies WeightedProgram,
     ) as NonEmptyArray<WeightedProgram>;
   }
@@ -74,7 +74,7 @@ export class WeightedFillerProgramIterator
       idx = this.weightedPrograms.length - 1;
     } else {
       while (idx < this.weightedPrograms.length) {
-        if (this.weightedPrograms[idx].program.duration > state.slotDuration) {
+        if (this.weightedPrograms[idx]!.program.duration > state.slotDuration) {
           break;
         }
         idx++;
@@ -103,8 +103,8 @@ export class WeightedFillerProgramIterator
 
     const targetWeight = this.random.real(0, sumWeight, false);
     for (let i = 0; i < cumulativeWeights.length; i++) {
-      const program = programsToConsider[i];
-      if (targetWeight < cumulativeWeights[i]) {
+      const program = programsToConsider[i]!;
+      if (targetWeight < cumulativeWeights[i]!) {
         this.lastSeenTimestampById.set(program.program.uuid, state.timeCursor);
         program.currentWeight *= this.decayFactor;
         return {

@@ -54,11 +54,11 @@ export class GetLastPtsDurationTask {
 
 function parsePtsAndDuration(str: string): PtsAndDuration {
   const [pts, duration] = str.split('|', 2);
-  const ptsParsed = parseFloat(pts);
+  const ptsParsed = parseFloat(pts!);
   if (isNaN(ptsParsed)) {
     throw new Error('PTS was not a number');
   }
-  let durationParsed = parseFloat(duration);
+  let durationParsed = parseFloat(duration!);
   if (isNaN(durationParsed)) {
     durationParsed = 10_000;
   }

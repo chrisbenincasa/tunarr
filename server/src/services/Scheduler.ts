@@ -51,7 +51,7 @@ class Scheduler {
   getScheduledJob<Id extends TaskId, TaskOutputTypeT = TaskOutputType<Id>>(
     id: Id,
   ): ScheduledTask<unknown[], TaskOutputTypeT> {
-    return this.getScheduledJobs<Id, TaskOutputTypeT>(id)?.[0];
+    return this.getScheduledJobs<Id, TaskOutputTypeT>(id)[0]!;
   }
 
   runScheduledJobNow<Id extends TaskId, OutType = TaskOutputType<Id>>(

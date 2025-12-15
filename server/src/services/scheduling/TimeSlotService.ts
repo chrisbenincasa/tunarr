@@ -115,7 +115,7 @@ export async function scheduleTimeSlots(
           ...slot,
           startTime: slot.startTime,
         },
-        contentProgramIteratorsById[slotIteratorKey(slot)],
+        contentProgramIteratorsById[slotIteratorKey(slot)]!,
         random,
         slotFillerIterators(slot, contentProgramIteratorsById),
       ),
@@ -165,7 +165,7 @@ export async function scheduleTimeSlots(
     }
 
     for (let i = 0; i < sortedSlots.length; i++) {
-      const slot = sortedSlots[i];
+      const slot = sortedSlots[i]!;
       let endTime: number;
       if (i === sortedSlots.length - 1) {
         endTime = first(sortedSlots)!.startTime + periodMs;

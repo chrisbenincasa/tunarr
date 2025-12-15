@@ -43,7 +43,7 @@ const defaultCronFields: CronFields = run(() => {
   return reduce(
     CronExpression.map,
     (acc, key, idx) => {
-      const constraint = CronExpression.constraints[idx];
+      const constraint = CronExpression.constraints[idx]!;
       return {
         ...acc,
         [key]: range(constraint.min, constraint.max + 1),

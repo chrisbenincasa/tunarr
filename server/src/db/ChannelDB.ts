@@ -2017,7 +2017,7 @@ export class ChannelDB implements IChannelDB {
         if (channelsById[item.channel]) {
           p = this.programConverter.redirectLineupItemToProgram(
             item,
-            channelsById[item.channel],
+            channelsById[item.channel]!,
           );
         } else {
           this.logger.warn(
@@ -2036,7 +2036,7 @@ export class ChannelDB implements IChannelDB {
           type: 'custom',
           customShowId: item.customShowId,
           duration: item.durationMs,
-          index: customShowIndexes[item.customShowId][item.id] ?? -1,
+          index: customShowIndexes[item.customShowId]![item.id] ?? -1,
           id: item.id,
         };
       } else if (item.fillerListId) {
@@ -2116,7 +2116,7 @@ function channelProgramToLineupItemFunc(
       .returnType<LineupItem>()
       .with({ type: 'content' }, (program) => ({
         type: 'content',
-        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId],
+        id: program.persisted ? program.id! : dbIdByUniqueId[program.uniqueId]!,
         durationMs: program.duration,
       }))
       .with({ type: 'custom' }, (program) => ({

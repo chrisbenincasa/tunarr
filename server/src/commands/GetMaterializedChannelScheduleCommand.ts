@@ -107,8 +107,12 @@ export class GetMaterializedChannelScheduleCommand {
         return match(slot)
           .returnType<MaterializedTimeSlot>()
           .with({ type: 'show' }, (showSlot) => {
-            const { show, raw } = materializedShows[showSlot.showId];
-            if (!show || raw.state === 'missing') {
+            const materializedShow = materializedShows[showSlot.showId];
+            if (
+              !materializedShow ||
+              !materializedShow.show ||
+              materializedShow.raw.state === 'missing'
+            ) {
               this.logger.error(
                 `Could not materialize show with ID ${showSlot.showId} from schedule!`,
               );
@@ -116,14 +120,14 @@ export class GetMaterializedChannelScheduleCommand {
                 ...showSlot,
                 show: null,
                 missingShow: {
-                  title: raw.title,
+                  title: materializedShow?.raw.title,
                 },
               } satisfies MaterializedTimeSlot;
             }
 
             return {
               ...showSlot,
-              show,
+              show: materializedShow.show,
             };
           })
           .with({ type: 'filler' }, (slot) => {
@@ -174,7 +178,7 @@ export class GetMaterializedChannelScheduleCommand {
             }
             return {
               ...slot,
-              channel: ormChannelToApiChannel(channel) ?? null,
+              channel: channel ? ormChannelToApiChannel(channel) : null,
               isMissing: !channel,
             } satisfies MaterializedRedirectTimeSlot;
           })
@@ -250,20 +254,27 @@ export class GetMaterializedChannelScheduleCommand {
         return match(slot)
           .returnType<MaterializedSlot>()
           .with({ type: 'show' }, (showSlot) => {
-            const { show } = materializedShows[showSlot.showId];
-            if (!show) {
+            const materializedShow = materializedShows[showSlot.showId];
+            if (
+              !materializedShow ||
+              !materializedShow.show ||
+              materializedShow.raw.state === 'missing'
+            ) {
               this.logger.error(
                 `Could not materialize show with ID ${showSlot.showId} from schedule!`,
               );
               return {
                 ...showSlot,
                 show: null,
+                missingShow: {
+                  title: materializedShow?.raw?.title,
+                },
               } satisfies MaterializedSlot;
             }
 
             return {
               ...showSlot,
-              show,
+              show: materializedShow.show,
             };
           })
           .with({ type: 'filler' }, (slot) => {
@@ -314,7 +325,7 @@ export class GetMaterializedChannelScheduleCommand {
             }
             return {
               ...slot,
-              channel: ormChannelToApiChannel(channel) ?? null,
+              channel: channel ? ormChannelToApiChannel(channel) : null,
               isMissing: !channel,
             };
           })

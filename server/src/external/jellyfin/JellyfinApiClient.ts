@@ -1049,7 +1049,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return;
     }
 
-    const source = find(sources, { Protocol: 'File' }) ?? sources[0];
+    const source = find(sources, { Protocol: 'File' }) ?? sources[0]!;
 
     if (isEmpty(source.MediaStreams)) {
       this.logger.warn('No media streams!');
@@ -1136,12 +1136,12 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       every(apiChapters, (c) => isDefined(c.StartPositionTicks))
     ) {
       for (let i = 0; i < apiChapters.length; i++) {
-        const chapter = apiChapters[i];
+        const chapter = apiChapters[i]!;
         const isLast = i === apiChapters.length - 1;
         const end = floor(
           isLast
             ? item.RunTimeTicks! / 10_000
-            : apiChapters[i + 1].StartPositionTicks! / 10_000,
+            : apiChapters[i + 1]!.StartPositionTicks! / 10_000,
         );
         chapters.push({
           chapterType: 'chapter',
@@ -1801,7 +1801,7 @@ function getSeasonNumberFromPath(path: string): Nullable<number> {
 
   const match = path.match(seasonRe);
   if (match && match.length > 1) {
-    num = parseInt(match[1]);
+    num = parseInt(match[1]!);
     if (!isNull(num)) return num;
   }
 

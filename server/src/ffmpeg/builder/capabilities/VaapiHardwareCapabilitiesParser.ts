@@ -14,7 +14,7 @@ export class VaapiHardwareCapabilitiesParser {
     for (const line of split(result, '\n')) {
       const match = line.match(this.ProfileEntrypointPattern);
       if (match) {
-        entrypoints.push(new VaapiProfileEntrypoint(match[1], match[2]));
+        entrypoints.push(new VaapiProfileEntrypoint(match[1]!, match[2]!));
       }
     }
 
@@ -28,7 +28,7 @@ export class VaapiHardwareCapabilitiesParser {
     for (const line of split(result, '\n')) {
       let match = line.match(this.ProfileEntrypointPattern);
       if (match) {
-        currentEntrypoint = new VaapiProfileEntrypoint(match[1], match[2]);
+        currentEntrypoint = new VaapiProfileEntrypoint(match[1]!, match[2]!);
         entrypoints.push(currentEntrypoint);
       } else if (currentEntrypoint) {
         match = line.match(this.ProfileRateControlPattern);

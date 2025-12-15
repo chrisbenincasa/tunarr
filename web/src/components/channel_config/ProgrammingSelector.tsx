@@ -12,8 +12,16 @@ import {
 } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/api';
-import { capitalize, find, isEmpty, isUndefined, map, some } from 'lodash-es';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  capitalize,
+  find,
+  isEmpty,
+  isUndefined,
+  map,
+  orderBy,
+  some,
+} from 'lodash-es';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Emby,
   Imported,
@@ -58,6 +66,15 @@ export const ProgrammingSelector = ({
   const { entityType, onSourceChange } = useProgrammingSelectionContext();
   const { data: mediaSources, isLoading: mediaSourcesLoading } =
     useMediaSources();
+  const sortedMediaSources = useMemo(
+    () =>
+      orderBy(
+        mediaSources,
+        (ms) => (ms.libraries.some((lib) => lib.lastScannedAt) ? 0 : 1),
+        'asc',
+      ),
+    [mediaSources],
+  );
   const selectedServer = useStore((s) => s.currentMediaSource);
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
@@ -74,11 +91,11 @@ export const ProgrammingSelector = ({
     const server =
       !isUndefined(mediaSources) && !isEmpty(mediaSources)
         ? (find(mediaSources, ({ id }) => id === initialMediaSourceId) ??
-          mediaSources[0])
+          sortedMediaSources[0])
         : undefined;
 
     setProgrammingListingServer(server);
-  }, [initialMediaSourceId, mediaSources]);
+  }, [initialMediaSourceId, mediaSources, sortedMediaSources]);
 
   /**
    * Load custom shows
@@ -272,7 +289,7 @@ export const ProgrammingSelector = ({
                 }
                 onChange={(e) => handleMediaSourceChange(e.target.value)}
               >
-                {map(mediaSources, (server) => (
+                {map(sortedMediaSources, (server) => (
                   <MenuItem key={server.id} value={server.id}>
                     {capitalize(server.type)}: {server.name}
                   </MenuItem>

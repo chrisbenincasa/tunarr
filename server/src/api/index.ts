@@ -169,7 +169,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       // We disregard any other files that were part of the upload
-      const data = allSavedFiles[0];
+      const data = allSavedFiles[0]!;
 
       const fileType = await fileTypeFromStream(
         createReadStream(data.filepath),

@@ -22,8 +22,8 @@ export abstract class JsonFileMigrator<StepClass extends MigrationStep> {
       if (i === 0) {
         continue;
       } else {
-        const prevStep = allSteps[i - 1];
-        const thisStep = allSteps[i];
+        const prevStep = allSteps[i - 1]!;
+        const thisStep = allSteps[i]!;
         assert(prevStep.to === thisStep.from);
       }
     }

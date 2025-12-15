@@ -42,6 +42,13 @@ export class StartupService {
 
       for (const taskId of sortedOrder) {
         const task = tasksById[taskId];
+        if (!task) {
+          this.logger.warn(
+            'Unexpected state. Task ID %s not found in sorted graph',
+            taskId,
+          );
+          continue;
+        }
         if (task.dependencies.length > 0) {
           const depPromises = seq.collect(
             task.dependencies,

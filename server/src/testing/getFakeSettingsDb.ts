@@ -37,7 +37,6 @@ export async function setTestGlobalOptions(
   const tmpName = await createTmpDir({ unsafeCleanup: true });
   setGlobalOptions({
     database: tmpName,
-    force_migration: false,
     log_level: 'debug',
     verbose: 0,
     ...(opts ?? {}),

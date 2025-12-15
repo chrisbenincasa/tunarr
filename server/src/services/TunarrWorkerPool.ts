@@ -189,7 +189,7 @@ export class TunarrWorkerPool implements IWorkerPool {
     await retry(async () => {
       return this.#mu.runExclusive(() => {
         const idx = this.#last;
-        const { ready, worker } = this.#pool[idx];
+        const { ready, worker } = this.#pool[idx]!;
         this.#last = (this.#last + 1) % this.#pool.length;
         if (ready) {
           this.logger.debug(
@@ -250,7 +250,7 @@ export class TunarrWorkerPool implements IWorkerPool {
           this.logger.debug('Worker %d is ready', idx);
           started = true;
           fut.resolve();
-          this.#pool[idx].ready = true;
+          this.#pool[idx]!.ready = true;
         })
         .with({ type: P.union('success', 'error') }, (reply) => {
           performance.mark(reply.requestId);
@@ -299,8 +299,9 @@ export class TunarrWorkerPool implements IWorkerPool {
     });
 
     worker.on('exit', (code) => {
-      this.#startPromises[idx]
-        .then(() => this.setupWorker(idx))
+      this.#startPromises
+        // eslint-disable-next-line no-unexpected-multiline
+        [idx]!.then(() => this.setupWorker(idx))
         .catch(() => this.setupWorker(idx));
 
       const outstandingListeners = this.#outstandingByIndex.get(idx) ?? [];

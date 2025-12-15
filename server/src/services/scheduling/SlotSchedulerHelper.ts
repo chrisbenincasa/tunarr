@@ -19,6 +19,7 @@ import { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
+import { zipWithIndex } from '../../util/index.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import {
   isProgramGroupingDocument,
@@ -94,8 +95,7 @@ export class SlotSchedulerHelper {
     const customShowContexts = reduce(
       customShowPrograms,
       (acc, programs, csId) => {
-        for (let i = 0; i < programs.length; i++) {
-          const program = programs[i];
+        for (const [program, i] of zipWithIndex(programs)) {
           const existing = acc[program.uuid] ?? [];
           existing.push({ customShowId: csId, index: i });
           acc[program.uuid] = existing;

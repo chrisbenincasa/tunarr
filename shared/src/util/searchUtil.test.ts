@@ -345,6 +345,28 @@ describe('parsedSearchToRequest', () => {
     } satisfies SearchFilter);
   });
 
+  test('negates queries', () => {
+    const parsed = {
+      type: 'single_query',
+      field: 'genre',
+      op: 'in',
+      negate: true,
+      value: ['comedy', 'horror'],
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(parsed);
+    expect(request).toEqual({
+      type: 'value',
+      fieldSpec: {
+        key: 'genres.name',
+        name: '',
+        op: 'not in',
+        type: 'string',
+        value: ['comedy', 'horror'],
+      },
+    } satisfies SearchFilter);
+  });
+
   describe('show virtual fields', () => {
     test('parse show_title', () => {
       const input = 'show_title:"The Twilight Zone"';

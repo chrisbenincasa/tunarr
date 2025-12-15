@@ -6,7 +6,7 @@ export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
   const newLineup: LineupItem[] = [];
   let i = 0;
   while (i < lineup.items.length) {
-    let item = lineup.items[i];
+    let item = lineup.items[i]!;
     if (item.type !== 'offline') {
       newLineup.push(item);
       i++;
@@ -21,7 +21,7 @@ export function collapseOfflineTime(lineup: Lineup): Promise<Lineup> {
       if (start >= lineup.items.length) {
         break;
       }
-      item = lineup.items[start];
+      item = lineup.items[start]!;
     }
 
     newLineup.push({

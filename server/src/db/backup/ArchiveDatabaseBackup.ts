@@ -163,11 +163,15 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       compact(
         map(listings, (file) => {
           const matchArr = file.match(/tunarr-backup-(\d{8}_\d{6})/);
-          if (isNull(matchArr) || matchArr.length === 0) {
+          if (isNull(matchArr) || matchArr.length < 2) {
             return;
           }
 
-          const [date, time] = matchArr[1].split('_', 2);
+          const [date, time] = matchArr[1]!.split('_', 2);
+          if (!date || !time) {
+            return;
+          }
+
           const dateNum = parseInt(date);
           const timeNum = parseInt(time);
           // TODO: Log the bad case here

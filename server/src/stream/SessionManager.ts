@@ -79,10 +79,10 @@ export class SessionManager {
     const ret: Dictionary<Partial<Dictionary<Session, SessionType>>> = {};
     for (const [key, session] of Object.entries(this.#sessions)) {
       const [channelId, sessionType] = key.split('_', 2);
-      if (!ret[channelId]) {
-        ret[channelId] = {};
+      if (!ret[channelId!]) {
+        ret[channelId!] = {};
       }
-      ret[channelId][sessionType] = session;
+      ret[channelId!]![sessionType!] = session;
     }
     return omitBy(ret, isEmpty);
   }
@@ -122,7 +122,7 @@ export class SessionManager {
     const sessions: Session[] = [];
     for (const key of Object.keys(this.#sessions)) {
       if (key.startsWith(id)) {
-        sessions.push(this.#sessions[key as SessionKey]);
+        sessions.push(this.#sessions[key as SessionKey]!);
       }
     }
     return sessions;

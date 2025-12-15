@@ -387,7 +387,7 @@ export class HlsSession extends BaseHlsSession {
           if (matches && matches.length > 0) {
             return {
               file,
-              seq: parseInt(matches[1]),
+              seq: parseInt(matches[1]!),
             };
           }
           return;

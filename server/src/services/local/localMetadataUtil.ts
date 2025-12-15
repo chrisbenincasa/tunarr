@@ -22,7 +22,7 @@ export function extractSeasonNumberFromFolder(folderName: string) {
 
   const matches = folderName.match(SeasonNameRegex);
   if (matches && matches.length > 1) {
-    const seasonNumber = parseIntOrNull(matches[1]);
+    const seasonNumber = parseIntOrNull(matches[1]!);
     if (!isNull(seasonNumber)) {
       return seasonNumber;
     }
@@ -45,13 +45,13 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
   fileName = basename(fileName, extname(fileName));
   const matches = fileName.match(SeasonAndEpisodeNameRegex1);
   if (matches && matches.length > 2) {
-    const season = parseIntOrNull(matches[1]);
+    const season = parseIntOrNull(matches[1]!);
     if (isNull(season)) {
       return;
     }
 
     const epMatches = seq.collect(
-      Array.from(matches[2].matchAll(/(\d+)/g)),
+      Array.from(matches[2]!.matchAll(/(\d+)/g)),
       ([n]) => parseIntOrNull(n),
     );
     if (!isNonEmptyArray(epMatches)) {
@@ -66,8 +66,8 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
 
   const matches2 = fileName.match(SeasonAndEpisodeNameRegex2);
   if (matches2 && matches2.length > 2) {
-    const season = parseIntOrNull(matches2[1]);
-    const episode = parseIntOrNull(matches2[2]);
+    const season = parseIntOrNull(matches2[1]!);
+    const episode = parseIntOrNull(matches2[2]!);
     if (!isNull(season) && !isNull(episode)) {
       return {
         season,

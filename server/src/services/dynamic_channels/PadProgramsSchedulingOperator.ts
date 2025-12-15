@@ -89,7 +89,7 @@ export class PadProgramsSchedulingOperator extends SchedulingOperator<AddPadding
           nextProgramTime = thisProgramEnd
             .add(1, 'h')
             .startOf('h')
-            .add(manualOffsets[0], 'm');
+            .add(manualOffsets[0]!, 'm');
         } else {
           // Reset m,s,ms on the end timestamp the rounded offset
           nextProgramTime = thisProgramEnd.startOf('h').add(foundOffset);

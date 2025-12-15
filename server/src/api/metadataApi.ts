@@ -35,7 +35,7 @@ const externalIdSchema = z
         return 'Invalid number of parts after splitting on delimiter';
       }
 
-      if (isUndefined(programSourceTypeFromString(parts[0]))) {
+      if (isUndefined(programSourceTypeFromString(parts[0]!))) {
         return `Invalid program source type: ${parts[0]}`;
       }
 
@@ -47,9 +47,9 @@ const externalIdSchema = z
   .transform((val) => {
     const [sourceType, sourceId, itemId] = val.split('|', 3);
     return {
-      externalSourceType: programSourceTypeFromString(sourceType)!,
-      externalSourceId: tag<MediaSourceId>(sourceId),
-      externalItemId: itemId,
+      externalSourceType: programSourceTypeFromString(sourceType!)!,
+      externalSourceId: tag<MediaSourceId>(sourceId!),
+      externalItemId: itemId!,
     };
   });
 

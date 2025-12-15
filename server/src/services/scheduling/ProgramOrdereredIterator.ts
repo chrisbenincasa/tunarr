@@ -56,7 +56,7 @@ export class CustomProgramOrderedIterator extends ProgramOrdereredIterator<Conde
       customShowId: this.customShowId,
       duration: program.duration,
       id: program.uuid,
-      index: this.indexById[program.uuid],
+      index: this.indexById[program.uuid]!,
       persisted: true,
       type: 'custom',
     };

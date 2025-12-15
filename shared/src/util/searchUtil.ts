@@ -392,20 +392,6 @@ export class SearchParser extends EmbeddedActionsParser {
     ]);
   });
 
-  private parenGroup = this.RULE('parenGroup', () => {
-    this.CONSUME(OpenParenGroup);
-    const clauses: SearchClause[] = [];
-    this.AT_LEAST_ONE(() => {
-      clauses.push(this.SUBRULE(this.searchClause));
-    });
-    this.CONSUME(CloseParenGroup);
-
-    return {
-      type: 'search_group' as const,
-      clauses,
-    } satisfies SearchGroup;
-  });
-
   private stringOperator = this.RULE('string_operator', () => {
     return this.OR<{
       op: StringOps;
@@ -698,6 +684,20 @@ export class SearchParser extends EmbeddedActionsParser {
     } satisfies SingleDateSearchQuery;
   });
 
+  private parenGroup = this.RULE('parenGroup', () => {
+    this.CONSUME(OpenParenGroup);
+    const clauses: SearchClause[] = [];
+    this.AT_LEAST_ONE(() => {
+      clauses.push(this.SUBRULE(this.searchClause));
+    });
+    this.CONSUME(CloseParenGroup);
+
+    return {
+      type: 'search_group' as const,
+      clauses,
+    } satisfies SearchGroup;
+  });
+
   private singleSearch = this.RULE('singleSearch', () => {
     return this.OR<SingleSearch>([
       {
@@ -901,12 +901,17 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
     case 'single_query': {
       const key: string = virtualFieldToIndexField[input.field] ?? input.field;
 
+      const op = match(input)
+        .returnType<StringOperators>()
+        .with({ op: 'in', negate: true }, () => 'not in')
+        .otherwise(() => StringOpToApiType[input.op]);
+
       return {
         type: 'value',
         fieldSpec: {
           key,
           name: '',
-          op: StringOpToApiType[input.op],
+          op,
           type: 'string' as const,
           value: isArray(input.value) ? input.value : [input.value],
         },
