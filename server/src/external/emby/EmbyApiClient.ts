@@ -101,7 +101,7 @@ const RequiredLibraryFields = [
   'Genres',
   // 'Tags',
   'DateCreated',
-  // 'Etag',
+  'Etag',
   'Overview',
   'Taglines',
   'Studios',
