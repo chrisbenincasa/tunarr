@@ -1,6 +1,7 @@
+import { createExternalId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { Person, ProgramOrFolder } from '@tunarr/types';
-import { isStructuralItemType } from '@tunarr/types';
+import { isStructuralItemType, tag } from '@tunarr/types';
 import type { MediaArtworkType } from '@tunarr/types/schemas';
 import { groupBy, isEmpty } from 'lodash-es';
 import { useCallback } from 'react';
@@ -29,26 +30,28 @@ export const useGetArtworkUrl = () => {
           const persistedArt = matchingArt.find((art) =>
             isNonEmptyString(art.id),
           );
-          if (persistedArt) {
+          if (persistedArt || item.sourceType === 'local') {
             return `${settings.backendUri}/api/programs/${item.uuid}/artwork/${type}`;
           }
 
-          // TODO: Remove when syncing is required and all artwork is persisted.
-          const path = matchingArt.find(
-            (art) =>
-              isNonEmptyString(art.path) && URL.canParse(art.path) && !art.id,
-          )?.path;
-          if (path) {
-            const parsedPath = URL.parse(path);
-            if (
-              parsedPath?.protocol.startsWith('http') ||
-              parsedPath?.protocol.startsWith('https')
-            ) {
-              return path;
-            }
-          }
-
-          return `${settings.backendUri}/api/programs/${item.uuid}/artwork/${type}`;
+          // TODO: Just return the right URLs in the artwork item itself!
+          const url = new URL(`${settings.backendUri}/api/metadata/external`);
+          url.searchParams.append('asset', 'image');
+          url.searchParams.append('imageType', 'poster');
+          url.searchParams.append(
+            'cache',
+            import.meta.env.PROD ? 'true' : 'false',
+          );
+          url.searchParams.append('mode', 'proxy');
+          url.searchParams.append(
+            'id',
+            createExternalId(
+              item.sourceType,
+              tag(item.mediaSourceId),
+              item.externalId ?? '',
+            ),
+          );
+          return url.toString();
         }
       }
 
