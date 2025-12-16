@@ -255,7 +255,7 @@ export default function RandomSlotEditorPage() {
         )}
         <Button
           variant="contained"
-          disabled={!isValid}
+          // disabled={!isValid}
           onClick={() => onSave()}
         >
           Save
