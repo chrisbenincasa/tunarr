@@ -249,11 +249,7 @@ export default function RandomSlotEditorPage() {
             Reset Options
           </Button>
         )}
-        <Button
-          variant="contained"
-          // disabled={!isValid}
-          onClick={() => onSave()}
-        >
+        <Button variant="contained" onClick={() => onSave()}>
           Save
         </Button>
       </Box>
