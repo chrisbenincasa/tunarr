@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.0.4](https://github.com/chrisbenincasa/tunarr/compare/v1.0.3...v1.0.4) (2025-12-16)
+
+
+### Bug Fixes
+
+* add support for attributes in credit or director xml fields ([#1540](https://github.com/chrisbenincasa/tunarr/issues/1540)) ([677b877](https://github.com/chrisbenincasa/tunarr/commit/677b877ddd61e4a956b4ee4484e8baeca06f89a6)), closes [#1528](https://github.com/chrisbenincasa/tunarr/issues/1528)
+* differntiate between persisted and ephemeral artwork in API ([c5c55e5](https://github.com/chrisbenincasa/tunarr/commit/c5c55e5704e46bd112b12b627958f0173d09d49d))
+* do not erroneously reset media source when changing libraries ([9e58734](https://github.com/chrisbenincasa/tunarr/commit/9e587342fde606f866391e50c7f9217e4dc7706b))
+* fix destructure of undefnied when materializing slot schedules ([6aaa43b](https://github.com/chrisbenincasa/tunarr/commit/6aaa43bbcb99268933159451bb961312a92dc662))
+* generate proper order for shows in slot editors ([fbf08c4](https://github.com/chrisbenincasa/tunarr/commit/fbf08c45bbf7aec46f1992136bd4fa30a59d4b28))
+* properly index studios and make them searchable ([2f043b9](https://github.com/chrisbenincasa/tunarr/commit/2f043b9948d8fb809ed02bade5cfea7650c82199))
+* properly map "not in" queries to search requests after parsing ([b80659f](https://github.com/chrisbenincasa/tunarr/commit/b80659f174a3b4f9d553ea0a2d02526684ebff99))
+* properly mint directors/writers for movie items ([80eb15e](https://github.com/chrisbenincasa/tunarr/commit/80eb15e840702e01ea6a13062c8d60f386cf72ef))
+* select ETag explicitly from Emby ([6912b3f](https://github.com/chrisbenincasa/tunarr/commit/6912b3ff108d48eca95f4265fe8b1787fe5419c2))
+* use proxied /api/metadata/external endpoint for loading non-persisted artwork ([c13e530](https://github.com/chrisbenincasa/tunarr/commit/c13e530563edfd3b7aa59370a57311b4e3521078))
+
+
+### Performance Improvements
+
+* substantially improve guide building performance while reducing memory usage ([1363b88](https://github.com/chrisbenincasa/tunarr/commit/1363b88f8e20d52e38056c5f65c5bba779322aea))
+
+
+### UI Changes
+
+* hide free text info box when query string is empty ([b8b764b](https://github.com/chrisbenincasa/tunarr/commit/b8b764bd401b6c638adf5cbf7ea7709d241c5e4b))
+
 ## [1.0.3](https://github.com/chrisbenincasa/tunarr/compare/v1.0.2...v1.0.3) (2025-12-14)
 
 
