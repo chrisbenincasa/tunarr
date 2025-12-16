@@ -75,9 +75,12 @@ function programOrdererNext(program: SlotSchedulerProgram) {
     case 'music_video':
     case 'other_video':
       return +dayjs(program.originalAirDate);
-    case 'episode':
+    case 'episode': {
       // Hacky thing from original code...
-      return program.seasonNumber! * 1e5 + program.episode!;
+      const seasonNumber = program.season?.index ?? program.seasonNumber ?? 1;
+      const episodeNumber = program.episode ?? 1;
+      return seasonNumber * (1e5 + episodeNumber);
+    }
     case 'track':
       // A-z for now
       return program.title;
