@@ -95,8 +95,8 @@ export const SmartCollectionsTable = () => {
             <IconButton
               onClick={() =>
                 navigate({
-                  to: '/search',
-                  search: { query: row.original.query },
+                  to: '/library/smart_collections/$id',
+                  params: { id: row.original.uuid },
                 })
               }
             >
