@@ -215,9 +215,20 @@ export class ProgramDaoMinter {
       artwork: movie.artwork.map((art) =>
         this.mintArtwork(art, programId, now),
       ),
-      credits: seq.collect(movie.actors, (actor) =>
-        this.mintCreditForActor(actor, programId, now),
-      ),
+      credits: seq
+        .collect(movie.actors, (actor) =>
+          this.mintCreditForActor(actor, programId, now),
+        )
+        .concat(
+          seq.collect(movie.directors, (dir) =>
+            this.mintCredit(dir, 'director', programId, now),
+          ),
+        )
+        .concat(
+          seq.collect(movie.writers, (dir) =>
+            this.mintCredit(dir, 'writer', programId, now),
+          ),
+        ),
       genres: seq.collect(movie.genres, (genre) => this.mintGenre(genre.name)),
       studios: seq.collect(movie.studios, (studio) =>
         this.mintStudio(studio.name),
