@@ -43,7 +43,7 @@ export type VideoStreamDetails = {
 export type AudioStreamDetails = {
   channels?: number;
   codec?: string;
-  index?: number;
+  index: number;
   bitrate?: number;
   profile?: string;
   default?: boolean;

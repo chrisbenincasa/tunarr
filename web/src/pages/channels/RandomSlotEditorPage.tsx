@@ -91,12 +91,8 @@ export default function RandomSlotEditorPage() {
         : defaultRandomSlotSchedule,
   });
 
-  const {
-    control,
-    getValues,
-    formState: { isValid, isDirty },
-    reset,
-  } = randomSlotForm;
+  const { control, getValues, formState, reset } = randomSlotForm;
+  const { isDirty } = formState;
 
   const slotArray = useFieldArray({
     control,

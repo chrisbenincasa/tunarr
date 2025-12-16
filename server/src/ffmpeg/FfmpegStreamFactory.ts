@@ -392,15 +392,12 @@ export class FfmpegStreamFactory extends IFFMPEG {
     if (isDefined(streamDetails.audioDetails)) {
       // Find the best matching audio stream based on language preferences
       const audioStream = this.findBestAudioStream(streamDetails.audioDetails);
-      const audioStreamIndex = isNonEmptyString(audioStream.index)
-        ? parseInt(audioStream.index)
-        : 1;
 
       audioInput = new AudioInputSource(
         streamSource,
         [
           AudioStream.create({
-            index: isNaN(audioStreamIndex) ? 1 : audioStreamIndex,
+            index: audioStream.index,
             codec: audioStream.codec ?? 'unknown',
             channels: audioStream.channels ?? -2,
           }),

@@ -18,8 +18,8 @@ import {
   first,
   isEmpty,
   isError,
+  isNil,
   isNull,
-  map,
   orderBy,
   takeWhile,
   trim,
@@ -279,7 +279,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
       };
     }
 
-    const audioStreamDetails = map(
+    const audioStreamDetails = seq.collect(
       orderBy(
         filter(
           firstMediaSource?.MediaStreams,
@@ -288,20 +288,20 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         [(stream) => stream.Index ?? 0, (stream) => !stream.IsDefault],
       ),
       (audioStream) => {
+        if (isNil(audioStream.Index)) {
+          return;
+        }
+        const index = audioStream.Index - externalStreamCount;
+        if (index < 0) {
+          return;
+        }
         return {
           bitrate: nullToUndefined(audioStream.BitRate),
           channels: nullToUndefined(audioStream.Channels),
           codec: nullToUndefined(audioStream.Codec),
           default: !!audioStream.IsDefault,
           forced: audioStream.IsForced,
-          index:
-            ifDefined(audioStream.Index, (streamIndex) => {
-              const index = streamIndex - externalStreamCount;
-              if (index >= 0) {
-                return index;
-              }
-              return;
-            }) ?? undefined,
+          index,
           language: nullToUndefined(audioStream.Language),
           profile: nullToUndefined(audioStream.Profile),
           title: nullToUndefined(audioStream.Title),

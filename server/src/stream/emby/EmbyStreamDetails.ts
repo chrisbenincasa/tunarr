@@ -16,9 +16,9 @@ import {
   first,
   isEmpty,
   isError,
+  isNil,
   isNull,
   isUndefined,
-  map,
   orderBy,
   sortBy,
   takeWhile,
@@ -270,7 +270,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       };
     }
 
-    const audioStreamDetails = map(
+    const audioStreamDetails = seq.collect(
       sortBy(
         filter(
           firstMediaSource?.MediaStreams,
@@ -279,20 +279,20 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         (stream) => [stream.Index ?? 0, !stream.IsDefault],
       ),
       (audioStream) => {
+        if (isNil(audioStream.Index)) {
+          return;
+        }
+        const index = audioStream.Index - externalStreamCount;
+        if (index < 0) {
+          return;
+        }
         return {
           bitrate: nullToUndefined(audioStream.BitRate),
           channels: nullToUndefined(audioStream.Channels),
           codec: nullToUndefined(audioStream.Codec),
           default: !!audioStream.IsDefault,
           forced: audioStream.IsForced,
-          index:
-            ifDefined(audioStream.Index, (streamIndex) => {
-              const index = streamIndex - externalStreamCount;
-              if (index >= 0) {
-                return index;
-              }
-              return;
-            }) ?? undefined,
+          index,
           language: nullToUndefined(audioStream.Language),
           profile: nullToUndefined(audioStream.Profile),
           title: nullToUndefined(audioStream.Title),
