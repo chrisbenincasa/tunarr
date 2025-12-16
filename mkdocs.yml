@@ -123,6 +123,7 @@ extra:
 
 plugins:
   - glightbox
+  - search
 
 watch:
   - docs-extras/includes
