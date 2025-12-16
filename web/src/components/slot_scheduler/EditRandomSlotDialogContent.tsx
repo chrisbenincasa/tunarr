@@ -18,6 +18,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import { TimeField } from '@mui/x-date-pickers';
 import type { RandomSlot } from '@tunarr/types/api';
@@ -55,9 +56,6 @@ export const EditRandomSlotDialogContent = ({
   onCancel,
 }: EditRandomSlotDialogContentProps) => {
   const randomSlotForm = useRandomSlotFormContext();
-  const {
-    formState: { isDirty: slotWeightDirty, isValid: slotWeightValid },
-  } = randomSlotForm;
   const programOptions = useSlotProgramOptionsContext();
   const { slotArray } = randomSlotForm;
   const [currentSlots, distribution, lockWeights] = randomSlotForm.watch([
@@ -68,16 +66,13 @@ export const EditRandomSlotDialogContent = ({
 
   const formMethods = useForm<SlotViewModel>({
     defaultValues: slot,
+    reValidateMode: 'onChange',
   });
 
-  const {
-    control,
-    getValues,
-    setValue,
-    watch,
-    formState: { isDirty, isValid },
-  } = formMethods;
+  const { control, getValues, setValue, watch, formState } = formMethods;
+  const { isValid, isDirty } = formState;
   const [durationSpec, programType] = watch(['durationSpec', 'type']);
+  console.log(watch());
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
 
@@ -230,15 +225,25 @@ export const EditRandomSlotDialogContent = ({
   const handleDurationTypeChange = useCallback(
     (value: RandomSlot['durationSpec']['type']) => {
       if (value === 'fixed') {
-        setValue('durationSpec', {
-          durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
-          type: 'fixed',
-        });
+        setValue(
+          'durationSpec',
+          {
+            durationMs: dayjs.duration({ minutes: 30 }).asMilliseconds(),
+            type: 'fixed',
+          },
+          {
+            shouldDirty: true,
+          },
+        );
       } else {
-        setValue('durationSpec', {
-          type: 'dynamic',
-          programCount: 1,
-        });
+        setValue(
+          'durationSpec',
+          {
+            type: 'dynamic',
+            programCount: 1,
+          },
+          { shouldDirty: true },
+        );
       }
     },
     [setValue],
@@ -261,18 +266,28 @@ export const EditRandomSlotDialogContent = ({
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
             <Tab label="Programming" />
-            <Tab
-              label="Filler"
-              disabled={programType === 'flex' || fillerLists.length === 0}
-            />
+            <Tooltip
+              title={
+                programType === 'flex'
+                  ? 'Adding filler is not supported on flex slots'
+                  : fillerLists.length === 0
+                    ? 'Create filler lists to add filler to slots!'
+                    : null
+              }
+              placement="top"
+            >
+              <Box component="span">
+                <Tab
+                  label="Filler"
+                  disabled={programType === 'flex' || fillerLists.length === 0}
+                />
+              </Box>
+            </Tooltip>
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
               <Stack direction="row" gap={1}>
-                {(programType === 'custom-show' ||
-                  programType === 'movie' ||
-                  programType === 'show' ||
-                  programType === 'filler') && (
+                {programType === 'flex' || programType === 'redirect' ? null : (
                   <Box>
                     <Controller
                       control={control}
@@ -305,7 +320,7 @@ export const EditRandomSlotDialogContent = ({
                       helperText: '',
                     }}
                     rules={{
-                      min: 1,
+                      min: durationSpec.type === 'dynamic' ? 1 : undefined,
                     }}
                     defaultValue={1}
                     name="durationSpec.programCount"
@@ -316,7 +331,7 @@ export const EditRandomSlotDialogContent = ({
                     control={control}
                     name="durationSpec.durationMs"
                     rules={{
-                      min: 1,
+                      min: durationSpec.type === 'fixed' ? 1 : undefined,
                     }}
                     render={({ field, fieldState: { error } }) => {
                       return (
@@ -418,9 +433,7 @@ export const EditRandomSlotDialogContent = ({
       <DialogActions>
         <Button onClick={() => onCancel()}>Cancel</Button>
         <Button
-          disabled={
-            !isDirty || !isValid || !slotWeightDirty || !slotWeightValid
-          }
+          disabled={!isDirty || !isValid}
           onClick={() => commit()}
           variant="contained"
         >
