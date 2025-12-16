@@ -2,8 +2,14 @@ import { head } from 'lodash-es';
 import z from 'zod/v4';
 import type { Maybe } from '../types/util.ts';
 
-export const NfoThumb = z.object({
-  '#text': z.string(),
+
+export const NfoFieldWithAttrs = z.object({
+  '#text': z.string()
+})
+
+export type NfoFieldWithAttrs = z.infer<typeof NfoFieldWithAttrs>;
+
+export const NfoThumb = NfoFieldWithAttrs.extend({
   // '@_aspect': z.enum([
   //   'banner',
   //   'clearart',
@@ -16,8 +22,7 @@ export const NfoThumb = z.object({
   '@_aspect': z.string(),
 });
 
-export const NfoUniqueId = z.object({
-  '#text': z.coerce.string(),
+export const NfoUniqueId = NfoFieldWithAttrs.extend({
   '@_type': z.string(), //z.enum(['imdb', 'tmdb', 'tvdb']),
   '@_default': z.stringbool().optional(),
 });
@@ -81,8 +86,8 @@ export const MovieNfo = z.object({
     .optional()
     .catch(undefined),
   tag: z.array(z.string()).optional(),
-  credits: z.array(z.string()).optional(),
-  director: z.array(z.string()).optional(),
+  credits: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
+  director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   studio: z.string().optional().catch(undefined),
   fileinfo: z.array(NfoFileInfo).optional(),
@@ -118,8 +123,8 @@ export const TvShowNfo = z.object({
     .optional()
     .catch(undefined),
   tag: z.array(z.string()).optional(),
-  credits: z.array(z.string()).optional(),
-  director: z.array(z.string()).optional(),
+  credits: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
+  director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   enddate: z.string().optional(), // yyyy-mm-dd
   studio: z.string().optional().catch(undefined),
@@ -154,8 +159,8 @@ export const TvEpisodeNfo = z.object({
     })
     .optional(),
   tag: z.array(z.string()).optional(),
-  credits: z.array(z.string()).optional(),
-  director: z.array(z.string()).optional(),
+  credits: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
+  director: z.array(z.string().or(NfoFieldWithAttrs)).optional(),
   premiered: z.string().optional(), // yyyy-mm-dd
   aired: z.string().optional(), // yyyy-mm-dd
   studio: z.string().optional().catch(undefined),

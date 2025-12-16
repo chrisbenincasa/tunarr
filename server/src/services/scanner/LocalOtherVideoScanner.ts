@@ -446,7 +446,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     const directors = seq.collect(nfo.director, (director) => {
       return {
-        name: director,
+        name: typeof director === 'string' ? director : director['#text'],
       } satisfies Director;
     });
 
@@ -469,7 +469,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       directors,
       studios: nfo.studio ? [{ name: nfo.studio }] : [],
       genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
-      writers: nfo.credits?.map((c) => ({ name: c })) ?? [],
+      writers: nfo.credits?.map((c) => ({ name: typeof c === 'string' ? c : c['#text'] })) ?? [],
       artwork: [], // Added later
       state: 'ok',
     };
