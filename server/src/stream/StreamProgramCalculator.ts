@@ -1,4 +1,3 @@
-import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
 import { Channel } from '@/db/schema/Channel.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { KEYS } from '@/types/inject.js';
@@ -474,52 +473,26 @@ export class StreamProgramCalculator {
           }
         }
 
-        const externalInfos = await this.programDB.getProgramExternalIds(
-          filler.uuid,
-          [
-            ProgramExternalIdType.PLEX,
-            ProgramExternalIdType.JELLYFIN,
-            ProgramExternalIdType.EMBY,
-          ],
+        streamDuration = Math.max(
+          1,
+          Math.min(filler.duration - fillerstart, streamDuration),
         );
+        const startOffset = Math.round(fillerstart);
 
-        if (
-          !isEmpty(externalInfos) &&
-          isNonEmptyString(first(externalInfos)?.mediaSourceId)
-        ) {
-          streamDuration = Math.max(
-            1,
-            Math.min(filler.duration - fillerstart, streamDuration),
-          );
-          const startOffset = Math.round(fillerstart);
-
-          return {
-            // just add the video, starting at 0, playing the entire duration
-            type: 'commercial',
-            program: {
-              ...fillerProgram,
-              mediaSourceId,
-            },
-            // title: filler.title,
-            // filePath: nullToUndefined(externalInfo.directFilePath),
-            // externalKey: externalInfo.externalKey,
-            // externalSource:
-            //   externalInfo.sourceType === ProgramExternalIdType.JELLYFIN
-            //     ? MediaSourceType.Jellyfin
-            //     : MediaSourceType.Plex,
-            startOffset,
-            streamDuration,
-            // contentDuration: filler.duration,
-            duration: program.duration,
-            // programId: filler.uuid,
-            // externalSourceId: externalInfo.mediaSourceId!,
-            // plexFilePath: nullToUndefined(externalInfo.externalFilePath),
-            // programType: filler.type,
-            programBeginMs: program.programBeginMs,
-            fillerId: filler.uuid,
-            infiniteLoop: filler.duration < streamDuration,
-          } satisfies CommercialStreamLineupItem;
-        }
+        return {
+          // just add the video, starting at 0, playing the entire duration
+          type: 'commercial',
+          program: {
+            ...fillerProgram,
+            mediaSourceId,
+          },
+          startOffset,
+          streamDuration,
+          duration: program.duration,
+          programBeginMs: program.programBeginMs,
+          fillerId: filler.uuid,
+          infiniteLoop: filler.duration < streamDuration,
+        } satisfies CommercialStreamLineupItem;
       }
 
       // pick the offline screen

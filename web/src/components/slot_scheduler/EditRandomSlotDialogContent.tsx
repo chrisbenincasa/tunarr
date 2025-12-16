@@ -72,7 +72,6 @@ export const EditRandomSlotDialogContent = ({
   const { control, getValues, setValue, watch, formState } = formMethods;
   const { isValid, isDirty } = formState;
   const [durationSpec, programType] = watch(['durationSpec', 'type']);
-  console.log(watch());
   const [tab, setTab] = useState(0);
   const { data: fillerLists } = useFillerLists();
 
