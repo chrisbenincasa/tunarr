@@ -24,7 +24,7 @@ At this point, Jellyfin will ask for your tuner type - we recdommend selecting H
 
 ![Jellyfin Add HD Homerun](/assets/Jellyfin-add-hdh.png)
 
-You can then select "Detect My Devices," and Jellyfin may already detect Tunarr and you might see your servers IP address. If it does not, you can fill in your info manually. Use the following format replacing serverIP with your servers IP address and chosen port (if using Docker): e.g. `http://serverIP:8000`
+You can then select "Detect My Devices," and Jellyfin may be able to detect your Tunarr instance and its IP address. If it does not, you can fill in your info manually. Use the following format replacing serverIP with your server's IP address and chosen port (if using Docker): e.g. `http://serverIP:8000`
 
 ![Jellyfin HDHR Setup](/assets/Jellyfin-tuner-setup.png)
 
@@ -47,7 +47,7 @@ If you have more than one instance, you can uncheck this and then apply this gui
 
 ![Jellyfin Apply to All](/assets/Jellyfin-apply-to-all.png)
 
-Be careful hen assigning if this applies to you!
+Be careful when assigning if this applies to you!
 
 ![Plex settings tuner 2](/assets/plex-settings-tuner2.png)
 
