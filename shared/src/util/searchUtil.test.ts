@@ -345,6 +345,28 @@ describe('parsedSearchToRequest', () => {
     } satisfies SearchFilter);
   });
 
+  test('handles studio search', () => {
+    const clause = {
+      type: 'single_query',
+      field: 'studio',
+      op: 'contains',
+      value: 'Pixar',
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(clause);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'studio.name',
+        name: '',
+        op: 'contains',
+        type: 'string',
+        value: ['Pixar'],
+      },
+    } satisfies SearchFilter);
+  });
+
   test('negates queries', () => {
     const parsed = {
       type: 'single_query',

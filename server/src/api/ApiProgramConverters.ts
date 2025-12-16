@@ -12,6 +12,7 @@ import type {
   ProgramGrouping,
   Season,
   Show,
+  Studio,
   TerminalProgram,
 } from '@tunarr/types';
 import { orderBy } from 'lodash-es';
@@ -111,6 +112,13 @@ export class ApiProgramConverters {
       actors: convertCreditWithArtwork(program.credits ?? [], 'cast'),
       writers: convertCreditWithArtwork(program.credits ?? [], 'writer'),
       directors: convertCreditWithArtwork(program.credits ?? [], 'director'),
+      studios: program.studios?.map(
+        (studio) =>
+          ({
+            uuid: studio.studio.uuid,
+            name: studio.studio.name,
+          }) satisfies Studio,
+      ),
     } satisfies Partial<TerminalProgram>;
 
     const result = match(program)

@@ -37,7 +37,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
-import { MarkRequired } from 'ts-essentials';
+import { MarkRequired, Paths } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import serverPackage from '../../package.json' with { type: 'json' };
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -85,7 +85,9 @@ import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
 
 type FlattenArrayTypes<T> = {
-  [K in keyof T]: T[K] extends Array<unknown> ? T[K][0] : T[K];
+  [K in keyof T]-?: Exclude<T[K], undefined> extends Array<unknown>
+    ? Exclude<T[K], undefined>[0]
+    : T[K];
 };
 
 interface BaseDocument {
@@ -95,8 +97,8 @@ interface BaseDocument {
 interface TunarrSearchIndex<Type extends BaseDocument> {
   name: string;
   primaryKey: string;
-  filterable: Path<FlattenArrayTypes<Type>>[];
-  sortable: Path<FlattenArrayTypes<Type>>[];
+  filterable: Paths<FlattenArrayTypes<Type>>[];
+  sortable: Paths<FlattenArrayTypes<Type>>[];
   caseSensitiveFilters?: Path<FlattenArrayTypes<Type>>[];
 }
 
@@ -155,7 +157,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'audioChannels',
     'audioCodec',
     'state',
-    'studio',
+    'studio.name',
     'parent.studio',
     'grandparent.studio',
   ],
@@ -1478,6 +1480,7 @@ export class MeilisearchService implements ISearchService {
       actors: program.actors ?? [],
       director: program.directors ?? [],
       writer: program.writers ?? [],
+      studio: program.studios ?? [],
       tags: program.tags,
       mediaSourceId: encodeCaseSensitiveId(program.mediaSourceId),
       libraryId: encodeCaseSensitiveId(program.libraryId),

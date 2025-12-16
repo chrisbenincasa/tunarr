@@ -36,6 +36,7 @@ const StringFields = [
   'genre',
   'director',
   'writer',
+  'studio',
   'library_id',
   'title',
   'video_codec',
