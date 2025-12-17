@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.5](https://github.com/chrisbenincasa/tunarr/compare/v1.0.4...v1.0.5) (2025-12-17)
+
+
+### Bug Fixes
+
+* disable slot editor validation check on save button ([9416c37](https://github.com/chrisbenincasa/tunarr/commit/9416c37c5d66ff8060347e0da48a9222d50fb102))
+* fix several form state issues in the slot dialog ([345a6af](https://github.com/chrisbenincasa/tunarr/commit/345a6af91002cd1597bb27939e541e1e32378e1c))
+* return audio stream index for all streams ([b7ab23b](https://github.com/chrisbenincasa/tunarr/commit/b7ab23b1095f686b1ad189cb78be689849eea07c))
+
 ## [1.0.4](https://github.com/chrisbenincasa/tunarr/compare/v1.0.3...v1.0.4) (2025-12-16)
 
 
