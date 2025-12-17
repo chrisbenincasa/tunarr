@@ -63,7 +63,7 @@ Fields available for search:
 | `writer` | `string` | Writer name | - |
 | `director` | `string` | Director name | - |
 | `genre` | `string` | Program genre | `Comedy` |
-| `tag` | `string` | Program tags | - |
+| `tags` | `string` | Program tags | - |
 | `video_codec` | `string` | Video codec of the program | `hevc` |
 | `audio_codec` | `string` | Audio codec of the program | `ac3` |
 | `video_height` | `number` | Video height dimension in pixels | `1080` |
