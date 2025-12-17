@@ -101,7 +101,15 @@ export default function MediaSourceSettingsPage() {
           row.original.type === 'local' ? (
             '-'
           ) : (
-            <Link href={cell.getValue<string>()} target="_blank">
+            <Link
+              href={cell.getValue<string>()}
+              sx={{
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+              }}
+              target="_blank"
+            >
               {cell.getValue<string>()}
             </Link>
           ),
@@ -115,7 +123,7 @@ export default function MediaSourceSettingsPage() {
         ),
         enableSorting: false,
         grow: false,
-        size: 150,
+        // size: 40,
       },
     ];
   }, []);
@@ -127,9 +135,10 @@ export default function MediaSourceSettingsPage() {
     layoutMode: 'grid',
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        grow: true,
+        grow: false,
         Header: '',
         visibleInShowHideMenu: false,
+        size: 160,
         muiTableBodyCellProps: {
           sx: {
             flexDirection: 'row',
