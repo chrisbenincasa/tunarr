@@ -1,3 +1,6 @@
+import dotenv from '@dotenvx/dotenvx';
+dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
+
 import { exec } from '@yao-pkg/pkg';
 import archiver from 'archiver';
 import retry from 'async-retry';

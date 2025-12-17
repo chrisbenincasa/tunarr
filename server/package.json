@@ -133,6 +133,6 @@
     "vitest": "^3.2.4"
   },
   "meilisearch": {
-    "version": "1.27.0"
+    "version": "1.30.0"
   }
 }
