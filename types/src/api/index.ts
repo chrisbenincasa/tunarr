@@ -415,7 +415,6 @@ export const UpdateMediaSourceLibraryRequest = z.object({
 
 export const ProgramSearchRequest = z.object({
   query: SearchRequestSchema,
-  restrictSeachTo: z.array(z.string()).optional(),
   mediaSourceId: z.string().optional(),
   libraryId: z.string().optional(), // Limit search to a specific library
   page: z.number().optional(),
