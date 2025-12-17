@@ -149,20 +149,7 @@ export class StreamProgramCalculator {
       }
 
       channelContext = newChannelAndLineup.channel;
-      // lineupItem = this.channelCache.getCurrentLineupItem(
-      //   channelContext.uuid,
-      //   req.startTime,
-      // );
 
-      // if (lineupItem) {
-      //   const newItemEndTime = lineupItem.programBeginMs + lineupItem.duration;
-      //   if (newItemEndTime < endTimeMs) {
-      //     streamDuration = newItemEndTime - req.startTime;
-      //   }
-
-      //   break;
-      // } else {
-      // }
       currentProgram = await this.getCurrentProgramAndTimeElapsed(
         req.startTime,
         channelContext,
@@ -304,29 +291,8 @@ export class StreamProgramCalculator {
 
         if (backingItem && isNonEmptyString(backingItem.mediaSourceId)) {
           const mediaSourceId = backingItem.mediaSourceId;
-          // const mediaSourceType = match(externalInfo.sourceType)
-          //   .with(ProgramExternalIdType.PLEX, () => MediaSourceType.Plex)
-          //   .with(
-          //     ProgramExternalIdType.JELLYFIN,
-          //     () => MediaSourceType.Jellyfin,
-          //   )
-          //   .with(ProgramExternalIdType.EMBY, () => MediaSourceType.Emby)
-          //   .otherwise(() => null);
-          // if (!mediaSourceType) {
-          //   throw new Error('Impossible');
-          // }
-
           const baseItem = {
-            // externalSource: backingItem.sourceType,
-            // plexFilePath: nullToUndefined(externalInfo?.externalFilePath),
-            // externalKey: externalInfo.externalKey,
-            // filePath: nullToUndefined(externalInfo?.directFilePath),
-            // externalSourceId: backingItem.mediaSourceId,
-            // contentDuration: backingItem.duration,
             duration: lineupItem.durationMs,
-            // programId: backingItem.uuid,
-            // title: backingItem.title,
-            // programType: backingItem.type,
             program: { ...backingItem, mediaSourceId },
             programBeginMs: timestamp - timeElapsed,
             streamDuration,
