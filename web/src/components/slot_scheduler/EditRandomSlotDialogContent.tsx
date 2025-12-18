@@ -7,6 +7,7 @@ import type {
 import { useAdjustRandomSlotWeights } from '@/hooks/slot_scheduler/useAdjustRandomSlotWeights.ts';
 import { useRandomSlotFormContext } from '@/hooks/useRandomSlotFormContext.ts';
 import {
+  Alert,
   Box,
   Button,
   DialogActions,
@@ -18,7 +19,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
 } from '@mui/material';
 import { TimeField } from '@mui/x-date-pickers';
 import type { RandomSlot } from '@tunarr/types/api';
@@ -32,6 +32,7 @@ import { match } from 'ts-pattern';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import type { SlotViewModel } from '../../model/SlotModels.ts';
+import { RouterLink } from '../base/RouterLink.tsx';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
@@ -264,24 +265,8 @@ export const EditRandomSlotDialogContent = ({
             onChange={(_, tab: number) => setTab(tab)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            <Tab label="Programming" />
-            <Tooltip
-              title={
-                programType === 'flex'
-                  ? 'Adding filler is not supported on flex slots'
-                  : fillerLists.length === 0
-                    ? 'Create filler lists to add filler to slots!'
-                    : null
-              }
-              placement="top"
-            >
-              <Box component="span">
-                <Tab
-                  label="Filler"
-                  disabled={programType === 'flex' || fillerLists.length === 0}
-                />
-              </Box>
-            </Tooltip>
+            <Tab label="Programming" value={0} />
+            {programType !== 'flex' && <Tab label="Filler" value={1} />}
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
@@ -423,9 +408,17 @@ export const EditRandomSlotDialogContent = ({
             </Stack>
           </TabPanel>
           <TabPanel value={tab} index={1}>
-            <FormProvider {...formMethods}>
-              <SlotFillerDialogPanel />
-            </FormProvider>
+            {fillerLists.length === 0 ? (
+              <Alert severity="warning" variant="outlined">
+                You must create at least one{' '}
+                <RouterLink to="/library/fillers">filler list</RouterLink>{' '}
+                before assigning filler to a lot.
+              </Alert>
+            ) : (
+              <FormProvider {...formMethods}>
+                <SlotFillerDialogPanel />
+              </FormProvider>
+            )}
           </TabPanel>
         </Box>
       </DialogContent>
