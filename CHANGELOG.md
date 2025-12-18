@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.6](https://github.com/chrisbenincasa/tunarr/compare/v1.0.5...v1.0.6) (2025-12-17)
+
+
+### Bug Fixes
+
+* allow choosing local programs as filler ([8a11e54](https://github.com/chrisbenincasa/tunarr/commit/8a11e542b2ac1e156a314fe724694cf252bef72d))
+* explicitly sort on title for GetDocuments request ([4a92c4a](https://github.com/chrisbenincasa/tunarr/commit/4a92c4a8385fd8e0eca0d0b50dd3b9bf0ef7c701))
+* fix building external thumb URLs for unsynced libraries ([5bfcf6b](https://github.com/chrisbenincasa/tunarr/commit/5bfcf6b0181cb90241ff575be3fed8dc23602570))
+
+
+### UI Changes
+
+* add smart collection page ([#1542](https://github.com/chrisbenincasa/tunarr/issues/1542)) ([528790b](https://github.com/chrisbenincasa/tunarr/commit/528790b13ccc1d75c8991510ececa878cfe9649e)), closes [#1526](https://github.com/chrisbenincasa/tunarr/issues/1526)
+* ensure all icons on media source table show ([c67b861](https://github.com/chrisbenincasa/tunarr/commit/c67b8615fe335155f72594b80a983d5f3cb29f68))
+
 ## [1.0.5](https://github.com/chrisbenincasa/tunarr/compare/v1.0.4...v1.0.5) (2025-12-17)
 
 
