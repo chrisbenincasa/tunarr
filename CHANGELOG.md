@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.7](https://github.com/chrisbenincasa/tunarr/compare/v1.0.6...v1.0.7) (2025-12-18)
+
+
+### Bug Fixes
+
+* allow quoted strings to contain search keywords ([359cc9f](https://github.com/chrisbenincasa/tunarr/commit/359cc9f58dd67ebe37b77ef70ab2cf04e4c13525))
+* allow selection of filler tab on slot editor dialog ([a23be18](https://github.com/chrisbenincasa/tunarr/commit/a23be189bb63f80739bf7551c9341e8db67c6807))
+* only sort by date; items missing date will be excluded if we try to sort on it ([5e50fbb](https://github.com/chrisbenincasa/tunarr/commit/5e50fbbb120d5c443e96d1dfcfbab0890e73e3ef))
+
 ## [1.0.6](https://github.com/chrisbenincasa/tunarr/compare/v1.0.5...v1.0.6) (2025-12-17)
 
 
