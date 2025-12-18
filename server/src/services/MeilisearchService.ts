@@ -1150,7 +1150,7 @@ export class MeilisearchService implements ISearchService {
           offset,
           // This does not exist on the type yet. Explicit cast because
           // the API supports it. Need https://github.com/meilisearch/meilisearch-js/pull/2038
-          sort: ['title:asc', 'originalReleaseYear:asc'],
+          sort: ['title:asc' /*, 'originalReleaseDate:asc'*/],
         } as DocumentsQuery<IndexDocumentTypeT>);
       return {
         type: 'filter',
