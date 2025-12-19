@@ -5,6 +5,7 @@ import {
   MediaSourceLibraryQueryOpts,
   useMediaSourceLibrary,
 } from '../../../hooks/media-sources/mediaSourceLibraryHooks.ts';
+import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
 export const Route = createFileRoute(
   '/media_sources_/$mediaSourceId/libraries_/$libraryId',
@@ -14,6 +15,7 @@ export const Route = createFileRoute(
     await context.queryClient.ensureQueryData(
       MediaSourceLibraryQueryOpts(libraryId),
     );
+    setSearchRequest(null);
   },
 });
 
@@ -23,7 +25,6 @@ function MediaSourceBrowserPage() {
 
   return (
     <Box>
-      {/* <Breadcrumbs /> */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4">
           Media Source: "{library.mediaSource.name}"

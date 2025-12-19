@@ -4,17 +4,19 @@ import Breadcrumbs from '../../../components/Breadcrumbs.tsx';
 import { LibrarySearch } from '../../../components/library/LibrarySearch.tsx';
 import { getApiMediaSourcesByMediaSourceIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
 import { useMediaSource } from '../../../hooks/media-sources/mediaSourceHooks.ts';
+import { setSearchRequest } from '../../../store/programmingSelector/actions.ts';
 
 export const Route = createFileRoute('/media_sources_/$mediaSourceId/')({
   component: MediaSourceBrowserPage,
   loader: async ({ context, params: { mediaSourceId } }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       getApiMediaSourcesByMediaSourceIdOptions({
         path: {
           mediaSourceId,
         },
       }),
     );
+    setSearchRequest(null);
   },
 });
 

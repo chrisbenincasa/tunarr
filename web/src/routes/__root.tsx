@@ -2,10 +2,7 @@ import { Root } from '@/App';
 import { TanStackRouterDevtools } from '@/dev/TanStackRouterDevtools';
 import { ErrorPage } from '@/pages/ErrorPage';
 import type { RouterContext } from '@/types/RouterContext';
-import {
-  createRootRouteWithContext,
-  retainSearchParams,
-} from '@tanstack/react-router';
+import { createRootRouteWithContext } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/api';
@@ -23,9 +20,6 @@ export type RootSearchQueryParams = z.infer<typeof searchQuerySchema>;
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   validateSearch: zodValidator(searchQuerySchema),
-  search: {
-    middlewares: [retainSearchParams(['query'])],
-  },
   loader: async ({ context: { queryClient }, location: { search } }) => {
     const parsed = search as RootSearchQueryParams;
     if (!isNonEmptyString(parsed.query)) {
