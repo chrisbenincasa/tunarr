@@ -30,6 +30,7 @@ export class DatabaseCopyMigrator {
 
     // Copy the existing DB to the new target
     await new SqliteDatabaseBackup().backup(currentDbPath, tmpPath);
+    this.logger.trace('Successfully created DB backup before copy migration');
     await tempDBConn.runDBMigrations(migrateTo);
 
     // Backup the old DB

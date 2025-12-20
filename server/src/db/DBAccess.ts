@@ -242,6 +242,11 @@ class Connection {
 
   async runDBMigrations(migrateTo?: string) {
     const migrator = this.getMigrator();
+    this.logger.debug(
+      'Migrating DB %s %s',
+      this.name,
+      isNonEmptyString(migrateTo) ? `to ${migrateTo}` : 'to latest',
+    );
     const { error, results } = await (isNonEmptyString(migrateTo)
       ? migrator.migrateTo(migrateTo)
       : migrator.migrateToLatest());
@@ -266,6 +271,8 @@ export class DBAccess {
   static instance: DBAccess = new DBAccess();
   private static didInit = false;
   private static connections: Map<string, Connection> = new Map();
+
+  private logger = LoggerFactory.child({ className: DBAccess.name });
 
   static init(): Connection {
     const name = getDefaultDatabaseName();
@@ -324,9 +331,14 @@ export class DBAccess {
       return;
     }
     const pendingMigrations = await conn.pendingDatabaseMigrations();
+    this.logger.info(
+      'Running %d pending database migrations.',
+      pendingMigrations.length,
+    );
 
     const copyMigrator = new DatabaseCopyMigrator(this);
     for (const migration of pendingMigrations) {
+      this.logger.info('Running database migration "%s"', migration.name);
       if (
         (has(migration.migration, 'fullCopy') &&
           migration.migration.fullCopy) ||
