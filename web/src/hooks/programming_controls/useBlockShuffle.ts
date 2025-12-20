@@ -16,9 +16,8 @@ import {
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
 import { setCurrentCustomShowProgramming } from '../../store/customShowEditor/actions.ts';
-import useStore from '../../store/index.ts';
 import {
-  materializedProgramListSelector,
+  useChannelEditorLazy,
   useCustomShowEditor,
 } from '../../store/selectors.ts';
 import {
@@ -82,13 +81,16 @@ function sortProgram(
 }
 
 export function useBlockShuffle() {
-  const programs = useStore(materializedProgramListSelector);
+  const { materializeOriginalProgramList } = useChannelEditorLazy();
 
   return {
     canUsePerfectSync: (blockSize: number) =>
-      canUsePerfectSync(programs, blockSize),
+      canUsePerfectSync(materializeOriginalProgramList(), blockSize),
     blockShuffle: (options: BlockShuffleConfig | null) => {
-      const alternatingShows = blockShuffle(programs, options);
+      const alternatingShows = blockShuffle(
+        materializeOriginalProgramList(),
+        options,
+      );
       if (alternatingShows) {
         setCurrentLineup(alternatingShows, true);
       }

@@ -63,6 +63,7 @@ const AddBlockShuffleModal = ({
   });
 
   const handleBlockShuffle = () => {
+    console.log(getValues());
     blockShuffle(getValues());
     onClose();
   };
