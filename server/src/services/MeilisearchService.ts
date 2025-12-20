@@ -161,6 +161,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'studio.name',
     'parent.studio',
     'grandparent.studio',
+    'audioLanguages',
+    'subtitleLanguages',
   ],
   sortable: [
     'title',
@@ -294,6 +296,8 @@ export type TerminalProgramSearchDocument<
   videoWidth?: number;
   audioCodec?: string;
   audioChannels?: number;
+  audioLanguages?: string[];
+  subtitleLanguages?: string[];
   state: ProgramState;
 };
 
@@ -1431,6 +1435,12 @@ export class MeilisearchService implements ISearchService {
     const audioStream = find(program.mediaItem?.streams, {
       streamType: 'audio',
     });
+    const audioStreams = program.mediaItem?.streams.filter(
+      (s) => s.streamType === 'audio' && isNonEmptyString(s.languageCodeISO6392),
+    );
+    const subtitleStreams = program.mediaItem?.streams.filter(
+      (s) => s.streamType === 'subtitles' && isNonEmptyString(s.languageCodeISO6392),
+    );
 
     let summary: string | null;
     switch (program.type) {
@@ -1494,6 +1504,8 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: audioStreams?.map((s) => s.languageCodeISO6392!),
+      subtitleLanguages: subtitleStreams?.map((s) => s.languageCodeISO6392!),
       state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
@@ -1546,6 +1558,13 @@ export class MeilisearchService implements ISearchService {
     const audioStream = find(program.mediaItem?.streams, {
       streamType: 'audio',
     });
+    const audioStreams = program.mediaItem?.streams.filter(
+      (s) => s.streamType === 'audio' && isNonEmptyString(s.languageCodeISO6392),
+    );
+    const subtitleStreams = program.mediaItem?.streams.filter(
+      (s) =>
+        s.streamType === 'subtitles' && isNonEmptyString(s.languageCodeISO6392),
+    );
 
     let summary: Nilable<string>;
     switch (program.type) {
@@ -1612,6 +1631,8 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: audioStreams?.map((s) => s.languageCodeISO6392!),
+      subtitleLanguages: subtitleStreams?.map((s) => s.languageCodeISO6392!),
     }; // satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 
