@@ -58,6 +58,8 @@ const StringFields = [
   'show_title',
   'show_genre',
   'show_tag',
+  'audio_language',
+  'subtitle_language',
 ] as const;
 
 const StringField = createToken({
@@ -330,6 +332,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   video_codec: 'videoCodec',
   video_height: 'videoHeight',
   video_width: 'videoWidth',
+  audio_language: 'audioLanguages',
+  subtitle_language: 'subtitleLanguages',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
 };
