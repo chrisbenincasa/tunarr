@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
-import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
+import { compact, find, isEmpty, isNull, isString, uniq } from 'lodash-es';
 import {
   DocumentsQuery,
   EnqueuedTask,
@@ -1520,8 +1520,10 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
-      audioLanguages: audioStreams?.map((s) => s.languageCodeISO6392!),
-      subtitleLanguages: subtitleStreams?.map((s) => s.languageCodeISO6392!),
+      audioLanguages: uniq(audioStreams?.map((s) => s.languageCodeISO6392!)),
+      subtitleLanguages: uniq(
+        subtitleStreams?.map((s) => s.languageCodeISO6392!),
+      ),
       state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
