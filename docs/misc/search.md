@@ -70,7 +70,7 @@ Fields available for search:
 | `video_width` | `number` | Video width dimension in pixels | `1920` |
 | `video_bit_depth` | `number` | Video pixel bit depth | `10` |
 | `audio_channels` | `number` | Whole number audio channels | `2`, `5.1` => `6` | 
-| `audio_language` | `string` | Audio language (ISO 639-2), this looks at all avaibale audio languages for the movie/shows | `eng`, `spa` |
+| `audio_language` | `string` | Audio language (ISO 639-2), this looks at all available audio languages for the movie/shows | `eng`, `spa` |
 | `subtitle_language` | `string` | Subtitle languages (ISO 639-2) | `eng` | 
 | `release_year` | `number` | Program release year | `1990` |
 | `release_date` | `date` | Program's original release date | `1990-12-05` (`YYYY-MM-DD` or `YYYYMMDD`) |
