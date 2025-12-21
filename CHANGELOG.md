@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.8](https://github.com/chrisbenincasa/tunarr/compare/v1.0.7...v1.0.8) (2025-12-21)
+
+
+### Bug Fixes
+
+* ensure original program lineup is used each time block shuffle is generated before saving ([19baad9](https://github.com/chrisbenincasa/tunarr/commit/19baad9981666ba2b8d032ca17900cfa6fdc1ff3))
+* ensure search state is cleared when navigating to media source views ([579586f](https://github.com/chrisbenincasa/tunarr/commit/579586f66d3696845373615cfdd34ce5d82b7ebc))
+* fix unsynced top-level Plex playlists view ([4f42bfb](https://github.com/chrisbenincasa/tunarr/commit/4f42bfbe0bd1733e9be0f6a0b87626372b6101a3))
+* revert api client timeout back to 60s ([1c36dcc](https://github.com/chrisbenincasa/tunarr/commit/1c36dcc3a2a25e8790f388cc208580b1a2461477))
+* various fixes to Emby integration and API client ([49150ab](https://github.com/chrisbenincasa/tunarr/commit/49150abbcddfd0c35c5a68e3a725d50853cba024))
+
 ## [1.0.7](https://github.com/chrisbenincasa/tunarr/compare/v1.0.6...v1.0.7) (2025-12-18)
 
 
