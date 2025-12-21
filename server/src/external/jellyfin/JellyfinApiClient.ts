@@ -639,11 +639,12 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   }
 
   getSeasonEpisodes(
-    parentId: string,
+    _: string,
+    seasonId: string,
     pageSize: number = 50,
   ): AsyncIterable<JellyfinEpisode> {
     return this.getChildContents(
-      parentId,
+      seasonId,
       'Episode',
       (ep) => this.jellyfinApiEpisodeInjection(ep),
       [],

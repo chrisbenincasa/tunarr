@@ -264,7 +264,7 @@ export const metadataApiRouter: RouterPluginAsyncCallback = async (fastify) => {
     if (query.asset === 'thumb' || query.asset === 'image') {
       return embyClient.getThumbUrl(
         query.id.externalItemId,
-        query.imageType === 'poster' ? 'Thumb' : 'Primary',
+        query.imageType === 'poster' ? 'Primary' : 'Thumb',
       );
     } else if (query.asset === 'external-link') {
       return embyClient.getExternalUrl(query.id.externalItemId);

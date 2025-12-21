@@ -546,7 +546,7 @@ export abstract class MediaSourceTvShowLibraryScanner<
   ): AsyncIterable<SeasonT>;
 
   protected abstract getSeasonEpisodes(
-    season: SeasonT,
+    season: SeasonWithShow<SeasonT, ShowT>,
     context: ScanContext<ApiClientTypeT>,
   ): AsyncIterable<EpisodeT>;
 

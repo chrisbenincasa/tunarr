@@ -149,9 +149,10 @@ export abstract class BaseApiClient<
 
     this.logger.error(
       parsed.error,
-      'Unable to parse schema from response. Path: %s\n%s',
+      'Unable to parse schema from response. Path: %s\n%s. Issues: %s',
       path,
       z.prettifyError(parsed.error),
+      JSON.stringify(parsed.error.issues, null, 2),
     );
 
     return this.makeErrorResult('parse_error');

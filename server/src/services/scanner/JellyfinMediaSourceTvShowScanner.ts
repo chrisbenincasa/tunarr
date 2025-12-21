@@ -18,6 +18,7 @@ import {
   JellyfinEpisode,
   JellyfinSeason,
   JellyfinShow,
+  SeasonWithShow,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -78,10 +79,13 @@ export class JellyfinMediaSourceTvShowScanner extends MediaSourceTvShowLibrarySc
   }
 
   protected getSeasonEpisodes(
-    season: JellyfinSeason,
+    season: SeasonWithShow<JellyfinSeason, JellyfinShow>,
     context: ScanContext<JellyfinApiClient>,
   ): AsyncIterable<JellyfinEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalId);
+    return context.apiClient.getSeasonEpisodes(
+      season.show.externalId,
+      season.externalId,
+    );
   }
 
   protected getFullEpisodeMetadata(

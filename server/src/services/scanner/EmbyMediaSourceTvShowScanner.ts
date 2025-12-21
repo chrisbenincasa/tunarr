@@ -14,7 +14,12 @@ import { KEYS } from '../../types/inject.ts';
 import { ProgramGrouping } from '@tunarr/types';
 import { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
-import { EmbyEpisode, EmbySeason, EmbyShow } from '../../types/Media.ts';
+import {
+  EmbyEpisode,
+  EmbySeason,
+  EmbyShow,
+  SeasonWithShow,
+} from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
@@ -74,10 +79,13 @@ export class EmbyMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   }
 
   protected getSeasonEpisodes(
-    season: EmbySeason,
+    season: SeasonWithShow<EmbySeason, EmbyShow>,
     context: ScanContext<EmbyApiClient>,
   ): AsyncIterable<EmbyEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalId);
+    return context.apiClient.getSeasonEpisodes(
+      season.show.externalId,
+      season.externalId,
+    );
   }
 
   protected getFullEpisodeMetadata(

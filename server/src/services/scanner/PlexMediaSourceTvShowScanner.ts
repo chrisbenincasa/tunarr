@@ -11,7 +11,12 @@ import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { KEYS } from '../../types/inject.ts';
-import { PlexEpisode, PlexSeason, PlexShow } from '../../types/Media.ts';
+import {
+  PlexEpisode,
+  PlexSeason,
+  PlexShow,
+  SeasonWithShow,
+} from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { MeilisearchService } from '../MeilisearchService.ts';
@@ -71,10 +76,13 @@ export class PlexMediaSourceTvShowScanner extends MediaSourceTvShowLibraryScanne
   }
 
   protected getSeasonEpisodes(
-    season: PlexSeason,
+    season: SeasonWithShow<PlexSeason, PlexShow>,
     context: ScanContext<PlexApiClient>,
   ): AsyncIterable<PlexEpisode> {
-    return context.apiClient.getSeasonEpisodes(season.externalId);
+    return context.apiClient.getSeasonEpisodes(
+      season.show.externalId,
+      season.externalId,
+    );
   }
 
   protected getFullEpisodeMetadata(

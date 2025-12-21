@@ -49,6 +49,7 @@ import {
   omitBy,
   orderBy,
   union,
+  uniq,
 } from 'lodash-es';
 import { type NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
@@ -110,6 +111,7 @@ const RequiredLibraryFields = [
   'ProviderIds',
   'Chapters',
   'PremiereDate',
+  'MediaSources',
 ];
 
 function getEmbyAuthorization(apiKey: Maybe<string>, clientId: Maybe<string>) {
@@ -140,6 +142,7 @@ export type EmbyGetItemsQuery = {
   hasTmdbId?: boolean;
   hasTvdbId?: boolean;
   artistType?: ('Artist' | 'AlbumArtist')[];
+  albumArtistIds?: string[];
 };
 
 type EmbyItemTypes = {
@@ -357,7 +360,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         type: 'local',
         path: path.Path,
       })),
-      sourceType: 'jellyfin',
+      sourceType: 'emby',
       title: lib.Name,
       uuid: v4(),
       childType: match(lib.CollectionType)
@@ -366,7 +369,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         .with('musicvideos', () => 'music_video')
         .with('tvshows', () => 'show')
         .with('music', () => 'artist')
-        .with('homevideos', () => 'other_video')
+        .with(P.union('homevideos', 'unknown'), () => 'other_video')
         .otherwise(() => undefined),
     } satisfies Library;
   }
@@ -413,7 +416,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
           {
             userId: userId ?? this.options.mediaSource.userId,
             parentId: parentId,
-            fields: union(extraFields, RequiredLibraryFields).join(','),
+            fields: uniq(union(extraFields, RequiredLibraryFields)).join(','),
             startIndex: pageParams?.offset,
             limit: pageParams?.limit,
             // These will be configurable eventually
@@ -431,6 +434,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
               ids: extraParams.ids?.join(','),
               genres: extraParams.genres?.join('|'),
               artistType: extraParams.artistType?.join(','),
+              albumArtistIds: extraParams.albumArtistIds?.join(','),
             },
           },
           (v) => isNil(v) || (!isNumber(v) && isEmpty(v)),
@@ -563,12 +567,35 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     pageSize?: number,
   ): AsyncIterable<EmbyMovie> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      libraryId,
       'Movie',
       (movie) => this.embyApiMovieInjection(movie),
-      [],
-      {},
+      (page) =>
+        this.getRawItems(
+          null,
+          libraryId,
+          ['Movie'],
+          [
+            'Path',
+            'Genres',
+            'Tags',
+            'DateCreated',
+            'Etag',
+            'Overview',
+            'Taglines',
+            'Studios',
+            'People',
+            'ProductionYear',
+            'PremiereDate',
+            'MediaSources',
+            'OfficialRating',
+            'ProviderIds',
+            'Chapters',
+          ],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+        ),
       pageSize,
     );
   }
@@ -578,12 +605,34 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     pageSize?: number,
   ): AsyncIterable<EmbyShow> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      libraryId,
       'Series',
       (series) => this.embyApiShowInjection(series),
-      [],
-      {},
+      (page) =>
+        this.getRawItems(
+          null,
+          libraryId,
+          ['Series'],
+          [
+            'Path',
+            'Genres',
+            'Tags',
+            'DateCreated',
+            'Etag',
+            'Overview',
+            'Taglines',
+            'Studios',
+            'People',
+            'ProductionYear',
+            'PremiereDate',
+            'MediaSources',
+            'OfficialRating',
+            'ProviderIds',
+          ],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+        ),
       pageSize,
     );
   }
@@ -612,26 +661,18 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     );
   }
 
-  getShowSeasons(
-    externalKey: string,
-    pageSize?: number,
-  ): AsyncIterable<EmbySeason> {
+  getShowSeasons(showId: string, pageSize?: number): AsyncIterable<EmbySeason> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      externalKey,
       'Season',
       (season) => this.embyApiSeasonInjection(season),
-      [],
-      {},
-      pageSize,
       (page) =>
         this.doTypeCheckedGet(
-          `/Shows/${externalKey}/Seasons`,
+          `/Shows/${showId}/Seasons`,
           EmbyLibraryItemsResponse,
           {
             params: {
               userId: this.options.mediaSource.userId,
-              fields: RequiredLibraryFields.join(','),
+              fields: 'Path,DateCreated,Etag,Taglines,ProviderIds',
               startIndex: page * (pageSize ?? 50),
               limit: pageSize ?? 50,
               sortOrder: 'Ascending',
@@ -639,20 +680,36 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             },
           },
         ),
+      pageSize,
     );
   }
 
   getSeasonEpisodes(
-    seasonKey: string,
+    showId: string,
+    seasonId: string,
     pageSize?: number,
   ): AsyncIterable<EmbyEpisode> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      seasonKey,
+      // this.options.mediaSource.userId,
+      // seasonKey,
       'Episode',
       (episode) => this.embyApiEpisodeInjection(episode),
-      [],
-      {},
+      (page) =>
+        this.doTypeCheckedGet(
+          `/Shows/${showId}/Seasons`,
+          EmbyLibraryItemsResponse,
+          {
+            params: {
+              userId: this.options.mediaSource.userId,
+              fields: 'Path,DateCreated,Etag,Taglines,ProviderIds',
+              startIndex: page * (pageSize ?? 50),
+              limit: pageSize ?? 50,
+              sortOrder: 'Ascending',
+              sortBy: ['SortName', 'ProductionYear'].join(','),
+              seasonId,
+            },
+          },
+        ),
       pageSize,
     );
   }
@@ -662,14 +719,34 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     pageSize: number,
   ): AsyncIterable<EmbyMusicArtist> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      libraryId,
       'MusicArtist',
       (movie) => this.embyApiMusicArtistInjection(movie),
-      [],
-      {
-        artistType: ['AlbumArtist'],
-      },
+      (page) =>
+        this.doTypeCheckedGet(
+          '/Artists/AlbumArtists',
+          EmbyLibraryItemsResponse,
+          {
+            params: {
+              parentId: libraryId,
+              sortOrder: 'Ascending',
+              sortBy: 'SortName',
+              artistType: ['AlbumArtist'],
+              fields: [
+                'Genres',
+                'MediaStreams',
+                'ETag',
+                'Path',
+                'ProviderIds',
+                'SortName',
+                'Studios',
+                'Taglines',
+                'Overview',
+              ].join(','),
+              startIndex: page * (pageSize ?? 50),
+              limit: pageSize ?? 50,
+            },
+          },
+        ),
       pageSize,
     );
   }
@@ -679,12 +756,23 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     pageSize: number,
   ): AsyncIterable<EmbyMusicAlbum> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      artistKey,
       'MusicAlbum',
       (album) => this.embyApiMusicAlbumInjection(album),
-      [],
-      {},
+      (page) =>
+        this.getRawItems(
+          null,
+          null,
+          ['MusicAlbum'],
+          [],
+          {
+            limit: pageSize ?? 50,
+            offset: page * (pageSize ?? 50),
+          },
+          {
+            albumArtistIds: [artistKey],
+            recursive: true,
+          },
+        ),
       pageSize,
     );
   }
@@ -694,12 +782,22 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     pageSize: number,
   ): AsyncIterable<EmbyMusicTrack> {
     return this.getChildContents(
-      this.options.mediaSource.userId,
-      albumKey,
       'Audio',
       (track) => this.embyApiMusicTrackInjection(track),
-      [],
-      { recursive: true },
+      (page) =>
+        this.getRawItems(
+          null,
+          albumKey,
+          ['Audio'],
+          [],
+          {
+            offset: page * (pageSize ?? 50),
+            limit: pageSize ?? 50,
+          },
+          {
+            recursive: true,
+          },
+        ),
       pageSize,
     );
   }
@@ -758,34 +856,30 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   }
 
   private async *getChildContents<ItemTypeT extends EmbyItemKind, OutType>(
-    userId: Nilable<string>, // Not required if we are using an access token
-    parentId: string,
+    // userId: Nilable<string>, // Not required if we are using an access token
+    // parentId: string,
     itemType: ItemTypeT,
     converter: (item: SpecificEmbyType<ItemTypeT>) => Nullable<OutType>,
-    extraFields: EmbyItemField[] = [],
-    extraParams: EmbyGetItemsQuery = {},
+    // extraFields: EmbyItemField[] = [],
+    // extraParams: EmbyGetItemsQuery = {},
+    getter: (page: number) => Promise<QueryResult<EmbyLibraryItemsResponse>>,
     pageSize: number = 50,
-    getter: (page: number) => Promise<QueryResult<EmbyLibraryItemsResponse>> = (
-      page,
-    ) =>
-      this.getRawItems(
-        userId,
-        parentId,
-        [itemType],
-        extraFields,
-        {
-          offset: page * pageSize,
-          limit: pageSize,
-        },
-        extraParams,
-      ),
+    //  = (
+    //   page,
+    // ) =>
+    //   this.getRawItems(
+    //     userId,
+    //     parentId,
+    //     [itemType],
+    //     extraFields,
+    //     {
+    //       offset: page * pageSize,
+    //       limit: pageSize,
+    //     },
+    //     extraParams,
+    //   ),
   ): AsyncIterable<OutType> {
-    const count = await this.getChildItemCount(parentId, itemType);
-    if (count.isFailure()) {
-      return count;
-    }
-
-    const totalPages = Math.ceil(count.get() / pageSize);
+    let totalPages = Number.MAX_SAFE_INTEGER;
 
     for (let page = 0; page <= totalPages; page++) {
       const chunkResult = await getter(page);
@@ -794,13 +888,20 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         throw chunkResult.error;
       }
 
-      for (const item of chunkResult.get().Items ?? []) {
+      const pageResult = chunkResult.get();
+
+      totalPages = Math.min(
+        totalPages,
+        Math.ceil(pageResult.TotalRecordCount / pageSize),
+      );
+
+      for (const item of pageResult.Items ?? []) {
         if (isEmbyType(item, itemType)) {
           const convertedResult = Result.attempt(() => converter(item));
           if (convertedResult.isFailure()) {
             this.logger.error(
               convertedResult.error,
-              'Failure converting Jellyfin item %s',
+              'Failure converting Emby item %s',
               item.Id,
             );
             continue;

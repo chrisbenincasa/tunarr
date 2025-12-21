@@ -89,7 +89,8 @@ export abstract class MediaSourceApiClient<
   ): AsyncIterable<ProgramTypes['season']>;
 
   abstract getSeasonEpisodes(
-    seasonKey: string,
+    showId: string,
+    seasonId: string,
     pageSize?: number,
     materializeFull?: boolean,
   ): AsyncIterable<ProgramTypes['episode']>;

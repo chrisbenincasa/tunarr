@@ -1,20 +1,22 @@
 import z from 'zod/v4';
 
-export const EmbyCollectionType = z.enum([
-  'unknown',
-  'movies',
-  'tvshows',
-  'music',
-  'musicvideos',
-  'trailers',
-  'homevideos',
-  'boxsets',
-  'books',
-  'photos',
-  'livetv',
-  'playlists',
-  'folders',
-]);
+export const EmbyCollectionType = z
+  .enum([
+    'unknown',
+    'movies',
+    'tvshows',
+    'music',
+    'musicvideos',
+    'trailers',
+    'homevideos',
+    'boxsets',
+    'books',
+    'photos',
+    'livetv',
+    'playlists',
+    'folders',
+  ])
+  .catch('unknown');
 
 export type EmbyCollectionType = z.infer<typeof EmbyCollectionType>;
 
@@ -55,6 +57,12 @@ export const EmbyItemFields = z.enum([
   'SortName',
   'Studios',
   'Taglines',
+  'Etag',
+  'Tags',
+  'ProductionYear',
+  'PremiereDate',
+  'MediaSources',
+  'OfficialRating',
 ]);
 
 const EmbyMediaProtocol = z.enum([

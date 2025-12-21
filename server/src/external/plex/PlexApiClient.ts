@@ -299,6 +299,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   }
 
   getSeasonEpisodes(
+    _: string,
     tvSeasonKey: string,
     pageSize: number = 50,
     materializeFull: boolean = false,
