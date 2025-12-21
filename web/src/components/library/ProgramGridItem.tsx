@@ -75,7 +75,7 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
           : isEpisode(item)
             ? 'landscape'
             : 'portrait',
-        isPlaylist: false,
+        isPlaylist: item.type === 'playlist',
         isFolder: item.type === 'folder',
         persisted,
       }) satisfies GridItemMetadata,

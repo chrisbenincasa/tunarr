@@ -1,16 +1,22 @@
 import { Box } from '@mui/material';
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
-import { ProgramOrFolder } from '@tunarr/types';
+import type {
+  InfiniteData,
+  UseInfiniteQueryResult,
+} from '@tanstack/react-query';
+import type { ProgramOrFolder } from '@tunarr/types';
 import type { PagedResult, PlexFilter } from '@tunarr/types/api';
 import { usePrevious } from '@uidotdev/usehooks';
 import { isNull, last, map, range } from 'lodash-es';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useDebounceCallback, useResizeObserver } from 'usehooks-ts';
 import { Plex } from '../../../helpers/constants.ts';
 import { estimateNumberOfColumns } from '../../../helpers/util.ts';
 import { usePlexCollectionsInfinite } from '../../../hooks/plex/usePlexCollections.ts';
-import { usePlexPlaylistsInfinite } from '../../../hooks/plex/usePlexPlaylists.ts';
+import {
+  usePlexPlaylistsInfinite,
+  usePlexTopLevelPlaylistsInfinite,
+} from '../../../hooks/plex/usePlexPlaylists.ts';
 import { usePlexItemsInfinite } from '../../../hooks/plex/usePlexSearch.ts';
 import useStore from '../../../store/index.ts';
 import { setPlexFilter } from '../../../store/programmingSelector/actions.ts';
@@ -53,10 +59,14 @@ export const PlexProgrammingGridView = ({
   });
 
   const currentParentContext = last(parentContext);
-  const subview =
-    selectedLibrary?.view.type === 'library'
-      ? selectedLibrary?.view.subview
-      : undefined;
+  const subview = useMemo(
+    () =>
+      selectedLibrary?.view.type === 'library'
+        ? selectedLibrary?.view.subview
+        : undefined,
+    [selectedLibrary?.view],
+  );
+  console.log(subview, selectedLibrary?.view.type);
 
   const plexSearchQuery = usePlexItemsInfinite(
     selectedServer,
@@ -71,7 +81,8 @@ export const PlexProgrammingGridView = ({
           type: currentParentContext.type,
         }
       : undefined,
-    !subview || !!currentParentContext,
+    (!subview && selectedLibrary?.view.type !== 'playlists') ||
+      !!currentParentContext,
   );
 
   const { data: searchData, isFetchingNextPage: isFetchingNextLibraryPage } =
@@ -96,39 +107,11 @@ export const PlexProgrammingGridView = ({
 
   const { isFetchingNextPage: isFetchingNextPlaylistPage } = plexPlaylistsQuery;
 
-  // // Update store
-  // useEffect(() => {
-  //   if (!isUndefined(searchData)) {
-  //     // We probably wouldn't have made it this far if we didnt have a server, but
-  //     // putting this here to prevent crashes
-  //     if (selectedServer) {
-  //       const allMedia = flatten(
-  //         seq.collect(searchData.pages, (page) => {
-  //           if (page.result.length === 0) {
-  //             return;
-  //           }
-  //           return page.result;
-  //         }),
-  //       );
-  //       addKnownMediaForPlexServer(selectedServer.id, allMedia);
-  //     }
-  //   }
-  // }, [selectedServer, searchData]);
-
-  // // Update store
-  // useEffect(() => {
-  //   if (isNonEmptyString(selectedServer?.id) && !isUndefined(collectionsData)) {
-  //     const allCollections = flatten(
-  //       seq.collect(collectionsData.pages, (page) => {
-  //         if (page.size === 0) {
-  //           return;
-  //         }
-  //         return page.result;
-  //       }),
-  //     );
-  //     addKnownMediaForPlexServer(selectedServer.id, allCollections);
-  //   }
-  // }, [selectedServer?.id, collectionsData]);
+  const plexToplevelPlaylistsQuery = usePlexTopLevelPlaylistsInfinite(
+    selectedServer,
+    columns * RowsToLoad + bufferSize,
+    selectedLibrary?.view.type === 'playlists',
+  );
 
   const previousIsFetchingNextLibraryPage = usePrevious(
     isFetchingNextLibraryPage,
@@ -255,13 +238,14 @@ export const PlexProgrammingGridView = ({
     InfiniteData<PagedResult<ProgramOrFolder[]>>
   > = currentParentContext
     ? plexSearchQuery
-    : match(subview)
+    : match([subview, selectedLibrary?.view.type])
         .returnType<
           UseInfiniteQueryResult<InfiniteData<PagedResult<ProgramOrFolder[]>>>
         >()
-        .with('collections', () => plexCollectionsQuery)
-        .with('playlists', () => plexPlaylistsQuery)
-        .with(P.nullish, () => plexSearchQuery)
+        .with(['collections', P._], () => plexCollectionsQuery)
+        .with(['playlists', P._], () => plexPlaylistsQuery)
+        .with([P._, 'playlists'], () => plexToplevelPlaylistsQuery)
+        .with([P.nullish, P._], () => plexSearchQuery)
         .exhaustive();
 
   return (

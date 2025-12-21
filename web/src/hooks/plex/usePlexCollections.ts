@@ -22,8 +22,8 @@ export const usePlexCollectionsInfinite = (
         getApiPlexByMediaSourceIdLibrariesByLibraryIdCollectionsInfiniteQueryKey(
           {
             path: {
-              mediaSourceId: plexServer!.id,
-              libraryId: currentLibrary!.library.externalId,
+              mediaSourceId: plexServer?.id ?? '',
+              libraryId: currentLibrary?.library.externalId ?? '',
             },
             query: {
               // offset: pageParam,
