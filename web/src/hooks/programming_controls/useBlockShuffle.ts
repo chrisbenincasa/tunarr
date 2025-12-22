@@ -4,7 +4,6 @@ import {
   forEach,
   groupBy,
   isEmpty,
-  isUndefined,
   map,
   mapValues,
   max,
@@ -60,19 +59,9 @@ function sortProgram(
       return ts;
     }
     case 'index': {
-      let n = 1;
-
-      const seasonNumber = p.parent?.index ?? p.seasonNumber;
-      if (!isUndefined(seasonNumber)) {
-        n += seasonNumber * 1e4;
-      }
-
-      const episodeNumber = p.index ?? p.episodeNumber;
-      if (!isUndefined(episodeNumber)) {
-        n += episodeNumber * 1e2;
-      }
-
-      return n;
+      const seasonNumber = p.parent?.index ?? p.seasonNumber ?? 1;
+      const episodeNumber = p.index ?? p.episodeNumber ?? 1;
+      return seasonNumber * (1e5 + episodeNumber);
     }
 
     case 'alpha':
@@ -140,13 +129,13 @@ function blockShuffle(
 
   if (options?.shuffleType === 'Fixed') {
     forEach(groupByShow, (programs, key) => {
-      if (key.startsWith('custom_')) {
+      if (key.startsWith('custom')) {
         groupByShow[key] = orderBy(
           programs as UICustomProgram[],
           (p) => p.index,
           [showsAscending ? 'asc' : 'desc'],
         );
-      } else if (key.startsWith('show_') || key.startsWith('track_')) {
+      } else if (key.startsWith('show') || key.startsWith('track')) {
         groupByShow[key] = orderBy(
           programs as UIContentProgram[],
           (p) => sortProgram(p, 'index'),
