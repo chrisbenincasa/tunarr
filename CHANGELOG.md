@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.9](https://github.com/chrisbenincasa/tunarr/compare/v1.0.8...v1.0.9) (2025-12-22)
+
+
+### Bug Fixes
+
+* fix block shuffle ordering for all program types ([36d4603](https://github.com/chrisbenincasa/tunarr/commit/36d4603d196ef49eb68bd51c9b435c1dc5e2e963))
+
 ## [1.0.8](https://github.com/chrisbenincasa/tunarr/compare/v1.0.7...v1.0.8) (2025-12-21)
 
 
