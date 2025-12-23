@@ -2,7 +2,7 @@ import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
-import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
+import type { TaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '@/types/DateTimeRange.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
@@ -17,6 +17,7 @@ import os from 'node:os';
 import z from 'zod/v4';
 import { container } from '../container.ts';
 import { TunarrWorkerPool } from '../services/TunarrWorkerPool.ts';
+import { KEYS } from '../types/inject.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
@@ -282,13 +283,15 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (req, res) => {
-      const result = await PlexTaskQueue.add(
-        new SavePlexProgramExternalIdsTask(
-          req.params.programId,
-          req.serverCtx.programDB,
-          req.serverCtx.mediaSourceApiFactory,
-        ),
-      );
+      const result = await container
+        .get<TaskQueue>(KEYS.PlexTaskQueue)
+        .add(
+          new SavePlexProgramExternalIdsTask(
+            req.params.programId,
+            req.serverCtx.programDB,
+            req.serverCtx.mediaSourceApiFactory,
+          ),
+        );
 
       return res.send(result);
     },

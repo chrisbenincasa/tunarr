@@ -23,6 +23,7 @@ import pino, {
 import type { PrettyOptions } from 'pino-pretty';
 import pretty from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
+import { RollingLogDestination } from './RollingDestination.ts';
 
 export const LogConfigEnvVars = {
   level: 'LOG_LEVEL',
@@ -99,6 +100,7 @@ class LoggerFactoryImpl {
   private initialized = false;
   private children: Record<string, Logger> = {};
   private currentStreams: MultiStreamRes<LogLevels>;
+  private rollingLogger!: RollingLogDestination;
 
   constructor() {
     // This ensures we always have a logger with the default configuration.
@@ -259,15 +261,32 @@ class LoggerFactoryImpl {
     // We can only add these streams post-initialization because they
     // require configuration.
     if (!isUndefined(this.settingsDB) && !isTest) {
-      streams.push({
-        stream: pino.destination({
-          dest: join(
-            this.settingsDB.systemSettings().logging.logsDirectory,
-            'tunarr.log',
-          ),
+      this.rollingLogger = new RollingLogDestination({
+        fileName: join(
+          this.settingsDB.systemSettings().logging.logsDirectory,
+          'tunarr.log',
+        ),
+        rotateSchedule: {
+          type: 'every',
+          increment: 1,
+          unit: 'day',
+        },
+        destinationOpts: {
           mkdir: true,
           append: true,
-        }),
+        },
+      });
+      this.rollingLogger.initDestination();
+      streams.push({
+        // stream: pino.destination({
+        //   dest: join(
+        //     this.settingsDB.systemSettings().logging.logsDirectory,
+        //     'tunarr.log',
+        //   ),
+        //   mkdir: true,
+        //   append: true,
+        // }),
+        stream: this.rollingLogger.initDestination(),
         level: logLevel,
       });
     }

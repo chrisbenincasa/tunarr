@@ -7,6 +7,8 @@ import { v4 } from 'uuid';
 import type { Task } from './Task.js';
 import { AnonymousTask } from './Task.js';
 
+export type TaskQueueFactory = ConstructorParameters<typeof TaskQueue>;
+
 export class TaskQueue {
   #logger: Logger;
   #queue: PQueue;
@@ -65,21 +67,3 @@ export class TaskQueue {
     this.#queue.start();
   }
 }
-
-export const PlexTaskQueue = new TaskQueue('PlexTaskQueue', {
-  concurrency: 2,
-  intervalCap: 5,
-  interval: 2000,
-});
-
-export const JellyfinTaskQueue = new TaskQueue('JellyfinTaskQueue', {
-  concurrency: 2,
-  intervalCap: 5,
-  interval: 2000,
-});
-
-export const DatabaseTaskQueue = new TaskQueue('DatabaseTaskQueue', {
-  concurrency: 5,
-  intervalCap: 10,
-  interval: 1000,
-});
