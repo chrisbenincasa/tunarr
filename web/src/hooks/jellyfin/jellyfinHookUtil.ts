@@ -25,6 +25,7 @@ export type EnrichedJellyfinItem = JellyfinItem & {
 
 export const enumerateJellyfinItem = (
   serverId: string,
+  libraryId: string,
   initialItem: ProgramOrFolder | Library,
 ): Promise<TerminalProgram[]> => {
   const seen = new Map<string, (ProgramOrFolder | Library)[]>();
@@ -67,9 +68,10 @@ export const enumerateJellyfinItem = (
         return getJellyfinLibraryItems({
           path: {
             mediaSourceId: serverId,
-            libraryId: item.externalId,
+            libraryId,
           },
           query: {
+            parentId: item.externalId,
             itemTypes: [...JellyfinTerminalTypes],
             recursive: true,
           },

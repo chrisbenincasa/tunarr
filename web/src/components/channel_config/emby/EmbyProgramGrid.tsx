@@ -83,6 +83,7 @@ export const EmbyProgramGrid = ({
 
   const itemsQuery = useInfiniteEmbyLibraryItems(
     selectedServer?.id ?? '',
+    selectedLibrary?.view.uuid ?? '',
     currentParentContext?.externalId ?? selectedLibrary?.view.externalId ?? '',
     itemTypes,
     true,

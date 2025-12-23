@@ -88,7 +88,6 @@ type TopBarNavItem = {
 
 export const TopBar = () => {
   const initialSearch = Route.useSearch();
-  console.log(initialSearch);
   const navigate = Route.useNavigate();
   const matches = useMatches();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

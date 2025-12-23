@@ -1,8 +1,9 @@
 import { MediaSourceType } from '@/db/schema/base.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { mediaSourceParamsSchema, TruthyQueryParam } from '@/types/schemas.js';
-import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';
-import { tag, type Library } from '@tunarr/types';
+import { isDefined, nullToUndefined } from '@/util/index.js';
+import type { ProgramOrFolder } from '@tunarr/types';
+import { tag } from '@tunarr/types';
 import { JellyfinLoginRequest, PagedResult } from '@tunarr/types/api';
 import {
   JellyfinItemFields,
@@ -15,11 +16,14 @@ import type { FastifyReply } from 'fastify/types/reply.js';
 import { isEmpty, isNil, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
-import { ServerRequestContext } from '../ServerContext.ts';
 import type {
   RouterPluginCallback,
   ZodFastifyRequest,
 } from '../types/serverType.js';
+import {
+  addTunarrLibraryIdsToItems,
+  addTunarrLibraryIdsToResponse,
+} from '../util/apiUtil.ts';
 
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
@@ -89,27 +93,6 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw response.error;
         }
 
-        // const amendedResponse = response
-        //   .get()
-        //   .filter((library) => {
-        //     // Mixed collections don't have this set
-        //     if (!library.CollectionType) {
-        //       return true;
-        //     }
-
-        //     return inConstArr(
-        //       ValidJellyfinCollectionTypes,
-        //       library.CollectionType ?? '',
-        //     );
-        //   })
-        //   .map(
-        //     (lib) =>
-        //       ({
-        //         ...lib,
-        //         jellyfinType: 'VirtualFolder',
-        //       }) satisfies TunarrAmendedJellyfinVirtualFolder,
-        //   );
-
         await addTunarrLibraryIdsToResponse(response.get(), mediaSource);
 
         return res.send(response.get());
@@ -161,6 +144,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           libraryId: z.string(),
         }),
         querystring: z.object({
+          parentId: z.string().optional(),
           offset: z.coerce.number().nonnegative().optional(),
           limit: z.coerce.number().positive().optional(),
           itemTypes: z
@@ -191,15 +175,26 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             .or(z.array(JellyfinItemSortBy).optional())
             .default(['SortName', 'ProductionYear']),
           recursive: TruthyQueryParam.optional().default(false),
-          parentId: z.string().optional(),
         }),
         response: {
           200: PagedResult(ItemOrFolder.array()),
+          404: z.string(),
         },
       },
     },
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
+        const library = mediaSource.libraries.find(
+          (lib) => lib.uuid === req.params.libraryId,
+        );
+        if (!library) {
+          return res
+            .status(404)
+            .send(
+              `Library ${req.params.libraryId} not found as part of media source ${mediaSource.uuid} (name = ${mediaSource.name})`,
+            );
+        }
+
         const api =
           await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
             mediaSource,
@@ -211,7 +206,7 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : null;
 
         const response = await api.getItems(
-          req.query.parentId ?? req.params.libraryId,
+          req.query.parentId ?? library.externalKey,
           req.query.itemTypes ?? [],
           uniq([
             'ChildCount',
@@ -235,7 +230,15 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw response.error;
         }
 
-        return res.send(response.get());
+        const result = {
+          ...response.get(),
+          result: addTunarrLibraryIdsToItems(
+            response.get().result,
+            req.params.libraryId,
+          ),
+        } satisfies PagedResult<ProgramOrFolder[]>;
+
+        return res.send(result);
       }),
   );
 
@@ -271,42 +274,3 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
   done();
 };
-
-async function addTunarrLibraryIdsToResponse(
-  response: Library[],
-  mediaSource: MediaSourceWithRelations,
-  attempts: number = 1,
-) {
-  if (attempts > 2) {
-    return;
-  }
-
-  const librariesByExternalId = groupByUniq(
-    mediaSource.libraries,
-    (lib) => lib.externalKey,
-  );
-  let needsRefresh = false;
-  for (const library of response) {
-    const tunarrLibrary = librariesByExternalId[library.externalId];
-    if (!tunarrLibrary) {
-      needsRefresh = true;
-      continue;
-    }
-
-    library.uuid = tunarrLibrary.uuid;
-  }
-
-  if (needsRefresh) {
-    const ctx = ServerRequestContext.currentServerContext()!;
-    await ctx.mediaSourceLibraryRefresher.refreshMediaSource(mediaSource);
-    // This definitely exists...
-    const newMediaSource = await ctx.mediaSourceDB.getById(mediaSource.uuid);
-    return addTunarrLibraryIdsToResponse(
-      response,
-      newMediaSource!,
-      attempts + 1,
-    );
-  }
-
-  return;
-}

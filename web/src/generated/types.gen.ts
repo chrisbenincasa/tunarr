@@ -18656,6 +18656,7 @@ export type GetJellyfinLibraryItemsData = {
         libraryId: string;
     };
     query?: {
+        parentId?: string;
         offset?: number;
         limit?: number;
         itemTypes?: string | Array<'AggregateFolder' | 'Audio' | 'AudioBook' | 'BasePluginFolder' | 'Book' | 'BoxSet' | 'Channel' | 'ChannelFolderItem' | 'CollectionFolder' | 'Episode' | 'Folder' | 'Genre' | 'ManualPlaylistsFolder' | 'Movie' | 'LiveTvChannel' | 'LiveTvProgram' | 'MusicAlbum' | 'MusicArtist' | 'MusicGenre' | 'MusicVideo' | 'Person' | 'Photo' | 'PhotoAlbum' | 'Playlist' | 'PlaylistsFolder' | 'Program' | 'Recording' | 'Season' | 'Series' | 'Studio' | 'Trailer' | 'TvChannel' | 'TvProgram' | 'UserRootFolder' | 'UserView' | 'Video' | 'Year'>;
@@ -18666,10 +18667,18 @@ export type GetJellyfinLibraryItemsData = {
         nameLessThan?: string;
         sortBy?: string | Array<'Default' | 'AiredEpisodeOrder' | 'Album' | 'AlbumArtist' | 'Artist' | 'DateCreated' | 'OfficialRating' | 'DatePlayed' | 'PremiereDate' | 'StartDate' | 'SortName' | 'Name' | 'Random' | 'Runtime' | 'CommunityRating' | 'ProductionYear' | 'PlayCount' | 'CriticRating' | 'IsFolder' | 'IsUnplayed' | 'IsPlayed' | 'SeriesSortName' | 'VideoBitRate' | 'AirTime' | 'Studio' | 'IsFavoriteOrLiked' | 'DateLastContentAdded' | 'SeriesDatePlayed' | 'ParentIndexNumber' | 'IndexNumber' | 'SimilarityScore' | 'SearchScore'>;
         recursive?: boolean | 'true' | 'false' | number;
-        parentId?: string;
     };
     url: '/api/jellyfin/{mediaSourceId}/libraries/{libraryId}/items';
 };
+
+export type GetJellyfinLibraryItemsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type GetJellyfinLibraryItemsError = GetJellyfinLibraryItemsErrors[keyof GetJellyfinLibraryItemsErrors];
 
 export type GetJellyfinLibraryItemsResponses = {
     /**
@@ -19307,8 +19316,9 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData = {
     query?: {
         offset?: number;
         limit?: number;
+        parentId?: string;
         itemTypes?: string | Array<'AggregateFolder' | 'Audio' | 'AudioBook' | 'BasePluginFolder' | 'Book' | 'BoxSet' | 'Channel' | 'ChannelFolderItem' | 'CollectionFolder' | 'Episode' | 'Folder' | 'Genre' | 'ManualPlaylistsFolder' | 'Movie' | 'LiveTvChannel' | 'LiveTvProgram' | 'MusicAlbum' | 'MusicArtist' | 'MusicGenre' | 'MusicVideo' | 'Person' | 'Photo' | 'PhotoAlbum' | 'Playlist' | 'PlaylistsFolder' | 'Program' | 'Recording' | 'Season' | 'Series' | 'Studio' | 'Trailer' | 'TvChannel' | 'TvProgram' | 'UserRootFolder' | 'UserView' | 'Video' | 'Year'>;
-        extraFields?: string | Array<'Budget' | 'Chapters' | 'ChildCount' | 'DateCreated' | 'Genres' | 'HomePageUrl' | 'IndexOptions' | 'MediaStreams' | 'Overview' | 'ParentId' | 'Path' | 'People' | 'ProviderIds' | 'PrimaryImageAspectRatio' | 'Revenue' | 'SortName' | 'Studios' | 'Taglines'>;
+        extraFields?: string | Array<'Budget' | 'Chapters' | 'ChildCount' | 'DateCreated' | 'Genres' | 'HomePageUrl' | 'IndexOptions' | 'MediaStreams' | 'Overview' | 'ParentId' | 'Path' | 'People' | 'ProviderIds' | 'PrimaryImageAspectRatio' | 'Revenue' | 'SortName' | 'Studios' | 'Taglines' | 'Etag' | 'Tags' | 'ProductionYear' | 'PremiereDate' | 'MediaSources' | 'OfficialRating'>;
         genres?: string;
         nameStartsWithOrGreater?: string;
         nameStartsWith?: string;
@@ -19319,6 +19329,15 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData = {
     };
     url: '/api/emby/{mediaSourceId}/libraries/{libraryId}/items';
 };
+
+export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsError = GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsErrors[keyof GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsErrors];
 
 export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
     /**

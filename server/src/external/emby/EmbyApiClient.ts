@@ -1316,6 +1316,41 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
+    const showJoin = episode.SeriesId
+      ? ({
+          type: 'show',
+          sourceType: 'emby',
+          actors: [],
+          identifiers: [
+            {
+              type: 'emby',
+              id: episode.SeriesId,
+              sourceId: this.options.mediaSource.uuid,
+            },
+          ],
+          title: episode.SeriesName ?? '',
+          genres: [],
+          studios: [],
+          rating: null,
+          releaseDate: null,
+          releaseDateString: null,
+          year: null,
+          artwork: [],
+          summary: null,
+          plot: null,
+          tagline: null,
+          mediaSourceId: this.options.mediaSource.uuid,
+          libraryId: '',
+          uuid: v4(),
+          canonicalId: '???',
+          externalId: episode.SeriesId,
+          sortTitle: episode.SeriesName
+            ? titleToSortTitle(episode.SeriesName)
+            : '',
+          tags: [],
+        } satisfies EmbyShow)
+      : undefined;
+
     return {
       uuid: v4(),
       externalId: episode.Id,
@@ -1363,6 +1398,40 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('thumbnail', episode, 'Thumb'),
       ]),
       state: 'ok',
+      season: episode.SeasonId
+        ? ({
+            uuid: v4(),
+            canonicalId: '???',
+            artwork: [],
+            externalId: episode.SeasonId,
+            identifiers: [
+              {
+                type: 'emby',
+                id: episode.SeasonId,
+                sourceId: this.options.mediaSource.uuid,
+              },
+            ],
+            index: episode.ParentIndexNumber ?? 1,
+            libraryId: '',
+            mediaSourceId: this.options.mediaSource.uuid,
+            type: 'season',
+            studios: [],
+            year: null,
+            releaseDate: null,
+            releaseDateString: null,
+            plot: null,
+            sortTitle: episode.SeasonName
+              ? titleToSortTitle(episode.SeasonName)
+              : `Season ${episode.ParentIndexNumber ?? 1}`,
+            sourceType: 'emby',
+            summary: null,
+            tagline: null,
+            title: episode.SeasonName ?? '',
+            tags: [],
+            show: showJoin,
+          } satisfies EmbySeason)
+        : undefined,
+      show: showJoin,
     };
   }
 

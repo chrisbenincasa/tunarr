@@ -1,8 +1,8 @@
 import { MediaSourceType } from '@/db/schema/base.js';
 import { EmbyApiClient } from '@/external/emby/EmbyApiClient.js';
 import { TruthyQueryParam } from '@/types/schemas.js';
-import { groupByUniq, isDefined, nullToUndefined } from '@/util/index.js';
-import type { Library } from '@tunarr/types';
+import { isDefined, nullToUndefined } from '@/util/index.js';
+import type { ProgramOrFolder } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import { EmbyLoginRequest, PagedResult } from '@tunarr/types/api';
 import {
@@ -15,11 +15,14 @@ import type { FastifyReply } from 'fastify/types/reply.js';
 import { isEmpty, isNil, isUndefined, uniq } from 'lodash-es';
 import { z } from 'zod/v4';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
-import { ServerRequestContext } from '../ServerContext.ts';
 import type {
   RouterPluginCallback,
   ZodFastifyRequest,
 } from '../types/serverType.js';
+import {
+  addTunarrLibraryIdsToItems,
+  addTunarrLibraryIdsToResponse,
+} from '../util/apiUtil.ts';
 
 const mediaSourceParams = z.object({
   mediaSourceId: z.string(),
@@ -87,25 +90,6 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw response.error;
         }
 
-        // const sanitizedResponse: EmbyLibraryItemsResponseType = {
-        //   ...response.get(),
-        //   Items: filter(response.get().Items, (library) => {
-        //     // Mixed collections don't have this set
-        //     if (!library.CollectionType) {
-        //       return true;
-        //     }
-
-        //     return ValidEmbyCollectionTypes.includes(
-        //       library.CollectionType as EmbyCollectionType,
-        //     );
-        //   }),
-        // };
-
-        // await addTunarrLibraryIdsToResponse(
-        //   sanitizedResponse.Items,
-        //   mediaSource,
-        // );
-
         await addTunarrLibraryIdsToResponse(response.get(), mediaSource);
 
         return res.send(response.get());
@@ -122,6 +106,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
         querystring: z.object({
           offset: z.coerce.number().nonnegative().optional(),
           limit: z.coerce.number().positive().optional(),
+          parentId: z.string().optional(),
           itemTypes: z
             .string()
             .optional()
@@ -159,11 +144,23 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
         }),
         response: {
           200: PagedResult(ItemOrFolder.array()),
+          404: z.string(),
         },
       },
     },
     (req, res) =>
       withEmbyMediaSource(req, res, async (mediaSource) => {
+        const library = mediaSource.libraries.find(
+          (lib) => lib.uuid === req.params.libraryId,
+        );
+        if (!library) {
+          return res
+            .status(404)
+            .send(
+              `Library ${req.params.libraryId} not found as part of media source ${mediaSource.uuid} (name = ${mediaSource.name})`,
+            );
+        }
+
         const api =
           await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
             mediaSource,
@@ -175,7 +172,7 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
             : null;
         const response = await api.getItems(
           null,
-          req.params.libraryId,
+          req.query.parentId ?? req.params.libraryId,
           req.query.itemTypes ?? [],
           isUndefined(req.query.extraFields)
             ? ['ChildCount']
@@ -199,7 +196,15 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
           throw response.error;
         }
 
-        return res.send(response.get());
+        const result = {
+          ...response.get(),
+          result: addTunarrLibraryIdsToItems(
+            response.get().result,
+            req.params.libraryId,
+          ),
+        } satisfies PagedResult<ProgramOrFolder[]>;
+
+        return res.send(result);
       }),
   );
 
@@ -235,42 +240,3 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
 
   done();
 };
-
-async function addTunarrLibraryIdsToResponse(
-  response: Library[],
-  mediaSource: MediaSourceWithRelations,
-  attempts: number = 1,
-) {
-  if (attempts > 2) {
-    return;
-  }
-
-  const librariesByExternalId = groupByUniq(
-    mediaSource.libraries,
-    (lib) => lib.externalKey,
-  );
-  let needsRefresh = false;
-  for (const library of response) {
-    const tunarrLibrary = librariesByExternalId[library.externalId];
-    if (!tunarrLibrary) {
-      needsRefresh = true;
-      continue;
-    }
-
-    library.uuid = tunarrLibrary.uuid;
-  }
-
-  if (needsRefresh) {
-    const ctx = ServerRequestContext.currentServerContext()!;
-    await ctx.mediaSourceLibraryRefresher.refreshMediaSource(mediaSource);
-    // This definitely exists...
-    const newMediaSource = await ctx.mediaSourceDB.getById(mediaSource.uuid);
-    return addTunarrLibraryIdsToResponse(
-      response,
-      newMediaSource!,
-      attempts + 1,
-    );
-  }
-
-  return;
-}

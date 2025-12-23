@@ -96,6 +96,7 @@ export const JellyfinProgramGrid = ({
 
   const jellyfinItemsQuery = useInfiniteJellyfinLibraryItems(
     selectedServer?.id,
+    selectedLibrary?.view?.uuid,
     currentParentContext?.externalId ?? selectedLibrary?.view.externalId ?? '',
     itemTypes,
     /**enabled= */ isUndefined(depth) ||

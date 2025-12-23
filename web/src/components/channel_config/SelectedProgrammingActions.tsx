@@ -79,7 +79,6 @@ export default function SelectedProgrammingActions({
   );
 
   const selectAllItems = useCallback(() => {
-    console.log('hello ', selectedServer, selectedLibrary);
     if (!isNil(selectedServer)) {
       removeAllItems();
       setSelectAllLoading(true);

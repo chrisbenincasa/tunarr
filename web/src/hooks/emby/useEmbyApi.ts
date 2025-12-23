@@ -2,7 +2,6 @@ import { isNonEmptyString } from '@/helpers/util.ts';
 import { addKnownMediaForServer } from '@/store/programmingSelector/actions.ts';
 import {
   infiniteQueryOptions,
-  queryOptions,
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
@@ -10,10 +9,7 @@ import { type EmbyItemKind } from '@tunarr/types/emby';
 import { every, flatMap, isEmpty, isNil, omitBy, sumBy } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import type { StrictOmit } from 'ts-essentials';
-import {
-  getApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsOptions,
-  getApiEmbyByMediaSourceIdUserLibrariesOptions,
-} from '../../generated/@tanstack/react-query.gen.ts';
+import { getApiEmbyByMediaSourceIdUserLibrariesOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems } from '../../generated/sdk.gen.ts';
 import type { GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsData } from '../../generated/types.gen.ts';
 import { Emby } from '../../helpers/constants.ts';
@@ -29,49 +25,6 @@ export const useEmbyUserLibraries = (
     }),
     enabled: enabled && isNonEmptyString(mediaSourceId),
   });
-};
-
-export const useEmbyLibraryItems = (
-  mediaSourceId: string,
-  parentId: string,
-  itemTypes: EmbyItemKind[],
-  pageParams: { offset: number; limit: number } | null = null,
-  enabled: boolean = true,
-) => {
-  const queryOpts = useMemo(
-    () =>
-      queryOptions({
-        ...getApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsOptions({
-          path: {
-            mediaSourceId,
-            libraryId: parentId,
-          },
-          query: {
-            offset: pageParams?.offset,
-            limit: pageParams?.limit,
-            itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
-            recursive: true,
-          },
-        }),
-        enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
-      }),
-    [enabled, itemTypes, mediaSourceId, pageParams, parentId],
-  );
-  const result = useQuery(queryOpts);
-
-  useQueryObserver(
-    queryOpts,
-    useCallback(
-      (result) => {
-        if (result.status === 'success') {
-          addKnownMediaForServer(mediaSourceId, result.data.result, parentId);
-        }
-      },
-      [mediaSourceId, parentId],
-    ),
-  );
-
-  return { ...result, queryKey: queryOpts.queryKey };
 };
 
 function getChunkSize(
@@ -90,6 +43,7 @@ function getChunkSize(
 
 export const useInfiniteEmbyLibraryItems = (
   mediaSourceId: string,
+  libraryId: string,
   parentId: string,
   itemTypes: EmbyItemKind[],
   enabled: boolean = true,
@@ -113,17 +67,18 @@ export const useInfiniteEmbyLibraryItems = (
           Emby,
           mediaSourceId,
           'library_items',
-          parentId,
+          libraryId,
           'infinite',
-          { itemTypes, additionalFilters },
+          { itemTypes, additionalFilters, parentId },
         ],
         queryFn: ({ pageParam: { offset, pageSize } }) =>
           getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
             path: {
               mediaSourceId,
-              libraryId: parentId,
+              libraryId,
             },
             query: {
+              parentId,
               offset,
               limit: pageSize,
               itemTypes: isEmpty(itemTypes) ? undefined : itemTypes,
@@ -131,7 +86,7 @@ export const useInfiniteEmbyLibraryItems = (
             },
             throwOnError: true,
           }).then(({ data }) => data),
-        enabled: enabled && every([mediaSourceId, parentId], isNonEmptyString),
+        enabled: enabled && every([mediaSourceId, libraryId], isNonEmptyString),
         initialPageParam: { offset: 0, pageSize: lastFetchSize },
         getNextPageParam: (res, all, { offset: lastOffset }) => {
           const total = sumBy(all, (page) => page.size);
@@ -155,6 +110,7 @@ export const useInfiniteEmbyLibraryItems = (
       initialChunkSize,
       itemTypes,
       lastFetchSize,
+      libraryId,
       mediaSourceId,
       parentId,
     ],

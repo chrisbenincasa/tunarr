@@ -5,7 +5,7 @@ import { type MouseEventHandler, useCallback, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { getApiProgramsByIdDescendants } from '../../generated/sdk.gen.ts';
 import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
-import { enumerateEmbyItem2 } from '../../helpers/embyUtil.ts';
+import { enumerateEmbyItem } from '../../helpers/embyUtil.ts';
 import { sequentialPromises } from '../../helpers/util.ts';
 import { enumeratePlexItem } from '../../hooks/plex/plexHookUtil.ts';
 import useStore from '../../store/index.ts';
@@ -58,6 +58,7 @@ export const useAddSelectedItems = () => {
 
             const items = await enumerateJellyfinItem(
               selected.mediaSource.id,
+              selected.libraryId,
               media,
             );
 
@@ -74,8 +75,9 @@ export const useAddSelectedItems = () => {
               return [];
             }
 
-            const items = await enumerateEmbyItem2(
+            const items = await enumerateEmbyItem(
               selected.mediaSource.id,
+              selected.libraryId,
               media,
             );
 

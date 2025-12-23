@@ -106,8 +106,9 @@ export type EnrichedEmbyItem = EmbyItem & {
   seasonId?: string;
 };
 
-export const enumerateEmbyItem2 = (
+export const enumerateEmbyItem = (
   serverId: string,
+  libraryId: string,
   initialItem: ProgramOrFolder | Library,
 ): Promise<TerminalProgram[]> => {
   const seen = new Map<string, (ProgramOrFolder | Library)[]>();
@@ -150,9 +151,10 @@ export const enumerateEmbyItem2 = (
         return getApiEmbyByMediaSourceIdLibrariesByLibraryIdItems({
           path: {
             mediaSourceId: serverId,
-            libraryId: item.externalId,
+            libraryId,
           },
           query: {
+            parentId: item.externalId,
             itemTypes: EmbyTerminalTypesArray,
             recursive: true,
           },
