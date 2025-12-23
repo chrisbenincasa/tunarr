@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
-import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
+import { compact, find, isEmpty, isNull, isString, uniq } from 'lodash-es';
 import {
   DocumentsQuery,
   EnqueuedTask,
@@ -161,6 +161,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'studio.name',
     'parent.studio',
     'grandparent.studio',
+    'audioLanguages',
+    'subtitleLanguages',
   ],
   sortable: [
     'title',
@@ -294,6 +296,8 @@ export type TerminalProgramSearchDocument<
   videoWidth?: number;
   audioCodec?: string;
   audioChannels?: number;
+  audioLanguages?: string[];
+  subtitleLanguages?: string[];
   state: ProgramState;
 };
 
@@ -1385,6 +1389,22 @@ export class MeilisearchService implements ISearchService {
     return buf;
   }
 
+  private getUniqueStreamLanguages(
+    streams: { streamType: string; languageCodeISO6392?: string | null }[] | undefined,
+    type: 'audio' | 'subtitles',
+  ): string[] {
+    if (!streams) return [];
+    return uniq(
+      streams
+        .filter(
+          (s) => s.streamType === type && isNonEmptyString(s.languageCodeISO6392),
+        )
+        .map((s) => s.languageCodeISO6392!),
+    );
+  }
+
+
+
   private convertProgramToSearchDocument<
     ProgramT extends (Movie | Episode | MusicTrack | OtherVideo) &
       HasMediaSourceAndLibraryId,
@@ -1494,6 +1514,14 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'audio',
+      ),
+      subtitleLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'subtitles',
+      ),
       state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
@@ -1546,6 +1574,7 @@ export class MeilisearchService implements ISearchService {
     const audioStream = find(program.mediaItem?.streams, {
       streamType: 'audio',
     });
+
 
     let summary: Nilable<string>;
     switch (program.type) {
@@ -1612,6 +1641,14 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'audio',
+      ),
+      subtitleLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'subtitles',
+      ),
     }; // satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 
