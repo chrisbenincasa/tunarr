@@ -11755,7 +11755,6 @@ export type PostApiProgramsSearchData = {
                 direction: 'asc' | 'desc';
             } | null;
         };
-        restrictSeachTo?: Array<string>;
         mediaSourceId?: string;
         libraryId?: string;
         page?: number;

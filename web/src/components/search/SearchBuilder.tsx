@@ -13,11 +13,11 @@ import { search as tunarrSearch } from '@tunarr/shared/util';
 import type { MediaSourceContentType } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
-import { isEmpty, last } from 'lodash-es';
+import { last } from 'lodash-es';
 import { useCallback, useMemo, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import { difference, isNonEmptyString } from '../../helpers/util.ts';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { Route } from '../../routes/__root.tsx';
 import type { Nullable } from '../../types/util.ts';
@@ -64,7 +64,6 @@ export function SearchBuilder({
 
   const expr = useMemo(() => {
     if (isNonEmptyString(query)) {
-      console.log(query);
       const result = getSearchExpression(query);
       const isStructured = result?.type === 'success';
       setIsStructuredSearch(isStructured);
@@ -100,13 +99,14 @@ export function SearchBuilder({
       } else {
         expr?.errors.forEach((err) => console.error(err));
       }
+      console.log(searchRestrctState);
       onSearch({
         ...search,
-        restrictSearchTo:
-          isEmpty(searchRestrctState) ||
-          difference(AllSearchRestrictKeys, searchRestrctState).size === 0
-            ? undefined
-            : [...searchRestrctState],
+        restrictSearchTo: [...searchRestrctState],
+        // isEmpty(searchRestrctState) ||
+        // difference(AllSearchRestrictKeys, searchRestrctState).size === 0
+        //   ? undefined
+        //   : [...searchRestrctState],
       });
     },
     [expr, onSearch, query, routeMatch, searchRestrctState],
@@ -191,8 +191,9 @@ export function SearchBuilder({
           {!isStructuredSearch && isNonEmptyString(query) && (
             <Alert severity="info">
               Tunarr is interpretting this query as a "free text" query. This
-              means the query is taken verbatim and searched across all fields.
-              If you are intending to use a "structured" query (e.g. &nbsp;
+              means the query is taken verbatim and searched across all fields
+              (or fields set via "restrict search fields"). If you are intending
+              to use a "structured" query (e.g. &nbsp;
               <code>title:"ABC"</code>) and are seeing this message, there is a
               syntax error or unsupported field in your query.
             </Alert>
