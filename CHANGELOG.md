@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.10](https://github.com/chrisbenincasa/tunarr/compare/v1.0.9...v1.0.10) (2025-12-24)
+
+
+### Bug Fixes
+
+* make Plex scannedAt attribute optional ([18f22c5](https://github.com/chrisbenincasa/tunarr/commit/18f22c518b7d3df162e028d55f6b0e36061896ba))
+* more fixes to adding unscyned Jellyfin / Emby client ([c524bad](https://github.com/chrisbenincasa/tunarr/commit/c524bad1cebc7f8aab70d98a76866e16c9c6cf53))
+
 ## [1.0.9](https://github.com/chrisbenincasa/tunarr/compare/v1.0.8...v1.0.9) (2025-12-22)
 
 
