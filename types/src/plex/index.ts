@@ -95,7 +95,7 @@ export const PlexLibrarySectionSchema = z.object({
   uuid: z.string(),
   updatedAt: z.number().optional(),
   createdAt: z.number(),
-  scannedAt: z.number(),
+  scannedAt: z.number().optional(),
   content: z.boolean(),
   directory: z.boolean(),
   contentChangedAt: z.number(),
