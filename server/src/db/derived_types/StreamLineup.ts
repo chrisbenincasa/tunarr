@@ -30,13 +30,13 @@ export function isOfflineLineupItem(
   return item.type === 'offline' || item.type === 'redirect';
 }
 
-export function isCommercialLineupItem(
+function isCommercialLineupItem(
   item: StreamLineupItem,
 ): item is CommercialStreamLineupItem {
   return item.type === 'commercial';
 }
 
-export function isProgramLineupItem(
+function isProgramLineupItem(
   item: StreamLineupItem,
 ): item is ProgramStreamLineupItem {
   return item.type === 'program';

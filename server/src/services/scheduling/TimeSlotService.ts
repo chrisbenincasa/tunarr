@@ -95,8 +95,6 @@ export async function scheduleTimeSlots(
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
 
-  // Load programs
-  // TODO: include redirects and custom programs!
   const allPrograms = deduplicatePrograms(programs);
   const contentProgramIteratorsById = createProgramIterators(
     schedule.slots,
