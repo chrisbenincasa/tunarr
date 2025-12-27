@@ -71,6 +71,24 @@ export const MigrationStateSchema = z.object({
     .describe('Whether a legacy migration was performed'),
   isFreshSettings: z.boolean().default(true).optional(),
   hasMigratedTo1_0: z.boolean().optional().default(false),
+  oneTimeMigrations: z
+    .object({
+      executed: z
+        .array(z.string())
+        .default([])
+        .describe('IDs of executed one-time migrations'),
+      failed: z
+        .array(
+          z.object({
+            id: z.string(),
+            error: z.string(),
+            attemptedAt: z.string(), // ISO timestamp
+          }),
+        )
+        .default([])
+        .describe('Failed migration attempts with error details'),
+    })
+    .default({ executed: [], failed: [] }),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -95,6 +113,10 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   migration: {
     legacyMigration: false,
     hasMigratedTo1_0: false,
+    oneTimeMigrations: {
+      executed: [],
+      failed: [],
+    },
   },
   settings: {
     clientId: uuidv4(),
@@ -216,6 +238,44 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
     return await this.db.update((olDsettings) => {
       olDsettings[key] = merge(olDsettings[key], settings);
     });
+  }
+
+  async markMigrationExecuted(migrationId: string): Promise<void> {
+    await this.directUpdate((settings) => {
+      if (
+        !settings.migration.oneTimeMigrations.executed.includes(migrationId)
+      ) {
+        settings.migration.oneTimeMigrations.executed.push(migrationId);
+      }
+    });
+  }
+
+  async markMigrationFailed(
+    migrationId: string,
+    error: string,
+  ): Promise<void> {
+    await this.directUpdate((settings) => {
+      settings.migration.oneTimeMigrations.failed.push({
+        id: migrationId,
+        error,
+        attemptedAt: new Date().toISOString(),
+      });
+    });
+  }
+
+  isMigrationExecuted(migrationId: string): boolean {
+    return this.db.data.migration.oneTimeMigrations.executed.includes(
+      migrationId,
+    );
+  }
+
+  getMigrationFailures(migrationId?: string) {
+    if (migrationId) {
+      return this.db.data.migration.oneTimeMigrations.failed.filter(
+        (f) => f.id === migrationId,
+      );
+    }
+    return this.db.data.migration.oneTimeMigrations.failed;
   }
 
   async flush() {

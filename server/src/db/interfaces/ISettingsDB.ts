@@ -57,6 +57,18 @@ export interface ISettingsDB extends TypedEventEmitter<SettingsChangeEvents> {
 
   updateFfmpegSettings(ffmpegSettings: FfmpegSettings): Promise<void>;
 
+  markMigrationExecuted(migrationId: string): Promise<void>;
+
+  markMigrationFailed(migrationId: string, error: string): Promise<void>;
+
+  isMigrationExecuted(migrationId: string): boolean;
+
+  getMigrationFailures(
+    migrationId?: string,
+  ): DeepReadonly<
+    Array<{ id: string; error: string; attemptedAt: string }>
+  >;
+
   flush(): Promise<void>;
 }
 

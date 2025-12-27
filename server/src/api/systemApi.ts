@@ -3,7 +3,7 @@ import { serverOptions } from '@/globals.js';
 import { scheduleBackupJobs } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
-import { ifDefined } from '@/util/index.js';
+import { ifDefined, makeWritable } from '@/util/index.js';
 import {
   getEnvironmentLogLevel,
   getPrettyStreamOpts,
@@ -118,7 +118,7 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (req, res) => {
-      return res.send(req.serverCtx.settings.migrationState);
+      return res.send(makeWritable(req.serverCtx.settings.migrationState));
     },
   );
 

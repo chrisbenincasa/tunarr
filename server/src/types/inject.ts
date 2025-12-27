@@ -48,6 +48,7 @@ const KEYS = {
   // Services
   HealthCheck: Symbol.for('HealthCheck'),
   StartupTask: Symbol.for('StartupTask'),
+  OneTimeMigration: Symbol.for('OneTimeMigration'),
   Fixer: Symbol.for('Fixer'),
   WorkerPool: Symbol.for('WorkerPool'),
   WorkerPoolFactory: Symbol.for('WorkerPoolFactory'),
