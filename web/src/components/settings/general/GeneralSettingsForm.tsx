@@ -20,7 +20,6 @@ import {
   MenuItem,
   Select,
   TextField,
-  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -198,142 +197,107 @@ export function GeneralSettingsForm({
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSave, console.error)}>
-      <Stack gap={2} spacing={2}>
-        <Typography variant="h5" sx={{ mb: 1 }}>
-          Server Settings
-        </Typography>
-        {!systemState.data.isInContainer && (
-          <NumericFormControllerText
-            control={control}
-            name="server.port"
-            TextFieldProps={{
-              label: 'Server Listen Port',
-              sx: {
-                width: ['100%', '50%'],
-              },
-              helperText:
-                'Select the port the Tunarr server will listen on. This requires a server restart to take effect.',
-            }}
-          />
-        )}
-        <Box>
-          <Controller
-            control={control}
-            name="backendUri"
-            rules={{ validate: { isValidUrl: (s) => isValidUrl(s, true) } }}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                sx={{
-                  width: ['100%', '50%'],
+      <Grid container spacing={2}>
+        <Grid size={{ sm: 12, md: 6 }}>
+          <Stack spacing={2}>
+            <Typography variant="h5" sx={{ mb: 1 }}>
+              Server Settings
+            </Typography>
+            {!systemState.data.isInContainer && (
+              <NumericFormControllerText
+                control={control}
+                name="server.port"
+                TextFieldProps={{
+                  label: 'Server Listen Port',
+                  helperText:
+                    'Select the port the Tunarr server will listen on. This requires a server restart to take effect.',
+                  fullWidth: true,
                 }}
-                label="Tunarr Backend URL"
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        {isLoading ? (
-                          <RotatingLoopIcon />
-                        ) : !isError ? (
-                          <CloudDoneOutlined color="success" />
-                        ) : (
-                          <CloudOff color="error" />
-                        )}
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                {...field}
-                helperText={
-                  error?.type === 'isValidUrl'
-                    ? 'Must use a valid URL, or empty.'
-                    : 'Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend.'
-                }
               />
             )}
-          />
-        </Box>
-        <Box>
-          <FormControl
-            sx={{
-              width: ['100%', '50%'],
-            }}
-          >
-            <InputLabel id="log-level-label">Log Level</InputLabel>
-            <Controller
-              name="logLevel"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  labelId="log-level-label"
-                  id="log-level"
-                  label="Log Level"
-                  {...field}
-                >
-                  {map(LogLevelChoices, ({ value, description }) => (
-                    <MenuItem key={value} value={value}>
-                      {description}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            <FormHelperText>
-              Set the log level for the Tunarr server.
-              <br />
-              Selecting <strong>"Use environment settings"</strong> will
-              instruct the server to use the <code>LOG_LEVEL</code> environment
-              variable, if set, or system default "info".
-            </FormHelperText>
-          </FormControl>
-        </Box>
-        <Box>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Backups
-          </Typography>
-          {renderBackupsForm()}
-        </Box>
-        <Box>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Caching
-          </Typography>
-          <Box>
-            <FormControl
-              sx={{
-                width: ['100%', '50%'],
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Controller
-                    control={control}
-                    name="cache.enablePlexRequestCache"
-                    render={({ field }) => (
-                      <Checkbox checked={field.value} {...field} />
-                    )}
+            <Box>
+              <Controller
+                control={control}
+                name="backendUri"
+                rules={{ validate: { isValidUrl: (s) => isValidUrl(s, true) } }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    label="Tunarr Backend URL"
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            {isLoading ? (
+                              <RotatingLoopIcon />
+                            ) : !isError ? (
+                              <CloudDoneOutlined color="success" />
+                            ) : (
+                              <CloudOff color="error" />
+                            )}
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    {...field}
+                    helperText={
+                      error?.type === 'isValidUrl'
+                        ? 'Must use a valid URL, or empty.'
+                        : 'Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend.'
+                    }
                   />
-                }
-                label={
-                  <span>
-                    <strong>Experimental:</strong> Enable Plex Request Cache{' '}
-                    <Tooltip
-                      title="Temporarily caches responses from Plex based by request path. Could potentially speed up channel editing."
-                      placement="top"
-                    >
-                      <sup style={{ color: theme.palette.primary.main }}>
-                        [?]
-                      </sup>
-                    </Tooltip>
-                  </span>
-                }
+                )}
               />
-              <FormHelperText>
-                This feature is currently experimental. Proceed with caution and
-                if you experience an issue, try disabling caching.
-              </FormHelperText>
-            </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <InputLabel id="log-level-label">Log Level</InputLabel>
+                <Controller
+                  name="logLevel"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      labelId="log-level-label"
+                      id="log-level"
+                      label="Log Level"
+                      {...field}
+                    >
+                      {map(LogLevelChoices, ({ value, description }) => (
+                        <MenuItem key={value} value={value}>
+                          {description}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <FormHelperText>
+                  Set the log level for the Tunarr server.
+                  <br />
+                  Selecting <strong>"Use environment settings"</strong> will
+                  instruct the server to use the <code>LOG_LEVEL</code>{' '}
+                  environment variable, if set, or system default level{' '}
+                  <code>info</code>.
+                </FormHelperText>
+              </FormControl>
+            </Box>
+          </Stack>
+        </Grid>
+        <Grid size={{ sm: 12, md: 6 }}>
+          <Stack spacing={2}>
+            <Typography variant="h5" sx={{ mb: 1 }}>
+              Search Settings
+            </Typography>
+          </Stack>
+        </Grid>
+        <Grid size={{ sm: 12 }}>
+          <Box>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Backups
+            </Typography>
+            {renderBackupsForm()}
           </Box>
-        </Box>
-      </Stack>
+        </Grid>
+      </Grid>
+      <Stack gap={2} spacing={2}></Stack>
       <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
         {isDirty && (
           <Button
