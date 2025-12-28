@@ -1,6 +1,5 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx';
-import { MissingProgramsAlert } from '@/components/slot_scheduler/MissingProgramsAlert.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
 import type { DropdownOption } from '@/helpers/DropdownOption.ts';
@@ -9,7 +8,6 @@ import {
   OneWeekMillis,
   lineupItemAppearsInSchedule,
 } from '@/helpers/slotSchedulerUtil.ts';
-import { useSlotProgramOptions } from '@/hooks/programming_controls/useSlotProgramOptions.ts';
 import type {
   TimeSlotForm,
   TimeSlotViewModel,
@@ -139,7 +137,6 @@ export default function TimeSlotEditorPage() {
 
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const { dropdownOpts: programOptions } = useSlotProgramOptions();
 
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
@@ -275,10 +272,6 @@ export default function TimeSlotEditorPage() {
       <Breadcrumbs />
       <Stack gap={2} useFlexGap>
         <Typography variant="h4">{channel!.name}</Typography>
-        <MissingProgramsAlert
-          slots={slotArray.fields}
-          programOptions={programOptions}
-        />
         {errors.slots?.message && (
           <Alert severity="error">{errors.slots.message}</Alert>
         )}
