@@ -13,7 +13,7 @@ import {
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { escape, flatMap, isNil, map, round } from 'lodash-es';
+import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { MaterializedGuideItem } from '../types/guide.ts';
@@ -162,15 +162,6 @@ export class XmlTvWriter {
       partial.subTitle = [{ _value: escape(subTitle) }];
     }
 
-    if (
-      guideItem.programming.type === 'program' &&
-      isNonEmptyString(guideItem.programming.program.summary)
-    ) {
-      partial.desc = [
-        { _value: escape(guideItem.programming.program.summary) },
-      ];
-    }
-
     if (guideItem.programming.type === 'program') {
       const program = guideItem.programming.program;
       if (program.type !== 'movie' && title !== guideItem.title) {
@@ -181,10 +172,14 @@ export class XmlTvWriter {
         ];
       }
 
-      if (isNonEmptyString(program.summary)) {
+      const desc = compact([program.summary, program.plot]).find(
+        isNonEmptyString,
+      );
+
+      if (desc) {
         partial.desc ??= [
           {
-            _value: escape(program.summary),
+            _value: escape(desc),
           },
         ];
       }
