@@ -64,6 +64,7 @@ Tunarr has various command line / environment variables for configuration. These
 | `TUNARR_BIND_ADDR` | N/A | `0.0.0.0` | Sets the interface that Tunarr will attempt to bind its server to. **NOTE** Change at your own risk! By default, Tunarr listens on all network interfaces | 
 | `TUNARR_USE_WORKER_POOL` | N/A | FALSE | Set to true to enable experimental support for Tunarr's worker threads | 
 | `TUNARR_WORKER_POOL_SIZE` | N/A | `cpus().length` | Control the number of worker threads Tunarr creates in its pool. It's recommended to use no more than the number of CPUs on the host system | 
+| `TUNARR_DEBUG_REDUCE_SEARCH_INDEXING_MEMORY` | N/A | TRUE | By default, Meilisearch will attempt to reduce search indexing memory usage, which can have an impact on file storage. Setting this to `false` will skip that. |
 
 ## Hardware Transcoding
 
