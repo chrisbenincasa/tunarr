@@ -2,6 +2,7 @@ import { Checkbox, FormControlLabel, Menu, MenuItem } from '@mui/material';
 import type { MediaSourceContentType } from '@tunarr/types';
 import { reject } from 'lodash-es';
 import { useMemo } from 'react';
+import type { NonEmptyArray } from 'ts-essentials';
 import { difference } from '../../helpers/util.ts';
 import type { Nullable } from '../../types/util.ts';
 
@@ -14,38 +15,40 @@ type Props = {
 };
 
 type SearchRestrictOption = {
-  key: string;
+  keys: NonEmptyArray<string>;
   name: string;
-  libraryTypes: 'all' | MediaSourceContentType[];
+  // libraryTypes: 'all' | MediaSourceContentType[];
   selectedDefault: boolean;
 };
 
-const SearchRestrictOptions: SearchRestrictOption[] = [
+const SearchRestrictOptions = [
   {
-    key: 'title',
+    keys: ['title'],
     name: 'Title',
-    libraryTypes: ['movies', 'music_videos', 'other_videos'],
+    // libraryTypes: ['movies', 'music_videos', 'other_videos'],
     selectedDefault: true,
   },
   {
-    key: 'title',
+    keys: ['show.title'],
     name: 'Show Title',
-    libraryTypes: ['shows'],
     selectedDefault: true,
   },
   {
-    key: 'plot',
+    keys: ['plot'],
     name: 'Summary',
-    libraryTypes: 'all',
+    // libraryTypes: 'all',
     selectedDefault: false,
   },
-];
+] as const satisfies SearchRestrictOption[];
 
-export type SearchRestrictKeys = (typeof SearchRestrictOptions)[number]['key'];
+export type SearchRestrictKeys =
+  (typeof SearchRestrictOptions)[number]['keys'][number];
 
 export const AllSearchRestrictKeys = new Set(
-  SearchRestrictOptions.map((opt) => opt.key),
+  SearchRestrictOptions.flatMap((opt) => opt.keys),
 ) as ReadonlySet<SearchRestrictKeys>;
+
+export const DefaultSearchRestrictKeys = new Set<SearchRestrictKeys>(['plot']);
 
 export const SearchFieldRestrictMenu = ({
   anchor,
@@ -54,17 +57,17 @@ export const SearchFieldRestrictMenu = ({
   onSearchFieldsChanged,
   mediaType: libraryType,
 }: Props) => {
-  const searchRestrictOptions = useMemo(() => {
-    return SearchRestrictOptions.filter(
-      (opt) =>
-        opt.libraryTypes === 'all' ||
-        (libraryType && opt.libraryTypes.includes(libraryType)),
-    );
-  }, [libraryType]);
+  // const searchRestrictOptions = useMemo(() => {
+  //   return SearchRestrictOptions.filter(
+  //     (opt) =>
+  //       opt.libraryTypes === 'all' ||
+  //       (libraryType && opt.libraryTypes.includes(libraryType)),
+  //   );
+  // }, [libraryType]);
 
   const searchRestrictOptionKeys = useMemo(
-    () => new Set(searchRestrictOptions.map((opt) => opt.key)),
-    [searchRestrictOptions],
+    () => new Set(SearchRestrictOptions.map((opt) => opt.key)),
+    [],
   );
 
   const handleSetSearchRestrict = (
@@ -102,17 +105,19 @@ export const SearchFieldRestrictMenu = ({
       >
         Select All
       </MenuItem>
-      {searchRestrictOptions.map(({ key, name, selectedDefault }) => (
-        <MenuItem dense disableRipple disableTouchRipple key={key}>
-          <FormControlLabel
-            label={name}
-            defaultChecked={selectedDefault}
-            checked={searchFields.has(key)}
-            onChange={(_, checked) => handleSetSearchRestrict(key, checked)}
-            control={<Checkbox size="small" />}
-          />
-        </MenuItem>
-      ))}
+      {SearchRestrictOptions.flatMap(({ keys, name, selectedDefault }) =>
+        keys.map(
+          <MenuItem dense disableRipple disableTouchRipple key={key}>
+            <FormControlLabel
+              label={name}
+              defaultChecked={selectedDefault}
+              checked={searchFields.has(key)}
+              onChange={(_, checked) => handleSetSearchRestrict(key, checked)}
+              control={<Checkbox size="small" />}
+            />
+          </MenuItem>,
+        ),
+      )}
     </Menu>
   );
 };
