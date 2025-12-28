@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.11](https://github.com/chrisbenincasa/tunarr/compare/v1.0.10...v1.0.11) (2025-12-28)
+
+
+### Bug Fixes
+
+* properly set plot field when minting Program DAOs for movies ([bacabac](https://github.com/chrisbenincasa/tunarr/commit/bacabac99d02ab0825670d77a355d0c4e581d564))
+* remove missing programs alert from slot scheduler ([9404b31](https://github.com/chrisbenincasa/tunarr/commit/9404b317178948a51834e86b3758ca194780f5ea))
+
 ## [1.0.10](https://github.com/chrisbenincasa/tunarr/compare/v1.0.9...v1.0.10) (2025-12-28)
 
 
