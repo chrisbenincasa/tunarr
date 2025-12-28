@@ -1399,7 +1399,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       sourceType: 'jellyfin',
       // tagline: find(episode.Taglines, isNonEmptyString) ?? null,
       tags: episode.Tags?.filter(isNonEmptyString) ?? [],
-      summary: null,
+      summary: episode.Overview ?? null,
       type: 'episode',
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(

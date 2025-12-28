@@ -1384,7 +1384,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       sourceType: 'emby',
       // tagline: find(episode.Taglines, isNonEmptyString) ?? null,
       tags: episode.Tags?.filter(isNonEmptyString) ?? [],
-      summary: null,
+      summary: episode.Overview ?? null,
       type: 'episode',
       mediaItem,
       identifiers: collectEmbyItemIdentifiers(
