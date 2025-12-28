@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/types",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
