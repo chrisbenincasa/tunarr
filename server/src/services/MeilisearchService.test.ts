@@ -52,6 +52,25 @@ describe('MeilisearchService.buildFilterExpression', () => {
       expect(result).toBe("title = 'The Matrix'");
     });
 
+    test('single string with quotes', () => {
+      const filter: SearchFilter = {
+        type: 'value',
+        fieldSpec: {
+          key: 'title',
+          name: 'Title',
+          type: 'string',
+          op: '=',
+          value: [`Bob's Burgers`],
+        },
+      };
+
+      const result = MeilisearchService.buildFilterExpression(
+        mockIndex,
+        filter,
+      );
+      expect(result).toBe("title = 'Bob\\\'s Burgers'");
+    });
+
     test('single string with "in" operator maps to equality', () => {
       const filter: SearchFilter = {
         type: 'value',
@@ -98,7 +117,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
           name: 'Title',
           type: 'string',
           op: 'in',
-          value: ['The Matrix', 'Inception', 'Interstellar'],
+          value: ['The Matrix', 'Inception', 'Interstellar', `Bob's Burgers`],
         },
       };
 
@@ -107,7 +126,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
         filter,
       );
       expect(result).toBe(
-        "title IN ['The Matrix', 'Inception', 'Interstellar']",
+        "title IN ['The Matrix', 'Inception', 'Interstellar', 'Bob\\\'s Burgers']",
       );
     });
 

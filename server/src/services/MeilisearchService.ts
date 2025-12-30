@@ -1335,13 +1335,13 @@ export class MeilisearchService implements ISearchService {
                   query.fieldSpec.key,
                 )
                   ? encodeCaseSensitiveId(filteredValue[0]!)
-                  : filteredValue[0];
+                  : filteredValue[0]!;
                 const mappedOp = match(op)
                   .returnType<StringOperators>()
                   .with('in', () => '=')
                   .with('not in', () => '!=')
                   .otherwise(() => op);
-                return `${mappedOp.toUpperCase()} '${v}'`;
+                return `${mappedOp.toUpperCase()} '${v.replaceAll(`'`, `\\'`)}'`;
               } else if (op === 'in' || op === 'not in') {
                 const searchOperator = op.toUpperCase();
                 const v = index.caseSensitiveFilters?.includes(
@@ -1349,7 +1349,7 @@ export class MeilisearchService implements ISearchService {
                 )
                   ? filteredValue.map(encodeCaseSensitiveId)
                   : filteredValue;
-                return `${searchOperator} [${v.map((_) => `'${_}'`).join(', ')}]`;
+                return `${searchOperator} [${v.map((_) => `'${_.replaceAll(`'`, `\\'`)}'`).join(', ')}]`;
               } else {
                 throw new Error(
                   `Unsupported search value configuration: ${JSON.stringify(query.fieldSpec)}`,
