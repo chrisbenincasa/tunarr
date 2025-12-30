@@ -1,5 +1,7 @@
+import { Stack } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
-import { LibrarySearch } from '../components/library/LibrarySearch.tsx';
+import { LibraryProgramGrid } from '../components/library/LibraryProgramGrid.tsx';
+import { SearchInput } from '../components/library/SearchInput.tsx';
 import { Route as RootRoute } from './__root.tsx';
 
 export const Route = createFileRoute('/search')({
@@ -9,9 +11,12 @@ export const Route = createFileRoute('/search')({
 function RouteComponent() {
   const searchParams = RootRoute.useSearch();
   return (
-    <LibrarySearch
-      disableProgramSelection
-      initialSearchQuery={searchParams?.query}
-    />
+    <Stack gap={2}>
+      <SearchInput
+        disableProgramSelection
+        initialSearchQuery={searchParams?.query}
+      />
+      <LibraryProgramGrid />
+    </Stack>
   );
 }

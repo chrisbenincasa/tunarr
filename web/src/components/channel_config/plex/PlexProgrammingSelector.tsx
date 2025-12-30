@@ -137,10 +137,6 @@ export default function PlexProgrammingSelector({
                   <Tab
                     value={TabValues.Collections}
                     label="Collections"
-                    // disabled={
-                    //   sumBy(collectionsData?.pages, (page) => page.size) ===
-                    //     0 || isCollectionLoading
-                    // }
                     {...a11yProps(TabValues.Collections)}
                   />
                 )}
@@ -149,17 +145,7 @@ export default function PlexProgrammingSelector({
                   <Tab
                     value={TabValues.Playlists}
                     label={
-                      <Tooltip
-                        title={
-                          // sumBy(playlistData?.pages, 'size') === 0 ||
-                          // isPlaylistLoading
-                          //   ? 'Selected library has no playlists'
-                          //   : null
-                          null
-                        }
-                        placement="top"
-                        arrow
-                      >
+                      <Tooltip title={null} placement="top" arrow>
                         <span>Playlists</span>
                       </Tooltip>
                     }
@@ -168,10 +154,6 @@ export default function PlexProgrammingSelector({
                         pointerEvents: 'all',
                       },
                     }}
-                    // disabled={
-                    //   sumBy(playlistData?.pages, 'size') === 0 ||
-                    //   isPlaylistLoading
-                    // }
                     {...a11yProps(TabValues.Playlists)}
                   />
                 )}

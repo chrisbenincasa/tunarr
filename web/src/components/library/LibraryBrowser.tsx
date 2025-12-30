@@ -25,6 +25,7 @@ export const LibraryBrowser = ({ mediaSourceId, libraryId }: Props) => {
           Search is currently scoped to media source "{mediaSource.name}"{' '}
           {library ? `and library "${library.name}"` : ''}
         </Typography>
+
         <ProgramViewToggleButton sx={{ ml: 'auto' }} />
       </Stack>
       <LibraryProgramGrid
