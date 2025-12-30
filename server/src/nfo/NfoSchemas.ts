@@ -2,10 +2,9 @@ import { head } from 'lodash-es';
 import z from 'zod/v4';
 import type { Maybe } from '../types/util.ts';
 
-
 export const NfoFieldWithAttrs = z.object({
-  '#text': z.string()
-})
+  '#text': z.string(),
+});
 
 export type NfoFieldWithAttrs = z.infer<typeof NfoFieldWithAttrs>;
 
@@ -181,6 +180,45 @@ export const OtherVideoNfoContainer = z
   .partial();
 
 export type OtherVideoNfo = MovieNfo | TvEpisodeNfo;
+
+export const MusicArtistNfo = z.object({
+  name: z.string(),
+  musicBrainzArtistID: z.string().optional().catch(undefined),
+  sortname: z.string().optional(),
+  genre: z.array(z.string()).optional(),
+  style: z.array(z.string()).optional(),
+  mood: z.array(z.string()).optional(),
+  born: z.string().optional(),
+  formed: z.string().optional(),
+  biography: z.string().optional(),
+  died: z.stringbool().optional().catch(false),
+  thumb: z.array(NfoThumb).optional(),
+});
+
+export const MusicArtistNfoContainer = z.object({
+  artist: MusicArtistNfo,
+});
+
+export const MusicAlbumNfo = z.object({
+  title: z.string(),
+  musicbrainzalbumid: z.string().optional(),
+  musicbrainzreleasegroupid: z.string().optional(),
+  genre: z.array(z.string()).optional(),
+  style: z.array(z.string()).optional(),
+  mood: z.array(z.string()).optional(),
+  theme: z.array(z.string()).optional(),
+  compilation: z.stringbool().optional(),
+  boxset: z.stringbool().optional(),
+  releasestatus: z.string().optional(),
+  releasedate: z.string().optional(),
+  originalreleasedate: z.string().optional(),
+  label: z.string().optional(),
+  thumb: z.array(NfoThumb).optional(),
+});
+
+export const MusicAlbumNfoContainer = z.object({
+  album: MusicAlbumNfo,
+});
 
 export function unwrapOtherVideoNfoContainer(
   container: z.infer<typeof OtherVideoNfoContainer>,
