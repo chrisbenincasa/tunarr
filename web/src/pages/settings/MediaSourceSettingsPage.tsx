@@ -256,7 +256,7 @@ export default function MediaSourceSettingsPage() {
             <Typography sx={{ width: '60%' }}>
               Media Sources are where Tunarr sources your content. Media can
               come from your filesystem or a remote server, like Plex or
-              Jellyfin. At leat one Media Source is necessary to create channels
+              Jellyfin. At least one Media Source is necessary to create channels
               and play media in Tunarr.
             </Typography>
           </Stack>
