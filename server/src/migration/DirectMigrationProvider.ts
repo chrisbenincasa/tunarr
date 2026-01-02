@@ -51,6 +51,7 @@ import Migration1763673215_MoreProgramForeignKeys from './db/Migration1763673215
 import Migration1763749592_AddProgramState from './db/Migration1763749592_AddProgramState.ts';
 import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266_AddCreditGroupingIndex.ts';
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
+import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -177,6 +178,10 @@ export class DirectMigrationProvider implements MigrationProvider {
           // Add program grouping state,
           migration1764870206: makeKyselyMigrationFromSqlFile(
             './sql/0032_vengeful_network.sql',
+          ),
+          migration1767300603: Migration1767300603_AddExternalCollections,
+          migration1767374284: makeKyselyMigrationFromSqlFile(
+            './sql/0036_smooth_vanisher.sql',
           ),
         },
         wrapWithTransaction,

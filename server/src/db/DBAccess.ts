@@ -267,12 +267,11 @@ export class DBAccess {
   private static didInit = false;
   private static connections: Map<string, Connection> = new Map();
 
-  static init(): Connection {
-    const name = getDefaultDatabaseName();
+  static init(connName: string = getDefaultDatabaseName()): Connection {
     if (!this.didInit) {
-      this.connections.set(name, new Connection(name));
+      this.connections.set(connName, new Connection(connName));
     }
-    return this.connections.get(name)!;
+    return this.connections.get(connName)!;
   }
 
   get db(): Maybe<Kysely<DB>> {
@@ -324,6 +323,12 @@ export class DBAccess {
       return;
     }
     const pendingMigrations = await conn.pendingDatabaseMigrations();
+
+    // Special-case for in-memory database (tests)
+    if (conn.name === ':memory:') {
+      await conn.runDBMigrations();
+      return;
+    }
 
     const copyMigrator = new DatabaseCopyMigrator(this);
     for (const migration of pendingMigrations) {

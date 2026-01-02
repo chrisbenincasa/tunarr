@@ -70,6 +70,7 @@ import type {
 } from './ProgramVersion.ts';
 import type { NewStudio, Studio, StudioEntity } from './Studio.ts';
 import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
+import type { Tag, TagRelation } from './Tag.ts';
 
 export type ProgramVersionWithRelations = ProgramVersion & {
   mediaStreams?: ProgramMediaStream[];
@@ -106,6 +107,10 @@ export type StudioEntityWithStudio = StudioEntity & {
   studio: Studio;
 };
 
+export type TagRelationWithTag = TagRelation & {
+  tag: Tag;
+};
+
 export type ProgramWithRelationsOrm = ProgramOrm & {
   show?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
   season?: DeepNullable<Partial<ProgramGroupingOrmWithRelations>> | null;
@@ -120,6 +125,7 @@ export type ProgramWithRelationsOrm = ProgramOrm & {
   credits?: CreditWithArtwork[];
   genres?: GenreEntityWithGenre[];
   studios?: StudioEntityWithStudio[];
+  tags?: TagRelationWithTag[];
 };
 
 export type SpecificProgramOrmType<
@@ -265,6 +271,7 @@ export type ProgramGroupingOrmWithRelations = ProgramGroupingOrm & {
   credits?: CreditWithArtwork[];
   genres?: GenreEntityWithGenre[];
   studios?: StudioEntityWithStudio[];
+  tags?: TagRelationWithTag[];
 };
 
 type SpecificSubtype<

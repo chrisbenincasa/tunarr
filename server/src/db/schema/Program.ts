@@ -26,6 +26,7 @@ import { ProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramSubtitles } from './ProgramSubtitles.ts';
 import { ProgramVersion } from './ProgramVersion.ts';
 import { StudioEntity } from './Studio.ts';
+import { TagRelations } from './Tag.ts';
 
 export const ProgramTypes = [
   'movie',
@@ -164,6 +165,7 @@ export const ProgramRelations = relations(Program, ({ many, one }) => ({
   credits: many(Credit),
   genres: many(EntityGenre),
   studios: many(StudioEntity),
+  tags: many(TagRelations),
 }));
 
 export type ProgramTable = KyselifyBetter<typeof Program>;

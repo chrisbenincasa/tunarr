@@ -366,6 +366,13 @@ export type FacetSearchRequest = {
   libraryId?: string;
 };
 
+export type ProgramIndexPartialUpdate =
+  | MarkRequired<Partial<TerminalProgramSearchDocument<ProgramType>>, 'id'>
+  | MarkRequired<
+      Partial<ProgramGroupingSearchDocument<ProgramGroupingType>>,
+      'id'
+    >;
+
 @injectable()
 export class MeilisearchService implements ISearchService {
   private mutex = new Mutex();
@@ -717,12 +724,7 @@ export class MeilisearchService implements ISearchService {
     );
   }
 
-  async updatePrograms(
-    programs: MarkRequired<
-      Partial<TerminalProgramSearchDocument<ProgramType>>,
-      'id'
-    >[],
-  ) {
+  async updatePrograms(programs: ProgramIndexPartialUpdate[]) {
     return await Promise.all(
       this.#client
         .index<ProgramSearchDocument>(ProgramsIndex.name)
