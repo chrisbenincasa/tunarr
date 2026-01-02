@@ -22,6 +22,11 @@ import {
   SearchSnapshotsFolderName,
   SettingsJsonFilename,
 } from '../../util/constants.ts';
+import {
+  DISABLE_SEARCH_SNAPSHOT_IN_BACKUP,
+  getBooleanEnvVar,
+} from '../../util/env.ts';
+import { run } from '../../util/index.ts';
 import { ISettingsDB } from '../interfaces/ISettingsDB.ts';
 import type { BackupResult } from './DatabaseBackup.ts';
 import { DatabaseBackup } from './DatabaseBackup.ts';
@@ -113,10 +118,18 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       path.join(tempDir, 'db.db'),
     );
 
-    const snapshotTaskId = await this.searchService.createSnapshot();
+    const searchSnapshotPromise = run(async () => {
+      if (getBooleanEnvVar(DISABLE_SEARCH_SNAPSHOT_IN_BACKUP, false)) {
+        const snapshotTaskId = await this.searchService.createSnapshot();
+        return this.searchService.monitorTask(snapshotTaskId);
+      } else {
+        return Promise.resolve(void 0);
+      }
+    });
+
     const [sqlBackupFile] = await Promise.all([
       sqlBackupFilePromise,
-      this.searchService.monitorTask(snapshotTaskId),
+      searchSnapshotPromise,
     ]);
 
     archive
