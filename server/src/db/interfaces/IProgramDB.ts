@@ -78,6 +78,13 @@ export interface IProgramDB {
     eid: ProgramGroupingExternalIdLookup,
   ): Promise<Maybe<ProgramGroupingOrmWithRelations>>;
 
+  getProgramGroupingsByExternalIds(
+    eids:
+      | Set<[RemoteSourceType, MediaSourceId, string]>
+      | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
+    chunkSize?: number,
+  ): Promise<ProgramGroupingOrmWithRelations[]>;
+
   getProgramParent(
     programId: string,
   ): Promise<Maybe<ProgramGroupingWithExternalIds>>;

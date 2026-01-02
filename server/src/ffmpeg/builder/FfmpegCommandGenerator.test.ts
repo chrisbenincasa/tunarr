@@ -31,10 +31,9 @@ beforeAll(async () => {
     // databaseDirectory: dbDir.name,
     database: dbDir.name,
     verbose: 0,
-    force_migration: false,
     log_level: 'debug',
   });
-  await bootstrapTunarr(globalOptions(), {
+  await bootstrapTunarr(globalOptions(), undefined, {
     system: {
       logging: {
         logLevel: 'debug',

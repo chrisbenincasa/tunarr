@@ -232,6 +232,34 @@
       "when": 1764870200476,
       "tag": "0032_vengeful_network",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1767231900846,
+      "tag": "0033_free_nekra",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1767297406180,
+      "tag": "0034_cooing_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1767363914365,
+      "tag": "0035_military_ben_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1767374278514,
+      "tag": "0036_smooth_vanisher",
+      "breakpoints": true
     }
   ]
 }
