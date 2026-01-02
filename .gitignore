@@ -39,3 +39,5 @@ DerivedData/
 tunarr-openapi.json
 
 web/.tanstack
+
+:memory:*

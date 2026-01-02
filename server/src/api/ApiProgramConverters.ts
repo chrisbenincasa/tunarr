@@ -107,8 +107,7 @@ export class ApiProgramConverters {
       title: program.title,
       duration: program.duration,
       canonicalId: program.canonicalId ?? '',
-      // TODO: Persist these to the DB
-      tags: searchDoc?.tags ?? [],
+      tags: program.tags?.map((tag) => tag.tag.tag) ?? searchDoc?.tags ?? [],
       actors: convertCreditWithArtwork(program.credits ?? [], 'cast'),
       writers: convertCreditWithArtwork(program.credits ?? [], 'writer'),
       directors: convertCreditWithArtwork(program.credits ?? [], 'director'),
@@ -145,7 +144,6 @@ export class ApiProgramConverters {
             rating: movie.rating,
             summary: movie.summary,
             tagline: movie.tagline,
-            tags: [],
           }) satisfies Movie,
       )
       .with(
@@ -156,7 +154,6 @@ export class ApiProgramConverters {
             type: 'track',
             originalTitle: null,
             trackNumber: program.episode ?? 0,
-            tags: [],
           }) satisfies MusicTrack,
       )
       .with(
@@ -168,7 +165,6 @@ export class ApiProgramConverters {
             ...base,
             type: 'other_video',
             originalTitle: null,
-            tags: [],
           }) satisfies OtherVideo,
       )
       .otherwise(() => null);
@@ -254,7 +250,7 @@ export class ApiProgramConverters {
       summary: grouping.summary,
       plot: grouping.plot,
       tagline: grouping.tagline,
-      tags: doc?.tags ?? [],
+      tags: grouping.tags?.map((tag) => tag.tag.tag) ?? doc?.tags ?? [],
       genres: grouping.genres?.map(({ genre }) => ({ name: genre.name })) ?? [],
       actors: convertCreditWithArtwork(grouping.credits ?? [], 'cast'),
     } satisfies Partial<ProgramGrouping>;

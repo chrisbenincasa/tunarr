@@ -6,6 +6,7 @@ import type { PlexMedia } from '@tunarr/types/plex';
 import { ContainerModule } from 'inversify';
 import type { MediaLibraryType } from '../db/schema/MediaSource.ts';
 import { KEYS } from '../types/inject.ts';
+import { bindFactoryFunc } from '../util/inject.ts';
 import type { Canonicalizer } from './Canonicalizer.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
 import { JellyfinItemCanonicalizer } from './JellyfinItemCanonicalizer.ts';
@@ -16,6 +17,7 @@ import { PlexMediaCanonicalizer } from './PlexMediaCanonicalizers.ts';
 import { EmbyMediaSourceMovieScanner } from './scanner/EmbyMediaSourceMovieScanner.ts';
 import { EmbyMediaSourceMusicScanner } from './scanner/EmbyMediaSourceMusicScanner.ts';
 import { EmbyMediaSourceTvShowScanner } from './scanner/EmbyMediaSourceTvShowScanner.ts';
+import type { GenericExternalCollectionScanner } from './scanner/ExternalCollectionScanner.ts';
 import type {
   GenericLocalMediaSourceScanner,
   GenericLocalMediaSourceScannerFactory,
@@ -37,6 +39,7 @@ import type {
   GenericMediaSourceScannerFactory,
 } from './scanner/MediaSourceScanner.ts';
 import type { GenericMediaSourceTvShowLibraryScanner } from './scanner/MediaSourceTvShowLibraryScanner.ts';
+import { PlexCollectionScanner } from './scanner/PlexCollectionScanner.ts';
 import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScanner.ts';
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
 import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
@@ -154,6 +157,20 @@ export const ServicesModule = new ContainerModule((bind) => {
             throw new Error('Not yet implemented.');
         }
       },
+  );
+
+  bind<GenericExternalCollectionScanner>(KEYS.ExternalCollectionScanner)
+    .to(PlexCollectionScanner)
+    .whenTargetNamed(MediaSourceType.Plex);
+  bindFactoryFunc(
+    bind,
+    KEYS.ExternalCollectionScannerFactory,
+    (ctx) => (mediaSourceType: MediaSourceType) => {
+      return ctx.container.tryGetNamed<GenericExternalCollectionScanner>(
+        KEYS.ExternalCollectionScanner,
+        mediaSourceType,
+      );
+    },
   );
 
   bind(MediaSourceProgressService).toSelf().inSingletonScope();

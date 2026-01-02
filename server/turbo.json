@@ -36,6 +36,9 @@
     "generate-openapi": {
       "inputs": ["./src/**"],
       "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
     }
   }
 }

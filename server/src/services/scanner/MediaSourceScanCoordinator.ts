@@ -1,12 +1,15 @@
 import { MediaSourceId } from '@tunarr/shared';
 import { E_ALREADY_LOCKED, tryAcquire } from 'async-mutex';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import PQueue from 'p-queue';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
+import { MediaSourceType } from '../../db/schema/base.ts';
 import { KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
+import { Maybe } from '../../types/util.ts';
 import { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
+import { GenericExternalCollectionScanner } from './ExternalCollectionScanner.ts';
 import { GenericLocalMediaSourceScannerFactory } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import { GenericMediaSourceScannerFactory } from './MediaSourceScanner.ts';
@@ -26,6 +29,11 @@ export class MediaSourceScanCoordinator {
     private localScannerFactory: GenericLocalMediaSourceScannerFactory,
     @inject(MediaSourceProgressService)
     private progressService: MediaSourceProgressService,
+    @inject(KEYS.ExternalCollectionScannerFactory)
+    private collectionScannerFactory: interfaces.SimpleFactory<
+      Maybe<GenericExternalCollectionScanner>,
+      [MediaSourceType]
+    >,
   ) {}
 
   async addLocal({
@@ -139,6 +147,10 @@ export class MediaSourceScanCoordinator {
         return false;
       }
 
+      const collectionScanner = this.collectionScannerFactory(
+        library.mediaSource.type,
+      );
+
       this.progressService.scanQueued(library.uuid);
       const controller = new AbortController();
       MediaSourceScanCoordinator.signalById.set(library.uuid, controller);
@@ -149,6 +161,12 @@ export class MediaSourceScanCoordinator {
               scanner.cancel(library.uuid);
             });
             await scanner.scan({ library, force: forceScan, pathFilter });
+            if (collectionScanner) {
+              await collectionScanner.scanLibrary({
+                libraryId: library.uuid,
+                force: forceScan,
+              });
+            }
           } finally {
             releaser();
           }

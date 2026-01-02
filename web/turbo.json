@@ -18,6 +18,9 @@
     "generate-client": {
       "dependsOn": ["@tunarr/server#generate-openapi"],
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"]
     }
   }
 }
