@@ -179,7 +179,7 @@ export function scheduleBackupJobs(
           cronSchedule,
           container.get<BackupTaskFactory>(BackupTask.KEY)(config),
           [],
-          { runOnSchedule: true },
+          {},
         ),
       );
     },
