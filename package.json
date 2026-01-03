@@ -12,7 +12,8 @@
     "lint-staged": "lint-staged",
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "should-semantic-release": "should-semantic-release --verbose"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
@@ -41,6 +42,7 @@
     "release-it": "^19.2.2",
     "release-it-pnpm": "^4.6.6",
     "semantic-release": "^25.0.2",
+    "should-semantic-release": "^0.3.5",
     "turbo": "^2.5.3",
     "typescript": "catalog:",
     "vitest": "^3.2.4"

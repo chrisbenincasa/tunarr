@@ -34,14 +34,14 @@ jobs:
 
       - name: Release from Main (Stable)
         if: github.ref == 'refs/heads/main'
-        run: pnpm release-it --dry-run --ci
+        run: if pnpm run should-semantic-release ; then  pnpm release-it --dry-run --ci --verbose ; fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_CHANNEL: latest # Updates the 'latest' tag on Docker Hub
 
       - name: Release from Dev (Pre-release)
         if: github.ref == 'refs/heads/dev'
-        run: npx release-it --dry-run --preRelease=dev --ci
+        run: if pnpm run should-semantic-release ; then pnpm release-it --dry-run --verbose --preRelease=dev --ci ; fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_CHANNEL: dev # Updates the 'dev' tag on Docker Hub

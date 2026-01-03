@@ -112,6 +112,9 @@ importers:
       semantic-release:
         specifier: ^25.0.2
         version: 25.0.2(typescript@5.9.3)
+      should-semantic-release:
+        specifier: ^0.3.5
+        version: 0.3.5
       turbo:
         specifier: ^2.5.3
         version: 2.5.3
@@ -4539,6 +4542,11 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  conventional-commits-parser@6.2.1:
+    resolution: {integrity: sha512-20pyHgnO40rvfI0NGF/xiEoFMkXDtkF8FwHvk5BokoFoCuTQRI8vrNCNFWUOfuolKJMm1tPCHc8GgYEtr1XRNA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   conventional-recommended-bump@11.2.0:
     resolution: {integrity: sha512-lqIdmw330QdMBgfL0e6+6q5OMKyIpy4OZNmepit6FS3GldhkG+70drZjuZ0A5NFpze5j85dlYs3GabQXl6sMHw==}
     engines: {node: '>=18'}
@@ -8154,6 +8162,11 @@ packages:
     resolution: {integrity: sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw==}
     engines: {node: '>= 0.4'}
 
+  should-semantic-release@0.3.5:
+    resolution: {integrity: sha512-yOWhFjT3eYZ1iZ3c9SI2A4wE0bjk8CXsGjrkMrsn7QU23uDJiIse/YbfK/eDs+97neXIljUsnAY4iYgyEC/TVw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   side-channel-list@1.0.0:
     resolution: {integrity: sha512-FCLHtRD/gnpCiCHEiJLOwdmFP+wzCmDEkc9y7NsYxeF4u7Btsn1ZuwgwJGxImImHicJArLP4R0yX4c2KCrMrTA==}
     engines: {node: '>= 0.4'}
@@ -11074,8 +11087,7 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@pkgjs/parseargs@0.11.0':
-    optional: true
+  '@pkgjs/parseargs@0.11.0': {}
 
   '@pnpm/config.env-replace@1.1.0': {}
 
@@ -13438,6 +13450,10 @@ snapshots:
       split2: 4.2.0
 
   conventional-commits-parser@6.2.0:
+    dependencies:
+      meow: 13.2.0
+
+  conventional-commits-parser@6.2.1:
     dependencies:
       meow: 13.2.0
 
@@ -17487,6 +17503,11 @@ snapshots:
   shebang-regex@3.0.0: {}
 
   shell-quote@1.8.3: {}
+
+  should-semantic-release@0.3.5:
+    dependencies:
+      '@pkgjs/parseargs': 0.11.0
+      conventional-commits-parser: 6.2.1
 
   side-channel-list@1.0.0:
     dependencies:
