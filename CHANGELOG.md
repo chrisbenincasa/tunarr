@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.12](https://github.com/chrisbenincasa/tunarr/compare/v1.0.11...v1.0.12) (2026-01-02)
+
+
+### Bug Fixes
+
+* do not run backup task immediately on server start ([70b8974](https://github.com/chrisbenincasa/tunarr/commit/70b897483b3fa6e1f2a1ce030cb3e0388f22474d))
+* fix typo in MediaSourceSettingsPage description ([#1575](https://github.com/chrisbenincasa/tunarr/issues/1575)) ([28ced48](https://github.com/chrisbenincasa/tunarr/commit/28ced48939b4d577db0ff2527712032a09e336c4))
+* handle quotes in search values ([53e1cdf](https://github.com/chrisbenincasa/tunarr/commit/53e1cdfe8b23d63b5a17e54367273c562a8d0bdd)), closes [#1569](https://github.com/chrisbenincasa/tunarr/issues/1569)
+
 ## [1.0.11](https://github.com/chrisbenincasa/tunarr/compare/v1.0.10...v1.0.11) (2025-12-28)
 
 
