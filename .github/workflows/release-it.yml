@@ -1,0 +1,47 @@
+name: Release It (test)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Latest Corepack
+        run: |
+          npm install -g corepack@latest
+          corepack enable && corepack enable pnpm
+          pnpm --version
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Release from Main (Stable)
+        if: github.ref == 'refs/heads/main'
+        run: pnpm release-it --dry-run --ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_CHANNEL: latest # Updates the 'latest' tag on Docker Hub
+
+      - name: Release from Dev (Pre-release)
+        if: github.ref == 'refs/heads/dev'
+        run: npx release-it --dry-run --preRelease=dev --ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_CHANNEL: dev # Updates the 'dev' tag on Docker Hub

@@ -3,18 +3,12 @@
  */
 export default {
   branches: [
-    {
-      name: 'main',
-    },
+    '+([0-9])?(.{+([0-9]),x}).x',
+    'main',
     {
       name: 'dev',
-      prerelease: true,
-      channel: 'next',
-    },
-    {
-      name: 'media-scanner',
-      prerelease: true,
-      channel: 'media-scanner',
+      prerelease: 'dev',
+      channel: 'dev',
     },
   ],
   plugins: [

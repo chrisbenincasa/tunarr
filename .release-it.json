@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/release-it/release-it/refs/heads/main/schema/release-it.json",
+  "plugins": {
+    "release-it-pnpm": {},
+    "@release-it/conventional-changelog": {
+      "preset": {
+        "name": "angular"
+      },
+      "infile": "CHANGELOG.md"
+    },
+    "@release-it/bumper": {
+      "out": {
+        "file": [
+          "server/package.json",
+          "web/package.json",
+          "shared/package.json",
+          "types/package.json"
+        ],
+        "path": "version"
+      }
+    }
+  },
+  "git": {
+    "commitMessage": "chore: release ${version}"
+  },
+  "npm": {
+    "publish": false,
+    "skipChecks": true
+  }
+}

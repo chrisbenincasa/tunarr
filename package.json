@@ -20,6 +20,8 @@
     "@commitlint/types": "^19.0.3",
     "@eslint/eslintrc": "^3.0.2",
     "@eslint/js": "^9.0.0",
+    "@release-it/bumper": "^7.0.5",
+    "@release-it/conventional-changelog": "^10.0.4",
     "@semantic-release/changelog": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
@@ -36,6 +38,8 @@
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.5.1",
+    "release-it": "^19.2.2",
+    "release-it-pnpm": "^4.6.6",
     "semantic-release": "^24.2.7",
     "turbo": "^2.5.3",
     "typescript": "catalog:",
@@ -60,5 +64,8 @@
       "prettier --write",
       "eslint --fix --no-warn-ignored"
     ]
+  },
+  "resolutions": {
+    "conventional-changelog-conventionalcommits": "8.0.0"
   }
 }
