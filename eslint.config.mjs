@@ -4,13 +4,14 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
 import reactRecommended from 'eslint-plugin-react/configs/recommended.js';
 import noUnusedImports from 'eslint-plugin-unused-imports';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint, { parser } from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
-      'eslint.config.js',
+      // 'eslint.config.js',
       '**/.tsup/*',
       '**/dist/*',
       '**/build/*',
@@ -23,7 +24,7 @@ export default tseslint.config(
       'server/src/web/*',
       'server/src/testing/*',
       'server/cjs-shim.ts',
-      'release.config.mjs',
+      // 'release.config.mjs',
     ],
   },
   {
@@ -36,7 +37,9 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['eslint.config.js'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
