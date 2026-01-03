@@ -6,7 +6,8 @@
       "preset": {
         "name": "conventionalcommits"
       },
-      "infile": "CHANGELOG.md"
+      "infile": "CHANGELOG.md",
+      "bumpStrict": true
     },
     "@release-it/bumper": {
       "out": {
