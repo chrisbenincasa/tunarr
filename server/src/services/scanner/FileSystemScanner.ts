@@ -194,7 +194,8 @@ export abstract class FileSystemScanner {
           index: subtitleStream.index ?? 0,
           default: true,
           // forced: true,
-          languageCodeISO6392: subtitleStream.languageCodeISO6392,
+          languageCodeISO6392:
+            subtitleStream.languageCodeISO6392 ?? subtitleStream.language,
           // programVersionId: versionId,
           profile: null,
           pixelFormat: null,
