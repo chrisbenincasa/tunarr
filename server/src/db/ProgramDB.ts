@@ -327,10 +327,18 @@ export class ProgramDB implements IProgramDB {
       const res = await this.drizzleDB.query.program.findMany({
         where: (fields, { inArray }) => inArray(fields.uuid, idChunk),
         with: {
-          album: true,
+          album: {
+            with: {
+              artwork: true,
+            },
+          },
           artist: true,
           season: true,
-          show: true,
+          show: {
+            with: {
+              artwork: true,
+            },
+          },
           externalIds: true,
           artwork: true,
         },

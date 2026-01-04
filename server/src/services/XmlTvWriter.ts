@@ -228,30 +228,45 @@ export class XmlTvWriter {
         }
       }
 
-      const query: string[] = [];
       const useShowPoster =
         this.settingsDB.xmlTvSettings().useShowPoster ?? false;
-      if (program.type === 'episode' && useShowPoster) {
-        query.push(`useShowPoster=${useShowPoster}`);
-      }
-      let idToUse = program.uuid;
-      if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
-        idToUse = program.album.uuid;
+
+      let url: string;
+      if (
+        useShowPoster &&
+        program.type === 'episode' &&
+        program.show?.artwork?.some((art) => art.artworkType === 'poster')
+      ) {
+        const showId = program.show?.uuid ?? program.tvShowUuid;
+        url = `{{host}}/api/programs/${showId}/artwork/poster`;
+      } else if (
+        program.type === 'episode' &&
+        program.artwork?.some((art) => art.artworkType === 'poster')
+      ) {
+        url = `{{host}}/api/programs/${program.uuid}/artwork/poster`;
+      } else if (
+        program.type === 'track' &&
+        program.album?.artwork?.some((art) => art.artworkType === 'poster')
+      ) {
+        url = `{{host}}/api/programs/${program.album?.uuid ?? program.albumUuid}/artwork/poster`;
+      } else if (program.artwork?.some((art) => art.artworkType === 'poster')) {
+        url = `{{host}}/api/programs/${program.uuid}/artwork/poster`;
+      } else {
+        // TODO: Remove this case when we consolidate all API endppoints for posters / thumbs
+        const query: string[] = [];
+        if (program.type === 'episode' && useShowPoster) {
+          query.push(`useShowPoster=${useShowPoster}`);
+        }
+        let idToUse = program.uuid;
+        if (program.type === 'track' && isNonEmptyString(program.album?.uuid)) {
+          idToUse = program.album.uuid;
+        }
+
+        url = `{{host}}/api/programs/${idToUse}/thumb?${query.join('&amp;')}`;
       }
 
-      partial.image = [
-        {
-          _value: `{{host}}/api/programs/${idToUse}/thumb?${query.join(
-            '&amp;',
-          )}`,
-          size: 3,
-        },
-      ];
-      partial.icon = [
-        {
-          src: `{{host}}/api/programs/${idToUse}/thumb?${query.join('&amp;')}`,
-        },
-      ];
+      partial.image = [{ _value: url, size: 3 }];
+      partial.icon = [{ src: url }];
     }
 
     return partial;

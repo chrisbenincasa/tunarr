@@ -629,60 +629,6 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           .exhaustive();
         return res.send(result);
       }
-
-      // if (grouping.type === 'album' || grouping.type === 'season') {
-      //   const { total, results } = await req.serverCtx.programDB.getChildren(
-      //     req.params.id,
-      //     grouping.type,
-      //     req.query,
-      //   );
-      //   const result = seq.collect(results, (program) =>
-      //     req.serverCtx.programConverter.programDaoToContentProgram(
-      //       program,
-      //       program.externalIds,
-      //     ),
-      //   );
-
-      //   return res.status(405).send();
-      //   return res.send({
-      //     total,
-      //     result: {
-      //       type: grouping.type === 'album' ? 'track' : 'episode',
-      //       programs: result,
-      //     },
-      //     size: result.length,
-      //   });
-      // } else if (grouping.type === 'artist') {
-      //   const { total, results } = await req.serverCtx.programDB.getChildren(
-      //     req.params.id,
-      //     grouping.type,
-      //     req.query,
-      //   );
-      //   const result = results.map((program) =>
-      //     req.serverCtx.programConverter.programGroupingDaoToDto(program),
-      //   );
-      //   return res.send({
-      //     total,
-      //     result: { type: 'album', programs: result },
-      //     size: result.length,
-      //   });
-      // } else if (grouping.type === 'show') {
-      //   const { total, results } = await req.serverCtx.programDB.getChildren(
-      //     req.params.id,
-      //     grouping.type,
-      //     req.query,
-      //   );
-      //   const result = results.map((program) =>
-      //     req.serverCtx.programConverter.programGroupingDaoToDto(program),
-      //   );
-      //   return res.send({
-      //     total,
-      //     result: { type: 'season', programs: result },
-      //     size: result.length,
-      //   });
-      // }
-
-      // return res.status(400).send();
     },
   );
 

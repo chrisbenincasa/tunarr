@@ -265,6 +265,8 @@ export class LocalMovieScanner extends FileSystemScanner {
       this.logger.trace('Existing folder %s changed, scanning', fullPath);
     }
 
+    this.logger.debug('Scanning local folder %s for movies', fullPath);
+
     for (const videoFile of videoFiles) {
       const fullVideoFilePath = path.join(videoFile.parentPath, videoFile.name);
       const result = await this.handleVideoFile(
@@ -459,7 +461,10 @@ export class LocalMovieScanner extends FileSystemScanner {
       directors,
       studios: movieNfo.studio ? [{ name: movieNfo.studio }] : [],
       genres: movieNfo.genre?.map((g) => ({ name: g })) ?? [],
-      writers: movieNfo.credits?.map((c) => ({ name: typeof c === 'string' ? c : c['#text'] })) ?? [],
+      writers:
+        movieNfo.credits?.map((c) => ({
+          name: typeof c === 'string' ? c : c['#text'],
+        })) ?? [],
       artwork: [], // Added later
       state: 'ok',
     };
