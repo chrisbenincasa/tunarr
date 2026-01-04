@@ -126,6 +126,8 @@ export class FfprobeStreamDetails
       ),
       (stream) => {
         const lang = stream.tags?.['language'];
+        const validLang =
+          lang && LanguageService.isValidLanguageCode(lang) ? lang : undefined;
         return {
           type: 'embedded',
           codec: stream.codec_name,
@@ -133,10 +135,10 @@ export class FfprobeStreamDetails
           default: stream.disposition?.default === 1,
           forced: stream.disposition?.forced === 1,
           sdh: stream.disposition?.hearing_impaired === 1,
-          language:
-            lang && LanguageService.isValidLanguageCode(lang)
-              ? lang
-              : undefined,
+          language: validLang,
+          languageCodeISO6392: validLang
+            ? LanguageService.getAlpha3TCode(validLang)
+            : undefined,
         } satisfies SubtitleStreamDetails;
       },
     );
