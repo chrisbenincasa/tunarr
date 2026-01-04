@@ -70,8 +70,8 @@ Fields available for search:
 | `video_width` | `number` | Video width dimension in pixels | `1920` |
 | `video_bit_depth` | `number` | Video pixel bit depth | `10` |
 | `audio_channels` | `number` | Whole number audio channels | `2`, `5.1` => `6` | 
-| `audio_language` | `string` | Audio language (ISO 639-2), this looks at all available audio languages for the movie/shows | `eng`, `spa` |
-| `subtitle_language` | `string` | Subtitle languages (ISO 639-2) | `eng` | 
+| `audio_language` | `string` | Audio language (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)), this looks at all available audio languages for the movie/shows | `eng`, `spa` |
+| `subtitle_language` | `string` | Subtitle languages (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)) | `eng` | 
 | `release_year` | `number` | Program release year | `1990` |
 | `release_date` | `date` | Program's original release date | `1990-12-05` (`YYYY-MM-DD` or `YYYYMMDD`) |
 | `show_title` | `string` | Title of the show a program belongs to (only applicable to episodes) | 30 Rock |
