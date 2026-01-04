@@ -447,4 +447,48 @@ describe('parsedSearchToRequest', () => {
       } satisfies SearchFilter);
     });
   });
+
+  test('handles audio_language mapping', () => {
+    const clause = {
+      type: 'single_query',
+      field: 'audio_language',
+      op: '=',
+      value: 'eng',
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(clause);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'audioLanguages',
+        name: '',
+        op: '=',
+        type: 'string',
+        value: ['eng'],
+      },
+    } satisfies SearchFilter);
+  });
+
+  test('handles subtitle_language mapping', () => {
+    const clause = {
+      type: 'single_query',
+      field: 'subtitle_language',
+      op: '=',
+      value: 'fra',
+    } satisfies SearchClause;
+
+    const request = parsedSearchToRequest(clause);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: 'subtitleLanguages',
+        name: '',
+        op: '=',
+        type: 'string',
+        value: ['fra'],
+      },
+    } satisfies SearchFilter);
+  });
 });
