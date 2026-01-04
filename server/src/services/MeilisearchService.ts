@@ -3,6 +3,7 @@ import {
   FindChild,
   tag,
   Tag,
+  MediaStream,
   TerminalProgram,
   TupleToUnion,
 } from '@tunarr/types';
@@ -1406,16 +1407,18 @@ export class MeilisearchService implements ISearchService {
   }
 
   private getUniqueStreamLanguages(
-    streams: { streamType: string; languageCodeISO6392?: string | null }[] | undefined,
+    streams: {
+      streamType: MediaStream['streamType'];
+      languageCodeISO6392?: string | null;
+    }[] | undefined,
     type: 'audio' | 'subtitles',
   ): string[] {
-    if (!streams) return [];
     return uniq(
-      streams
-        .filter(
-          (s) => s.streamType === type && isNonEmptyString(s.languageCodeISO6392),
-        )
-        .map((s) => s.languageCodeISO6392!),
+      seq.collect(streams, (s) =>
+        s.streamType === type && isNonEmptyString(s.languageCodeISO6392)
+          ? s.languageCodeISO6392
+          : undefined,
+      ),
     );
   }
 
