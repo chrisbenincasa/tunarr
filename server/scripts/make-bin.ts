@@ -149,9 +149,9 @@ for (const arch of args.target) {
         `Downloading meilisearch (platform ${nodePlatform}, arch ${archString})`,
       );
       const meilisearchBinaryPath = await grabMeilisearch(
+        `./bin/meilisearch-${arch}`,
         nodePlatform,
         archString,
-        `./bin/meilisearch-${arch}`,
       );
       if (!meilisearchBinaryPath) {
         throw new Error('Could not download Meilisearch binary');

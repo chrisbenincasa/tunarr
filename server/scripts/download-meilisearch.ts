@@ -25,12 +25,12 @@ function getMeilisearchDownloadUrl(
   return format(meilisearchDownloadFmt, version, platform, arch);
 }
 
-const outPath = './bin/meilisearch';
+const DefaultOutPath = './bin/meilisearch';
 const wantedVersion = serverPackage.meilisearch.version;
 
-async function hasExecutePermission() {
+async function hasExecutePermission(targetPath: string) {
   try {
-    const stats = await fs.stat(outPath);
+    const stats = await fs.stat(targetPath);
     const mode = stats.mode;
 
     // Check for execute permission for the owner
@@ -57,22 +57,22 @@ async function hasExecutePermission() {
   }
 }
 
-async function addExecPermission() {
+async function addExecPermission(targetPath: string) {
   try {
-    const stat = await fs.stat(outPath);
+    const stat = await fs.stat(targetPath);
     const currentMode = stat.mode;
-    await fs.chmod(outPath, currentMode | 0o100);
+    await fs.chmod(targetPath, currentMode | 0o100);
   } catch (e) {
     console.error(e, 'Error while trying to chmod +x meilisearch binary');
   }
 }
 
-async function needsToDownloadNewBinary() {
-  const exists = await fileExists(outPath);
+async function needsToDownloadNewBinary(targetPath: string) {
+  const exists = await fileExists(targetPath);
   let shouldDownload = !exists;
   if (exists) {
     // check version against package
-    const stdout = execSync(`${outPath} --version`).toString('utf-8').trim();
+    const stdout = execSync(`${targetPath} --version`).toString('utf-8').trim();
     const extractedVersionMatch = /meilisearch\s*(\d+\.\d+\.\d+).*/.exec(
       stdout,
     );
@@ -85,14 +85,14 @@ async function needsToDownloadNewBinary() {
         console.info(
           'Skipping meilisearch download. Already have right version',
         );
-        const hasExec = await hasExecutePermission();
+        const hasExec = await hasExecutePermission(targetPath);
         if (hasExec) {
           console.debug('meilisearch has execute permissions. Woohoo!');
         } else {
           console.warn(
             'meilisearch does not have execute permissions. Attempting to add them',
           );
-          await addExecPermission();
+          await addExecPermission(targetPath);
         }
       } else {
         shouldDownload = true;
@@ -112,25 +112,23 @@ async function copyToTarget(targetPath: string) {
   if (!(await fileExists(dir))) {
     await fs.mkdir(dir, { recursive: true });
   }
-  await fs.cp(outPath, targetPath);
+  await fs.cp(DefaultOutPath, targetPath);
 }
 
 export async function grabMeilisearch(
+  targetPath: string,
   platform: NodeJS.Platform = os.platform(),
   arch: string = os.arch(),
-  targetPath?: string,
 ) {
-  const needsDownload = await needsToDownloadNewBinary();
+  const needsDownload = await needsToDownloadNewBinary(targetPath);
 
   if (!needsDownload) {
     console.debug(
       'Current meilisearch binary version already at version ' + wantedVersion,
     );
-    if (targetPath) {
-      await copyToTarget(targetPath);
-    }
+    // await copyToTarget(targetPath);
 
-    return outPath;
+    return targetPath;
   }
 
   console.info(
@@ -179,23 +177,23 @@ export async function grabMeilisearch(
     responseType: 'stream',
   });
 
-  await pipeline(outStream.data, createWriteStream(outPath));
+  await pipeline(outStream.data, createWriteStream(targetPath));
 
-  console.log(`Successfully wrote meilisearch binary to ${outPath}`);
+  console.log(`Successfully wrote meilisearch binary to ${targetPath}`);
 
-  await addExecPermission();
+  await addExecPermission(targetPath);
 
   console.log('Successfully set exec permissions on new binary');
 
-  if (targetPath) {
-    await copyToTarget(targetPath);
-    console.log(
-      'Successfully copied meilisearch to configured target: ' + targetPath,
-    );
-    return targetPath;
-  }
+  // if (targetPath) {
+  //   await copyToTarget(targetPath);
+  //   console.log(
+  //     'Successfully copied meilisearch to configured target: ' + targetPath,
+  //   );
+  //   return targetPath;
+  // }
 
-  return outPath;
+  return targetPath;
 }
 
 if (process.argv[1] === import.meta.filename) {
@@ -211,6 +209,7 @@ if (process.argv[1] === import.meta.filename) {
     })
     .option('outPath', {
       type: 'string',
+      default: DefaultOutPath,
     })
     .parseAsync();
 
@@ -220,8 +219,8 @@ if (process.argv[1] === import.meta.filename) {
     args.arch,
   );
   await grabMeilisearch(
+    args.outPath,
     args.platform as NodeJS.Platform,
     args.arch,
-    args.outPath,
   );
 }
