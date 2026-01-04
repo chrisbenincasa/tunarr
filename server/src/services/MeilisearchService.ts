@@ -498,13 +498,27 @@ export class MeilisearchService implements ISearchService {
         }
 
         let executablePath: Maybe<string>;
-        const binaryName =
-          os.platform() === 'win32' ? 'meilisearch.exe' : 'meilisearch';
-        const testPaths = [
-          getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH),
+        // Support the following filenames:
+        // 1. meilisearch-{platform}-{arch}(.exe)?
+        // 2. meilisearch(.exe)?
+        // Then search for these names against these paths:
+        // 1. the env var value
+        // 2. cwd / bin / bin_name (docker, etc)
+        // 3. cwd / bin_name (macOS bundle)
+        const baseNames = [
+          `meilisearch-${os.platform()}-${os.arch()}`,
+          'meilisearch',
+        ];
+        const binaryNames = baseNames.map((n) =>
+          os.platform() === 'win32' ? `${n}.exe` : n,
+        );
+        const envPath = getEnvVar(TUNARR_ENV_VARS.MEILISEARCH_PATH);
+        const testPaths = binaryNames.flatMap((binaryName) => [
+          envPath,
+          isNonEmptyString(envPath) ? path.join(envPath, binaryName) : null,
           path.join(process.cwd(), 'bin', binaryName),
           path.join(process.cwd(), binaryName),
-        ];
+        ]);
         for (const testPath of testPaths) {
           if (!testPath) {
             continue;

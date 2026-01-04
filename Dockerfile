@@ -72,6 +72,7 @@ COPY pnpm-workspace.yaml pnpm-workspace.yaml
 COPY turbo.json turbo.json
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm turbo clean
 ENTRYPOINT [ "pnpm" ]
 CMD [ "turbo", "dev" ]
 
@@ -98,6 +99,7 @@ cp .env web/.env
 EOF
 # Install deps
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm turbo clean
 # Bundle web in a separate task
 RUN NODE_OPTIONS=--max-old-space-size=32768 pnpm turbo bundle --filter=@tunarr/web
 RUN echo "Building target: ${exec_target}"
@@ -113,5 +115,5 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 # user, such as volume mapping their legacy DBs, while not interrupting the
 # other assumptions that Tunarr makes about its working directory
 RUN mkdir /tunarr/bin
-RUN ln -s /tunarr/server/bin/meilisearch /tunarr/bin/meilisearch
+RUN ln -s /tunarr/server/bin/meilisearch-${exec_target} /tunarr/bin/meilisearch
 RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr

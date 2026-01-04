@@ -5,6 +5,7 @@ import NodeCache from 'node-cache';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { KEYS } from '../types/inject.ts';
+import { Result } from '../types/result.ts';
 import { Maybe } from '../types/util.ts';
 import { cacheGetOrSet } from '../util/cache.ts';
 import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
@@ -58,7 +59,7 @@ export class SystemDevicesService {
           if (!(await fileExists('/dev/dri'))) {
             if (isDocker()) {
               this.logger.warn(
-                'Could not find /dev/dri directory. Did you passed this in as a device when starting your container?',
+                'Could not find /dev/dri directory. Did you pass this in as a device when starting your container?',
               );
             } else {
               this.logger.error(
@@ -91,14 +92,19 @@ export class SystemDevicesService {
       async () => {
         try {
           const processHelper = new ChildProcessHelper();
+          const vaInfoStdoutResult = await Result.attemptAsync(() =>
+            processHelper.getStdout('which', ['vainfo'], {
+              isPath: false,
+            }),
+          );
+          if (vaInfoStdoutResult.isFailure()) {
+            this.logger.warn(
+              'Unable to locate vainfo on system. May not be able to auto-detect hardware acceleration capabilities',
+            );
+            return;
+          }
           const vaInfoPath = first(
-            (
-              await processHelper.getStdout('which', ['vainfo'], {
-                isPath: false,
-              })
-            )
-              .split('\n')
-              .map(trim),
+            vaInfoStdoutResult.get().split('\n').map(trim),
           );
 
           if (!isNonEmptyString(vaInfoPath)) {

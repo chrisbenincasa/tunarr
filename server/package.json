@@ -13,7 +13,7 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
     "bundle": "dotenv -- tsx scripts/bundle.ts",
     "make-bin": "dotenv -- tsx scripts/make-bin.ts",
-    "clean": "rimraf --glob ./build/ ./dist/ ./bin/tunar*",
+    "clean": "rimraf --glob ./build/ ./dist/ ./bin/*",
     "debug": "dotenv -e .env.development -v NODE_ENV=development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-wait ./src",
     "dev": "dotenv -e .env.development -v NODE_ENV=development -- tsx watch --heap-snapshot-on-oom --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
