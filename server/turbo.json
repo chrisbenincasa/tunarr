@@ -1,41 +1,74 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "extends": ["//"],
+  "extends": [
+    "//"
+  ],
   "tasks": {
     "build": {},
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "bundle": {
-      "inputs": ["./scripts/bundle.ts", "./src/**"],
-      "dependsOn": ["^build", "@tunarr/web#bundle"],
-      "outputs": ["dist/**"]
+      "inputs": [
+        "./scripts/bundle.ts",
+        "./src/**"
+      ],
+      "dependsOn": [
+        "^build",
+        "@tunarr/web#bundle"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "build-dev": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "make-bin": {
       "cache": false,
-      "dependsOn": ["@tunarr/web#bundle", "bundle"],
-      "outputs": ["bin/**"]
+      "dependsOn": [
+        "@tunarr/web#bundle",
+        "bundle"
+      ],
+      "outputs": [
+        "bin/**"
+      ]
     },
     "lint-staged": {},
     "lint": {
-      "dependsOn": ["lint-staged"]
+      "dependsOn": [
+        "lint-staged"
+      ]
     },
     "install-meilisearch": {
-      "inputs": ["./scripts/download-meilisearch.ts"],
+      "inputs": [
+        "./scripts/download-meilisearch.ts"
+      ],
+      "dependsOn": [
+        "@tunarr/shared#build"
+      ],
       "cache": false
     },
     "dev": {
-      "dependsOn": ["install-meilisearch", "@tunarr/shared#build"],
+      "dependsOn": [
+        "install-meilisearch",
+        "@tunarr/shared#build"
+      ],
       "persistent": true,
       "cache": false,
       "interruptible": true
     },
     "generate-openapi": {
-      "inputs": ["./src/**"],
-      "dependsOn": ["^build"]
+      "inputs": [
+        "./src/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }
