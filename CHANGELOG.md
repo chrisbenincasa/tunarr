@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.13](https://github.com/chrisbenincasa/tunarr/compare/v1.0.12...v1.0.13) (2026-01-04)
+
+
+### Bug Fixes
+
+* add missing build dependency for meilisearch install ([#1577](https://github.com/chrisbenincasa/tunarr/issues/1577)) ([a6933aa](https://github.com/chrisbenincasa/tunarr/commit/a6933aaa77293b90cbabce4450990a37c8dc1ec9))
+* populate subtitle language metadata from ffprobe ([#1579](https://github.com/chrisbenincasa/tunarr/issues/1579)) ([d129446](https://github.com/chrisbenincasa/tunarr/commit/d129446ce58e6e95e84a468a8b9432a30019c38e))
+* use proper image URL for locally scanned libraries in EPG ([d541cc5](https://github.com/chrisbenincasa/tunarr/commit/d541cc52710d9eae1b8d092d5e8b94fe087a47df))
+
 ## [1.0.12](https://github.com/chrisbenincasa/tunarr/compare/v1.0.11...v1.0.12) (2026-01-02)
 
 
