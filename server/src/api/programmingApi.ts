@@ -63,15 +63,14 @@ import { match } from 'ts-pattern';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
+import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 import { globalOptions } from '../globals.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
-
-import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';
-import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 
 const LookupExternalProgrammingSchema = z.object({
   externalId: z

@@ -164,6 +164,7 @@ export const EditTimeSlotDialogContent = ({
             direction: 'asc',
             title: opt?.description ?? '',
             show: null,
+            seasonFilter: [],
           };
         })
         .with('smart-collection', () => {
