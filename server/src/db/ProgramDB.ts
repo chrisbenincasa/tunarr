@@ -10,7 +10,11 @@ import type {
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
-import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
+import {
+  JellyfinTaskQueue,
+  PlexTaskQueue,
+  TaskQueue,
+} from '@/tasks/TaskQueue.js';
 import {
   SaveJellyfinProgramExternalIdsTask,
   type SaveJellyfinProgramExternalIdsTaskFactory,
@@ -257,6 +261,8 @@ export class ProgramDB implements IProgramDB {
     @inject(KEYS.ProgramDaoMinterFactory)
     private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
     @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
+    @inject(KEYS.PlexTaskQueue) private plexTaskQueue: TaskQueue,
+    @inject(KEYS.JellyfinTaskQueue) private jellyfinTaskQueue: TaskQueue,
   ) {
     this.timer = new Timer(this.logger);
   }

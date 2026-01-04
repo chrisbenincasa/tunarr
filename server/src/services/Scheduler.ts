@@ -7,7 +7,7 @@ import type { Task, TaskId, TaskOutputType } from '@/tasks/Task.js';
 import { typedProperty } from '@/types/path.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
-import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
+import { scheduleRuleToCronString } from '@/util/schedulingUtil.js';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { interfaces } from 'inversify';
@@ -163,7 +163,7 @@ export function scheduleBackupJobs(
       let cronSchedule: string;
       switch (config.schedule.type) {
         case 'every': {
-          cronSchedule = parseEveryScheduleRule(config.schedule);
+          cronSchedule = scheduleRuleToCronString(config.schedule);
           break;
         }
         case 'cron': {

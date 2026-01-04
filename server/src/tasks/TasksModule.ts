@@ -42,6 +42,7 @@ import type {
   SubtitleExtractorTaskRequest,
 } from './SubtitleExtractorTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
+import { TaskQueue } from './TaskQueue.ts';
 
 export type ReconcileProgramDurationsTaskFactory = (
   request?: ReconcileProgramDurationsTaskRequest,
@@ -168,6 +169,22 @@ const TasksModule = new ContainerModule((bind) => {
   );
 
   bind<RefreshMediaSourceLibraryTask>(RefreshMediaSourceLibraryTask).toSelf();
+
+  bind(KEYS.PlexTaskQueue).toConstantValue(
+    new TaskQueue('PlexTaskQueue', {
+      concurrency: 2,
+      intervalCap: 5,
+      interval: 2000,
+    }),
+  );
+
+  bind(KEYS.JellyfinTaskQueue).toConstantValue(
+    new TaskQueue('JellyfinTaskQueue', {
+      concurrency: 2,
+      intervalCap: 5,
+      interval: 2000,
+    }),
+  );
 });
 
 export { TasksModule };
