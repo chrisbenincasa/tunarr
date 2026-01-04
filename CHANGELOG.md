@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.14](https://github.com/chrisbenincasa/tunarr/compare/v1.0.13...v1.0.14) (2026-01-04)
+
+
+### Bug Fixes
+
+* search for arch-specific meilisearch binary ([bb81409](https://github.com/chrisbenincasa/tunarr/commit/bb81409493f3e929d60c354ef4b5fe280b184895)), closes [#1561](https://github.com/chrisbenincasa/tunarr/issues/1561)
+
 ## [1.0.13](https://github.com/chrisbenincasa/tunarr/compare/v1.0.12...v1.0.13) (2026-01-04)
 
 

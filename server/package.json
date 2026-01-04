@@ -1,6 +1,6 @@
 {
   "name": "@tunarr/server",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Create LiveTV channels from your Plex media",
   "license": "Zlib",
   "private": true,
