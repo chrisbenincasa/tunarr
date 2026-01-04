@@ -114,18 +114,9 @@ export class SubtitleStreamPicker {
           continue;
         }
 
-        // TODO: check if embedded text based are extracted and continue searching
-        // for a fallback if they are not.
-        if (!isImageBasedSubtitle(stream.codec) && stream.type === 'embedded') {
-          const streamWithUpdatedPath =
-            await this.getSubtitleDetailsWithExtractedPath(lineupItem, stream);
-          if (streamWithUpdatedPath) {
-            return streamWithUpdatedPath;
-          }
-
-          continue;
-        }
-
+        // For embedded text-based subtitles, we can burn them directly from
+        // the source file using ffmpeg's subtitles filter with stream index.
+        // No pre-extraction is required.
         return stream;
       }
     }
