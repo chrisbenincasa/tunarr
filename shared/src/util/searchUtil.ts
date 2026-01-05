@@ -321,8 +321,12 @@ export const virtualFieldToIndexField: Record<string, string> = {
   show_title: 'grandparent.title',
   show_tag: 'grandparent.tag',
   grandparent_genre: 'grandparent.genres',
+  video_bit_depth: 'videoBitDepth',
+  video_codec: 'videoCodec',
   video_height: 'videoHeight',
   video_width: 'videoWidth',
+  audio_codec: 'audioCodec',
+  audio_channels: 'audioChannels',
 };
 
 function normalizeReleaseDate(value: string) {
