@@ -2,11 +2,13 @@ name: Build & Push Docker
 
 on:
   workflow_dispatch:
+  release:
+    types: [created]
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
   schedule:
-    - cron: '0 13-21/2 * * *' # every 2 hours during US Eastern daytime
+    - cron: "0 13-21/2 * * *" # every 2 hours during US Eastern daytime
 
 jobs:
   typecheck:
@@ -24,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.0
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
@@ -43,13 +45,13 @@ jobs:
       max-parallel: 2
       matrix:
         builds:
-          - base_tag: '7.1.1'
+          - base_tag: "7.1.1"
             platform: linux/amd64
-            suffix: ''
+            suffix: ""
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: '7.1.1'
+          - base_tag: "7.1.1"
             platform: linux/arm64
             suffix: -arm64
             target: linux-arm64

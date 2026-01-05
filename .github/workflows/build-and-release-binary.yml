@@ -2,6 +2,8 @@ name: Build & Publish Binaries
 
 on:
   workflow_dispatch:
+  release:
+    types: [created]
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
