@@ -1,10 +1,6 @@
 name: Release It (test)
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - dev
 
 permissions:
   contents: read # for checkout
