@@ -1,5 +1,7 @@
 on:
   workflow_dispatch:
+  push:
+    branches: [main, dev]
 
 permissions:
   contents: write
@@ -12,8 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: release-please-oss/release-please-action@v5.0.0
-        id: release
+        if: github.ref == 'refs/heads/main'
+        id: release-main
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release/release-please-config.json
           manifest-file: release/.release-please-manifest.json
+      - uses: release-please-oss/release-please-action@v5.0.0
+        if: github.ref == 'refs/heads/dev'
+        id: release-dev
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release/release-please-config-prerelease.json
+          manifest-file: release/.release-please-dev-prerelease-manifest.json
