@@ -1,6 +1,8 @@
 name: Release It (test)
 on:
   workflow_dispatch:
+  push:
+    branches: [dev]
 
 permissions:
   contents: read # for checkout
