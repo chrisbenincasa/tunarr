@@ -24,8 +24,5 @@
   "git": {
     "commitMessage": "chore: release ${version}"
   },
-  "npm": {
-    "publish": false,
-    "skipChecks": true
-  }
+  "npm": false
 }
