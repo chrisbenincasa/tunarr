@@ -64,7 +64,12 @@ export class ApiProgramConverters {
       true,
     );
     const releaseDate = parsed.isValid() ? +parsed : null;
-    const year = program.year ?? (parsed.isValid() ? parsed.year() : null);
+    const year =
+      program.year && program.year > 0
+        ? program.year
+        : parsed.isValid()
+          ? parsed.year()
+          : null;
 
     const identifiers =
       program.externalIds?.map((eid) => ({
@@ -103,7 +108,7 @@ export class ApiProgramConverters {
       state: program.state,
       uuid,
       identifiers,
-      year,
+      year: year && year > 0 ? year : null,
       title: program.title,
       duration: program.duration,
       canonicalId: program.canonicalId ?? '',
@@ -227,6 +232,11 @@ export class ApiProgramConverters {
       ? dayjs(grouping.releaseDate)
       : null;
 
+    let year = releaseDateObj?.year();
+    if (!year || year <= 0) {
+      year = grouping.year ?? undefined;
+    }
+
     const base = {
       sortTitle: '',
       mediaSourceId: mediaSource.uuid,
@@ -248,7 +258,7 @@ export class ApiProgramConverters {
       index: grouping.index ?? 0,
       uuid,
       identifiers,
-      year: releaseDateObj?.year() ?? null,
+      year: year && year > 0 ? year : null,
       canonicalId: grouping.canonicalId ?? '',
       title: grouping.title,
       summary: grouping.summary,
