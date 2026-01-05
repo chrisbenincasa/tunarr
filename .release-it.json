@@ -1,7 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/release-it/release-it/refs/heads/main/schema/release-it.json",
   "plugins": {
-    "release-it-pnpm": {},
     "@release-it/conventional-changelog": {
       "preset": {
         "name": "conventionalcommits"
@@ -24,5 +23,8 @@
   "git": {
     "commitMessage": "chore: release ${version}"
   },
-  "npm": false
+  "npm": {
+    "skipChecks": true,
+    "publish": false
+  }
 }
