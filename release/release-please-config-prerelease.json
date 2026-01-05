@@ -8,7 +8,7 @@
       "draft": false,
       "versioning": "prerelease",
       "prerelease": true,
-      "prerelease-type": "alpha",
+      "prerelease-type": "dev",
       "bootstrap-sha": "31c0ba34fd2dcf535fd3993952da0aba45bd0fa0",
       "include-v-in-tag": true,
       "include-component-in-tag": false,
