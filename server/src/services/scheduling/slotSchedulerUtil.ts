@@ -480,10 +480,17 @@ function getContentProgramIterator(
   slot: BaseMovieProgrammingSlot | BaseShowProgrammingSlot,
   random: Random,
 ) {
-  const programs = uniqBy(
+  let programs = uniqBy(
     programBySlotType.content[contentSlotId] ?? [],
     (p) => p.uuid,
   );
+
+  if (slot.type === 'show' && slot.seasonFilter.length > 0) {
+    programs = programs.filter((program) => {
+      const season = program.season?.index ?? program.seasonNumber;
+      return season && slot.seasonFilter.includes(season);
+    });
+  }
 
   switch (slot.order) {
     case 'next':

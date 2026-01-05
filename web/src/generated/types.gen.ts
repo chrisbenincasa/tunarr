@@ -3267,6 +3267,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -3362,6 +3363,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -4508,6 +4510,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
                 filler?: Array<{
@@ -5102,6 +5105,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 direction?: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -5464,6 +5468,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -5559,6 +5564,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -7106,6 +7112,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
                 filler?: Array<{
@@ -7432,6 +7439,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 direction?: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -7789,6 +7797,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -8017,6 +8026,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 show: Show | null;
                 /**
                  * A show that existed in the DB at schedule time, but no longer exists.

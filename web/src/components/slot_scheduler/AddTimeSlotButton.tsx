@@ -71,6 +71,7 @@ export const AddTimeSlotButton = ({
         type: 'show',
         showId: sortBy(opts, (opt) => opt.value)?.[0].showId,
         show: null,
+        seasonFilter: [],
       } satisfies ShowTimeSlotViewModel;
     } else if (
       optionsByType['custom-show'] &&

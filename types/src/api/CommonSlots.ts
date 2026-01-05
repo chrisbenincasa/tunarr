@@ -60,6 +60,7 @@ export type BaseMovieProgrammingSlot = z.infer<
 export const ShowProgrammingSlotSchema = z.object({
   type: z.literal('show'),
   showId: z.string(),
+  seasonFilter: z.number().array().default([]).catch([]),
   ...BaseSlotOrdering.shape,
   ...Slot.shape,
 });
