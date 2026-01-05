@@ -537,7 +537,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.2.15)(react@18.2.0))(@types/react@18.2.15)(react@18.2.0)
       '@hookform/error-message':
         specifier: ^2.0.1
-        version: 2.0.1(react-dom@18.2.0(react@18.2.0))(react-hook-form@7.65.0(react@18.2.0))(react@18.2.0)
+        version: 2.0.1(react-dom@18.2.0(react@18.2.0))(react-hook-form@7.68.0(react@18.2.0))(react@18.2.0)
       '@mui/icons-material':
         specifier: ^7.0.2
         version: 7.0.2(@mui/material@7.0.2(@emotion/react@11.14.0(@types/react@18.2.15)(react@18.2.0))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.2.15)(react@18.2.0))(@types/react@18.2.15)(react@18.2.0))(@types/react@18.2.15)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@types/react@18.2.15)(react@18.2.0)
@@ -623,8 +623,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0(react@18.2.0)
       react-hook-form:
-        specifier: ^7.63.0
-        version: 7.65.0(react@18.2.0)
+        specifier: ^7.68.0
+        version: 7.68.0(react@18.2.0)
       react-markdown:
         specifier: ^9.0.3
         version: 9.0.3(@types/react@18.2.15)(react@18.2.0)
@@ -7782,8 +7782,8 @@ packages:
     peerDependencies:
       react: '>=16.13.1'
 
-  react-hook-form@7.65.0:
-    resolution: {integrity: sha512-xtOzDz063WcXvGWaHgLNrNzlsdFgtUWcb32E6WFaGTd7kPZG3EeDusjdZfUsPwKCKVXy1ZlntifaHZ4l8pAsmw==}
+  react-hook-form@7.68.0:
+    resolution: {integrity: sha512-oNN3fjrZ/Xo40SWlHf1yCjlMK417JxoSJVUXQjGdvdRCU07NTFei1i1f8ApUAts+IVh14e4EdakeLEA+BEAs/Q==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -10525,11 +10525,11 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  '@hookform/error-message@2.0.1(react-dom@18.2.0(react@18.2.0))(react-hook-form@7.65.0(react@18.2.0))(react@18.2.0)':
+  '@hookform/error-message@2.0.1(react-dom@18.2.0(react@18.2.0))(react-hook-form@7.68.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      react-hook-form: 7.65.0(react@18.2.0)
+      react-hook-form: 7.68.0(react@18.2.0)
 
   '@humanfs/core@0.19.1': {}
 
@@ -16966,7 +16966,7 @@ snapshots:
       '@babel/runtime': 7.27.1
       react: 18.2.0
 
-  react-hook-form@7.65.0(react@18.2.0):
+  react-hook-form@7.68.0(react@18.2.0):
     dependencies:
       react: 18.2.0
 

@@ -1,13 +1,15 @@
 import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { search } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
-import type { FactedStringSearchField, SearchRequest } from '@tunarr/types/api';
+import type { FactedStringSearchField } from '@tunarr/types/api';
 import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';
 import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
+import { SearchForm } from './SearchInput.tsx';
 
 export function FacetStringValueSearchNode({
   formKey,
@@ -18,7 +20,7 @@ export function FacetStringValueSearchNode({
   formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
   library?: MediaSourceLibrary;
 }) {
-  const { control } = useFormContext<SearchRequest>();
+  const { control } = useFormContext<SearchForm>();
   const [facetSearchInputValue, setFacetSearchInputValue] = useDebounceValue(
     '',
     500,
@@ -26,7 +28,9 @@ export function FacetStringValueSearchNode({
 
   const facetQuery = useQuery({
     ...postApiProgramsFacetsByFacetNameOptions({
-      path: { facetName: field.key },
+      path: {
+        facetName: search.virtualFieldToIndexField[field.key] ?? field.key,
+      },
       query: {
         libraryId: library?.id,
         facetQuery: isNonEmptyString(facetSearchInputValue)

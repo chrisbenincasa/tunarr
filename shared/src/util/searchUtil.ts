@@ -13,9 +13,14 @@ import type {
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
-import { identity, isArray, isNumber } from 'lodash-es';
-import type { NonEmptyArray, StrictExclude, StrictOmit } from 'ts-essentials';
-import { match } from 'ts-pattern';
+import { identity, invert, isArray, isNumber } from 'lodash-es';
+import type {
+  Dictionary,
+  NonEmptyArray,
+  StrictExclude,
+  StrictOmit,
+} from 'ts-essentials';
+import { match, P } from 'ts-pattern';
 
 dayjs.extend(customParseFormat);
 
@@ -327,6 +332,12 @@ export const virtualFieldToIndexField: Record<string, string> = {
   video_width: 'videoWidth',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
+};
+
+const indexFieldToVirtualField = invert(virtualFieldToIndexField);
+
+const indexOperatorToSyntax: Dictionary<string> = {
+  contains: '~',
 };
 
 function normalizeReleaseDate(value: string) {
@@ -942,6 +953,98 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
   }
 }
 
+export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
+  return match(input)
+    .returnType<SearchFilter>()
+    .with({ type: 'op', children: [P.select()] }, (child) =>
+      normalizeSearchFilter(child),
+    )
+    .with({ type: 'op' }, (op) => ({
+      ...op,
+      children: op.children.map(normalizeSearchFilter),
+    }))
+    .with({ type: 'value', fieldSpec: { type: 'numeric' } }, (numeric) => {
+      const key: string =
+        virtualFieldToIndexField[numeric.fieldSpec.key] ??
+        numeric.fieldSpec.key;
+      const valueConverter: Converter<number> =
+        numeric.fieldSpec.key in numericFieldNormalizersByField
+          ? numericFieldNormalizersByField[
+              numeric.fieldSpec
+                .key as keyof typeof numericFieldNormalizersByField
+            ]
+          : identity;
+      if (isArray(numeric.fieldSpec.value)) {
+        return {
+          type: 'value',
+          fieldSpec: {
+            ...numeric.fieldSpec,
+            key,
+            value: [
+              valueConverter(numeric.fieldSpec.value[0]),
+              valueConverter(numeric.fieldSpec.value[1]),
+            ],
+          },
+        };
+      } else {
+        return {
+          type: 'value',
+          fieldSpec: {
+            ...numeric.fieldSpec,
+            key,
+            value: valueConverter(numeric.fieldSpec.value),
+          },
+        };
+      }
+    })
+    .with({ type: 'value', fieldSpec: { type: 'date' } }, ({ fieldSpec }) => {
+      const key: string =
+        virtualFieldToIndexField[fieldSpec.key] ?? fieldSpec.key;
+      const converter = identity;
+      if (isArray(fieldSpec.value)) {
+        return {
+          type: 'value',
+          fieldSpec: {
+            ...fieldSpec,
+            key,
+            value: [
+              converter(fieldSpec.value[0]),
+              converter(fieldSpec.value[1]),
+            ],
+          },
+        };
+      } else {
+        return {
+          type: 'value',
+          fieldSpec: {
+            ...fieldSpec,
+            key,
+            value: converter(fieldSpec.value),
+          },
+        };
+      }
+    })
+    .with(
+      {
+        type: 'value',
+        fieldSpec: { type: P.union('facted_string', 'string') },
+      },
+      ({ fieldSpec }) => {
+        const key: string =
+          virtualFieldToIndexField[fieldSpec.key] ?? fieldSpec.key;
+        return {
+          type: 'value',
+          fieldSpec: {
+            ...fieldSpec,
+            key,
+            type: 'string' as const,
+          },
+        };
+      },
+    )
+    .exhaustive();
+}
+
 export function searchFilterToString(
   input: SearchFilter,
   depth: number = 0,
@@ -954,13 +1057,24 @@ export function searchFilterToString(
       if (depth === 0) {
         return children.join(` ${input.op.toUpperCase()} `);
       }
+      if (children.length === 0) {
+        return '';
+      }
+      if (children.length === 1) {
+        return children[0];
+      }
       // Wrap in parents for higher depth
       return `(${children.join(` ${input.op.toUpperCase()} `)})`;
     }
     case 'value': {
       let valueString: string;
       if (isNumber(input.fieldSpec.value)) {
-        valueString = input.fieldSpec.value.toString();
+        valueString =
+          input.fieldSpec.type === 'date'
+            ? dayjs(input.fieldSpec.value).format('YYYY-MM-DD')
+            : input.fieldSpec.value.toString();
+      } else if (input.fieldSpec.value.length === 0) {
+        return '';
       } else if (input.fieldSpec.value.length === 1) {
         const value = input.fieldSpec.value[0];
         let repr: string;
@@ -981,7 +1095,11 @@ export function searchFilterToString(
         }
         valueString = `[${components.join(', ')}]`;
       }
-      return `${input.fieldSpec.key} ${input.fieldSpec.op} ${valueString}`;
+      const key =
+        indexFieldToVirtualField[input.fieldSpec.key] ?? input.fieldSpec.key;
+      const op =
+        indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
+      return `${key} ${op} ${valueString}`;
     }
   }
 }
