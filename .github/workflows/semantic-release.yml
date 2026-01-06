@@ -43,7 +43,7 @@ jobs:
         id: semantic
         uses: chrisbenincasa/semantic-release-action@e0b75dd3b943e75f6bea693cc69caf82c26c0571
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Do something when a new release published
         if: steps.semantic.outputs.new_release_published == 'true'
