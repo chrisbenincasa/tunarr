@@ -13765,6 +13765,20 @@ export type GetApiDebugPlexStreamDetailsResponses = {
     200: unknown;
 };
 
+export type GetApiDebugHeapData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/debug/heap';
+};
+
+export type GetApiDebugHeapResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
 export type GetApiDebugHelpersPlayingAtData = {
     body?: never;
     path?: never;
@@ -14248,22 +14262,6 @@ export type PostApiDebugPlexByProgramIdUpdateExternalIdsResponses = {
     200: unknown;
 };
 
-export type GetApiDebugHelpersPromoteLineupData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-    };
-    url: '/api/debug/helpers/promote_lineup';
-};
-
-export type GetApiDebugHelpersPromoteLineupResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
 export type GetApiDebugChannelsReloadAllLineupsData = {
     body?: never;
     path?: never;
@@ -14337,6 +14335,24 @@ export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData =
 };
 
 export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsData = {
+    body?: never;
+    path: {
+        mediaSourceId: string;
+    };
+    query?: {
+        pathFilter?: string;
+    };
+    url: '/api/debug/media_sources/{mediaSourceId}/scan-collections';
+};
+
+export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsResponses = {
     /**
      * Default Response
      */

@@ -36,6 +36,7 @@ import type {
   PlexTvShow as ApiPlexTvShow,
   PlexActor,
   PlexJoinItem,
+  PlexLibraryCollection,
   PlexMediaAudioStream,
   PlexMediaContainerMetadata,
   PlexMediaContainerResponse,
@@ -45,6 +46,7 @@ import type {
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import {
+  isTerminalItem,
   MakePlexMediaContainerResponseSchema,
   PlexContainerStatsSchema,
   type PlexDvr,
@@ -391,10 +393,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     );
   }
 
-  private async *iterateChildItems<
-    OutType,
-    ItemType extends PlexMediaNoCollectionOrPlaylist,
-  >(
+  private async *iterateChildItems<OutType, ItemType extends PlexMedia>(
     libraryId: string,
     schema: z.ZodType<PlexMetadataResponse<ItemType>>,
     converter: (
@@ -429,7 +428,11 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       const responseLibraryId = mediaContainer.librarySectionID?.toString();
       for (const item of mediaContainer.Metadata ?? []) {
         const externalLibraryId =
-          item.librarySectionID?.toString() ?? responseLibraryId ?? libraryId;
+          (isTerminalItem(item)
+            ? item.librarySectionID?.toString()
+            : undefined) ??
+          responseLibraryId ??
+          libraryId;
         const library = this.findLibraryFromPlexMedia(item, externalLibraryId);
 
         if (library.isFailure()) {
@@ -532,20 +535,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       }
 
       const collections = (data.MediaContainer.Metadata ?? []).map(
-        (collection) =>
-          ({
-            type: 'collection',
-            externalId: collection.ratingKey,
-            libraryId: library.uuid,
-            mediaSourceId: this.options.mediaSource.uuid,
-            title: collection.title,
-            uuid: v4(),
-            sourceType: MediaSourceType.Plex,
-            childCount: collection.childCount,
-            childType: inConstArr(ProgramTypes, collection.subtype)
-              ? (collection.subtype as Collection['childType'])
-              : undefined,
-          }) satisfies Collection,
+        (collection) => this.plexCollectionInject(library, collection),
       );
 
       return this.makeSuccessResult({
@@ -557,6 +547,73 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         offset: paging?.offset,
       });
     });
+  }
+
+  private plexCollectionInject(
+    library: MediaSourceLibraryOrm,
+    collection: PlexLibraryCollection,
+  ): Collection {
+    return {
+      type: 'collection',
+      externalId: collection.ratingKey,
+      libraryId: library.uuid,
+      mediaSourceId: this.options.mediaSource.uuid,
+      title: collection.title,
+      uuid: v4(),
+      sourceType: MediaSourceType.Plex,
+      childCount: collection.childCount,
+      childType: inConstArr(ProgramTypes, collection.subtype)
+        ? (collection.subtype as Collection['childType'])
+        : undefined,
+    };
+  }
+
+  getAllLibraryCollections(libraryId: string): AsyncGenerator<Collection> {
+    const library = this.options.mediaSource.libraries.find(
+      (lib) => lib.externalKey === libraryId,
+    );
+    if (!library) {
+      throw new Error(
+        `Could not find matching library in DB for key = ${libraryId}`,
+      );
+    }
+
+    return this.iterateChildItems(
+      libraryId,
+      MakePlexMediaContainerResponseSchema(PlexLibraryCollectionSchema),
+      (item, library) =>
+        Result.success(this.plexCollectionInject(library, item)),
+      50,
+      `/library/sections/${libraryId}/collections`,
+    );
+  }
+
+  getCollectionItems(
+    libraryId: string,
+    collectionId: string,
+  ): AsyncGenerator<ProgramOrFolder> {
+    return this.iterateChildItems(
+      libraryId,
+      PlexMediaContainerResponseSchema,
+      (item, library) =>
+        match(item)
+          .with({ type: 'movie' }, (movie) =>
+            this.plexMovieInjection(movie, library),
+          )
+          .with({ type: 'show' }, (show) =>
+            this.plexShowInjection(show, library),
+          )
+          .with({ type: 'artist' }, (artist) =>
+            this.plexMusicArtistInjection(artist, library),
+          )
+          .otherwise((x) =>
+            Result.failure(
+              `Found collection with unsupported child: ${JSON.stringify(x)}`,
+            ),
+          ),
+      50,
+      `/library/collections/${collectionId}/children`,
+    );
   }
 
   async getLibraryCount(libraryId: string) {
@@ -726,14 +783,16 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   }
 
   private findLibraryFromPlexMedia(
-    media: PlexMediaNoCollectionOrPlaylist,
+    media: PlexMedia,
     libraryId?: string,
   ): QueryResult<MediaSourceLibraryOrm> {
-    libraryId ??= media.librarySectionID?.toString();
+    libraryId ??= isTerminalItem(media)
+      ? media.librarySectionID?.toString()
+      : undefined;
     if (!isNonEmptyString(libraryId)) {
       return this.makeErrorResult(
         'generic_request_error',
-        `Missing librarySectionID for Plex show ${media.ratingKey}`,
+        `Missing librarySectionID for Plex ${media.type} ID = ${media.ratingKey}`,
       );
     }
 

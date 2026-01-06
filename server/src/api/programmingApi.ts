@@ -294,6 +294,11 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
               studio: true,
             },
           },
+          tags: {
+            with: {
+              tag: true,
+            },
+          },
         },
       });
 

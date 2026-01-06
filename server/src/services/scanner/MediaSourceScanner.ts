@@ -42,11 +42,19 @@ export type GenericMediaSourceScannerFactory = (
   libraryType: MediaLibraryType,
 ) => GenericMediaSourceScanner;
 
+export abstract class BaseMediaSourceScanner<ApiClientTypeT, ScanRequestT> {
+  abstract scan(req: ScanRequestT): Promise<void>;
+
+  protected abstract getApiClient(
+    mediaSource: MediaSourceWithRelations,
+  ): Promise<ApiClientTypeT>;
+}
+
 export abstract class MediaSourceScanner<
   MediaLibraryTypeT extends MediaLibraryType,
   MediaSourceTypeT extends RemoteMediaSourceType,
   ApiClientTypeT,
-> {
+> extends BaseMediaSourceScanner<ApiClientTypeT, ScanRequest> {
   #state: Map<string, RunState> = new Map();
   abstract readonly type: MediaLibraryTypeT;
   abstract readonly mediaSourceType: MediaSourceTypeT;
@@ -54,7 +62,9 @@ export abstract class MediaSourceScanner<
   constructor(
     protected logger: Logger,
     protected mediaSourceDB: MediaSourceDB,
-  ) {}
+  ) {
+    super();
+  }
 
   async scan({ library, force, pathFilter }: ScanRequest) {
     this.#state.set(library.uuid, 'starting');

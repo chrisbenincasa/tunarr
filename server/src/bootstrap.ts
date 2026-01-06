@@ -46,6 +46,7 @@ async function initDbDirectories(opts: GlobalOptions) {
 
 export async function bootstrapTunarr(
   opts: GlobalOptions = globalOptions(),
+  dbName?: string, // This should only be set in tests
   initialSettings?: DeepPartial<SettingsFile>,
 ) {
   languages.registerLocale(en);
@@ -69,7 +70,7 @@ export async function bootstrapTunarr(
   }
 
   await initDbDirectories(opts);
-  const conn = DBAccess.init();
+  const conn = DBAccess.init(dbName);
 
   // not the first run, use the copy migrator
   if (hasTunarrDb) {
