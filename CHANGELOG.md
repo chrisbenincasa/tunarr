@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.15](https://github.com/chrisbenincasa/tunarr/compare/v1.0.14...v1.0.15) (2026-01-06)
+
+### Bug Fixes
+
+* **macos:** create tunarr data directory on first run if not exists ([a5271b4](https://github.com/chrisbenincasa/tunarr/commit/a5271b46beb6eb2eea66004d41d2b0f147300f60))
+
 ## [1.0.14](https://github.com/chrisbenincasa/tunarr/compare/v1.0.13...v1.0.14) (2026-01-05)
 
 
