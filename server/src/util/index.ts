@@ -34,7 +34,6 @@ import { format, inspect } from 'node:util';
 import { isPromise } from 'node:util/types';
 import type { DeepReadonly, DeepWritable, NonEmptyArray } from 'ts-essentials';
 import type { NewProgramDao, ProgramDao } from '../db/schema/Program.ts';
-import { getBooleanEnvVar, TUNARR_ENV_VARS } from './env.ts';
 
 dayjs.extend(duration);
 
@@ -467,11 +466,6 @@ export const currentEnv = once(() => {
 export const isProduction = currentEnv() === 'production';
 export const isDev = currentEnv() === 'development';
 export const isTest = currentEnv() === 'test';
-export const isEdgeBuild = getBooleanEnvVar(
-  TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,
-  false,
-);
-export const tunarrBuild = process.env.TUNARR_BUILD;
 
 export const zipWithIndex = <T>(
   seq: readonly T[],

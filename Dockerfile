@@ -85,11 +85,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 FROM sources AS build-full-stack
 ARG exec_target=linux-x64
 ARG is_edge_build
+ARG tunarr_version
 ARG tunarr_build
 ARG exec_target=linux-x64
 # Build common modules
 RUN <<EOF
 touch .env
+echo TUNARR_VERSION="${tunarr_version}" >> .env
 echo TUNARR_BUILD="${tunarr_build}" >> .env
 echo TUNARR_EDGE_BUILD=${is_edge_build} >> .env
 echo TUNARR_BUILD_BASE_TAG=${base_image_tag} >> .env
