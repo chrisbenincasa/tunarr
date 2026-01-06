@@ -13,7 +13,7 @@ export const IS_EDGE_BUILD_ENV_VAR = 'TUNARR_EDGE_BUILD';
 const packageVersion = packageDef.version;
 
 const version = (() => {
-  let tunarrVersion = packageVersion;
+  let tunarrVersion = process.env.TUNARR_VERSION ?? packageVersion;
   const build = process.env[BUILD_ENV_VAR] ?? '';
   const isEdgeBuildValue = process.env[IS_EDGE_BUILD_ENV_VAR];
   const isEdgeBuild = isEdgeBuildValue === 'true' || isEdgeBuildValue === '1';

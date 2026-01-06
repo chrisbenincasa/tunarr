@@ -74,6 +74,7 @@ const result = await esbuild.build({
   metafile: true,
   define: {
     'process.env.NODE_ENV': '"production"',
+    'process.env.TUNARR_VERSION': `"${process.env.TUNARR_VERSION}"`,
     'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
     'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
     'import.meta.url': '__import_meta_url',

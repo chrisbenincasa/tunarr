@@ -1,11 +1,6 @@
 import tunarrPackage from '../../package.json' with { type: 'json' };
-import { getEnvVar, TUNARR_ENV_VARS } from './env.ts';
-import {
-  isEdgeBuild,
-  isNonEmptyString,
-  isProduction,
-  tunarrBuild,
-} from './index.js';
+import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './env.ts';
+import { isNonEmptyString, isProduction } from './index.js';
 
 let tunarrVersion: string;
 export const getTunarrVersion = () => {
@@ -13,6 +8,12 @@ export const getTunarrVersion = () => {
     // Attempt to set for dev. This is relative to the shared package
     tunarrVersion =
       getEnvVar(TUNARR_ENV_VARS.BUILD_ENV_VAR) ?? tunarrPackage.version ?? '';
+
+    const isEdgeBuild = getBooleanEnvVar(
+      TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,
+      false,
+    );
+    const tunarrBuild = getEnvVar(TUNARR_ENV_VARS.COMMIT_SHA_ENV_VAR);
 
     if (isNonEmptyString(tunarrBuild) && isEdgeBuild) {
       tunarrVersion += `-${tunarrBuild}`;

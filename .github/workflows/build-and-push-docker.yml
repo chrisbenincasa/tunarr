@@ -7,8 +7,8 @@ on:
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
-  schedule:
-    - cron: "0 13-21/2 * * *" # every 2 hours during US Eastern daytime
+  # schedule:
+  #   - cron: "0 13-21/2 * * *" # every 2 hours during US Eastern daytime
 
 jobs:
   typecheck:
@@ -120,7 +120,8 @@ jobs:
 
       - name: Generate Version Number
         run: |
-          echo "TUNARR_VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "TUNARR_VERSION=${{github.ref_name}}" >> $GITHUB_ENV
+          echo "TUNARR_BUILD=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -131,7 +132,8 @@ jobs:
           build-args: |
             base_image_tag=${{ matrix.builds.base_tag }}
             is_edge_build=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'schedule'}}
-            tunarr_build=${{ env.TUNARR_VERSION }}
+            tunarr_version=${{ env.TUNARR_VERSION }}
+            tunarr_build=${{ env.TUNARR_BUILD }}
             exec_target=${{ matrix.builds.target }}
           target: full-stack
           tags: ${{ steps.meta.outputs.tags }}
