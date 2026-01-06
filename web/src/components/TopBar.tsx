@@ -115,6 +115,7 @@ export const TopBar = () => {
   > = useCallback(
     (e) => {
       if (e.key === 'Enter' && isNonEmptyString(searchQuery)) {
+        console.log('navigating', searchQuery);
         navigate({
           to: '/search',
           search: { query: searchQuery },

@@ -207,7 +207,6 @@ export default function MediaDetailCard({ program }: Props) {
             </Stack>
             <ProgramOperationsMenu
               programId={program.uuid}
-              programType={program.type}
               anchorEl={moreMenuAnchorEl}
               onClose={() => setMoreMenuAnchorEl(null)}
               open={!!moreMenuAnchorEl}

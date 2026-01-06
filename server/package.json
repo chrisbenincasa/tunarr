@@ -70,6 +70,7 @@
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.1",
     "meilisearch": "^0.50.0",
+    "music-metadata": "^11.10.5",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
     "node-ssdp": "^4.0.1",

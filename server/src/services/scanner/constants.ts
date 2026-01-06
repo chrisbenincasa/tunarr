@@ -25,3 +25,23 @@ export const KnownImageFileExtensions = new Set([
   'tbn',
   'webp',
 ]);
+
+export const KnownAudioFileExtensions = new Set([
+  '.aac',
+  '.aif',
+  '.aifc',
+  '.aiff',
+  '.alac',
+  '.dff',
+  '.dsf',
+  '.flac',
+  '.mp3',
+  '.m4a',
+  '.ogg',
+  '.opus',
+  '.oga',
+  '.ogx',
+  '.spx',
+  '.wav',
+  '.wma',
+]);

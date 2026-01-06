@@ -101,6 +101,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       localMediaDB,
       mediaSourceProgressService,
       mediaSourceDB,
+      canonicalizer,
     );
   }
 
@@ -162,14 +163,14 @@ export class LocalTvShowScanner extends FileSystemScanner {
         return;
       }
       // Look for missing episodes.
-      const existingMovies =
+      const existingEpisodes =
         await this.programDB.getProgramInfoForMediaSourceLibrary(
           context.library.uuid,
           ProgramType.Episode,
         );
 
-      const missingMovies: ProgramCanonicalIdLookupResult[] = [];
-      for (const episodeChunk of chunk(Object.values(existingMovies), 100)) {
+      const missingEpisodes: ProgramCanonicalIdLookupResult[] = [];
+      for (const episodeChunk of chunk(Object.values(existingEpisodes), 100)) {
         const results = episodeChunk.map(async (movie) => {
           const exists = await fileExists(movie.externalKey);
           if (!exists) {
@@ -177,15 +178,15 @@ export class LocalTvShowScanner extends FileSystemScanner {
           }
           return;
         });
-        missingMovies.push(...compact(await Promise.all(results)));
+        missingEpisodes.push(...compact(await Promise.all(results)));
       }
 
       await this.programDB.updateProgramsState(
-        missingMovies.map((movie) => movie.uuid),
+        missingEpisodes.map((movie) => movie.uuid),
         'missing',
       );
       await this.searchService.updatePrograms(
-        missingMovies.map((movie) => ({
+        missingEpisodes.map((movie) => ({
           id: movie.uuid,
           state: 'missing',
         })),
@@ -207,69 +208,19 @@ export class LocalTvShowScanner extends FileSystemScanner {
       return;
     }
 
-    const parentFolder = await this.localMediaDB.findFolder(
-      library,
-      library.externalKey,
-    );
     const fullPath = path.join(showDirent.parentPath, showDirent.name);
-    const thisFolder = await this.localMediaDB.findFolder(library, fullPath);
-
-    const allFiles = await fs.readdir(fullPath, { withFileTypes: true });
-
-    // Calculate the folder's canonical ID from its contents and update
-    // the DB with the paths and ID
-    const canonicalFiles = allFiles.filter(
-      (f) => !basename(f.name).startsWith('.'),
-    );
-    const canonicalFilesAndStats = await Promise.all(
-      canonicalFiles.map(async (file) => {
-        const stat = await fs.stat(path.join(file.parentPath, file.name));
-        return {
-          dirent: file,
-          stats: stat,
-        };
-      }),
-    );
-
-    const canonicalId = this.canonicalizer.getCanonicalId({
-      folderName: fullPath,
-      folderStats: await fs.stat(fullPath),
-      contents: canonicalFilesAndStats,
-    });
-
-    let shouldScan = false;
-    let isNew = false;
-    let folderId: string;
-    if (!thisFolder) {
-      shouldScan = true;
-      const folderResult = await this.localMediaDB.upsertFolder(
-        context.library,
-        parentFolder?.uuid,
-        fullPath,
-        canonicalId,
-      );
-      isNew = folderResult.isNew;
-      folderId = folderResult.folder.uuid;
-    } else if (thisFolder.canonicalId !== canonicalId) {
-      shouldScan = true;
-      folderId = thisFolder.uuid;
-    } else {
-      folderId = thisFolder.uuid;
-    }
-
-    shouldScan = shouldScan || context.force;
+    const {
+      shouldScan,
+      folderResult: showFolder,
+      canonicalId,
+      folderId,
+      isNew,
+    } = await this.upsertFolder(fullPath, context, library.externalKey);
 
     if (!shouldScan) {
       this.logger.debug('Skipping unchanged folder %s', fullPath);
       return;
     }
-
-    const showFolder = await this.localMediaDB.upsertFolder(
-      library,
-      parentFolder?.uuid,
-      fullPath,
-      canonicalId,
-    );
 
     // Locate the tvshow.nfo metadata and parse
     const showResult = await this.loadTvMetadataFromNfo(fullPath);
@@ -330,7 +281,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       context,
       show,
       showDirent,
-      allFiles.filter((dirent) => dirent.isFile()),
+      await fs.readdir(fullPath, { withFileTypes: true }),
       showFolder.folder.uuid,
     );
 

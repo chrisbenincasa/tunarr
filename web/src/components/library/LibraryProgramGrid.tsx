@@ -122,6 +122,8 @@ export const LibraryProgramGrid = ({
     staticSearchRequest,
   ]);
 
+  console.log(query);
+
   const search = useInfiniteQuery({
     queryKey: ['programs', 'search', query, mediaSource?.id, library?.id],
     queryFn: async ({ pageParam }) => {

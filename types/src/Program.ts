@@ -23,9 +23,12 @@ import type {
   MovieMetadata,
   MusicAlbum,
   MusicAlbumContentProgramSchema,
+  MusicAlbumMetadata,
   MusicArtist,
   MusicArtistContentProgramSchema,
+  MusicArtistMetadata,
   MusicTrack,
+  MusicTrackMetadata,
   MusicTrackWithHierarchy,
   MusicVideo,
   NamedEntity,
@@ -192,6 +195,9 @@ export type EpisodeMetadata = z.infer<typeof EpisodeMetadata>;
 export type SeasonMetadata = z.infer<typeof SeasonMetadata>;
 export type ShowMetadata = z.infer<typeof ShowMetadata>;
 export type OtherVideoMetadata = z.infer<typeof OtherVideoMetadata>;
+export type MusicArtistMetadata = z.infer<typeof MusicArtistMetadata>;
+export type MusicAlbumMetadata = z.infer<typeof MusicAlbumMetadata>;
+export type MusicTrackMetadata = z.infer<typeof MusicTrackMetadata>
 
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,

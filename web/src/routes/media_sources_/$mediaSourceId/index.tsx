@@ -36,7 +36,7 @@ function MediaSourceBrowserPage() {
       </Box>
       <Stack gap={2}>
         <SearchInput />
-        <LibraryProgramGrid mediaSource={mediaSource} />
+        <LibraryProgramGrid mediaSource={mediaSource} disableProgramSelection />
       </Stack>
     </Box>
   );

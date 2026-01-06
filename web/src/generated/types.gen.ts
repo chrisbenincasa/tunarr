@@ -13519,16 +13519,16 @@ export type GetApiProgrammingShowsByIdSeasonsResponses = {
     200: unknown;
 };
 
-export type PostApiMoviesByIdScanData = {
+export type PostApiProgramsByIdScanData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/movies/{id}/scan';
+    url: '/api/programs/{id}/scan';
 };
 
-export type PostApiMoviesByIdScanErrors = {
+export type PostApiProgramsByIdScanErrors = {
     /**
      * Default Response
      */
@@ -13536,49 +13536,16 @@ export type PostApiMoviesByIdScanErrors = {
     /**
      * Default Response
      */
-    404: unknown;
+    404: string;
     /**
      * Default Response
      */
-    500: unknown;
+    500: string;
 };
 
-export type PostApiMoviesByIdScanError = PostApiMoviesByIdScanErrors[keyof PostApiMoviesByIdScanErrors];
+export type PostApiProgramsByIdScanError = PostApiProgramsByIdScanErrors[keyof PostApiProgramsByIdScanErrors];
 
-export type PostApiMoviesByIdScanResponses = {
-    /**
-     * Default Response
-     */
-    202: unknown;
-};
-
-export type PostApiShowsByIdScanData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/shows/{id}/scan';
-};
-
-export type PostApiShowsByIdScanErrors = {
-    /**
-     * Default Response
-     */
-    400: string;
-    /**
-     * Default Response
-     */
-    404: unknown;
-    /**
-     * Default Response
-     */
-    500: unknown;
-};
-
-export type PostApiShowsByIdScanError = PostApiShowsByIdScanErrors[keyof PostApiShowsByIdScanErrors];
-
-export type PostApiShowsByIdScanResponses = {
+export type PostApiProgramsByIdScanResponses = {
     /**
      * Default Response
      */
@@ -17650,7 +17617,7 @@ export type GetApiPlexByMediaSourceIdFiltersResponses = {
         Meta: {
             Type: Array<{
                 key: string;
-                type: 'movie' | 'show' | 'artist' | 'photo' | 'track' | 'season' | 'album' | 'folder';
+                type: 'movie' | 'show' | 'artist' | 'photo' | 'track' | 'episode' | 'season' | 'album' | 'folder';
                 title: string;
                 active: boolean;
                 Filter?: Array<{

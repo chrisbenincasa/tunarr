@@ -60,6 +60,7 @@ import type { RemoteSourceType } from '../db/schema/base.js';
 import { RemoteSourceTypes, type MediaSourceId } from '../db/schema/base.js';
 
 import { match } from 'ts-pattern';
+import { ForceScanCommand } from '../commands/ForceScanCommand.ts';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
@@ -69,6 +70,7 @@ import { EmbyApiClient } from '../external/emby/EmbyApiClient.ts';
 import { globalOptions } from '../globals.ts';
 import { FfprobeStreamDetails } from '../stream/FfprobeStreamDetails.ts';
 import { ExternalStreamDetailsFetcherFactory } from '../stream/StreamDetailsFetcher.ts';
+import { TypedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
 
@@ -1163,7 +1165,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.post(
-    '/movies/:id/scan',
+    '/programs/:id/scan',
     {
       schema: {
         params: z.object({
@@ -1172,108 +1174,25 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         response: {
           202: z.void(),
           400: z.void().or(z.string()),
-          404: z.void(),
-          500: z.void(),
+          404: z.void().or(z.string()),
+          500: z.void().or(z.string()),
         },
       },
     },
     async (req, res) => {
-      const program = await req.serverCtx.programDB.getProgramById(
-        req.params.id,
-      );
-      if (!program) {
-        return res.status(404).send();
-      }
+      const scanResult = await container
+        .get<ForceScanCommand>(ForceScanCommand)
+        .run(req.params.id);
 
-      if (
-        program.type !== 'movie' ||
-        !program.libraryId ||
-        !program.externalKey
-      ) {
-        return res.status(400).send();
-      }
-
-      if (program.sourceType === 'local' && !program.mediaSourceId) {
-        return res
-          .status(400)
-          .send(`Progarm ID = ${program.uuid} did not have a media source id!`);
-      }
-
-      const queued =
-        program.sourceType === 'local'
-          ? await req.serverCtx.mediaSourceScanCoordinator.addLocal({
-              forceScan: true,
-              mediaSourceId: program.mediaSourceId!,
-              pathFilter: program.externalKey,
-            })
-          : await req.serverCtx.mediaSourceScanCoordinator.add({
-              forceScan: true,
-              libraryId: program.libraryId,
-              pathFilter: program.externalKey,
-            });
-
-      if (!queued) {
-        return res.status(500).send();
-      }
-
-      return res.status(202).send();
-    },
-  );
-
-  fastify.post(
-    '/shows/:id/scan',
-    {
-      schema: {
-        params: z.object({
-          id: z.uuid(),
-        }),
-        response: {
-          202: z.void(),
-          400: z.void().or(z.string()),
-          404: z.void(),
-          500: z.void(),
-        },
-      },
-    },
-    async (req, res) => {
-      const program = await req.serverCtx.programDB.getProgramGrouping(
-        req.params.id,
-      );
-      if (!program) {
-        return res.status(404).send();
-      }
-
-      if (
-        program.type !== 'show' ||
-        !program.libraryId ||
-        !program.externalKey
-      ) {
-        return res.status(400).send();
-      }
-
-      if (program.sourceType === 'local' && !program.mediaSourceId) {
-        return res
-          .status(400)
-          .send(
-            `Grouping ID = ${program.uuid} did not have a media source id!`,
-          );
-      }
-
-      const queued =
-        program.sourceType === 'local'
-          ? await req.serverCtx.mediaSourceScanCoordinator.addLocal({
-              forceScan: true,
-              mediaSourceId: program.mediaSourceId!,
-              pathFilter: program.externalKey,
-            })
-          : await req.serverCtx.mediaSourceScanCoordinator.add({
-              forceScan: true,
-              libraryId: program.libraryId,
-              pathFilter: program.externalKey,
-            });
-
-      if (!queued) {
-        return res.status(500).send();
+      if (scanResult.isFailure()) {
+        if (scanResult.error instanceof TypedError) {
+          const code = [400, 404, 500].includes(scanResult.error.httpCode)
+            ? (scanResult.error.httpCode as 400 | 404 | 500)
+            : 500;
+          return res.status(code).send(scanResult.error.message);
+        } else {
+          return res.status(500).send(scanResult.error.message);
+        }
       }
 
       return res.status(202).send();

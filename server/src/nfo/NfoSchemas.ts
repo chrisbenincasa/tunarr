@@ -195,6 +195,8 @@ export const MusicArtistNfo = z.object({
   thumb: z.array(NfoThumb).optional(),
 });
 
+export type MusicArtistNfo = z.infer<typeof MusicArtistNfo>;
+
 export const MusicArtistNfoContainer = z.object({
   artist: MusicArtistNfo,
 });
@@ -219,6 +221,8 @@ export const MusicAlbumNfo = z.object({
 export const MusicAlbumNfoContainer = z.object({
   album: MusicAlbumNfo,
 });
+
+export type MusicAlbumNfo = z.infer<typeof MusicAlbumNfo>;
 
 export function unwrapOtherVideoNfoContainer(
   container: z.infer<typeof OtherVideoNfoContainer>,
