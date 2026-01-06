@@ -21,5 +21,8 @@
   "npm": {
     "skipChecks": true,
     "publish": false
+  },
+  "github": {
+    "release": true
   }
 }
