@@ -2,8 +2,8 @@ name: Build & Push Docker
 
 on:
   workflow_dispatch:
-  release:
-    types: [created]
+  #release:
+  #  types: [created]
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
@@ -70,8 +70,6 @@ jobs:
             chrisbenincasa/tunarr
             ghcr.io/chrisbenincasa/tunarr
           tags: |
-            # Update edge tag on the scheduled build
-            type=schedule,pattern=edge
             # Update version tags on proper releases
             type=semver,pattern={{version}}
             # Update edge tag when we manually trigger the release
@@ -101,22 +99,6 @@ jobs:
           key: ${{ runner.os }}-edge-build-${{ github.sha }}
           restore-keys: | # Check for previous SHA in cache
             ${{ runner.os }}-edge-build-
-
-      - name: Check for HEAD commit changes
-        run: |
-          git fetch origin main
-          HEAD_SHA=$(git rev-parse HEAD)
-
-          if [[ -z "$PREVIOUS_HEAD_SHA" ]]; then
-            echo "No previous HEAD SHA found (first run). Building image."
-          elif [[ "$HEAD_SHA" != "$PREVIOUS_HEAD_SHA" ]]; then
-            echo "Head commit has changed. Building and pushing image."
-          else
-            echo "Head commit hasn't changed. Skipping build."
-            exit 0  # Exit without pushing the image
-          fi
-          echo "PREVIOUS_HEAD_SHA=$HEAD_SHA" >> previous_head_sha  # Save current SHA for next run
-        if: github.event_name == 'schedule'
 
       - name: Generate Version Number
         run: |
