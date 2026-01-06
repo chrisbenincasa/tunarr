@@ -74,6 +74,8 @@ jobs:
             type=raw,value=edge,enable=${{github.ref == format('refs/heads/{0}', 'dev') && github.event_name == 'workflow_dispatch'}}
             # Update alpha "latest" on any alpha release.
             type=raw,value=alpha,enable=${{ contains(github.ref_name, '-alpha') || contains(github.event.release.tag_name, '-alpha') }}
+            # Update dev floating tag on any alpha release.
+            type=raw,value=dev,enable=${{ contains(github.ref_name, '-dev') || contains(github.event.release.tag_name, '-dev') }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

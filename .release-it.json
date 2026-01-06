@@ -10,12 +10,7 @@
     },
     "@release-it/bumper": {
       "out": {
-        "file": [
-          "server/package.json",
-          "web/package.json",
-          "shared/package.json",
-          "types/package.json"
-        ],
+        "file": "**/package.json",
         "path": "version"
       }
     }
