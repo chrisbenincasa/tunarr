@@ -374,6 +374,10 @@ export const PlexImageSchema = z.object({
   url: z.string(),
 });
 
+export const PlexLabelSchema = z.object({
+  tag: z.string(),
+});
+
 // We have to be totally sure these fields apply to ALL media types before
 // adding here.
 const BasePlexMediaSchema = z.object({
@@ -385,6 +389,7 @@ const BasePlexMediaSchema = z.object({
   // This is gnarly, but it won't be forever
   tunarrCanonicalId: z.string().optional(),
   Image: z.array(PlexImageSchema).optional(),
+  Label: z.array(PlexLabelSchema).optional().catch([]),
 });
 
 export const PlexMovieSchema = BasePlexMediaSchema.extend({
