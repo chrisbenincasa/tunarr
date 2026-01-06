@@ -156,7 +156,7 @@ export class LocalMediaDB {
   }
 }
 
-type UpsertFolderResult = {
+export type UpsertFolderResult = {
   isNew: boolean;
   folder: LocalMediaFolderOrm;
 };

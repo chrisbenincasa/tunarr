@@ -46,6 +46,10 @@ export abstract class Result<T, E extends WrappedError = WrappedError> {
     return new Success(d);
   }
 
+  static void<U extends WrappedError>(): Result<void, U> {
+    return this.success(void 0);
+  }
+
   abstract isSuccess(): this is Success<T, E>;
 
   isFailure(): this is Failure<T, E> {

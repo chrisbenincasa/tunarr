@@ -593,6 +593,7 @@ export const MusicArtist = z.object({
     return z.optional(z.array(BaseMusicAlbum));
   },
 });
+export const MusicArtistMetadata = MusicArtist.omit(MetadataOmitMask);
 
 const BaseMusicAlbum = z.object({
   ...BaseProgramGrouping.shape,
@@ -619,11 +620,15 @@ export const MusicAlbum = z.object({
   },
 });
 
+export const MusicAlbumMetadata = MusicAlbum.omit(MetadataOmitMask);
+
 export const MusicTrack = z.object({
   ...BaseMusicTrack.shape,
   album: MusicAlbum.optional(),
   artist: MusicArtist.optional(),
 });
+
+export const MusicTrackMetadata = MusicTrack.omit(MetadataOmitMask);
 
 export const MusicAlbumWithArtist = MusicAlbum.required({ artist: true });
 

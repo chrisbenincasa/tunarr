@@ -57,6 +57,7 @@ const supportedLocalLibraryTypes = [
   'movies',
   'shows',
   'other_videos',
+  'tracks',
 ] as const satisfies MediaSourceContentType[];
 
 const emptyDefaults = () =>
