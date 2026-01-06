@@ -2,13 +2,11 @@ name: Build & Publish Binaries
 
 on:
   workflow_dispatch:
-  #release:
-  #  types: [created]
+  release:
+    types: [created]
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
-  #schedule:
-  #  - cron: "0 13-21/2 * * *" # every 2 hours during US Eastern daytime
 
 jobs:
   typecheck:
@@ -73,7 +71,7 @@ jobs:
       - name: "Create env file"
         run: |
           touch .env
-          echo TUNARR_VERSION="${{github.ref_name}}" >> .env
+          echo TUNARR_VERSION="${{github.event.release.tag_name || github.ref_name}}" >> .env
           echo TUNARR_BUILD="$(git rev-parse --short ${{ github.sha }})" >> .env
           echo TUNARR_EDGE_BUILD=${{github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')}} >> .env
           echo NODE_ENV=production >> .env
@@ -156,7 +154,7 @@ jobs:
           echo NODE_ENV=production >> .env
           echo TUNARR_BIND_ADDR=0.0.0.0 >> .env
 
-          tunarr_version="${{github.ref_name}}"
+          tunarr_version="${{github.event.release.tag_name || github.ref_name}}"
           tunarr_full_version="${tunarr_version}"
           if [[ "$TUNARR_EDGE_BUILD" == "true" || "$TUNARR_EDGE_BUILD" == "1" ]]; then
             is_edge_build=true
