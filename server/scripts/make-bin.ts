@@ -193,7 +193,8 @@ for (const arch of args.target) {
 
       let execName = `tunarr`;
       if (args.includeVersion && !isEdgeBuild) {
-        execName += `-${serverPackage.version}`;
+        const version = process.env.TUNARR_VERSION ?? serverPackage.version;
+        execName += `-${version}`;
       }
       execName += `-${arch}`;
       if (arch.startsWith('windows')) {
