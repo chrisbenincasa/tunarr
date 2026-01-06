@@ -168,11 +168,7 @@ jobs:
           echo "TUNARR_VERSION=${tunarr_version}" >> .env
           echo "TUNARR_FULL_VERSION=${tunarr_full_version}" >> .env
 
-          if [[ "$TUNARR_EDGE_BUILD" == true ]]; then
-            release_name="Tunarr-${tunarr_version}-${{ matrix.os.target }}"
-          else 
-            release_name="Tunarr-${{ matrix.os.target }}"
-          fi
+          release_name="Tunarr-${tunarr_full_version}-${{ matrix.os.target }}"
           echo "RELEASE_NAME=${release_name}" >> .env
 
           grep -v '^#.*' .env >> $GITHUB_ENV
