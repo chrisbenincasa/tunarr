@@ -1216,7 +1216,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexShow.Label?.map((label) => label.tag) ?? [],
       externalId: plexShow.ratingKey,
       childCount: plexShow.childCount,
       grandchildCount: plexShow.leafCount,
@@ -1267,7 +1267,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexSeason.Label?.map((label) => label.tag) ?? [],
       externalId: plexSeason.ratingKey,
       childCount: plexSeason.leafCount,
       artwork: compact([
@@ -1387,7 +1387,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexEpisode.Label?.map((label) => label.tag) ?? [],
       externalId: plexEpisode.ratingKey,
       artwork: compact([
         this.plexArtworkInject(plexEpisode.thumb, 'poster'),
@@ -1546,7 +1546,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       plot: null,
       tagline: plexMovie.tagline ?? null,
       rating: plexMovie.contentRating ?? null,
-      tags: [],
+      tags: plexMovie.Label?.map((label) => label.tag) ?? [],
       externalId: plexMovie.ratingKey,
       identifiers: [
         {
@@ -1627,7 +1627,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       plot: null,
       tagline: plexClip.tagline ?? null,
       rating: plexClip.contentRating ?? null,
-      tags: [],
+      tags: plexClip.Label?.map((label) => label.tag) ?? [],
       externalId: plexClip.ratingKey,
       artwork: compact([
         this.plexArtworkInject(plexClip.thumb, 'poster'),
@@ -1692,7 +1692,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexArtist.Label?.map((label) => label.tag) ?? [],
       externalId: plexArtist.ratingKey,
       artwork: compact([
         this.plexArtworkInject(plexArtist.thumb, 'poster'),
@@ -1743,7 +1743,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexAlbum.Label?.map((label) => label.tag) ?? [],
       externalId: plexAlbum.ratingKey,
       releaseDate: plexAlbum.originallyAvailableAt
         ? +dayjs(plexAlbum.originallyAvailableAt)
@@ -1821,7 +1821,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
           };
         }),
       ],
-      tags: [],
+      tags: plexTrack.Label?.map((label) => label.tag) ?? [],
       externalId: plexTrack.ratingKey,
       artwork: [],
       state: 'ok',
