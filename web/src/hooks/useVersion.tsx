@@ -1,6 +1,7 @@
 import { Close, Refresh } from '@mui/icons-material';
 import { Button, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { trimStart } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import type { StrictOmit } from 'ts-essentials';
 import { getApiVersionOptions } from '../generated/@tanstack/react-query.gen.ts';
@@ -21,7 +22,8 @@ export const useVersion = (
   });
 
   const versionMismatch =
-    !query.isLoading && query.data?.tunarr !== __TUNARR_VERSION__;
+    !query.isLoading &&
+    trimStart(query.data?.tunarr, 'v') !== trimStart(__TUNARR_VERSION__, 'v');
 
   if (versionMismatch) {
     snackbar.enqueueSnackbar({
@@ -35,8 +37,8 @@ export const useVersion = (
           the browser to get the latest. If this message persists, clear your
           browser cache and reload.
           <br />
-          Web version = {__TUNARR_VERSION__}, Server version ={' '}
-          {query.data?.tunarr}
+          Web version = {trimStart(__TUNARR_VERSION__, 'v')}, Server version ={' '}
+          {trimStart(query.data?.tunarr, 'v')}
         </span>
       ),
       variant: 'warning',
