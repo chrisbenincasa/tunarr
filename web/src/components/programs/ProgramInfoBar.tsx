@@ -3,7 +3,7 @@ import {
   getProgramRating,
   getProgramReleaseDate,
 } from '@/helpers/programUtil';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import {
   getChildCount,
@@ -11,7 +11,7 @@ import {
   type ProgramGrouping,
   type TerminalProgram,
 } from '@tunarr/types';
-import { capitalize, isUndefined } from 'lodash-es';
+import { capitalize, compact, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, { useMemo } from 'react';
 import Genres from './Genres';
@@ -120,6 +120,13 @@ export default function ProgramInfoBar({ program, time }: Props) {
   }, [program]);
 
   const source = useMemo(() => {
+    if (program.sourceType === 'local') {
+      return (
+        <Tooltip title={program.externalId}>
+          <span>{capitalize(program.sourceType)}</span>
+        </Tooltip>
+      );
+    }
     return capitalize(program.sourceType);
   }, [program]);
 
@@ -182,7 +189,7 @@ export default function ProgramInfoBar({ program, time }: Props) {
     seasonTitle,
   ]);
 
-  return itemInfoBar.map((chip, index) => (
+  return compact(itemInfoBar).map((chip, index) => (
     <React.Fragment key={index}>
       <Box display="inline-block">{chip}</Box>
       {index < itemInfoBar.length - 1 && (

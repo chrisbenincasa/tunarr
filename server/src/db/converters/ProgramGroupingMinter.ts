@@ -402,6 +402,7 @@ export class ProgramGroupingMinter {
         year:
           album.year ??
           (album.releaseDate ? dayjs(album.releaseDate).year() : null),
+        artistUuid: album.artist?.uuid,
       },
       externalIds: this.mintExternalIdsFromIdentifiers(
         mediaSource,

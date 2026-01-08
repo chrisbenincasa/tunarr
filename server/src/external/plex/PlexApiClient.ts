@@ -46,6 +46,10 @@ import type {
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import {
+  isPlexMusicAlbum,
+  isPlexMusicArtist,
+  isPlexSeason,
+  isPlexShow,
   isTerminalItem,
   MakePlexMediaContainerResponseSchema,
   PlexContainerStatsSchema,
@@ -786,9 +790,14 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     media: PlexMedia,
     libraryId?: string,
   ): QueryResult<MediaSourceLibraryOrm> {
-    libraryId ??= isTerminalItem(media)
-      ? media.librarySectionID?.toString()
-      : undefined;
+    libraryId ??=
+      isTerminalItem(media) ||
+      isPlexShow(media) ||
+      isPlexSeason(media) ||
+      isPlexMusicAlbum(media) ||
+      isPlexMusicArtist(media)
+        ? media.librarySectionID?.toString()
+        : undefined;
     if (!isNonEmptyString(libraryId)) {
       return this.makeErrorResult(
         'generic_request_error',

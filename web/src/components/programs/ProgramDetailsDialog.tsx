@@ -20,21 +20,20 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { ProgramLike, TupleToUnion } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
-import { find, isEqual, merge } from 'lodash-es';
+import { find, merge } from 'lodash-es';
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { DeepRequired } from 'ts-essentials';
 import {
   getApiProgramGroupingsByIdOptions,
-  getApiProgramGroupingsByIdQueryKey,
   getApiProgramsByIdOptions,
-  postApiMoviesByIdScanMutation,
-  postApiShowsByIdScanMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
+import { useScanNow } from '../../hooks/useScanNow.ts';
 import type { Nullable } from '../../types/util.ts';
 import { ProgramMetadataDialogContent } from '../ProgramMetadataDialogContent.tsx';
 import { ProgramStreamDetails } from '../ProgramStreamDetails.tsx';
@@ -136,59 +135,13 @@ export default function ProgramDetailsDialog({
     }
   }, [programData]);
 
-  const queryClient = useQueryClient();
-  const clearQueryCache = useCallback(() => {
-    return queryClient.invalidateQueries({
-      predicate: (key) => {
-        return (
-          isEqual(
-            key,
-            getApiProgramGroupingsByIdQueryKey({ path: { id: programId } }),
-          ) ||
-          isEqual(key, getApiProgramsByIdOptions({ path: { id: programId } }))
-        );
-      },
-    });
-  }, [programId, queryClient]);
-
-  const showScanMut = useMutation({
-    ...postApiShowsByIdScanMutation(),
-    onSuccess: () => {
-      return clearQueryCache();
-    },
-  });
-
-  const movieScanMut = useMutation({
-    ...postApiMoviesByIdScanMutation(),
-    onSuccess: () => {
-      return clearQueryCache();
-    },
-  });
+  const triggerScan = useScanNow();
 
   const scanItem = useCallback(() => {
-    switch (programType) {
-      case 'movie': {
-        movieScanMut.mutate({ path: { id: programId } }, {});
-        break;
-      }
-      case 'show': {
-        showScanMut.mutate({
-          path: { id: programId },
-        });
-        break;
-      }
-      case 'season':
-      case 'episode':
-      case 'album':
-      case 'artist':
-      case 'track':
-      case 'music_video':
-      case 'other_video':
-        break;
-    }
+    triggerScan(programId);
 
     setMoreMenuAnchorEl(null);
-  }, [movieScanMut, programId, programType, showScanMut]);
+  }, [programId, triggerScan]);
 
   return (
     <Dialog
@@ -225,14 +178,13 @@ export default function ProgramDetailsDialog({
           sx={{ display: 'flex', alignItems: 'center' }}
         >
           <Box sx={{ flex: 1 }}>{title}</Box>
-          {programType === 'show' || programType === 'movie' ? (
-            <IconButton
-              onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
-              sx={{ mr: 1 }}
-            >
-              <MoreVert />
-            </IconButton>
-          ) : null}
+
+          <IconButton
+            onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
+            sx={{ mr: 1 }}
+          >
+            <MoreVert />
+          </IconButton>
           <Menu
             anchorEl={moreMenuAnchorEl}
             open={moreMenuOpen}
@@ -279,7 +231,10 @@ export default function ProgramDetailsDialog({
               )}
 
             {visibility.program_details && (
-              <Tab value="program_details" label="Program Info" />
+              <Tab
+                value="program_details"
+                label={`${prettifySnakeCaseString(programType)} Info`}
+              />
             )}
           </Tabs>
         )}

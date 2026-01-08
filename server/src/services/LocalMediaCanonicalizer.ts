@@ -1,4 +1,9 @@
-import type { OtherVideo } from '@tunarr/types';
+import type {
+  MusicAlbum,
+  MusicArtist,
+  MusicTrack,
+  OtherVideo,
+} from '@tunarr/types';
 import {
   isTerminalItemType,
   type Episode,
@@ -27,9 +32,12 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
         return this.getEpisodeCanonicalId(input);
       case 'other_video':
         return this.getOtherVideoCanonicalId(input);
-      case 'album':
-      case 'track':
       case 'artist':
+        return this.getMusicArtistCanonicalId(input);
+      case 'album':
+        return this.getMusicAlbumCanonicalId(input);
+      case 'track':
+        return this.getMusicTrackCanonicalId(input);
       case 'music_video':
         throw new Error('Unsupported');
     }
@@ -86,6 +94,36 @@ export class LocalMediaCanonicalizer implements Canonicalizer<ProgramLike> {
   private getOtherVideoCanonicalId(otherVideo: OtherVideo): string {
     const hash = crypto.createHash('sha1');
     this.updateHashForBaseItem(otherVideo, hash);
+    return hash.digest('hex');
+  }
+
+  private getMusicArtistCanonicalId(musicArtist: MusicArtist): string {
+    const hash = crypto.createHash('sha1');
+    this.updateHashForBaseItem(musicArtist, hash);
+    this.updateHashForGrouping(musicArtist, hash);
+    return hash.digest('hex');
+  }
+
+  private getMusicAlbumCanonicalId(musicAlbum: MusicAlbum): string {
+    const hash = crypto.createHash('sha1');
+    this.updateHashForBaseItem(musicAlbum, hash);
+    this.updateHashForGrouping(musicAlbum, hash);
+    hash.update(musicAlbum.index?.toString() ?? '');
+    orderBy(musicAlbum.studios, (s) => s.name).forEach((s) =>
+      hash.update(s.name),
+    );
+    hash.update(musicAlbum.releaseDate?.toString() ?? '');
+    hash.update(musicAlbum.releaseDateString ?? '');
+    hash.update(musicAlbum.year?.toString() ?? '');
+    return hash.digest('hex');
+  }
+
+  private getMusicTrackCanonicalId(musicTrack: MusicTrack): string {
+    const hash = crypto.createHash('sha1');
+    this.updateHashForBaseItem(musicTrack, hash);
+    this.updateHashForTerminalProgram(musicTrack, hash);
+    hash.update(musicTrack.trackNumber?.toString() ?? '');
+    hash.update(musicTrack.year?.toString() ?? '');
     return hash.digest('hex');
   }
 

@@ -28,7 +28,13 @@ import type { ProgramOrFolder } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
 import { filter, isUndefined, some } from 'lodash-es';
 import type { ForwardedRef, MouseEvent } from 'react';
-import React, { forwardRef, useCallback, useMemo, useState } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';
 import { useShallow } from 'zustand/react/shallow';
 import { useIsDarkMode } from '../../hooks/useTunarrTheme.ts';
@@ -82,6 +88,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const darkMode = useIsDarkMode();
+  const skeletonRef = useRef<HTMLSpanElement | null>(null);
 
   const {
     item,
@@ -338,6 +345,7 @@ const MediaGridItemInner = <ItemTypeT extends ProgramOrFolder>(
                 </Box>
               ) : (
                 <Skeleton
+                  ref={skeletonRef}
                   animation={false}
                   variant="rounded"
                   sx={{ borderRadius: '5%' }}

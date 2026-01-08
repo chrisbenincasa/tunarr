@@ -71,6 +71,7 @@ export function SearchFilterBuilder({ library }: SearchBuilderProps) {
                 },
               }}
               render={({ field, fieldState }) => {
+                console.log(field);
                 return (
                   <>
                     <TextField

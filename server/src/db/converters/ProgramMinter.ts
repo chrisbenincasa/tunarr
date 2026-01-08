@@ -12,6 +12,7 @@ import {
   MediaArtwork,
   NamedEntity,
   ProgramLike,
+  Resolution,
   tag,
   TerminalProgram,
   type ContentProgram,
@@ -272,7 +273,13 @@ export class ProgramDaoMinter {
         } satisfies NewProgramMediaFile;
       });
 
-      if (item.mediaItem.resolution) {
+      let resolution: Nilable<Resolution> = item.mediaItem.resolution;
+      if (item.type === 'track') {
+        // Tracks will not have a resolution ever
+        resolution = { heightPx: 0, widthPx: 0 };
+      }
+
+      if (resolution) {
         const version: NewProgramVersion = {
           uuid: versionId,
           createdAt: now,
@@ -286,8 +293,8 @@ export class ProgramDaoMinter {
             .with(P.nullish, (nil) => nil)
             .exhaustive(),
           sampleAspectRatio: item.mediaItem.sampleAspectRatio,
-          height: item.mediaItem.resolution?.heightPx,
-          width: item.mediaItem.resolution?.widthPx,
+          height: resolution.heightPx,
+          width: resolution.widthPx,
           mediaStreams: streams,
           mediaFiles: files,
           chapters: item.mediaItem.chapters?.map((chapter) => {
@@ -506,6 +513,8 @@ export class ProgramDaoMinter {
       updatedAt: now,
       canonicalId: track.canonicalId,
       state: 'ok',
+      // TODO: change this field name! jeez!
+      episode: track.trackNumber,
     } satisfies NewMusicTrack;
 
     return {

@@ -41,6 +41,7 @@ import type {
   StrictExclude,
 } from 'ts-essentials';
 import type { NewArtwork } from '../schema/Artwork.ts';
+import type { NewGenre } from '../schema/Genre.ts';
 import type { RemoteMediaSourceType } from '../schema/MediaSource.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { MediaSourceId, MediaSourceType } from '../schema/base.js';
@@ -256,6 +257,11 @@ export interface IProgramDB {
   ): Promise<void>;
 
   emptyTrashPrograms(): Promise<void>;
+
+  upsertProgramGroupingGenres(
+    groupingId: string,
+    genres: NewGenre[],
+  ): Promise<void>;
 }
 
 export type WithChannelIdFilter<T> = T & {

@@ -27,6 +27,7 @@ import { JellyfinMediaSourceMusicScanner } from './scanner/JellyfinMediaSourceMu
 import { JellyfinMediaSourceOtherVideoScanner } from './scanner/JellyfinMediaSourceOtherVideoScanner.ts';
 import { JellyfinMediaSourceTvShowScanner } from './scanner/JellyfinMediaSourceTvShowScanner.ts';
 import { LocalMovieScanner } from './scanner/LocalMovieScanner.ts';
+import { LocalMusicScanner } from './scanner/LocalMusicScanner.ts';
 import { LocalOtherVideoScanner } from './scanner/LocalOtherVideoScanner.ts';
 import { LocalTvShowScanner } from './scanner/LocalTvShowScanner.ts';
 import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourceMovieLibraryScanner.ts';
@@ -152,8 +153,9 @@ export const ServicesModule = new ContainerModule((bind) => {
             return ctx.container.get<LocalOtherVideoScanner>(
               LocalOtherVideoScanner,
             );
-          case 'music_videos':
           case 'tracks':
+            return ctx.container.get<LocalMusicScanner>(LocalMusicScanner);
+          case 'music_videos':
             throw new Error('Not yet implemented.');
         }
       },
