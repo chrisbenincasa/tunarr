@@ -392,9 +392,11 @@ export class MeilisearchService implements ISearchService {
         return;
       }
 
+      const indexFolderExists = await fileExists(this.dbPath);
+
       // Check for update.
       // Only run updates on start of the main tunarr thread
-      if ((await fileExists(this.dbPath)) && isMainThread) {
+      if (indexFolderExists && isMainThread) {
         const indexVersion = await this.getMeilisearchVersion();
 
         if (indexVersion === serverPackage.meilisearch.version) {
@@ -448,6 +450,20 @@ export class MeilisearchService implements ISearchService {
           '--no-analytics',
           '--experimental-dumpless-upgrade',
         ];
+
+        // Restore from snapshot if we don't have an index folder already
+        const snapshotPath = path.join(
+          this.fileSystemService.getMsSnapshotsPath(),
+          'data.ms.snapshot',
+        );
+        const snapshotExists = await fileExists(snapshotPath);
+        if (!indexFolderExists && snapshotExists) {
+          this.logger.debug(
+            'Restoring search index from snapshot: %s',
+            snapshotPath,
+          );
+          args.push('--import-snapshot', snapshotPath);
+        }
 
         const indexingRamSetting =
           getEnvVar(TUNARR_ENV_VARS.SEARCH_MAX_RAM) ??
