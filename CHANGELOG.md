@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.16](https://github.com/chrisbenincasa/tunarr/compare/v1.0.15...v1.0.16) (2026-01-08)
+
+### Bug Fixes
+
+* do not stop scanning seasons if one is unchanged ([109a030](https://github.com/chrisbenincasa/tunarr/commit/109a0300a1a144ce9b4f3e5a8bd9d8b30fadfa5a))
+* strip leading "v" from version strings before building ([6723eee](https://github.com/chrisbenincasa/tunarr/commit/6723eeed201765f2551e2601247512471387427e))
+
 ## [1.0.15](https://github.com/chrisbenincasa/tunarr/compare/v1.0.14...v1.0.15) (2026-01-06)
 
 ### Bug Fixes
