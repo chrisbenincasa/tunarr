@@ -17,19 +17,28 @@ import {
   map,
   uniqBy,
 } from 'lodash-es';
+import z from 'zod';
 import { ChannelOrm } from '../db/schema/Channel.ts';
 import { DB } from '../db/schema/db.ts';
-import { Task, TaskMetadata } from './Task.ts';
+import { Task2, TaskMetadata } from './Task.ts';
+import { taskDef } from './TaskRegistry.ts';
 
-export type ReconcileProgramDurationsTaskRequest =
-  | {
-      type: 'channel';
-      channelId?: string;
-    }
-  | {
-      type: 'program';
-      programId?: string;
-    };
+export type ReconcileProgramDurationsTaskRequest = z.infer<
+  typeof ReconcileProgramDurationsTaskRequest
+>;
+
+export const ReconcileProgramDurationsTaskRequest = z
+  .discriminatedUnion('type', [
+    z.object({
+      type: z.literal('channel'),
+      channelId: z.string().optional(),
+    }),
+    z.object({
+      type: z.literal('program'),
+      programId: z.string().optional(),
+    }),
+  ])
+  .optional();
 
 // This task is fired off whenever programs are updated. It goes through
 // all channel lineups that contain the program and ensure that their
@@ -38,9 +47,16 @@ export type ReconcileProgramDurationsTaskRequest =
 // changed, ex. replacing a movie with an extended edition (or sometimes a)
 // different versions varies in length by a few seconds).
 @injectable()
-export class ReconcileProgramDurationsTask extends Task {
+@taskDef({
+  schema: ReconcileProgramDurationsTaskRequest,
+  hidden: true,
+})
+export class ReconcileProgramDurationsTask extends Task2<
+  typeof ReconcileProgramDurationsTaskRequest
+> {
   static KEY = Symbol.for(ReconcileProgramDurationsTask.name);
   static ID = ReconcileProgramDurationsTask.name;
+  schema = ReconcileProgramDurationsTaskRequest;
 
   public ID = ReconcileProgramDurationsTask.ID as Tag<
     typeof ReconcileProgramDurationsTask.name,
@@ -53,26 +69,30 @@ export class ReconcileProgramDurationsTask extends Task {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.Database) private db: Kysely<DB>,
-    private request?: ReconcileProgramDurationsTaskRequest,
+    // private request?: ReconcileProgramDurationsTaskRequest,
   ) {
     super(logger);
     this.logger.setBindings({ task: this.ID });
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(
+    request?: ReconcileProgramDurationsTaskRequest,
+  ): Promise<void> {
     // Programs previously loaded from the DB, keyed by ID, value
     // is the source-of-truth duration.
     const cachedPrograms: Record<string, number> = {};
 
     let channels: ChannelOrm[];
-    if (this.programId) {
-      channels = await this.channelDB.findChannelsForProgramId(this.programId);
+    const programId = this.programId(request);
+    if (programId) {
+      channels = await this.channelDB.findChannelsForProgramId(programId);
     } else {
       channels = await this.channelDB.getAllChannels();
     }
 
     for (const channel of channels) {
-      if (this.channelId && channel.uuid !== this.channelId) {
+      const channelId = this.channelId(request);
+      if (channelId && channel.uuid !== channelId) {
         continue;
       }
 
@@ -140,22 +160,16 @@ export class ReconcileProgramDurationsTask extends Task {
     return;
   }
 
-  private get channelId() {
-    if (
-      this.request?.type === 'channel' &&
-      isNonEmptyString(this.request.channelId)
-    ) {
-      return this.request.channelId;
+  private channelId(request?: ReconcileProgramDurationsTaskRequest) {
+    if (request?.type === 'channel' && isNonEmptyString(request.channelId)) {
+      return request.channelId;
     }
     return null;
   }
 
-  private get programId() {
-    if (
-      this.request?.type === 'program' &&
-      isNonEmptyString(this.request.programId)
-    ) {
-      return this.request.programId;
+  private programId(request?: ReconcileProgramDurationsTaskRequest) {
+    if (request?.type === 'program' && isNonEmptyString(request.programId)) {
+      return request.programId;
     }
     return null;
   }

@@ -11,15 +11,9 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { AnonymousTask } from '@/tasks/Task.js';
 import { JellyfinTaskQueue, PlexTaskQueue } from '@/tasks/TaskQueue.js';
-import {
-  SaveJellyfinProgramExternalIdsTask,
-  type SaveJellyfinProgramExternalIdsTaskFactory,
-} from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
-import {
-  SavePlexProgramExternalIdsTask,
-  type SavePlexProgramExternalIdsTaskFactory,
-} from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
-import { KEYS } from '@/types/inject.js';
+import { SaveJellyfinProgramExternalIdsTask } from '@/tasks/jellyfin/SaveJellyfinProgramExternalIdsTask.js';
+import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import { MarkNonNullable, Maybe, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { devAssert } from '@/util/debug.js';
@@ -249,10 +243,10 @@ export class ProgramDB implements IProgramDB {
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
-    @inject(SavePlexProgramExternalIdsTask.KEY)
-    private savePlexProgramExternalIdsTaskFactory: SavePlexProgramExternalIdsTaskFactory,
-    @inject(SaveJellyfinProgramExternalIdsTask.KEY)
-    private saveJellyfinProgramExternalIdsTask: SaveJellyfinProgramExternalIdsTaskFactory,
+    @inject(autoFactoryKey(SavePlexProgramExternalIdsTask))
+    private savePlexProgramExternalIdsTaskFactory: interfaces.AutoFactory<SavePlexProgramExternalIdsTask>,
+    @inject(autoFactoryKey(SaveJellyfinProgramExternalIdsTask))
+    private saveJellyfinProgramExternalIdsTask: interfaces.AutoFactory<SaveJellyfinProgramExternalIdsTask>,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.ProgramDaoMinterFactory)
     private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
@@ -1071,7 +1065,7 @@ export class ProgramDB implements IProgramDB {
       GlobalScheduler.scheduleOneOffTask(
         'UpsertExternalIds',
         dayjs().add(100),
-        [],
+        undefined,
         AnonymousTask('UpsertExternalIds', () =>
           this.timer.timeAsync(
             `background external ID upsert (${backgroundExternalIds.length} ids)`,
@@ -3152,11 +3146,9 @@ export class ProgramDB implements IProgramDB {
         filter(upsertedPrograms, { sourceType: ProgramSourceType.PLEX }),
         (program) => {
           try {
-            const task = this.savePlexProgramExternalIdsTaskFactory(
-              program.uuid,
-            );
+            const task = this.savePlexProgramExternalIdsTaskFactory();
             task.logLevel = 'trace';
-            PlexTaskQueue.add(task).catch((e) => {
+            PlexTaskQueue.add(task, { programId: program.uuid }).catch((e) => {
               this.logger.error(
                 e,
                 'Error saving external IDs for program %O',
@@ -3182,14 +3174,16 @@ export class ProgramDB implements IProgramDB {
         filter(upsertedPrograms, (p) => p.sourceType === 'jellyfin'),
         (program) => {
           try {
-            const task = this.saveJellyfinProgramExternalIdsTask(program.uuid);
-            JellyfinTaskQueue.add(task).catch((e) => {
-              this.logger.error(
-                e,
-                'Error saving external IDs for program %O',
-                program,
-              );
-            });
+            const task = this.saveJellyfinProgramExternalIdsTask();
+            JellyfinTaskQueue.add(task, { programId: program.uuid }).catch(
+              (e) => {
+                this.logger.error(
+                  e,
+                  'Error saving external IDs for program %O',
+                  program,
+                );
+              },
+            );
           } catch (e) {
             this.logger.error(
               e,

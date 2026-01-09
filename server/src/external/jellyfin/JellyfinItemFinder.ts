@@ -6,7 +6,7 @@ import type { ProgramWithExternalIds } from '@/db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
-import { KEYS } from '@/types/inject.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import { Maybe } from '@/types/util.js';
 import { groupByUniq, isDefined, isNonEmptyString, run } from '@/util/index.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -19,14 +19,12 @@ import {
 } from 'inversify';
 import { find, isUndefined, some } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { container } from '../../container.ts';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
 } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { MediaSourceId } from '../../db/schema/base.js';
-import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { JellyfinGetItemsQuery } from './JellyfinApiClient.ts';
 
 @injectable()
@@ -39,6 +37,8 @@ export class JellyfinItemFinder {
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDaoMinterFactory)
     private programMinterFactory: interfaces.AutoFactory<ProgramDaoMinter>,
+    @inject(autoFactoryKey(ReconcileProgramDurationsTask))
+    private reconcileDurationTaskFactory: interfaces.AutoFactory<ReconcileProgramDurationsTask>,
   ) {}
 
   async findForProgramAndUpdate(programId: string) {
@@ -57,7 +57,7 @@ export class JellyfinItemFinder {
 
     const oldExternalId = find(
       program.externalIds,
-      (eid) => eid.sourceType === ProgramExternalIdType.JELLYFIN,
+      (eid) => eid.sourceType === ProgramExternalIdType.JELLYFIN.valueOf(),
     );
 
     const minter = this.programMinterFactory();
@@ -116,14 +116,11 @@ export class JellyfinItemFinder {
         program.uuid,
         updatedProgram.duration,
       );
-      const task = container.get<ReconcileProgramDurationsTaskFactory>(
-        ReconcileProgramDurationsTask.KEY,
-      )({
+      const task = this.reconcileDurationTaskFactory();
+      GlobalScheduler.runTask(task, {
         type: 'program',
         programId: program.uuid,
       });
-
-      GlobalScheduler.runTask(task);
     }
 
     return newExternalId;

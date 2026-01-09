@@ -5,10 +5,14 @@ import { MediaSourceScanCoordinator } from '../services/scanner/MediaSourceScanC
 import { KEYS } from '../types/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import type { TaskMetadata } from './Task.ts';
-import { Task } from './Task.ts';
+import { SimpleTask } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
-export class ScanLibrariesTask extends Task {
+@simpleTaskDef({
+  description: 'Initiates a scan of all enabled libraries and media sources',
+})
+export class ScanLibrariesTask extends SimpleTask {
   static KEY = Symbol.for(ScanLibrariesTask.name);
   static ID = ScanLibrariesTask.name;
   public ID = ScanLibrariesTask.ID as Tag<
@@ -25,7 +29,7 @@ export class ScanLibrariesTask extends Task {
     super(logger);
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(): Promise<void> {
     const allSources = await this.mediaSourceDB.getAll();
 
     // Very simple impl - we can probably fan out by source

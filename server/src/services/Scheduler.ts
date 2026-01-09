@@ -2,40 +2,41 @@ import { container } from '@/container.js';
 import type { BackupTaskFactory } from '@/tasks/BackupTask.js';
 import { BackupTask } from '@/tasks/BackupTask.js';
 import { OneOffTask } from '@/tasks/OneOffTask.js';
+import type { UnknownScheduledTask } from '@/tasks/ScheduledTask.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
-import type { Task, TaskId, TaskOutputType } from '@/tasks/Task.js';
-import { typedProperty } from '@/types/path.js';
+import type { Task, Task2, TaskId, TaskOutputType } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { parseEveryScheduleRule } from '@/util/schedulingUtil.js';
 import type { BackupSettings } from '@tunarr/types/schemas';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { interfaces } from 'inversify';
-import { filter, forEach, isString, reject } from 'lodash-es';
+import { filter, forEach, isString } from 'lodash-es';
 import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
+import type z from 'zod';
 
 const { isDayjs } = dayjs;
 
 class Scheduler {
   private static immediateExecuteQueue = new PQueue({ concurrency: 3 });
   private logger = LoggerFactory.child({ className: Scheduler.name });
-  #scheduledJobsById: Record<string, ScheduledTask[]> = {};
+  #scheduledJobsById: Record<string, UnknownScheduledTask[]> = {};
 
   // TaskId values always have an associated task (after server startup)
   getScheduledJobs<Id extends TaskId, TaskOutputTypeT = TaskOutputType<Id>>(
     id: Id,
-  ): ScheduledTask<unknown[], TaskOutputTypeT>[];
+  ): ScheduledTask<z.ZodUnknown, TaskOutputTypeT>[];
   getScheduledJobs<OutType = void>(
     id: string,
-  ): Maybe<ScheduledTask<unknown[], OutType>[]>;
+  ): Maybe<ScheduledTask<z.ZodUnknown, OutType>[]>;
   getScheduledJobs<OutType = void>(
     id: Task<[], OutType> | string,
-  ): Maybe<ScheduledTask<unknown[], OutType>[]> {
+  ): Maybe<ScheduledTask<z.ZodUnknown, OutType>[]> {
     if (isString(id)) {
       return this.#scheduledJobsById[id] as Maybe<
-        ScheduledTask<unknown[], OutType>[]
+        ScheduledTask<z.ZodUnknown, OutType>[]
       >;
     } else {
       return this.getScheduledJobs(id.ID);
@@ -50,7 +51,7 @@ class Scheduler {
   // around the codebase (dynamic jobs)
   getScheduledJob<Id extends TaskId, TaskOutputTypeT = TaskOutputType<Id>>(
     id: Id,
-  ): ScheduledTask<unknown[], TaskOutputTypeT> {
+  ): ScheduledTask<z.ZodUnknown, TaskOutputTypeT> {
     return this.getScheduledJobs<Id, TaskOutputTypeT>(id)[0]!;
   }
 
@@ -68,40 +69,44 @@ class Scheduler {
         task.removeFromSchedule();
       });
 
-      this.#scheduledJobsById[id] = [];
+      delete this.#scheduledJobsById[id];
     }
   }
 
-  scheduleTask(id: string, task: ScheduledTask): boolean {
+  scheduleTask<InputTypeT extends z.ZodType, OutputT>(
+    id: string,
+    task: ScheduledTask<InputTypeT, OutputT>,
+  ): boolean {
     this.insertTask(id, task);
     this.logger.debug('Scheduled task %s', task.name);
     return true;
   }
 
-  runTask<TaskT extends Task>(task: TaskT) {
+  runTask<InputT extends z.ZodType>(
+    task: Task2<InputT>,
+    request: z.infer<InputT>,
+  ) {
     Scheduler.immediateExecuteQueue
-      .add(() => task.run())
+      .add(() => task.run(request))
       .catch((e) => {
         this.logger.error(e, 'Error running task: %O', task);
       });
   }
 
-  scheduleOneOffTask<
-    TaskT extends Task,
-    Args extends unknown[] = TaskT extends Task<infer Args, unknown>
-      ? Args
-      : unknown[],
-  >(
+  scheduleOneOffTask<InputTypeT extends z.ZodType = z.ZodUnknown>(
     name: interfaces.ServiceIdentifier,
     when: Dayjs | Date | number,
-    args: Args,
-    taskInstance?: TaskT,
+    args: z.infer<InputTypeT>,
+    taskInstance?: Task2<InputTypeT, unknown>,
   ): void {
-    let task: TaskT;
+    let task: Task2<InputTypeT, unknown>;
     if (taskInstance) {
       task = taskInstance;
     } else {
-      const taskFactory = container.tryGet<interfaces.AutoFactory<TaskT>>(name);
+      const taskFactory =
+        container.tryGet<interfaces.AutoFactory<Task2<InputTypeT, unknown>>>(
+          name,
+        );
       if (!taskFactory) {
         this.logger.error(
           'Unable to schedule unknown task: %s',
@@ -112,32 +117,28 @@ class Scheduler {
 
       task = taskFactory();
     }
-    const id = `one_off_${name.toString()}`;
     const scheduledTaskName = `${name.toString()}_${v4()}`;
-    task.addOnCompleteListener(() => {
-      this.#scheduledJobsById[id] = reject(
-        this.#scheduledJobsById[id] ?? [],
-        (j) => j.name === scheduledTaskName,
-      );
-    });
     const ts = isDayjs(when) ? when.toDate() : when;
-    this.insertTask(
-      id,
-      new OneOffTask<Args, unknown>(scheduledTaskName, ts, () => task, args),
+    const oneoff = new OneOffTask<z.ZodType, unknown>(
+      scheduledTaskName,
+      ts,
+      () => task,
+      args,
     );
+    this.insertTask(scheduledTaskName, oneoff);
   }
 
-  private insertTask(id: string, task: ScheduledTask) {
+  private insertTask(id: string, task: UnknownScheduledTask) {
     if (!this.#scheduledJobsById[id]) {
       this.#scheduledJobsById[id] = [];
     }
     this.#scheduledJobsById[id].push(task);
   }
 
-  get scheduledJobsById(): Record<string, ScheduledTask[]> {
-    const ret: Record<string, ScheduledTask[]> = {};
+  get scheduledJobsById(): Record<string, UnknownScheduledTask[]> {
+    const ret: Record<string, UnknownScheduledTask[]> = {};
     forEach(this.#scheduledJobsById, (tasks, key) => {
-      const visibleTasks = filter(tasks, typedProperty('visible'));
+      const visibleTasks = tasks.filter((task) => task.visible);
       if (visibleTasks.length > 0) {
         ret[key] = visibleTasks;
       }
@@ -175,10 +176,10 @@ export function scheduleBackupJobs(
       GlobalScheduler.scheduleTask(
         BackupTask.name,
         new ScheduledTask(
-          BackupTask.name,
+          BackupTask,
           cronSchedule,
           container.get<BackupTaskFactory>(BackupTask.KEY)(config),
-          [],
+          undefined,
           {},
         ),
       );

@@ -3,22 +3,25 @@ import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { SessionManager } from '@/stream/SessionManager.js';
 import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { every, values } from 'lodash-es';
-import { Task, TaskId } from './Task.ts';
+import { SimpleTask } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 /**
  * Checks all on-demand channels for whether there are active watchers.
  * If there are no active watchers, a cleanup is scheduled to deactive the channel.
  */
 @injectable()
-export class OnDemandChannelStateTask extends Task {
+@simpleTaskDef({
+  description: 'Pauses on-demand channels that have no active connections.',
+})
+export class OnDemandChannelStateTask extends SimpleTask {
   static KEY = Symbol.for(OnDemandChannelStateTask.name);
+  static ID = OnDemandChannelStateTask.name;
 
-  public ID: string | Tag<TaskId, unknown> = 'on-demand-channel-state';
-  static ID: TaskId = 'on-demand-channel-state';
+  public ID = OnDemandChannelStateTask.ID;
 
   constructor(
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
@@ -30,7 +33,7 @@ export class OnDemandChannelStateTask extends Task {
     super(logger);
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(): Promise<void> {
     const configs = await this.channelDB.loadAllLineupConfigs();
     // TODO filter down to on-demand only...
     const stopTime = +dayjs();

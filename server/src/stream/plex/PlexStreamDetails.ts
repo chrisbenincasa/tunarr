@@ -3,7 +3,7 @@ import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 import type { PlexMediaSource } from '@/db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { KEYS } from '@/types/inject.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import { Maybe, Nilable, Nullable } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import {
@@ -16,6 +16,8 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import { seq } from '@tunarr/shared/util';
 import {
+  isPlexMusicTrack,
+  isTerminalItem,
   PlexEpisode,
   PlexMediaAudioStream,
   PlexMediaContainerResponseSchema,
@@ -23,11 +25,9 @@ import {
   PlexMediaVideoStream,
   PlexMovie,
   PlexMusicTrack,
-  isPlexMusicTrack,
-  isTerminalItem,
 } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import {
   filter,
   find,
@@ -43,12 +43,10 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { format } from 'node:util';
-import { container } from '../../container.ts';
 import { MinimalPlexBackedStreamLineupItem } from '../../db/derived_types/StreamLineup.ts';
 import { MediaSourceType } from '../../db/schema/base.js';
 import { GlobalScheduler } from '../../services/Scheduler.ts';
 import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurationsTask.ts';
-import { ReconcileProgramDurationsTaskFactory } from '../../tasks/TasksModule.ts';
 import { WrappedError } from '../../types/errors.ts';
 import { PlexT } from '../../types/internal.ts';
 import { Result } from '../../types/result.ts';
@@ -83,6 +81,8 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(ExternalSubtitleDownloader)
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
+    @inject(autoFactoryKey(ReconcileProgramDurationsTask))
+    private reconcileDurationTaskFactory: interfaces.AutoFactory<ReconcileProgramDurationsTask>,
   ) {
     super();
   }
@@ -138,7 +138,7 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         );
         const plexGuid = find(
           program.externalIds,
-          (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID,
+          (eid) => eid.sourceType === ProgramExternalIdType.PLEX_GUID.valueOf(),
         )?.externalKey;
         if (isNonEmptyString(plexGuid)) {
           const byGuidResult = await plexApiClient.doTypeCheckedGet(
@@ -185,15 +185,12 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
                   metadata.duration,
                 );
 
-                const task =
-                  container.get<ReconcileProgramDurationsTaskFactory>(
-                    ReconcileProgramDurationsTask.KEY,
-                  )({
-                    type: 'program',
-                    programId: program.uuid,
-                  });
+                const task = this.reconcileDurationTaskFactory();
 
-                GlobalScheduler.runTask(task);
+                GlobalScheduler.runTask(task, {
+                  programId: program.uuid,
+                  type: 'program',
+                });
               }
 
               return this.getStreamInternal(

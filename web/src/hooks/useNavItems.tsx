@@ -14,9 +14,18 @@ import {
 import type { BadgeProps } from '@mui/material';
 import { useRouterState } from '@tanstack/react-router';
 import { countBy, last, trimEnd } from 'lodash-es';
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import useStore from '../store/index.ts';
 import { useSystemHealthChecks } from './useSystemHealthChecks.ts';
+
+function setSelected(navItems: NavItem[], currentRoute: string | undefined) {
+  for (const item of navItems) {
+    item.selected = item.path === currentRoute;
+    if (item.children) {
+      setSelected(item.children, currentRoute);
+    }
+  }
+}
 
 export const useNavItems = () => {
   const showWelcome = useStore((state) => state.theme.showWelcome);
@@ -38,18 +47,6 @@ export const useNavItems = () => {
 
     return [null, 0];
   }, [healthChecks]);
-
-  const setSelected = useCallback(
-    (navItems: NavItem[], currentRoute: string | undefined) => {
-      for (const item of navItems) {
-        item.selected = item.path === currentRoute;
-        if (item.children) {
-          setSelected(item.children, currentRoute);
-        }
-      }
-    },
-    [],
-  );
 
   return useMemo<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -146,11 +143,6 @@ export const useNavItems = () => {
             path: '/settings/hdhr',
             hidden: true,
           },
-          {
-            name: 'tasks',
-            path: '/settings/tasks',
-            hidden: true,
-          },
         ],
       },
     ];
@@ -158,7 +150,7 @@ export const useNavItems = () => {
     setSelected(items, routerState);
 
     return items;
-  }, [highestSev, routerState, setSelected, sevCount, showWelcome]);
+  }, [highestSev, routerState, sevCount, showWelcome]);
 };
 
 export interface NavItem {

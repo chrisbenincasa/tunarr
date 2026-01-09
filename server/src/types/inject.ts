@@ -2,6 +2,7 @@ import type {
   GetChildLoggerArgs,
   Logger,
 } from '@/util/logging/LoggerFactory.js';
+import { isString } from 'lodash-es';
 
 const KEYS = {
   GlobalOptions: Symbol.for('GlobalOptions'),
@@ -79,6 +80,21 @@ const KEYS = {
   Task: Symbol.for('Task'),
   StartupTasks: Symbol.for('StartupTasks'),
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Constructor = { new (...args: any[]): any };
+
+export function factoryKey(s: Constructor): symbol;
+export function factoryKey(s: string): symbol;
+export function factoryKey(s: Constructor | string): symbol {
+  return Symbol.for(`Factory<${isString(s) ? s : s.name}>`);
+}
+
+export function autoFactoryKey(s: Constructor): symbol;
+export function autoFactoryKey(s: string): symbol;
+export function autoFactoryKey(s: Constructor | string): symbol {
+  return Symbol.for(`AutoFactory<${isString(s) ? s : s.name}>`);
+}
 
 export type LoggerFactory = (args: GetChildLoggerArgs) => Logger;
 

@@ -1,13 +1,7 @@
-import {
-  Box,
-  LinearProgress,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
-import { Link, Outlet } from '@tanstack/react-router';
+import { Box, LinearProgress, Paper, Tabs, Typography } from '@mui/material';
+import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
+import { RouterTabLink } from '../../components/base/RouterTabLink.tsx';
 
 type Props = {
   currentTab?: string;
@@ -31,42 +25,23 @@ export function SettingsLayout({ currentTab = '/general' }: Props) {
               },
             }}
           >
-            <Tab
+            <RouterTabLink
               label="General"
               value="/general"
               to="/settings/general"
-              component={Link}
             />
-            <Tab
-              label="XMLTV"
-              value="/xmltv"
-              to="/settings/xmltv"
-              component={Link}
-            />
-            <Tab
+            <RouterTabLink label="XMLTV" value="/xmltv" to="/settings/xmltv" />
+            <RouterTabLink
               label="FFMPEG"
               value="/ffmpeg"
               to="/settings/ffmpeg"
-              component={Link}
             />
-            <Tab
+            <RouterTabLink
               label="Sources"
               value="/sources"
               to="/settings/sources"
-              component={Link}
             />
-            <Tab
-              label="HDHR"
-              value="/hdhr"
-              to="/settings/hdhr"
-              component={Link}
-            />
-            <Tab
-              label="Tasks"
-              value="/tasks"
-              to="/settings/tasks"
-              component={Link}
-            />
+            <RouterTabLink label="HDHR" value="/hdhr" to="/settings/hdhr" />
           </Tabs>
         </Box>
 
