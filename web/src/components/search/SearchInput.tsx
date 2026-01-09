@@ -19,6 +19,7 @@ import { normalizeSearchFilter } from '../../../../shared/dist/src/util/searchUt
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { setSearchRequest } from '../../store/programmingSelector/actions.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
+import type { SearchRestrictKeys } from './SearchFieldRestrictMenu.tsx';
 import {
   AllSearchRestrictKeys,
   SearchFieldRestrictMenu,
@@ -79,7 +80,7 @@ export const SearchInput = ({ library, initialSearchFilter }: Props) => {
     useState<Nullable<HTMLElement>>(null);
 
   const [searchRestrctState, setSearchRestrictState] = useState<
-    ReadonlySet<string>
+    ReadonlySet<SearchRestrictKeys>
   >(AllSearchRestrictKeys);
 
   const handleSearch: SubmitHandler<SearchForm> = useCallback(

@@ -28,6 +28,7 @@ import {
   type GridItemProps,
 } from '../channel_config/MediaItemGrid.tsx';
 import { MediaItemList } from '../channel_config/MediaItemList.tsx';
+import { AllSearchRestrictKeys } from '../search/SearchFieldRestrictMenu.tsx';
 import { ProgramGridItem } from './ProgramGridItem.tsx';
 import { ProgramListItem } from './ProgramListItem.tsx';
 
@@ -110,7 +111,9 @@ export const LibraryProgramGrid = ({
     return {
       query: searchRequest?.query,
       filter,
-      restrictSearchTo: searchRequest?.restrictSearchTo,
+      restrictSearchTo: searchRequest?.restrictSearchTo ?? [
+        ...AllSearchRestrictKeys.values(),
+      ],
     };
   }, [
     currentParentContext,
