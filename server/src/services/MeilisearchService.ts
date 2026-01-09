@@ -498,7 +498,7 @@ export class MeilisearchService implements ISearchService {
           !isWindows() &&
           getBooleanEnvVar(
             TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY,
-            os.platform() === 'linux',
+            false,
           )
         ) {
           args.push('--experimental-reduce-indexing-memory-usage');
