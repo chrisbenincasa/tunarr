@@ -7,14 +7,16 @@ import { Tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { every, values } from 'lodash-es';
-import { Task, TaskId } from './Task.ts';
+import { SimpleTask, TaskId } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 /**
  * Checks all on-demand channels for whether there are active watchers.
  * If there are no active watchers, a cleanup is scheduled to deactive the channel.
  */
 @injectable()
-export class OnDemandChannelStateTask extends Task {
+@simpleTaskDef()
+export class OnDemandChannelStateTask extends SimpleTask {
   static KEY = Symbol.for(OnDemandChannelStateTask.name);
 
   public ID: string | Tag<TaskId, unknown> = 'on-demand-channel-state';
@@ -30,7 +32,7 @@ export class OnDemandChannelStateTask extends Task {
     super(logger);
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(): Promise<void> {
     const configs = await this.channelDB.loadAllLineupConfigs();
     // TODO filter down to on-demand only...
     const stopTime = +dayjs();

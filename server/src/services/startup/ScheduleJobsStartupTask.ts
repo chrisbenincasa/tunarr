@@ -42,36 +42,36 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       UpdateXmlTvTask.ID,
       new ScheduledTask(
-        UpdateXmlTvTask.name,
+        UpdateXmlTvTask,
         hoursCrontab(xmlTvSettings.refreshHours),
         container.get<interfaces.AutoFactory<UpdateXmlTvTask>>(
           KEYS.UpdateXmlTvTaskFactory,
         ),
-        [],
+        {},
       ),
     );
 
     GlobalScheduler.scheduleTask(
       CleanupSessionsTask.ID,
       new ScheduledTask(
-        CleanupSessionsTask.name,
+        CleanupSessionsTask,
         minutesCrontab(1),
         container.get<interfaces.AutoFactory<CleanupSessionsTask>>(
           CleanupSessionsTask.KEY,
         ),
-        [],
+        undefined,
       ),
     );
 
     GlobalScheduler.scheduleTask(
       OnDemandChannelStateTask.ID,
       new ScheduledTask(
-        OnDemandChannelStateTask.name,
+        OnDemandChannelStateTask,
         minutesCrontab(1),
         container.get<interfaces.AutoFactory<OnDemandChannelStateTask>>(
           OnDemandChannelStateTask.KEY,
         ),
-        [],
+        undefined,
         { runAtStartup: true },
       ),
     );
@@ -79,13 +79,13 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       ScheduleDynamicChannelsTask.ID,
       new ScheduledTask(
-        ScheduleDynamicChannelsTask.name,
+        ScheduleDynamicChannelsTask,
         // Temporary
         hoursCrontab(1),
         container.get<interfaces.AutoFactory<ScheduleDynamicChannelsTask>>(
           ScheduleDynamicChannelsTask.KEY,
         ),
-        [],
+        undefined,
         {
           runAtStartup: true,
           runOnSchedule: true,
@@ -96,13 +96,13 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       SubtitleExtractorTask.ID,
       new ScheduledTask(
-        SubtitleExtractorTask.name,
+        SubtitleExtractorTask,
         hoursCrontab(1),
         () =>
           container.get<SubtitleExtractorTaskFactory>(
             SubtitleExtractorTask.KEY,
           )({}),
-        [],
+        {},
         {
           runAtStartup: true,
         },
@@ -112,27 +112,27 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       RefreshMediaSourceLibraryTask.ID,
       new ScheduledTask(
-        RefreshMediaSourceLibraryTask.ID,
+        RefreshMediaSourceLibraryTask,
         hoursCrontab(1),
         () =>
           container.get<RefreshMediaSourceLibraryTask>(
             RefreshMediaSourceLibraryTask,
           ),
-        [],
+        undefined,
       ),
     );
 
     GlobalScheduler.scheduleTask(
       ScanLibrariesTask.ID,
       new ScheduledTask(
-        ScanLibrariesTask.name,
+        ScanLibrariesTask,
         hoursCrontab(
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
         ),
         container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
           ScanLibrariesTask.KEY,
         ),
-        [],
+        undefined,
       ),
     );
 

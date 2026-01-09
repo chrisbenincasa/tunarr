@@ -10,6 +10,7 @@ import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { RemoveDanglingProgramsFromSearchTask } from '../tasks/RemoveDanglingProgramsFromSearchTask.ts';
 import type { Task } from '../tasks/Task.ts';
+import { TaskRegistry } from '../tasks/TaskRegistry.ts';
 import { KEYS } from '../types/inject.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -17,6 +18,10 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
     caller: import.meta,
     className: 'TasksApi',
+  });
+
+  fastify.get('/tasks', async (req, res) => {
+    return res.send(TaskRegistry.getAll());
   });
 
   fastify.get(

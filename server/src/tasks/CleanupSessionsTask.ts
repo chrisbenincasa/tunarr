@@ -1,12 +1,13 @@
 import { SessionManager } from '@/stream/SessionManager.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
-import { Task, TaskId } from './Task.js';
+import { SimpleTask, TaskId } from './Task.js';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
-export class CleanupSessionsTask extends Task {
+@simpleTaskDef()
+export class CleanupSessionsTask extends SimpleTask {
   static KEY = Symbol.for(CleanupSessionsTask.name);
   public static ID: TaskId = 'cleanup-sessions';
   public ID = CleanupSessionsTask.ID;
@@ -19,7 +20,7 @@ export class CleanupSessionsTask extends Task {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  protected async runInternal(): Promise<Maybe<void>> {
+  protected async runInternal(): Promise<void> {
     this.sessionManager.cleanupStaleSessions();
   }
 
