@@ -696,12 +696,13 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       (episode) => this.embyApiEpisodeInjection(episode),
       (page) =>
         this.doTypeCheckedGet(
-          `/Shows/${showId}/Seasons`,
+          `/Shows/${showId}/Episodes`,
           EmbyLibraryItemsResponse,
           {
             params: {
               userId: this.options.mediaSource.userId,
-              fields: 'Path,DateCreated,Etag,Taglines,ProviderIds',
+              fields:
+                'Path,DateCreated,Etag,Taglines,ProviderIds,MediaStreams,People',
               startIndex: page * (pageSize ?? 50),
               limit: pageSize ?? 50,
               sortOrder: 'Ascending',
