@@ -413,7 +413,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
 
       if (!shouldScan) {
         this.logger.debug('Skipping unchanged season folder %s', fullPath);
-        return;
+        continue;
       }
 
       const seasonMetadata = this.seasonForNumber(show, seasonNumber);
@@ -462,7 +462,11 @@ export class LocalTvShowScanner extends FileSystemScanner {
       );
 
       if (epScanResult.isFailure()) {
-        return;
+        this.logger.warn(
+          epScanResult.error,
+          'Failed to scan episodes for season directory %s',
+          fullPath,
+        );
       }
 
       if (!isNew) {

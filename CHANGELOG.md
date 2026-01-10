@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.17](https://github.com/chrisbenincasa/tunarr/compare/v1.0.16...v1.0.17) (2026-01-09)
+
+### Bug Fixes
+
+* default experimental search index memory flag to false ([271555c](https://github.com/chrisbenincasa/tunarr/commit/271555c86fc0c9a660c601dc0003690eb3165dc4))
+* properly scan Emby episodes ([f1978e8](https://github.com/chrisbenincasa/tunarr/commit/f1978e8060f5559ffd549cf30264c8978f699465))
+* restore search index from snapshot when necessary ([4a8fd4e](https://github.com/chrisbenincasa/tunarr/commit/4a8fd4ed4a7f20df64c246c8e31196a178cb74d0))
+
+## [1.0.16](https://github.com/chrisbenincasa/tunarr/compare/v1.0.15...v1.0.16) (2026-01-08)
+
+### Bug Fixes
+
+* do not stop scanning seasons if one is unchanged ([109a030](https://github.com/chrisbenincasa/tunarr/commit/109a0300a1a144ce9b4f3e5a8bd9d8b30fadfa5a))
+* strip leading "v" from version strings before building ([6723eee](https://github.com/chrisbenincasa/tunarr/commit/6723eeed201765f2551e2601247512471387427e))
+
 ## [1.0.15](https://github.com/chrisbenincasa/tunarr/compare/v1.0.14...v1.0.15) (2026-01-06)
 
 ### Bug Fixes

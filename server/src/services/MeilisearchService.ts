@@ -1,9 +1,9 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
 import {
   FindChild,
+  MediaStream,
   tag,
   Tag,
-  MediaStream,
   TerminalProgram,
   TupleToUnion,
 } from '@tunarr/types';
@@ -404,9 +404,11 @@ export class MeilisearchService implements ISearchService {
         return;
       }
 
+      const indexFolderExists = await fileExists(this.dbPath);
+
       // Check for update.
       // Only run updates on start of the main tunarr thread
-      if ((await fileExists(this.dbPath)) && isMainThread) {
+      if (indexFolderExists && isMainThread) {
         const indexVersion = await this.getMeilisearchVersion();
 
         if (indexVersion === serverPackage.meilisearch.version) {
@@ -461,6 +463,20 @@ export class MeilisearchService implements ISearchService {
           '--experimental-dumpless-upgrade',
         ];
 
+        // Restore from snapshot if we don't have an index folder already
+        const snapshotPath = path.join(
+          this.fileSystemService.getMsSnapshotsPath(),
+          'data.ms.snapshot',
+        );
+        const snapshotExists = await fileExists(snapshotPath);
+        if (!indexFolderExists && snapshotExists) {
+          this.logger.debug(
+            'Restoring search index from snapshot: %s',
+            snapshotPath,
+          );
+          args.push('--import-snapshot', snapshotPath);
+        }
+
         const indexingRamSetting =
           getEnvVar(TUNARR_ENV_VARS.SEARCH_MAX_RAM) ??
           this.settingsDB.systemSettings().server.searchSettings
@@ -494,7 +510,7 @@ export class MeilisearchService implements ISearchService {
           !isWindows() &&
           getBooleanEnvVar(
             TUNARR_ENV_VARS.SEARCH_REDUCE_INDEXER_MEMORY_USAGE,
-            os.platform() === 'linux',
+            false,
           )
         ) {
           args.push('--experimental-reduce-indexing-memory-usage');
@@ -1407,10 +1423,12 @@ export class MeilisearchService implements ISearchService {
   }
 
   private getUniqueStreamLanguages(
-    streams: {
-      streamType: MediaStream['streamType'];
-      languageCodeISO6392?: string | null;
-    }[] | undefined,
+    streams:
+      | {
+          streamType: MediaStream['streamType'];
+          languageCodeISO6392?: string | null;
+        }[]
+      | undefined,
     type: 'audio' | 'subtitles',
   ): string[] {
     return uniq(
@@ -1421,8 +1439,6 @@ export class MeilisearchService implements ISearchService {
       ),
     );
   }
-
-
 
   private convertProgramToSearchDocument<
     ProgramT extends (Movie | Episode | MusicTrack | OtherVideo) &
@@ -1593,7 +1609,6 @@ export class MeilisearchService implements ISearchService {
     const audioStream = find(program.mediaItem?.streams, {
       streamType: 'audio',
     });
-
 
     let summary: Nilable<string>;
     switch (program.type) {

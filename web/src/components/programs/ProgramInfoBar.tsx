@@ -11,7 +11,7 @@ import {
   type ProgramGrouping,
   type TerminalProgram,
 } from '@tunarr/types';
-import { capitalize, isUndefined } from 'lodash-es';
+import { capitalize, compact, isUndefined } from 'lodash-es';
 import pluralize from 'pluralize';
 import React, { useMemo } from 'react';
 import Genres from './Genres';
@@ -73,6 +73,10 @@ export default function ProgramInfoBar({ program, time }: Props) {
     const searchParamsObject = {
       query: queryStringValue,
     };
+
+    if (!rating) {
+      return null;
+    }
 
     return (
       <Link
@@ -182,7 +186,7 @@ export default function ProgramInfoBar({ program, time }: Props) {
     seasonTitle,
   ]);
 
-  return itemInfoBar.map((chip, index) => (
+  return compact(itemInfoBar).map((chip, index) => (
     <React.Fragment key={index}>
       <Box display="inline-block">{chip}</Box>
       {index < itemInfoBar.length - 1 && (

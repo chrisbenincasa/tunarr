@@ -1,3 +1,4 @@
+import { trimStart } from 'lodash-es';
 import tunarrPackage from '../../package.json' with { type: 'json' };
 import { getBooleanEnvVar, getEnvVar, TUNARR_ENV_VARS } from './env.ts';
 import { isNonEmptyString, isProduction } from './index.js';
@@ -6,8 +7,10 @@ let tunarrVersion: string;
 export const getTunarrVersion = () => {
   if (!tunarrVersion) {
     // Attempt to set for dev. This is relative to the shared package
-    tunarrVersion =
-      getEnvVar(TUNARR_ENV_VARS.BUILD_ENV_VAR) ?? tunarrPackage.version ?? '';
+    tunarrVersion = trimStart(
+      getEnvVar(TUNARR_ENV_VARS.BUILD_ENV_VAR) ?? tunarrPackage.version ?? '',
+      'v',
+    );
 
     const isEdgeBuild = getBooleanEnvVar(
       TUNARR_ENV_VARS.IS_EDGE_BUILD_ENV_VAR,

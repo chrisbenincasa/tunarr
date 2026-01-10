@@ -9,6 +9,7 @@ import { rimraf } from 'rimraf';
 import { nativeNodeModulesPlugin } from '../esbuild/native-node-module.ts';
 import { nodeProtocolPlugin } from '../esbuild/node-protocol.ts';
 
+import { trimStart } from 'lodash-es';
 import { createRequire } from 'node:module';
 const __require = createRequire(import.meta.url);
 const esbuildPluginPino = __require('esbuild-plugin-pino');
@@ -88,7 +89,7 @@ const result = await esbuild.build({
   metafile: true,
   define: {
     'process.env.NODE_ENV': '"production"',
-    'process.env.TUNARR_VERSION': `"${process.env.TUNARR_VERSION}"`,
+    'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
     'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
     'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
     'import.meta.url': '__import_meta_url',

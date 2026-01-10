@@ -1,6 +1,6 @@
 {
   "name": "tunarr",
-  "version": "1.0.15",
+  "version": "1.0.17",
   "description": "Create LiveTV channels from your Plex media",
   "type": "module",
   "author": "chrisbenincasa",
@@ -13,7 +13,8 @@
     "lint-changed": "eslint --fix $(git diff --name-only HEAD -- './**/*.ts*' | xargs)",
     "test": "turbo run test",
     "preinstall": "npx only-allow pnpm",
-    "should-semantic-release": "should-semantic-release --verbose"
+    "should-semantic-release": "should-semantic-release --verbose",
+    "generate-docs-script": "tsx scripts/generate-docs-script.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",
@@ -24,6 +25,8 @@
     "@release-it/bumper": "^7.0.5",
     "@release-it/conventional-changelog": "^10.0.4",
     "@semantic-release/changelog": "^6.0.3",
+    "@types/node": "22.10.7",
+    "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -42,7 +45,9 @@
     "release-it": "^19.2.2",
     "release-it-pnpm": "^4.6.6",
     "semantic-release": "^25.0.2",
+    "semver": "^7.7.3",
     "should-semantic-release": "^0.3.5",
+    "tsx": "^4.20.5",
     "turbo": "^2.5.3",
     "typescript": "catalog:",
     "vitest": "^3.2.4"

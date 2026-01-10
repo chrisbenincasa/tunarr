@@ -1,9 +1,10 @@
 import { getProgramSummary } from '@/helpers/programUtil';
 import { useSettings } from '@/store/settings/selectors';
-import { OpenInNew } from '@mui/icons-material';
+import { MoreVert, OpenInNew } from '@mui/icons-material';
 import {
   Box,
   Button,
+  IconButton,
   Stack,
   Typography,
   useMediaQuery,
@@ -18,7 +19,9 @@ import {
 import { capitalize } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
+import type { Nullable } from '../../types/util.ts';
 import ProgramInfoBar from './ProgramInfoBar';
+import { ProgramOperationsMenu } from './ProgramOperationsMenu.tsx';
 
 type Props = {
   program: TerminalProgram | ProgramGrouping;
@@ -35,6 +38,9 @@ export default function MediaDetailCard({ program }: Props) {
   const externalLink = useMemo(() => {
     return `${settings.backendUri}/api/programs/${program.uuid}/external-link`;
   }, [settings.backendUri, program]);
+
+  const [moreMenuAnchorEl, setMoreMenuAnchorEl] =
+    useState<Nullable<HTMLElement>>(null);
 
   const getProgramDescription = useMemo(() => {
     return getProgramSummary(program);
@@ -190,7 +196,22 @@ export default function MediaDetailCard({ program }: Props) {
         </Box>
         <Box maxWidth={700}>
           <Stack spacing={1}>
-            {getProgramTitle}
+            <Stack direction={'row'} sx={{ alignItems: 'center' }}>
+              <Box flex={1}>{getProgramTitle}</Box>
+              <IconButton
+                sx={{ width: 40, height: 40 }}
+                onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
+              >
+                <MoreVert />
+              </IconButton>
+            </Stack>
+            <ProgramOperationsMenu
+              programId={program.uuid}
+              programType={program.type}
+              anchorEl={moreMenuAnchorEl}
+              onClose={() => setMoreMenuAnchorEl(null)}
+              open={!!moreMenuAnchorEl}
+            />
 
             <Stack
               direction="row"

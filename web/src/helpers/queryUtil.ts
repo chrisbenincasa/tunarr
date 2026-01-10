@@ -28,8 +28,6 @@ export function invalidateTaggedQueries(tagsToMatch: string | string[]) {
       return false;
     }
 
-    console.log(query.queryKey, parseResult.data.tags, tagsToMatch);
-
     return intersection(parseResult.data.tags, tagsToMatch).length > 0;
   };
 }
