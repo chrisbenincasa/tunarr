@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.1.0-dev.0](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.1.0-dev.0) (2026-01-10)
+
+### Features
+
+* ingest Plex labels field as tags ([#1584](https://github.com/chrisbenincasa/tunarr/issues/1584)) ([5584978](https://github.com/chrisbenincasa/tunarr/commit/5584978b339cf7e9ca591ec95d9a858f8369fdea))
+
+### Bug Fixes
+
+* do not run migration Migration1763673215_MoreProgramForeignKeys in transaction ([#1534](https://github.com/chrisbenincasa/tunarr/issues/1534)) ([9d0e4da](https://github.com/chrisbenincasa/tunarr/commit/9d0e4da6cfd20632af22dfaa0dbf4c7d92f7e2cc))
+## [1.1.0-dev.3](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.1.0-dev.0) (2026-01-06)
+
+### Features
+
+* **search:** index all audio and subtitle languages ([453a080](https://github.com/chrisbenincasa/tunarr/commit/453a080d831859656d0f9c6814ed2423bdea9ef1))
+## [1.1.0-dev.2](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.1.0-dev.0) (2026-01-06)
+
+### Features
+
+* add ability to select specific seasons for show slots ([#1567](https://github.com/chrisbenincasa/tunarr/issues/1567)) ([b807c8e](https://github.com/chrisbenincasa/tunarr/commit/b807c8eeda2363c726a6518b0180b5ff2af9689f))
+* reimplementation of a visual search editor ([#1533](https://github.com/chrisbenincasa/tunarr/issues/1533)) ([5dbb9b0](https://github.com/chrisbenincasa/tunarr/commit/5dbb9b01e67f9d9284da9e978fff4d967e227205))
+* scan plex collections periodically and persist membership as tags ([#1576](https://github.com/chrisbenincasa/tunarr/issues/1576)) ([5c13659](https://github.com/chrisbenincasa/tunarr/commit/5c136597cb5e1aac6c45f31ddb690fda8581f420))
+
 ## [1.0.17](https://github.com/chrisbenincasa/tunarr/compare/v1.0.16...v1.0.17) (2026-01-09)
 
 ### Bug Fixes
