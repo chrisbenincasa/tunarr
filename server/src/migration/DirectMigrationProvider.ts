@@ -190,15 +190,21 @@ export class DirectMigrationProvider implements MigrationProvider {
   }
 }
 
-function wrapWithTransaction(m: Migration): Migration {
+function wrapWithTransaction(m: TunarrDatabaseMigration): Migration {
   return {
     ...m,
     up(db) {
+      if (m.noTransaction) {
+        return m.up(db);
+      }
       return db.transaction().execute((tx) => {
         return m.up(tx);
       });
     },
     down(db) {
+      if (m.noTransaction) {
+        return m.down?.(db) ?? Promise.resolve(void 0);
+      }
       return db.transaction().execute((tx) => {
         return m.down?.(tx) ?? Promise.resolve(void 0);
       });
@@ -209,4 +215,5 @@ function wrapWithTransaction(m: Migration): Migration {
 export interface TunarrDatabaseMigration extends Migration {
   inPlace?: boolean;
   fullCopy?: boolean;
+  noTransaction?: boolean;
 }
