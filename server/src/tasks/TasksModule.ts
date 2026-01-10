@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import {
   ArchiveDatabaseBackup,

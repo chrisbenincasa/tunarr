@@ -6,7 +6,6 @@ import { globalOptions } from '@/globals.js';
 import { TVGuideService } from '@/services/TvGuideService.js';
 import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
 import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
 import { Logger } from '@/util/logging/LoggerFactory.js';
@@ -14,20 +13,28 @@ import { type Tag } from '@tunarr/types';
 import { PlexDvr } from '@tunarr/types/plex';
 import dayjs from 'dayjs';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
+import z from 'zod';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
-import { Task, TaskMetadata } from './Task.js';
+import { Task2, TaskMetadata } from './Task.js';
+
+const UpdateXmlTvTaskRequest = z.object({
+  channelId: z.string().optional(),
+});
+
+type UpdateXmlTvTaskRequest = z.infer<typeof UpdateXmlTvTaskRequest>;
 
 @injectable()
-export class UpdateXmlTvTask extends Task<[string | undefined]> {
+export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
   public static ID = UpdateXmlTvTask.name as Tag<
     typeof UpdateXmlTvTask.name,
     TaskMetadata<[string | undefined], void>
   >;
   public ID = UpdateXmlTvTask.ID;
+  schema = UpdateXmlTvTaskRequest;
 
   constructor(
-    @inject(KEYS.Logger) protected logger: Logger,
+    @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(TVGuideService) private guideService: TVGuideService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
@@ -35,7 +42,7 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
     private mediaSourceApiFactory: MediaSourceApiFactory,
     @inject(LineupCreator) private lineupCreator: LineupCreator,
   ) {
-    super();
+    super(logger);
     this.logger.setBindings({ task: UpdateXmlTvTask.ID });
   }
 
@@ -43,7 +50,7 @@ export class UpdateXmlTvTask extends Task<[string | undefined]> {
     return UpdateXmlTvTask.name;
   }
 
-  protected runInternal(channelId?: string): Promise<Maybe<void>> {
+  protected runInternal({ channelId }: UpdateXmlTvTaskRequest): Promise<void> {
     return this.updateXmlTv(channelId);
   }
 
