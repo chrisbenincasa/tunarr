@@ -326,7 +326,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   // TODO: Make grouping-tyhpe specific subdocs
   show_genre: 'grandparent.genres',
   show_title: 'grandparent.title',
-  show_tag: 'grandparent.tag',
+  show_tags: 'grandparent.tags',
   grandparent_genre: 'grandparent.genres',
   video_bit_depth: 'videoBitDepth',
   video_codec: 'videoCodec',
