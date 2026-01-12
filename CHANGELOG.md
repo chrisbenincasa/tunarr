@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0-dev.1](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.0...v1.1.0-dev.1) (2026-01-12)
+
+### Bug Fixes
+
+* fix selecting items from local libraries when editing channels ([#1592](https://github.com/chrisbenincasa/tunarr/issues/1592)) ([b48e54b](https://github.com/chrisbenincasa/tunarr/commit/b48e54b65ccbe321b6ddb9031cfcbc1cd641afbd))
+* fix show_tags virtual field to match actual definition ([74ed6f7](https://github.com/chrisbenincasa/tunarr/commit/74ed6f76c8ca26349a72622510e0931ad8fc46b3))
+
 ## [1.1.0-dev.0](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.1.0-dev.0) (2026-01-10)
 
 ### Features
