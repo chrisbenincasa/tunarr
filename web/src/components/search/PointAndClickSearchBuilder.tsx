@@ -1,5 +1,5 @@
 import { Stack, TextField } from '@mui/material';
-import type { MediaSourceLibrary } from '@tunarr/types';
+import type { MediaSourceId } from '@tunarr/shared';
 import { FormProvider, useFormContext } from 'react-hook-form';
 import { searchFilterToString } from '../../../../shared/dist/src/util/searchUtil';
 import { SearchGroupNode } from './SearchGroupNode.tsx';
@@ -7,10 +7,14 @@ import type { SearchForm } from './SearchInput.tsx';
 import { SearchInputToggle } from './SearchInputToggle.tsx';
 
 type Props = {
-  library?: MediaSourceLibrary;
+  mediaSourceId?: MediaSourceId;
+  libraryId?: string;
 };
 
-export const PointAndClickSearchBuilder = ({ library }: Props) => {
+export const PointAndClickSearchBuilder = ({
+  mediaSourceId,
+  libraryId,
+}: Props) => {
   const form = useFormContext<SearchForm>();
   const filter = form.watch('filter');
 
@@ -36,7 +40,8 @@ export const PointAndClickSearchBuilder = ({ library }: Props) => {
         formKey="filter.filter"
         index={0}
         remove={() => {}}
-        library={library}
+        mediaSourceId={mediaSourceId}
+        libraryId={libraryId}
       />
     </FormProvider>
   );

@@ -72,7 +72,9 @@ const ProgramGridItemInner = <T extends ProgramOrFolder>(
               },
         aspectRatio: isMusicItem(item)
           ? 'square'
-          : isEpisode(item)
+          : isEpisode(item) ||
+              item.type === 'other_video' ||
+              item.type === 'music_video'
             ? 'landscape'
             : 'portrait',
         isPlaylist: item.type === 'playlist',

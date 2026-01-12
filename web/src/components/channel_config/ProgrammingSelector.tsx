@@ -13,7 +13,9 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
+import { tag } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
 import {
   capitalize,
@@ -154,7 +156,13 @@ export const ProgrammingSelector = ({
     if (selectedServer?.type === 'local') {
       return (
         <Box sx={{ mt: 2 }}>
-          <SearchInput />
+          <SearchInput mediaSourceId={tag<MediaSourceId>(selectedServer.id)} />
+          <SelectedProgrammingActions
+            toggleOrSetSelectedProgramsDrawer={
+              toggleOrSetSelectedProgramsDrawer
+            }
+          />
+          <LibraryProgramGrid mediaSource={selectedServer} />
         </Box>
       );
     }
@@ -197,10 +205,8 @@ export const ProgrammingSelector = ({
           return (
             <Stack gap={2}>
               <SearchInput
-                library={{
-                  ...selectedLibrary.view,
-                  mediaSource: selectedServer!,
-                }}
+                mediaSourceId={tag<MediaSourceId>(selectedServer!.id)}
+                libraryId={selectedLibrary.view.id}
               />
               <SelectedProgrammingActions
                 toggleOrSetSelectedProgramsDrawer={
