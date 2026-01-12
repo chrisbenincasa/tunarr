@@ -1,17 +1,15 @@
 import { Stack } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import type { MediaSourceLibrary } from '@tunarr/types';
 import { type DateSearchField } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
-import { SearchForm } from './SearchInput.tsx';
+import type { SearchForm } from './SearchInput.tsx';
 
 type Props = {
   field: DateSearchField;
   formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
-  library?: MediaSourceLibrary;
 };
 
 export function DateSearchValueNode({ field, formKey }: Props) {

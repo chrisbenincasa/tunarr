@@ -36,7 +36,7 @@ function MediaSourceBrowserPage() {
         </Typography>
       </Box>
       <Stack gap={2}>
-        <SearchInput library={library} />
+        <SearchInput libraryId={libraryId} />
         <LibraryProgramGrid
           mediaSource={library.mediaSource}
           library={library}

@@ -14,8 +14,8 @@ import { OperatorsByType } from '@tunarr/types/api';
 import { find, flatten, isArray, isNumber, map } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import {
-  SearchFieldSpec,
   SearchFieldSpecs,
   getOperatorLabel,
 } from '../../helpers/searchBuilderConstants.ts';
@@ -33,7 +33,16 @@ type ValueNodeProps = GroupNodeProps & {
 };
 
 export function SearchValueNode(props: ValueNodeProps) {
-  const { library, depth, index, formKey, only, remove } = props;
+  const {
+    libraryId,
+    mediaSourceId,
+    mediaTypeFilter,
+    depth,
+    index,
+    formKey,
+    only,
+    remove,
+  } = props;
   const { control, watch, setValue } = useFormContext<SearchForm>();
   const selfValue = watch(formKey) as SearchFilterValueNode;
   const getFieldName = useGetFieldName(formKey);
@@ -113,7 +122,7 @@ export function SearchValueNode(props: ValueNodeProps) {
         shouldDirty: true,
       });
     },
-    [getFieldName, setValue],
+    [dayjs, getFieldName, setValue],
   );
 
   const handleOpChange = useCallback(
@@ -185,7 +194,8 @@ export function SearchValueNode(props: ValueNodeProps) {
       return (
         <FacetStringValueSearchNode
           formKey={getFieldName('fieldSpec')}
-          library={library}
+          libraryId={libraryId}
+          mediaSourceId={mediaSourceId}
           field={fieldSpec}
         />
       );
@@ -193,7 +203,6 @@ export function SearchValueNode(props: ValueNodeProps) {
       return (
         <DateSearchValueNode
           formKey={getFieldName('fieldSpec')}
-          library={library}
           field={fieldSpec}
         />
       );
@@ -237,9 +246,9 @@ export function SearchValueNode(props: ValueNodeProps) {
             >
               {seq.collect(SearchFieldSpecs, (spec) => {
                 if (
-                  library &&
+                  mediaTypeFilter &&
                   isArray(spec.visibleForLibraryTypes) &&
-                  !spec.visibleForLibraryTypes.includes(library.mediaType)
+                  !spec.visibleForLibraryTypes.includes(mediaTypeFilter)
                 ) {
                   return null;
                 }

@@ -8,8 +8,8 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useMatches } from '@tanstack/react-router';
+import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
-import type { MediaSourceLibrary } from '@tunarr/types';
 import type { SearchFilter, SearchRequest } from '@tunarr/types/api';
 import { difference, isEmpty, last } from 'lodash-es';
 import { useCallback, useState } from 'react';
@@ -26,7 +26,8 @@ import {
 import { SearchFilterBuilder } from './SearchFilterBuilder.tsx';
 
 type Props = {
-  library?: MediaSourceLibrary;
+  mediaSourceId?: MediaSourceId;
+  libraryId?: string;
   initialSearchFilter?: SearchFilter;
 };
 
@@ -48,7 +49,11 @@ export type SearchForm = {
   queryBuilderType: QueryBuilderType;
 };
 
-export const SearchInput = ({ library, initialSearchFilter }: Props) => {
+export const SearchInput = ({
+  libraryId,
+  initialSearchFilter,
+  mediaSourceId,
+}: Props) => {
   const routeMatch = useMatches();
   const formMethods = useForm<SearchForm>({
     defaultValues: {
@@ -198,7 +203,8 @@ export const SearchInput = ({ library, initialSearchFilter }: Props) => {
             )}
           />
           <SearchFilterBuilder
-            library={library}
+            libraryId={libraryId}
+            mediaSourceId={mediaSourceId}
             onSearch={handleSearchChange}
           />
           <Box sx={{ width: '100%' }}>

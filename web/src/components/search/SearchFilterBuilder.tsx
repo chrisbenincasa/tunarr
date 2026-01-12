@@ -9,7 +9,7 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import type { MediaSourceLibrary } from '@tunarr/types';
+import type { MediaSourceId } from '@tunarr/shared';
 import type { SearchRequest } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
 import { isEmpty, isNil } from 'lodash-es';
@@ -25,10 +25,14 @@ import { SearchInputToggle } from './SearchInputToggle.tsx';
 
 type SearchBuilderProps = {
   onSearch: (query: SearchRequest) => void;
-  library?: MediaSourceLibrary;
+  mediaSourceId?: MediaSourceId;
+  libraryId?: string;
 };
 
-export function SearchFilterBuilder({ library }: SearchBuilderProps) {
+export function SearchFilterBuilder({
+  libraryId,
+  mediaSourceId,
+}: SearchBuilderProps) {
   const [smartCollectionModalOpen, toggleSmartCollectionModal] =
     useToggle(false);
 
@@ -147,7 +151,10 @@ export function SearchFilterBuilder({ library }: SearchBuilderProps) {
             />
           </Stack>
         ) : (
-          <PointAndClickSearchBuilder library={library} />
+          <PointAndClickSearchBuilder
+            mediaSourceId={mediaSourceId}
+            libraryId={libraryId}
+          />
         )}
       </Stack>
       <CreateSmartCollectionDialog

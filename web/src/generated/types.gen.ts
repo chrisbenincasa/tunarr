@@ -12460,6 +12460,7 @@ export type PostApiProgramsFacetsByFacetNameData = {
     };
     query?: {
         facetQuery?: string;
+        mediaSourceId?: string;
         libraryId?: string;
     };
     url: '/api/programs/facets/{facetName}';
