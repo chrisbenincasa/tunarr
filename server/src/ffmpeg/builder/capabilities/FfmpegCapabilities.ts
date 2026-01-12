@@ -32,3 +32,10 @@ export class FfmpegCapabilities {
     return this.filters.has(filter);
   }
 }
+
+// Used for testing
+export const EmptyFfmpegCapabilities = new FfmpegCapabilities(
+  new Set(),
+  new Map(),
+  new Set(),
+);
