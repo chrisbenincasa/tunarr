@@ -4,7 +4,8 @@ import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import type { Options, Queue, QueueAddOptions } from 'p-queue';
 import PQueue from 'p-queue';
 import { v4 } from 'uuid';
-import type { Task } from './Task.js';
+import type z from 'zod';
+import type { Task2 } from './Task.js';
 import { AnonymousTask } from './Task.js';
 
 export class TaskQueue {
@@ -28,15 +29,16 @@ export class TaskQueue {
     this.#queue = new PQueue({ ...opts });
   }
 
-  async add<Args extends unknown[] = unknown[], Out = unknown>(
-    task: Task<Args, Out>,
-    ...args: Args
+  async add<Args extends z.ZodType = z.ZodUnknown, Out = unknown>(
+    task: Task2<Args, Out>,
+    args: z.infer<Args>,
   ): Promise<Maybe<Out>> {
     try {
       this.#logger.trace('Adding task %s to queue', task.taskName);
       return await this.#queue.add(
-        () => {
-          return task.run(...args);
+        async () => {
+          const _ = await task.run(args);
+          return _.getOrThrow();
         },
         { throwOnTimeout: true },
       );
@@ -50,7 +52,7 @@ export class TaskQueue {
     name: string,
     func: () => Promise<Out>,
   ): Promise<Maybe<Out>> {
-    return this.add(AnonymousTask(`${v4()}_${name}`, func));
+    return this.add(AnonymousTask(`${v4()}_${name}`, func), undefined);
   }
 
   set concurrency(c: number) {

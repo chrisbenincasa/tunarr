@@ -1,12 +1,15 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
-import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
-import { Task } from '@/tasks/Task.js';
+import { Task2 } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import dayjs from 'dayjs';
+import { inject, injectable } from 'inversify';
 import { compact, isEmpty, isUndefined, map } from 'lodash-es';
+import { Dictionary } from 'ts-essentials';
 import { v4 } from 'uuid';
+import z from 'zod';
 import {
   ProgramExternalIdType,
   programExternalIdTypeFromJellyfinProvider,
@@ -14,34 +17,56 @@ import {
 import type {
   MinimalProgramExternalId,
   NewSingleOrMultiExternalId,
+  ProgramExternalId,
 } from '../../db/schema/ProgramExternalId.ts';
+import { KEYS } from '../../types/inject.ts';
+import { Logger } from '../../util/logging/LoggerFactory.ts';
 
 export type SaveJellyfinProgramExternalIdsTaskFactory = (
   programId: string,
 ) => SaveJellyfinProgramExternalIdsTask;
 
-export class SaveJellyfinProgramExternalIdsTask extends Task {
+export const SaveJellyfinProgramExternalIdsTaskRequest = z.object({
+  programId: z.string(),
+});
+
+export type SaveJellyfinProgramExternalIdsTaskRequest = z.infer<
+  typeof SaveJellyfinProgramExternalIdsTaskRequest
+>;
+
+@injectable()
+export class SaveJellyfinProgramExternalIdsTask extends Task2<
+  typeof SaveJellyfinProgramExternalIdsTaskRequest,
+  Maybe<Dictionary<ProgramExternalId[]>>
+> {
   static KEY = Symbol.for(SaveJellyfinProgramExternalIdsTask.name);
   ID = SaveJellyfinProgramExternalIdsTask.name;
+  schema = SaveJellyfinProgramExternalIdsTaskRequest;
 
   constructor(
-    private programId: string,
+    @inject(KEYS.Logger) logger: Logger,
+    @inject(KEYS.ProgramDB)
     private programDB: IProgramDB,
+    @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
-    super();
+    super(logger);
   }
 
-  protected async runInternal(): Promise<unknown> {
-    const program = await this.programDB.getProgramById(this.programId);
+  protected async runInternal({
+    programId,
+  }: SaveJellyfinProgramExternalIdsTaskRequest): Promise<
+    Maybe<Dictionary<ProgramExternalId[]>>
+  > {
+    const program = await this.programDB.getProgramById(programId);
 
     if (!program) {
-      throw new Error('Program not found: ID = ' + this.programId);
+      throw new Error('Program not found: ID = ' + programId);
     }
 
     const jellyfinIds = program.externalIds.filter(
       (eid) =>
-        eid.sourceType === ProgramExternalIdType.JELLYFIN &&
+        eid.sourceType === ProgramExternalIdType.JELLYFIN.toString() &&
         isNonEmptyString(eid.externalSourceId),
     );
 

@@ -1746,6 +1746,71 @@ export type SearchFilter = {
     };
 };
 
+export type GetApiTasksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/tasks';
+};
+
+export type GetApiTasksResponses = {
+    /**
+     * Default Response
+     */
+    200: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        scheduledTasks: Array<{
+            running: boolean;
+            lastExecution?: string;
+            lastExecutionEpoch?: number;
+            nextExecution?: string;
+            nextExecutionEpoch?: number;
+            args: {
+                [key: string]: never;
+            } | string;
+        }>;
+    }>;
+};
+
+export type GetApiTasksResponse = GetApiTasksResponses[keyof GetApiTasksResponses];
+
+export type PostApiTasksByIdRunData = {
+    body?: unknown;
+    path: {
+        id: string;
+    };
+    query?: {
+        background?: boolean | string;
+    };
+    url: '/api/tasks/{id}/run';
+};
+
+export type PostApiTasksByIdRunErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type PostApiTasksByIdRunError = PostApiTasksByIdRunErrors[keyof PostApiTasksByIdRunErrors];
+
+export type PostApiTasksByIdRunResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+    /**
+     * Default Response
+     */
+    202: unknown;
+};
+
 export type GetApiJobsData = {
     body?: never;
     path?: never;
@@ -1760,11 +1825,17 @@ export type GetApiJobsResponses = {
     200: Array<{
         id: string;
         name: string;
-        running: boolean;
-        lastExecution?: string;
-        lastExecutionEpoch?: number;
-        nextExecution?: string;
-        nextExecutionEpoch?: number;
+        description?: string;
+        scheduledTasks: Array<{
+            running: boolean;
+            lastExecution?: string;
+            lastExecutionEpoch?: number;
+            nextExecution?: string;
+            nextExecutionEpoch?: number;
+            args: {
+                [key: string]: never;
+            } | string;
+        }>;
     }>;
 };
 

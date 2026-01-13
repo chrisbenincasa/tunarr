@@ -1,146 +1,188 @@
-import { Loop, PlayArrowOutlined } from '@mui/icons-material';
+import { MoreVert, PlayArrowOutlined } from '@mui/icons-material';
 import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Box,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
   Typography,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import type { Task } from '@tunarr/types';
-import dayjs from 'dayjs';
-import { map } from 'lodash-es';
+import { maxBy, minBy } from 'lodash-es';
+import type { MRT_ColumnDef } from 'material-react-table';
+import { MRT_Table, useMaterialReactTable } from 'material-react-table';
 import { useSnackbar } from 'notistack';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  deleteApiChannelsM3uMutation,
-  getApiChannelsAllLineupsQueryKey,
-  getApiJobsOptions,
-  postApiJobsByIdRunMutation,
+  getApiTasksOptions,
+  postApiTasksByIdRunMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
-
-const StyledLoopIcon = styled(Loop)({
-  animation: 'spin 2s linear infinite',
-  '@keyframes spin': {
-    '0%': {
-      transform: 'rotate(360deg)',
-    },
-    '100%': {
-      transform: 'rotate(0deg)',
-    },
-  },
-});
-
-// Separated so we can track mutation state individually
-function TaskRow({ task }: { task: Task }) {
-  const queryClient = useQueryClient();
-
-  const runJobMutation = useMutation({
-    ...postApiJobsByIdRunMutation(),
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: getApiChannelsAllLineupsQueryKey(),
-      });
-    },
-    onMutate: async ({ path: { id } }) => {
-      await queryClient.cancelQueries({ queryKey: ['jobs'] });
-      const prevJobs = queryClient.getQueryData<Task[]>(['jobs']);
-      const now = new Date();
-      queryClient.setQueryData(
-        ['jobs'],
-        map(prevJobs, (j) => {
-          return j.id === id
-            ? {
-                ...j,
-                lastExecution: now,
-                lastExecutionEpoch: now.getTime() / 1000,
-              }
-            : j;
-        }),
-      );
-    },
-  });
-
-  const runJobWithId = (id: string) => {
-    runJobMutation.mutate({ path: { id } });
-  };
-
-  return (
-    <TableRow key={task.id}>
-      <TableCell>{task.name}</TableCell>
-      <TableCell>
-        {task.lastExecutionEpoch
-          ? dayjs(task.lastExecutionEpoch * 1000).format('llll')
-          : 'Never run'}
-      </TableCell>
-      <TableCell>
-        {task.nextExecutionEpoch
-          ? dayjs(task.nextExecutionEpoch * 1000).format('llll')
-          : 'Not scheduled'}
-      </TableCell>
-      <TableCell>
-        <Button
-          onClick={() => runJobWithId(task.id)}
-          disabled={runJobMutation.isPending || task.running}
-          startIcon={
-            runJobMutation.isPending || task.running ? (
-              <StyledLoopIcon />
-            ) : (
-              <PlayArrowOutlined />
-            )
-          }
-          variant="contained"
-        >
-          Run Now
-        </Button>
-      </TableCell>
-    </TableRow>
-  );
-}
+import { useDayjs } from '../../hooks/useDayjs.ts';
+import type { Nullable } from '../../types/util.ts';
 
 export default function TaskSettingsPage() {
   const snackbar = useSnackbar();
-  const { isPending, data: tasks } = useQuery({
-    ...getApiJobsOptions(),
+  const { data: tasks } = useSuspenseQuery({
+    ...getApiTasksOptions(),
     refetchInterval: 60 * 1000, // Check tasks every minute
   });
+  const dayjs = useDayjs();
+  const [selectedTaskMenu, setSelectedTaskMenu] =
+    useState<Nullable<string>>(null);
+  const [menuRef, setMenuRef] = useState<Nullable<HTMLElement>>(null);
 
-  const clearM3UCacheMutation = useMutation({
-    ...deleteApiChannelsM3uMutation(),
-    onSuccess: () => {
-      snackbar.enqueueSnackbar('Successfully cleared m3u cache', {
-        variant: 'success',
-      });
+  const runTaskNowMutation = useMutation({
+    ...postApiTasksByIdRunMutation(),
+  });
+
+  const runTaskNow = useCallback(
+    (taskId: string) => {
+      runTaskNowMutation.mutate(
+        {
+          path: {
+            id: taskId,
+          },
+          query: {
+            background: true,
+          },
+        },
+        {
+          onSuccess: () => {
+            snackbar.enqueueSnackbar({
+              variant: 'success',
+              message: `Successfully scheduled ${taskId} (running in background).`,
+            });
+          },
+          onError: (e) => {
+            console.error(e);
+            snackbar.enqueueSnackbar({
+              variant: 'error',
+              message: `Error while scheduling ${taskId}. Check server logs for details`,
+            });
+          },
+        },
+      );
+      setSelectedTaskMenu(null);
+      setMenuRef(null);
+    },
+    [runTaskNowMutation, snackbar],
+  );
+
+  const columns = useMemo<MRT_ColumnDef<Task>[]>(
+    () => [
+      {
+        header: 'Name',
+        accessorKey: 'name',
+      },
+      {
+        header: 'Description',
+        id: 'description',
+        accessorFn: (row) => {
+          return row.description ?? '-';
+        },
+        enableSorting: false,
+      },
+      {
+        header: 'Last Scheduled Execution',
+        id: 'lastScheduledExecution',
+        accessorFn: (originalRow) => {
+          const max = maxBy(
+            originalRow.scheduledTasks,
+            (task) => task.lastExecutionEpoch,
+          );
+          const epoch = max?.lastExecutionEpoch;
+          if (!epoch) {
+            return '-';
+          }
+          return dayjs(epoch * 1000).format('llll');
+        },
+      },
+      {
+        header: 'Next Scheduled Execution',
+        id: 'nextScheduledExecution',
+        accessorFn: (originalRow) => {
+          const min = minBy(
+            originalRow.scheduledTasks,
+            (task) => task.nextExecutionEpoch,
+          );
+          const epoch = min?.nextExecutionEpoch;
+          if (!epoch) {
+            return '-';
+          }
+          return dayjs(epoch * 1000).format('llll');
+        },
+      },
+    ],
+    [dayjs],
+  );
+
+  const openTaskActionMenu = useCallback(
+    (target: HTMLElement, taskId: string) => {
+      setMenuRef(target);
+      setSelectedTaskMenu(taskId);
+    },
+    [],
+  );
+
+  const table = useMaterialReactTable<Task>({
+    columns,
+    data: tasks ?? [],
+    enableRowActions: true,
+    layoutMode: 'semantic',
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        grow: true,
+        Header: '',
+        visibleInShowHideMenu: false,
+        muiTableBodyCellProps: {
+          sx: {
+            flexDirection: 'row',
+          },
+          align: 'right',
+        },
+      },
+    },
+    renderRowActions: ({ row }) => {
+      return (
+        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
+          <IconButton
+            onClick={(e) =>
+              openTaskActionMenu(e.currentTarget, row.original.id)
+            }
+          >
+            <MoreVert />
+          </IconButton>
+          <Menu
+            open={!!menuRef && row.original.id === selectedTaskMenu}
+            anchorEl={menuRef}
+            onClose={() => setMenuRef(null)}
+          >
+            <MenuItem onClick={() => runTaskNow(row.original.id)}>
+              <ListItemIcon>
+                <PlayArrowOutlined />
+              </ListItemIcon>
+              <ListItemText primary="Run" />
+            </MenuItem>
+          </Menu>
+        </Box>
+      );
     },
   });
 
-  const renderTableRows = () => {
-    if (isPending) {
-      return (
-        <TableRow>
-          <TableCell colSpan={4}>Loading...</TableCell>
-        </TableRow>
-      );
-    }
-
-    if (!tasks || tasks.length === 0) {
-      return (
-        <TableRow>
-          <TableCell colSpan={4}>No Scheduled Tasks!</TableCell>
-        </TableRow>
-      );
-    }
-
-    return tasks.map((task) => <TaskRow key={task.id} task={task} />);
-  };
-
   return (
-    <>
-      <Typography variant="h4">Tasks</Typography>
-      <TableContainer>
+    <Stack gap={2}>
+      <Box>
+        <Typography variant="h4">Tasks</Typography>
+        <Typography>
+          Tunarr runs various tasks, sometimes on a schedule, for background
+          operations.
+        </Typography>
+      </Box>
+      <MRT_Table table={table} />
+      {/* <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
@@ -184,7 +226,7 @@ export default function TaskSettingsPage() {
             </TableRow>
           </TableBody>
         </Table>
-      </TableContainer>
-    </>
+      </TableContainer> */}
+    </Stack>
   );
 }

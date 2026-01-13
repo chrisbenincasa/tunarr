@@ -35,6 +35,7 @@ import { FfmpegPipelineBuilderModule } from './ffmpeg/builder/pipeline/PipelineB
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { EntityMutex } from './services/EntityMutex.ts';
 import { FileSystemService } from './services/FileSystemService.ts';
+import { M3uService } from './services/M3UService.ts';
 import { MediaSourceLibraryRefresher } from './services/MediaSourceLibraryRefresher.js';
 import { MeilisearchService } from './services/MeilisearchService.ts';
 import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
@@ -108,6 +109,8 @@ const RootModule = new ContainerModule((bind) => {
   //   .bind<MediaSourceApiFactory>(KEYS.MediaSourceApiFactory)
   //   .to(MediaSourceApiFactory)
   //   .inSingletonScope();
+
+  bind(M3uService).toSelf().inSingletonScope();
 
   container
     .bind<interfaces.Factory<MediaSourceApiFactory>>(KEYS.MediaSourceApiFactory)

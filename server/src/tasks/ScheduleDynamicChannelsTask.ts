@@ -1,16 +1,17 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { KEYS } from '@/types/inject.js';
-import { Maybe } from '@/types/util.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { inject, injectable } from 'inversify';
 import { filter } from 'lodash-es';
 import { DynamicChannelUpdaterFactory } from './DynamicChannelUpdaterFactory.ts';
 import { ScheduledTask } from './ScheduledTask.ts';
-import { Task, TaskId } from './Task.ts';
+import { SimpleTask, TaskId } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
-export class ScheduleDynamicChannelsTask extends Task {
+@simpleTaskDef({ hidden: true })
+export class ScheduleDynamicChannelsTask extends SimpleTask {
   public static KEY = Symbol.for(ScheduleDynamicChannelsTask.name);
   public static ID: TaskId = 'schedule-dynamic-channels';
 
@@ -25,7 +26,7 @@ export class ScheduleDynamicChannelsTask extends Task {
     super(logger);
   }
 
-  protected async runInternal(): Promise<Maybe<void>> {
+  protected async runInternal(): Promise<void> {
     const lineups = await this.channelsDb.loadAllLineupConfigs();
     const dynamicLineups = filter(
       lineups,
@@ -43,11 +44,12 @@ export class ScheduleDynamicChannelsTask extends Task {
             'UpdateDynamicChannel',
             source.updater.schedule,
             () => this.taskFactory.getTask(channel, source),
-            [],
+            undefined,
           ),
         );
         console.log('scheduling task = ' + scheduled);
       }
     }
+    return;
   }
 }

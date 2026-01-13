@@ -1,16 +1,18 @@
 import type { MediaSourceOrm } from '@/db/schema/MediaSource.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
-import { Task } from '@/tasks/Task.js';
+import { Task2 } from '@/tasks/Task.js';
 import { run } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { RecurrenceRule } from 'node-schedule';
+import z from 'zod';
 import { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
-import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
+import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
+import { taskDef } from '../TaskRegistry.ts';
 
 export type UpdatePlexPlayStatusScheduleRequest = {
   ratingKey: string;
@@ -20,10 +22,23 @@ export type UpdatePlexPlayStatusScheduleRequest = {
   updateIntervalSeconds?: number;
 };
 
-type UpdatePlexPlayStatusInvocation = UpdatePlexPlayStatusScheduleRequest & {
-  playState: PlayState;
-  sessionId: string;
-};
+const UpdatePlexPlayStatusScheduleRequest = z.object({
+  ratingKey: z.string(),
+  startTime: z.number(),
+  duration: z.number(),
+  channelNumber: z.number(),
+  updateIntervalSeconds: z.number().optional(),
+});
+
+const UpdatePlexPlayStatusTaskInvocation = z.object({
+  ...UpdatePlexPlayStatusScheduleRequest.shape,
+  playState: z.enum(['playing', 'stopped']),
+  sessionId: z.string(),
+});
+
+type UpdatePlexPlayStatusTaskInvocation = z.infer<
+  typeof UpdatePlexPlayStatusTaskInvocation
+>;
 
 type PlayState = 'playing' | 'stopped';
 
@@ -41,7 +56,10 @@ export type UpdatePlexPlayStatusScheduledTaskFactory = (
 ) => UpdatePlexPlayStatusScheduledTask;
 
 @injectable()
-export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
+export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask<
+  typeof UpdatePlexPlayStatusTaskInvocation,
+  boolean
+> {
   static KEY = Symbol.for(UpdatePlexPlayStatusScheduledTask.name);
 
   private playState: PlayState = 'playing';
@@ -60,7 +78,11 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
         return rule;
       }),
       () => this.getNextTask(),
-      [],
+      {
+        ...request,
+        playState: 'playing',
+        sessionId,
+      },
       { visible: false },
     );
 
@@ -68,7 +90,11 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
       dayjs().add(1, 'second'),
-      [],
+      {
+        ...request,
+        playState: this.playState,
+        sessionId: this.sessionId,
+      },
       this.getNextTask(),
     );
   }
@@ -83,7 +109,11 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     GlobalScheduler.scheduleOneOffTask(
       UpdatePlexPlayStatusTask.name,
       dayjs().add(5, 'seconds').toDate(),
-      [],
+      {
+        ...this.request,
+        playState: this.playState,
+        sessionId: this.sessionId,
+      },
       this.getNextTask(),
     );
   }
@@ -92,11 +122,6 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
     const task = new UpdatePlexPlayStatusTask(
       this.mediaSourceApiFactory,
       this.plexServer,
-      {
-        ...this.request,
-        playState: this.playState,
-        sessionId: this.sessionId,
-      },
     );
 
     this.request = {
@@ -112,17 +137,26 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask {
   }
 }
 
-class UpdatePlexPlayStatusTask extends Task {
+@injectable()
+@taskDef({
+  schema: UpdatePlexPlayStatusScheduleRequest,
+  hidden: true,
+})
+class UpdatePlexPlayStatusTask extends Task2<
+  typeof UpdatePlexPlayStatusTaskInvocation,
+  boolean
+> {
   public ID: string = UpdatePlexPlayStatusTask.name;
+  schema = UpdatePlexPlayStatusTaskInvocation;
 
   get taskName(): string {
     return this.ID;
   }
 
   constructor(
+    @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSourceWithRelations,
-    private request: UpdatePlexPlayStatusInvocation,
   ) {
     super(
       LoggerFactory.child({
@@ -131,20 +165,22 @@ class UpdatePlexPlayStatusTask extends Task {
     );
   }
 
-  protected async runInternal(): Promise<boolean> {
+  protected async runInternal(
+    request: UpdatePlexPlayStatusTaskInvocation,
+  ): Promise<boolean> {
     const plex =
       await this.mediaSourceApiFactory.getPlexApiClientForMediaSource(
         this.plexServer,
       );
 
-    const deviceName = `tunarr-channel-${this.request.channelNumber}`;
+    const deviceName = `tunarr-channel-${request.channelNumber}`;
     const params = {
       ...StaticPlexHeaders,
-      ratingKey: this.request.ratingKey,
-      state: this.request.playState,
-      key: `/library/metadata/${this.request.ratingKey}`,
-      time: this.request.startTime,
-      duration: this.request.duration,
+      ratingKey: request.ratingKey,
+      state: request.playState,
+      key: `/library/metadata/${request.ratingKey}`,
+      time: request.startTime,
+      duration: request.duration,
       'X-Plex-Product': 'Tunarr',
       'X-Plex-Version': getTunarrVersion(),
       'X-Plex-Device-Name': deviceName,
@@ -157,7 +193,7 @@ class UpdatePlexPlayStatusTask extends Task {
     } catch (error) {
       this.logger.warn(
         error,
-        `Problem updating Plex status using status URL for item ${this.request.ratingKey}: `,
+        `Problem updating Plex status using status URL for item ${request.ratingKey}: `,
       );
       return false;
     }

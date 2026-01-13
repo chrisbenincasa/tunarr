@@ -3,10 +3,15 @@ import { inject, injectable } from 'inversify';
 
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import type { TaskId } from './Task.ts';
-import { Task } from './Task.ts';
+import { SimpleTask } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
-export class RefreshMediaSourceLibraryTask extends Task<[], void> {
+@simpleTaskDef({
+  description:
+    'Synchronizes the list of available libraries for external media sources.',
+})
+export class RefreshMediaSourceLibraryTask extends SimpleTask {
   static ID = RefreshMediaSourceLibraryTask.name;
   public ID: string | Tag<TaskId, unknown> = RefreshMediaSourceLibraryTask.ID;
 
