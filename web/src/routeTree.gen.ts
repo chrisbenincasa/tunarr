@@ -18,10 +18,10 @@ import { Route as IndexRouteImport } from './routes/index';
 import { Route as SystemIndexRouteImport } from './routes/system/index';
 import { Route as LibraryIndexRouteImport } from './routes/library/index';
 import { Route as ChannelsIndexRouteImport } from './routes/channels_/index';
+import { Route as SystemTasksRouteImport } from './routes/system/tasks';
 import { Route as SystemLogsRouteImport } from './routes/system/logs';
 import { Route as SystemDebugRouteImport } from './routes/system/debug';
 import { Route as SettingsXmltvRouteImport } from './routes/settings/xmltv';
-import { Route as SettingsTasksRouteImport } from './routes/settings/tasks';
 import { Route as SettingsSourcesRouteImport } from './routes/settings/sources';
 import { Route as SettingsHdhrRouteImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralRouteImport } from './routes/settings/general';
@@ -104,6 +104,11 @@ const ChannelsIndexRoute = ChannelsIndexRouteImport.update({
   path: '/channels/',
   getParentRoute: () => rootRouteImport,
 } as any);
+const SystemTasksRoute = SystemTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => SystemRoute,
+} as any);
 const SystemLogsRoute = SystemLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -117,11 +122,6 @@ const SystemDebugRoute = SystemDebugRouteImport.update({
 const SettingsXmltvRoute = SettingsXmltvRouteImport.update({
   id: '/xmltv',
   path: '/xmltv',
-  getParentRoute: () => SettingsRoute,
-} as any);
-const SettingsTasksRoute = SettingsTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
   getParentRoute: () => SettingsRoute,
 } as any);
 const SettingsSourcesRoute = SettingsSourcesRouteImport.update({
@@ -341,10 +341,10 @@ export interface FileRoutesByFullPath {
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
-  '/settings/tasks': typeof SettingsTasksRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
+  '/system/tasks': typeof SystemTasksRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
   '/system/': typeof SystemIndexRoute;
@@ -390,10 +390,10 @@ export interface FileRoutesByTo {
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
-  '/settings/tasks': typeof SettingsTasksRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
+  '/system/tasks': typeof SystemTasksRoute;
   '/channels': typeof ChannelsIndexRoute;
   '/library': typeof LibraryIndexRoute;
   '/system': typeof SystemIndexRoute;
@@ -440,10 +440,10 @@ export interface FileRoutesById {
   '/settings/general': typeof SettingsGeneralRoute;
   '/settings/hdhr': typeof SettingsHdhrRoute;
   '/settings/sources': typeof SettingsSourcesRoute;
-  '/settings/tasks': typeof SettingsTasksRoute;
   '/settings/xmltv': typeof SettingsXmltvRoute;
   '/system/debug': typeof SystemDebugRoute;
   '/system/logs': typeof SystemLogsRoute;
+  '/system/tasks': typeof SystemTasksRoute;
   '/channels_/': typeof ChannelsIndexRoute;
   '/library/': typeof LibraryIndexRoute;
   '/system/': typeof SystemIndexRoute;
@@ -493,10 +493,10 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/hdhr'
     | '/settings/sources'
-    | '/settings/tasks'
     | '/settings/xmltv'
     | '/system/debug'
     | '/system/logs'
+    | '/system/tasks'
     | '/channels'
     | '/library'
     | '/system/'
@@ -542,10 +542,10 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/hdhr'
     | '/settings/sources'
-    | '/settings/tasks'
     | '/settings/xmltv'
     | '/system/debug'
     | '/system/logs'
+    | '/system/tasks'
     | '/channels'
     | '/library'
     | '/system'
@@ -591,10 +591,10 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/hdhr'
     | '/settings/sources'
-    | '/settings/tasks'
     | '/settings/xmltv'
     | '/system/debug'
     | '/system/logs'
+    | '/system/tasks'
     | '/channels_/'
     | '/library/'
     | '/system/'
@@ -718,6 +718,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChannelsIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/system/tasks': {
+      id: '/system/tasks';
+      path: '/tasks';
+      fullPath: '/system/tasks';
+      preLoaderRoute: typeof SystemTasksRouteImport;
+      parentRoute: typeof SystemRoute;
+    };
     '/system/logs': {
       id: '/system/logs';
       path: '/logs';
@@ -737,13 +744,6 @@ declare module '@tanstack/react-router' {
       path: '/xmltv';
       fullPath: '/settings/xmltv';
       preLoaderRoute: typeof SettingsXmltvRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
-    '/settings/tasks': {
-      id: '/settings/tasks';
-      path: '/tasks';
-      fullPath: '/settings/tasks';
-      preLoaderRoute: typeof SettingsTasksRouteImport;
       parentRoute: typeof SettingsRoute;
     };
     '/settings/sources': {
@@ -1006,7 +1006,6 @@ interface SettingsRouteChildren {
   SettingsGeneralRoute: typeof SettingsGeneralRoute;
   SettingsHdhrRoute: typeof SettingsHdhrRoute;
   SettingsSourcesRoute: typeof SettingsSourcesRoute;
-  SettingsTasksRoute: typeof SettingsTasksRoute;
   SettingsXmltvRoute: typeof SettingsXmltvRoute;
   SettingsFfmpegConfigIdRoute: typeof SettingsFfmpegConfigIdRoute;
   SettingsFfmpegNewRoute: typeof SettingsFfmpegNewRoute;
@@ -1017,7 +1016,6 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsHdhrRoute: SettingsHdhrRoute,
   SettingsSourcesRoute: SettingsSourcesRoute,
-  SettingsTasksRoute: SettingsTasksRoute,
   SettingsXmltvRoute: SettingsXmltvRoute,
   SettingsFfmpegConfigIdRoute: SettingsFfmpegConfigIdRoute,
   SettingsFfmpegNewRoute: SettingsFfmpegNewRoute,
@@ -1030,12 +1028,14 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 interface SystemRouteChildren {
   SystemDebugRoute: typeof SystemDebugRoute;
   SystemLogsRoute: typeof SystemLogsRoute;
+  SystemTasksRoute: typeof SystemTasksRoute;
   SystemIndexRoute: typeof SystemIndexRoute;
 }
 
 const SystemRouteChildren: SystemRouteChildren = {
   SystemDebugRoute: SystemDebugRoute,
   SystemLogsRoute: SystemLogsRoute,
+  SystemTasksRoute: SystemTasksRoute,
   SystemIndexRoute: SystemIndexRoute,
 };
 

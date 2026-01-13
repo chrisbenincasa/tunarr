@@ -4,13 +4,17 @@ import type { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import type { TaskMetadata } from './Task.ts';
-import { Task } from './Task.ts';
+import { SimpleTask } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 export type BackupTaskFactory = (
   config: DeepReadonly<BackupConfiguration>,
 ) => () => BackupTask;
 
-export class BackupTask extends Task {
+@simpleTaskDef({
+  description: 'Performs a backup of Tunarr data per user configuration',
+})
+export class BackupTask extends SimpleTask {
   static KEY = Symbol.for(BackupTask.name);
   public ID: string | Tag<typeof BackupTask.name, TaskMetadata> =
     BackupTask.name;
@@ -22,7 +26,7 @@ export class BackupTask extends Task {
     super();
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(): Promise<void> {
     if (!this.config.enabled) {
       this.logger.debug('Skipping backup configuration which is disabled');
       return;

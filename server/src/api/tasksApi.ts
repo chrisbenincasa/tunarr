@@ -2,15 +2,12 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
-import { BaseErrorSchema } from '@tunarr/types/api';
 import { TaskSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
-import { isEmpty, isNil } from 'lodash-es';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
-import { RemoveDanglingProgramsFromSearchTask } from '../tasks/RemoveDanglingProgramsFromSearchTask.ts';
-import type { Task } from '../tasks/Task.ts';
-import { KEYS } from '../types/inject.ts';
+import type { GenericTask } from '../tasks/Task.ts';
+import { TaskRegistry } from '../tasks/TaskRegistry.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -20,7 +17,7 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
   });
 
   fastify.get(
-    '/jobs',
+    '/tasks',
     {
       schema: {
         tags: ['System', 'Tasks'],
@@ -30,52 +27,48 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const allJobs = seq.collectMapValues(
-        GlobalScheduler.scheduledJobsById,
-        (tasks, id) => {
-          if (isNil(tasks) || isEmpty(tasks)) {
-            return;
-          }
+      const allTasks = TaskRegistry.getAll();
 
-          // TODO: We're goingn to have to figure out a better way
-          // to represnt this in the API
-          const task = tasks[0]!;
+      const tasks = Object.entries(allTasks).map(([name, def]) => {
+        const scheduledTasks = seq.collect(
+          GlobalScheduler.scheduledJobsById[name],
+          (scheduledTask) => {
+            if (!scheduledTask.visible) {
+              return;
+            }
 
-          const lastExecution = task.lastExecution
-            ? dayjs(task.lastExecution)
-            : undefined;
-          const nextExecution = task.nextExecution()
-            ? dayjs(task.nextExecution())
-            : undefined;
-
-          return {
-            id,
-            name: task.name,
-            running: task.running,
-            lastExecution: lastExecution?.format(),
-            lastExecutionEpoch: lastExecution?.unix(),
-            nextExecution: nextExecution?.format(),
-            nextExecutionEpoch: nextExecution?.unix(),
-          };
-        },
-      );
-
-      allJobs.push({
-        id: RemoveDanglingProgramsFromSearchTask.ID,
-        name: RemoveDanglingProgramsFromSearchTask.name,
-        running: false,
-        lastExecution: undefined,
-        lastExecutionEpoch: undefined,
-        nextExecution: undefined,
-        nextExecutionEpoch: undefined,
+            const lastExecution = scheduledTask.lastExecution
+              ? dayjs(scheduledTask.lastExecution)
+              : undefined;
+            const nextExecution = scheduledTask.nextExecution()
+              ? dayjs(scheduledTask.nextExecution())
+              : undefined;
+            return {
+              running: scheduledTask.running,
+              lastExecution: lastExecution?.format(),
+              lastExecutionEpoch: lastExecution?.unix(),
+              nextExecution: nextExecution?.format(),
+              nextExecutionEpoch: nextExecution?.unix(),
+              args: scheduledTask.presetArgs,
+              // schedule: scheduledTask.schedule,
+            };
+          },
+        );
+        return {
+          id: def.name,
+          name: def.name,
+          description: def.description,
+          scheduledTasks,
+          schema: z.toJSONSchema(def.schema, { unrepresentable: 'any' }),
+        };
       });
 
-      return res.send(allJobs);
+      return res.send(tasks);
     },
   );
 
   fastify.post(
-    '/jobs/:id/run',
+    '/tasks/:id/run',
     {
       schema: {
         tags: ['System', 'Tasks'],
@@ -83,64 +76,52 @@ export const tasksApiRouter: RouterPluginAsyncCallback = async (fastify) => {
           id: z.string(),
         }),
         querystring: z.object({
-          background: z.stringbool().default(true),
+          background: z.coerce
+            .boolean()
+            .or(z.stringbool())
+            .optional()
+            .default(true),
         }),
+        body: z.any(),
         response: {
           200: z.any(),
           202: z.void(),
-          400: BaseErrorSchema,
-          404: z.void(),
-          500: z.void(),
+          400: z.void(),
+          404: z.string(),
         },
       },
     },
     async (req, res) => {
-      const tasks = GlobalScheduler.getScheduledJobs(req.params.id);
-      if (isNil(tasks) || isEmpty(tasks)) {
-        const allTasks = container.getAll<Task>(KEYS.Task);
-        const matchedTask = allTasks.find(
-          (task) => task.taskName === req.params.id,
-        );
-        if (!matchedTask) {
-          return res.status(404).send();
-        }
-
-        const runPromise = matchedTask.run();
-        if (req.query.background) {
-          try {
-            const result = await runPromise;
-            return res.send(result);
-          } catch (e) {
-            logger.error(e, 'Task %s failed to run', matchedTask.taskName);
-            return res.status(500).send();
-          }
-        } else {
-          runPromise.catch((e) => {
-            logger.error(e, 'Async task triggered by API failed');
+      const taskDef = TaskRegistry.getTask(req.params.id);
+      if (!taskDef) {
+        return res
+          .status(404)
+          .send(`Task with ID ${req.params.id} does not exist`);
+      }
+      const parsed = taskDef.schema.safeParse(req.body, { reportInput: true });
+      if (parsed.error) {
+        logger.error(parsed.error, z.prettifyError(parsed.error));
+        return res.status(400).send();
+      }
+      const task = container.get<GenericTask>(taskDef.injectKey);
+      task.logLevel = 'info';
+      if (req.query.background) {
+        setTimeout(() => {
+          task.run(parsed.data).catch((e) => {
+            logger.error(
+              e,
+              'Error while running task %s in background (via API)',
+              req.params.id,
+            );
           });
-          return res.status(202).send();
-        }
+        }, 0);
+        return res.status(202).send();
       } else {
-        const task = tasks[0]!;
-        if (task.running) {
-          return res.status(400).send({ message: 'Task already running' });
+        const result = await task.run(parsed.data);
+        if (result.isFailure()) {
+          throw result.error;
         }
-        const taskPromise = task.runNow(req.query.background);
-
-        if (!req.query.background) {
-          try {
-            const result = await taskPromise;
-            return res.send(result);
-          } catch (e) {
-            logger.error(e, 'Task %s failed to run', task.name);
-            return res.status(500).send();
-          }
-        } else {
-          taskPromise.catch((e) => {
-            logger.error(e, 'Async task triggered by API failed');
-          });
-          return res.status(202).send();
-        }
+        return res.send(result.get());
       }
     },
   );

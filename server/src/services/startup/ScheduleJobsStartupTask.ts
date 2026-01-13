@@ -8,12 +8,9 @@ import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLib
 import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { ScheduleDynamicChannelsTask } from '../../tasks/ScheduleDynamicChannelsTask.ts';
-import {
-  SubtitleExtractorTask,
-  SubtitleExtractorTaskFactory,
-} from '../../tasks/SubtitleExtractorTask.ts';
+import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
-import { KEYS } from '../../types/inject.ts';
+import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { Logger, LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import {
   GlobalScheduler,
@@ -42,36 +39,36 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       UpdateXmlTvTask.ID,
       new ScheduledTask(
-        UpdateXmlTvTask.name,
+        UpdateXmlTvTask,
         hoursCrontab(xmlTvSettings.refreshHours),
         container.get<interfaces.AutoFactory<UpdateXmlTvTask>>(
           KEYS.UpdateXmlTvTaskFactory,
         ),
-        [],
+        {},
       ),
     );
 
     GlobalScheduler.scheduleTask(
       CleanupSessionsTask.ID,
       new ScheduledTask(
-        CleanupSessionsTask.name,
+        CleanupSessionsTask,
         minutesCrontab(1),
         container.get<interfaces.AutoFactory<CleanupSessionsTask>>(
           CleanupSessionsTask.KEY,
         ),
-        [],
+        undefined,
       ),
     );
 
     GlobalScheduler.scheduleTask(
       OnDemandChannelStateTask.ID,
       new ScheduledTask(
-        OnDemandChannelStateTask.name,
+        OnDemandChannelStateTask,
         minutesCrontab(1),
         container.get<interfaces.AutoFactory<OnDemandChannelStateTask>>(
           OnDemandChannelStateTask.KEY,
         ),
-        [],
+        undefined,
         { runAtStartup: true },
       ),
     );
@@ -79,13 +76,13 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       ScheduleDynamicChannelsTask.ID,
       new ScheduledTask(
-        ScheduleDynamicChannelsTask.name,
+        ScheduleDynamicChannelsTask,
         // Temporary
         hoursCrontab(1),
         container.get<interfaces.AutoFactory<ScheduleDynamicChannelsTask>>(
           ScheduleDynamicChannelsTask.KEY,
         ),
-        [],
+        undefined,
         {
           runAtStartup: true,
           runOnSchedule: true,
@@ -96,13 +93,12 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       SubtitleExtractorTask.ID,
       new ScheduledTask(
-        SubtitleExtractorTask.name,
+        SubtitleExtractorTask,
         hoursCrontab(1),
-        () =>
-          container.get<SubtitleExtractorTaskFactory>(
-            SubtitleExtractorTask.KEY,
-          )({}),
-        [],
+        container.get<interfaces.AutoFactory<SubtitleExtractorTask>>(
+          autoFactoryKey(SubtitleExtractorTask),
+        ),
+        {},
         {
           runAtStartup: true,
         },
@@ -112,27 +108,27 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
     GlobalScheduler.scheduleTask(
       RefreshMediaSourceLibraryTask.ID,
       new ScheduledTask(
-        RefreshMediaSourceLibraryTask.ID,
+        RefreshMediaSourceLibraryTask,
         hoursCrontab(1),
         () =>
           container.get<RefreshMediaSourceLibraryTask>(
             RefreshMediaSourceLibraryTask,
           ),
-        [],
+        undefined,
       ),
     );
 
     GlobalScheduler.scheduleTask(
       ScanLibrariesTask.ID,
       new ScheduledTask(
-        ScanLibrariesTask.name,
+        ScanLibrariesTask,
         hoursCrontab(
           this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
         ),
         container.get<interfaces.AutoFactory<ScanLibrariesTask>>(
           ScanLibrariesTask.KEY,
         ),
-        [],
+        undefined,
       ),
     );
 

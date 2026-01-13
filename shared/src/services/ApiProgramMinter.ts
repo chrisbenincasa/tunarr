@@ -159,7 +159,7 @@ export class ApiProgramMinter {
           );
 
     const season = episode.season;
-    const show = season.show;
+    const show = season.show ?? episode.show;
 
     return {
       date: episode.releaseDate
@@ -222,7 +222,7 @@ export class ApiProgramMinter {
           );
 
     const album = track.album;
-    const artist = album.artist;
+    const artist = album.artist ?? track.album;
 
     return {
       date: track.releaseDate ? dayjs(track.releaseDate).format() : undefined,

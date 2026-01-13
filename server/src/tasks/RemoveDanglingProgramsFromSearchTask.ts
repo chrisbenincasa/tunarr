@@ -4,10 +4,16 @@ import { MeilisearchService } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { ReconcileProgramDurationsTask } from './ReconcileProgramDurationsTask.ts';
-import { Task } from './Task.ts';
+import { SimpleTask } from './Task.ts';
+import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
-export class RemoveDanglingProgramsFromSearchTask extends Task {
+@simpleTaskDef({
+  name: RemoveDanglingProgramsFromSearchTask.name,
+  description:
+    'Removes programs from the search index that have media sources which do not exist in the database',
+})
+export class RemoveDanglingProgramsFromSearchTask extends SimpleTask {
   static ID = ReconcileProgramDurationsTask.name;
   public ID = ReconcileProgramDurationsTask.name;
 

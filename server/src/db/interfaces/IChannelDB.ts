@@ -97,6 +97,8 @@ export interface IChannelDB {
     updateReq: SaveableChannel,
   ): Promise<ChannelAndLineup<Channel>>;
 
+  updateChannelDuration(id: string, duration: number): Promise<number>;
+
   copyChannel(id: string): Promise<ChannelAndLineup<Channel>>;
 
   loadLineup(channelId: string, forceRead?: boolean): Promise<Lineup>;

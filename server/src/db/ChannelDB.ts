@@ -876,7 +876,7 @@ export class ChannelDB implements IChannelDB {
     };
   }
 
-  private updateChannelDuration(id: string, newDur: number) {
+  updateChannelDuration(id: string, newDur: number): Promise<number> {
     return this.drizzleDB
       .update(Channel)
       .set({
@@ -884,7 +884,8 @@ export class ChannelDB implements IChannelDB {
       })
       .where(eq(Channel.uuid, id))
       .limit(1)
-      .execute();
+      .execute()
+      .then((_) => _.changes);
   }
 
   async copyChannel(id: string): Promise<ChannelAndLineup<Channel>> {

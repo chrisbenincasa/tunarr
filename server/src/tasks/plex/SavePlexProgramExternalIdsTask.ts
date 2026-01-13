@@ -1,42 +1,67 @@
 import { ProgramExternalIdType } from '@/db/custom_types/ProgramExternalIdType.js';
-import type { MinimalProgramExternalId } from '@/db/schema/ProgramExternalId.js';
-import { type MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
+import type {
+  MinimalProgramExternalId,
+  ProgramExternalId,
+} from '@/db/schema/ProgramExternalId.js';
+import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
 import type { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { Task } from '@/tasks/Task.js';
+import { Task2 } from '@/tasks/Task.js';
 import type { Maybe } from '@/types/util.js';
 import { mintExternalIdForPlexGuid } from '@/util/externalIds.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { seq } from '@tunarr/shared/util';
 import type { PlexTerminalMedia } from '@tunarr/types/plex';
+import { inject, injectable } from 'inversify';
 import { isEmpty, isNil, isUndefined } from 'lodash-es';
+import type { Dictionary } from 'ts-essentials';
+import z from 'zod';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
+import { KEYS } from '../../types/inject.ts';
 
 export type SavePlexProgramExternalIdsTaskFactory = (
   programId: string,
 ) => SavePlexProgramExternalIdsTask;
 
-export class SavePlexProgramExternalIdsTask extends Task {
+const SavePlexProgramExternalIdsTaskRequest = z.object({
+  programId: z.string(),
+});
+
+type SavePlexProgramExternalIdsTaskRequest = z.infer<
+  typeof SavePlexProgramExternalIdsTaskRequest
+>;
+
+@injectable()
+export class SavePlexProgramExternalIdsTask extends Task2<
+  typeof SavePlexProgramExternalIdsTaskRequest,
+  Maybe<Dictionary<ProgramExternalId[]>>
+> {
   static KEY = Symbol.for(SavePlexProgramExternalIdsTask.name);
   ID = SavePlexProgramExternalIdsTask.name;
+  schema = SavePlexProgramExternalIdsTaskRequest;
 
   constructor(
-    private programId: string,
+    @inject(KEYS.ProgramDB)
     private programDB: IProgramDB,
+    @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
   ) {
     super();
   }
 
-  protected async runInternal(): Promise<unknown> {
-    const program = await this.programDB.getProgramById(this.programId);
+  protected async runInternal({
+    programId,
+  }: SavePlexProgramExternalIdsTaskRequest): Promise<
+    Maybe<Dictionary<ProgramExternalId[]>>
+  > {
+    const program = await this.programDB.getProgramById(programId);
 
     if (isNil(program)) {
-      throw new Error('Program not found ID = ' + this.programId);
+      throw new Error('Program not found ID = ' + programId);
     }
 
     const plexIds = program.externalIds.filter(
       (eid) =>
-        eid.sourceType === ProgramExternalIdType.PLEX &&
+        eid.sourceType === ProgramExternalIdType.PLEX.toString() &&
         isNonEmptyString(eid.externalSourceId),
     );
 

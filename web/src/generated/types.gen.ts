@@ -1746,61 +1746,61 @@ export type SearchFilter = {
     };
 };
 
-export type GetApiJobsData = {
+export type GetApiTasksData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/jobs';
+    url: '/api/tasks';
 };
 
-export type GetApiJobsResponses = {
+export type GetApiTasksResponses = {
     /**
      * Default Response
      */
     200: Array<{
         id: string;
         name: string;
-        running: boolean;
-        lastExecution?: string;
-        lastExecutionEpoch?: number;
-        nextExecution?: string;
-        nextExecutionEpoch?: number;
+        description?: string;
+        scheduledTasks: Array<{
+            running: boolean;
+            lastExecution?: string;
+            lastExecutionEpoch?: number;
+            nextExecution?: string;
+            nextExecutionEpoch?: number;
+            args: {
+                [key: string]: never;
+            } | string;
+        }>;
     }>;
 };
 
-export type GetApiJobsResponse = GetApiJobsResponses[keyof GetApiJobsResponses];
+export type GetApiTasksResponse = GetApiTasksResponses[keyof GetApiTasksResponses];
 
-export type PostApiJobsByIdRunData = {
-    body?: never;
+export type PostApiTasksByIdRunData = {
+    body?: unknown;
     path: {
         id: string;
     };
     query?: {
-        background?: string;
+        background?: boolean | string;
     };
-    url: '/api/jobs/{id}/run';
+    url: '/api/tasks/{id}/run';
 };
 
-export type PostApiJobsByIdRunErrors = {
+export type PostApiTasksByIdRunErrors = {
     /**
      * Default Response
      */
-    400: {
-        message: string;
-    };
+    400: unknown;
     /**
      * Default Response
      */
-    404: unknown;
-    /**
-     * Default Response
-     */
-    500: unknown;
+    404: string;
 };
 
-export type PostApiJobsByIdRunError = PostApiJobsByIdRunErrors[keyof PostApiJobsByIdRunErrors];
+export type PostApiTasksByIdRunError = PostApiTasksByIdRunErrors[keyof PostApiTasksByIdRunErrors];
 
-export type PostApiJobsByIdRunResponses = {
+export type PostApiTasksByIdRunResponses = {
     /**
      * Default Response
      */

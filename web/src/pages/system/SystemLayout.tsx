@@ -1,13 +1,7 @@
-import {
-  Box,
-  LinearProgress,
-  Paper,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
-import { Link, Outlet } from '@tanstack/react-router';
+import { Box, LinearProgress, Paper, Tabs, Typography } from '@mui/material';
+import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
+import { RouterTabLink } from '../../components/base/RouterTabLink.tsx';
 
 type Props = {
   currentTab?: string;
@@ -32,25 +26,16 @@ export const SystemLayout = ({ currentTab }: Props) => {
               },
             }}
           >
-            <Tab label="Status" value="/" to="/system" component={Link} />
-            <Tab
-              label="Debug"
-              value="/debug"
-              to="/system/debug"
-              component={Link}
-            />
-            <Tab
-              label="Logs"
-              value="/logs"
-              to="/system/logs"
-              component={Link}
-            />
+            <RouterTabLink label="Status" value="/" to="/system" />
+            <RouterTabLink label="Debug" value="/debug" to="/system/debug" />
+            <RouterTabLink label="Logs" value="/logs" to="/system/logs" />
+            <RouterTabLink label="Tasks" value="/tasks" to="/system/tasks" />
           </Tabs>
-          <Box sx={{ py: [1, 3] }}>
-            <Suspense fallback={<LinearProgress />}>
-              <Outlet />
-            </Suspense>
-          </Box>
+        </Box>
+        <Box sx={{ py: [1, 3] }}>
+          <Suspense fallback={<LinearProgress />}>
+            <Outlet />
+          </Suspense>
         </Box>
       </Paper>
     </Box>

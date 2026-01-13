@@ -1,12 +1,12 @@
 import { seq } from '@tunarr/shared/util';
 import { ContentGuideProgram } from '@tunarr/types';
 import dayjs from 'dayjs';
-import type { Duration } from 'dayjs/plugin/duration.js';
 import { inject, injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { dirname, extname } from 'node:path';
 import { tmpName } from 'tmp-promise';
+import z from 'zod';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -29,46 +29,60 @@ import { fileExists } from '../util/fsUtil.ts';
 import { isDefined } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { getSubtitleCacheFilePath } from '../util/subtitles.ts';
-import { Task } from './Task.ts';
+import { Task2 } from './Task.ts';
+import { taskDef } from './TaskRegistry.ts';
 
-type ChannelExtractionFilter = {
-  type: 'channel';
-  channelId: string;
-};
+const ChannelExtractionFilter = z.object({
+  type: z.literal('channel'),
+  channelId: z.string(),
+});
 
-type ProgramExtractionFilter = {
-  type: 'program';
-  programId: string;
-};
+const ProgramExtractionFilter = z.object({
+  type: z.literal('program'),
+  programId: z.string(),
+});
 
-type DurationExtractionFilter = {
-  type: 'time';
-  duration: Duration;
-};
+const DurationExtractionFilter = z.object({
+  type: z.literal('time'),
+  durationMs: z.number(),
+});
 
-type ExtractionFilter =
-  | ChannelExtractionFilter
-  | ProgramExtractionFilter
-  | DurationExtractionFilter;
+export type DurationExtractionFilter = z.infer<typeof DurationExtractionFilter>;
 
-export type SubtitleExtractorTaskRequest = {
-  filter?: ExtractionFilter;
-};
+const ExtractionFilter = z.discriminatedUnion('type', [
+  ChannelExtractionFilter,
+  ProgramExtractionFilter,
+  DurationExtractionFilter,
+]);
+
+const SubtitleExtractorTaskRequest = z.object({
+  filter: ExtractionFilter.optional(),
+});
+
+export type SubtitleExtractorTaskRequest = z.infer<
+  typeof SubtitleExtractorTaskRequest
+>;
 
 const defaultFilter = {
   type: 'time',
-  duration: dayjs.duration({ hours: 1 }),
+  durationMs: dayjs.duration({ hours: 1 }).asMilliseconds(),
 } satisfies DurationExtractionFilter;
 
-export type SubtitleExtractorTaskFactory = (
-  request: SubtitleExtractorTaskRequest,
-) => SubtitleExtractorTask;
-
 @injectable()
-export class SubtitleExtractorTask extends Task {
+@taskDef({
+  name: SubtitleExtractorTask.name,
+  description:
+    'Extracted embedded, text-based subtitles from scheduled programs',
+  schema: SubtitleExtractorTaskRequest,
+})
+export class SubtitleExtractorTask extends Task2<
+  typeof SubtitleExtractorTaskRequest
+> {
   static KEY = SubtitleExtractorTask.name;
   static ID = SubtitleExtractorTask.name;
   public ID = SubtitleExtractorTask.ID;
+
+  schema = SubtitleExtractorTaskRequest;
 
   constructor(
     @inject(KEYS.Logger) logger: Logger,
@@ -80,18 +94,20 @@ export class SubtitleExtractorTask extends Task {
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-    private request: SubtitleExtractorTaskRequest,
+    // private request: SubtitleExtractorTaskRequest,
   ) {
     super(logger);
   }
 
-  protected async runInternal(): Promise<unknown> {
+  protected async runInternal(
+    request: SubtitleExtractorTaskRequest,
+  ): Promise<void> {
     if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
       this.logger.debug('Subtitle extraction is not enabled, skipping task.');
       return;
     }
 
-    const filter = this.request.filter ?? defaultFilter;
+    const filter = request.filter ?? defaultFilter;
     switch (filter.type) {
       case 'time':
         await this.handleTimeFilter(filter);
@@ -104,8 +120,6 @@ export class SubtitleExtractorTask extends Task {
         );
         break;
     }
-
-    return;
   }
 
   private async handleTimeFilter(filter: DurationExtractionFilter) {
@@ -115,7 +129,7 @@ export class SubtitleExtractorTask extends Task {
     await this.guideService.get();
 
     const nextHourGuide = await this.guideService.getAllChannelGuides(
-      OpenDateTimeRange.create(now, now.add(filter.duration))!,
+      OpenDateTimeRange.create(now, now.add(filter.durationMs))!,
     );
     const mediaSources = await this.mediaSourceDB.getAll();
 
