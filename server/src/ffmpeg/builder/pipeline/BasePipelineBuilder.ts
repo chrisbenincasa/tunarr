@@ -76,6 +76,7 @@ import { Libx264Encoder } from '../encoder/Libx264Encoder.ts';
 import { Libx265Encoder } from '../encoder/Libx265Encoder.ts';
 import { Mpeg2VideoEncoder } from '../encoder/Mpeg2VideoEncoder.ts';
 import { RawVideoEncoder } from '../encoder/RawVideoEncoder.ts';
+import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import type { FilterOption } from '../filter/FilterOption.ts';
 import { StreamSeekFilter } from '../filter/StreamSeekFilter.ts';
 import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
@@ -319,7 +320,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     pipelineOptions: PipelineOptions,
   ): Pipeline {
     this.context = new PipelineBuilderContext({
-      videoStream: first(this.videoInputSource.streams),
+      videoStream: first(this.nullableVideoInputSource?.streams),
       audioStream: first(this.audioInputSource?.streams),
       subtitleStream: first(this.subtitleInputSource?.streams),
       ffmpegState,
@@ -357,7 +358,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         : FastStartOutputOption();
     this.pipelineSteps.push(movFlags);
 
-    // TODO BFrames
+    // TODO: BFrames
     if (isNull(this.nullableVideoInputSource)) {
       throw new Error('FFmpeg pipeline currently requires a video input');
     }
@@ -596,7 +597,15 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
     }
 
-    // TODO Audio volumne
+    if (
+      !isNull(this.desiredAudioState?.audioVolume) &&
+      this.desiredAudioState.audioVolume > 0
+    ) {
+      this.audioInputSource?.filterSteps?.push(
+        new AudioVolumeFilter(this.desiredAudioState.audioVolume),
+      );
+    }
+
     if (encoder.name !== 'copy') {
       // This seems to help with audio sync issues in QSV
       const asyncSamples =
