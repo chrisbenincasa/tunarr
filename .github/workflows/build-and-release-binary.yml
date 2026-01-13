@@ -88,7 +88,7 @@ jobs:
         run: pnpm turbo make-bin -- --target ${{matrix.os.target}} --output-archives
 
       - name: Upload Edge Binary
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.2
         with:
           name: Tunarr Edge
           tag_name: edge
@@ -98,7 +98,7 @@ jobs:
         if: github.ref == format('refs/heads/{0}', 'dev') && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
 
       - name: Upload Binaries
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.2
         with:
           files: |
             ./server/bin/tunarr-*.*(tar.gz|zip)
