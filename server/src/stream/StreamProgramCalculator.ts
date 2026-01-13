@@ -8,7 +8,7 @@ import { type Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
-import { first, isEmpty, isNil, isNull } from 'lodash-es';
+import { first, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
 import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
@@ -93,6 +93,13 @@ export class StreamProgramCalculator {
     }
 
     const lineup = await this.channelDB.loadLineup(channel.uuid);
+
+    // Fix channel lineups if necessary
+    if (channel.duration <= 0) {
+      const actualDuration = sumBy(lineup.items, (item) => item.durationMs);
+      await this.channelDB.updateChannelDuration(channel.uuid, actualDuration);
+      channel.duration = actualDuration;
+    }
 
     let lineupItem: Maybe<StreamLineupItem>;
     let channelContext: Channel = channel;

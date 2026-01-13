@@ -599,6 +599,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
     if (
       !isNull(this.desiredAudioState?.audioVolume) &&
+      this.desiredAudioState.audioVolume !== 100 &&
+      encoder.name != 'copy' &&
       this.desiredAudioState.audioVolume > 0
     ) {
       this.audioInputSource?.filterSteps?.push(
