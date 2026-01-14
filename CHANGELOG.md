@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0-dev.3](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.2...v1.1.0-dev.3) (2026-01-14)
+
+### Features
+
+* add local music track library scanner ([#1585](https://github.com/chrisbenincasa/tunarr/issues/1585)) ([580091a](https://github.com/chrisbenincasa/tunarr/commit/580091aa734dfb37f536fce3057574e195c0353b))
+
 ## [1.1.0-dev.2](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.1...v1.1.0-dev.2) (2026-01-14)
 
 ### Bug Fixes
