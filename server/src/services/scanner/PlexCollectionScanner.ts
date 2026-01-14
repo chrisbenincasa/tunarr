@@ -10,11 +10,16 @@ import {
   reject,
   uniq,
 } from 'lodash-es';
+import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ExternalCollectionRepo } from '../../db/ExternalCollectionRepo.ts';
 import { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
-import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.ts';
+import type {
+  MediaSourceWithRelations,
+  ProgramGroupingOrmWithRelations,
+  ProgramWithRelationsOrm,
+} from '../../db/schema/derivedTypes.ts';
 import { ExternalCollection } from '../../db/schema/ExternalCollection.ts';
 import { MediaSourceOrm } from '../../db/schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../../db/schema/MediaSourceLibrary.ts';
@@ -275,30 +280,99 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
 
     for (const newKeyChunk of chunk([...newKeys], 100)) {
       let searchDocs: ProgramSearchDocument[];
+      const childSearchDocs: ProgramSearchDocument[] = [];
       if (isGroupingCollectionType) {
         const groupings = await this.getProgramGroupingsAndSearchDocuments(
           context,
           newKeyChunk,
         );
         searchDocs = groupings.searchDocs;
-        await this.tagRepo.tagProgramGroupings(tag.uuid, groupings.daos);
+        await this.tagRepo.tagProgramGroupings(
+          tag.uuid,
+          groupings.daos.map((dao) => dao.uuid),
+        );
+        // For groupings, we also need to expand the hierarchy so we can update nested
+        // documents in the search index.
+        const allDescendentIds = uniq(
+          (
+            await Promise.all(
+              groupings.daos.map(({ type, uuid }) => {
+                return Promise.all([
+                  this.programDB
+                    .getChildren(uuid, type)
+                    .then((_) =>
+                      _.results.map(
+                        (
+                          p:
+                            | ProgramGroupingOrmWithRelations
+                            | ProgramWithRelationsOrm,
+                        ) => p.uuid,
+                      ),
+                    ),
+                  this.programDB
+                    .getProgramGroupingDescendants(uuid, type)
+                    .then((_) => _.map((p) => p.uuid)),
+                ]).then((_) => uniq(_.flat()));
+              }),
+            )
+          ).flat(),
+        );
+        childSearchDocs.push(
+          ...(await this.searchService.getPrograms(allDescendentIds)),
+        );
       } else {
         const programs = await this.getProgramsAndSearchDocuments(
           context,
           newKeyChunk,
         );
         searchDocs = programs.searchDocs;
-        await this.tagRepo.tagPrograms(tag.uuid, programs.daos);
+        await this.tagRepo.tagPrograms(
+          tag.uuid,
+          programs.daos.map((dao) => dao.uuid),
+        );
       }
 
-      const updates = searchDocs.map((doc) => {
+      const updates: ProgramIndexPartialUpdate[] = searchDocs.map((doc) => {
         return {
           id: doc.id,
           tags: uniq(doc.tags.concat(collection.title)),
-        } satisfies ProgramIndexPartialUpdate;
+        };
       });
 
-      await this.searchService.updatePrograms(updates);
+      // Update any children we have too.
+      const childUpdates: ProgramIndexPartialUpdate[] = seq.collect(
+        childSearchDocs,
+        (doc) => {
+          return match(doc)
+            .with(
+              { type: P.union('episode', 'track'), grandparent: P.nonNullable },
+              (doc) => {
+                return {
+                  id: doc.id,
+                  grandparent: {
+                    ...doc.grandparent,
+                    tags: uniq(doc.grandparent.tags.concat(collection.title)),
+                  },
+                } satisfies ProgramIndexPartialUpdate;
+              },
+            )
+            .with(
+              { type: P.union('album', 'season'), parent: P.nonNullable },
+              (doc) => {
+                return {
+                  id: doc.id,
+                  parent: {
+                    ...doc.parent,
+                    tags: uniq(doc.parent.tags.concat(collection.title)),
+                  },
+                } satisfies ProgramIndexPartialUpdate;
+              },
+            )
+            .otherwise(() => null);
+        },
+      );
+
+      await this.searchService.updatePrograms(updates.concat(childUpdates));
     }
 
     // Removed keys
@@ -402,7 +476,10 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
     }
 
     return {
-      daos: daoIds,
+      daos: programs.map((group) => ({
+        uuid: group.uuid,
+        type: group.type,
+      })),
       searchDocs: docs,
     };
   }
@@ -447,7 +524,10 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
     }
 
     return {
-      daos: daoIds,
+      daos: groups.map((group) => ({
+        uuid: group.uuid,
+        type: group.type,
+      })),
       searchDocs: docs,
     };
   }

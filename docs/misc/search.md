@@ -76,4 +76,5 @@ Fields available for search:
 | `release_date` | `date` | Program's original release date | `1990-12-05` (`YYYY-MM-DD` or `YYYYMMDD`) |
 | `show_title` | `string` | Title of the show a program belongs to (only applicable to episodes) | 30 Rock |
 | `show_genre` | `string` | Genre of the show a program belongs to (only applicable to episodes) | comedy |
-| `show_tag` | `string` | Tag on the show the program belongs to (only applicable to episodes) | - |
+| `show_tags` | `string` | Tag on the show the program belongs to (only applicable to episodes) | - |
+| `show_studio` | `string` | Studio on the show the program belongs to | - |

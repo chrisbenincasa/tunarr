@@ -57,7 +57,8 @@ const StringFields = [
   'type',
   'show_title',
   'show_genre',
-  'show_tag',
+  'show_tags',
+  'show_studio',
   'audio_language',
   'subtitle_language',
 ] as const;
@@ -327,6 +328,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   show_genre: 'grandparent.genres',
   show_title: 'grandparent.title',
   show_tags: 'grandparent.tags',
+  show_studio: 'grandparent.studio',
   grandparent_genre: 'grandparent.genres',
   video_bit_depth: 'videoBitDepth',
   video_codec: 'videoCodec',
