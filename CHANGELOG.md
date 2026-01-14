@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0-dev.2](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.1...v1.1.0-dev.2) (2026-01-14)
+
+### Bug Fixes
+
+* add audio volume filter back to ffmpeg pipeline ([1e6a46c](https://github.com/chrisbenincasa/tunarr/commit/1e6a46c94a1dbfd533dfce4509bf2dda7d065637)), closes [#1582](https://github.com/chrisbenincasa/tunarr/issues/1582)
+* apply tag values to denormalized parent/grandparent search index fields ([50408bb](https://github.com/chrisbenincasa/tunarr/commit/50408bb522392167ab3bf12c9ef9c1d2ba0d7dde))
+* be more permissive about deriving / accepting program hierarchies ([8be211d](https://github.com/chrisbenincasa/tunarr/commit/8be211da810ebe38509945bb053a166c131ea243))
+* correctly mint ContentPrograms for unsaved channel programming ([b9143d2](https://github.com/chrisbenincasa/tunarr/commit/b9143d2cc7cb8d70759a315b3d4581ddf12cb9bd))
+* fix zero channel durations if detected at stream time ([2bb4231](https://github.com/chrisbenincasa/tunarr/commit/2bb4231d89aa17db7845e505ae60f9b4d54348aa))
+* properly extract librarySectionID from other plex item types ([5946299](https://github.com/chrisbenincasa/tunarr/commit/5946299a34ca7d0e30c900ab3302f17c7c903a7f))
+
 ## [1.1.0-dev.1](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.0...v1.1.0-dev.1) (2026-01-12)
 
 ### Bug Fixes
