@@ -161,6 +161,7 @@ export class MediaSourceLibraryRefresher {
         // Other video plex libraries have type=movie but a tv.plex.agents.none agent, AFAICT.
         return plexLibrary.agent.includes('none') ? 'other_videos' : 'movies';
       case 'show':
+      case 'episode':
         return 'shows';
       case 'artist':
       case 'track':
