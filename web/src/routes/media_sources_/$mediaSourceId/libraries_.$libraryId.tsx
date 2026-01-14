@@ -40,6 +40,7 @@ function MediaSourceBrowserPage() {
         <LibraryProgramGrid
           mediaSource={library.mediaSource}
           library={library}
+          disableProgramSelection
         />
       </Stack>
     </Box>

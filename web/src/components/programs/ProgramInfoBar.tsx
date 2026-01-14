@@ -3,7 +3,7 @@ import {
   getProgramRating,
   getProgramReleaseDate,
 } from '@/helpers/programUtil';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import {
   getChildCount,
@@ -124,6 +124,13 @@ export default function ProgramInfoBar({ program, time }: Props) {
   }, [program]);
 
   const source = useMemo(() => {
+    if (program.sourceType === 'local') {
+      return (
+        <Tooltip title={program.externalId}>
+          <span>{capitalize(program.sourceType)}</span>
+        </Tooltip>
+      );
+    }
     return capitalize(program.sourceType);
   }, [program]);
 

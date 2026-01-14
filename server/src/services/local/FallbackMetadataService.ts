@@ -1,12 +1,21 @@
-import { MovieMetadata, OtherVideoMetadata, ShowMetadata } from '@tunarr/types';
+import {
+  MovieMetadata,
+  MusicAlbumMetadata,
+  MusicArtistMetadata,
+  OtherVideoMetadata,
+  ShowMetadata,
+} from '@tunarr/types';
 import { injectable } from 'inversify';
 import { isNull } from 'lodash-es';
 import { basename, extname } from 'node:path';
 import { v4 } from 'uuid';
+import { Nullable } from '../../types/util.ts';
 import { parseIntOrNull } from '../../util/index.ts';
+import { titleToSortTitle } from '../../util/programs.ts';
 
 // TODO: Maybe make this customizable
 const MovieNameRegex = /^(.*?)[.(](\d{4})[.)].*\.\w+$/;
+const AlbumNameRegex = /^(.+?)(?:\s+\((\d{4})\))?$/;
 
 @injectable()
 export class FallbackMetadataService {
@@ -23,7 +32,7 @@ export class FallbackMetadataService {
       releaseDate: null,
       releaseDateString: null,
       title,
-      sortTitle: title,
+      sortTitle: titleToSortTitle(title),
       sourceType: 'local',
       studios: [],
       summary: null,
@@ -44,7 +53,7 @@ export class FallbackMetadataService {
       originalTitle: null,
       releaseDate: null,
       releaseDateString: null,
-      sortTitle: title, // TODO:
+      sortTitle: titleToSortTitle(title),
       sourceType: 'local',
       summary: null,
       title,
@@ -98,7 +107,7 @@ export class FallbackMetadataService {
       originalTitle: null,
       releaseDate: null,
       releaseDateString: null,
-      sortTitle: title, // TODO:
+      sortTitle: titleToSortTitle(title),
       sourceType: 'local',
       title,
       tags: [],
@@ -108,5 +117,53 @@ export class FallbackMetadataService {
       artwork: [],
       state: 'ok',
     };
+  }
+
+  getArtistFallbackMetadata(artistDirectory: string): MusicArtistMetadata {
+    const title = basename(artistDirectory);
+    const metadata: MusicArtistMetadata = {
+      genres: [],
+      identifiers: [],
+      plot: null,
+      title,
+      sortTitle: titleToSortTitle(title),
+      sourceType: 'local',
+      summary: null,
+      tagline: null,
+      tags: [],
+      type: 'artist',
+      uuid: v4(),
+      artwork: [],
+    };
+    return metadata;
+  }
+
+  getAlbumFallbackMetadata(albumDirectory: string): MusicAlbumMetadata {
+    const title = basename(albumDirectory);
+
+    const matches = title.match(AlbumNameRegex);
+    let year: Nullable<number> = null;
+    if (matches && matches[2]) {
+      year = parseIntOrNull(matches[2]);
+    }
+
+    const metadata: MusicAlbumMetadata = {
+      genres: [],
+      identifiers: [],
+      plot: null,
+      title,
+      sortTitle: titleToSortTitle(title),
+      sourceType: 'local',
+      summary: null,
+      tagline: null,
+      tags: [],
+      type: 'album',
+      uuid: v4(),
+      artwork: [],
+      year,
+      releaseDate: null,
+      releaseDateString: null,
+    };
+    return metadata;
   }
 }

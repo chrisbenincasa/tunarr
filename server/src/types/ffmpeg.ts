@@ -131,6 +131,7 @@ export const FfprobeMediaFormatSchema = z.object({
   size: z.coerce.number(),
   bit_rate: z.coerce.number(),
   probe_score: z.number().optional(),
+  tags: z.record(z.string(), z.string()).optional(),
 });
 
 export const FfprobeChapter = z.object({

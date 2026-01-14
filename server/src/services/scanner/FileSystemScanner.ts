@@ -2,11 +2,15 @@ import type { MediaSourceLibraryOrm } from '@/db/schema/MediaSourceLibrary.js';
 import { seq } from '@tunarr/shared/util';
 import type { MediaItem, MediaStream } from '@tunarr/types';
 import dayjs from 'dayjs';
+import glob from 'fast-glob';
 import { head, orderBy } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename } from 'node:path';
 import { v4 } from 'uuid';
-import type { LocalMediaDB } from '../../db/LocalMediaDB.ts';
+import type {
+  LocalMediaDB,
+  UpsertFolderResult,
+} from '../../db/LocalMediaDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type {
   Artwork,
@@ -22,10 +26,27 @@ import type { Maybe } from '../../types/util.ts';
 import { fileExists } from '../../util/fsUtil.ts';
 import { caughtErrorToError, isDefined } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import type { Canonicalizer } from '../Canonicalizer.ts';
 import type { ImageCache } from '../ImageCache.ts';
+import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
 import { KnownImageFileExtensions } from './constants.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { RunState } from './MediaSourceScanner.ts';
+
+export type ScannerUpsertFolderResult = {
+  isNew: boolean;
+  folderId: string;
+  canonicalId: string;
+} & (
+  | {
+      shouldScan: true;
+      folderResult: UpsertFolderResult;
+    }
+  | {
+      shouldScan: false;
+      folderResult: undefined;
+    }
+);
 
 export type LocalScanRequest = {
   mediaSource: MediaSourceWithRelations;
@@ -50,6 +71,7 @@ export abstract class FileSystemScanner {
     protected localMediaDB: LocalMediaDB,
     protected mediaSourceProgressService: MediaSourceProgressService,
     protected mediaSourceDB: MediaSourceDB,
+    protected localFolderCanonicalizer: Canonicalizer<FolderAndContents>,
   ) {}
 
   async scan(req: LocalScanRequest) {
@@ -358,16 +380,162 @@ export abstract class FileSystemScanner {
     );
   }
 
+  protected async upsertFolder(
+    folderPath: string,
+    context: LocalScanContext,
+    parentFolderPath: string,
+  ): Promise<ScannerUpsertFolderResult> {
+    const { library } = context;
+    const parentFolder = await this.localMediaDB.findFolder(
+      library,
+      parentFolderPath,
+    );
+
+    // const fullPath = path.join(showDirent.parentPath, showDirent.name);
+    const thisFolder = await this.localMediaDB.findFolder(library, folderPath);
+
+    const allFiles = await fs.readdir(folderPath, { withFileTypes: true });
+
+    // Calculate the folder's canonical ID from its contents and update
+    // the DB with the paths and ID
+    const canonicalFiles = allFiles.filter(
+      (f) => !basename(f.name).startsWith('.'),
+    );
+    const canonicalFilesAndStats = await Promise.all(
+      canonicalFiles.map(async (file) => {
+        const stat = await fs.stat(path.join(file.parentPath, file.name));
+        return {
+          dirent: file,
+          stats: stat,
+        };
+      }),
+    );
+
+    const canonicalId = this.localFolderCanonicalizer.getCanonicalId({
+      folderName: folderPath,
+      folderStats: await fs.stat(folderPath),
+      contents: canonicalFilesAndStats,
+    });
+
+    let shouldScan = false;
+    let isNew = false;
+    let folderId: string;
+    let folderResult: Maybe<UpsertFolderResult>;
+    if (!thisFolder) {
+      shouldScan = true;
+      folderResult = await this.localMediaDB.upsertFolder(
+        context.library,
+        parentFolder?.uuid,
+        folderPath,
+        canonicalId,
+      );
+      isNew = folderResult.isNew;
+      folderId = folderResult.folder.uuid;
+    } else if (thisFolder.canonicalId !== canonicalId) {
+      shouldScan = true;
+      folderId = thisFolder.uuid;
+    } else {
+      folderId = thisFolder.uuid;
+    }
+
+    shouldScan = shouldScan || context.force;
+
+    if (shouldScan) {
+      folderResult = await this.localMediaDB.upsertFolder(
+        library,
+        parentFolder?.uuid,
+        folderPath,
+        canonicalId,
+      );
+      return {
+        shouldScan,
+        isNew,
+        folderId,
+        folderResult,
+        canonicalId,
+      };
+    }
+
+    return {
+      shouldScan,
+      isNew,
+      folderId,
+      folderResult: undefined,
+      canonicalId,
+    };
+  }
+
+  protected async produceArtwork(
+    fullPath: string,
+    artworkType: ArtworkType,
+    possibleArtworkNames: string[],
+    force: boolean = false,
+  ) {
+    if (possibleArtworkNames.length === 0) {
+      this.logger.warn(
+        'Tried to scan unsupported artwork type: %s',
+        artworkType,
+      );
+      return Result.success(undefined);
+    }
+
+    const artPath = await FileSystemScanner.locateArtworkInDirectory(
+      fullPath,
+      possibleArtworkNames,
+    );
+
+    if (!artPath) {
+      this.logger.debug(
+        'No artwork found for %s with types %O',
+        fullPath,
+        possibleArtworkNames,
+      );
+      return Result.success(undefined);
+    }
+
+    const scanResult = await this.scanArtwork(
+      artPath,
+      artworkType,
+      undefined,
+      force,
+    );
+
+    scanResult.ifError((e) => {
+      this.logger.error(
+        e,
+        'Failed to scan artwork of type %s for item %s',
+        artworkType,
+        fullPath,
+      );
+    });
+
+    return scanResult;
+  }
+
   protected static async locateArtworkInDirectory(
     baseFolder: string,
     artworkNames: string[],
   ) {
-    const allNames = KnownImageFileExtensions.values()
-      .flatMap((ext) => artworkNames.map((name) => `${name}.${ext}`))
-      .map((filename) => path.join(baseFolder, filename));
+    const allNames = KnownImageFileExtensions.values().flatMap((ext) => {
+      return artworkNames.map((name) => {
+        if (glob.isDynamicPattern(name)) {
+          return `${glob.convertPathToPattern(baseFolder)}/${name}.${ext}`;
+        }
+        return path.join(baseFolder, `${name}.${ext}`);
+      });
+      // artworkNames.map((name) => `${name}.${ext}`)
+    });
+    // .map((filename) => path.join(baseFolder, filename));
     for (const name of allNames) {
-      if (await fileExists(name)) {
-        return name;
+      if (glob.isDynamicPattern(name)) {
+        const expanded = await glob.async(name);
+        if (expanded.length > 0) {
+          return expanded[0];
+        }
+      } else {
+        if (await fileExists(name)) {
+          return name;
+        }
       }
     }
     return;

@@ -7,11 +7,10 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { useMatches } from '@tanstack/react-router';
 import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
 import type { SearchFilter, SearchRequest } from '@tunarr/types/api';
-import { difference, isEmpty, last } from 'lodash-es';
+import { difference, isEmpty } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -54,18 +53,14 @@ export const SearchInput = ({
   initialSearchFilter,
   mediaSourceId,
 }: Props) => {
-  const routeMatch = useMatches();
   const formMethods = useForm<SearchForm>({
     defaultValues: {
-      filter: initialSearchFilter
-        ? {
-            type: 'structured',
-            filter: initialSearchFilter,
-          }
-        : {
-            type: 'text',
-            expression: '',
-          },
+      filter: {
+        type: 'text',
+        expression: initialSearchFilter
+          ? tunarrSearch.searchFilterToString(initialSearchFilter)
+          : '',
+      },
       keywords: '',
       queryBuilderType: 'text',
     },
@@ -119,19 +114,19 @@ export const SearchInput = ({
       };
       // // If we successfully parsed the search query, it's structured. Otherwise
       // // we just treat it as a raw query.
-      const currentParams = new URLSearchParams(window.location.search);
+      // const currentParams = new URLSearchParams(window.location.search);
 
-      if (last(routeMatch)?.pathname.startsWith('/search')) {
-        window.history.replaceState(
-          {},
-          '',
-          `${window.location.pathname}?${currentParams.toString()}`,
-        );
-      }
+      // if (last(routeMatch)?.pathname.startsWith('/search')) {
+      //   window.history.replaceState(
+      //     {},
+      //     '',
+      //     `${window.location.pathname}?${currentParams.toString()}`,
+      //   );
+      // }
 
       setSearchRequest(search);
     },
-    [getSearchExpression, routeMatch, searchRestrctState],
+    [getSearchExpression, searchRestrctState],
   );
 
   return (

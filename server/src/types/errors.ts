@@ -28,7 +28,8 @@ export function isWrappedError(e: unknown): e is WrappedError {
 }
 
 export abstract class TypedError extends WrappedError {
-  readonly type: KnownErrorTypes;
+  readonly type?: KnownErrorTypes = undefined;
+  readonly httpCode: number = 500;
 
   static fromError(e: Error): TypedError {
     if (e instanceof TypedError) {
@@ -55,7 +56,15 @@ export abstract class TypedError extends WrappedError {
   }
 }
 
-export abstract class NotFoundError extends TypedError {}
+export abstract class NotFoundError extends TypedError {
+  readonly httpCode: number = 404;
+}
+
+export class GenericNotFoundError extends NotFoundError {
+  constructor(id: string, entityType: string = 'Item') {
+    super(`${entityType} with id ${id} not found`);
+  }
+}
 
 export class ChannelNotFoundError extends NotFoundError {
   readonly type = 'channel_not_found';
@@ -78,4 +87,8 @@ export type KnownErrorTypes =
 
 export class GenericError extends TypedError {
   readonly type = 'generic_error';
+}
+
+export class GenericBadRequestError extends TypedError {
+  readonly httpCode: number = 400;
 }
