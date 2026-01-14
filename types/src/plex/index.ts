@@ -77,6 +77,7 @@ export const PlexMediaTypeSchema = z.enum([
   'artist',
   'photo',
   'track',
+  'episode',
 ]);
 
 export const PlexLibrarySectionSchema = z.object({

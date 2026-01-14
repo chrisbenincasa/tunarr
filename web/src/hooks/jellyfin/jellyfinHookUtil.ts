@@ -44,9 +44,11 @@ export const enumerateJellyfinItem = (
         }
 
         if (parent?.type === 'season' && item.type === 'episode') {
-          item.season = parent;
+          item.season ??= parent;
+          item.show ??= parent?.show;
         } else if (parent?.type === 'album' && item.type === 'track') {
-          item.album = parent;
+          item.album ??= parent;
+          item.artist ??= parent?.artist;
         }
 
         acc.push(item);
