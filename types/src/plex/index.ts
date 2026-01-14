@@ -778,6 +778,16 @@ export function isTerminalItem(
   );
 }
 
+export function isPlexItemOrGrouping(item: PlexMedia) {
+  return (
+    isTerminalItem(item) ||
+    isPlexShow(item) ||
+    isPlexSeason(item) ||
+    isPlexMusicArtist(item) ||
+    isPlexMusicAlbum(item)
+  );
+}
+
 // /library/collections/{id}/children
 const basePlexCollectionContentsSchema = z.object({
   size: z.number(),

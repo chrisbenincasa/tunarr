@@ -46,7 +46,7 @@ import type {
   PlexTerminalMedia,
 } from '@tunarr/types/plex';
 import {
-  isTerminalItem,
+  isPlexItemOrGrouping,
   MakePlexMediaContainerResponseSchema,
   PlexContainerStatsSchema,
   type PlexDvr,
@@ -428,7 +428,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       const responseLibraryId = mediaContainer.librarySectionID?.toString();
       for (const item of mediaContainer.Metadata ?? []) {
         const externalLibraryId =
-          (isTerminalItem(item)
+          (isPlexItemOrGrouping(item)
             ? item.librarySectionID?.toString()
             : undefined) ??
           responseLibraryId ??
@@ -786,7 +786,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     media: PlexMedia,
     libraryId?: string,
   ): QueryResult<MediaSourceLibraryOrm> {
-    libraryId ??= isTerminalItem(media)
+    libraryId ??= isPlexItemOrGrouping(media)
       ? media.librarySectionID?.toString()
       : undefined;
     if (!isNonEmptyString(libraryId)) {
