@@ -196,13 +196,13 @@ export type OtherVideoMetadata = z.infer<typeof OtherVideoMetadata>;
 export function isEpisodeWithHierarchy(
   f: TerminalProgram,
 ): f is EpisodeWithHierarchy {
-  return f.type === 'episode' && !!f.season && !!f.season?.show;
+  return f.type === 'episode' && !!f.season && (!!f.season?.show || !!f.show);
 }
 
 export function isMusicTrackWithHierarchy(
   f: TerminalProgram,
 ): f is MusicTrackWithHierarchy {
-  return f.type === 'track' && !!f.album && !!f.album?.artist;
+  return f.type === 'track' && !!f.album && (!!f.album?.artist || !!f.artist);
 }
 
 export function getChildItemType(typ: ProgramOrFolder['type']) {

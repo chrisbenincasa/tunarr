@@ -42,9 +42,11 @@ export const enumeratePlexItem = async (
     }
 
     if (item.type === 'episode' && parent?.type === 'season') {
-      item.season = parent;
+      item.season ??= parent;
+      item.show ??= parent?.show;
     } else if (item.type === 'track' && parent?.type === 'album') {
-      item.album = parent;
+      item.album ??= parent;
+      item.artist ??= parent?.artist;
     }
 
     acc.push(item);

@@ -288,7 +288,7 @@ const ProgramListItem = ({
         }),
         pr: enableDelete ? '96px' : undefined,
       }}
-      key={startTime}
+      key={startTime ?? index.toString()}
       secondaryAction={
         enableDrag && isDragging ? null : (
           <>
@@ -459,6 +459,9 @@ export default function ChannelLineupList(props: Props) {
     return (
       <ProgramListItem
         index={idx}
+        // This is probably not ideal, but coming up with a custom
+        // key may be harder
+        key={idx.toString()}
         program={program}
         style={style}
         channel={channel!}
