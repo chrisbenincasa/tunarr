@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.18](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.0.18) (2026-01-14)
+
+### Bug Fixes
+
+* add audio volume filter back to ffmpeg pipeline ([1e6a46c](https://github.com/chrisbenincasa/tunarr/commit/1e6a46c94a1dbfd533dfce4509bf2dda7d065637)), closes [#1582](https://github.com/chrisbenincasa/tunarr/issues/1582)
+* be more permissive about deriving / accepting program hierarchies ([8be211d](https://github.com/chrisbenincasa/tunarr/commit/8be211da810ebe38509945bb053a166c131ea243))
+* correctly mint ContentPrograms for unsaved channel programming ([b9143d2](https://github.com/chrisbenincasa/tunarr/commit/b9143d2cc7cb8d70759a315b3d4581ddf12cb9bd))
+* fix zero channel durations if detected at stream time ([2bb4231](https://github.com/chrisbenincasa/tunarr/commit/2bb4231d89aa17db7845e505ae60f9b4d54348aa))
+
 ## [1.0.17](https://github.com/chrisbenincasa/tunarr/compare/v1.0.16...v1.0.17) (2026-01-09)
 
 ### Bug Fixes
