@@ -16244,6 +16244,20 @@ export type GetApiSystemSettingsResponses = {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
+            logRollConfig: {
+                enabled: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs: number;
+                };
+            };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {
@@ -16268,6 +16282,20 @@ export type PutApiSystemSettingsData = {
         logging?: {
             logLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             useEnvVarLevel?: boolean;
+            logRollConfig?: {
+                enabled?: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs?: number;
+                };
+            };
         };
         backup?: {
             configurations: Array<{
@@ -16338,6 +16366,20 @@ export type PutApiSystemSettingsResponses = {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
+            logRollConfig: {
+                enabled: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs: number;
+                };
+            };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {

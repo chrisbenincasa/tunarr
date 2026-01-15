@@ -81,6 +81,7 @@
     "random-js": "2.1.0",
     "reflect-metadata": "^0.2.2",
     "retry": "^0.13.1",
+    "sonic-boom": "4.2.0",
     "split2": "^4.2.0",
     "ts-pattern": "^5.8.0",
     "tslib": "^2.8.1",

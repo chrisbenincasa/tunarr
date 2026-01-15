@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { BackupSettingsSchema } from './schemas/settingsSchemas.js';
+import { ScheduleSchema } from './schemas/utilSchemas.js';
 import { type TupleToUnion } from './util.js';
 
 export const LogLevelsSchema = z.union([
@@ -28,10 +29,22 @@ export const LogLevels = [
 
 export type LogLevel = TupleToUnion<typeof LogLevels>;
 
+export const LogRollConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  maxFileSizeBytes: z.number().positive().optional(),
+  rolledFileLimit: z.number().positive(),
+  schedule: ScheduleSchema.optional(),
+});
+
 export const LoggingSettingsSchema = z.object({
   logLevel: LogLevelsSchema,
   logsDirectory: z.string(),
   useEnvVarLevel: z.boolean().default(true),
+  logRollConfig: LogRollConfigSchema.optional().default({
+    enabled: false,
+    maxFileSizeBytes: Math.pow(2, 20), // 1MB => 1,048,576 bytes
+    rolledFileLimit: 3,
+  }),
 });
 
 export type LoggingSettings = z.infer<typeof LoggingSettingsSchema>;

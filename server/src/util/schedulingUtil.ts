@@ -53,7 +53,7 @@ const defaultCronFields: CronFields = run(() => {
   ) as Required<CronFields>;
 });
 
-export function parseEveryScheduleRule(schedule: EverySchedule) {
+export function scheduleRuleToCronString(schedule: EverySchedule) {
   const offset = dayjs.duration(schedule.offsetMs);
 
   function getRange(

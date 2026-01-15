@@ -139,3 +139,5 @@ export const ContentProgramTypeSchema = z.enum([
   'music_video',
   'other_video',
 ]);
+
+export type Schedule = z.infer<typeof ScheduleSchema>;

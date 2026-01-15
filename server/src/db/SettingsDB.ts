@@ -4,7 +4,7 @@ import {
   SettingsChangeEvents,
 } from '@/db/interfaces/ISettingsDB.js';
 import { TypedEventEmitter } from '@/types/eventEmitter.js';
-import { isProduction } from '@/util/index.js';
+import { deepCopy, isProduction } from '@/util/index.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
   DefaultServerSettings,
@@ -39,6 +39,7 @@ import { setImmediate } from 'node:timers';
 import { DeepPartial, DeepReadonly } from 'ts-essentials';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
+import { Maybe } from '../types/util.ts';
 import {
   getDefaultLogDirectory,
   getDefaultLogLevel,
@@ -112,6 +113,11 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
       logLevel: getDefaultLogLevel(),
       logsDirectory: getDefaultLogDirectory(),
       useEnvVarLevel: true,
+      logRollConfig: {
+        enabled: false,
+        rolledFileLimit: 3,
+        maxFileSizeBytes: Math.pow(2, 20),
+      },
     },
     cache: {
       enablePlexRequestCache: false,
@@ -191,12 +197,18 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
   }
 
   async directUpdate(fn: (settings: SettingsFile) => SettingsFile | void) {
-    return await this.db.update(fn).then(() => {
-      this.logger?.debug(
-        'Detected change to settings DB file on disk. Reloading.',
-      );
-      this.emit('change');
-    });
+    let prevSettings: Maybe<SettingsFile>;
+    return await this.db
+      .update((prev) => {
+        prevSettings = deepCopy(prev);
+        fn(prev);
+      })
+      .then(() => {
+        this.logger?.debug(
+          'Detected change to settings DB file on disk. Reloading.',
+        );
+        this.emit('change', prevSettings);
+      });
   }
 
   async updateSettings<K extends keyof Settings>(
@@ -213,8 +225,8 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
     key: K,
     settings: Partial<SettingsFile[K]>,
   ) {
-    return await this.db.update((olDsettings) => {
-      olDsettings[key] = merge(olDsettings[key], settings);
+    return await this.db.update((oldSettings) => {
+      oldSettings[key] = merge(oldSettings[key], settings);
     });
   }
 

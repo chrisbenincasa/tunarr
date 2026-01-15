@@ -261,7 +261,11 @@ export type SystemSettingsResponse = z.infer<
 >;
 
 export const UpdateSystemSettingsRequestSchema = z.object({
-  logging: LoggingSettingsSchema.pick({ logLevel: true, useEnvVarLevel: true })
+  logging: LoggingSettingsSchema.pick({
+    logLevel: true,
+    useEnvVarLevel: true,
+    logRollConfig: true,
+  })
     .partial()
     .optional(),
   backup: BackupSettingsSchema.optional(),
