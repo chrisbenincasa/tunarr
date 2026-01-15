@@ -694,6 +694,7 @@ export class MeilisearchService implements ISearchService {
             ids,
             offset,
             limit: 100,
+            filter: '',
           });
         results.push(...res.results);
         offset += res.results.length;
@@ -749,7 +750,7 @@ export class MeilisearchService implements ISearchService {
     return await Promise.all(
       this.#client
         .index<ProgramSearchDocument>(ProgramsIndex.name)
-        .updateDocumentsInBatches(programs, 100),
+        .updateDocumentsInBatches(programs, 20),
     );
   }
 

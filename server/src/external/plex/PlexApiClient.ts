@@ -5,7 +5,6 @@ import { type Maybe } from '@/types/util.js';
 import dayjs from '@/util/dayjs.js';
 import {
   caughtErrorToError,
-  inConstArr,
   isDefined,
   isNonEmptyString,
   zipWithIndex,
@@ -97,7 +96,7 @@ import { v4 } from 'uuid';
 import type z from 'zod';
 import type { PageParams } from '../../db/interfaces/IChannelDB.ts';
 import type { ArtworkType } from '../../db/schema/Artwork.ts';
-import { ProgramType, ProgramTypes } from '../../db/schema/Program.ts';
+import { ProgramType } from '../../db/schema/Program.ts';
 import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import type { Canonicalizer } from '../../services/Canonicalizer.ts';
 import type { WrappedError } from '../../types/errors.ts';
@@ -562,9 +561,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       uuid: v4(),
       sourceType: MediaSourceType.Plex,
       childCount: collection.childCount,
-      childType: inConstArr(ProgramTypes, collection.subtype)
-        ? (collection.subtype as Collection['childType'])
-        : undefined,
+      childType: collection.subtype,
     };
   }
 

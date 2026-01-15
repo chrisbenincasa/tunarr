@@ -131,7 +131,10 @@ export const PlexLibraryCollectionSchema = z
     type: z.literal('collection'),
     title: z.string(),
     titleSort: z.string().optional(),
-    subtype: z.string(),
+    subtype: z
+      .enum(['movie', 'show', 'artist', 'album'])
+      .optional()
+      .catch(undefined),
     contentRating: z.string().optional(),
     summary: z.string(),
     index: z.number(),
