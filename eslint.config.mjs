@@ -85,6 +85,7 @@ export default defineConfig(
         'warn',
         { allowConstantExport: true },
       ],
+      'react-hooks/preserve-manual-memoization': ['warn'],
       // Don't error on promise-returning functions in JSX attributes
       '@typescript-eslint/no-misused-promises': [
         2,

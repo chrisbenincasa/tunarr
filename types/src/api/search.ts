@@ -107,8 +107,19 @@ export const SearchFilterQuerySchema: z.ZodDiscriminatedUnion<
 
 export type SearchFilter = z.infer<typeof SearchFilterQuerySchema>;
 
+export const SearchSortFields = [
+  'title',
+  'sortTitle',
+  'duration',
+  'originalReleaseDate',
+  'originalReleaseYear',
+  'index',
+] as const;
+
+export type SearchSortField = TupleToUnion<typeof SearchSortFields>;
+
 export const SearchSortSchema = z.object({
-  field: z.string(),
+  field: z.enum(SearchSortFields),
   direction: z.enum(['asc', 'desc']),
 });
 
@@ -118,7 +129,7 @@ export const SearchRequestSchema = z.object({
   query: z.string().nullish(),
   restrictSearchTo: z.string().array().optional(),
   filter: SearchFilterQuerySchema.nullish(),
-  sort: SearchSortSchema.nullish(),
+  sort: SearchSortSchema.array().nullish(),
 });
 
 export type SearchRequest = z.infer<typeof SearchRequestSchema>;

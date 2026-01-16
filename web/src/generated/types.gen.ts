@@ -1811,77 +1811,6 @@ export type PostApiTasksByIdRunResponses = {
     202: unknown;
 };
 
-export type GetApiJobsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/jobs';
-};
-
-export type GetApiJobsResponses = {
-    /**
-     * Default Response
-     */
-    200: Array<{
-        id: string;
-        name: string;
-        description?: string;
-        scheduledTasks: Array<{
-            running: boolean;
-            lastExecution?: string;
-            lastExecutionEpoch?: number;
-            nextExecution?: string;
-            nextExecutionEpoch?: number;
-            args: {
-                [key: string]: never;
-            } | string;
-        }>;
-    }>;
-};
-
-export type GetApiJobsResponse = GetApiJobsResponses[keyof GetApiJobsResponses];
-
-export type PostApiJobsByIdRunData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: {
-        background?: string;
-    };
-    url: '/api/jobs/{id}/run';
-};
-
-export type PostApiJobsByIdRunErrors = {
-    /**
-     * Default Response
-     */
-    400: {
-        message: string;
-    };
-    /**
-     * Default Response
-     */
-    404: unknown;
-    /**
-     * Default Response
-     */
-    500: unknown;
-};
-
-export type PostApiJobsByIdRunError = PostApiJobsByIdRunErrors[keyof PostApiJobsByIdRunErrors];
-
-export type PostApiJobsByIdRunResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-    /**
-     * Default Response
-     */
-    202: unknown;
-};
-
 export type GetChannelsData = {
     body?: never;
     path?: never;
@@ -11821,10 +11750,10 @@ export type PostApiProgramsSearchData = {
             query?: string | null;
             restrictSearchTo?: Array<string>;
             filter?: SearchFilterInput | null;
-            sort?: {
-                field: string;
+            sort?: Array<{
+                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'index';
                 direction: 'asc' | 'desc';
-            } | null;
+            }> | null;
         };
         restrictSeachTo?: Array<string>;
         mediaSourceId?: string;
@@ -17694,7 +17623,7 @@ export type GetApiPlexByMediaSourceIdFiltersResponses = {
         Meta: {
             Type: Array<{
                 key: string;
-                type: 'movie' | 'show' | 'artist' | 'photo' | 'track' | 'season' | 'album' | 'folder';
+                type: 'movie' | 'show' | 'artist' | 'photo' | 'track' | 'episode' | 'season' | 'album' | 'folder';
                 title: string;
                 active: boolean;
                 Filter?: Array<{

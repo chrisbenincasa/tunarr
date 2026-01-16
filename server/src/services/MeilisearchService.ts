@@ -164,6 +164,7 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
   ],
   sortable: [
     'title',
+    'sortTitle',
     'duration',
     'originalReleaseDate',
     'originalReleaseYear',
@@ -257,6 +258,7 @@ type BaseProgramSearchDocument = {
   libraryId: SingleCaseString;
   title: string;
   titleReverse: string;
+  sortTitle?: string;
   rating: Nullable<string>;
   summary: Nullable<string>;
   plot: Nullable<string>;
@@ -333,6 +335,7 @@ type SearchRequest<
     page: number;
     limit: number;
   };
+  sort?: Array<{ field: string; direction: 'asc' | 'desc' }>;
 };
 
 export type FreeSearchResponse<DocumentType extends Record<string, unknown>> = {
@@ -777,6 +780,7 @@ export class MeilisearchService implements ISearchService {
       tagline: show.tagline,
       title: show.title,
       titleReverse: show.title.split('').reverse().join(''),
+      sortTitle: show.sortTitle,
       rating: show.rating,
       genres: show.genres,
       actors: show.actors,
@@ -824,6 +828,7 @@ export class MeilisearchService implements ISearchService {
       tagline: season.tagline,
       title: season.title,
       titleReverse: season.title.split('').reverse().join(''),
+      sortTitle: season.sortTitle,
       director: [],
       rating: null,
       actors: [],
@@ -948,6 +953,7 @@ export class MeilisearchService implements ISearchService {
       tagline: artist.tagline,
       title: artist.title,
       titleReverse: artist.title.split('').reverse().join(''),
+      sortTitle: artist.sortTitle,
       rating: null,
       genres: artist.genres ?? [],
       actors: [],
@@ -993,6 +999,7 @@ export class MeilisearchService implements ISearchService {
       tagline: album.tagline,
       title: album.title,
       titleReverse: album.title.split('').reverse().join(''),
+      sortTitle: album.sortTitle,
       director: [],
       rating: null,
       actors: [],
@@ -1138,19 +1145,24 @@ export class MeilisearchService implements ISearchService {
     }
 
     if (isNonEmptyString(request.query)) {
+      const sort = request.sort?.map(
+        ({ field, direction }) => `${field}:${direction}`,
+      ) ?? ['title:asc'];
       const req = {
         filter,
         page: request.paging?.page,
         limit: request.paging?.limit,
         attributesToSearchOn: request.restrictSearchTo ?? undefined,
         facets: request.facets ?? undefined,
+        sort,
       } satisfies SearchParams;
 
       this.logger.debug(
-        'Issuing search: query = %s, filter: %O (parsed: %O)',
+        'Issuing search: query = %s, filter: %O (parsed: %O), sort %O',
         request.query,
         request.filter ?? {},
         req,
+        sort,
       );
 
       const searchResults = await this.client()
@@ -1165,9 +1177,14 @@ export class MeilisearchService implements ISearchService {
       const offset = request.paging
         ? request.paging.page * request.paging.limit
         : undefined;
+      const sort = request.sort?.map(
+        ({ field, direction }) => `${field}:${direction}`,
+      ) ?? ['title:asc'];
+
       this.logger.debug(
-        'Issuing get documents request: filter: "%s". offset: %d limit %d',
+        'Issuing get documents request: filter: "%s", sort: %O. offset: %d limit %d',
         filter ?? '',
+        sort,
         offset ?? 0,
         request.paging?.limit ?? -1,
       );
@@ -1180,7 +1197,8 @@ export class MeilisearchService implements ISearchService {
           offset,
           // This does not exist on the type yet. Explicit cast because
           // the API supports it. Need https://github.com/meilisearch/meilisearch-js/pull/2038
-          sort: ['title:asc' /*, 'originalReleaseDate:asc'*/],
+          // sort: ['title:asc' /*, 'originalReleaseDate:asc'*/],
+          sort,
         } as DocumentsQuery<IndexDocumentTypeT>);
       return {
         type: 'filter',
@@ -1502,6 +1520,7 @@ export class MeilisearchService implements ISearchService {
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title.split('').reverse().join(''),
+      sortTitle: program.sortTitle,
       type: program.type,
       index:
         program.type === 'episode'

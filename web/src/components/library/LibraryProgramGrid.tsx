@@ -8,7 +8,7 @@ import type {
   ProgramOrFolder,
 } from '@tunarr/types';
 import { type ProgramLike } from '@tunarr/types';
-import type { SearchFilter } from '@tunarr/types/api';
+import type { SearchFilter, SearchSort } from '@tunarr/types/api';
 import {
   type ProgramSearchResponse,
   type SearchRequest,
@@ -87,8 +87,17 @@ export const LibraryProgramGrid = ({
 
   const query = useMemo<SearchRequest>(() => {
     if (currentParentContext) {
+      // sort override
+      const sort = match(currentParentContext)
+        .returnType<Maybe<SearchSort[]>>()
+        .with({ type: P.union('show', 'season', 'album') }, () => [
+          { field: 'index', direction: 'asc' },
+        ])
+        .otherwise(() => undefined);
+      const filter = getChildSearchFilter(currentParentContext);
       return {
-        filter: getChildSearchFilter(currentParentContext),
+        filter,
+        sort,
       };
     }
 

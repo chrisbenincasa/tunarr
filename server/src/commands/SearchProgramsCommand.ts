@@ -45,6 +45,7 @@ export class SearchProgramsCommand {
       restrictSearchTo: req.query
         .restrictSearchTo as Path<ProgramSearchDocument>[],
       facets: ['type'],
+      sort: req.query.sort ?? undefined,
     });
 
     const [programIds, groupingIds] = result.results.reduce(
