@@ -75,6 +75,10 @@ const KEYS = {
   ),
   MediaSourceLibraryScanner: Symbol.for('MediaSourceLibraryScanner'),
   LocalMediaSourceScanner: Symbol.for('LocalMediaSourceScanner'),
+  ExternalCollectionScanner: Symbol.for('ExternalCollectionScanner'),
+  ExternalCollectionScannerFactory: Symbol.for(
+    'ExternalCollectionScannerFactory',
+  ),
 
   // Tasks
   Task: Symbol.for('Task'),

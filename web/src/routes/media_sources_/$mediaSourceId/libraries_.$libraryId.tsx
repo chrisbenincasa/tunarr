@@ -1,6 +1,7 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
-import { LibrarySearch } from '../../../components/library/LibrarySearch.tsx';
+import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
+import { SearchInput } from '../../../components/search/SearchInput.tsx';
 import {
   MediaSourceLibraryQueryOpts,
   useMediaSourceLibrary,
@@ -30,12 +31,18 @@ function MediaSourceBrowserPage() {
           Media Source: "{library.mediaSource.name}"
         </Typography>
         <Typography variant="subtitle1">Library: {library.name}</Typography>
+        <Typography variant="subtitle1">
+          Search is currently scoped to this Media Source Library.
+        </Typography>
       </Box>
-      <LibrarySearch
-        mediaSource={library.mediaSource}
-        library={library}
-        disableProgramSelection
-      />
+      <Stack gap={2}>
+        <SearchInput libraryId={libraryId} />
+        <LibraryProgramGrid
+          mediaSource={library.mediaSource}
+          library={library}
+          disableProgramSelection
+        />
+      </Stack>
     </Box>
   );
 }

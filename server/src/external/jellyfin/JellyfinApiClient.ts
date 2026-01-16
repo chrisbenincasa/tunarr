@@ -1072,30 +1072,37 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     }
 
     const videoStream = find(source.MediaStreams, { Type: 'Video' });
-    if (!videoStream) {
-      return;
+
+    const width = videoStream?.Width ?? 1;
+    const height = videoStream?.Height ?? 1;
+    const isAnamorphic = videoStream
+      ? (videoStream.IsAnamorphic ??
+        (isNonEmptyString(videoStream.AspectRatio) &&
+        videoStream.AspectRatio.includes(':')
+          ? extractIsAnamorphic(width, height, videoStream.AspectRatio)
+          : false))
+      : false;
+
+    const streams: MediaStream[] = [];
+
+    if (videoStream) {
+      const videoMediaStream: MediaStream = {
+        streamType: 'video',
+        index: Math.max(0, (videoStream.Index ?? 0) - streamIndexOffset),
+        codec: videoStream.Codec ?? 'unknown',
+        profile: (videoStream.Profile ?? '')?.toLowerCase(),
+        bitDepth: nullToUndefined(videoStream.BitDepth),
+        default: videoStream.IsDefault,
+        fileName: nullToUndefined(videoStream.Path),
+        pixelFormat: nullToUndefined(videoStream.PixelFormat),
+        selected: videoStream.IsForced,
+        colorPrimaries: videoStream.ColorPrimaries,
+        colorSpace: videoStream.ColorSpace,
+        colorTransfer: videoStream.ColorTransfer,
+        colorRange: videoStream.ColorRange,
+      };
+      streams.push(videoMediaStream);
     }
-
-    const width = videoStream.Width ?? 1;
-    const height = videoStream.Height ?? 1;
-    const isAnamorphic =
-      videoStream.IsAnamorphic ??
-      (isNonEmptyString(videoStream.AspectRatio) &&
-      videoStream.AspectRatio.includes(':')
-        ? extractIsAnamorphic(width, height, videoStream.AspectRatio)
-        : false);
-
-    const videoMediaStream: MediaStream = {
-      streamType: 'video',
-      index: Math.max(0, (videoStream.Index ?? 0) - streamIndexOffset),
-      codec: videoStream.Codec ?? 'unknown',
-      profile: (videoStream.Profile ?? '')?.toLowerCase(),
-      bitDepth: nullToUndefined(videoStream.BitDepth),
-      default: videoStream.IsDefault,
-      fileName: nullToUndefined(videoStream.Path),
-      pixelFormat: nullToUndefined(videoStream.PixelFormat),
-      selected: videoStream.IsForced,
-    };
 
     const audioMediaStreams: MediaStream[] =
       source.MediaStreams?.filter((stream) => stream.Type === 'Audio').map(
@@ -1108,9 +1115,12 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             selected: audioStream.IsForced,
             languageCodeISO6392: nullToUndefined(audioStream.Language),
             index: Math.max(0, (audioStream.Index ?? 0) - streamIndexOffset),
+            title: audioStream.Title ?? audioStream.DisplayTitle,
           };
         },
       ) ?? [];
+
+    streams.push(...audioMediaStreams);
 
     const subtitleStreams: MediaStream[] =
       source.MediaStreams?.filter((stream) => stream.Type === 'Subtitle').map(
@@ -1125,9 +1135,12 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             selected: subStream.IsForced,
             languageCodeISO6392: nullToUndefined(subStream.Language),
             index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
+            title: subStream.Title ?? subStream.DisplayTitle,
           };
         },
       ) ?? [];
+
+    streams.push(...subtitleStreams);
 
     const chapters: MediaChapter[] = [];
     const apiChapters = item.Chapters ?? [];
@@ -1155,10 +1168,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
     }
 
     return {
-      displayAspectRatio: videoStream.AspectRatio ?? '',
+      displayAspectRatio: videoStream?.AspectRatio ?? '',
       sampleAspectRatio: isAnamorphic ? '0:0' : '1:1',
       duration: +dayjs.duration(Math.ceil((source.RunTimeTicks ?? 0) / 10_000)),
-      frameRate: videoStream.RealFrameRate?.toFixed(2),
+      frameRate: videoStream?.RealFrameRate?.toFixed(2),
       locations: [
         {
           type: 'remote',
@@ -1167,7 +1180,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
           path: source.Path ?? '',
         },
       ],
-      streams: [videoMediaStream, ...audioMediaStreams, ...subtitleStreams],
+      streams,
       resolution: {
         widthPx: width,
         heightPx: height,

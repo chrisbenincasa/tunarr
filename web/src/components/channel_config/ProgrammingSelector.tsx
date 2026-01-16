@@ -1,3 +1,4 @@
+import { Keyboard, Mouse } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -8,9 +9,13 @@ import {
   Select,
   Stack,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
+import { tag } from '@tunarr/types';
 import type { SearchRequest } from '@tunarr/types/api';
 import {
   capitalize,
@@ -40,7 +45,8 @@ import {
 } from '../../store/programmingSelector/actions.ts';
 import { ProgramViewToggleButton } from '../base/ProgramViewToggleButton.tsx';
 import { RouterLink } from '../base/RouterLink.tsx';
-import { LibrarySearch } from '../library/LibrarySearch.tsx';
+import { LibraryProgramGrid } from '../library/LibraryProgramGrid.tsx';
+import { SearchInput } from '../search/SearchInput.tsx';
 import { AddMediaSourceButton } from '../settings/media_source/AddMediaSourceButton.tsx';
 import { CustomShowProgrammingSelector } from './CustomShowProgrammingSelector.tsx';
 import { EmbyLibrarySelector } from './emby/EmbyLibrarySelector.tsx';
@@ -50,6 +56,7 @@ import { JellyfinLibrarySelector } from './jellyfin/JellyfinLibrarySelector.tsx'
 import { JellyfinProgrammingSelector } from './jellyfin/JellyfinProgrammingSelector.tsx';
 import { PlexLibrarySelector } from './plex/PlexLibrarySelector.tsx';
 import PlexProgrammingSelector from './plex/PlexProgrammingSelector.tsx';
+import SelectedProgrammingActions from './SelectedProgrammingActions.tsx';
 
 type Props = {
   initialMediaSourceId?: string;
@@ -79,6 +86,9 @@ export const ProgrammingSelector = ({
   const selectedLibrary = useStore((s) => s.currentMediaSourceView);
   const [mediaSource, setMediaSource] = useState(selectedServer?.name);
   const [useSyncedSources, setUseSyncedSources] = useState(true);
+  const [queryBuilderType, setQueryBuilderType] = useState<'text' | 'click'>(
+    'text',
+  );
   const viewingCustomShows = mediaSource === 'custom-shows';
 
   const { data: libraries, isLoading: librariesLoading } =
@@ -146,13 +156,13 @@ export const ProgrammingSelector = ({
     if (selectedServer?.type === 'local') {
       return (
         <Box sx={{ mt: 2 }}>
-          <LibrarySearch
-            mediaSource={selectedServer}
-            disableProgramSelection={false}
+          <SearchInput mediaSourceId={tag<MediaSourceId>(selectedServer.id)} />
+          <SelectedProgrammingActions
             toggleOrSetSelectedProgramsDrawer={
               toggleOrSetSelectedProgramsDrawer
             }
           />
+          <LibraryProgramGrid mediaSource={selectedServer} />
         </Box>
       );
     }
@@ -193,19 +203,24 @@ export const ProgrammingSelector = ({
           );
         case Imported:
           return (
-            <Box sx={{ mt: 2 }}>
-              <LibrarySearch
+            <Stack gap={2}>
+              <SearchInput
+                mediaSourceId={tag<MediaSourceId>(selectedServer!.id)}
+                libraryId={selectedLibrary.view.id}
+              />
+              <SelectedProgrammingActions
+                toggleOrSetSelectedProgramsDrawer={
+                  toggleOrSetSelectedProgramsDrawer
+                }
+              />
+              <LibraryProgramGrid
                 mediaSource={selectedServer}
                 library={{
                   ...selectedLibrary.view,
                   mediaSource: selectedServer!,
                 }}
-                disableProgramSelection={false}
-                toggleOrSetSelectedProgramsDrawer={
-                  toggleOrSetSelectedProgramsDrawer
-                }
               />
-            </Box>
+            </Stack>
           );
         default:
           return null;
@@ -267,13 +282,14 @@ export const ProgrammingSelector = ({
     <Box>
       <Box sx={{ pb: 1 }}>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction={{ sm: 'column', md: 'row' }}
           sx={{
             display: 'flex',
-            columnGap: 1,
+            flexWrap: 'wrap',
+            columnGap: 2,
             justifyContent: 'flex-start',
             flexGrow: 1,
-            rowGap: 2,
+            rowGap: { sm: 1, md: 0 },
             alignItems: 'center',
           }}
         >
@@ -302,6 +318,27 @@ export const ProgrammingSelector = ({
           )}
 
           {renderLibraryChoices()}
+
+          {selectedLibrary?.type === 'imported' && (
+            <ToggleButtonGroup
+              value={queryBuilderType}
+              onChange={(_, v) => {
+                if (v) {
+                  setQueryBuilderType(v as 'text' | 'click');
+                }
+              }}
+              exclusive
+            >
+              <ToggleButton value="text">
+                <Keyboard />
+              </ToggleButton>
+              <ToggleButton value="click">
+                <Mouse />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
+          <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
+          <Box sx={{ flexBasis: '100%' }} />
           {selectedServer?.type !== 'local' && (
             <FormControlLabel
               control={
@@ -310,10 +347,9 @@ export const ProgrammingSelector = ({
                   onChange={(_, v) => setUseSyncedSources(v)}
                 />
               }
-              label="Show only synced"
+              label="Show only synced libraries"
             />
           )}
-          <ProgramViewToggleButton sx={{ ml: 'auto' }} />
         </Stack>
       </Box>
       {renderMediaSourcePrograms()}

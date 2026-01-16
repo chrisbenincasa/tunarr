@@ -57,7 +57,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
   constructor(
     @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.LocalFolderCanonicalizer)
-    private canonicalizer: Canonicalizer<FolderAndContents>,
+    canonicalizer: Canonicalizer<FolderAndContents>,
     @inject(LocalMediaDB) localMediaDB: LocalMediaDB,
     @inject(FfprobeStreamDetails)
     ffprobeStreamDetails: FfprobeStreamDetails,
@@ -82,6 +82,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       localMediaDB,
       mediaSourceProgressService,
       mediaSourceDB,
+      canonicalizer,
     );
   }
 
@@ -242,7 +243,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       }),
     );
 
-    const canonicalId = this.canonicalizer.getCanonicalId({
+    const canonicalId = this.localFolderCanonicalizer.getCanonicalId({
       contents: canonicalFilesAndStats,
       folderName: fullPath,
       folderStats: await fs.stat(fullPath),
@@ -469,7 +470,10 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       directors,
       studios: nfo.studio ? [{ name: nfo.studio }] : [],
       genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
-      writers: nfo.credits?.map((c) => ({ name: typeof c === 'string' ? c : c['#text'] })) ?? [],
+      writers:
+        nfo.credits?.map((c) => ({
+          name: typeof c === 'string' ? c : c['#text'],
+        })) ?? [],
       artwork: [], // Added later
       state: 'ok',
     };

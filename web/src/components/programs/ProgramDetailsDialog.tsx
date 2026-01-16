@@ -17,6 +17,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import type { ProgramLike, TupleToUnion } from '@tunarr/types';
 import { isStructuralItemType, isTerminalItemType } from '@tunarr/types';
 import type { Dayjs } from 'dayjs';
@@ -164,17 +165,15 @@ export default function ProgramDetailsDialog({
           sx={{ display: 'flex', alignItems: 'center' }}
         >
           <Box sx={{ flex: 1 }}>{title}</Box>
-          {programType === 'show' || programType === 'movie' ? (
-            <IconButton
-              onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
-              sx={{ mr: 1 }}
-            >
-              <MoreVert />
-            </IconButton>
-          ) : null}
+
+          <IconButton
+            onClick={(e) => setMoreMenuAnchorEl(e.currentTarget)}
+            sx={{ mr: 1 }}
+          >
+            <MoreVert />
+          </IconButton>
           <ProgramOperationsMenu
             programId={programId}
-            programType={programType}
             anchorEl={moreMenuAnchorEl}
             onClose={() => setMoreMenuAnchorEl(null)}
             open={!!moreMenuAnchorEl}
@@ -211,7 +210,10 @@ export default function ProgramDetailsDialog({
               )}
 
             {visibility.program_details && (
-              <Tab value="program_details" label="Program Info" />
+              <Tab
+                value="program_details"
+                label={`${prettifySnakeCaseString(programType)} Info`}
+              />
             )}
           </Tabs>
         )}

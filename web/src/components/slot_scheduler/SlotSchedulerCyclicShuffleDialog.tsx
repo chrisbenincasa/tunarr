@@ -108,6 +108,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
         showId: show.uuid,
         show,
         weight: 100,
+        seasonFilter: [],
       });
     }
 

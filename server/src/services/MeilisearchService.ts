@@ -1,6 +1,7 @@
 import { nullToUndefined, seq } from '@tunarr/shared/util';
 import {
   FindChild,
+  MediaStream,
   tag,
   Tag,
   TerminalProgram,
@@ -19,7 +20,7 @@ import dayjs from 'dayjs';
 import type { ProcessInfo } from 'find-process';
 import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
-import { compact, find, isEmpty, isNull, isString } from 'lodash-es';
+import { compact, find, isEmpty, isNull, isString, uniq } from 'lodash-es';
 import {
   DocumentsQuery,
   EnqueuedTask,
@@ -161,6 +162,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'studio.name',
     'parent.studio',
     'grandparent.studio',
+    'audioLanguages',
+    'subtitleLanguages',
   ],
   sortable: [
     'title',
@@ -296,6 +299,8 @@ export type TerminalProgramSearchDocument<
   videoWidth?: number;
   audioCodec?: string;
   audioChannels?: number;
+  audioLanguages?: string[];
+  subtitleLanguages?: string[];
   state: ProgramState;
 };
 
@@ -368,6 +373,13 @@ export type FacetSearchRequest = {
   mediaSourceId?: string;
   libraryId?: string;
 };
+
+export type ProgramIndexPartialUpdate =
+  | MarkRequired<Partial<TerminalProgramSearchDocument<ProgramType>>, 'id'>
+  | MarkRequired<
+      Partial<ProgramGroupingSearchDocument<ProgramGroupingType>>,
+      'id'
+    >;
 
 @injectable()
 export class MeilisearchService implements ISearchService {
@@ -500,7 +512,7 @@ export class MeilisearchService implements ISearchService {
         if (
           !isWindows() &&
           getBooleanEnvVar(
-            TUNARR_ENV_VARS.DEBUG__REDUCE_SEARCH_INDEXING_MEMORY,
+            TUNARR_ENV_VARS.SEARCH_REDUCE_INDEXER_MEMORY_USAGE,
             false,
           )
         ) {
@@ -685,6 +697,7 @@ export class MeilisearchService implements ISearchService {
             ids,
             offset,
             limit: 100,
+            filter: '',
           });
         results.push(...res.results);
         offset += res.results.length;
@@ -736,16 +749,11 @@ export class MeilisearchService implements ISearchService {
     );
   }
 
-  async updatePrograms(
-    programs: MarkRequired<
-      Partial<TerminalProgramSearchDocument<ProgramType>>,
-      'id'
-    >[],
-  ) {
+  async updatePrograms(programs: ProgramIndexPartialUpdate[]) {
     return await Promise.all(
       this.#client
         .index<ProgramSearchDocument>(ProgramsIndex.name)
-        .updateDocumentsInBatches(programs, 100),
+        .updateDocumentsInBatches(programs, 20),
     );
   }
 
@@ -1433,6 +1441,24 @@ export class MeilisearchService implements ISearchService {
     return buf;
   }
 
+  private getUniqueStreamLanguages(
+    streams:
+      | {
+          streamType: MediaStream['streamType'];
+          languageCodeISO6392?: string | null;
+        }[]
+      | undefined,
+    type: 'audio' | 'subtitles',
+  ): string[] {
+    return uniq(
+      seq.collect(streams, (s) =>
+        s.streamType === type && isNonEmptyString(s.languageCodeISO6392)
+          ? s.languageCodeISO6392
+          : undefined,
+      ),
+    );
+  }
+
   private convertProgramToSearchDocument<
     ProgramT extends (Movie | Episode | MusicTrack | OtherVideo) &
       HasMediaSourceAndLibraryId,
@@ -1541,8 +1567,23 @@ export class MeilisearchService implements ISearchService {
       videoHeight: height,
       videoCodec: videoStream?.codec,
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
+      videoDynamicRange: videoStream
+        ? videoStream?.colorPrimaries === 'bt2020' ||
+          videoStream?.colorTransfer === 'smpte2084' ||
+          videoStream?.colorTransfer === 'arib-std-b67'
+          ? 'hdr'
+          : 'sdr'
+        : undefined,
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'audio',
+      ),
+      subtitleLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'subtitles',
+      ),
       state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
@@ -1661,6 +1702,14 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
+      audioLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'audio',
+      ),
+      subtitleLanguages: this.getUniqueStreamLanguages(
+        program.mediaItem?.streams,
+        'subtitles',
+      ),
     }; // satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 

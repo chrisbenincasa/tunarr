@@ -51,7 +51,8 @@ export const ImportedLibrarySelector = ({ initialLibraryId }: Props) => {
   const { data: libraries } = useMediaSourceLibraries(
     selectedServer?.id ?? '',
     {
-      enabled: isNonEmptyString(selectedServer?.id),
+      enabled:
+        isNonEmptyString(selectedServer?.id) && selectedServer.type !== 'local',
     },
   );
 

@@ -3,7 +3,7 @@ import { setProgrammingSelectorViewState } from '@/store/themeEditor/actions';
 import type { ProgramSelectorViewType } from '@/types';
 import { GridView, ViewList } from '@mui/icons-material';
 import type { SxProps } from '@mui/material';
-import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Stack, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 
 type Props = {
   sx?: SxProps;
@@ -22,18 +22,24 @@ export const ProgramViewToggleButton = ({ sx }: Props) => {
   };
 
   return (
-    <ToggleButtonGroup
-      value={viewType}
-      onChange={handleFormat}
-      exclusive
-      sx={sx}
-    >
-      <ToggleButton value="grid">
-        <GridView />
-      </ToggleButton>
-      <ToggleButton value="list">
-        <ViewList />
-      </ToggleButton>
-    </ToggleButtonGroup>
+    <Stack direction={'row'} sx={sx}>
+      <ToggleButtonGroup
+        value={viewType}
+        onChange={handleFormat}
+        exclusive
+        // sx={sx}
+      >
+        <Tooltip title="Grid">
+          <ToggleButton value="grid">
+            <GridView />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title="List">
+          <ToggleButton value="list">
+            <ViewList />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
+    </Stack>
   );
 };

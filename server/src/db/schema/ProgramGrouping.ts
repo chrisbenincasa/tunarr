@@ -23,6 +23,7 @@ import { Program } from './Program.ts';
 import type { ProgramGroupingTable as RawProgramGrouping } from './ProgramGrouping.ts';
 import { ProgramGroupingExternalId } from './ProgramGroupingExternalId.ts';
 import { StudioEntity } from './Studio.ts';
+import { TagRelations } from './Tag.ts';
 
 export const ProgramGroupingType = {
   Show: 'show',
@@ -118,6 +119,7 @@ export const ProgramGroupingRelations = relations(
     credits: many(Credit),
     genres: many(EntityGenre),
     studios: many(StudioEntity),
+    tags: many(TagRelations),
   }),
 );
 

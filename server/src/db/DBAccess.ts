@@ -242,6 +242,11 @@ class Connection {
 
   async runDBMigrations(migrateTo?: string) {
     const migrator = this.getMigrator();
+    this.logger.debug(
+      'Migrating DB %s %s',
+      this.name,
+      isNonEmptyString(migrateTo) ? `to ${migrateTo}` : 'to latest',
+    );
     const { error, results } = await (isNonEmptyString(migrateTo)
       ? migrator.migrateTo(migrateTo)
       : migrator.migrateToLatest());
@@ -267,12 +272,13 @@ export class DBAccess {
   private static didInit = false;
   private static connections: Map<string, Connection> = new Map();
 
-  static init(): Connection {
-    const name = getDefaultDatabaseName();
+  private logger = LoggerFactory.child({ className: DBAccess.name });
+
+  static init(connName: string = getDefaultDatabaseName()): Connection {
     if (!this.didInit) {
-      this.connections.set(name, new Connection(name));
+      this.connections.set(connName, new Connection(connName));
     }
-    return this.connections.get(name)!;
+    return this.connections.get(connName)!;
   }
 
   get db(): Maybe<Kysely<DB>> {
@@ -324,9 +330,20 @@ export class DBAccess {
       return;
     }
     const pendingMigrations = await conn.pendingDatabaseMigrations();
+    this.logger.info(
+      'Running %d pending database migrations.',
+      pendingMigrations.length,
+    );
+
+    // Special-case for in-memory database (tests)
+    if (conn.name === ':memory:') {
+      await conn.runDBMigrations();
+      return;
+    }
 
     const copyMigrator = new DatabaseCopyMigrator(this);
     for (const migration of pendingMigrations) {
+      this.logger.info('Running database migration "%s"', migration.name);
       if (
         (has(migration.migration, 'fullCopy') &&
           migration.migration.fullCopy) ||

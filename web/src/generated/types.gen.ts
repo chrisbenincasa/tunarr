@@ -3267,6 +3267,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -3362,6 +3363,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -4508,6 +4510,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
                 filler?: Array<{
@@ -5102,6 +5105,7 @@ export type PostApiChannelsByIdProgrammingData = {
                 direction?: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -5464,6 +5468,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -5559,6 +5564,7 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -7106,6 +7112,7 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction?: 'asc' | 'desc';
                 filler?: Array<{
@@ -7432,6 +7439,7 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 direction?: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter?: Array<number>;
             } | {
                 cooldownMs: number;
                 periodMs?: number;
@@ -7789,6 +7797,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 startTime: number;
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
                 direction: 'asc' | 'desc';
                 filler?: Array<{
@@ -8017,6 +8026,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                 direction: 'asc' | 'desc';
                 type: 'show';
                 showId: string;
+                seasonFilter: Array<number>;
                 show: Show | null;
                 /**
                  * A show that existed in the DB at schedule time, but no longer exists.
@@ -12450,6 +12460,7 @@ export type PostApiProgramsFacetsByFacetNameData = {
     };
     query?: {
         facetQuery?: string;
+        mediaSourceId?: string;
         libraryId?: string;
     };
     url: '/api/programs/facets/{facetName}';
@@ -13508,16 +13519,16 @@ export type GetApiProgrammingShowsByIdSeasonsResponses = {
     200: unknown;
 };
 
-export type PostApiMoviesByIdScanData = {
+export type PostApiProgramsByIdScanData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/movies/{id}/scan';
+    url: '/api/programs/{id}/scan';
 };
 
-export type PostApiMoviesByIdScanErrors = {
+export type PostApiProgramsByIdScanErrors = {
     /**
      * Default Response
      */
@@ -13525,49 +13536,16 @@ export type PostApiMoviesByIdScanErrors = {
     /**
      * Default Response
      */
-    404: unknown;
+    404: string;
     /**
      * Default Response
      */
-    500: unknown;
+    500: string;
 };
 
-export type PostApiMoviesByIdScanError = PostApiMoviesByIdScanErrors[keyof PostApiMoviesByIdScanErrors];
+export type PostApiProgramsByIdScanError = PostApiProgramsByIdScanErrors[keyof PostApiProgramsByIdScanErrors];
 
-export type PostApiMoviesByIdScanResponses = {
-    /**
-     * Default Response
-     */
-    202: unknown;
-};
-
-export type PostApiShowsByIdScanData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/shows/{id}/scan';
-};
-
-export type PostApiShowsByIdScanErrors = {
-    /**
-     * Default Response
-     */
-    400: string;
-    /**
-     * Default Response
-     */
-    404: unknown;
-    /**
-     * Default Response
-     */
-    500: unknown;
-};
-
-export type PostApiShowsByIdScanError = PostApiShowsByIdScanErrors[keyof PostApiShowsByIdScanErrors];
-
-export type PostApiShowsByIdScanResponses = {
+export type PostApiProgramsByIdScanResponses = {
     /**
      * Default Response
      */
@@ -13749,6 +13727,20 @@ export type GetApiDebugPlexStreamDetailsData = {
 };
 
 export type GetApiDebugPlexStreamDetailsResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type GetApiDebugHeapData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/debug/heap';
+};
+
+export type GetApiDebugHeapResponses = {
     /**
      * Default Response
      */
@@ -14238,22 +14230,6 @@ export type PostApiDebugPlexByProgramIdUpdateExternalIdsResponses = {
     200: unknown;
 };
 
-export type GetApiDebugHelpersPromoteLineupData = {
-    body?: never;
-    path?: never;
-    query: {
-        channelId: string;
-    };
-    url: '/api/debug/helpers/promote_lineup';
-};
-
-export type GetApiDebugHelpersPromoteLineupResponses = {
-    /**
-     * Default Response
-     */
-    200: unknown;
-};
-
 export type GetApiDebugChannelsReloadAllLineupsData = {
     body?: never;
     path?: never;
@@ -14327,6 +14303,24 @@ export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanData =
 };
 
 export type GetApiDebugMediaSourcesByMediaSourceIdLibrariesByLibraryIdScanResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsData = {
+    body?: never;
+    path: {
+        mediaSourceId: string;
+    };
+    query?: {
+        pathFilter?: string;
+    };
+    url: '/api/debug/media_sources/{mediaSourceId}/scan-collections';
+};
+
+export type GetApiDebugMediaSourcesByMediaSourceIdScanCollectionsResponses = {
     /**
      * Default Response
      */
@@ -16250,6 +16244,20 @@ export type GetApiSystemSettingsResponses = {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
+            logRollConfig: {
+                enabled: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs: number;
+                };
+            };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {
@@ -16274,6 +16282,20 @@ export type PutApiSystemSettingsData = {
         logging?: {
             logLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             useEnvVarLevel?: boolean;
+            logRollConfig?: {
+                enabled?: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs?: number;
+                };
+            };
         };
         backup?: {
             configurations: Array<{
@@ -16344,6 +16366,20 @@ export type PutApiSystemSettingsResponses = {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
             logsDirectory: string;
             useEnvVarLevel: boolean;
+            logRollConfig: {
+                enabled: boolean;
+                maxFileSizeBytes?: number;
+                rolledFileLimit: number;
+                schedule?: {
+                    type: 'cron';
+                    cron: string;
+                } | {
+                    type: 'every';
+                    increment: number;
+                    unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
+                    offsetMs: number;
+                };
+            };
             environmentLogLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
         };
         cache?: {

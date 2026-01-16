@@ -51,6 +51,11 @@ export class GetProgramGroupingById {
             studio: true,
           },
         },
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
     });
 

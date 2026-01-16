@@ -1,22 +1,22 @@
 import { DebugPlexApiRouter } from '@/api/debug/debugPlexApi.js';
 import type { ArchiveDatabaseBackupFactory } from '@/db/backup/ArchiveDatabaseBackup.js';
 import { ArchiveDatabaseBackupKey } from '@/db/backup/ArchiveDatabaseBackup.js';
-import { LineupCreator } from '@/services/dynamic_channels/LineupCreator.js';
 import { PlexTaskQueue } from '@/tasks/TaskQueue.js';
 import { SavePlexProgramExternalIdsTask } from '@/tasks/plex/SavePlexProgramExternalIdsTask.js';
 import { DateTimeRange } from '@/types/DateTimeRange.js';
 import { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
-import { ifDefined } from '@/util/index.js';
 import { tag } from '@tunarr/types';
 import { ChannelLineupQuery } from '@tunarr/types/api';
 import { ChannelLineupSchema } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import os from 'node:os';
+import { getHeapStatistics } from 'v8';
 import z from 'zod/v4';
 import { container } from '../container.ts';
 import { TunarrWorkerPool } from '../services/TunarrWorkerPool.ts';
+import { PlexCollectionScanner } from '../services/scanner/PlexCollectionScanner.ts';
 import { debugFfmpegApiRouter } from './debug/debugFfmpegApi.ts';
 import { DebugJellyfinApiRouter } from './debug/debugJellyfinApi.js';
 import { debugStreamApiRouter } from './debug/debugStreamApi.js';
@@ -39,6 +39,10 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
     .register(DebugPlexApiRouter, {
       prefix: '/debug',
     });
+
+  fastify.get('/debug/heap', async (_, res) => {
+    return res.send(getHeapStatistics());
+  });
 
   fastify.get(
     '/debug/helpers/playing_at',
@@ -295,27 +299,6 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
   );
 
   fastify.get(
-    '/debug/helpers/promote_lineup',
-    {
-      schema: {
-        tags: ['Debug'],
-        querystring: z.object({
-          channelId: z.string().uuid(),
-        }),
-      },
-    },
-    async (req, res) => {
-      const result = await container
-        .get(LineupCreator)
-        .resolveLineup(req.query.channelId);
-      ifDefined(result, (r) => {
-        console.log(r.lineup.items.length);
-      });
-      return res.send(result);
-    },
-  );
-
-  fastify.get(
     '/debug/channels/reload_all_lineups',
     {
       schema: {
@@ -422,6 +405,43 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
         libraryId: req.params.libraryId,
         pathFilter: req.query.pathFilter,
       });
+
+      return res.send(scanRes);
+    },
+  );
+
+  fastify.get(
+    '/debug/media_sources/:mediaSourceId/scan-collections',
+    {
+      schema: {
+        params: z.object({
+          mediaSourceId: z.uuid(),
+        }),
+        querystring: z.object({
+          pathFilter: z.string().optional(),
+        }),
+      },
+    },
+    async (req, res) => {
+      const mediaSource = await req.serverCtx.mediaSourceDB.getById(
+        tag(req.params.mediaSourceId),
+      );
+      if (!mediaSource) {
+        return res
+          .status(404)
+          .send(`No media source with ID ${req.params.mediaSourceId}`);
+      } else if (mediaSource.type !== 'plex') {
+        return res
+          .status(400)
+          .send('Only Plex collection scanning is currently supported');
+      }
+
+      const scanRes = await container
+        .get<PlexCollectionScanner>(PlexCollectionScanner)
+        .scan({
+          mediaSourceId: mediaSource.uuid,
+          force: true,
+        });
 
       return res.send(scanRes);
     },

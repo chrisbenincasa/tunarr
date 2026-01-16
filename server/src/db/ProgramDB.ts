@@ -335,6 +335,11 @@ export class ProgramDB implements IProgramDB {
           },
           externalIds: true,
           artwork: true,
+          tags: {
+            with: {
+              tag: true,
+            },
+          },
         },
       });
       results.push(...res);
@@ -371,6 +376,11 @@ export class ProgramDB implements IProgramDB {
             artist: true,
             show: true,
             credits: true,
+            tags: {
+              with: {
+                tag: true,
+              },
+            },
           },
         });
       }),
@@ -415,6 +425,47 @@ export class ProgramDB implements IProgramDB {
         },
       })
       .then((result) => result?.grouping ?? undefined);
+  }
+
+  async getProgramGroupingsByExternalIds(
+    eids:
+      | Set<[RemoteSourceType, MediaSourceId, string]>
+      | Set<readonly [RemoteSourceType, MediaSourceId, string]>,
+    chunkSize: number = 100,
+  ) {
+    const allIds = [...eids];
+    const programs: MarkRequired<
+      ProgramGroupingOrmWithRelations,
+      'externalIds'
+    >[] = [];
+    for (const idChunk of chunk(allIds, chunkSize)) {
+      const results =
+        await this.drizzleDB.query.programGroupingExternalId.findMany({
+          where: (fields, { or, and, eq }) => {
+            const ands = idChunk.map(([ps, es, ek]) =>
+              and(
+                eq(fields.externalKey, ek),
+                eq(fields.sourceType, ps),
+                eq(fields.mediaSourceId, es),
+              ),
+            );
+            return or(...ands);
+          },
+          columns: {},
+          with: {
+            grouping: {
+              with: {
+                artist: true,
+                show: true,
+                externalIds: true,
+              },
+            },
+          },
+        });
+      programs.push(...seq.collect(results, (r) => r.grouping));
+    }
+
+    return programs;
   }
 
   async getProgramParent(

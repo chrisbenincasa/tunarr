@@ -11,16 +11,20 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
+import type { MediaSourceId } from '@tunarr/shared';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
 import type { SearchFilter } from '@tunarr/types/api';
 import { map } from 'lodash-es';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
-import { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
+import { TitleSearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import { useGetFieldName } from '../../hooks/searchBuilderHooks.ts';
 import { SearchValueNode } from './SearchValueNode.tsx';
 
 export type GroupNodeProps = {
-  library?: MediaSourceLibrary;
+  mediaSourceId?: MediaSourceId;
+  libraryId?: string;
+  mediaTypeFilter?: MediaSourceLibrary['mediaType'];
   index: number;
   depth: number;
   formKey: FieldPrefix;
@@ -32,10 +36,14 @@ export function SearchGroupNode({
   formKey,
   remove: removeSelf,
   index,
-  library,
+  libraryId,
+  mediaSourceId,
+  mediaTypeFilter,
 }: GroupNodeProps) {
   const { control } = useFormContext();
-  const prefix = `${formKey}.` as const;
+  const prefix = isNonEmptyString(formKey)
+    ? (`${formKey}.` as const)
+    : ('' as const);
   const getFieldName = useGetFieldName(formKey);
 
   const {
@@ -82,7 +90,8 @@ export function SearchGroupNode({
               append({
                 type: 'value',
                 fieldSpec: {
-                  ...SearchFieldSpec['title'],
+                  ...TitleSearchFieldSpec,
+                  type: 'string',
                   op: '=',
                   value: [''],
                 },
@@ -116,7 +125,9 @@ export function SearchGroupNode({
             index={index}
             only={fields.length === 1}
             remove={removeChild}
-            library={library}
+            libraryId={libraryId}
+            mediaSourceId={mediaSourceId}
+            mediaTypeFilter={mediaTypeFilter}
           />
         ) : (
           <SearchGroupNode
@@ -125,7 +136,9 @@ export function SearchGroupNode({
             formKey={`${prefix}children.${index}` as FieldPrefix}
             remove={removeChild}
             index={index}
-            library={library}
+            libraryId={libraryId}
+            mediaSourceId={mediaSourceId}
+            mediaTypeFilter={mediaTypeFilter}
           />
         ),
       )}

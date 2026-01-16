@@ -114,6 +114,7 @@ export class FfprobeStreamDetails
             ? LanguageService.getAlpha3TCode(lang)
             : undefined,
           profile: audioStream.profile,
+          title: audioStream.tags?.['title'],
         } satisfies AudioStreamDetails;
       },
     );

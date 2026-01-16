@@ -9,24 +9,23 @@ import {
   TextField,
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import type {
-  SearchField,
-  SearchFilterValueNode,
-  SearchRequest,
-} from '@tunarr/types/api';
+import type { SearchField, SearchFilterValueNode } from '@tunarr/types/api';
 import { OperatorsByType } from '@tunarr/types/api';
-import { find, flatten, get, isArray, isNumber, map } from 'lodash-es';
-import { useCallback, useEffect } from 'react';
+import { find, flatten, isArray, isNumber, map } from 'lodash-es';
+import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import {
-  SearchFieldSpec,
+  SearchFieldSpecs,
   getOperatorLabel,
 } from '../../helpers/searchBuilderConstants.ts';
 import { useGetFieldName } from '../../hooks/searchBuilderHooks.ts';
+import { useDayjs } from '../../hooks/useDayjs.ts';
 import type { FieldPrefix } from '../../types/SearchBuilder.ts';
 import { DateSearchValueNode } from './DateSearchValueNode.tsx';
 import { FacetStringValueSearchNode } from './FacetStringValueSearchNode.tsx';
 import type { GroupNodeProps } from './SearchGroupNode.tsx';
+import type { SearchForm } from './SearchInput.tsx';
 
 type ValueNodeProps = GroupNodeProps & {
   formKey: FieldPrefix;
@@ -34,75 +33,100 @@ type ValueNodeProps = GroupNodeProps & {
 };
 
 export function SearchValueNode(props: ValueNodeProps) {
-  const { library, depth, index, formKey, only, remove } = props;
-  const { control, watch, setValue } = useFormContext<SearchRequest>();
+  const {
+    libraryId,
+    mediaSourceId,
+    mediaTypeFilter,
+    depth,
+    index,
+    formKey,
+    only,
+    remove,
+  } = props;
+  const { control, watch, setValue } = useFormContext<SearchForm>();
   const selfValue = watch(formKey) as SearchFilterValueNode;
   const getFieldName = useGetFieldName(formKey);
+  const dayjs = useDayjs();
 
-  useEffect(() => {
-    const sub = watch((value, { name }) => {
-      if (name === getFieldName('fieldSpec.value')) {
-        const fieldValue = get(
-          value,
-          getFieldName('fieldSpec').split('.'),
-        ) as SearchField;
-        if (
-          (fieldValue.type === 'facted_string' ||
-            fieldValue.type === 'string') &&
-          fieldValue.value.length > 1
-        ) {
-          setValue(getFieldName('fieldSpec.op'), 'in');
-        }
-      }
-    });
-    return () => sub.unsubscribe();
-  }, [formKey, getFieldName, setValue, watch]);
+  // useEffect(() => {
+  //   const sub = watch((value, { name }) => {
+  //     if (name === getFieldName('fieldSpec.value')) {
+  //       const fieldValue = get(
+  //         value,
+  //         getFieldName('fieldSpec').split('.'),
+  //       ) as SearchField;
+  //       if (
+  //         (fieldValue.type === 'facted_string' ||
+  //           fieldValue.type === 'string') &&
+  //         fieldValue.value.length > 1
+  //       ) {
+  //         setValue(getFieldName('fieldSpec.op'), 'in');
+  //       }
+  //     }
+  //   });
+  //   return () => sub.unsubscribe();
+  // }, [formKey, getFieldName, setValue, watch]);
 
   const handleFieldChange = useCallback(
     (newField: string) => {
-      const field = find(SearchFieldSpec, (_, k) => k === newField);
-      if (!field) {
+      const spec = find(
+        SearchFieldSpecs,
+        (spec) => (spec.alias ?? spec.key) === newField,
+      );
+
+      if (!spec) {
         return;
       }
 
       let fieldSpec: SearchField;
-      switch (field.type) {
+      switch (spec.type) {
         case 'string':
           fieldSpec = {
-            key: field.key,
-            type: field.type,
-            name: field.name,
+            key: spec.alias ?? spec.key,
+            type: spec.type,
+            name: spec.name,
             op: '=',
-            value: [''],
+            value: [],
           };
           break;
         case 'facted_string':
           fieldSpec = {
-            key: field.key,
-            type: field.type,
-            name: field.name,
+            key: spec.alias ?? spec.key,
+            type: spec.type,
+            name: spec.name,
             op: '=',
-            value: [''],
+            value: [],
           };
           break;
         case 'date':
           fieldSpec = {
-            key: field.key,
-            type: field.type,
-            name: field.name,
+            key: spec.alias ?? spec.key,
+            type: spec.type,
+            name: spec.name,
+            op: '=',
+            value: +dayjs(),
+          };
+          break;
+        case 'numeric':
+          fieldSpec = {
+            key: spec.alias ?? spec.key,
+            type: spec.type,
+            name: spec.name,
             op: '=',
             value: 0,
           };
       }
 
-      setValue(getFieldName('fieldSpec'), fieldSpec, { shouldTouch: true });
+      setValue(getFieldName('fieldSpec'), fieldSpec, {
+        shouldTouch: true,
+        shouldDirty: true,
+      });
     },
-    [getFieldName, setValue],
+    [dayjs, getFieldName, setValue],
   );
 
   const handleOpChange = useCallback(
     (newOp: string, originalOnChange: (...args: unknown[]) => void) => {
-      console.log('handle op change', newOp);
       if (
         selfValue.fieldSpec.type === 'numeric' ||
         selfValue.fieldSpec.type === 'date'
@@ -129,13 +153,49 @@ export function SearchValueNode(props: ValueNodeProps) {
     ],
   );
 
+  const handleValueChange = useCallback(
+    (
+      spec: SearchFieldSpec<SearchField['type']>,
+      value: string,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      console.log(value);
+      if (selfValue.fieldSpec.type === 'numeric') {
+        if (spec.normalizer) {
+          originalOnChange(spec.normalizer(value));
+        } else {
+          const parsed = parseInt(value);
+          if (isNaN(parsed)) {
+            return;
+          }
+          originalOnChange(parsed);
+        }
+      } else {
+        if (spec.normalizer) {
+          originalOnChange([spec.normalizer(value)]);
+        } else {
+          originalOnChange([value]);
+        }
+      }
+    },
+    [selfValue.fieldSpec.type],
+  );
+
   const renderValueInput = () => {
     const fieldSpec = selfValue.fieldSpec;
+    const matchingSpec = Object.values(SearchFieldSpecs).find(
+      (spec) => spec.alias ?? spec.key,
+    );
+    if (!matchingSpec) {
+      return;
+    }
+
     if (fieldSpec.type === 'facted_string') {
       return (
         <FacetStringValueSearchNode
           formKey={getFieldName('fieldSpec')}
-          library={library}
+          libraryId={libraryId}
+          mediaSourceId={mediaSourceId}
           field={fieldSpec}
         />
       );
@@ -143,7 +203,6 @@ export function SearchValueNode(props: ValueNodeProps) {
       return (
         <DateSearchValueNode
           formKey={getFieldName('fieldSpec')}
-          library={library}
           field={fieldSpec}
         />
       );
@@ -157,7 +216,9 @@ export function SearchValueNode(props: ValueNodeProps) {
               label="Value"
               size="small"
               {...field}
-              onChange={(e) => field.onChange([e.target.value])}
+              onChange={(e) =>
+                handleValueChange(matchingSpec, e.target.value, field.onChange)
+              }
             />
           )}
         />
@@ -165,15 +226,11 @@ export function SearchValueNode(props: ValueNodeProps) {
     }
   };
 
-  const hasMultiValues =
-    (selfValue.fieldSpec.type === 'facted_string' ||
-      selfValue.fieldSpec.type === 'string') &&
-    selfValue.fieldSpec.value.length > 1;
-
   return (
     <Stack
       gap={1}
       sx={{ pl: 4 * depth, flexDirection: { xs: 'column', md: 'row' } }}
+      maxWidth={'100%'}
     >
       <Controller
         control={control}
@@ -187,18 +244,19 @@ export function SearchValueNode(props: ValueNodeProps) {
               {...field}
               onChange={(e) => handleFieldChange(e.target.value)}
             >
-              {seq.collectMapValues(SearchFieldSpec, (spec, field) => {
+              {seq.collect(SearchFieldSpecs, (spec) => {
                 if (
-                  library &&
+                  mediaTypeFilter &&
                   isArray(spec.visibleForLibraryTypes) &&
-                  !(spec.visibleForLibraryTypes as string[]).includes(
-                    library.mediaType,
-                  )
+                  !spec.visibleForLibraryTypes.includes(mediaTypeFilter)
                 ) {
                   return null;
                 }
                 return (
-                  <MenuItem key={field} value={field}>
+                  <MenuItem
+                    key={spec.alias ?? spec.key}
+                    value={spec.alias ?? spec.key}
+                  >
                     {spec.name}
                   </MenuItem>
                 );
@@ -217,8 +275,7 @@ export function SearchValueNode(props: ValueNodeProps) {
             <Select
               label="Operator"
               {...field}
-              value={hasMultiValues ? 'in' : field.value}
-              disabled={hasMultiValues}
+              value={field.value}
               onChange={(ev) => handleOpChange(ev.target.value, field.onChange)}
             >
               {flatten(

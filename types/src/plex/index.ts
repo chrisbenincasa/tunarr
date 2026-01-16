@@ -131,7 +131,10 @@ export const PlexLibraryCollectionSchema = z
     type: z.literal('collection'),
     title: z.string(),
     titleSort: z.string().optional(),
-    subtype: z.string(),
+    subtype: z
+      .enum(['movie', 'show', 'artist', 'album'])
+      .optional()
+      .catch(undefined),
     contentRating: z.string().optional(),
     summary: z.string(),
     index: z.number(),
@@ -255,7 +258,9 @@ const BasePlexMediaStreamSchema = z.object({
   index: z.number(),
   bitrate: z.number().optional(),
   bitDepth: z.number().optional(),
+  title: z.string().optional(),
   displayTitle: z.string().optional(),
+  extendedDisplayTitle: z.string().optional(),
 });
 
 export const PlexMediaVideoStreamSchema = BasePlexMediaStreamSchema.extend({
@@ -375,6 +380,10 @@ export const PlexImageSchema = z.object({
   url: z.string(),
 });
 
+export const PlexLabelSchema = z.object({
+  tag: z.string(),
+});
+
 // We have to be totally sure these fields apply to ALL media types before
 // adding here.
 const BasePlexMediaSchema = z.object({
@@ -386,6 +395,7 @@ const BasePlexMediaSchema = z.object({
   // This is gnarly, but it won't be forever
   tunarrCanonicalId: z.string().optional(),
   Image: z.array(PlexImageSchema).optional(),
+  Label: z.array(PlexLabelSchema).optional().catch([]),
 });
 
 export const PlexMovieSchema = BasePlexMediaSchema.extend({
@@ -771,6 +781,16 @@ export function isTerminalItem(
   return (
     !isPlexDirectory(item) &&
     (isPlexMovie(item) || isPlexEpisode(item) || isPlexMusicTrack(item))
+  );
+}
+
+export function isPlexItemOrGrouping(item: PlexMedia) {
+  return (
+    isTerminalItem(item) ||
+    isPlexShow(item) ||
+    isPlexSeason(item) ||
+    isPlexMusicArtist(item) ||
+    isPlexMusicAlbum(item)
   );
 }
 

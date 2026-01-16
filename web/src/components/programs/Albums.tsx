@@ -1,15 +1,14 @@
-import { useSettings } from '@/store/settings/selectors';
 import { Box, Grid, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type { MusicAlbum, MusicArtist } from '@tunarr/types';
 import { useState } from 'react';
+import { useGetArtworkUrl } from '../../hooks/useThumbnailUrl.ts';
 
 type Props = {
   program: MusicArtist;
 };
 
 export default function Albums({ program }: Props) {
-  const settings = useSettings();
   const navigate = useNavigate();
 
   const [posterError, setPosterError] = useState(false);
@@ -23,6 +22,78 @@ export default function Albums({ program }: Props) {
       replace: false,
       resetScroll: true,
     });
+  };
+
+  const getArtworkUrl = useGetArtworkUrl();
+
+  const renderAlbum = (album: MusicAlbum, index: number) => {
+    const artworkUrl = getArtworkUrl(album);
+    return (
+      <Box
+        key={index}
+        sx={{
+          width: '100%',
+          transition: 'transform 0.2s',
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          },
+        }}
+      >
+        {!artworkUrl || posterError ? (
+          <Box
+            sx={{
+              width: 175,
+              height: 255,
+              boxShadow: 3,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '10px',
+              backgroundColor: 'grey.700',
+            }}
+            onClick={() => handleNavigation(album)}
+          >
+            <Typography variant="h5" component="span" sx={{ color: 'white' }}>
+              {`S${index + 1}`}
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Box
+              alt={album.title}
+              component={'img'}
+              src={artworkUrl}
+              sx={{
+                width: '100%',
+                height: 'auto',
+                boxShadow: 3,
+                borderRadius: '10px',
+              }}
+              onClick={() => handleNavigation(album)}
+              onError={() => setPosterError(true)}
+            />
+
+            <Typography
+              variant="caption"
+              component="h3"
+              title={album.title}
+              sx={{
+                marginTop: 0.5,
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
+              {album.title}
+            </Typography>
+          </>
+        )}
+      </Box>
+    );
   };
 
   return (
@@ -47,76 +118,7 @@ export default function Albums({ program }: Props) {
         }}
       >
         {albums.length > 0 &&
-          albums.map((album, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                width: '100%',
-                transition: 'transform 0.2s',
-                cursor: 'pointer',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                },
-              }}
-            >
-              {posterError ? (
-                <Box
-                  sx={{
-                    width: 175,
-                    height: 255,
-                    boxShadow: 3,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '10px',
-                    backgroundColor: 'grey.700',
-                  }}
-                  onClick={() => handleNavigation(album)}
-                >
-                  <Typography
-                    variant="h5"
-                    component="span"
-                    sx={{ color: 'white' }}
-                  >
-                    {`S${index + 1}`}
-                  </Typography>
-                </Box>
-              ) : (
-                <>
-                  <Box
-                    alt={album.title}
-                    component={'img'}
-                    src={`${settings.backendUri}/api/programs/${album.uuid}/artwork/poster`}
-                    sx={{
-                      width: '100%',
-                      height: 'auto',
-                      boxShadow: 3,
-                      borderRadius: '10px',
-                    }}
-                    onClick={() => handleNavigation(album)}
-                    onError={() => setPosterError(true)}
-                  />
-
-                  <Typography
-                    variant="caption"
-                    component="h3"
-                    title={album.title}
-                    sx={{
-                      marginTop: 0.5,
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '100%',
-                    }}
-                  >
-                    {album.title}
-                  </Typography>
-                </>
-              )}
-            </Box>
-          ))}
+          albums.map((album, index) => renderAlbum(album, index))}
       </Grid>
     </>
   );

@@ -1097,30 +1097,35 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     }
 
     const videoStream = find(source.MediaStreams, { Type: 'Video' });
-    if (!videoStream) {
-      return;
+
+    const width = videoStream?.Width ?? 1;
+    const height = videoStream?.Height ?? 1;
+    const isAnamorphic = videoStream
+      ? (videoStream.IsAnamorphic ??
+        (isNonEmptyString(videoStream.AspectRatio) &&
+        videoStream.AspectRatio.includes(':')
+          ? extractIsAnamorphic(width, height, videoStream.AspectRatio)
+          : false))
+      : false;
+
+    const streams: MediaStream[] = [];
+    if (videoStream) {
+      const videoMediaStream: MediaStream = {
+        streamType: 'video',
+        index: Math.max(0, (videoStream.Index ?? 0) - streamIndexOffset),
+        codec: videoStream.Codec ?? 'unknown',
+        profile: (videoStream.Profile ?? '')?.toLowerCase(),
+        bitDepth: nullToUndefined(videoStream.BitDepth),
+        default: videoStream.IsDefault,
+        fileName: nullToUndefined(videoStream.Path),
+        pixelFormat: nullToUndefined(videoStream.PixelFormat),
+        selected: videoStream.IsForced,
+        colorPrimaries: videoStream.ColorPrimaries,
+        colorSpace: videoStream.ColorSpace,
+        colorTransfer: videoStream.ColorTransfer,
+      };
+      streams.push(videoMediaStream);
     }
-
-    const width = videoStream.Width ?? 1;
-    const height = videoStream.Height ?? 1;
-    const isAnamorphic =
-      videoStream.IsAnamorphic ??
-      (isNonEmptyString(videoStream.AspectRatio) &&
-      videoStream.AspectRatio.includes(':')
-        ? extractIsAnamorphic(width, height, videoStream.AspectRatio)
-        : false);
-
-    const videoMediaStream: MediaStream = {
-      streamType: 'video',
-      index: Math.max(0, (videoStream.Index ?? 0) - streamIndexOffset),
-      codec: videoStream.Codec ?? 'unknown',
-      profile: (videoStream.Profile ?? '')?.toLowerCase(),
-      bitDepth: nullToUndefined(videoStream.BitDepth),
-      default: videoStream.IsDefault,
-      fileName: nullToUndefined(videoStream.Path),
-      pixelFormat: nullToUndefined(videoStream.PixelFormat),
-      selected: videoStream.IsForced,
-    };
 
     const audioMediaStreams: MediaStream[] =
       source.MediaStreams?.filter((stream) => stream.Type === 'Audio').map(
@@ -1136,6 +1141,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
           };
         },
       ) ?? [];
+    streams.push(...audioMediaStreams);
 
     const subtitleStreams: MediaStream[] =
       source.MediaStreams?.filter((stream) => stream.Type === 'Subtitle').map(
@@ -1154,11 +1160,13 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         },
       ) ?? [];
 
+    streams.push(...subtitleStreams);
+
     return {
-      displayAspectRatio: videoStream.AspectRatio ?? '',
+      displayAspectRatio: videoStream?.AspectRatio ?? '',
       sampleAspectRatio: isAnamorphic ? '0:0' : '1:1',
       duration: +dayjs.duration(Math.ceil((source.RunTimeTicks ?? 0) / 10_000)),
-      frameRate: videoStream.RealFrameRate?.toFixed(2),
+      frameRate: videoStream?.RealFrameRate?.toFixed(2),
       locations: [
         {
           type: 'remote',
@@ -1167,7 +1175,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
           path: source.Path ?? '',
         },
       ],
-      streams: [videoMediaStream, ...audioMediaStreams, ...subtitleStreams],
+      streams,
       resolution: {
         widthPx: width,
         heightPx: height,

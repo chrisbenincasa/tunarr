@@ -49,7 +49,7 @@ export class LocalMovieScanner extends FileSystemScanner {
   constructor(
     @inject(KEYS.Logger) logger: Logger,
     @inject(KEYS.LocalFolderCanonicalizer)
-    private canonicalizer: Canonicalizer<FolderAndContents>,
+    localFolderCanonicalizer: Canonicalizer<FolderAndContents>,
     @inject(LocalMediaDB) localMediaDB: LocalMediaDB,
     @inject(FfprobeStreamDetails)
     ffprobeStreamDetails: FfprobeStreamDetails,
@@ -74,6 +74,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       localMediaDB,
       mediaSourceProgressService,
       mediaSourceDB,
+      localFolderCanonicalizer,
     );
   }
 
@@ -215,7 +216,7 @@ export class LocalMovieScanner extends FileSystemScanner {
       }),
     );
 
-    const canonicalId = this.canonicalizer.getCanonicalId({
+    const canonicalId = this.localFolderCanonicalizer.getCanonicalId({
       folderName: fullPath,
       folderStats: await fs.stat(fullPath),
       contents: canonicalFilesAndStats,

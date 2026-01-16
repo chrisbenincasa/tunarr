@@ -1,0 +1,1 @@
+ALTER TABLE `external_collections` ADD `title` text NOT NULL;

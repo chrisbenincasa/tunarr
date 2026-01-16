@@ -19,6 +19,12 @@ import {
   CustomShowContent,
   CustomShowContentRelations,
 } from './CustomShowContent.ts';
+import {
+  ExternalCollection,
+  ExternalCollectionProgramRelations,
+  ExternalCollectionPrograms,
+  ExternalCollectionRelations,
+} from './ExternalCollection.ts';
 import { FillerShow, FillerShowRelations } from './FillerShow.ts';
 import {
   FillerShowContent,
@@ -71,6 +77,12 @@ import {
 import { ProgramVersion, ProgramVersionRelations } from './ProgramVersion.ts';
 import { SmartCollection } from './SmartCollection.ts';
 import { Studio, StudioEntity, StudioRelations } from './Studio.ts';
+import {
+  Tag,
+  TagJoinRelationSchema,
+  TagRelations,
+  TagRelationSchema,
+} from './Tag.ts';
 
 // export { Program } from './Program.ts';
 
@@ -131,6 +143,14 @@ export const schema = {
   studio: Studio,
   studioEntity: StudioEntity,
   studioRelations: StudioRelations,
+  externalCollections: ExternalCollection,
+  externalCollectionPrograms: ExternalCollectionPrograms,
+  externalCollectionRelations: ExternalCollectionRelations,
+  externalCollectionProgramRelations: ExternalCollectionProgramRelations,
+  tags: Tag,
+  tagRelations: TagJoinRelationSchema,
+  tagJoin: TagRelations,
+  tagJoinRelations: TagRelationSchema,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

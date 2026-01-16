@@ -5,6 +5,7 @@ import { isNonEmptyString, isProduction, isTest } from '@/util/index.js';
 import {
   forEach,
   isEmpty,
+  isEqual,
   isString,
   isUndefined,
   nth,
@@ -23,6 +24,7 @@ import pino, {
 import type { PrettyOptions } from 'pino-pretty';
 import pretty from 'pino-pretty';
 import type ThreadStream from 'thread-stream';
+import { RollingLogDestination } from './RollingDestination.ts';
 
 export const LogConfigEnvVars = {
   level: 'LOG_LEVEL',
@@ -99,6 +101,7 @@ class LoggerFactoryImpl {
   private initialized = false;
   private children: Record<string, Logger> = {};
   private currentStreams: MultiStreamRes<LogLevels>;
+  private roller?: RollingLogDestination;
 
   constructor() {
     // This ensures we always have a logger with the default configuration.
@@ -114,14 +117,21 @@ class LoggerFactoryImpl {
       // but it does seem to work with relative paths + the shim... so I'm
       // going to keep them around for now.
       this.rootLogger = this.createRootLogger();
-      this.settingsDB.on('change', () => {
+      this.settingsDB.on('change', (prevSettings) => {
         if (!this.initialized) {
           return;
         }
 
+        const currentSettings =
+          this.settingsDB.systemSettings().logging.logRollConfig;
+
         const { level: newLevel } = this.logLevel;
 
-        if (this.rootLogger[symbols.getLevelSym] !== newLevel) {
+        if (
+          this.rootLogger[symbols.getLevelSym] !== newLevel ||
+          !prevSettings ||
+          !isEqual(prevSettings.system.logging.logRollConfig, currentSettings)
+        ) {
           this.updateLevel(newLevel);
         }
       });
@@ -144,6 +154,10 @@ class LoggerFactoryImpl {
 
   get isInitialized() {
     return this.initialized;
+  }
+
+  rollLogsNow() {
+    this.roller?.roll();
   }
 
   // HACK - but this is how we change transports without a restart:
@@ -259,17 +273,43 @@ class LoggerFactoryImpl {
     // We can only add these streams post-initialization because they
     // require configuration.
     if (!isUndefined(this.settingsDB) && !isTest) {
-      streams.push({
-        stream: pino.destination({
-          dest: join(
-            this.settingsDB.systemSettings().logging.logsDirectory,
-            'tunarr.log',
-          ),
-          mkdir: true,
-          append: true,
-        }),
-        level: logLevel,
-      });
+      // TODO Expose this in the UI with configuration
+      const logConfig = this.settingsDB.systemSettings().logging;
+      const logFilePath = join(logConfig.logsDirectory, 'tunarr.log');
+
+      this.roller?.deinitialize();
+      this.roller = undefined;
+
+      if (logConfig.logRollConfig.enabled) {
+        this.roller = new RollingLogDestination({
+          fileName: logFilePath,
+          maxSizeBytes: logConfig.logRollConfig.maxFileSizeBytes,
+          rotateSchedule: logConfig.logRollConfig.schedule,
+          fileLimit: {
+            count: logConfig.logRollConfig.rolledFileLimit,
+          },
+          destinationOpts: {
+            mkdir: true,
+            append: true,
+          },
+        });
+        streams.push({
+          stream: this.roller.initDestination(),
+          level: logLevel,
+        });
+      } else {
+        streams.push({
+          stream: pino.destination({
+            dest: join(
+              this.settingsDB.systemSettings().logging.logsDirectory,
+              'tunarr.log',
+            ),
+            mkdir: true,
+            append: true,
+          }),
+          level: logLevel,
+        });
+      }
     }
 
     return streams;
