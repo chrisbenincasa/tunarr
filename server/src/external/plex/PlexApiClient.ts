@@ -2040,25 +2040,6 @@ function plexMediaStreamsInject(
   const streams: MediaStream[] = [];
   if (videoStream) {
     const videoDetails = {
-      // sampleAspectRatio: isNonEmptyString(videoStream?.pixelAspectRatio)
-      //   ? videoStream.pixelAspectRatio
-      //   : '1:1',
-      // scanType:
-      //   videoStream.scanType === 'interlaced'
-      //     ? 'interlaced'
-      //     : videoStream.scanType === 'progressive'
-      //     ? 'progressive'
-      //     : 'unknown',
-      // width: videoStream.width,
-      // height: videoStream.height,
-      // frameRate: videoStream.frameRate,
-      // displayAspectRatio:
-      //   (relevantMedia?.aspectRatio ?? 0) === 0
-      //     ? ''
-      //     : round(relevantMedia?.aspectRatio ?? 0.0, 10).toFixed(),
-      // chapters
-      // anamorphic:
-      //   videoStream.anamorphic === '1' || videoStream.anamorphic === true,
       streamType: 'video',
       codec: videoStream.codec,
       bitDepth: videoStream.bitDepth ?? 8,
@@ -2067,7 +2048,10 @@ function plexMediaStreamsInject(
       profile: videoStream.profile?.toLowerCase() ?? '',
       index: videoStream.index,
       frameRate: videoStream.frameRate,
-      // streamIndex: videoStream.index?.toString() ?? '0',
+      colorPrimaries: videoStream.colorPrimaries,
+      colorRange: videoStream.colorRange,
+      colorSpace: videoStream.colorSpace,
+      colorTransfer: videoStream.colorTrc,
     } satisfies MediaStream;
     streams.push(videoDetails);
   }

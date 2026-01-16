@@ -1548,6 +1548,13 @@ export class MeilisearchService implements ISearchService {
       videoHeight: height,
       videoCodec: videoStream?.codec,
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
+      videoDynamicRange: videoStream
+        ? videoStream?.colorPrimaries === 'bt2020' ||
+          videoStream?.colorTransfer === 'smpte2084' ||
+          videoStream?.colorTransfer === 'arib-std-b67'
+          ? 'hdr'
+          : 'sdr'
+        : undefined,
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
       audioLanguages: this.getUniqueStreamLanguages(
