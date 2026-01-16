@@ -258,7 +258,9 @@ const BasePlexMediaStreamSchema = z.object({
   index: z.number(),
   bitrate: z.number().optional(),
   bitDepth: z.number().optional(),
+  title: z.string().optional(),
   displayTitle: z.string().optional(),
+  extendedDisplayTitle: z.string().optional(),
 });
 
 export const PlexMediaVideoStreamSchema = BasePlexMediaStreamSchema.extend({
