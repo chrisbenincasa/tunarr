@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.3...v1.1.0) (2026-01-16)
+
+### Features
+
+* **server:** implement simple log roller ([#609](https://github.com/chrisbenincasa/tunarr/issues/609)) ([ab36246](https://github.com/chrisbenincasa/tunarr/commit/ab3624675c0468cf6f4f1e0a38ed93525d3552bc))
+
+### Bug Fixes
+
+* extract audio title tag when probing local files ([42659b7](https://github.com/chrisbenincasa/tunarr/commit/42659b7333987ca31b023b05bfda1f7d46bb122b))
+* fix derivation of Plex collection subtype ([9e9b005](https://github.com/chrisbenincasa/tunarr/commit/9e9b00540b01ea3c9faba38bf9e2d3de9a25c794))
+* multiple fixes to NFO parsing to be more permissive ([cdb1ba6](https://github.com/chrisbenincasa/tunarr/commit/cdb1ba6c371df1edb7ea16987d9e3bc93ed72513))
+* passthrough color information from Plex ([3755ecc](https://github.com/chrisbenincasa/tunarr/commit/3755eccf72b153295c72f95cd3292b0749099a86))
+* remove video stream presence restriction for Jellyfin items ([d59b1f2](https://github.com/chrisbenincasa/tunarr/commit/d59b1f293d4100854ac3fedca0c97f48ca555be5))
+* remove video stream restriction from Emby ([ed7381a](https://github.com/chrisbenincasa/tunarr/commit/ed7381ac8c0404227c2f2ca2dd082e1af922778d))
+* sort nested program queries by index ([a0a13b3](https://github.com/chrisbenincasa/tunarr/commit/a0a13b351714a9f6669719e5c20a80100a63947b))
+## [1.0.18](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.3...v1.1.0) (2026-01-14)
+
 ## [1.0.18](https://github.com/chrisbenincasa/tunarr/compare/v1.0.17...v1.0.18) (2026-01-14)
 
 ### Bug Fixes
