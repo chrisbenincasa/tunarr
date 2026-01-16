@@ -14,7 +14,13 @@ describe('MovieNfoParser', () => {
     expect(output.movie.credits).length(2);
     expect(output.movie.director).length(1);
     expect(output.movie.actor).length(5);
+  });
 
-    console.log(output);
+  test('parses NFOs without explicit fileinfo', async () => {
+    const contents = (await readTestFile('nfo-without-fileinfo.nfo')).toString(
+      'utf-8',
+    );
+    const result = await new MovieNfoParser().parse(contents);
+    expect(result.isSuccess()).toBe(true);
   });
 });

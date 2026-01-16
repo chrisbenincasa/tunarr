@@ -33,10 +33,10 @@ export const NfoAudioStream = z.object({
 });
 
 export const NfoVideoStream = z.object({
-  codec: z.string(),
+  codec: z.string().optional(),
   aspect: z.coerce.number().or(z.string()).optional(),
-  width: z.coerce.number(),
-  height: z.coerce.number(),
+  width: z.coerce.number().optional(),
+  height: z.coerce.number().optional(),
   durationinseconds: z.coerce.number().optional(),
   stereomode: z.string().optional(),
   hdrtype: z.enum(['', 'hdr10', 'dolbyvision', 'hlg']).nullish().catch(''),
@@ -48,7 +48,7 @@ export const NfoSubtitleStream = z.object({
 
 export const NfoFileInfo = z.object({
   streamdetails: z.object({
-    video: NfoVideoStream,
+    video: NfoVideoStream.optional(),
     audio: z.array(NfoAudioStream).or(NfoAudioStream).optional(),
     subtitle: z.array(NfoSubtitleStream).or(NfoSubtitleStream).optional(),
   }),
