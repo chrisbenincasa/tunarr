@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0...v1.1.1) (2026-01-17)
+
+### Bug Fixes
+
+* fix general settings form with invalid default logroll config ([266464c](https://github.com/chrisbenincasa/tunarr/commit/266464c388a98026a7c844886d9d484c33c1818f))
+
 ## [1.1.0](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0-dev.3...v1.1.0) (2026-01-16)
 
 ### Features
