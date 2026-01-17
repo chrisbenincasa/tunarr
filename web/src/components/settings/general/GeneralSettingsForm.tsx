@@ -88,7 +88,7 @@ function getDefaultFormValues(
   base.logging.logRollConfig.schedule ??= {
     type: 'every',
     unit: 'day',
-    increment: 0,
+    increment: 1,
     offsetMs: 0,
   };
   return base;
