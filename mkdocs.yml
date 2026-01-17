@@ -33,6 +33,7 @@ theme:
     - navigation.path
     - navigation.sections
     - navigation.indexes
+    - navigation.footer
     - content.code.copy
     - content.code.select
     - content.tooltips
@@ -120,6 +121,9 @@ extra_css:
 extra:
   status:
     new: Alpha only!
+  social:
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/nYkb7MhPfD
 
 plugins:
   - glightbox

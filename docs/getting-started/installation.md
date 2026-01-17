@@ -32,6 +32,10 @@ Tunarr is available in the [Community Apps](https://unraid.net/community/apps) s
 
 Follow the on-screen instructions to set up the container, including mapping the Web UI port. You can optionally pass in an Nvidia GPU or Intel iGPU for hardware transcoding (use the proper corresponding Docker tag; enable "Advanced View" for more details), and optionally map an existing dizqueTV configuration directory to migrate (click "Show more settings...").
 
+### Synology
+
+TODO! If you run Tunarr on Synology and would like to contribute a guide for Tunarr installation / setup, please reach out
+
 ## Binaries
 
 Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 7.1.1 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
@@ -41,3 +45,7 @@ Like Docker images, binaries are released with versions as well as a singular 'e
 * [Latest release](http://github.com/chrisbenincasa/tunarr/releases/latest)
 * [Edge release](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
 * [All releases](https://github.com/chrisbenincasa/tunarr/releases)
+
+## Proxmox
+
+If you use Proxmox, you can easily install Tunarr into an LXC using the [Tunarr Proxmox helper script](https://community-scripts.github.io/ProxmoxVE/scripts?id=tunarr). You can view the source [here](https://github.com/community-scripts/ProxmoxVE/blob/83f4085885a5645fe2df1040e058e2d1d984146b/install/tunarr-install.sh#L4). 
