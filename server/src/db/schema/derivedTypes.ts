@@ -70,7 +70,7 @@ import type {
 } from './ProgramVersion.ts';
 import type { NewStudio, Studio, StudioEntity } from './Studio.ts';
 import type { ChannelSubtitlePreferences } from './SubtitlePreferences.ts';
-import type { Tag, TagRelation } from './Tag.ts';
+import type { NewTag, Tag, TagRelation } from './Tag.ts';
 
 export type ProgramVersionWithRelations = ProgramVersion & {
   mediaStreams?: ProgramMediaStream[];
@@ -243,6 +243,7 @@ export type NewProgramWithRelations<Type extends ProgramType = ProgramType> = {
   credits: NewCreditWithArtwork[];
   genres: NewGenre[];
   studios: NewStudio[];
+  tags: NewTag[];
 };
 
 export type NewProgramWithExternalIds = NewProgramDao & {
@@ -349,6 +350,7 @@ export type NewProgramGroupingWithRelations<
   credits: NewCreditWithArtwork[];
   genres: NewGenre[];
   studios: NewStudio[];
+  tags: NewTag[];
 };
 
 export type NewTvShow = SpecificProgramGroupingType<'show', NewProgramGrouping>;

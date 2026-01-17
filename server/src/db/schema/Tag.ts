@@ -1,4 +1,4 @@
-import type { InferSelectModel } from 'drizzle-orm';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { index, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import { Program } from './Program.ts';
@@ -14,6 +14,7 @@ export const Tag = sqliteTable(
 );
 
 export type Tag = InferSelectModel<typeof Tag>;
+export type NewTag = InferInsertModel<typeof Tag>;
 
 export const TagJoinRelationSchema = relations(Tag, ({ many }) => ({
   programs: many(TagRelations),
@@ -39,6 +40,7 @@ export const TagRelations = sqliteTable(
 );
 
 export type TagRelation = InferSelectModel<typeof TagRelations>;
+export type NewTagRelation = InferInsertModel<typeof TagRelations>;
 
 export const TagRelationSchema = relations(TagRelations, ({ one }) => ({
   tag: one(Tag, {
