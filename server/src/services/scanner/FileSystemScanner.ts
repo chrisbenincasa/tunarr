@@ -159,17 +159,13 @@ export abstract class FileSystemScanner {
         for (const probeVideoStream of videoStreams) {
           const videoStream: MediaStream = {
             ...probeVideoStream,
-            // uuid: v4(),
             bitDepth: probeVideoStream.bitDepth,
             streamType: 'video',
             codec: probeVideoStream.codec ?? 'unknown',
             channels: null,
             index: probeVideoStream.streamIndex ?? 0,
             default: true,
-            // forced: true,
             title: 'Main',
-            // languageCodeISO6392: null,
-            // programVersionId: versionId,
             profile: probeVideoStream.profile ?? null,
             pixelFormat: probeVideoStream.pixelFormat ?? null,
             colorPrimaries: probeVideoStream.colorPrimaries ?? null,

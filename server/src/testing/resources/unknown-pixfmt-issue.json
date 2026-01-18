@@ -1,0 +1,130 @@
+{
+    "videoStream": {
+        "kind": "video",
+        "index": 0,
+        "codec": "hevc",
+        "profile": "2",
+        "pixelFormat": {
+            "name": "unknown",
+            "bitDepth": 8
+        },
+        "frameSize": {
+            "width": 1920,
+            "height": 820
+        },
+        "frameRate": "23.976023976023978",
+        "inputKind": "video",
+        "providedSampleAspectRatio": "1:1",
+        "displayAspectRatio": "96:41"
+    },
+    "audioStream": {
+        "kind": "audio",
+        "index": 1,
+        "codec": "aac",
+        "channels": -2
+    },
+    "subtitleStream": {
+        "kind": "subtitle",
+        "inputKind": "embedded",
+        "codec": "ass",
+        "index": 3,
+        "method": "burn"
+    },
+    "ffmpegState": {
+        "version": {
+            "versionString": "7.1.1",
+            "majorVersion": 7,
+            "minorVersion": 1,
+            "patchVersion": 1,
+            "versionDetails": "",
+            "isUnknown": false
+        },
+        "threadCount": 0,
+        "start": "PT29M15.251S",
+        "duration": "PT1H3M20.322S",
+        "logLevel": "warning",
+        "mapMetadata": false,
+        "metadataServiceName": null,
+        "metadataServiceProvider": null,
+        "decoderHwAccelMode": "none",
+        "encoderHwAccelMode": "none",
+        "softwareScalingAlgorithm": "bicubic",
+        "softwareDeinterlaceFilter": "none",
+        "vaapiDevice": "/dev/dri/renderD129",
+        "vaapiDriver": null,
+        "outputFormat": {
+            "type": "hls",
+            "hlsOptions": {
+                "hlsDeleteThreshold": 3,
+                "streamNameFormat": "stream.m3u8",
+                "segmentNameFormat": "data%06d.ts",
+                "segmentBaseDirectory": "/transcode",
+                "streamBasePath": "stream_f10c60fb-6bfa-4d17-bb16-259e6aeb0c3a",
+                "streamBaseUrl": "/stream/channels/f10c60fb-6bfa-4d17-bb16-259e6aeb0c3a/hls/",
+                "hlsTime": 4,
+                "hlsListSize": 0,
+                "deleteThreshold": null,
+                "appendSegments": true
+            }
+        },
+        "outputLocation": "stdout",
+        "ptsOffset": 0
+    },
+    "desiredState": {
+        "scaledSize": {
+            "width": 1920,
+            "height": 820
+        },
+        "paddedSize": {
+            "width": 1920,
+            "height": 1080
+        },
+        "isAnamorphic": false,
+        "realtime": false,
+        "videoFormat": "mpeg2video",
+        "videoPreset": null,
+        "videoProfile": null,
+        "frameRate": null,
+        "videoTrackTimescale": 90000,
+        "videoBitrate": 2000,
+        "videoBufferSize": 4000,
+        "frameDataLocation": "unknown",
+        "deinterlace": false,
+        "pixelFormat": {
+            "name": "yuv420p",
+            "bitDepth": 8
+        },
+        "infiniteLoop": false,
+        "forceSoftwareOverlay": false
+    },
+    "desiredAudioState": {
+        "audioEncoder": "copy",
+        "audioChannels": 6,
+        "audioBitrate": 192,
+        "audioBufferSize": 384,
+        "audioSampleRate": 48,
+        "audioDuration": 3800322,
+        "audioVolume": 100
+    },
+    "pipelineOptions": {
+        "decoderThreadCount": 0,
+        "encoderThreadCount": 0,
+        "filterThreadCount": null,
+        "disableHardwareDecoding": false,
+        "disableHardwareEncoding": false,
+        "disableHardwareFilters": false,
+        "vaapiDevice": "/dev/dri/renderD129",
+        "vaapiDriver": null
+    },
+    "pipelineSteps": [],
+    "filterChain": {
+        "videoFilterSteps": [],
+        "subtitleOverlayFilterSteps": [],
+        "watermarkOverlayFilterSteps": [],
+        "pixelFormatFilterSteps": []
+    },
+    "hasWatermark": false,
+    "shouldDeinterlace": false,
+    "is10BitOutput": false,
+    "isIntelVaapiOrQsv": false
+}

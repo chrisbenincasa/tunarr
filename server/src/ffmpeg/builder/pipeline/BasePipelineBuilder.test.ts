@@ -1,4 +1,5 @@
 import { FileStreamSource } from '../../../stream/types.ts';
+import { readTestFile } from '../../../testing/util.ts';
 import { EmptyFfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
@@ -9,7 +10,7 @@ import { AudioState } from '../state/AudioState.ts';
 import { DefaultPipelineOptions, FfmpegState } from '../state/FfmpegState.ts';
 import { FrameState } from '../state/FrameState.ts';
 import { FrameSize } from '../types.ts';
-import { BasePipelineBuilder } from './BasePipelineBuilder.ts';
+import { BasePipelineBuilder, PipelineBuilderContext } from './BasePipelineBuilder.ts';
 
 class NoopPipelineBuilder extends BasePipelineBuilder {
   protected setupVideoFilters(): void {}
@@ -126,5 +127,12 @@ describe('BasePipelineBuilder', () => {
     );
 
     expect(volumeFilter).toBeUndefined();
+  });
+
+  test('unknown pixfmt issue fix', async () => {
+    const contents = JSON.parse(
+      (await readTestFile('unknown-pixfmt-issue.json')).toString('utf-8'),
+    ) as PipelineBuilderContext;
+    new 
   });
 });
