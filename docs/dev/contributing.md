@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Tunarr! This guide will help you 
 Before you begin, ensure you have the following installed:
 
 - **Node.js 22** or later
-- **pnpm 9.12.3** or later (do not use npm or yarn)
+- **pnpm 10.28.0** or later (do not use npm or yarn; easiest to use `corepack` to get the right version)
 - **Git**
 - **FFmpeg** (for testing streaming features)
 

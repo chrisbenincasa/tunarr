@@ -23,7 +23,7 @@ This is a monorepo with four main packages:
 
 ### Package Manager & Task Runner
 
-- Use **pnpm** (v9.12.3) for all dependency management - never use npm or yarn
+- Use **pnpm** (v10.28.0) for all dependency management - never use npm or yarn
 - Use **Turbo** for running tasks across the monorepo
 - Node.js version: 22 (specified in package.json engines)
 

@@ -27,7 +27,7 @@ overrides:
 
 patchedDependencies:
   kysely:
-    hash: 5ewjqngd4oyjgaqa3fcufrviwq
+    hash: fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813
     path: patches/kysely.patch
 
 importers:
@@ -72,7 +72,7 @@ importers:
         version: 8.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(yaml@2.8.2))
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.2))
       esbuild:
         specifier: ^0.21.5
         version: 0.21.5
@@ -216,7 +216,7 @@ importers:
         version: 1.11.18
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))
+        version: 0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813))
       fast-xml-parser:
         specifier: ^4.5.3
         version: 4.5.3
@@ -255,7 +255,7 @@ importers:
         version: 10.3.0
       kysely:
         specifier: ^0.27.6
-        version: 0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
+        version: 0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813)
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -367,7 +367,7 @@ importers:
         version: 17.0.33
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(yaml@2.8.2))
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.2))
       '@yao-pkg/pkg':
         specifier: ^6.9.0
         version: 6.9.0
@@ -400,7 +400,7 @@ importers:
         version: 15.15.0
       kysely-ctl:
         specifier: ^0.9.0
-        version: 0.9.0(kysely@0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))(magicast@0.3.5)
+        version: 0.9.0(kysely@0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813))(magicast@0.3.5)
       memfs:
         specifier: ^4.51.0
         version: 4.51.0
@@ -488,7 +488,7 @@ importers:
         version: 22.10.7
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(yaml@2.8.2))
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.2))
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
@@ -612,7 +612,7 @@ importers:
         version: 4.17.21
       material-react-table:
         specifier: ^3.2.1
-        version: 3.2.1(65d5er3ndsabpx655yilbq2giu)
+        version: 3.2.1(cc24eaa8a22bbc40cbc852c0c273529d)
       notistack:
         specifier: ^3.0.1
         version: 3.0.1(csstype@3.1.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -12497,7 +12497,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(yaml@2.8.2))':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.10.7)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.2))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -13847,13 +13847,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)):
+  drizzle-orm@0.39.3(@opentelemetry/api@1.4.1)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.8.1)(bun-types@1.2.1)(kysely@0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813)):
     optionalDependencies:
       '@opentelemetry/api': 1.4.1
       '@types/better-sqlite3': 7.6.13
       better-sqlite3: 11.8.1
       bun-types: 1.2.1
-      kysely: 0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
+      kysely: 0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813)
 
   dunder-proto@1.0.1:
     dependencies:
@@ -15670,12 +15670,12 @@ snapshots:
 
   kolorist@1.8.0: {}
 
-  kysely-ctl@0.9.0(kysely@0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq))(magicast@0.3.5):
+  kysely-ctl@0.9.0(kysely@0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813))(magicast@0.3.5):
     dependencies:
       c12: 1.11.2(magicast@0.3.5)
       citty: 0.1.6
       consola: 3.2.3
-      kysely: 0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq)
+      kysely: 0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813)
       nypm: 0.3.12
       ofetch: 1.4.1
       pathe: 1.1.2
@@ -15685,7 +15685,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  kysely@0.27.6(patch_hash=5ewjqngd4oyjgaqa3fcufrviwq): {}
+  kysely@0.27.6(patch_hash=fb5a7c1d135f745c6c1b2b02bbc9510933d542d938da31ef0b7f11bf7222f813): {}
 
   lazystream@1.0.1:
     dependencies:
@@ -15891,7 +15891,7 @@ snapshots:
 
   marked@15.0.12: {}
 
-  material-react-table@3.2.1(65d5er3ndsabpx655yilbq2giu):
+  material-react-table@3.2.1(cc24eaa8a22bbc40cbc852c0c273529d):
     dependencies:
       '@emotion/react': 11.14.0(@types/react@18.2.15)(react@18.2.0)
       '@emotion/styled': 11.14.0(@emotion/react@11.14.0(@types/react@18.2.15)(react@18.2.0))(@types/react@18.2.15)(react@18.2.0)
