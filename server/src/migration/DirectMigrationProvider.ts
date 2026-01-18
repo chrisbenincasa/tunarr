@@ -52,6 +52,7 @@ import Migration1763749592_AddProgramState from './db/Migration1763749592_AddPro
 import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266_AddCreditGroupingIndex.ts';
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
 import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
+import Migration1768000000_AddProgramPlayHistory from './db/Migration1768000000_AddProgramPlayHistory.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -183,6 +184,7 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1767374284: makeKyselyMigrationFromSqlFile(
             './sql/0036_smooth_vanisher.sql',
           ),
+          migration1768000000: Migration1768000000_AddProgramPlayHistory,
         },
         wrapWithTransaction,
       ),
