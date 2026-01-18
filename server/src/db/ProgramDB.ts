@@ -185,6 +185,7 @@ import {
   Studio,
   StudioEntity,
 } from './schema/Studio.ts';
+import { NewTag, NewTagRelation, Tag, TagRelations } from './schema/Tag.ts';
 import {
   MediaSourceId,
   MediaSourceName,
@@ -1192,6 +1193,7 @@ export class ProgramDB implements IProgramDB {
         const creditsToInsert: NewCredit[] = [];
         const genresToInsert: Dictionary<NewGenre[]> = {};
         const studiosToInsert: Dictionary<NewStudio[]> = {};
+        const tagsToInsert: Dictionary<NewTag[]> = {};
         for (const program of chunkResult) {
           const key = program.canonicalId;
           const request: Maybe<NewProgramWithRelations> =
@@ -1231,6 +1233,11 @@ export class ProgramDB implements IProgramDB {
             studiosToInsert[program.uuid] ??= [];
             studiosToInsert[program.uuid]?.push(studio);
           }
+
+          for (const tag of request?.tags ?? []) {
+            tagsToInsert[program.uuid] ??= [];
+            tagsToInsert[program.uuid]?.push(tag);
+          }
         }
 
         const externalIdsByProgramId =
@@ -1252,6 +1259,10 @@ export class ProgramDB implements IProgramDB {
 
         for (const [programId, studios] of Object.entries(studiosToInsert)) {
           await this.upsertProgramStudios(programId, studios);
+        }
+
+        for (const [programId, tags] of Object.entries(tagsToInsert)) {
+          await this.upsertProgramTags(programId, tags);
         }
 
         return chunkResult.map(
@@ -1571,6 +1582,72 @@ export class ProgramDB implements IProgramDB {
       }
       if (relations.length > 0) {
         await tx.insert(StudioEntity).values(relations).onConflictDoNothing();
+      }
+    });
+  }
+
+  async upsertProgramTags(programId: string, tags: NewTag[]) {
+    return this.upsertProgramTagsInternal('program', programId, tags);
+  }
+
+  async upsertProgramGroupingTags(groupingId: string, tags: NewTag[]) {
+    return this.upsertProgramTagsInternal('grouping', groupingId, tags);
+  }
+
+  private async upsertProgramTagsInternal(
+    entityType: 'program' | 'grouping',
+    joinId: string,
+    tags: NewTag[],
+  ) {
+    if (tags.length === 0) {
+      return;
+    }
+
+    const incomingByName = groupByUniq(tags, (g) => g.tag);
+    const existingTagsByName: Dictionary<Tag> = {};
+    for (const tagChunk of chunk(tags, 100)) {
+      const names = tagChunk.map((g) => g.tag);
+      const results = await this.drizzleDB
+        .select()
+        .from(Tag)
+        .where(inArray(Tag.tag, names));
+      for (const result of results) {
+        existingTagsByName[result.tag] = result;
+      }
+    }
+
+    const newTagNames = new Set(
+      difference(keys(incomingByName), keys(existingTagsByName)),
+    );
+
+    const relations: NewTagRelation[] = [];
+    for (const name of Object.keys(incomingByName)) {
+      const tagId = newTagNames.has(name)
+        ? incomingByName[name]!.uuid
+        : existingTagsByName[name]!.uuid;
+      relations.push({
+        tagId,
+        programId: entityType === 'program' ? joinId : null,
+        groupingId: entityType === 'grouping' ? joinId : null,
+      });
+    }
+
+    return this.drizzleDB.transaction(async (tx) => {
+      const col =
+        entityType === 'grouping'
+          ? TagRelations.groupingId
+          : TagRelations.programId;
+      await tx.delete(TagRelations).where(eq(col, joinId));
+      if (newTagNames.size > 0) {
+        await tx
+          .insert(Tag)
+          .values(
+            [...newTagNames.values()].map((name) => incomingByName[name]!),
+          )
+          .onConflictDoNothing();
+      }
+      if (relations.length > 0) {
+        await tx.insert(TagRelations).values(relations).onConflictDoNothing();
       }
     });
   }
@@ -2203,6 +2280,11 @@ export class ProgramDB implements IProgramDB {
       await this.upsertProgramGroupingStudios(
         entity.uuid,
         newGroupingAndRelations.studios,
+      );
+
+      await this.upsertProgramGroupingTags(
+        entity.uuid,
+        newGroupingAndRelations.tags,
       );
     }
 

@@ -31,14 +31,13 @@ import {
   NewCreditWithArtwork,
   NewProgramGroupingWithRelations,
 } from '../schema/derivedTypes.js';
-import { NewGenre } from '../schema/Genre.ts';
 import { MediaSourceOrm } from '../schema/MediaSource.ts';
 import { MediaSourceLibraryOrm } from '../schema/MediaSourceLibrary.ts';
 import {
   ProgramGroupingType,
   type NewProgramGrouping,
 } from '../schema/ProgramGrouping.ts';
-import { NewStudio } from '../schema/Studio.ts';
+import { CommonDaoMinter } from './CommonDaoMinter.ts';
 
 @injectable()
 export class ProgramGroupingMinter {
@@ -220,10 +219,13 @@ export class ProgramGroupingMinter {
       credits: show.actors.map((actor) =>
         this.mintCreditForActor(actor, groupingId, +now),
       ),
-      genres: seq.collect(show.genres, (genre) => this.mintGenre(genre.name)),
-      studios: seq.collect(show.studios, (studio) =>
-        this.mintStudio(studio.name),
+      genres: seq.collect(show.genres, (genre) =>
+        CommonDaoMinter.mintGenre(genre.name),
       ),
+      studios: seq.collect(show.studios, (studio) =>
+        CommonDaoMinter.mintStudio(studio.name),
+      ),
+      tags: seq.collect(show.tags, (tag) => CommonDaoMinter.mintTag(tag)),
     };
   }
 
@@ -309,8 +311,11 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
-      genres: seq.collect(artist.genres, (genre) => this.mintGenre(genre.name)),
+      genres: seq.collect(artist.genres, (genre) =>
+        CommonDaoMinter.mintGenre(genre.name),
+      ),
       studios: [],
+      tags: seq.collect(artist.tags, (tag) => CommonDaoMinter.mintTag(tag)),
     };
   }
 
@@ -366,10 +371,13 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
-      genres: seq.collect(season.genres, (genre) => this.mintGenre(genre.name)),
-      studios: seq.collect(season.studios, (studio) =>
-        this.mintStudio(studio.name),
+      genres: seq.collect(season.genres, (genre) =>
+        CommonDaoMinter.mintGenre(genre.name),
       ),
+      studios: seq.collect(season.studios, (studio) =>
+        CommonDaoMinter.mintStudio(studio.name),
+      ),
+      tags: seq.collect(season.tags, (tag) => CommonDaoMinter.mintTag(tag)),
     };
   }
 
@@ -424,10 +432,13 @@ export class ProgramGroupingMinter {
             }) satisfies NewArtwork,
         ),
       credits: [],
-      genres: seq.collect(album.genres, (genre) => this.mintGenre(genre.name)),
-      studios: seq.collect(album.studios, (studio) =>
-        this.mintStudio(studio.name),
+      genres: seq.collect(album.genres, (genre) =>
+        CommonDaoMinter.mintGenre(genre.name),
       ),
+      studios: seq.collect(album.studios, (studio) =>
+        CommonDaoMinter.mintStudio(studio.name),
+      ),
+      tags: seq.collect(album.tags, (tag) => CommonDaoMinter.mintTag(tag)),
     };
   }
 
@@ -464,19 +475,5 @@ export class ProgramGroupingMinter {
 
       return;
     });
-  }
-
-  private mintGenre(genreName: string): NewGenre {
-    return {
-      uuid: v4(),
-      name: genreName,
-    };
-  }
-
-  private mintStudio(studioName: string): NewStudio {
-    return {
-      uuid: v4(),
-      name: studioName,
-    };
   }
 }

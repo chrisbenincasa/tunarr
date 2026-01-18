@@ -44,6 +44,7 @@ import {
 } from './schema/ProgramGrouping.ts';
 import { NewMultiProgramGroupingId } from './schema/ProgramGroupingExternalId.ts';
 import { NewStudio } from './schema/Studio.ts';
+import { NewTag } from './schema/Tag.ts';
 
 export function jsonObject<T extends SelectedFields>(shape: T) {
   const chunks: SQL[] = [];
@@ -286,6 +287,13 @@ function createStudio(): NewStudio {
   };
 }
 
+function createTag(): NewTag {
+  return {
+    uuid: v4(),
+    tag: faker.string.alphanumeric(),
+  };
+}
+
 function createArtwork(groupingId: string): NewArtwork {
   return {
     uuid: v4(),
@@ -361,6 +369,7 @@ function createProgramGrouping<Typ extends ProgramGroupingType>(
     credits: [createCreditWithArtwork(groupingId)],
     genres: [createGenre()],
     studios: [createStudio()],
+    tags: [createTag()],
   };
 }
 
@@ -951,7 +960,112 @@ describe('ProgramDB', () => {
       });
     });
 
-    describe('relations - genres, studios, credits, artwork', () => {
+    describe('relations - genres, studios, credits, artwork, tags', () => {
+      test('should upsert tags for a show', async ({ programDb, drizzle }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const showGrouping = {
+          ...createProgramGrouping('show', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          tags: [createTag(), createTag(), createTag()],
+        };
+
+        const result = await programDb.upsertProgramGrouping(showGrouping);
+
+        expect(result.entity).toBeDefined();
+
+        // Retrieve the grouping with tags to verify they were saved
+        const groupings = await programDb.getProgramGroupings([
+          result.entity.uuid,
+        ]);
+        const retrievedGrouping = groupings[result.entity.uuid];
+
+        expect(retrievedGrouping).toBeDefined();
+        expect(retrievedGrouping?.tags).toHaveLength(3);
+
+        // Verify tag names match
+        const savedTagNames = retrievedGrouping!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = showGrouping.tags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
+
+      test('should update tags when forceUpdate is true', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const initialTags = [createTag(), createTag()];
+        const showGrouping = {
+          ...createProgramGrouping('show', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          tags: initialTags,
+        };
+
+        const firstResult = await programDb.upsertProgramGrouping(showGrouping);
+
+        // Update with new tags
+        const newTags = [createTag(), createTag(), createTag()];
+        const updatedGrouping = {
+          ...showGrouping,
+          tags: newTags,
+        };
+
+        await programDb.upsertProgramGrouping(updatedGrouping, true);
+
+        // Verify tags were updated
+        const groupings = await programDb.getProgramGroupings([
+          firstResult.entity.uuid,
+        ]);
+        const retrievedGrouping = groupings[firstResult.entity.uuid];
+
+        expect(retrievedGrouping?.tags).toHaveLength(3);
+        const savedTagNames = retrievedGrouping!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = newTags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
+
+      test('should preserve tags when upserting existing grouping without forceUpdate', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const initialTags = [createTag(), createTag()];
+        const showGrouping = {
+          ...createProgramGrouping('show', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          tags: initialTags,
+        };
+
+        const firstResult = await programDb.upsertProgramGrouping(showGrouping);
+
+        // Upsert again without forceUpdate - tags should remain unchanged
+        const updatedGrouping = {
+          ...showGrouping,
+          tags: [createTag()], // Different tags
+        };
+
+        await programDb.upsertProgramGrouping(updatedGrouping, false);
+
+        // Verify original tags are preserved
+        const groupings = await programDb.getProgramGroupings([
+          firstResult.entity.uuid,
+        ]);
+        const retrievedGrouping = groupings[firstResult.entity.uuid];
+
+        expect(retrievedGrouping?.tags).toHaveLength(2);
+        const savedTagNames = retrievedGrouping!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = initialTags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
+
       test('should upsert genres for a show', async ({
         programDb,
         drizzle,
@@ -1014,7 +1128,7 @@ describe('ProgramDB', () => {
 
         expect(result.entity).toBeDefined();
         expect(showGrouping.credits).toHaveLength(1);
-        expect(showGrouping.credits[0].artwork).toHaveLength(1);
+        expect(showGrouping.credits[0]?.artwork).toHaveLength(1);
       });
 
       test('should upsert artwork for a show', async ({
@@ -1060,6 +1174,7 @@ describe('ProgramDB', () => {
           credits: [],
           genres: [],
           studios: [],
+          tags: [],
         };
 
         const result = await programDb.upsertProgramGrouping(showGrouping);
@@ -1120,7 +1235,7 @@ describe('ProgramDB', () => {
 
         expect(result.entity.externalIds).toBeDefined();
         expect(result.entity.externalIds.length).toBeGreaterThan(0);
-        expect(result.entity.externalIds[0].sourceType).toBe('plex');
+        expect(result.entity.externalIds[0]?.sourceType).toBe('plex');
       });
 
       test('should handle multiple external IDs for same grouping', async ({
@@ -1283,6 +1398,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const result1 = await programDb.upsertProgramGrouping(program1Grouping);
@@ -1302,6 +1418,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const result2 = await programDb.upsertProgramGrouping(program2Grouping);
@@ -1361,6 +1478,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const result = await programDb.upsertProgramGrouping(programGrouping);
@@ -1401,6 +1519,7 @@ describe('ProgramDB', () => {
           studios: [],
           artwork: [],
           credits: [],
+          tags: [],
         };
 
         const result = await programDb.upsertProgramGrouping(grouping);
@@ -1451,6 +1570,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const result = await programDb.upsertProgramGrouping(grouping);
@@ -1492,6 +1612,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const showResult = await programDb.upsertProgramGrouping(showGrouping);
@@ -1513,6 +1634,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const season2: NewProgramGroupingWithRelations = {
@@ -1531,6 +1653,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       await programDb.upsertProgramGrouping(season1);
@@ -1569,6 +1692,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const showResult = await programDb.upsertProgramGrouping(showGrouping);
@@ -1591,6 +1715,7 @@ describe('ProgramDB', () => {
           studios: [],
           artwork: [],
           credits: [],
+          tags: [],
         };
         await programDb.upsertProgramGrouping(season);
       }
@@ -1623,6 +1748,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       const showResult = await programDb.upsertProgramGrouping(showGrouping);
@@ -1641,6 +1767,7 @@ describe('ProgramDB', () => {
         credits: [],
         versions: [],
         subtitles: [],
+        tags: [],
       };
 
       await programDb.upsertPrograms([episode]);
@@ -1653,7 +1780,7 @@ describe('ProgramDB', () => {
       );
 
       expect(descendants.length).toBeGreaterThan(0);
-      expect(descendants[0].uuid).toEqual(episode.program.uuid);
+      expect(descendants[0]?.uuid).toEqual(episode.program.uuid);
     });
   });
 
@@ -1687,6 +1814,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       // First upsert
@@ -1733,6 +1861,7 @@ describe('ProgramDB', () => {
         studios: [],
         artwork: [],
         credits: [],
+        tags: [],
       };
 
       // Initial insert
@@ -1754,6 +1883,258 @@ describe('ProgramDB', () => {
 
       expect(result2.entity.uuid).toBe(result1.entity.uuid);
       expect(result2.entity.title).toBe('Updated Title');
+    });
+  });
+
+  describe('upsertPrograms', () => {
+    describe('program tags', () => {
+      test('should save tags for a program', async ({ programDb, drizzle }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const tags = [createTag(), createTag(), createTag()];
+
+        const program: NewProgramWithRelations = {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags,
+        };
+
+        const result = await programDb.upsertPrograms([program]);
+
+        expect(result).toHaveLength(1);
+
+        // Retrieve the program with tags
+        const programs = await programDb.getProgramsByIds([result[0]!.uuid]);
+
+        expect(programs).toHaveLength(1);
+        expect(programs[0]!.tags).toHaveLength(3);
+
+        // Verify tag names match
+        const savedTagNames = programs[0]!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = tags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
+
+      test('should save tags for multiple programs', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        const program1Tags = [createTag(), createTag()];
+        const program2Tags = [createTag(), createTag(), createTag()];
+
+        const program1: NewProgramWithRelations = {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: program1Tags,
+        };
+
+        const program2: NewProgramWithRelations = {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: program2Tags,
+        };
+
+        const results = await programDb.upsertPrograms([program1, program2]);
+
+        expect(results).toHaveLength(2);
+
+        // Retrieve both programs with tags
+        const programs = await programDb.getProgramsByIds(
+          results.map((r) => r.uuid),
+        );
+
+        expect(programs).toHaveLength(2);
+
+        // Find each program by uuid
+        const savedProgram1 = programs.find(
+          (p) => p.uuid === results[0]!.uuid,
+        )!;
+        const savedProgram2 = programs.find(
+          (p) => p.uuid === results[1]!.uuid,
+        )!;
+
+        expect(savedProgram1.tags).toHaveLength(2);
+        expect(savedProgram2.tags).toHaveLength(3);
+
+        // Verify tag names for program 1
+        const savedTags1 = savedProgram1.tags.map((t) => t.tag?.tag).sort();
+        const expectedTags1 = program1Tags.map((t) => t.tag).sort();
+        expect(savedTags1).toEqual(expectedTags1);
+
+        // Verify tag names for program 2
+        const savedTags2 = savedProgram2.tags.map((t) => t.tag?.tag).sort();
+        const expectedTags2 = program2Tags.map((t) => t.tag).sort();
+        expect(savedTags2).toEqual(expectedTags2);
+      });
+
+      test('should update tags when upserting existing program', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const initialTags = [createTag(), createTag()];
+
+        const program: NewProgramWithRelations = {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: initialTags,
+        };
+
+        const firstResult = await programDb.upsertPrograms([program]);
+
+        // Upsert the same program with different tags
+        const newTags = [createTag(), createTag(), createTag()];
+        const updatedProgram: NewProgramWithRelations = {
+          ...program,
+          tags: newTags,
+        };
+
+        await programDb.upsertPrograms([updatedProgram]);
+
+        // Retrieve the program with tags
+        const programs = await programDb.getProgramsByIds([
+          firstResult[0]!.uuid,
+        ]);
+
+        expect(programs).toHaveLength(1);
+        expect(programs[0]!.tags).toHaveLength(3);
+
+        // Verify new tag names
+        const savedTagNames = programs[0]!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = newTags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
+
+      test('should handle programs with no tags', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        const program: NewProgramWithRelations = {
+          program: createBaseProgram('movie', library.uuid, 'local', {
+            mediaSourceId: library.mediaSourceId,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: [],
+        };
+
+        const result = await programDb.upsertPrograms([program]);
+
+        expect(result).toHaveLength(1);
+
+        // Retrieve the program
+        const programs = await programDb.getProgramsByIds([result[0]!.uuid]);
+
+        expect(programs).toHaveLength(1);
+        expect(programs[0]!.tags).toHaveLength(0);
+      });
+
+      test('should save tags for episode program', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+
+        // Create show grouping first
+        const showGrouping: NewProgramGroupingWithRelations = {
+          programGrouping: createBaseProgramGrouping(
+            'show',
+            library.uuid,
+            'plex',
+            {
+              mediaSourceId: library.mediaSourceId,
+            },
+          ),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          tags: [],
+        };
+
+        const showResult = await programDb.upsertProgramGrouping(showGrouping);
+
+        // Create episode with tags
+        const episodeTags = [createTag(), createTag()];
+        const episode: NewProgramWithRelations = {
+          program: createBaseProgram('episode', library.uuid, 'plex', {
+            mediaSourceId: library.mediaSourceId,
+            tvShowUuid: showResult.entity.uuid,
+            episode: 1,
+            seasonNumber: 1,
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: episodeTags,
+        };
+
+        const result = await programDb.upsertPrograms([episode]);
+
+        expect(result).toHaveLength(1);
+
+        // Retrieve the episode with tags
+        const programs = await programDb.getProgramsByIds([result[0]!.uuid]);
+
+        expect(programs).toHaveLength(1);
+        expect(programs[0]!.tags).toHaveLength(2);
+
+        // Verify tag names
+        const savedTagNames = programs[0]!.tags
+          .map((t) => t.tag?.tag)
+          .sort();
+        const expectedTagNames = episodeTags.map((t) => t.tag).sort();
+        expect(savedTagNames).toEqual(expectedTagNames);
+      });
     });
   });
 });
