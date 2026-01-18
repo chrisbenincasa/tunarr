@@ -290,7 +290,7 @@ function createStudio(): NewStudio {
 function createTag(): NewTag {
   return {
     uuid: v4(),
-    tag: faker.string.alphanumeric(),
+    tag: faker.string.alphanumeric({ length: 20 }),
   };
 }
 
@@ -1917,9 +1917,7 @@ describe('ProgramDB', () => {
         expect(programs[0]!.tags).toHaveLength(3);
 
         // Verify tag names match
-        const savedTagNames = programs[0]!.tags
-          .map((t) => t.tag?.tag)
-          .sort();
+        const savedTagNames = programs[0]!.tags.map((t) => t.tag?.tag).sort();
         const expectedTagNames = tags.map((t) => t.tag).sort();
         expect(savedTagNames).toEqual(expectedTagNames);
       });
@@ -2035,9 +2033,7 @@ describe('ProgramDB', () => {
         expect(programs[0]!.tags).toHaveLength(3);
 
         // Verify new tag names
-        const savedTagNames = programs[0]!.tags
-          .map((t) => t.tag?.tag)
-          .sort();
+        const savedTagNames = programs[0]!.tags.map((t) => t.tag?.tag).sort();
         const expectedTagNames = newTags.map((t) => t.tag).sort();
         expect(savedTagNames).toEqual(expectedTagNames);
       });
@@ -2129,9 +2125,7 @@ describe('ProgramDB', () => {
         expect(programs[0]!.tags).toHaveLength(2);
 
         // Verify tag names
-        const savedTagNames = programs[0]!.tags
-          .map((t) => t.tag?.tag)
-          .sort();
+        const savedTagNames = programs[0]!.tags.map((t) => t.tag?.tag).sort();
         const expectedTagNames = episodeTags.map((t) => t.tag).sort();
         expect(savedTagNames).toEqual(expectedTagNames);
       });
