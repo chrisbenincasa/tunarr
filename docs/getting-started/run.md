@@ -155,6 +155,13 @@ chmod +x ./tunarr-linux-64
 
 Replace `tunarr-linux-64` with the path to the Tunarr binary you downloaded.
 
+### Meilisearch Binary
+
+!!! warning "Important"
+    Tunarr releases include a packaged Meilisearch binary (`meilisearch` or `meilisearch.exe` on Windows) alongside the main Tunarr executable. **You must keep the Meilisearch binary in the same directory as the Tunarr binary.** Tunarr will not start properly if it cannot locate this file.
+
+    When moving or installing Tunarr, always ensure both binaries are kept together.
+
 ### Run as a service
 
 It's recommended to run Tunarr as a service / background task. Below are examples depending on your host OS.
