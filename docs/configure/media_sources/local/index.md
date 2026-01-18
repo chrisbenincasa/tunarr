@@ -1,7 +1,3 @@
----
-status: new
----
-
 # Local Media
 
 Local Media Sources allow scheduling media from your filesystem without requiring a media server like Plex or Jellyfin.

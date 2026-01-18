@@ -60,6 +60,7 @@ nav:
               - Movies: configure/media_sources/local/movies.md
               - Shows: configure/media_sources/local/shows.md
               - Other Video: configure/media_sources/local/other_videos.md
+              - Music: configure/media_sources/local/music.md
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
