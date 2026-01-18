@@ -1,6 +1,3 @@
----
-status: new
----
 
 <style>
     table {
