@@ -63,6 +63,8 @@ nav:
       - FFmpeg:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
+      - Search:
+          - misc/search/index.md
       - Channels:
           - configure/channels/index.md
           - Properties: configure/channels/properties.md
@@ -70,7 +72,12 @@ nav:
           - EPG: configure/channels/epg.md
           - Transcoding: configure/channels/transcoding.md
           - Watermarks: configure/channels/watermarks.md
-      - Programming: configure/programming.md
+          - Programming: configure/channels/programming.md
+      - Library:
+          - configure/library/index.md
+          - Filler: configure/library/filler.md
+          - Custom Shows: configure/library/custom-shows.md
+          - Smart Collections: configure/library/smart-collections.md
       - Scheduling:
           - configure/scheduling/index.md
           - Concepts: configure/scheduling/concepts.md
@@ -81,17 +88,12 @@ nav:
           #- Balance: configure/scheduling/balance.md
           - Replicate: configure/scheduling/replicate.md
           - Consolidate: configure/scheduling/consolidate.md
-      - Library:
-          - configure/library/index.md
-          - Filler: configure/library/filler.md
-          - Custom Shows: configure/library/custom-shows.md
-          - Smart Collections: configure/library/smart-collections.md
       - Clients:
           - configure/clients/index.md
           - Plex: configure/clients/plex.md
           - Jellyfin: configure/clients/jellyfin.md
   - Misc.:
-      - Search: misc/search.md
+      - FAQ: misc/faq.md
       - Common Issues: misc/common-issues.md
       #- Troubleshooting: misc/troubleshooting.md
   - Development:
@@ -126,7 +128,7 @@ extra:
       link: https://discord.gg/nYkb7MhPfD
 
 plugins:
-  - glightbox
+  # - glightbox
   - search
 
 watch:
