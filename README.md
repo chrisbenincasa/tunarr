@@ -1,6 +1,6 @@
 # Tunarr
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen)](https://github.com/chrisbenincasa/tunarr/stargazers) [![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr) [![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr/tags)![Discord](https://img.shields.io/discord/1254564006123802805?style=flat&logo=discord&logoColor=white&label=Discord)
+[![GitHub Repo stars](https://img.shields.io/github/stars/chrisbenincasa/tunarr?style=flat&logo=github&color=lightseagreen)](https://github.com/chrisbenincasa/tunarr/stargazers) [![Docker Pulls](https://img.shields.io/docker/pulls/chrisbenincasa/tunarr?style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr) [![Docker Image Version](https://img.shields.io/docker/v/chrisbenincasa/tunarr?sort=semver&arch=amd64&style=flat&logo=docker&color=lightseagreen)](https://hub.docker.com/r/chrisbenincasa/tunarr/tags)[![Discord](https://img.shields.io/discord/1254564006123802805?style=flat&logo=discord&logoColor=white&label=Discord)](https://discord.gg/JpFjERP7y)
 
 Create and configure live TV channels using media on your Plex, Jellyfin, or Emby servers.
 
