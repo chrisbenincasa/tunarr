@@ -25,7 +25,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const parsed = search as RootSearchQueryParams;
     if (!isNonEmptyString(parsed.query)) {
       useStore.setState((s) => {
-        s.currentSearchRequest = null;
+        if (s.currentSearchRequest) {
+          delete s.currentSearchRequest.query;
+          delete s.currentSearchRequest.filter;
+        }
       });
       return;
     }
@@ -51,7 +54,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       programSearchQueryOpts(undefined, undefined, searchRequest),
     );
     useStore.setState((s) => {
-      s.currentSearchRequest = searchRequest;
+      s.currentSearchRequest = {
+        ...s.currentSearchRequest,
+        ...searchRequest,
+      };
     });
 
     console.log('searchRequest = ', searchRequest);
