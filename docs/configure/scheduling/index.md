@@ -1,17 +1,60 @@
 # Scheduling Tools
 
-Tunarr offers a range of tools for modifying channel schedules. However, it is important to first become familiar with Tunarr's scheduling [concepts](./concepts.md).
+Tunarr offers a range of tools for modifying channel schedules. Before diving in, familiarize yourself with Tunarr's scheduling [concepts](concepts.md).
 
-* [Slot Editor](random-slots.md) allows assigning programming to "slots" of fixed or dynamic duration. Slots can then be played back sequentially or at random when generating a schedule.
+<div class="grid cards" markdown>
 
-* [Time Slots](time-slots.md) mimic traditional TV scheduling, where programs are assigned to a particular start time and duration.
+-   **[Concepts](concepts.md)**
 
-* [Block Shuffle](block-shuffle.md) is a simpler version of slot editor. Randomly chooses "blocks" of programming of a chosen size.
+    ---
 
-* [Cyclic Shuffle](cyclic-shuffle.md)
+    Understand how Tunarr's scheduling system works before using the tools.
 
-* [Balance](balance.md) lets you pick the weight for your shows to air some shows more frequently than others. 
+-   **[Slot Editor](random-slots.md)**
 
-* [Replicate](replicate.md) will create copies of the same schedule and play them in sequence. This typically is not needed as Tunarr already handles replaying a schedule once complete. Some use this as an intermediate tool before applying other tools, like balance.
+    ---
 
-* [Consolidate](consolidate.md) merges contiguous match flex and redirect blocks into singular spans. 
+    Assign programming to "slots" of fixed or dynamic duration, played sequentially or randomly.
+
+-   **[Time Slots](time-slots.md)**
+
+    ---
+
+    Traditional TV scheduling where programs are assigned to specific start times.
+
+-   **[Block Shuffle](block-shuffle.md)**
+
+    ---
+
+    Simpler version of slot editor that randomly chooses "blocks" of programming.
+
+-   **[Cyclic Shuffle](cyclic-shuffle.md)**
+
+    ---
+
+    Cycle through programming in a repeating pattern.
+
+-   **[Replicate](replicate.md)**
+
+    ---
+
+    Create copies of a schedule to play in sequence. Useful as an intermediate step.
+
+-   **[Consolidate](consolidate.md)**
+
+    ---
+
+    Merge contiguous flex and redirect blocks into single spans.
+
+</div>
+
+## Choosing a Tool
+
+| Goal | Recommended Tool |
+|------|------------------|
+| Mimic traditional TV with set air times | [Time Slots](time-slots.md) |
+| Random variety with control over duration | [Slot Editor](random-slots.md) |
+| Simple random playback | [Block Shuffle](block-shuffle.md) |
+| Predictable rotation through content | [Cyclic Shuffle](cyclic-shuffle.md) |
+| Extend a schedule before applying other tools | [Replicate](replicate.md) |
+| Clean up fragmented flex time | [Consolidate](consolidate.md) |

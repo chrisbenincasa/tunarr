@@ -46,24 +46,7 @@ When using external Media Sources, it is recommended to ensure Tunarr has access
 
 Option 1 is simpler and requires no additional configuration within Tunarr. 
 
-### Configuring Path Replacements (stable)
-
-On current stable versions path replacements can only be configured once for all servers, globally.
-
-First change the "Stream Path" mode to "Direct"
-
-<figure markdown="span">
-    ![](../../assets/media_source_direct_path.png)
-    <figcaption>Direct stream path mode</figcaption>
-</figure>
-
-Then, configure your stream path. Tunarr uses prefix-matching for the "original" path to replace.
-
-<figure markdown="span">
-    ![](../../assets/media_source_path_replacement_old.png)
-</figure>
-
-### Configuring Path Replacements (alpha)
+### Configuring Path Replacements
 
 !!! info
     Alpha versions allow configuring path replacements per-media-source.

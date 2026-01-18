@@ -92,6 +92,10 @@ nav:
           - configure/clients/index.md
           - Plex: configure/clients/plex.md
           - Jellyfin: configure/clients/jellyfin.md
+      - System:
+          - configure/system/index.md
+          - Backup: configure/system/backup.md
+          - Logging: configure/system/logging.md
   - Misc.:
       - FAQ: misc/faq.md
       - Common Issues: misc/common-issues.md
@@ -128,7 +132,7 @@ extra:
       link: https://discord.gg/nYkb7MhPfD
 
 plugins:
-  # - glightbox
+  - glightbox
   - search
 
 watch:

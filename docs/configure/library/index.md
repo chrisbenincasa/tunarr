@@ -1,5 +1,33 @@
 # Library
 
-[Filler](/configure/library/filler) lists are collections of videos that you may want to play during [Flex](/configure/channels/flex) time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding).
+The Library contains reusable collections of content that can be used across multiple channels. This includes filler content for gaps in your schedule and custom shows that group videos together.
 
-[Custom Shows](/configure/library/custom-shows) are sequences of videos that represent a episodes of a virtual TV show. When you add these shows to a channel, the schedule tools will treat the videos as if they belonged to a single TV show.
+<div class="grid cards" markdown>
+
+-   **[Filler](filler.md)**
+
+    ---
+
+    Collections of videos to play during [Flex](../channels/flex.md) time segments, such as commercials, bumpers, or interstitials.
+
+-   **[Custom Shows](custom-shows.md)**
+
+    ---
+
+    Create virtual TV shows by grouping videos into episodes. Scheduling tools will treat these as a single show.
+
+-   **[Smart Collections](smart-collections.md)**
+
+    ---
+
+    Dynamic collections that automatically include content matching specified criteria.
+
+</div>
+
+## When to Use Each
+
+| Feature | Use Case |
+|---------|----------|
+| **Filler** | Commercials, station IDs, bumpers, short clips to fill gaps |
+| **Custom Shows** | YouTube series, home videos, or any content you want to treat as episodic |
+| **Smart Collections** | Auto-updating playlists based on genre, year, rating, etc. |

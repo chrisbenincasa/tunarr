@@ -54,17 +54,45 @@ If using Docker Desktop, before running the Tunarr container, you have to use th
 
 Tunarr has various command line / environment variables for configuration. These are listed below.
 
-| Environment Variable   | Command Line Flag | Default value | Description                                                                                                                                        |
-| ---------------------- | ----------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TUNARR_DATABASE_PATH` | `--database`      | `''`          | Sets the path where Tunarr will write its data to. **NOTE** Do not set this if using docker; use a bind mount pointed to `/config/tunarr` instead. |
-| `TUNARR_SERVER_PORT`   | `--port`/`p`      | 8000          | Sets the port that the Tunarr server will listen on. **NOTE** When using Docker prefer using a port mapping than setting this. |
-| `TUNARR_SERVER_ADMIN_MODE` | `--admin` | FALSE | Starts Tunarr in [admin mode](/configure/system/security/#admin-mode) | 
-| `TUNARR_SERVER_PRINT_ROUTES` | `--print_routes` | FALSE | Prints all of Tunarrs server routes at startup |
-| `TUNARR_SERVER_TRUST_PROXY` | `--trust_proxy` | FALSE | Enables [trust proxy](/configure/system/security/#trust-proxy) for using Tunarr behind a reverse proxy |
-| `TUNARR_BIND_ADDR` | N/A | `0.0.0.0` | Sets the interface that Tunarr will attempt to bind its server to. **NOTE** Change at your own risk! By default, Tunarr listens on all network interfaces | 
-| `TUNARR_USE_WORKER_POOL` | N/A | FALSE | Set to true to enable experimental support for Tunarr's worker threads | 
-| `TUNARR_WORKER_POOL_SIZE` | N/A | `cpus().length` | Control the number of worker threads Tunarr creates in its pool. It's recommended to use no more than the number of CPUs on the host system | 
-| `TUNARR_DEBUG_REDUCE_SEARCH_INDEXING_MEMORY` | N/A | TRUE | By default, Meilisearch will attempt to [reduce search indexing memory usage](https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch#reduce-indexing-memory-usage), which can have an [impact on file storage](https://github.com/chrisbenincasa/tunarr/issues/1558). Setting this to `false` will skip that. Not available for Windows users. |
+### Server
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_DATABASE_NAME` | `--database` | `''` | Sets the path where Tunarr will write its data to. **NOTE** Do not set this if using Docker; use a bind mount pointed to `/config/tunarr` instead. |
+| `TUNARR_SERVER_PORT` | `--port`/`-p` | `8000` | Sets the port that the Tunarr server will listen on. **NOTE** When using Docker, prefer using a port mapping instead of setting this. |
+| `TUNARR_BIND_ADDR` | N/A | `0.0.0.0` | Sets the interface that Tunarr will bind to. By default, Tunarr listens on all network interfaces. **NOTE** This generally does not have to be changed. |
+| `TUNARR_SERVER_TRUST_PROXY` | `--trust_proxy` | `false` | Enables [trust proxy](/configure/system/security/#trust-proxy) for using Tunarr behind a reverse proxy. |
+
+### Logging
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `LOG_LEVEL` | N/A | `info` | Sets the log level. Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. Overrides the UI setting. |
+| `LOG_DIRECTORY` | N/A | (data dir) | Sets a custom directory for log files. |
+
+### Search (Meilisearch)
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_MEILISEARCH_PATH` | N/A | (auto-detected) | Path to the Meilisearch binary. Tunarr will search common locations if not set. |
+| `TUNARR_SEARCH_PORT` | N/A | (random available) | Port for the embedded Meilisearch instance. |
+| `TUNARR_SEARCH_MAX_MEMORY` | N/A | (unlimited) | Maximum memory for Meilisearch indexing (e.g., `1024Mb`, `2Gb`). See [Meilisearch docs](https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch#max-indexing-memory). |
+| `TUNARR_SEARCH_MAX_INDEXING_THREADS` | N/A | (all cores) | Maximum threads for Meilisearch indexing. Useful for limiting CPU usage. |
+| `TUNARR_SEARCH_REDUCE_INDEXER_MEMORY_USAGE` | N/A | `true` | Reduces Meilisearch memory usage during indexing. See [Meilisearch docs](https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch#reduce-indexing-memory-usage). May [impact file storage](https://github.com/chrisbenincasa/tunarr/issues/1558). Not available on Windows. |
+| `TUNARR_DISABLE_SEARCH_SNAPSHOT_IN_BACKUP` | N/A | `false` | When set to `true`, excludes Meilisearch snapshots from backups. The search index will be rebuilt on restore. |
+
+### Performance
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_USE_WORKER_POOL` | N/A | `false` | Enables experimental worker thread pool for background tasks. **NOTE** This is experimental. |
+| `TUNARR_WORKER_POOL_SIZE` | N/A | (CPU count) | Number of worker threads in the pool. Recommended: no more than the number of CPUs on the host. |
+
+### Debug
+
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_SERVER_PRINT_ROUTES` | `--print_routes` | `false` | Prints all server routes at startup. Useful for debugging. |
 
 ## Hardware Transcoding
 
