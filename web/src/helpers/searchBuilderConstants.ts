@@ -1,5 +1,5 @@
 import type { MediaSourceLibrary } from '@tunarr/types';
-import type { SearchField } from '@tunarr/types/api';
+import type { SearchField } from '@tunarr/types/schemas';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { OperatorLabelMap, Operators } from '../types/SearchBuilder.ts';
 

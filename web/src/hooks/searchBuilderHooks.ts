@@ -1,4 +1,4 @@
-import type { SearchFilter } from '@tunarr/types/api';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { useCallback } from 'react';
 import type { FieldPath } from 'react-hook-form';
 import type { FieldKey, FieldPrefix } from '../types/SearchBuilder.ts';

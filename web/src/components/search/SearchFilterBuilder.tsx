@@ -10,15 +10,13 @@ import {
   Tooltip,
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
-import type { SearchRequest } from '@tunarr/types/api';
-import { useToggle } from '@uidotdev/usehooks';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { isEmpty, isNil } from 'lodash-es';
 import { useCallback } from 'react';
 import type { FieldPathValue, Validate } from 'react-hook-form';
 import { Controller, useFormContext } from 'react-hook-form';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
-import { CreateSmartCollectionDialog } from '../smart_collections/CreateSmartCollectionDialog.tsx';
 import { PointAndClickSearchBuilder } from './PointAndClickSearchBuilder.tsx';
 import type { SearchForm } from './SearchInput.tsx';
 import { SearchInputToggle } from './SearchInputToggle.tsx';
@@ -33,16 +31,10 @@ export function SearchFilterBuilder({
   libraryId,
   mediaSourceId,
 }: SearchBuilderProps) {
-  const [smartCollectionModalOpen, toggleSmartCollectionModal] =
-    useToggle(false);
-
   const formMethods = useFormContext<SearchForm>();
 
   const { getSearchExpression } = useSearchQueryParser();
-  const [query, queryBuilderType] = formMethods.watch([
-    'filter',
-    'queryBuilderType',
-  ]);
+  const [queryBuilderType] = formMethods.watch(['queryBuilderType']);
 
   const validateFilterExpression: Validate<
     FieldPathValue<SearchForm, 'filter.expression'>,
@@ -75,7 +67,6 @@ export function SearchFilterBuilder({
                 },
               }}
               render={({ field, fieldState }) => {
-                console.log(field);
                 return (
                   <>
                     <TextField
@@ -158,11 +149,6 @@ export function SearchFilterBuilder({
           />
         )}
       </Stack>
-      <CreateSmartCollectionDialog
-        open={smartCollectionModalOpen}
-        onClose={() => toggleSmartCollectionModal(false)}
-        initialQuery={query.type === 'text' ? query.expression : ''}
-      />
     </>
   );
 }

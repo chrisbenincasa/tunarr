@@ -1,15 +1,16 @@
 import { Stack, Typography } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { search } from '@tunarr/shared/util';
+import { SearchRequest } from '@tunarr/types/schemas';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
 import { getApiSmartCollectionsByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
-import { parseSearchQuery } from '../../../hooks/useSearchQueryParser.ts';
+import { programSearchQueryOpts } from '../../../hooks/useProgramSearchQuery.ts';
+import useStore from '../../../store/index.ts';
 
 export const Route = createFileRoute('/library/smart_collections/$id')({
-  loader: async ({ context, params }) => {
-    const smartCollection = await context.queryClient.ensureQueryData(
+  loader: async ({ context: { queryClient }, params }) => {
+    const smartCollection = await queryClient.ensureQueryData(
       getApiSmartCollectionsByIdOptions({
         path: {
           id: params.id,
@@ -17,23 +18,26 @@ export const Route = createFileRoute('/library/smart_collections/$id')({
       }),
     );
 
-    const parseResult = parseSearchQuery(smartCollection.query);
+    const searchRequest: SearchRequest = {
+      filter: smartCollection.filter,
+      query: smartCollection.keywords,
+    };
+    await queryClient.prefetchInfiniteQuery(
+      programSearchQueryOpts(undefined, undefined, searchRequest),
+    );
 
-    if (!parseResult || parseResult?.type === 'error') {
-      // This is an error - Smart collections should be properly parseable (confirmed at save time)
-      throw new Error(
-        `Smart collection ${params.id} has an unparseable query: ${smartCollection.query}`,
-      );
-    }
+    useStore.setState((s) => {
+      s.currentSearchRequest = searchRequest;
+    });
 
-    return search.parsedSearchToRequest(parseResult.query);
+    return searchRequest;
   },
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const { id } = Route.useParams();
-  const parsedQuery = Route.useLoaderData();
+  const { filter, keywords } = Route.useLoaderData();
   const { data: smartCollection } = useSuspenseQuery(
     getApiSmartCollectionsByIdOptions({ path: { id } }),
   );
@@ -42,8 +46,7 @@ function RouteComponent() {
       <Typography variant="h4">
         Smart Collection: {smartCollection.name}
       </Typography>
-      <SearchInput initialSearchFilter={parsedQuery} />
-
+      <SearchInput initialSearchFilter={filter} initialKeywords={keywords} />
       <LibraryProgramGrid />
     </Stack>
   );

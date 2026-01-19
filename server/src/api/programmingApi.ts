@@ -22,11 +22,11 @@ import {
   ProgramChildrenResult,
   ProgramSearchRequest,
   ProgramSearchResponse,
-  SearchFilterQuerySchema,
 } from '@tunarr/types/api';
 import {
   ContentProgramSchema,
   ProgramGroupingSchema,
+  SearchFilterQuerySchema,
   TerminalProgramSchema,
 } from '@tunarr/types/schemas';
 import axios, { AxiosHeaders, isAxiosError } from 'axios';

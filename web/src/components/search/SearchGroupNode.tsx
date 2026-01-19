@@ -14,7 +14,7 @@ import {
 import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSourceLibrary } from '@tunarr/types';
-import type { SearchFilter } from '@tunarr/types/api';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { map } from 'lodash-es';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import { TitleSearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';

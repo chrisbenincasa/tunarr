@@ -1,5 +1,6 @@
 import { isNonEmptyString, search } from '@tunarr/shared/util';
-import { SearchFilter } from '@tunarr/types/api';
+import { SmartCollection as SmartCollectionDto } from '@tunarr/types';
+import { SearchFilter } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { eq } from 'drizzle-orm';
@@ -8,18 +9,16 @@ import { head } from 'lodash-es';
 import NodeCache from 'node-cache';
 import { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
-import { SearchClause } from '../../../shared/dist/src/util/searchUtil.js';
 import {
   MeilisearchService,
   ProgramSearchDocument,
 } from '../services/MeilisearchService.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
+import { Maybe } from '../types/util.ts';
+import { Logger } from '../util/logging/LoggerFactory.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
-import {
-  NewSmartCollection,
-  SmartCollection,
-} from './schema/SmartCollection.ts';
+import { SmartCollection } from './schema/SmartCollection.ts';
 
 @injectable()
 export class SmartCollectionsDB {
@@ -31,19 +30,67 @@ export class SmartCollectionsDB {
   private mu: Mutex = new Mutex();
 
   constructor(
+    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.DrizzleDB) private db: DrizzleDBAccess,
     @inject(search.SearchParser) private searchParser: search.SearchParser,
     @inject(MeilisearchService) private searchService: MeilisearchService,
   ) {}
 
   async getAll() {
+    const collections = await this.db.query.smartCollection.findMany();
+    return Promise.all(
+      collections.map((coll) => this.convertSmartCollectionDao(coll)),
+    );
+  }
+
+  async getAllRaw() {
     return await this.db.query.smartCollection.findMany();
   }
 
-  async getById(id: string) {
-    return await this.db.query.smartCollection.findFirst({
+  async getById(id: string): Promise<Maybe<SmartCollectionDto>> {
+    const smartCollection = await this.db.query.smartCollection.findFirst({
       where: (fields, { eq }) => eq(fields.uuid, id),
     });
+
+    if (!smartCollection) {
+      return;
+    }
+
+    return this.convertSmartCollectionDao(smartCollection);
+  }
+
+  private async convertSmartCollectionDao(
+    smartCollection: SmartCollection,
+  ): Promise<SmartCollectionDto> {
+    let searchFilter: Maybe<SearchFilter>;
+    if (isNonEmptyString(smartCollection.query)) {
+      searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
+        smartCollection.query,
+      );
+      if (!searchFilter) {
+        const parseResult = await this.parseSearchQueryString(
+          smartCollection.query,
+        );
+        if (parseResult.isFailure()) {
+          this.logger.warn(
+            'Smart collection ID %s (%s) has unparseable filter ("%s"). Results will be wrong.',
+            smartCollection.uuid,
+            smartCollection.name,
+            smartCollection.query,
+          );
+        } else {
+          searchFilter = parseResult.get();
+        }
+      }
+    }
+
+    return {
+      ...smartCollection,
+      filter: searchFilter,
+      keywords: isNonEmptyString(smartCollection.keywords)
+        ? smartCollection.keywords
+        : '',
+    };
   }
 
   async getByIds(ids: string[]) {
@@ -51,9 +98,13 @@ export class SmartCollectionsDB {
       return [];
     }
 
-    return await this.db.query.smartCollection.findMany({
+    const colls = await this.db.query.smartCollection.findMany({
       where: (fields, { inArray }) => inArray(fields.uuid, ids),
     });
+
+    return Promise.all(
+      colls.map((coll) => this.convertSmartCollectionDao(coll)),
+    );
   }
 
   async delete(id: string) {
@@ -63,50 +114,73 @@ export class SmartCollectionsDB {
   }
 
   async insert(
-    collection: StrictOmit<NewSmartCollection, 'uuid'>,
-  ): Promise<Result<SmartCollection>> {
-    const parseResult = await this.parseSearchQueryString(collection.query);
+    collection: StrictOmit<SmartCollectionDto, 'uuid'>,
+  ): Promise<Result<SmartCollectionDto>> {
+    const parseResult = isNonEmptyString(collection.filter)
+      ? await this.parseSearchQueryString(collection.filter)
+      : Result.success(undefined);
 
-    parseResult.forEach((searchClause) => {
-      SmartCollectionsDB.cache.set(
-        collection.query,
-        search.parsedSearchToRequest(searchClause),
+    // Going forward, only parseable filters can be saved.
+    // Free text queries should use the keywords field
+    if (parseResult.isFailure()) {
+      this.logger.error(
+        parseResult.error,
+        'Could not parse smart collection filter before saving: %s',
+        collection.filter,
       );
-    });
+      return parseResult.recast();
+    }
 
-    return await Result.attemptAsync(() =>
+    const insertResult = await Result.attemptAsync(() =>
       this.db
         .insert(SmartCollection)
         .values({
           ...collection,
+          query: collection.filter
+            ? search.searchFilterToString(collection.filter)
+            : null,
           uuid: v4(),
         })
         .returning(),
     ).then((_) => _.map((r) => head(r)!));
+
+    return insertResult.mapAsync((insert) => {
+      return this.convertSmartCollectionDao(insert);
+    });
   }
 
-  async update(id: string, collection: Partial<NewSmartCollection>) {
-    if (isNonEmptyString(collection.query)) {
-      const query = collection.query;
+  async update(
+    id: string,
+    collection: Partial<SmartCollectionDto>,
+  ): Promise<Result<SmartCollectionDto>> {
+    if (isNonEmptyString(collection.filter)) {
+      const query = collection.filter;
       const parseResult = await this.parseSearchQueryString(query);
-      parseResult.forEach((searchClause) => {
-        SmartCollectionsDB.cache.set(
-          query,
-          search.parsedSearchToRequest(searchClause),
+      if (parseResult.isFailure()) {
+        this.logger.error(
+          parseResult.error,
+          'Could not parse smart collection filter before saving: %s',
+          collection.filter,
         );
-      });
+        return parseResult.recast();
+      }
     }
 
-    return await Result.attemptAsync(() =>
-      this.db
-        .update(SmartCollection)
-        .set({
-          name: collection.name,
-          query: collection.query,
-        })
-        .where(eq(SmartCollection.uuid, id))
-        .returning(),
-    ).then((_) => _.map((r) => head(r)!));
+    return (
+      await Result.attemptAsync(() =>
+        this.db
+          .update(SmartCollection)
+          .set({
+            name: collection.name,
+            query: collection.filter
+              ? search.searchFilterToString(collection.filter)
+              : null,
+            keywords: collection.keywords,
+          })
+          .where(eq(SmartCollection.uuid, id))
+          .returning(),
+      ).then((_) => _.map((r) => head(r)!))
+    ).mapAsync((updated) => this.convertSmartCollectionDao(updated));
   }
 
   async materializeSmartCollection(
@@ -125,21 +199,27 @@ export class SmartCollectionsDB {
       }
     }
 
-    let searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
-      maybeCollection.query,
-    );
-    if (!searchFilter) {
-      const parseResult = await this.parseSearchQueryString(
+    let searchFilter: Maybe<SearchFilter>;
+    if (maybeCollection.query) {
+      searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
         maybeCollection.query,
       );
+      if (!searchFilter) {
+        const parseResult = await this.parseSearchQueryString(
+          maybeCollection.query,
+        );
 
-      if (parseResult.isSuccess()) {
-        searchFilter = search.parsedSearchToRequest(parseResult.get());
-        SmartCollectionsDB.cache.set(maybeCollection.query, searchFilter);
+        if (parseResult.isSuccess()) {
+          const filter = parseResult.get();
+          if (filter) {
+            searchFilter = filter;
+            SmartCollectionsDB.cache.set(maybeCollection.query, searchFilter);
+          }
+        }
       }
     }
 
-    let page = searchFilter ? 0 : 1;
+    let page = isNonEmptyString(maybeCollection.keywords) ? 0 : 1;
     const results: ProgramSearchDocument[] = [];
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
@@ -159,7 +239,7 @@ export class SmartCollectionsDB {
 
   private async parseSearchQueryString(
     queryString: string,
-  ): Promise<Result<SearchClause>> {
+  ): Promise<Result<Maybe<SearchFilter>>> {
     const tokenized = search.tokenizeSearchQuery(queryString);
     if (tokenized.errors.length > 0) {
       return Result.forError(
@@ -183,6 +263,11 @@ export class SmartCollectionsDB {
       );
     }
 
-    return Result.success(clause);
+    SmartCollectionsDB.cache.set(
+      queryString,
+      search.parsedSearchToRequest(clause),
+    );
+
+    return Result.success(search.parsedSearchToRequest(clause));
   }
 }

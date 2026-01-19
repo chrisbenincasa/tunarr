@@ -23,7 +23,8 @@ export class SmartCollectionsApiController {
         },
       },
       async (_, res) => {
-        return res.send(await this.smartCollectionDB.getAll());
+        const collections = await this.smartCollectionDB.getAll();
+        return res.send(collections);
       },
     );
 
@@ -95,7 +96,8 @@ export class SmartCollectionsApiController {
         if (smartCollection.isFailure()) {
           throw smartCollection.error;
         }
-        return res.send(smartCollection.get());
+        const coll = smartCollection.get();
+        return res.send(coll);
       },
     );
 
@@ -122,8 +124,10 @@ export class SmartCollectionsApiController {
           return res.status(404).send();
         }
 
-        await this.smartCollectionDB.update(req.params.id, req.body);
-        return res.send(smartCollection);
+        const updated = (
+          await this.smartCollectionDB.update(req.params.id, req.body)
+        ).getOrThrow();
+        return res.send(updated);
       },
     );
   };

@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { postApiProgramsSearchInfiniteOptions } from '../generated/@tanstack/react-query.gen.ts';
 
 export const useProgramInfiniteSearch = (

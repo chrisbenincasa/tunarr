@@ -35,10 +35,26 @@ export function parseSearchQuery(input: string) {
   };
 }
 
+export function parseSearchQueryOrNull(input: string) {
+  const result = parseSearchQuery(input);
+  if (!result || result?.type === 'error') {
+    return null;
+  }
+  return result.query;
+}
+
+export function parseToSearchFilterOrNull(input: string) {
+  const parsed = parseSearchQueryOrNull(input);
+  if (!parsed) return null;
+  return search.parsedSearchToRequest(parsed);
+}
+
 export const useSearchQueryParser = () => {
   return {
     parser,
     tokenize,
     getSearchExpression: parseSearchQuery,
+    getSearchExpressionOrNull: parseSearchQueryOrNull,
+    parseToSearchFilterOrNull,
   };
 };

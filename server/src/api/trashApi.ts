@@ -1,5 +1,5 @@
-import type { SearchFilter } from '@tunarr/types/api';
 import { ProgramSearchResponse } from '@tunarr/types/api';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { ProgramTypeSchema } from '@tunarr/types/schemas';
 import z from 'zod';
 import { SearchProgramsCommand } from '../commands/SearchProgramsCommand.ts';

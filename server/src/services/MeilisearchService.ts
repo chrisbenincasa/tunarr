@@ -7,11 +7,12 @@ import {
   TerminalProgram,
   TupleToUnion,
 } from '@tunarr/types';
-import { SearchFilter, StringOperators } from '@tunarr/types/api';
 import {
   ExternalIdType,
   isValidMultiExternalIdType,
   isValidSingleExternalIdType,
+  SearchFilter,
+  StringOperators,
 } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import retry from 'async-retry';

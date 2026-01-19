@@ -1,4 +1,4 @@
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { createContext } from 'react';
 import { type AddedMedia } from '../types/index.ts';
 import { type Nullable } from '../types/util.ts';

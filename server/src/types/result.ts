@@ -4,9 +4,7 @@ import { WrappedError } from './errors.ts';
 import type { Nullable } from './util.ts';
 import { type Maybe } from './util.ts';
 
-declare const resultTypeSym: unique symbol;
-
-export abstract class Result<T, E extends WrappedError = WrappedError> {
+export abstract class Result<T, out E extends WrappedError = WrappedError> {
   declare readonly _: {
     successType: T;
   };

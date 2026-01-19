@@ -2,7 +2,7 @@ import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceId } from '@tunarr/shared';
 import { search } from '@tunarr/shared/util';
-import type { FactedStringSearchField } from '@tunarr/types/api';
+import type { FactedStringSearchField } from '@tunarr/types/schemas';
 import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';

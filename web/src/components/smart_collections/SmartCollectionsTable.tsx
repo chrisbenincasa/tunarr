@@ -1,5 +1,12 @@
 import { Delete, Edit, Search, Visibility } from '@mui/icons-material';
-import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Dialog,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SmartCollection } from '@tunarr/types';
 import {
@@ -125,11 +132,16 @@ export const SmartCollectionsTable = () => {
   return (
     <>
       <MaterialReactTable table={table} />
-      <EditSmartCollectionDialog
+      <Dialog
         open={isNonEmptyString(editingSmartCollection)}
         onClose={() => setEditingSmartCollection(undefined)}
-        id={editingSmartCollection ?? ''}
-      />
+        fullWidth
+      >
+        <EditSmartCollectionDialog
+          onClose={() => setEditingSmartCollection(undefined)}
+          id={editingSmartCollection ?? ''}
+        />
+      </Dialog>
       <DeleteConfirmationDialog
         open={!!deletingSmartCollection}
         onClose={() => setDeletingSmartCollection(undefined)}

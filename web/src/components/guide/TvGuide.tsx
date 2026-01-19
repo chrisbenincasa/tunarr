@@ -291,7 +291,6 @@ export function TvGuide({ channelId, start, end, showStealth = true }: Props) {
 
       if (isPlaying && !program.isPaused) {
         remainingTime = betterHumanize(dayjs.duration(programEnd.diff()));
-        console.log(programStart, programEnd, remainingTime);
       } else if (program.isPaused && !isUndefined(program.timeRemaining)) {
         remainingTime = betterHumanize(dayjs.duration(program.timeRemaining));
       }
