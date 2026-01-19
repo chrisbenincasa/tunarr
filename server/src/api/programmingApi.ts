@@ -97,6 +97,19 @@ const BatchLookupExternalProgrammingSchema = z.object({
     }),
 });
 
+const SearchByRawExternalIdQuerySchema = z.object({
+  externalId: z.string().min(1).describe('Raw external id to match external_key'),
+
+  // Optional narrowing
+  sourceType: z.string().optional().describe('Optional source type filter (plex/jellyfin/emby)'),
+  mediaSourceId: z.uuid().optional().describe('Optional media source UUID filter'),
+  externalSourceId: z.string().optional().describe('Optional external source id filter'),
+
+  includePrograms: TruthyQueryParam.default(true).describe('Include program matches'),
+  includeGroupings: TruthyQueryParam.default(true).describe('Include grouping matches'),
+  ...PagingParams.shape,
+});
+
 // eslint-disable-next-line @typescript-eslint/require-await
 export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
   const logger = LoggerFactory.child({
@@ -956,6 +969,169 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         default:
           return res.status(405).send();
       }
+    },
+  );
+
+  fastify.get(
+    '/programming/external-id/search',
+    {
+      schema: {
+        tags: ['Programs'],
+        operationId: 'searchProgrammingByRawExternalId',
+        querystring: SearchByRawExternalIdQuerySchema,
+        summary: 'Search by raw external id',
+        description:
+          'Search for Tunarr programs and/or groupings that contain the given raw external id (external_key). ' +
+          'This avoids the {source_type}|{source_id}|{external_key} format used by /programming/:externalId.',
+        response: {
+          200: z.object({
+            totalPrograms: z.number(),
+            totalGroupings: z.number(),
+            programs: z.array(ContentProgramSchema),
+            groupings: z.array(ProgramGroupingSchema),
+          }),
+          400: z.object({ message: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const {
+        externalId,
+        sourceType,
+        mediaSourceId,
+        externalSourceId,
+        includePrograms,
+        includeGroupings,
+        offset,
+        limit,
+      } = req.query;
+
+      if (sourceType && !inConstArr(RemoteSourceTypes, sourceType)) {
+        return res
+          .status(400)
+          .send({ message: 'Invalid sourceType ' + sourceType });
+      }
+
+      const db = req.serverCtx.databaseFactory();
+
+      let totalPrograms = 0;
+      let totalGroupings = 0;
+      let programs: z.infer<typeof ContentProgramSchema>[] = [];
+      let groupings: z.infer<typeof ProgramGroupingSchema>[] = [];
+
+      if (includePrograms) {
+        let base = db
+          .selectFrom('programExternalId')
+          .where('programExternalId.externalKey', '=', externalId);
+
+        if (sourceType) {
+          base = base.where(
+            'programExternalId.sourceType',
+            '=',
+            sourceType as RemoteSourceType,
+          );
+        }
+
+        if (mediaSourceId) {
+          base = base.where('programExternalId.mediaSourceId', '=', mediaSourceId);
+        }
+
+        if (externalSourceId) {
+          base = base.where(
+            'programExternalId.externalSourceId',
+            '=',
+            externalSourceId,
+          );
+        }
+
+        const totalRow = await base
+          .select((eb) =>
+            eb.fn.countDistinct('programExternalId.programUuid').as('total'),
+          )
+          .executeTakeFirst();
+
+        totalPrograms = Number(totalRow?.total ?? 0);
+
+        const uuidRows = await base
+          .select('programExternalId.programUuid')
+          .distinct()
+          .limit(limit)
+          .offset(offset)
+          .execute();
+
+        const programUuids = uuidRows.map((r) => r.programUuid);
+
+        if (programUuids.length > 0) {
+          const programOrms = await req.serverCtx.programDB.getProgramsByIds(programUuids);
+          programs = compact(
+            programOrms.map((p) =>
+              req.serverCtx.programConverter.programOrmToContentProgram(p),
+            ),
+          );
+        }
+      }
+
+      if (includeGroupings) {
+        let base = db
+          .selectFrom('programGroupingExternalId')
+          .where('programGroupingExternalId.externalKey', '=', externalId);
+
+        if (sourceType) {
+          base = base.where(
+            'programGroupingExternalId.sourceType',
+            '=',
+            sourceType as RemoteSourceType,
+          );
+        }
+
+        if (mediaSourceId) {
+          base = base.where(
+            'programGroupingExternalId.mediaSourceId',
+            '=',
+            mediaSourceId,
+          );
+        }
+
+        if (externalSourceId) {
+          base = base.where(
+            'programGroupingExternalId.externalSourceId',
+            '=',
+            externalSourceId,
+          );
+        }
+
+        const totalRow = await base
+          .select((eb) =>
+            eb.fn.countDistinct('programGroupingExternalId.groupUuid').as('total'),
+          )
+          .executeTakeFirst();
+
+        totalGroupings = Number(totalRow?.total ?? 0);
+
+        const uuidRows = await base
+          .select('programGroupingExternalId.groupUuid')
+          .distinct()
+          .limit(limit)
+          .offset(offset)
+          .execute();
+
+        const groupUuids = uuidRows.map((r) => r.groupUuid);
+
+        if (groupUuids.length > 0) {
+          const groupingRecord = await req.serverCtx.programDB.getProgramGroupings(groupUuids);
+          const groupingOrms = values(groupingRecord);
+          groupings = await container
+            .get<MaterializeProgramGroupings>(MaterializeProgramGroupings)
+            .execute(groupingOrms);
+        }
+      }
+
+      return res.send({
+        totalPrograms,
+        totalGroupings,
+        programs,
+        groupings,
+      });
     },
   );
 
