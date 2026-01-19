@@ -60,6 +60,7 @@ import {
 import type { NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
+import { z } from 'zod';
 import type { ArtworkType } from '../../db/schema/Artwork.ts';
 import type { ProgramType } from '../../db/schema/Program.ts';
 import type { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
@@ -120,6 +121,42 @@ const RequiredLibraryFields = [
   'MediaSources',
 ];
 
+
+// Jellyfin 10.11.x has been observed to return /Library/VirtualFolders entries without ItemId
+// and sometimes without LibraryOptions depending on query params. Tunarr should not hard-fail
+// on strict schema parsing for this endpoint.
+const JellyfinUserMeResponse = z.object({ Id: z.string() }).passthrough();
+
+const JellyfinUserResponse = z
+  .object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Policy: z
+      .object({
+        IsAdministrator: z.boolean().optional(),
+        IsDisabled: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+const JellyfinUsersResponse = z.array(JellyfinUserResponse);
+
+const JellyfinViewResponse = z
+  .object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    CollectionType: z.string().optional(),
+    Type: z.string().optional(),
+  })
+  .passthrough();
+
+const JellyfinUserViewsResponse = z
+  .object({
+    Items: z.array(JellyfinViewResponse).default([]),
+  })
+  .passthrough();
+
 function getJellyfinAuthorization(
   apiKey: Maybe<string>,
   clientId: Maybe<string>,
@@ -169,6 +206,93 @@ type JellyfinItemTypes = {
 
 export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   protected redacter = new JellyfinRequestRedacter();
+
+
+  private resolvedUserId: string | null = null;
+  private resolvingUserId: Promise<string> | null = null;
+
+  /**
+   * Ensure we have a usable Jellyfin userId for endpoints that require it.
+   *
+   * - Username/password login yields a user session token, so /Users/Me should work.
+   * - Dashboard API keys are not necessarily tied to a user session; /Users/Me may 400.
+   *   In that case, fall back to /Users and pick an enabled admin (or first enabled) user.
+   */
+  private async ensureUserId(): Promise<string> {
+    const configured = this.options.mediaSource.userId;
+    if (isNonEmptyString(configured)) {
+      this.resolvedUserId = configured;
+      return configured;
+    }
+
+    if (isNonEmptyString(this.resolvedUserId)) {
+      return this.resolvedUserId;
+    }
+
+    if (this.resolvingUserId) {
+      return this.resolvingUserId;
+    }
+
+    this.resolvingUserId = (async () => {
+      // 1) Try /Users/Me (works for user access tokens)
+      try {
+        const meRaw = await this.doGet<unknown>({ url: '/Users/Me' });
+        const parsed = JellyfinUserMeResponse.safeParse(meRaw);
+        if (parsed.success && isNonEmptyString(parsed.data.Id)) {
+          return parsed.data.Id;
+        }
+      } catch {
+        // Swallow; API keys may cause /Users/Me to 400.
+      }
+
+      // 2) Fallback to /Users (works for dashboard API keys)
+      const usersRaw = await this.doGet<unknown>({ url: '/Users' });
+      const users = JellyfinUsersResponse.safeParse(usersRaw);
+      if (!users.success || users.data.length === 0) {
+        throw new Error('Unable to resolve Jellyfin userId: /Users returned no users');
+      }
+
+      const enabled = users.data.filter((u) => !u.Policy?.IsDisabled);
+      const admin = enabled.find((u) => u.Policy?.IsAdministrator);
+      const chosen = admin ?? enabled[0] ?? users.data[0];
+
+      if (!isNonEmptyString(chosen?.Id)) {
+        throw new Error('Unable to resolve Jellyfin userId: chosen user had no Id');
+      }
+
+      return chosen.Id;
+    })();
+
+    try {
+      const userId = await this.resolvingUserId;
+      this.resolvedUserId = userId;
+      // Write back for downstream query params.
+      (this.options.mediaSource as any).userId = userId;
+      return userId;
+    } finally {
+      this.resolvingUserId = null;
+    }
+  }
+
+  private viewToLibrary(view: z.infer<typeof JellyfinViewResponse>): Library {
+    return {
+      type: 'library',
+      externalId: view.Id,
+      // Views endpoint doesn't provide filesystem locations.
+      locations: [],
+      sourceType: 'jellyfin',
+      title: view.Name ?? 'Jellyfin Library',
+      uuid: v4(),
+      childType: match(view.CollectionType)
+        .returnType<Folder['childType']>()
+        .with('movies', () => 'movie')
+        .with('musicvideos', () => 'music_video')
+        .with('tvshows', () => 'show')
+        .with('music', () => 'artist')
+        .with('homevideos', () => 'other_video')
+        .otherwise(() => undefined),
+    } satisfies Library;
+  }
 
   constructor(
     private canonicalizer: Canonicalizer<ApiJellyfinItem>,
@@ -227,32 +351,13 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         url: '/System/Ping',
       });
 
-      // One of these should succeed. In the username/pw case
-      // we should be able to at least retrieve our own user.
-      // Access token based auth will not have a "me" but should be able
-      // to at least list all users.
-      const [meResult, allUsersResult] = await Promise.allSettled([
-        this.doGet({
-          url: '/Users/Me',
-          params: {
-            userId: this.options.mediaSource.userId,
-          },
-        }),
-        this.doGet({
-          url: '/Users',
-        }),
-      ]);
-
-      if (
-        meResult.status === 'fulfilled' ||
-        allUsersResult.status === 'fulfilled'
-      ) {
+      // Validate auth in a way that works for both user session tokens and dashboard API keys.
+      // API keys may 400 on /Users/Me even though they are otherwise valid.
+      try {
+        await this.ensureUserId();
         return { healthy: true };
-      } else {
-        return {
-          healthy: false,
-          status: 'auth',
-        };
+      } catch {
+        return { healthy: false, status: 'auth' };
       }
     } catch (e) {
       return {
@@ -267,54 +372,91 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   }
 
   async getUserLibraries(): Promise<QueryResult<Library[]>> {
-    const result = await this.doTypeCheckedGet(
-      '/Library/VirtualFolders',
-      JellyfinVirtualFolderResponse,
-    );
-    return result.mapPure((data) =>
-      data.map((lib) => this.virtualFolderToLibrary(lib)),
-    );
+    // Prefer user-facing views rather than /Library/VirtualFolders, which is unstable on JF 10.11.x
+    // and may omit ItemId/LibraryOptions.
+    try {
+      const userId = await this.ensureUserId();
+      const raw = await this.doGet<unknown>({
+        url: `/Users/${userId}/Views`,
+        params: {
+          includeHidden: true,
+        },
+      });
+
+      const parsed = await JellyfinUserViewsResponse.parseAsync(raw);
+      return this.makeSuccessResult(parsed.Items.map((v) => this.viewToLibrary(v)));
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
+    }
   }
 
   async getUserViewsRaw() {
-    return this.doTypeCheckedGet(
-      '/Library/VirtualFolders',
-      JellyfinVirtualFolderResponse,
-      {
+    // Maintain the original return type (array of virtual folders) because
+    // downstream code expects an array and calls .filter/.map on it.
+    //
+    // Jellyfin 10.11.x has been observed to omit ItemId (and sometimes LibraryOptions)
+    // from /Library/VirtualFolders, so we synthesize a VirtualFolders-like array from
+    // the stable user-facing Views endpoint.
+    try {
+      const userId = await this.ensureUserId();
+      const raw = await this.doGet<unknown>({
+        url: `/Users/${userId}/Views`,
         params: {
-          includeExternalContent: false,
-          presetViews: [
-            'movies',
-            'tvshows',
-            'music',
-            'playlists',
-            'folders',
-            'homevideos',
-            'boxsets',
-            'trailers',
-            'musicvideos',
-          ],
+          includeHidden: true,
         },
-      },
-    );
+      });
+
+      const parsed = await JellyfinUserViewsResponse.parseAsync(raw);
+
+      // Preserve the old presetViews behavior as a filter.
+      const allowed = new Set([
+        'movies',
+        'tvshows',
+        'music',
+        'playlists',
+        'folders',
+        'homevideos',
+        'boxsets',
+        'trailers',
+        'musicvideos',
+      ]);
+
+      const folders = parsed.Items.filter((v) =>
+        isNonEmptyString(v.CollectionType) ? allowed.has(v.CollectionType) : false,
+      ).map(
+        (v) =>
+          ({
+            Name: v.Name ?? v.Id,
+            CollectionType: v.CollectionType!,
+            ItemId: v.Id,
+            // We don't get filesystem locations from Views; keep schema-compatible defaults.
+            LibraryOptions: {
+              PathInfos: [],
+            },
+            Locations: [],
+          }) as unknown as JellyfinVirtualFolder,
+      );
+
+      return this.makeSuccessResult(folders);
+    } catch (e) {
+      const err = caughtErrorToError(e);
+      return this.makeErrorResult('generic_request_error', err.message);
+    }
   }
-
   async getUserViews() {
-    const result = await this.getUserViewsRaw();
-
-    return result.mapPure((data) =>
-      data.map((lib) => this.virtualFolderToLibrary(lib)),
-    );
+    // Backwards-compatible alias used by UI code.
+    return this.getUserLibraries();
   }
 
   private virtualFolderToLibrary(lib: JellyfinVirtualFolder): Library {
     return {
       type: 'library',
-      externalId: lib.ItemId,
-      locations: lib.LibraryOptions.PathInfos.map((path) => ({
+      externalId: (lib as any).ItemId ?? lib.Name,
+      locations: (lib as any).LibraryOptions?.PathInfos?.map((path: any) => ({
         type: 'local',
         path: path.Path,
-      })),
+      })) ?? [],
       sourceType: 'jellyfin',
       title: lib.Name,
       uuid: v4(),
