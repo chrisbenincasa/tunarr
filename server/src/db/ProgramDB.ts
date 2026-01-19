@@ -805,6 +805,24 @@ export class ProgramDB implements IProgramDB {
               season: true,
               show: true,
               externalIds: true,
+              tags: {
+                with: {
+                  tag: true,
+                },
+              },
+              artwork: true,
+              credits: true,
+              genres: {
+                with: {
+                  genre: true,
+                },
+              },
+              studios: {
+                with: {
+                  studio: true,
+                },
+              },
+              versions: true,
             },
           },
         },

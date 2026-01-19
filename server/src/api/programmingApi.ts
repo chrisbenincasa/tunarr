@@ -1014,7 +1014,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         operationId: 'batchGetProgramsByExternalIds',
         body: BatchLookupExternalProgrammingSchema,
         response: {
-          200: z.record(z.string(), ContentProgramSchema),
+          200: z.record(z.string(), TerminalProgramSchema),
         },
       },
     },
@@ -1038,9 +1038,9 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
       return res.send(
         groupByUniq(
           seq.collect(results, (p) =>
-            req.serverCtx.programConverter.programOrmToContentProgram(p),
+            req.serverCtx.programConverter.programDaoToTerminalProgram(p),
           ),
-          (p) => p.id,
+          (p) => p.uuid,
         ),
       );
     },
