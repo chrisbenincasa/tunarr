@@ -136,5 +136,10 @@
   },
   "meilisearch": {
     "version": "1.30.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

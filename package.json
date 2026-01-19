@@ -64,7 +64,14 @@
       "eslint": "9.39.2",
       "@types/node": "22.10.7",
       "typescript": "5.9.3"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "arktype",
+      "better-sqlite3",
+      "esbuild",
+      "unrs-resolver"
+    ]
   },
   "lint-staged": {
     "*.{ts,tsx}": [
