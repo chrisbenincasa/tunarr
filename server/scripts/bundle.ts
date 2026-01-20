@@ -1,4 +1,5 @@
-import '@dotenvx/dotenvx/config';
+import dotenv from '@dotenvx/dotenvx';
+dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
 
 import esbuild from 'esbuild';
 import fg from 'fast-glob';
@@ -38,6 +39,16 @@ for (const [key, val] of Object.entries(process.env)) {
 console.debug(format('Building with Tunarr env: %O', tunarrKeyVals));
 
 const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
+
+const define = {
+  'process.env.NODE_ENV': '"production"',
+  'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
+  'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
+  'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
+  'import.meta.url': '__import_meta_url',
+};
+
+console.debug('Inlining environment to bundle: ', define);
 
 console.log('Bundling app...');
 const result = await esbuild.build({
@@ -87,13 +98,7 @@ const result = await esbuild.build({
   ],
   keepNames: true, // This is to ensure that Entity class names remain the same
   metafile: true,
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
-    'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
-    'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
-    'import.meta.url': '__import_meta_url',
-  },
+  define,
 });
 
 fs.writeFileSync(`${DIST_DIR}/meta.json`, JSON.stringify(result.metafile));
