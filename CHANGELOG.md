@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/chrisbenincasa/tunarr/compare/v1.1.1...v1.1.2) (2026-01-20)
+
+### Bug Fixes
+
+* fix smart collections to work with keywords and new search experience ([#1603](https://github.com/chrisbenincasa/tunarr/issues/1603)) ([46ae9be](https://github.com/chrisbenincasa/tunarr/commit/46ae9be900666ca9f95c7fd024622d7f33c96087))
+* properly persist tags while scanning ([#1595](https://github.com/chrisbenincasa/tunarr/issues/1595)) ([2b04109](https://github.com/chrisbenincasa/tunarr/commit/2b04109296f95eb65592857e256a15aaf4b0396d))
+
 ## [1.1.1](https://github.com/chrisbenincasa/tunarr/compare/v1.1.0...v1.1.1) (2026-01-17)
 
 ### Bug Fixes
