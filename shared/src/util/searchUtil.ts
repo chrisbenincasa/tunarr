@@ -61,6 +61,8 @@ const StringFields = [
   'show_studio',
   'audio_language',
   'subtitle_language',
+  'media_source_name',
+  'library_name',
 ] as const;
 
 const StringField = createToken({
