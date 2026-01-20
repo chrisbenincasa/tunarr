@@ -181,6 +181,20 @@ export const SearchFieldSpecs: NonEmptyArray<
   },
   MinutesField,
   SecondsField,
+  {
+    key: 'media_source_name',
+    type: 'string' as const,
+    name: 'Media Source Name',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
+  {
+    key: 'library_name',
+    type: 'string' as const,
+    name: 'Library Name',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
 ];
 
 interface Bij<In, Out = In> {

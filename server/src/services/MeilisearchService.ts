@@ -86,6 +86,7 @@ import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import { ISearchService } from './ISearchService.ts';
+import { SearchParser } from './search/SearchParser.ts';
 
 type FlattenArrayTypes<T> = {
   [K in keyof T]-?: Exclude<T[K], undefined> extends Array<unknown>
@@ -396,6 +397,7 @@ export class MeilisearchService implements ISearchService {
     @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
     @inject(ChildProcessHelper) private childProcessHelper: ChildProcessHelper,
     @inject(FileSystemService) private fileSystemService: FileSystemService,
+    @inject(SearchParser) private searchParser: SearchParser,
   ) {}
 
   getPort() {
@@ -1126,7 +1128,10 @@ export class MeilisearchService implements ISearchService {
     const index = IndexesByName[indexName];
     let filter: Maybe<string>;
     if (request.filter) {
-      filter = MeilisearchService.buildFilterExpression(index, request.filter);
+      filter = MeilisearchService.buildFilterExpression(
+        index,
+        await this.searchParser.preprocessSearchFilter(request.filter),
+      );
     }
 
     if (
@@ -1775,7 +1780,7 @@ async function getAvailablePort(): Promise<number> {
   });
 }
 
-function encodeCaseSensitiveId(id: string): SingleCaseString {
+export function encodeCaseSensitiveId(id: string): SingleCaseString {
   return tag(base32.encode(id));
 }
 

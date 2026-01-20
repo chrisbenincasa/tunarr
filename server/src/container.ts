@@ -17,7 +17,7 @@ import { HealthCheckModule } from '@/services/health_checks/HealthCheckModule.js
 import { StreamModule } from '@/stream/StreamModule.js';
 import { TasksModule } from '@/tasks/TasksModule.js';
 import { FixerModule } from '@/tasks/fixers/FixerModule.js';
-import { KEYS } from '@/types/inject.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -45,6 +45,7 @@ import { SystemDevicesService } from './services/SystemDevicesService.ts';
 import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
 import { DynamicChannelsModule } from './services/dynamic_channels/DynamicChannelsModule.ts';
 import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedulerService.ts';
+import { SearchParser } from './services/search/SearchParser.ts';
 import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLineupMigratorStartupTask.ts';
 import { ClearM3uCacheStartupTask } from './services/startup/ClearM3uCacheStartupTask.ts';
 import { GenerateGuideStartupTask } from './services/startup/GenerateGuideStartupTask.ts';
@@ -169,6 +170,7 @@ const RootModule = new ContainerModule((bind) => {
   bind(App).toSelf().inSingletonScope();
 
   bind(search.SearchParser).to(search.SearchParser);
+  bind(autoFactoryKey(SearchParser)).toAutoFactory(SearchParser);
 });
 
 container.load(RootModule);
