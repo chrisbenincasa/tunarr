@@ -1,13 +1,12 @@
 import { Save } from '@mui/icons-material';
 import {
   Alert,
-  Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   LinearProgress,
+  Stack,
   TextField,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -18,10 +17,10 @@ import type { FieldValues, SubmitErrorHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import { getApiSmartCollectionsByIdOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import { useUpdateSmartCollection } from '../../hooks/smartCollectionHooks.ts';
-import type { CommonDialogProps } from '../../types/CommonDialogProps.ts';
 
-type Props = CommonDialogProps & {
+type Props = {
   id: string;
+  onClose: () => void;
 };
 
 export const EditSmartCollectionDialog = (props: Props) => {
@@ -94,16 +93,20 @@ export const EditSmartCollectionDialog = (props: Props) => {
 
     return (
       <>
-        <DialogTitle>Editing "{smartCollection.name}"</DialogTitle>
+        <DialogTitle>
+          Editing Smart Collection "{smartCollection.name}"
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 1 }}>
+          <Stack sx={{ mt: 1 }} gap={1}>
             <Controller
               control={control}
               name="name"
               rules={{ required: true, minLength: 1 }}
-              render={({ field }) => <TextField label="Name" {...field} />}
+              render={({ field }) => (
+                <TextField fullWidth label="Name" {...field} />
+              )}
             />
-          </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={props.onClose}>Cancel</Button>
@@ -121,7 +124,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
   };
 
   return (
-    <Dialog open={props.open} onClose={props.onClose} fullWidth>
+    <>
       {isLoading && <LinearProgress />}
       {isError && (
         <Alert variant="filled" severity="error">
@@ -129,6 +132,6 @@ export const EditSmartCollectionDialog = (props: Props) => {
         </Alert>
       )}
       {smartCollection && renderForm()}
-    </Dialog>
+    </>
   );
 };

@@ -5,8 +5,8 @@ import type {
   ProgramOrFolder,
 } from '@tunarr/types';
 import { type CustomProgram, type MediaSourceSettings } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
 import { type PlexSearch } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import type { StrictOmit } from 'ts-essentials';
 import { type StateCreator } from 'zustand';
 import type { Imported, Local } from '../../types/MediaSource';

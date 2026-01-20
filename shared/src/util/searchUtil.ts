@@ -9,7 +9,7 @@ import type {
   SearchFilterOperatorNode,
   SearchFilterValueNode,
   StringOperators,
-} from '@tunarr/types/api';
+} from '@tunarr/types/schemas';
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';

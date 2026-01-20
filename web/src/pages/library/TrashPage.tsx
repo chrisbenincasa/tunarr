@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProgramType } from '@tunarr/types';
-import type { SearchFilter, SearchRequest } from '@tunarr/types/api';
+import type { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState } from 'react';
 import { LibraryProgramGrid } from '../../components/library/LibraryProgramGrid.tsx';

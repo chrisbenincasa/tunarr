@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { type DateSearchField } from '@tunarr/types/api';
+import { type DateSearchField } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
 import { Controller, useFormContext } from 'react-hook-form';

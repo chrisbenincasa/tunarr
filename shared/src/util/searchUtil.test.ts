@@ -1,4 +1,4 @@
-import { SearchFilter } from '@tunarr/types/api';
+import { SearchFilter } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import {

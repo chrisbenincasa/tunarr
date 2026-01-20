@@ -1,7 +1,6 @@
 import { Save } from '@mui/icons-material';
 import {
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -13,11 +12,12 @@ import {
   TextField,
 } from '@mui/material';
 import { isNonEmptyString } from '@tunarr/shared/util';
+import { SearchFilter } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import type { FieldErrors } from 'react-hook-form';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
   useCreateSmartCollection,
   useSmartCollections,
@@ -25,44 +25,38 @@ import {
 } from '../../hooks/smartCollectionHooks.ts';
 
 type Props = {
-  open: boolean;
   onClose: () => void;
-  initialQuery: string | null | undefined;
+  initialQuery: {
+    filter?: SearchFilter;
+    keywords?: string;
+  };
 };
 
 type SmartCollectionForm = {
   name: string;
   id: string;
-  query: string;
+  filter: SearchFilter;
+  keywords: string;
 };
 
 export const CreateSmartCollectionDialog = ({
-  open,
   onClose,
   initialQuery,
 }: Props) => {
   const { data: existingCollections } = useSmartCollections();
   const snackbar = useSnackbar();
   const {
-    setValue,
     control,
     handleSubmit,
-    formState: { isDirty, isValid },
-    watch,
+    formState: { isValid },
   } = useForm<SmartCollectionForm>({
     defaultValues: {
       name: '',
-      query: '',
+      filter: initialQuery?.filter,
+      keywords: initialQuery?.keywords ?? '',
       id: 'new',
     },
   });
-
-  useEffect(() => {
-    if (isNonEmptyString(initialQuery)) {
-      setValue('query', initialQuery);
-    }
-  }, [initialQuery, setValue]);
-
   const insertSmartCollection = useCreateSmartCollection({
     onSuccess: () => {
       onClose();
@@ -75,7 +69,7 @@ export const CreateSmartCollectionDialog = ({
     },
   });
 
-  const existingId = watch('id');
+  const [existingId] = useWatch({ control, name: ['id'] });
 
   const saveSmartCollection = useCallback(
     (values: SmartCollectionForm) => {
@@ -83,7 +77,8 @@ export const CreateSmartCollectionDialog = ({
         insertSmartCollection.mutate({
           body: {
             name: values.name,
-            query: values.query,
+            filter: values.filter,
+            keywords: values.keywords,
           },
           throwOnError: true,
         });
@@ -93,7 +88,8 @@ export const CreateSmartCollectionDialog = ({
             id: values.id,
           },
           body: {
-            query: values.query,
+            filter: values.filter,
+            keywords: values.keywords,
           },
         });
       }
@@ -114,7 +110,7 @@ export const CreateSmartCollectionDialog = ({
   );
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth>
+    <>
       <DialogTitle>Save Smart Collection</DialogTitle>
       <DialogContent>
         <Stack gap={2} sx={{ pt: 1 }}>
@@ -140,7 +136,7 @@ export const CreateSmartCollectionDialog = ({
                 <FormHelperText>
                   {field.value === 'new'
                     ? 'Creates a new collection'
-                    : `Existing query: ${existingCollections.find((coll) => coll.uuid === field.value)?.query ?? ''}`}
+                    : `Existing query: ${existingCollections.find((coll) => coll.uuid === field.value)?.filter ?? ''}`}
                 </FormHelperText>
               </FormControl>
             )}
@@ -160,11 +156,19 @@ export const CreateSmartCollectionDialog = ({
               />
             ))}
           <Controller
-            name="query"
+            name="keywords"
             control={control}
             rules={{ required: true, minLength: 1 }}
             render={({ field }) => (
-              <TextField disabled label="Query" {...field} />
+              <TextField disabled label="Keywords" {...field} />
+            )}
+          />
+          <Controller
+            name="filter"
+            control={control}
+            rules={{ required: true, minLength: 1 }}
+            render={({ field }) => (
+              <TextField disabled label="Filter" {...field} />
             )}
           />
         </Stack>
@@ -173,13 +177,13 @@ export const CreateSmartCollectionDialog = ({
         <Button onClick={() => onClose()}>Cancel</Button>
         <Button
           variant="contained"
-          disabled={!isDirty || !isValid}
+          disabled={!isValid}
           startIcon={<Save />}
           onClick={handleSubmit(saveSmartCollection, handleError)}
         >
           Save
         </Button>
       </DialogActions>
-    </Dialog>
+    </>
   );
 };

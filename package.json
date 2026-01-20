@@ -1,6 +1,6 @@
 {
   "name": "tunarr",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Create LiveTV channels from your Plex media",
   "type": "module",
   "author": "chrisbenincasa",
@@ -64,7 +64,14 @@
       "eslint": "9.39.2",
       "@types/node": "22.10.7",
       "typescript": "5.9.3"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "arktype",
+      "better-sqlite3",
+      "esbuild",
+      "unrs-resolver"
+    ]
   },
   "lint-staged": {
     "*.{ts,tsx}": [

@@ -10,7 +10,7 @@ import {
   type ChannelProgram,
   type ContentProgram,
 } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../generated/sdk.gen.ts';

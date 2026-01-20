@@ -4,7 +4,7 @@ import type {
   UseInfiniteQueryOptions,
 } from '@tanstack/react-query';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { flatten, groupBy, isEmpty } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { postApiProgramsSearch } from '../generated/sdk.gen.ts';

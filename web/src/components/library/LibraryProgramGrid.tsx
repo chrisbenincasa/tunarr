@@ -8,11 +8,12 @@ import type {
   ProgramOrFolder,
 } from '@tunarr/types';
 import { type ProgramLike } from '@tunarr/types';
-import type { SearchFilter, SearchSort } from '@tunarr/types/api';
-import {
-  type ProgramSearchResponse,
-  type SearchRequest,
-} from '@tunarr/types/api';
+import { type ProgramSearchResponse } from '@tunarr/types/api';
+import type {
+  SearchFilter,
+  SearchRequest,
+  SearchSort,
+} from '@tunarr/types/schemas';
 import { groupBy, isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
 import { match, P } from 'ts-pattern';
@@ -130,8 +131,6 @@ export const LibraryProgramGrid = ({
     searchRequest?.restrictSearchTo,
     staticSearchRequest,
   ]);
-
-  console.log(query);
 
   const search = useInfiniteQuery({
     queryKey: ['programs', 'search', query, mediaSource?.id, library?.id],

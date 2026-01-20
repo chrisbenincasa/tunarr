@@ -3,8 +3,11 @@ export * from './plexSearchUtil.js';
 export * as search from './searchUtil.js';
 export * as seq from './seq.js';
 import type { ChannelProgram, ProgramLike } from '@tunarr/types';
-import type { SearchFilterValueNode, StringOperators } from '@tunarr/types/api';
 import type { PlexMedia } from '@tunarr/types/plex';
+import type {
+  SearchFilterValueNode,
+  StringOperators,
+} from '@tunarr/types/schemas';
 import { capitalize, isNull, isString } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import type { MarkRequired } from 'ts-essentials';

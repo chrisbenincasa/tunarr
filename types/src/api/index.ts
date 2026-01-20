@@ -7,6 +7,7 @@ import {
   SystemSettingsSchema,
 } from '../SystemSettings.js';
 import { JellyfinItemFields, JellyfinItemKind } from '../jellyfin/index.js';
+import { SearchRequestSchema } from '../schemas/SearchRequest.js';
 import {
   ChannelConcatStreamModes,
   ChannelStreamModes,
@@ -31,7 +32,6 @@ import {
 } from '../schemas/settingsSchemas.js';
 import { MaterializedSlot, RandomSlotScheduleSchema } from './RandomSlots.js';
 import { MaterializedTimeSlot, TimeSlotScheduleSchema } from './TimeSlots.js';
-import { SearchRequestSchema } from './search.js';
 
 export * from './CommonSlots.js';
 export * from './RandomSlots.js';

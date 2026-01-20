@@ -18,27 +18,32 @@ type Props = {
   dialogProps?: Omit<DialogProps, 'open' | 'onClose'>;
 };
 
-export const DeleteConfirmationDialog = ({
-  open,
+type ContentProps = {
+  title: string;
+  body?: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  onCancel?: () => void;
+};
+
+const DeleteConfirmationDialogContent = ({
   title,
   body,
-  onConfirm,
-  onCancel,
   onClose,
-  dialogProps,
-}: Props) => {
+  onCancel,
+  onConfirm,
+}: ContentProps) => {
   const confirm = () => {
     onConfirm();
     onClose();
   };
-
   const cancel = () => {
     onCancel?.();
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={() => onClose()} {...dialogProps}>
+    <>
       <DialogTitle>{title}</DialogTitle>
       {body && (
         <DialogContent>
@@ -51,6 +56,16 @@ export const DeleteConfirmationDialog = ({
           Delete
         </Button>
       </DialogActions>
+    </>
+  );
+};
+
+export const DeleteConfirmationDialog = (props: Props) => {
+  const { open, onClose, dialogProps } = props;
+
+  return (
+    <Dialog open={open} onClose={() => onClose()} {...dialogProps}>
+      <DeleteConfirmationDialogContent {...props} />
     </Dialog>
   );
 };
