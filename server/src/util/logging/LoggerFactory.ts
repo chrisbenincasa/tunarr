@@ -133,6 +133,9 @@ class LoggerFactoryImpl {
           !isEqual(prevSettings.system.logging.logRollConfig, currentSettings)
         ) {
           this.updateLevel(newLevel);
+          setTimeout(() => {
+            this.rollLogsNow();
+          });
         }
       });
 

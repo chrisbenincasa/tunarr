@@ -41,6 +41,7 @@ export class RollingLogDestination {
   private currentFileName: string;
   private createdFileNames: string[] = [];
   private rotatePattern: RegExp;
+  private destinationReady = false;
 
   constructor(private opts: Opts) {
     this.rotatePattern = new RegExp(`(\\d+)${this.opts.extension ?? ''}$`);
@@ -74,6 +75,10 @@ export class RollingLogDestination {
     this.destination = new sb.default.SonicBoom({
       ...(this.opts.destinationOpts ?? {}),
       dest: this.opts.fileName,
+    });
+
+    this.destination.once('ready', () => {
+      this.destinationReady = true;
     });
 
     if (this.opts.maxSizeBytes && this.opts.maxSizeBytes > 0) {
@@ -111,11 +116,17 @@ export class RollingLogDestination {
       return;
     }
 
+    this.destinationReady = false;
+    this.destination.end();
+
     this.scheduledTask?.cancel(false);
   }
 
   roll() {
     if (!this.destination) {
+      return;
+    } else if (!this.destinationReady) {
+      this.destination.once('ready', () => this.roll());
       return;
     }
 
