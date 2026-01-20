@@ -3,7 +3,11 @@ import { ProgramType } from '@/db/schema/Program.js';
 import { ProgramGroupingType } from '@/db/schema/ProgramGrouping.js';
 import { JellyfinApiClient } from '@/external/jellyfin/JellyfinApiClient.js';
 import { PlexApiClient } from '@/external/plex/PlexApiClient.js';
-import { PagingParams, TruthyQueryParam } from '@/types/schemas.js';
+import {
+  BatchLookupExternalProgrammingSchema,
+  PagingParams,
+  TruthyQueryParam,
+} from '@/types/schemas.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import {
   groupByUniq,
@@ -34,13 +38,11 @@ import type { HttpHeader } from 'fastify/types/utils.js';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 import {
   compact,
-  every,
   find,
   first,
   head,
   isNil,
   isNull,
-  isUndefined,
   map,
   omitBy,
   trimStart,
@@ -49,7 +51,6 @@ import {
 import type stream from 'node:stream';
 import z from 'zod/v4';
 import { container } from '../container.ts';
-import { programSourceTypeFromString } from '../db/custom_types/ProgramSourceType.ts';
 import {
   AllProgramFields,
   AllProgramGroupingFields,
@@ -78,23 +79,6 @@ const LookupExternalProgrammingSchema = z.object({
   externalId: z
     .string()
     .transform((s) => s.split('|', 3) as [string, string, string]),
-});
-
-const BatchLookupExternalProgrammingSchema = z.object({
-  externalIds: z
-    .array(z.string())
-    .transform(
-      (s) =>
-        new Set(
-          [...s].map((s0) => s0.split('|', 3) as [string, string, string]),
-        ),
-    )
-    .refine((set) => {
-      return every(
-        [...set],
-        (tuple) => !isUndefined(programSourceTypeFromString(tuple[0])),
-      );
-    }),
 });
 
 // eslint-disable-next-line @typescript-eslint/require-await

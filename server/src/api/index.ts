@@ -31,6 +31,7 @@ import { mediaSourceRouter } from './mediaSourceApi.js';
 import { metadataApiRouter } from './metadataApi.js';
 import { plexApiRouter } from './plexApi.ts';
 import { plexSettingsRouter } from './plexSettingsApi.js';
+import { ProgramGroupingApiController } from './programGroupingApi.ts';
 import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
 import { settingsApi } from './settingsApi.ts';
@@ -79,7 +80,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(settingsApi)
     .register(trashApi)
     .register(container.get(SmartCollectionsApiController).mount)
-    .register(container.get(CreditsApiController).mount);
+    .register(container.get(CreditsApiController).mount)
+    .register(container.get(ProgramGroupingApiController).mount);
 
   fastify.get(
     '/version',
