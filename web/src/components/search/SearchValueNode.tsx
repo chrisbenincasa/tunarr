@@ -9,8 +9,8 @@ import {
   TextField,
 } from '@mui/material';
 import { seq } from '@tunarr/shared/util';
-import type { SearchField, SearchFilterValueNode } from '@tunarr/types/api';
-import { OperatorsByType } from '@tunarr/types/api';
+import type { SearchField, SearchFilterValueNode } from '@tunarr/types/schemas';
+import { OperatorsByType } from '@tunarr/types/schemas';
 import { find, flatten, isArray, isNumber, map } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';

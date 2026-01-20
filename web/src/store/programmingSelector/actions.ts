@@ -9,8 +9,8 @@ import {
   type MediaSourceSettings,
   type PlexServerSettings,
 } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
 import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 
 import { groupBy, has, isArray, map, reject, some, uniq } from 'lodash-es';
 import { match } from 'ts-pattern';
@@ -319,6 +319,5 @@ export const setPlexSort = (plexSort: PlexSort | undefined) =>
 
 export const setSearchRequest = (request: Nullable<SearchRequest>) =>
   useStore.setState((state) => {
-    console.log('setting search', request);
     state.currentSearchRequest = request;
   });

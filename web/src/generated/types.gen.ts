@@ -7973,7 +7973,8 @@ export type GetApiChannelsByIdScheduleResponses = {
                 smartCollection: {
                     uuid: string;
                     name: string;
-                    query: string;
+                    filter?: SearchFilter;
+                    keywords: string;
                 } | null;
                 isMissing: boolean;
             }>;
@@ -20652,7 +20653,8 @@ export type GetApiSmartCollectionsResponses = {
     200: Array<{
         uuid: string;
         name: string;
-        query: string;
+        filter?: SearchFilter;
+        keywords: string;
     }>;
 };
 
@@ -20661,7 +20663,8 @@ export type GetApiSmartCollectionsResponse = GetApiSmartCollectionsResponses[key
 export type PostApiSmartCollectionsData = {
     body: {
         name: string;
-        query: string;
+        filter?: SearchFilterInput;
+        keywords: string;
     };
     path?: never;
     query?: never;
@@ -20684,7 +20687,8 @@ export type PostApiSmartCollectionsResponses = {
     201: {
         uuid: string;
         name: string;
-        query: string;
+        filter?: SearchFilter;
+        keywords: string;
     };
 };
 
@@ -20736,7 +20740,8 @@ export type GetApiSmartCollectionsByIdResponses = {
     200: {
         uuid: string;
         name: string;
-        query: string;
+        filter?: SearchFilter;
+        keywords: string;
     };
 };
 
@@ -20745,7 +20750,8 @@ export type GetApiSmartCollectionsByIdResponse = GetApiSmartCollectionsByIdRespo
 export type PutApiSmartCollectionsByIdData = {
     body?: {
         name?: string;
-        query?: string;
+        filter?: SearchFilterInput;
+        keywords?: string;
     };
     path: {
         id: string;
@@ -20768,7 +20774,8 @@ export type PutApiSmartCollectionsByIdResponses = {
     200: {
         uuid: string;
         name: string;
-        query: string;
+        filter?: SearchFilter;
+        keywords: string;
     };
 };
 

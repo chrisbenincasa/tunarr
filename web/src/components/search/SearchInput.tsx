@@ -1,6 +1,7 @@
 import { Clear, FilterList, Help, Save, Search } from '@mui/icons-material';
 import {
   Box,
+  Dialog,
   IconButton,
   InputAdornment,
   Stack,
@@ -9,15 +10,17 @@ import {
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
-import type { SearchFilter, SearchRequest } from '@tunarr/types/api';
-import { difference, isEmpty } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
+import { useToggle } from '@uidotdev/usehooks';
+import { difference, isEmpty, isEqual } from 'lodash-es';
+import { useCallback, useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { normalizeSearchFilter } from '../../../../shared/dist/src/util/searchUtil';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { setSearchRequest } from '../../store/programmingSelector/actions.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
+import { CreateSmartCollectionDialog } from '../smart_collections/CreateSmartCollectionDialog.tsx';
 import {
   AllSearchRestrictKeys,
   SearchFieldRestrictMenu,
@@ -27,6 +30,7 @@ import { SearchFilterBuilder } from './SearchFilterBuilder.tsx';
 type Props = {
   mediaSourceId?: MediaSourceId;
   libraryId?: string;
+  initialKeywords?: string;
   initialSearchFilter?: SearchFilter;
 };
 
@@ -48,26 +52,69 @@ export type SearchForm = {
   queryBuilderType: QueryBuilderType;
 };
 
+function searchFormDefaultValues(
+  initialSearchFilter?: SearchFilter,
+  initialKeywords?: string,
+): SearchForm {
+  return {
+    filter: {
+      type: 'text',
+      expression: initialSearchFilter
+        ? tunarrSearch.searchFilterToString(initialSearchFilter)
+        : '',
+    },
+    keywords: initialKeywords ?? '',
+    queryBuilderType: 'text',
+  };
+}
+
 export const SearchInput = ({
   libraryId,
+  initialKeywords,
   initialSearchFilter,
   mediaSourceId,
 }: Props) => {
+  const [savedInitialSearch, setInitialSearch] = useState(initialSearchFilter);
+  const [savedKeywords, setKeywords] = useState(initialKeywords);
   const formMethods = useForm<SearchForm>({
-    defaultValues: {
-      filter: {
-        type: 'text',
-        expression: initialSearchFilter
-          ? tunarrSearch.searchFilterToString(initialSearchFilter)
-          : '',
-      },
-      keywords: '',
-      queryBuilderType: 'text',
-    },
+    defaultValues: searchFormDefaultValues(
+      initialSearchFilter,
+      initialKeywords,
+    ),
     mode: 'onChange',
   });
 
-  const { getSearchExpression } = useSearchQueryParser();
+  const formState = formMethods.formState;
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const searchForm = formMethods.watch();
+  const query = searchForm.filter;
+
+  // Some insane stuff we have to do to get reasonable UX with react-hook-form
+  useEffect(() => {
+    if (
+      !isEqual(initialSearchFilter, savedInitialSearch) ||
+      initialKeywords !== savedKeywords
+    ) {
+      setInitialSearch(initialSearchFilter);
+      setKeywords(initialKeywords);
+      formMethods.reset(
+        searchFormDefaultValues(initialSearchFilter, initialKeywords),
+      );
+    }
+  }, [
+    formMethods,
+    initialSearchFilter,
+    query,
+    savedInitialSearch,
+    savedKeywords,
+  ]);
+
+  const [smartCollectionModalOpen, toggleSmartCollectionModal] =
+    useToggle(false);
+
+  const { getSearchExpression, parseToSearchFilterOrNull } =
+    useSearchQueryParser();
 
   const handleSearchChange = useCallback((searchRequest: SearchRequest) => {
     setSearchRequest(searchRequest);
@@ -205,7 +252,10 @@ export const SearchInput = ({
           <Box sx={{ width: '100%' }}>
             <Stack direction={'row'} justifyContent={'flex-end'}>
               <Tooltip title="Save as Smart Collection">
-                <IconButton type="submit">
+                <IconButton
+                  onClick={() => toggleSmartCollectionModal(true)}
+                  disabled={!!formState.errors.filter}
+                >
                   <Save />
                 </IconButton>
               </Tooltip>
@@ -216,6 +266,22 @@ export const SearchInput = ({
           </Box>
         </Stack>
       </FormProvider>
+      <Dialog
+        fullWidth
+        open={smartCollectionModalOpen}
+        onClose={() => toggleSmartCollectionModal(false)}
+      >
+        <CreateSmartCollectionDialog
+          onClose={() => toggleSmartCollectionModal(false)}
+          initialQuery={{
+            filter:
+              searchForm.filter.type === 'structured'
+                ? searchForm.filter.filter
+                : (parseToSearchFilterOrNull(searchForm.filter.expression) ??
+                  undefined),
+          }}
+        />
+      </Dialog>
     </Box>
   );
 };

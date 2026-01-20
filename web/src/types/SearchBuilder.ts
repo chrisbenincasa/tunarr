@@ -1,5 +1,5 @@
-import type { OperatorsByType } from '@tunarr/types/api';
-import { type SearchField } from '@tunarr/types/api';
+import type { OperatorsByType } from '@tunarr/types/schemas';
+import { type SearchField } from '@tunarr/types/schemas';
 
 type Root = 'filter.filter';
 type Child = `${Root}.children.${number}`;

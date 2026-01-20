@@ -1,6 +1,6 @@
 import { Autocomplete, ListItem, TextField } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { isUndefined } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { useIntersectionObserver } from 'usehooks-ts';

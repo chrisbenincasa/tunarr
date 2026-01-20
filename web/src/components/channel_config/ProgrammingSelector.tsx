@@ -16,7 +16,7 @@ import {
 import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { tag } from '@tunarr/types';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import {
   capitalize,
   find,

@@ -1,5 +1,5 @@
 import SelectedProgrammingList from '@/components/channel_config/SelectedProgrammingList.tsx';
-import { SearchRequest } from '@tunarr/types/api';
+import { SearchRequest } from '@tunarr/types/schemas';
 import { useCallback, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import PaddedPaper from '../../components/base/PaddedPaper.tsx';

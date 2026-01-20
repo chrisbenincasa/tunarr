@@ -5,7 +5,7 @@ import type { RouterContext } from '@/types/RouterContext';
 import { createRootRouteWithContext } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
-import type { SearchRequest } from '@tunarr/types/api';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { z } from 'zod/v4';
 import { RouterLink } from '../components/base/RouterLink.tsx';
 import { programSearchQueryOpts } from '../hooks/useProgramSearchQuery.ts';
@@ -53,8 +53,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     useStore.setState((s) => {
       s.currentSearchRequest = searchRequest;
     });
-
-    console.log('searchRequest = ', searchRequest);
 
     return {
       searchRequest,

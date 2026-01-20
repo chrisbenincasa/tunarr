@@ -1,7 +1,7 @@
 import { Keyboard, Mouse } from '@mui/icons-material';
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { search as tunarrSearch } from '@tunarr/shared/util';
-import { SearchFilter } from '@tunarr/types/api';
+import { SearchFilter } from '@tunarr/types/schemas';
 import { useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
