@@ -9,10 +9,11 @@ import type { StreamConnectionDetails } from '@tunarr/types/api';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
-import { forEach, isEmpty, keys, partition } from 'lodash-es';
+import { forEach, isEmpty, isNull, keys, partition } from 'lodash-es';
 import events from 'node:events';
 import type { StrictExtract } from 'ts-essentials';
 import { v4 } from 'uuid';
+import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { ConnectionTracker } from './ConnectionTracker.ts';
 
 const ConcatSessionSuffix = '_concat';
@@ -20,7 +21,7 @@ const ConcatSessionSuffix = '_concat';
 type SessionState = 'starting' | 'started' | 'error' | 'stopped' | 'init';
 
 export type SessionOptions = {
-  cleanupDelay?: number;
+  cleanupDelayMs?: number;
   stalenessMs?: number;
 };
 
@@ -249,7 +250,17 @@ export abstract class Session<
     return this.connectionTracker.lastHeartbeat(token);
   }
 
-  scheduleCleanup(delay: number = this.sessionOptions.cleanupDelay ?? 15_000) {
+  scheduleCleanup(delay?: number) {
+    if (!delay) {
+      const configuredDelay = getNumericEnvVar(
+        TUNARR_ENV_VARS.SESSION_CLEANUP_DELAY_SECONDS,
+      );
+      if (!isNull(configuredDelay) && configuredDelay > 0) {
+        delay = configuredDelay;
+      }
+    }
+    delay ??= this.sessionOptions.cleanupDelayMs ?? 15_000; // Ensure we always end up with a value
+
     // Trigger cleanup immediately if we're in an error state
     if (this.state === 'error') {
       this.stop().catch((e) => {

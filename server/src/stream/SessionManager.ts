@@ -197,7 +197,10 @@ export class SessionManager {
       token,
       connection,
       options.sessionType,
-      (channel) => this.concatSessionFactory(channel, options),
+      (channel) => {
+        options.cleanupDelayMs ??= 5_000;
+        return this.concatSessionFactory(channel, options);
+      },
     );
   }
 
