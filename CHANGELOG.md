@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3](https://github.com/chrisbenincasa/tunarr/compare/v1.1.2...v1.1.3) (2026-01-20)
+
+### Bug Fixes
+
+* prevent "sonic boom is not ready yet" errors on system settings change ([ca8e393](https://github.com/chrisbenincasa/tunarr/commit/ca8e393e4fafca81ad7bf9d1b347f5227d744fb5))
+
 ## [1.1.2](https://github.com/chrisbenincasa/tunarr/compare/v1.1.1...v1.1.2) (2026-01-20)
 
 ### Bug Fixes
