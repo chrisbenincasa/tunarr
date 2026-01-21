@@ -108,7 +108,7 @@ export class ChannelCache implements IStreamLineupCache {
 
     if (isCommercialLineupItem(lineupItem)) {
       await this.persistentChannelCache.setFillerPlayTime(
-        this.getKey(channelId, lineupItem.fillerId),
+        this.getKey(channelId, lineupItem.fillerListId),
         t0 + remaining,
       );
     }

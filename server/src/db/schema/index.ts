@@ -55,6 +55,10 @@ import {
   ProgramExternalIdRelations,
 } from './ProgramExternalId.ts';
 import {
+  ProgramPlayHistory,
+  ProgramPlayHistoryRelations,
+} from './ProgramPlayHistory.ts';
+import {
   ProgramGrouping,
   ProgramGroupingRelations,
 } from './ProgramGrouping.ts';
@@ -111,6 +115,8 @@ export const schema = {
   programGroupingRelations: ProgramGroupingRelations,
   programExternalId: ProgramExternalId,
   programExternalIdRelations: ProgramExternalIdRelations,
+  programPlayHistory: ProgramPlayHistory,
+  programPlayHistoryRelations: ProgramPlayHistoryRelations,
   programGroupingExternalId: ProgramGroupingExternalId,
   programGroupingExternalIdRelations: ProgramGroupingExternalIdRelations,
   programMediaStream: ProgramMediaStream,

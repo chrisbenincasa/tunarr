@@ -45,7 +45,11 @@ export function isProgramLineupItem(
 export function isContentBackedLineupItem(
   item: StreamLineupItem,
 ): item is ContentBackedStreamLineupItem {
-  return isCommercialLineupItem(item) || isProgramLineupItem(item);
+  return (
+    isCommercialLineupItem(item) ||
+    isProgramLineupItem(item) ||
+    item.type === 'fallback'
+  );
 }
 
 export function isPlexBackedLineupItem(
@@ -77,7 +81,8 @@ export function isEmnyBackedLineupItem(
 
 export type ContentBackedStreamLineupItem =
   | CommercialStreamLineupItem
-  | ProgramStreamLineupItem;
+  | ProgramStreamLineupItem
+  | FallbackStreamLineupItem;
 
 export type MinimalContentStreamLineupItem = {
   programId: string;
@@ -121,7 +126,11 @@ type BaseContentBackedStreamLineupItem = BaseStreamLineupItem & {
 
 export type CommercialStreamLineupItem = BaseContentBackedStreamLineupItem & {
   type: 'commercial';
-  fillerId: string;
+  fillerListId: string;
+};
+
+export type FallbackStreamLineupItem = BaseContentBackedStreamLineupItem & {
+  type: 'fallback';
 };
 
 export type ProgramStreamLineupItem = BaseContentBackedStreamLineupItem & {
@@ -144,7 +153,8 @@ export type StreamLineupItem =
   | CommercialStreamLineupItem
   | OfflineStreamLineupItem
   | RedirectStreamLineupItem
-  | ErrorStreamLineupItem;
+  | ErrorStreamLineupItem
+  | FallbackStreamLineupItem;
 
 export function createOfflineStreamLineupItem(
   duration: number,

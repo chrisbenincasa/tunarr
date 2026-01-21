@@ -1,4 +1,5 @@
 import { CompiledQuery, type Kysely } from 'kysely';
+import { castArray } from 'lodash-es';
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,14 +53,17 @@ export async function processSqlMigrationFile(
 }
 
 export function makeKyselyMigrationFromSqlFile(
-  filePath: string,
+  filePaths: string | Array<string>,
   fullCopy: boolean = false,
 ): TunarrDatabaseMigration {
   return {
     fullCopy,
     async up(db) {
-      for (const statement of await processSqlMigrationFile(filePath)) {
-        await db.executeQuery(statement);
+      filePaths = castArray(filePaths);
+      for (const path of filePaths) {
+        for (const statement of await processSqlMigrationFile(path)) {
+          await db.executeQuery(statement);
+        }
       }
     },
   };

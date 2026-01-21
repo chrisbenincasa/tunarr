@@ -18,6 +18,7 @@ import { ChannelCustomShow } from './ChannelCustomShow.ts';
 import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
+import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 
 export const Channel = sqliteTable('channel', {
   uuid: text().primaryKey(),
@@ -64,4 +65,5 @@ export const ChannelRelations = relations(Channel, ({ many }) => ({
   channelPrograms: many(ChannelPrograms),
   channelCustomShows: many(ChannelCustomShow),
   channelFillerShow: many(ChannelFillerShow),
+  playHistory: many(ProgramPlayHistory),
 }));

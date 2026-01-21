@@ -3,7 +3,7 @@ import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { now, sum, sumBy } from 'lodash-es';
 import { DeepPartial } from 'ts-essentials';
-import { instance, mock, verify, when } from 'ts-mockito';
+import { anything, instance, mock, verify, when } from 'ts-mockito';
 import { test as baseTest } from 'vitest';
 import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
@@ -11,6 +11,7 @@ import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
+import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { MediaSourceId } from '../db/schema/base.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
@@ -31,6 +32,7 @@ describe('StreamProgramCalculator', () => {
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
     const channelCache = mock<IStreamLineupCache>();
+    const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
     const channelId = faker.string.uuid();
@@ -88,6 +90,18 @@ describe('StreamProgramCalculator', () => {
       }),
     );
 
+    // Mock play history - program not currently playing
+    when(
+      playHistoryDB.isProgramCurrentlyPlaying(
+        anything(),
+        anything(),
+        anything(),
+      ),
+    ).thenReturn(Promise.resolve(false));
+    when(playHistoryDB.create(anything())).thenReturn(
+      Promise.resolve(undefined),
+    );
+
     const calc = new StreamProgramCalculator(
       LoggerFactory.root,
       instance(fillerDB),
@@ -95,6 +109,7 @@ describe('StreamProgramCalculator', () => {
       instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
+      instance(playHistoryDB),
     );
 
     const out = (
@@ -126,6 +141,7 @@ describe('StreamProgramCalculator', () => {
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
     const channelCache = mock<IStreamLineupCache>();
+    const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
     const channelId = faker.string.uuid();
@@ -185,6 +201,18 @@ describe('StreamProgramCalculator', () => {
       }),
     );
 
+    // Mock play history - program not currently playing
+    when(
+      playHistoryDB.isProgramCurrentlyPlaying(
+        anything(),
+        anything(),
+        anything(),
+      ),
+    ).thenReturn(Promise.resolve(false));
+    when(playHistoryDB.create(anything())).thenReturn(
+      Promise.resolve(undefined),
+    );
+
     const calc = new StreamProgramCalculator(
       LoggerFactory.root,
       instance(fillerDB),
@@ -192,6 +220,7 @@ describe('StreamProgramCalculator', () => {
       instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
+      instance(playHistoryDB),
     );
 
     const out = (
@@ -210,7 +239,7 @@ describe('StreamProgramCalculator', () => {
       infiniteLoop: false,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
       startOffset: +dayjs.duration(16, 'minutes'),
-      fillerId: fillerListId,
+      fillerListId: fillerListId,
       type: 'commercial',
     });
 
@@ -225,6 +254,7 @@ describe('StreamProgramCalculator', () => {
     const programDB = mock<IProgramDB>();
     const fillerPicker = mock<IFillerPicker>();
     const channelCache = mock<IStreamLineupCache>();
+    const playHistoryDB = mock<ProgramPlayHistoryDB>();
 
     const startTime = dayjs(new Date(2025, 8, 17, 8));
     const channelId = faker.string.uuid();
@@ -284,6 +314,18 @@ describe('StreamProgramCalculator', () => {
       }),
     );
 
+    // Mock play history - program not currently playing
+    when(
+      playHistoryDB.isProgramCurrentlyPlaying(
+        anything(),
+        anything(),
+        anything(),
+      ),
+    ).thenReturn(Promise.resolve(false));
+    when(playHistoryDB.create(anything())).thenReturn(
+      Promise.resolve(undefined),
+    );
+
     const calc = new StreamProgramCalculator(
       LoggerFactory.root,
       instance(fillerDB),
@@ -291,6 +333,7 @@ describe('StreamProgramCalculator', () => {
       instance(channelCache),
       instance(programDB),
       instance(fillerPicker),
+      instance(playHistoryDB),
     );
 
     const out = (
@@ -307,7 +350,7 @@ describe('StreamProgramCalculator', () => {
       infiniteLoop: true,
       programBeginMs: +startTime - +dayjs.duration(16, 'minutes'),
       startOffset: +dayjs.duration(16, 'minutes'),
-      fillerId: fillerListId,
+      fillerListId: fillerListId,
       type: 'commercial',
       duration: +dayjs.duration(22, 'minutes'),
     });
@@ -316,6 +359,222 @@ describe('StreamProgramCalculator', () => {
       channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
     ).once();
   });
+
+  baseTest('records play history for new playback', async () => {
+    const fillerDB = mock<IFillerListDB>();
+    const channelDB = mock<IChannelDB>();
+    const programDB = mock<IProgramDB>();
+    const fillerPicker = mock<IFillerPicker>();
+    const channelCache = mock<IStreamLineupCache>();
+    const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+    const startTime = dayjs(new Date(2025, 8, 17, 8));
+    const channelId = faker.string.uuid();
+    const programId1 = faker.string.uuid();
+    const programId2 = faker.string.uuid();
+
+    const lineup: LineupItem[] = [
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId1,
+      },
+      {
+        type: 'content',
+        durationMs: +dayjs.duration({ minutes: 22 }),
+        id: programId2,
+      },
+    ];
+
+    when(programDB.getProgramById(programId1)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({
+          uuid: programId1,
+          duration: lineup[0].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
+      ),
+    );
+
+    when(programDB.getProgramById(programId2)).thenReturn(
+      Promise.resolve(
+        createFakeProgram({
+          uuid: programId2,
+          duration: lineup[1].durationMs,
+          mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+        }),
+      ),
+    );
+
+    const channel = createChannel({
+      uuid: channelId,
+      number: 1,
+      startTime: +startTime.subtract(1, 'hour'),
+      duration: sumBy(lineup, ({ durationMs }) => durationMs),
+    });
+
+    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+
+    when(channelDB.loadLineup(channelId)).thenReturn(
+      Promise.resolve({
+        version: 1,
+        items: lineup,
+        startTimeOffsets: calculateStartTimeOffsets(lineup),
+        lastUpdated: now(),
+      }),
+    );
+
+    // Mock play history - program NOT currently playing
+    when(
+      playHistoryDB.isProgramCurrentlyPlaying(
+        anything(),
+        anything(),
+        anything(),
+      ),
+    ).thenReturn(Promise.resolve(false));
+    when(playHistoryDB.create(anything())).thenReturn(
+      Promise.resolve(undefined),
+    );
+
+    const calc = new StreamProgramCalculator(
+      LoggerFactory.root,
+      instance(fillerDB),
+      instance(channelDB),
+      instance(channelCache),
+      instance(programDB),
+      instance(fillerPicker),
+      instance(playHistoryDB),
+    );
+
+    await calc.getCurrentLineupItem({
+      allowSkip: false,
+      channelId: 1,
+      startTime: +startTime,
+    });
+
+    // Wait for async play history recording
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Verify play history was checked
+    verify(
+      playHistoryDB.isProgramCurrentlyPlaying(
+        channelId,
+        programId1,
+        +startTime,
+      ),
+    ).once();
+
+    // Verify play history was created since program was not currently playing
+    verify(playHistoryDB.create(anything())).once();
+  });
+
+  baseTest(
+    'does not record duplicate play history when program is already playing',
+    async () => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const channelCache = mock<IStreamLineupCache>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const channelId = faker.string.uuid();
+      const programId1 = faker.string.uuid();
+      const programId2 = faker.string.uuid();
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: programId1,
+        },
+        {
+          type: 'content',
+          durationMs: +dayjs.duration({ minutes: 22 }),
+          id: programId2,
+        },
+      ];
+
+      when(programDB.getProgramById(programId1)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId1,
+            duration: lineup[0].durationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+
+      when(programDB.getProgramById(programId2)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId2,
+            duration: lineup[1].durationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+          }),
+        ),
+      );
+
+      const channel = createChannel({
+        uuid: channelId,
+        number: 1,
+        startTime: +startTime.subtract(1, 'hour'),
+        duration: sumBy(lineup, ({ durationMs }) => durationMs),
+      });
+
+      when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+
+      // Mock play history - program IS currently playing (simulates another client already connected)
+      when(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(Promise.resolve(true));
+
+      const calc = new StreamProgramCalculator(
+        LoggerFactory.root,
+        instance(fillerDB),
+        instance(channelDB),
+        instance(channelCache),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+
+      await calc.getCurrentLineupItem({
+        allowSkip: false,
+        channelId: 1,
+        startTime: +startTime,
+      });
+
+      // Wait for async play history recording
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify play history was checked
+      verify(
+        playHistoryDB.isProgramCurrentlyPlaying(
+          channelId,
+          programId1,
+          +startTime,
+        ),
+      ).once();
+
+      // Verify play history was NOT created since program was already playing
+      verify(playHistoryDB.create(anything())).never();
+    },
+  );
 
   describe('calculateStreamDuration', () => {
     test('first channel cycle', () => {

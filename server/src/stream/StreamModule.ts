@@ -150,7 +150,8 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
       return (playerContext: PlayerContext, outputFormat: OutputFormat) => {
         switch (playerContext.lineupItem.type) {
           case 'program':
-          case 'commercial': {
+          case 'commercial':
+          case 'fallback': {
             return ctx.container.getNamed<ProgramStreamFactory>(
               KEYS.ProgramStreamFactory,
               playerContext.lineupItem.program.sourceType,

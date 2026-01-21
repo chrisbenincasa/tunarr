@@ -12,13 +12,16 @@ import { first, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
 import { Lineup } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
+  createOfflineStreamLineupItem,
+  FallbackStreamLineupItem,
+  isContentBackedLineupItem,
   ProgramStreamLineupItem,
   StreamLineupItem,
-  createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import { WrappedError } from '../types/errors.ts';
@@ -75,6 +78,8 @@ export class StreamProgramCalculator {
     @inject(KEYS.ChannelCache) private channelCache: IStreamLineupCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.FillerPicker) private fillerPicker: IFillerPicker,
+    @inject(ProgramPlayHistoryDB)
+    private programPlayHistoryDB: ProgramPlayHistoryDB,
   ) {}
 
   async getCurrentLineupItem(
@@ -234,6 +239,43 @@ export class StreamProgramCalculator {
       lineupItem,
     );
 
+    // Record play history for content-backed items (programs and commercials/fillers)
+    // Only record if this is a new playback (not a duplicate request for an already-playing program)
+    if (
+      isContentBackedLineupItem(lineupItem) &&
+      lineupItem.type !== 'fallback'
+    ) {
+      const programUuid = lineupItem.program.uuid;
+      const fillerListId =
+        lineupItem.type === 'commercial' ? lineupItem.fillerListId : undefined;
+      const streamDuration = lineupItem.streamDuration;
+      const channelUuid = channel.uuid;
+      const playedAt = new Date(req.startTime);
+
+      this.programPlayHistoryDB
+        .isProgramCurrentlyPlaying(channelUuid, programUuid, req.startTime)
+        .then((isCurrentlyPlaying) => {
+          if (!isCurrentlyPlaying) {
+            return this.programPlayHistoryDB.create({
+              programUuid,
+              channelUuid,
+              playedAt,
+              playedDuration: streamDuration,
+              fillerListId,
+            });
+          }
+          return;
+        })
+        .catch((err) => {
+          this.logger.error(
+            err,
+            'Failed to record play history for program %s on channel %s',
+            programUuid,
+            channelUuid,
+          );
+        });
+    }
+
     if (
       req.sessionToken &&
       wereThereTooManyAttempts(req.sessionToken, lineupItem)
@@ -309,7 +351,7 @@ export class StreamProgramCalculator {
             program = {
               ...baseItem,
               type: 'commercial',
-              fillerId: lineupItem.fillerListId,
+              fillerListId: lineupItem.fillerListId,
               infiniteLoop: backingItem.duration < streamDuration,
             } satisfies CommercialStreamLineupItem;
           } else {
@@ -452,9 +494,7 @@ export class StreamProgramCalculator {
         );
         const startOffset = Math.round(fillerstart);
 
-        return {
-          // just add the video, starting at 0, playing the entire duration
-          type: 'commercial',
+        const base = {
           program: {
             ...fillerProgram,
             mediaSourceId,
@@ -463,7 +503,22 @@ export class StreamProgramCalculator {
           streamDuration,
           duration: program.duration,
           programBeginMs: program.programBeginMs,
-          fillerId: filler.uuid,
+          fillerListId: filler.uuid,
+          infiniteLoop: filler.duration < streamDuration,
+        };
+
+        if (isSpecial) {
+          return {
+            ...base,
+            type: 'fallback',
+          } satisfies FallbackStreamLineupItem;
+        }
+
+        return {
+          ...base,
+          // just add the video, starting at 0, playing the entire duration
+          type: 'commercial',
+          fillerListId: filler.uuid,
           infiniteLoop: filler.duration < streamDuration,
         } satisfies CommercialStreamLineupItem;
       }
