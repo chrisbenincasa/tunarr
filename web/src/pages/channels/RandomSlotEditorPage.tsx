@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { seq } from '@tunarr/shared/util';
 import type { RandomSlotSchedule } from '@tunarr/types/api';
 import { useToggle } from '@uidotdev/usehooks';
@@ -40,6 +41,7 @@ import ChannelLineupList from '../../components/channel_config/ChannelLineupList
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert';
 import { SlotProgrammingOptionsProvider } from '../../components/slot_scheduler/SlotProgrammingOptionsProvider.tsx';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { lineupItemAppearsInSchedule } from '../../helpers/slotSchedulerUtil';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
@@ -53,12 +55,14 @@ export default function RandomSlotEditorPage() {
   const { currentEntity: channel, programList: newLineup } = useChannelEditor();
   const { data: channelSchedule } = useChannelSchedule(channel!.id);
 
+  const queryClient = useQueryClient();
   const updateLineupMutation = useUpdateLineup({
-    onSuccess(data) {
-      reset(data.schedule ?? defaultRandomSlotSchedule, {
-        keepDefaultValues: false,
-        keepDirty: false,
-      });
+    onSuccess() {
+      queryClient
+        .invalidateQueries({
+          predicate: invalidateTaggedQueries('Channels'),
+        })
+        .catch(console.error);
     },
   });
 

@@ -1122,7 +1122,7 @@ export class ProgramDB implements IProgramDB {
       this.logger.debug('Scheduling follow-up program tasks...');
 
       GlobalScheduler.scheduleOneOffTask(
-        ReconcileProgramDurationsTask.KEY,
+        autoFactoryKey(ReconcileProgramDurationsTask),
         dayjs().add(500, 'ms'),
         [],
       );
