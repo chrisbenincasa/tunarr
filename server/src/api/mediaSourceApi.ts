@@ -797,6 +797,12 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
     async (req, res) => {
       try {
         await req.serverCtx.mediaSourceDB.updateMediaSource(req.body);
+        if (req.body.type === 'local') {
+          await req.serverCtx.mediaSourceScanCoordinator.addLocal({
+            mediaSourceId: tag(req.body.id),
+            forceScan: false,
+          });
+        }
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: `Media source ${req.body.name} updated.`,
@@ -848,6 +854,12 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         const newServerId = await req.serverCtx.mediaSourceDB.addMediaSource(
           req.body,
         );
+        if (req.body.type === 'local') {
+          await req.serverCtx.mediaSourceScanCoordinator.addLocal({
+            mediaSourceId: newServerId,
+            forceScan: false,
+          });
+        }
         req.serverCtx.eventService.push({
           type: 'settings-update',
           message: `Media source "${req.body.name}" added.`,
