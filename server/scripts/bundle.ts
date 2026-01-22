@@ -11,6 +11,7 @@ import { nodeProtocolPlugin } from '../esbuild/node-protocol.ts';
 
 import { trimStart } from 'lodash-es';
 import { createRequire } from 'node:module';
+import { generateEnvModule } from './generateEnvModule.ts';
 const __require = createRequire(import.meta.url);
 const esbuildPluginPino = __require('esbuild-plugin-pino');
 
@@ -28,16 +29,24 @@ fs.cpSync('src/resources/images', `${DIST_DIR}/resources/images`, {
   recursive: true,
 });
 
-const tunarrKeyVals: Record<string, string> = {};
-for (const [key, val] of Object.entries(process.env)) {
-  if (key.startsWith('TUNARR_') && val) {
-    tunarrKeyVals[key] = val;
-  }
-}
-
-console.debug(format('Building with Tunarr env: %O', tunarrKeyVals));
-
 const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
+
+// TODO: Do we want to hard-code any TUNARR_ prefixed environment variables at build time?
+await generateEnvModule([
+  'NODE_ENV',
+  'TUNARR_VERSION',
+  'TUNARR_BUILD',
+  'TUNARR_EDGE_BUILD',
+]);
+const define = {
+  'process.env.NODE_ENV': '"production"',
+  'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
+  'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
+  'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
+  'import.meta.url': '__import_meta_url',
+};
+
+console.debug(format('Building with Tunarr env: %O', define));
 
 console.log('Bundling app...');
 const result = await esbuild.build({
@@ -87,13 +96,7 @@ const result = await esbuild.build({
   ],
   keepNames: true, // This is to ensure that Entity class names remain the same
   metafile: true,
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
-    'process.env.TUNARR_BUILD': `"${process.env.TUNARR_BUILD}"`,
-    'process.env.TUNARR_EDGE_BUILD': `"${isEdgeBuild}"`,
-    'import.meta.url': '__import_meta_url',
-  },
+  define,
 });
 
 fs.writeFileSync(`${DIST_DIR}/meta.json`, JSON.stringify(result.metafile));

@@ -42,8 +42,8 @@
         "skipLibCheck": true,
     },
     "include": [
-        "./src/**/*.ts",
-        "./scripts/**/*.ts",
+        "./src/**/*",
+        "./scripts/**/*",
     ],
     "exclude": [
         "./src/**/*.ignore.ts",
