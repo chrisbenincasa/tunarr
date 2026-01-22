@@ -1,6 +1,12 @@
 name: Semantic Release (test)
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run in dry run mode"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read # for checkout
@@ -44,7 +50,7 @@ jobs:
         id: semantic
         uses: chrisbenincasa/semantic-release-action@e0b75dd3b943e75f6bea693cc69caf82c26c0571
         with:
-          dry_run: true
+          dry_run: ${{ github.event.inputs.dry_run }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
