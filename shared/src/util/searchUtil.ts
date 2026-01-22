@@ -1089,7 +1089,11 @@ export function searchFilterToString(
         } else {
           repr = value;
         }
-        return `${input.fieldSpec.key} ${input.fieldSpec.op} ${repr}`;
+        const key =
+          indexFieldToVirtualField[input.fieldSpec.key] ?? input.fieldSpec.key;
+        const op =
+          indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
+        return `${key} ${op} ${repr}`;
       } else {
         const components: string[] = [];
         for (const x of input.fieldSpec.value) {

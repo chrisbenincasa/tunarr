@@ -11,8 +11,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { isNonEmptyString } from '@tunarr/shared/util';
-import { SearchFilter } from '@tunarr/types/schemas';
+import { search } from '@tunarr/shared/util';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback } from 'react';
@@ -50,6 +50,7 @@ export const CreateSmartCollectionDialog = ({
     handleSubmit,
     formState: { isValid },
   } = useForm<SmartCollectionForm>({
+    mode: 'all',
     defaultValues: {
       name: '',
       filter: initialQuery?.filter,
@@ -117,48 +118,52 @@ export const CreateSmartCollectionDialog = ({
           <Controller
             control={control}
             name="id"
-            render={({ field }) => (
-              <FormControl>
-                <Select
-                  disabled={existingCollections.length === 0}
-                  {...field}
-                  value={field.value ? field.value : 'new'}
-                >
-                  {existingCollections.map((coll) => (
-                    <MenuItem key={coll.uuid} value={coll.uuid}>
-                      {coll.name}
+            render={({ field }) => {
+              const existingFilter = existingCollections.find(
+                (coll) => coll.uuid === field.value,
+              )?.filter;
+              const filterString = existingFilter
+                ? search.searchFilterToString(existingFilter)
+                : '';
+              return (
+                <FormControl>
+                  <Select
+                    disabled={existingCollections.length === 0}
+                    {...field}
+                    value={field.value ? field.value : 'new'}
+                  >
+                    {existingCollections.map((coll) => (
+                      <MenuItem key={coll.uuid} value={coll.uuid}>
+                        {coll.name}
+                      </MenuItem>
+                    ))}
+                    <MenuItem value="new">
+                      Save as new collection&hellip;
                     </MenuItem>
-                  ))}
-                  <MenuItem value="new">
-                    Save as new collection&hellip;
-                  </MenuItem>
-                </Select>
-                <FormHelperText>
-                  {field.value === 'new'
-                    ? 'Creates a new collection'
-                    : `Existing query: ${existingCollections.find((coll) => coll.uuid === field.value)?.filter ?? ''}`}
-                </FormHelperText>
-              </FormControl>
-            )}
+                  </Select>
+                  <FormHelperText>
+                    {field.value === 'new'
+                      ? 'Creates a new collection'
+                      : `Existing query: ${filterString}`}
+                  </FormHelperText>
+                </FormControl>
+              );
+            }}
           />
-          {isEmpty(existingId) ||
-            (existingId === 'new' && (
-              <Controller
-                name="name"
-                control={control}
-                rules={{
-                  validate: {
-                    valid: (v, form) =>
-                      isNonEmptyString(form.id) ? undefined : !isEmpty(v),
-                  },
-                }}
-                render={({ field }) => <TextField label="Name" {...field} />}
-              />
-            ))}
+          {(isEmpty(existingId) || existingId === 'new') && (
+            <Controller
+              name="name"
+              control={control}
+              rules={{
+                required: true,
+                minLength: 1,
+              }}
+              render={({ field }) => <TextField label="Name" {...field} />}
+            />
+          )}
           <Controller
             name="keywords"
             control={control}
-            rules={{ required: true, minLength: 1 }}
             render={({ field }) => (
               <TextField disabled label="Keywords" {...field} />
             )}
@@ -166,9 +171,15 @@ export const CreateSmartCollectionDialog = ({
           <Controller
             name="filter"
             control={control}
-            rules={{ required: true, minLength: 1 }}
             render={({ field }) => (
-              <TextField disabled label="Filter" {...field} />
+              <TextField
+                disabled
+                label="Filter"
+                {...field}
+                value={
+                  field.value ? search.searchFilterToString(field.value) : ''
+                }
+              />
             )}
           />
         </Stack>
