@@ -25,7 +25,7 @@ export const useVersion = (
     !query.isLoading &&
     trimStart(query.data?.tunarr, 'v') !== trimStart(__TUNARR_VERSION__, 'v');
 
-  if (versionMismatch) {
+  if (versionMismatch && import.meta.env.PROD) {
     snackbar.enqueueSnackbar({
       key: 'version_mismatch',
       preventDuplicate: true,

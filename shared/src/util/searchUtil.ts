@@ -13,7 +13,7 @@ import type {
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
-import { identity, invert, isArray, isNumber } from 'lodash-es';
+import { head, identity, isArray, isNumber } from 'lodash-es';
 import type {
   Dictionary,
   NonEmptyArray,
@@ -21,6 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import { invert } from './seq.js';
 
 dayjs.extend(customParseFormat);
 
@@ -86,6 +87,7 @@ const NumericFields = [
   'video_width',
   'audio_channels',
   'release_year',
+  'year',
 ] as const;
 
 const NumericField = createToken({
@@ -340,7 +342,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   audio_channels: 'audioChannels',
 };
 
-const indexFieldToVirtualField = invert(virtualFieldToIndexField);
+const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
@@ -1090,9 +1092,10 @@ export function searchFilterToString(
           repr = value;
         }
         const key =
-          indexFieldToVirtualField[input.fieldSpec.key] ?? input.fieldSpec.key;
+          head(indexFieldToVirtualField[input.fieldSpec.key]) ??
+          input.fieldSpec.key;
         const op =
-          indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
+          head(indexOperatorToSyntax[input.fieldSpec.op]) ?? input.fieldSpec.op;
         return `${key} ${op} ${repr}`;
       } else {
         const components: string[] = [];
@@ -1106,9 +1109,10 @@ export function searchFilterToString(
         valueString = `[${components.join(', ')}]`;
       }
       const key =
-        indexFieldToVirtualField[input.fieldSpec.key] ?? input.fieldSpec.key;
+        head(indexFieldToVirtualField[input.fieldSpec.key]) ??
+        input.fieldSpec.key;
       const op =
-        indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
+        head(indexOperatorToSyntax[input.fieldSpec.op]) ?? input.fieldSpec.op;
       return `${key} ${op} ${valueString}`;
     }
   }

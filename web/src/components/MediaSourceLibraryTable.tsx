@@ -140,21 +140,23 @@ const MediaSourceLibraryTableActionCell = ({
   return (
     <>
       <Tooltip placement="top" title="View Library">
-        {mediaSource.type === 'local' ? (
-          <RouterIconButtonLink
-            to="/media_sources/$mediaSourceId"
-            params={{ mediaSourceId: mediaSource.id }}
-          >
-            <VideoLibrary />
-          </RouterIconButtonLink>
-        ) : (
-          <RouterIconButtonLink
-            to={'/media_sources/$mediaSourceId/libraries/$libraryId'}
-            params={{ mediaSourceId: mediaSource.id, libraryId: library.id }}
-          >
-            <VideoLibrary />
-          </RouterIconButtonLink>
-        )}
+        <Box component="span">
+          {mediaSource.type === 'local' ? (
+            <RouterIconButtonLink
+              to="/media_sources/$mediaSourceId"
+              params={{ mediaSourceId: mediaSource.id }}
+            >
+              <VideoLibrary />
+            </RouterIconButtonLink>
+          ) : (
+            <RouterIconButtonLink
+              to={'/media_sources/$mediaSourceId/libraries/$libraryId'}
+              params={{ mediaSourceId: mediaSource.id, libraryId: library.id }}
+            >
+              <VideoLibrary />
+            </RouterIconButtonLink>
+          )}
+        </Box>
       </Tooltip>
       <Tooltip
         placement="top"
