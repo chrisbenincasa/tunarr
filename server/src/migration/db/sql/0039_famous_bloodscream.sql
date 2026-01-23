@@ -1,0 +1,2 @@
+DROP INDEX `program_play_history_channel_uuid_index`;--> statement-breakpoint
+CREATE INDEX `program_play_history_channel_uuid_index` ON `program_play_history` (`channel_uuid`,`program_uuid`,`filler_list_id`);

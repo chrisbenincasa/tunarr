@@ -1,4 +1,5 @@
 import { KEYS } from '@/types/inject.js';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { and, eq, gt } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { v4 } from 'uuid';
@@ -75,7 +76,7 @@ export class ProgramPlayHistoryDB {
       .then((rows) => rows[0]);
   }
 
-  update(
+  async update(
     id: string,
     data: Partial<
       Pick<
@@ -84,40 +85,40 @@ export class ProgramPlayHistoryDB {
       >
     >,
   ) {
-    return this.drizzle
+    const rows = await this.drizzle
       .update(ProgramPlayHistory)
       .set(data)
       .where(eq(ProgramPlayHistory.uuid, id))
-      .returning()
-      .then((rows) => rows[0]);
+      .returning();
+    return rows[0];
   }
 
-  delete(id: string) {
-    return this.drizzle
+  async delete(id: string) {
+    const rows = await this.drizzle
       .delete(ProgramPlayHistory)
       .where(eq(ProgramPlayHistory.uuid, id))
-      .returning()
-      .then((rows) => rows.length > 0);
+      .returning();
+    return rows.length > 0;
   }
 
-  deleteByChannelId(channelId: string) {
-    return this.drizzle
+  async deleteByChannelId(channelId: string) {
+    const rows = await this.drizzle
       .delete(ProgramPlayHistory)
       .where(eq(ProgramPlayHistory.channelUuid, channelId))
-      .returning()
-      .then((rows) => rows.length);
+      .returning();
+    return rows.length;
   }
 
-  deleteByProgramId(programId: string) {
-    return this.drizzle
+  async deleteByProgramId(programId: string) {
+    const rows = await this.drizzle
       .delete(ProgramPlayHistory)
       .where(eq(ProgramPlayHistory.programUuid, programId))
-      .returning()
-      .then((rows) => rows.length);
+      .returning();
+    return rows.length;
   }
 
-  deleteByChannelIdAfter(channelId: string, after: Date) {
-    return this.drizzle
+  async deleteByChannelIdAfter(channelId: string, after: Date) {
+    const rows = await this.drizzle
       .delete(ProgramPlayHistory)
       .where(
         and(
@@ -125,20 +126,46 @@ export class ProgramPlayHistoryDB {
           gt(ProgramPlayHistory.playedAt, after),
         ),
       )
-      .returning()
-      .then((rows) => rows.length);
+      .returning();
+    return rows.length;
   }
 
   /**
    * Gets the most recent play history entry for a program on a channel.
    * Returns the entry if found, or undefined if no play history exists.
    */
-  async getMostRecentPlay(channelId: string, programId: string) {
-    return this.drizzle.query.programPlayHistory.findFirst({
+  async getMostRecentPlay(
+    channelId: string,
+    programId: string,
+    fillerListId?: string,
+  ) {
+    return await this.drizzle.query.programPlayHistory.findFirst({
       where: (fields, { eq, and }) =>
         and(
           eq(fields.channelUuid, channelId),
           eq(fields.programUuid, programId),
+          isNonEmptyString(fillerListId)
+            ? eq(fields.fillerListId, fillerListId)
+            : undefined,
+        ),
+      orderBy: (fields, { desc }) => desc(fields.playedAt),
+    });
+  }
+
+  async getFillerHistory(channelId: string) {
+    return await this.drizzle.query.programPlayHistory.findMany({
+      where: (fields, { isNotNull, and }) =>
+        and(eq(fields.channelUuid, channelId), isNotNull(fields.fillerListId)),
+      orderBy: (fields, { desc }) => desc(fields.playedAt),
+    });
+  }
+
+  async getFillerLastPlay(channelId: string, fillerId: string) {
+    return await this.drizzle.query.programPlayHistory.findFirst({
+      where: (fields, { eq, and }) =>
+        and(
+          eq(fields.channelUuid, channelId),
+          eq(fields.fillerListId, fillerId),
         ),
       orderBy: (fields, { desc }) => desc(fields.playedAt),
     });

@@ -1,19 +1,22 @@
 import type { SettingsDB } from '@/db/SettingsDB.js';
 import type { Maybe, TupleToUnion } from '@/types/util.js';
 import { getDefaultLogLevel } from '@/util/defaults.js';
-import { isNonEmptyString, isProduction, isTest } from '@/util/index.js';
+import { inConstArr, isNonEmptyString, isTest } from '@/util/index.js';
 import {
   forEach,
   isEmpty,
   isEqual,
-  isString,
   isUndefined,
-  nth,
   toLower,
   trim,
 } from 'lodash-es';
-import path, { join } from 'node:path';
-import type { Bindings, MultiStreamRes, StreamEntry } from 'pino';
+import { join } from 'node:path';
+import type {
+  Bindings,
+  ChildLoggerOptions,
+  MultiStreamRes,
+  StreamEntry,
+} from 'pino';
 import pino, {
   levels,
   multistream,
@@ -23,7 +26,8 @@ import pino, {
 } from 'pino';
 import type { PrettyOptions } from 'pino-pretty';
 import pretty from 'pino-pretty';
-import type ThreadStream from 'thread-stream';
+import { TUNARR_ENV_VARS } from '../env.ts';
+import { RootLoggerWrapper } from './LoggerWrapper.ts';
 import { RollingLogDestination } from './RollingDestination.ts';
 
 export const LogConfigEnvVars = {
@@ -31,8 +35,10 @@ export const LogConfigEnvVars = {
   directory: 'LOG_DIRECTORY',
 } as const;
 
-export function getEnvironmentLogLevel(): Maybe<LogLevels> {
-  const envLevel = trim(toLower(process.env[LogConfigEnvVars.level]));
+export function getEnvironmentLogLevel(envVar?: string): Maybe<LogLevels> {
+  const envLevel = trim(
+    toLower(process.env[envVar ?? TUNARR_ENV_VARS.LOG_LEVEL_ENV_VAR]),
+  );
   if (isNonEmptyString(envLevel)) {
     if (ValidLogLevels.includes(envLevel)) {
       return envLevel as LogLevels;
@@ -61,6 +67,7 @@ export type LogLevels = LevelWithSilent | ExtraLogLevels;
 
 export type GetChildLoggerArgs = {
   caller?: ImportMeta | string;
+  category?: LogCategory;
   className: string;
 } & Bindings;
 
@@ -95,11 +102,16 @@ export function getPrettyStreamOpts(): PrettyOptions {
   };
 }
 
+export const LogCategories = ['streaming', 'scheduling'] as const;
+
+export type LogCategory = TupleToUnion<typeof LogCategories>;
+
 class LoggerFactoryImpl {
   private settingsDB: SettingsDB;
-  private rootLogger: PinoLogger<ExtraLogLevels>;
+  // private rootLogger: PinoLogger<ExtraLogLevels>;
+  private rootLogger!: RootLoggerWrapper;
   private initialized = false;
-  private children: Record<string, Logger> = {};
+  private children: Record<string, WeakRef<Logger>> = {};
   private currentStreams: MultiStreamRes<LogLevels>;
   private roller?: RollingLogDestination;
 
@@ -128,7 +140,7 @@ class LoggerFactoryImpl {
         const { level: newLevel } = this.logLevel;
 
         if (
-          this.rootLogger[symbols.getLevelSym] !== newLevel ||
+          this.rootLogger.logger[symbols.getLevelSym] !== newLevel ||
           !prevSettings ||
           !isEqual(prevSettings.system.logging.logRollConfig, currentSettings)
         ) {
@@ -152,7 +164,7 @@ class LoggerFactoryImpl {
   }
 
   get root() {
-    return this.rootLogger;
+    return this.rootLogger.logger;
   }
 
   get isInitialized() {
@@ -163,45 +175,20 @@ class LoggerFactoryImpl {
     this.roller?.roll();
   }
 
-  // HACK - but this is how we change transports without a restart:
-  // 1. Flush and close the existing transport
-  // 2. Update the transports to the new set
-  // 3. Manually attach them to the pino instance
-  reinitStream() {
-    if (!this.initialized) {
-      return;
-    }
-
-    const currentStream = this.rootLogger[symbols.streamSym] as ThreadStream;
-    currentStream.flushSync();
-    currentStream.end();
-    Object.assign(
-      this.rootLogger[symbols.streamSym],
-      this.currentStreams.clone(this.logLevel.level),
+  child(
+    args: GetChildLoggerArgs,
+    opts?: ChildLoggerOptions<LogLevels>,
+  ): Logger {
+    const { className } = args;
+    opts ??= {};
+    const levelOverride = getEnvironmentLogLevel(
+      `TUNARR_LOG_LEVEL_${className.toUpperCase()}`,
     );
-  }
-
-  child(opts: GetChildLoggerArgs): Logger {
-    const { caller, className, ...rest } = opts;
-
-    if (this.children[className]) {
-      return this.children[className];
+    const child = this.rootLogger.child(args, opts);
+    if (levelOverride) {
+      child.updateStreams(multistream(this.createStreams(levelOverride)));
     }
-
-    const childOpts = {
-      ...rest,
-      file: isProduction
-        ? undefined
-        : caller
-          ? isString(caller)
-            ? caller
-            : getCaller(caller)
-          : undefined,
-      caller: isProduction ? undefined : className, // Don't include this twice in production
-    };
-    const newChild = this.rootLogger.child(childOpts);
-    this.children[className] = newChild;
-    return newChild;
+    return child.logger;
   }
 
   private createLogStreams(level?: LogLevels) {
@@ -212,9 +199,9 @@ class LoggerFactoryImpl {
     return this.currentStreams;
   }
 
-  private createRootLogger() {
+  private createRootLogger(): RootLoggerWrapper {
     const { level } = this.logLevel;
-    return pino(
+    const root = pino(
       {
         level,
         customLevels: {
@@ -224,6 +211,8 @@ class LoggerFactoryImpl {
       },
       this.createLogStreams(),
     );
+
+    return new RootLoggerWrapper(root);
   }
 
   private get logLevel(): {
@@ -249,20 +238,22 @@ class LoggerFactoryImpl {
     }
   }
 
-  private updateLevel(newLevel: LogLevels) {
+  private updateLevel(newLevel: LogLevels, category?: string) {
+    if (category && inConstArr(LogCategories, category)) {
+      this.rootLogger.updateCategoryLevel(
+        newLevel,
+        category as LogCategory,
+        () => this.createLogStreams(newLevel),
+      );
+      return;
+    }
+
     // Reset the level of the root logger and all children
     // We do this by setting the level on the instance directly
     // but then for multistream to work, we have to manually reset the streams
     // by cloning them with new levels.
     this.rootLogger.level = newLevel;
-    Object.assign(
-      this.rootLogger[symbols.streamSym],
-      this.createLogStreams(newLevel),
-    );
-    forEach(this.children, (childLogger) => {
-      childLogger.level = newLevel;
-      Object.assign(childLogger[symbols.streamSym], this.currentStreams);
-    });
+    this.rootLogger.updateStreams(this.createLogStreams(newLevel));
   }
 
   private createStreams(logLevel: LogLevels): StreamEntry<LogLevels>[] {
@@ -318,13 +309,6 @@ class LoggerFactoryImpl {
     return streams;
   }
 }
-
-const getCaller = (callingModule: ImportMeta) => {
-  const parts = callingModule.url.split(path.sep);
-  const submodule = nth(parts, parts.length - 2) ?? '';
-  const last = parts.pop();
-  return join(submodule === 'src' ? '' : submodule, last ?? '');
-};
 
 export const LoggerFactory = new LoggerFactoryImpl();
 

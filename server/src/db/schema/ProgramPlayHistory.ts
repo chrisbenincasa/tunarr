@@ -28,6 +28,7 @@ export const ProgramPlayHistory = sqliteTable(
     index('program_play_history_program_uuid_index').on(table.programUuid),
     index('program_play_history_channel_uuid_index').on(
       table.channelUuid,
+      table.programUuid,
       table.fillerListId,
     ),
     index('program_play_history_played_at_index').on(table.playedAt),

@@ -60,6 +60,7 @@ import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
 import { Timer } from './util/Timer.ts';
 import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
+import type { LoggingDefinition } from './util/logging/loggingDef.ts';
 
 const container = new Container({ autoBindInjectable: true });
 
@@ -88,9 +89,13 @@ const RootModule = new ContainerModule((bind) => {
   bind<Logger>(KEYS.Logger).toDynamicValue((ctx) => {
     const impl =
       ctx.currentRequest.parentRequest?.bindings?.[0]?.implementationType;
+    const loggingDef = impl
+      ? (Reflect.get(impl, 'tunarr:log_def') as LoggingDefinition)
+      : null;
     return LoggerFactory.child({
       className: impl ? (Reflect.get(impl, 'name') as string) : 'Unknown',
       worker: isMainThread ? undefined : true,
+      category: loggingDef?.category,
     });
   });
 

@@ -11,7 +11,7 @@ import type {
   SaveableChannel,
   SubtitlePreference,
 } from '@tunarr/types';
-import { isEmpty, keys, map, reject, some } from 'lodash-es';
+import { isEmpty, isNil, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
 import {
   FormProvider,
@@ -40,7 +40,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     streamMode: channel.streamMode ?? 'hls',
     fillerCollections: channel.fillerCollections ?? [],
     fillerRepeatCooldown:
-      (channel.fillerRepeatCooldown
+      (!isNil(channel.fillerRepeatCooldown)
         ? channel.fillerRepeatCooldown
         : DefaultChannel.fillerRepeatCooldown!) / 1000,
     guideFlexTitle: channel.guideFlexTitle ?? '',
@@ -177,7 +177,7 @@ export function EditChannelForm({
       ...data,
       // Transform this to milliseconds before we send it over
       guideMinimumDuration: data.guideMinimumDuration * 1000,
-      fillerRepeatCooldown: data.fillerRepeatCooldown
+      fillerRepeatCooldown: !isNil(data.fillerRepeatCooldown)
         ? data.fillerRepeatCooldown * 1000
         : undefined,
       guideFlexTitle: isNonEmptyString(data.guideFlexTitle)
