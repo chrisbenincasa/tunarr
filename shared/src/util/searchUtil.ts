@@ -1085,12 +1085,7 @@ export function searchFilterToString(
         return '';
       } else if (input.fieldSpec.value.length === 1) {
         const value = input.fieldSpec.value[0];
-        let repr: string;
-        if (value.includes(' ')) {
-          repr = `"${value}"`;
-        } else {
-          repr = value;
-        }
+        const repr = `"${value}"`;
         const key =
           head(indexFieldToVirtualField[input.fieldSpec.key]) ??
           input.fieldSpec.key;
@@ -1103,7 +1098,7 @@ export function searchFilterToString(
           if (isNumber(x)) {
             components.push(x.toString());
           } else {
-            components.push(x.includes(' ') ? `"${x}"` : x);
+            components.push(`"${x}"`);
           }
         }
         valueString = `[${components.join(', ')}]`;
