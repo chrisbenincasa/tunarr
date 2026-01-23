@@ -12,6 +12,7 @@ import { nodeProtocolPlugin } from '../esbuild/node-protocol.ts';
 
 import { trimStart } from 'lodash-es';
 import { createRequire } from 'node:module';
+import { generateEnvModule } from './generateEnvModule.ts';
 const __require = createRequire(import.meta.url);
 const esbuildPluginPino = __require('esbuild-plugin-pino');
 
@@ -29,17 +30,15 @@ fs.cpSync('src/resources/images', `${DIST_DIR}/resources/images`, {
   recursive: true,
 });
 
-const tunarrKeyVals: Record<string, string> = {};
-for (const [key, val] of Object.entries(process.env)) {
-  if (key.startsWith('TUNARR_') && val) {
-    tunarrKeyVals[key] = val;
-  }
-}
-
-console.debug(format('Building with Tunarr env: %O', tunarrKeyVals));
-
 const isEdgeBuild = process.env.TUNARR_EDGE_BUILD === 'true';
 
+// TODO: Do we want to hard-code any TUNARR_ prefixed environment variables at build time?
+await generateEnvModule([
+  'NODE_ENV',
+  'TUNARR_VERSION',
+  'TUNARR_BUILD',
+  'TUNARR_EDGE_BUILD',
+]);
 const define = {
   'process.env.NODE_ENV': '"production"',
   'process.env.TUNARR_VERSION': `"${trimStart(process.env.TUNARR_VERSION, 'v')}"`,
@@ -48,7 +47,7 @@ const define = {
   'import.meta.url': '__import_meta_url',
 };
 
-console.debug('Inlining environment to bundle: ', define);
+console.debug(format('Building with Tunarr env: %O', define));
 
 console.log('Bundling app...');
 const result = await esbuild.build({

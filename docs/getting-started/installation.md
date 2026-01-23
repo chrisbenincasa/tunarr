@@ -10,19 +10,20 @@ Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tuna
 
 Since Tunarr is currently pre-release. There are a few tags to choose from which have different releae cadences:
 
-- `x.x.x` (versioned): These are release cuts. Because we are pre-1.0.0, breaking changes cause major version bumps and bug fixes are patch version bumps. Once we achieve 1.0.0, we will use proper semver.
-- `latest`: The latest tag points at the most recent release version.
-- `edge`: Pushed every 2 hours off of the "dev" branch. This build can be unstable. **NOTE**: If switching from a versioned/latest build to an edge build, it's recommended to take a backup of your entire Tunarr data directory. Downgrading from "edge" to a previous version is not supported; edge builds can contain non-backwards compatible changes, like database schema changes.
+- `x.x.x` (versioned): These are stable release builds. In general, once a `x.x.0` release is cut (e.g. `1.1.0`), only bug fixes (patch releases) will be made to the release line. Major version bumps happen when backwards incompatible changes are made, particularly to the database.
+- `latest`: The latest tag points at the most recent, stable release build.
+- `x.x.x-dev.x`: These are pre-release build. Most new features are added on pre-releases before merged back to `latest` for a stable release.
+- `dev`: Points to the latest pre-release build. This build can be unstable. **NOTE**: If switching from a versioned/latest build to an dev build, it's recommended to take a backup of your entire Tunarr data directory. Downgrading from "dev" to a previous version is not supported; dev builds can contain non-backwards compatible changes, like database schema changes.
 
 [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr/):
 
 - `chrisbenincasa/tunarr:latest`
-- `chrisbenincasa/tunarr:edge`
+- `chrisbenincasa/tunarr:dev`
 
 [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr):
 
 - `ghcr.io/chrisbenincasa/tunarr:latest`
-- `ghcr.io/chrisbenincasa/tunarr:edge`
+- `ghcr.io/chrisbenincasa/tunarr:dev`
 
 Currently ARM builds are published under separate tags. Take any of the tags above and append `-arm64` to get a Docker image for ARM-based hosts.
 
@@ -40,10 +41,8 @@ TODO! If you run Tunarr on Synology and would like to contribute a guide for Tun
 
 Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 7.1.1 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
 
-Like Docker images, binaries are released with versions as well as a singular 'edge' build which is released bihourly.
-
 * [Latest release](http://github.com/chrisbenincasa/tunarr/releases/latest)
-* [Edge release](https://github.com/chrisbenincasa/tunarr/releases/tag/edge)
+* [Pre-releases](https://github.com/chrisbenincasa/tunarr/releases?q=-dev&expanded=true)
 * [All releases](https://github.com/chrisbenincasa/tunarr/releases)
 
 ## Proxmox

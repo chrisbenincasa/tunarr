@@ -15,7 +15,9 @@
     "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
     "clean": "rimraf --glob ./build/ ./dist/ ./bin/*",
     "debug": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'src/streams' --inspect-wait ./src",
+    "predev": "tsx scripts/generateEnvModule.ts",
     "dev": "cross-env NODE_ENV=development dotenvx run -f .env.development -- tsx watch --heap-snapshot-on-oom --trace-warnings --tsconfig ./tsconfig.build.json --ignore 'build' --ignore 'src/streams' --ignore 'src/**/*.test.ts' ./src/index.ts",
+    "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
@@ -136,10 +138,5 @@
   },
   "meilisearch": {
     "version": "1.30.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3"
-    ]
   }
 }

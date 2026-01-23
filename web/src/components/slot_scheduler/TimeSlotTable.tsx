@@ -17,7 +17,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import { blue, green, orange, pink, purple } from '@mui/material/colors';
-import { prettifySnakeCaseString } from '@tunarr/shared/util';
 import { type SlotFiller } from '@tunarr/types/api';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -45,6 +44,7 @@ import {
 import pluralize from 'pluralize';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
+import { formatSlotOrder } from '../../helpers/slots.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
@@ -286,19 +286,7 @@ export const TimeSlotTable = () => {
       // },
       {
         header: 'Order',
-        accessorFn(originalRow) {
-          switch (originalRow.type) {
-            case 'flex':
-            case 'redirect':
-              return null;
-            case 'movie':
-            case 'show':
-            case 'custom-show':
-            case 'filler':
-            case 'smart-collection':
-              return prettifySnakeCaseString(originalRow.order);
-          }
-        },
+        accessorFn: formatSlotOrder,
         id: 'programOrder',
         Cell({ cell }) {
           const value = cell.getValue<string | null>();

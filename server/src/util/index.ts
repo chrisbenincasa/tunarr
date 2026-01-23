@@ -459,7 +459,7 @@ export function flipMap<K extends string | number, V extends string | number>(
 export const filename = (path: string) => fileURLToPath(path);
 
 export const currentEnv = once(() => {
-  const env = process.env['NODE_ENV'];
+  const env = process.env.NODE_ENV;
   return env ?? 'production';
 });
 

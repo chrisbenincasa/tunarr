@@ -1,9 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "include": [
-        "./src/**/*.ts",
-        "mikro-orm.prod.config.ts",
-        "mikro-orm.base.config.ts"
+        "./src/**/*",
     ],
     "exclude": [
         "./dist/**/*",

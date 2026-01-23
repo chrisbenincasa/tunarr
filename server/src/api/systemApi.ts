@@ -43,6 +43,7 @@ import {
   isPodman,
   isRunningInContainer,
 } from '../util/containerUtil.ts';
+import { getEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { streamFileBackwards } from '../util/fsUtil.ts';
 import { take } from '../util/streams.ts';
 
@@ -457,19 +458,20 @@ export const systemApiRouter: RouterPluginAsyncCallback = async (
       },
     },
     async (_, res) => {
-      const matching = seq.collect(
-        Object.entries(process.env),
-        ([key, val]) => {
-          if (key.startsWith('TUNARR_') && val) {
-            return [key, val] as const;
-          } else if ((key === 'NODE_ENV' || key === 'LOG_LEVEL') && val) {
-            return [key, val] as const;
-          }
-          return;
-        },
-      );
+      const matches = seq.collect(Object.values(TUNARR_ENV_VARS), (key) => {
+        const value = getEnvVar(key);
+        if (!value) return;
+        return [key, value] as const;
+      });
+      const obj = Object.fromEntries(matches);
+      if (process.env.NODE_ENV) {
+        obj['NODE_ENV'] = process.env.NODE_ENV;
+      }
+      if (process.env.LOG_LEVEL) {
+        obj['LOG_LEVEL'] = process.env.LOG_LEVEL;
+      }
 
-      return res.send(Object.fromEntries(matching));
+      return res.send(obj);
     },
   );
 

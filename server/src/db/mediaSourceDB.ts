@@ -352,7 +352,9 @@ export class MediaSourceDB {
       .executeTakeFirstOrThrow();
   }
 
-  async addMediaSource(server: InsertMediaSourceRequest): Promise<string> {
+  async addMediaSource(
+    server: InsertMediaSourceRequest,
+  ): Promise<MediaSourceId> {
     const name = tag<MediaSourceName>(server.name);
     const sendGuideUpdates =
       server.type === 'plex' ? (server.sendGuideUpdates ?? false) : false;

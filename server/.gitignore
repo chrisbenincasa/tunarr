@@ -10,6 +10,5 @@ streams/
 bin/
 
 src/generated/**
-!src/generated/web-imports.d.ts
-!src/generated/.gitkeep
+!src/generated/env.ts
 emby.ts

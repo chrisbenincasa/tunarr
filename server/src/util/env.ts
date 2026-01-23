@@ -1,3 +1,4 @@
+import { BUILD_ENV, BUILD_ENV_KEYS } from '@/generated/env.js';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import type { Nullable } from '../types/util.ts';
 import { isNonEmptyString, parseIntOrNull } from './index.ts';
@@ -55,6 +56,9 @@ export const TUNARR_ENV_VARS = {
 type ValidEnvVar = (typeof TUNARR_ENV_VARS)[keyof typeof TUNARR_ENV_VARS];
 
 export function getEnvVar(name: ValidEnvVar): Nullable<string> {
+  if (BUILD_ENV_KEYS.has(name)) {
+    return BUILD_ENV[name] ?? null;
+  }
   const val = process.env[name];
   return isNonEmptyString(val) ? val : null;
 }

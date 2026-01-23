@@ -57,6 +57,7 @@ import {
 import pluralize from 'pluralize';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
+import { formatSlotOrder } from '../../helpers/slots.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
 import type { SlotViewModel } from '../../model/SlotModels.ts';
 import type { Nullable } from '../../types/util.ts';
@@ -257,18 +258,7 @@ export const RandomSlotTable = () => {
       },
       {
         header: 'Order',
-        accessorFn(originalRow) {
-          switch (originalRow.type) {
-            case 'flex':
-            case 'redirect':
-              return null;
-            case 'movie':
-            case 'show':
-            case 'custom-show':
-            case 'filler':
-              return originalRow.order.split('_').map(capitalize).join(' ');
-          }
-        },
+        accessorFn: formatSlotOrder,
         id: 'programOrder',
         Header() {
           return (
