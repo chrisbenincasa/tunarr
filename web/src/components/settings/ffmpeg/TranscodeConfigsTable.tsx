@@ -19,11 +19,13 @@ import {
 } from '../../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../../helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '../../../hooks/settingsHooks.ts';
+import { useStoreBackedTableSettings } from '../../../hooks/useTableSettings.ts';
 import { DeleteConfirmationDialog } from '../../DeleteConfirmationDialog.tsx';
 
 export const TranscodeConfigsTable = () => {
   const queryClient = useQueryClient();
   const transcodeConfigs = useTranscodeConfigs();
+  const tableSettings = useStoreBackedTableSettings('TranscodeConfigs');
 
   const [confirmDeleteTranscodeConfig, setConfirmDeleteTranscodeConfig] =
     useState<TranscodeConfig | null>(null);
@@ -166,6 +168,7 @@ export const TranscodeConfigsTable = () => {
         </Stack>
       );
     },
+    ...tableSettings,
   });
 
   return (
