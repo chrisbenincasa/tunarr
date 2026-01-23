@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { createFileRoute } from '@tanstack/react-router';
+import { ProgramViewToggleButton } from '../../../components/base/ProgramViewToggleButton.tsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.tsx';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
@@ -29,7 +30,10 @@ function MediaSourceBrowserPage() {
     <Box>
       <Breadcrumbs thisRouteName={mediaSource.name} />
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h4">Media Source: "{mediaSource.name}"</Typography>
+        <Typography variant="h4" sx={{ display: 'inline-flex', width: '100%' }}>
+          <span>Media Source: "{mediaSource.name}"</span>
+          <ProgramViewToggleButton sx={{ ml: { sm: undefined, md: 'auto' } }} />
+        </Typography>
         <Typography>
           Search is currently scoped to this Media Source.
         </Typography>

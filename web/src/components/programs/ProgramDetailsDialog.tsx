@@ -155,7 +155,8 @@ function ProgramDetailsDialogContent({
 
             {visibility.stream_details &&
               programId &&
-              isNonEmptyString(programId) && (
+              isNonEmptyString(programId) &&
+              isTerminalItemType(programType) && (
                 <Tab value="stream_details" label="Stream Info" />
               )}
 

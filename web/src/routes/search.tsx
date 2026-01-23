@@ -10,13 +10,13 @@ export const Route = createFileRoute('/search')({
 
 function RouteComponent() {
   const rootLoaderData = RootRoute.useLoaderData();
-  console.log(rootLoaderData);
   return (
     <Stack gap={2}>
       <SearchInput
         initialSearchFilter={rootLoaderData?.searchRequest.filter ?? undefined}
+        showViewToggle
       />
-      <LibraryProgramGrid />
+      <LibraryProgramGrid disableProgramSelection />
     </Stack>
   );
 }
