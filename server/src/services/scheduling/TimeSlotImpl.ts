@@ -1,5 +1,6 @@
 import type { CondensedChannelProgram, FillerProgram } from '@tunarr/types';
 import type { TimeSlot } from '@tunarr/types/api';
+import { isNil } from 'lodash-es';
 import type { Random } from 'random-js';
 import type { ProgramIterator } from './ProgramIterator.js';
 import { SlotImpl } from './SlotImpl.js';
@@ -21,5 +22,13 @@ export class TimeSlotImpl<
 
   get startTime() {
     return this.slot.startTime;
+  }
+
+  get padMs() {
+    const pad = this.slot.padMs;
+    if (isNil(pad)) {
+      return pad;
+    }
+    return pad > 0 ? pad : undefined;
   }
 }
