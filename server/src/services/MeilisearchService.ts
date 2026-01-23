@@ -409,7 +409,6 @@ export class MeilisearchService implements ISearchService {
       if (this.started) {
         return;
       }
-
       const indexFolderExists = await fileExists(this.dbPath);
 
       // Check for update.

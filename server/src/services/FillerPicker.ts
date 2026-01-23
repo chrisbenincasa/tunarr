@@ -4,17 +4,23 @@ import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
 import constants from '@tunarr/shared/constants';
 import { inject, injectable } from 'inversify';
-import { isEmpty, isNil } from 'lodash-es';
+import { isEmpty } from 'lodash-es';
 import type {
   ChannelFillerShowWithContent,
   ProgramWithRelations,
 } from '../db/schema/derivedTypes.js';
-import type { IFillerPicker } from './interfaces/IFillerPicker.ts';
-import { EmptyFillerPickResult } from './interfaces/IFillerPicker.ts';
-
-const DefaultFillerCooldownMillis = 30 * 60 * 1000;
-const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
-const FiveMinutesMillis = 5 * 60 * 60 * 1000;
+import {
+  FiveMinutesMillis,
+  OneDayMillis,
+} from '../ffmpeg/builder/constants.ts';
+import type {
+  FillerPickResult,
+  IFillerPicker,
+} from './interfaces/IFillerPicker.ts';
+import {
+  DefaultFillerCooldownMillis,
+  EmptyFillerPickResult,
+} from './interfaces/IFillerPicker.ts';
 
 @injectable()
 export class FillerPicker implements IFillerPicker {
@@ -28,9 +34,9 @@ export class FillerPicker implements IFillerPicker {
     channel: Channel,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
-  ) {
+  ): Promise<FillerPickResult> {
     if (isEmpty(fillers)) {
-      return EmptyFillerPickResult;
+      return Promise.resolve(EmptyFillerPickResult);
     }
 
     let pick1: Maybe<ProgramWithRelations>;
@@ -104,11 +110,11 @@ export class FillerPicker implements IFillerPicker {
       }
     }
 
-    return {
-      fillerListId: fillerListId!,
-      filler: isNil(pick1) ? null : pick1,
+    return Promise.resolve({
+      fillerListId: fillerListId ?? null,
+      filler: pick1 ?? null,
       minimumWait,
-    };
+    });
   }
 }
 

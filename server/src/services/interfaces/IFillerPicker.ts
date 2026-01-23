@@ -22,5 +22,7 @@ export interface IFillerPicker {
     channel: Channel,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
-  ): FillerPickResult;
+    now?: number,
+  ): Promise<FillerPickResult>;
 }
+export const DefaultFillerCooldownMillis = 30 * 60 * 1000;
