@@ -37,6 +37,7 @@ import {
 import { useMediaSources } from '../hooks/settingsHooks.ts';
 import { useDayjs } from '../hooks/useDayjs.ts';
 import { useQueryObserver } from '../hooks/useQueryObserver.ts';
+import { useStoreBackedTableSettings } from '../hooks/useTableSettings.ts';
 import type { Nullable } from '../types/util.ts';
 import { RouterIconButtonLink } from './base/RouterButtonLink.tsx';
 
@@ -230,9 +231,12 @@ const MediaSourceLibraryTableActionCell = ({
   );
 };
 
+const TableName = 'MediaSourceLibraryTable';
+
 export const MediaSourceLibraryTable = () => {
   const dayjs = useDayjs();
   const { data: mediaSources } = useMediaSources();
+  const tableSettings = useStoreBackedTableSettings(TableName);
 
   const columns = useMemo<MRT_ColumnDef<MediaSourceLibraryRow>[]>(() => {
     return [
@@ -346,6 +350,7 @@ export const MediaSourceLibraryTable = () => {
       />
     ),
     positionActionsColumn: 'last',
+    ...tableSettings,
   });
 
   return (

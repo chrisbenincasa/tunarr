@@ -56,12 +56,7 @@ const useStore = create<State>()(
               settings: {
                 backendUri: state.settings.backendUri,
                 ui: {
-                  channelTablePagination: {
-                    pageSize: state.settings.ui.channelTablePagination.pageSize,
-                  },
-                  channelTableColumnModel:
-                    state.settings.ui.channelTableColumnModel,
-                  i18n: state.settings.ui.i18n,
+                  ...state.settings.ui,
                 },
               },
             }) satisfies PersistedState,

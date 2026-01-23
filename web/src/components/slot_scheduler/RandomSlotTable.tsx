@@ -28,7 +28,6 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import type { VisibilityState } from '@tanstack/react-table';
 import { seq } from '@tunarr/shared/util';
 import { usePrevious, useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
@@ -59,12 +58,33 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { P, match } from 'ts-pattern';
 import { formatSlotOrder } from '../../helpers/slots.ts';
 import { useSlotName } from '../../hooks/slot_scheduler/useSlotName.ts';
+import {
+  useStoreBackedTableSettings,
+  useTableSettings,
+} from '../../hooks/useTableSettings.ts';
 import type { SlotViewModel } from '../../model/SlotModels.ts';
 import type { Nullable } from '../../types/util.ts';
 
 export const RandomSlotTable = () => {
   const { slotArray, getValues, watch, setValue } = useRandomSlotFormContext();
   const getSlotName = useSlotName();
+  const slotDistribution = getValues('randomDistribution');
+  const tableStateUpdaters = useTableSettings(
+    'SlotEditor',
+    { pageIndex: 0, pageSize: 25 },
+    {
+      weight: slotDistribution === 'weighted',
+      cooldownMs: slotDistribution !== 'none',
+    },
+  );
+  const tableSettings = useStoreBackedTableSettings(
+    'SlotEditor',
+    { pageIndex: 0, pageSize: 25 },
+    {
+      weight: slotDistribution === 'weighted',
+      cooldownMs: slotDistribution !== 'none',
+    },
+  );
 
   const slotIds = useMemo(
     () => uniq(map(slotArray.fields, (slot) => getRandomSlotId(slot))),
@@ -76,23 +96,12 @@ export const RandomSlotTable = () => {
     index: number;
   } | null>(null);
 
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 25,
-  });
-
   const [weightAdjustDialogOpen, toggleWeightAdjustDialogOpen] =
     useToggle(false);
 
   const [currentSlotWarningsIndex, setCurrentSlotWarningsIndex] = useState<
     number | null
   >(null);
-
-  const slotDistribution = getValues('randomDistribution');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    weight: slotDistribution === 'weighted',
-    cooldownMs: slotDistribution !== 'none',
-  });
 
   const [currentSlots, distributionType, lockWeights] = watch([
     'slots',
@@ -162,7 +171,7 @@ export const RandomSlotTable = () => {
         }
       }
 
-      setColumnVisibility((prev) => ({
+      tableStateUpdaters.colVisibilityState.setter((prev) => ({
         ...prev,
         weight: value.randomDistribution === 'weighted',
         cooldownMs: value.randomDistribution !== 'none',
@@ -439,16 +448,8 @@ export const RandomSlotTable = () => {
         </Stack>
       );
     },
-    initialState: {
-      density: 'compact',
-    },
+
     autoResetPageIndex: false,
-    onPaginationChange: setPagination,
-    onColumnVisibilityChange: setColumnVisibility,
-    state: {
-      pagination,
-      columnVisibility,
-    },
     enableSorting: distributionType !== 'none',
     enableRowOrdering: distributionType === 'none',
     muiRowDragHandleProps: ({ table }) => ({
@@ -459,6 +460,11 @@ export const RandomSlotTable = () => {
         }
       },
     }),
+    ...tableSettings,
+    initialState: {
+      ...tableSettings.initialState,
+      density: 'compact',
+    },
   });
 
   const stopBubble: React.DragEventHandler = useCallback((e) => {

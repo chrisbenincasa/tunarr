@@ -8,6 +8,28 @@ export const setBackendUri = (uri: string) =>
     settings.backendUri = uri;
   });
 
+export const setTableColumnModel = (
+  tableName: string,
+  model: Record<string, boolean>,
+) =>
+  useStore.setState(({ settings }) => {
+    settings.ui.tableSettings[tableName] = {
+      ...(settings.ui.tableSettings[tableName] ?? {}),
+      columnModel: model,
+    };
+  });
+
+export const setTablePaginationState = (
+  tableName: string,
+  pagination: PaginationState,
+) =>
+  useStore.setState(({ settings }) => {
+    settings.ui.tableSettings[tableName] = {
+      ...(settings.ui.tableSettings[tableName] ?? {}),
+      pagination,
+    };
+  });
+
 export const setChannelTableColumnModel = (model: Record<string, boolean>) => {
   useStore.setState(({ settings }) => {
     settings.ui.channelTableColumnModel = { ...model };
