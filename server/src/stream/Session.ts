@@ -256,7 +256,7 @@ export abstract class Session<
         TUNARR_ENV_VARS.SESSION_CLEANUP_DELAY_SECONDS,
       );
       if (!isNull(configuredDelay) && configuredDelay > 0) {
-        delay = configuredDelay;
+        delay = configuredDelay * 1000;
       }
     }
     delay ??= this.sessionOptions.cleanupDelayMs ?? 15_000; // Ensure we always end up with a value
