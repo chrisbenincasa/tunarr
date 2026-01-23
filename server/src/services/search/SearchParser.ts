@@ -22,7 +22,6 @@ export class SearchParser {
     ];
 
     const r = this.preprocessSearchFilterInner(filter, mutators);
-    console.log(filter, r);
     return r;
   }
 

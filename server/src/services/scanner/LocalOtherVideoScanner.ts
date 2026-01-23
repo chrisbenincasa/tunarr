@@ -119,16 +119,14 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
           break;
         }
 
-        this.logger.debug('Scanning directory: %s', folder);
-
         if (
           isNonEmptyString(context.pathFilter) &&
-          !basename(folder)
-            .toLowerCase()
-            .startsWith(context.pathFilter.toLowerCase())
+          !context.pathFilter.toLowerCase().startsWith(folder.toLowerCase())
         ) {
           continue;
         }
+
+        this.logger.debug('Scanning directory: %s', folder);
 
         const result = await Result.attemptAsync(() =>
           this.scanFolder(folder, context),
@@ -201,6 +199,13 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
   private async scanFolder(fullPath: string, context: LocalScanContext) {
     const parent = dirname(fullPath);
+
+    if (
+      isNonEmptyString(context.pathFilter) &&
+      !context.pathFilter.toLowerCase().startsWith(fullPath.toLowerCase())
+    ) {
+      return;
+    }
 
     // Find the existing parent folder if it exists
     const parentFolder = await this.localMediaDB.findFolder(
@@ -307,9 +312,15 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
       return;
     }
 
-    await wait();
-
     const fullFilePath = path.join(file.parentPath, file.name);
+    if (
+      isNonEmptyString(context.pathFilter) &&
+      !context.pathFilter.toLowerCase().startsWith(fullFilePath.toLowerCase())
+    ) {
+      return;
+    }
+
+    await wait();
 
     const mediaItem = (await this.getMediaItem(fullFilePath)).getOrThrow();
 
