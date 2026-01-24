@@ -16,6 +16,7 @@ import PQueue from 'p-queue';
 import type { DeepReadonly } from 'ts-essentials';
 import { v4 } from 'uuid';
 import type z from 'zod';
+import { factoryKey } from '../types/inject.ts';
 
 const { isDayjs } = dayjs;
 
@@ -178,7 +179,7 @@ export function scheduleBackupJobs(
         new ScheduledTask(
           BackupTask,
           cronSchedule,
-          container.get<BackupTaskFactory>(BackupTask.KEY)(config),
+          container.get<BackupTaskFactory>(factoryKey(BackupTask))(config),
           undefined,
           {},
         ),

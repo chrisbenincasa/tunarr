@@ -3,6 +3,7 @@ import type { Tag } from '@tunarr/types';
 import type { BackupConfiguration } from '@tunarr/types/schemas';
 import { partition } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
+import { autoFactoryKey } from '../types/inject.ts';
 import type { TaskMetadata } from './Task.ts';
 import { SimpleTask } from './Task.ts';
 import { simpleTaskDef } from './TaskRegistry.ts';
@@ -13,6 +14,7 @@ export type BackupTaskFactory = (
 
 @simpleTaskDef({
   description: 'Performs a backup of Tunarr data per user configuration',
+  injectKey: autoFactoryKey(BackupTask),
 })
 export class BackupTask extends SimpleTask {
   static KEY = Symbol.for(BackupTask.name);
