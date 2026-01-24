@@ -103,7 +103,7 @@ export class SubtitleExtractorTask extends Task2<
     request: SubtitleExtractorTaskRequest,
   ): Promise<void> {
     if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
-      this.logger.debug('Subtitle extraction is not enabled, skipping task.');
+      this.logger.trace('Subtitle extraction is not enabled, skipping task.');
       return;
     }
 
@@ -166,7 +166,16 @@ export class SubtitleExtractorTask extends Task2<
           continue;
         }
 
-        await this.handleProgram(program, mediaSource);
+        const result = await Result.attemptAsync(() =>
+          this.handleProgram(program, mediaSource),
+        );
+        if (result.isFailure()) {
+          this.logger.warn(
+            result.error,
+            'Failed to extract subtitles for program %s',
+            program.id,
+          );
+        }
       }
     }
   }
