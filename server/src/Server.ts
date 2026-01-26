@@ -22,6 +22,7 @@ import type { RouteOptions } from 'fastify/types/route.js';
 import { inject, injectable } from 'inversify';
 import {
   isArray,
+  isBoolean,
   isNumber,
   isString,
   isUndefined,
@@ -217,7 +218,16 @@ export class Server {
     );
 
     this.app.addHook('onResponse', (req, rep, done) => {
-      if (req.routeOptions.config.disableRequestLogging) {
+      if (
+        isBoolean(req.routeOptions.config.disableRequestLogging) &&
+        req.routeOptions.config.disableRequestLogging
+      ) {
+        return;
+      }
+
+      const onlyErrors =
+        req.routeOptions.config.disableRequestLogging === 'only-errors';
+      if (onlyErrors && rep.raw.statusCode < 400) {
         return;
       }
 

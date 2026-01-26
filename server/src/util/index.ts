@@ -113,14 +113,14 @@ export function groupByUniqPropAndMapAsync<
 }
 
 export function groupByUniq<T, Key extends string | number | symbol>(
-  data: T[],
+  data: T[] | ReadonlyArray<T>,
   func: (item: T) => Key,
 ): Record<Key, T> {
   return groupByFunc(data, func);
 }
 
 export function groupByFunc<T, Key extends string | number | symbol, Value>(
-  data: T[],
+  data: T[] | ReadonlyArray<T>,
   func: (val: T) => Key,
   mapper: (val: T) => Value = identity,
 ): Record<Key, Value> {

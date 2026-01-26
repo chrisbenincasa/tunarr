@@ -281,6 +281,13 @@
       "when": 1769031772309,
       "tag": "0039_famous_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1769361500423,
+      "tag": "0040_daffy_bishop",
+      "breakpoints": true
     }
   ]
 }

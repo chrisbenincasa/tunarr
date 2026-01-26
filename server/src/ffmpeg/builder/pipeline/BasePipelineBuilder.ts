@@ -1,4 +1,7 @@
-import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
+import {
+  HardwareAccelerationMode,
+  TranscodeAudioOutputFormat,
+} from '@/db/schema/TranscodeConfig.js';
 import {
   SubtitleMethods,
   type AudioStream,
@@ -29,6 +32,7 @@ import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
 import { HlsConcatOutputFormat } from '@/ffmpeg/builder/options/HlsConcatOutputFormat.js';
+import { HlsDirectOutputFormat } from '@/ffmpeg/builder/options/HlsDirectOutputFormat.js';
 import { HlsOutputFormat } from '@/ffmpeg/builder/options/HlsOutputFormat.js';
 import { LogLevelOption } from '@/ffmpeg/builder/options/LogLevelOption.js';
 import { NoStatsOption } from '@/ffmpeg/builder/options/NoStatsOption.js';
@@ -110,10 +114,12 @@ import {
   OutputTsOffsetOption,
   PipeProtocolOutputOption,
   TimeLimitOutputOption,
+  TransocdeUntilOutputOption,
   VideoBitrateOutputOption,
   VideoBufferSizeOutputOption,
   VideoTrackTimescaleOutputOption,
 } from '../options/OutputOption.ts';
+import { RealtimeBufferSizeInputOption } from '../options/input/RealtimeBufferSizeInputOption.ts';
 import { FrameRateOutputOption } from '../options/output/FrameRateOutputOption.ts';
 import { Pipeline } from './Pipeline.ts';
 import type { PipelineBuilder } from './PipelineBuilder.ts';
@@ -290,7 +296,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       input.addOption(new ConcatHttpReconnectOptions());
     }
 
-    input.addOption(new ReadrateInputOption(this.ffmpegCapabilities, 0));
+    input.addOption(new RealtimeBufferSizeInputOption('15M'));
+    input.addOption(
+      new ReadrateInputOption(this.ffmpegCapabilities, 0 /*, 1.5*/),
+    );
     if (state.metadataServiceName) {
       pipelineSteps.push(
         MetadataServiceNameOutputOption(state.metadataServiceName),
@@ -374,7 +383,18 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.setStreamSeek();
 
     if (this.ffmpegState.duration && +this.ffmpegState.duration > 0) {
-      this.pipelineSteps.push(TimeLimitOutputOption(this.ffmpegState.duration));
+      if (this.ffmpegState.outputFormat.type !== 'hls_direct_v2') {
+        this.pipelineSteps.push(
+          TimeLimitOutputOption(this.ffmpegState.duration),
+        );
+      } else {
+        const seek = this.ffmpegState.start?.asMilliseconds() ?? 0;
+        this.pipelineSteps.push(
+          TransocdeUntilOutputOption(
+            seek + this.ffmpegState.duration.asMilliseconds(),
+          ),
+        );
+      }
     }
 
     if (
@@ -570,6 +590,13 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
     this.pipelineSteps.push(encoder);
 
+    if (
+      this.context.desiredAudioState.audioEncoder ===
+      TranscodeAudioOutputFormat.Copy
+    ) {
+      return;
+    }
+
     if (!isNull(this.context.desiredAudioState.audioChannels)) {
       this.pipelineSteps.push(
         AudioChannelsOutputOption(
@@ -750,12 +777,6 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
   }
 
   protected setOutputFormat() {
-    // this.context.pipelineSteps.push(
-    //   this.context.ffmpegState.outputFormat === OutputFormats.Mkv
-    //     ? MatroskaOutputFormatOption()
-    //     : MpegTsOutputFormatOption(),
-    //   PipeProtocolOutputOption(),
-    // );
     switch (this.ffmpegState.outputFormat.type) {
       case OutputFormatTypes.Mkv:
         this.pipelineSteps.push(MatroskaOutputFormatOption());
@@ -796,11 +817,32 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         }
         break;
       }
+      case OutputFormatTypes.HlsDirectV2: {
+        if (
+          isNonEmptyString(this.ffmpegState.hlsPlaylistPath) &&
+          isNonEmptyString(this.ffmpegState.hlsSegmentTemplate) &&
+          isNonEmptyString(this.ffmpegState.hlsBaseStreamUrl)
+        ) {
+          this.pipelineSteps.push(
+            new HlsDirectOutputFormat(
+              this.ffmpegState.hlsPlaylistPath,
+              this.ffmpegState.hlsSegmentTemplate,
+              this.ffmpegState.hlsBaseStreamUrl,
+              isNil(this.ffmpegState.ptsOffset) ||
+                this.ffmpegState.ptsOffset === 0,
+            ),
+          );
+        }
+        break;
+      }
       case OutputFormatTypes.Dash:
         throw new Error('MPEG-DASH streaming is not yet implemented');
     }
 
-    if (this.ffmpegState.outputFormat.type !== OutputFormatTypes.Hls) {
+    if (
+      this.ffmpegState.outputFormat.type !== OutputFormatTypes.Hls &&
+      this.ffmpegState.outputFormat.type !== OutputFormatTypes.HlsDirectV2
+    ) {
       switch (this.ffmpegState.outputLocation) {
         case OutputLocation.Stdout:
           this.pipelineSteps.push(PipeProtocolOutputOption());

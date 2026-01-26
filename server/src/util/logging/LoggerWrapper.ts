@@ -32,7 +32,6 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
   ): ILoggerWrapper;
 
   updateStreams(streams: MultiStreamRes<LogLevels>) {
-    console.log('update streams ', this.className);
     Object.assign(this.wrappedLogger[symbols.streamSym], streams);
 
     for (const childRef of Object.values(this.children)) {

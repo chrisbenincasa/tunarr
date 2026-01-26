@@ -192,6 +192,9 @@ export class DirectMigrationProvider implements MigrationProvider {
           migration1769099084: makeKyselyMigrationFromSqlFile(
             './sql/0039_famous_bloodscream.sql',
           ),
+          migration1769361518: makeKyselyMigrationFromSqlFile(
+            './sql/0040_daffy_bishop.sql',
+          ),
         },
         wrapWithTransaction,
       ),

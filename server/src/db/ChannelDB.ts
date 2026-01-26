@@ -1524,18 +1524,28 @@ export class ChannelDB implements IChannelDB {
   async loadAllRawLineups(): Promise<Record<string, ChannelAndRawLineup>> {
     return asyncMapToRecord(
       await this.getAllChannels(),
-      async (channel) => ({
-        channel,
-        lineup: jsonSchema.parse(
-          JSON.parse(
-            (
-              await fs.readFile(
-                this.fileSystemService.getChannelLineupPath(channel.uuid),
-              )
-            ).toString('utf-8'),
+      async (channel) => {
+        if (
+          !(await fileExists(
+            this.fileSystemService.getChannelLineupPath(channel.uuid),
+          ))
+        ) {
+          await this.createLineup(channel.uuid);
+        }
+
+        return {
+          channel,
+          lineup: jsonSchema.parse(
+            JSON.parse(
+              (
+                await fs.readFile(
+                  this.fileSystemService.getChannelLineupPath(channel.uuid),
+                )
+              ).toString('utf-8'),
+            ),
           ),
-        ),
-      }),
+        };
+      },
       ({ channel }) => channel.uuid,
     );
   }
