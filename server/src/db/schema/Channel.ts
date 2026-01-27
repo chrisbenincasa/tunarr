@@ -3,6 +3,7 @@ import { inArray, relations } from 'drizzle-orm';
 import {
   check,
   getTableConfig,
+  index,
   integer,
   sqliteTable,
   text,
@@ -18,6 +19,7 @@ import {
 } from './base.ts';
 import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
+import { InfiniteSchedule } from './InfiniteSchedule.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 import { StreamSelectionProfile } from './StreamSelectionProfile.ts';
@@ -51,12 +53,17 @@ export const Channel = sqliteTable(
       () => StreamSelectionProfile.uuid,
       { onDelete: 'set null' },
     ),
+    // Infinite schedule reference - when set, channel uses infinite scheduling
+    infiniteScheduleUuid: text(),
   },
   (table) => [
     uniqueIndex('channel_number_unique').on(table.number),
     check(
       'channel_stream_mode_check',
       inArray(table.streamMode, table.streamMode.enumValues).inlineParams(),
+    ),
+    index('channel_infinite_schedule_uuid_index').on(
+      table.infiniteScheduleUuid,
     ),
   ],
 );
@@ -87,5 +94,9 @@ export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   transcodeConfig: one(TranscodeConfig, {
     fields: [Channel.transcodeConfigId],
     references: [TranscodeConfig.uuid],
+  }),
+  infiniteSchedule: one(InfiniteSchedule, {
+    fields: [Channel.infiniteScheduleUuid],
+    references: [InfiniteSchedule.uuid],
   }),
 }));

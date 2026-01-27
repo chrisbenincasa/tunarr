@@ -8,6 +8,7 @@ export * from './eventSchema.js';
 export * from './lineups.js';
 export * from './miscSchemas.js';
 export * from './programmingSchema.js';
+export * from './scheduleSchemas.js';
 export * from './SearchRequest.js';
 export * from './settingsSchemas.js';
 export * from './subtitleSchema.js';

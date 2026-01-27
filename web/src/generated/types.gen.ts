@@ -3016,6 +3016,7 @@ export type GetChannelsResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     }>;
 };
 
@@ -3083,6 +3084,7 @@ export type CreateChannelV2Data = {
                 allowExternal: boolean;
                 filter?: 'none' | 'forced' | 'default' | 'any';
             }>;
+            scheduleId?: string;
         };
     } | {
         type: 'copy';
@@ -3221,6 +3223,7 @@ export type CreateChannelV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -3380,6 +3383,7 @@ export type GetChannelsByNumberV2Responses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -3445,6 +3449,7 @@ export type PutApiChannelsByIdData = {
             allowExternal: boolean;
             filter?: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
     path: {
         id: string;
@@ -3585,6 +3590,7 @@ export type PutApiChannelsByIdResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        scheduleId?: string;
     };
 };
 
@@ -3783,9 +3789,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -3823,9 +3842,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -3867,9 +3899,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -3909,9 +3954,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -3949,9 +4007,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -3990,9 +4061,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4036,9 +4120,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4113,9 +4210,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4171,9 +4281,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4209,9 +4332,22 @@ export type GetApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4348,9 +4484,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4388,9 +4537,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4432,9 +4594,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4474,9 +4649,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4514,9 +4702,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4561,9 +4762,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4607,9 +4821,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4684,9 +4911,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4742,9 +4982,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4780,9 +5033,22 @@ export type PostApiChannelsByIdProgrammingData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4936,9 +5202,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -4976,9 +5255,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5020,9 +5312,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5062,9 +5367,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5102,9 +5420,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5143,9 +5474,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5189,9 +5533,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5266,9 +5623,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5324,9 +5694,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5362,9 +5745,22 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5865,9 +6261,22 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5905,9 +6314,22 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5949,9 +6371,22 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -5991,9 +6426,22 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6031,9 +6479,22 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6159,9 +6620,22 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6205,9 +6679,22 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6282,9 +6769,22 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6340,9 +6840,22 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6378,9 +6891,22 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6541,9 +7067,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6581,9 +7120,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6731,6 +7283,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    scheduleId?: string;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -6743,9 +7296,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6790,9 +7356,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6840,9 +7419,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6889,9 +7481,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -6935,9 +7540,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -7120,6 +7738,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                         allowExternal: boolean;
                         filter: 'none' | 'forced' | 'default' | 'any';
                     }>;
+                    scheduleId?: string;
                 } | null;
                 isMissing: boolean;
             } | {
@@ -7128,9 +7747,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -7197,9 +7829,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -7241,9 +7886,22 @@ export type GetApiChannelsByIdScheduleResponses = {
                 linkMode?: 'continue' | 'rerun';
                 rerunOverflow?: 'flex' | 'continue';
                 filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
                     fillerListId: string;
                     fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
                 }>;
                 midRoll?: {
                     intervalMs?: number;
@@ -7292,6 +7950,526 @@ export type GetApiChannelsByIdScheduleResponses = {
 };
 
 export type GetApiChannelsByIdScheduleResponse = GetApiChannelsByIdScheduleResponses[keyof GetApiChannelsByIdScheduleResponses];
+
+export type CreateScheduleForChannelData = {
+    body: {
+        name: string;
+        padToMultiple?: number;
+        flexPreference?: 'distribute' | 'end';
+        timeZoneOffset?: number;
+        bufferDays?: number;
+        bufferThresholdDays?: number;
+        enabled?: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots?: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/schedule';
+};
+
+export type CreateScheduleForChannelErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        error: string;
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+    /**
+     * Default Response
+     */
+    409: {
+        error: string;
+    };
+};
+
+export type CreateScheduleForChannelError = CreateScheduleForChannelErrors[keyof CreateScheduleForChannelErrors];
+
+export type CreateScheduleForChannelResponses = {
+    /**
+     * Default Response
+     */
+    201: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    };
+};
+
+export type CreateScheduleForChannelResponse = CreateScheduleForChannelResponses[keyof CreateScheduleForChannelResponses];
 
 export type GetApiChannelsByIdNativePlaybackData = {
     body?: never;
@@ -13135,6 +14313,7 @@ export type PostApiTroubleshootResponses = {
                 allowExternal: boolean;
                 filter: 'none' | 'forced' | 'default' | 'any';
             }>;
+            scheduleId?: string;
         };
         streamSelection?: {
             profileName?: string;
@@ -13266,6 +14445,4092 @@ export type GetApiTrashResponses = {
 };
 
 export type GetApiTrashResponse = GetApiTrashResponses[keyof GetApiTrashResponses];
+
+export type GetSchedulesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/schedules';
+};
+
+export type GetSchedulesResponses = {
+    /**
+     * Default Response
+     */
+    200: Array<{
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    }>;
+};
+
+export type GetSchedulesResponse = GetSchedulesResponses[keyof GetSchedulesResponses];
+
+export type PostApiSchedulesData = {
+    body: {
+        name: string;
+        padToMultiple?: number;
+        flexPreference?: 'distribute' | 'end';
+        timeZoneOffset?: number;
+        bufferDays?: number;
+        bufferThresholdDays?: number;
+        enabled?: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots?: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/schedules';
+};
+
+export type PostApiSchedulesErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+};
+
+export type PostApiSchedulesError = PostApiSchedulesErrors[keyof PostApiSchedulesErrors];
+
+export type PostApiSchedulesResponses = {
+    /**
+     * Default Response
+     */
+    201: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    };
+};
+
+export type PostApiSchedulesResponse = PostApiSchedulesResponses[keyof PostApiSchedulesResponses];
+
+export type GetScheduleByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}';
+};
+
+export type GetScheduleByIdErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetScheduleByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        createdAt?: number | null;
+        updatedAt?: number | null;
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+            channel: {
+                disableFillerOverlay: boolean;
+                duration: number;
+                fallback?: Array<{
+                    artistName?: string;
+                    albumName?: string;
+                    channel?: string;
+                    customOrder?: number;
+                    customShowId?: string;
+                    customShowName?: string;
+                    date?: string;
+                    duration: number;
+                    episode?: number;
+                    episodeIcon?: string;
+                    file?: string;
+                    id: string;
+                    icon?: string;
+                    key?: string;
+                    plexFile?: string;
+                    rating?: string;
+                    externalKey?: string;
+                    season?: number;
+                    seasonIcon?: string;
+                    serverKey?: string;
+                    showIcon?: string;
+                    showTitle?: string;
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    summary?: string;
+                    title?: string;
+                    type: 'movie' | 'episode' | 'track' | 'redirect' | 'custom' | 'flex';
+                    year?: number;
+                }>;
+                fillerCollections?: Array<{
+                    id: string;
+                    weight: number;
+                    cooldownSeconds: number;
+                }>;
+                fillerRepeatCooldown?: number;
+                groupTitle: string;
+                guideFlexTitle?: string;
+                guideMinimumDuration: number;
+                icon: {
+                    path: string;
+                    width: number;
+                    duration: number;
+                    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                    useDefaultIconFallback?: boolean;
+                };
+                id: string;
+                name: string;
+                number: number;
+                offline: {
+                    picture?: string;
+                    soundtrack?: string;
+                    mode: 'pic' | 'clip';
+                };
+                startTime: number;
+                stealth: boolean;
+                transcoding?: {
+                    targetResolution?: {
+                        widthPx: number;
+                        heightPx: number;
+                    };
+                    videoBitrate?: number;
+                    videoBufferSize?: number;
+                };
+                watermark?: {
+                    url?: string;
+                    enabled: boolean;
+                    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+                    width: number;
+                    verticalMargin: number;
+                    horizontalMargin: number;
+                    duration: number;
+                    fixedSize?: boolean;
+                    animated?: boolean;
+                    opacity: number;
+                    fadeConfig?: Array<{
+                        programType?: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
+                        periodMins: number;
+                        leadingEdge?: boolean;
+                    }>;
+                };
+                onDemand: {
+                    enabled: boolean;
+                };
+                programCount: number;
+                streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
+                transcodeConfigId: string;
+                sessions?: Array<{
+                    type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+                    state: string;
+                    numConnections: number;
+                    connections: Array<{
+                        ip: string;
+                        userAgent?: string;
+                        lastHeartbeat?: number;
+                    }>;
+                }>;
+                subtitlesEnabled: boolean;
+                subtitlePreferences?: Array<{
+                    langugeCode: string;
+                    priority: number;
+                    allowImageBased: boolean;
+                    allowExternal: boolean;
+                    filter: 'none' | 'forced' | 'default' | 'any';
+                }>;
+                scheduleId?: string;
+            } | null;
+            isMissing: boolean;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+            customShow: {
+                id: string;
+                name: string;
+                contentCount: number;
+                syncMediaSourceId?: string | null;
+                syncMediaSourceType?: 'plex' | null;
+                syncExternalPlaylistId?: string | null;
+                lastSyncedAt?: number | null;
+                isSyncing: boolean;
+            } | null;
+            isMissing: boolean;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+            show: Show | null;
+            /**
+             * A show that existed in the DB at schedule time, but no longer exists.
+             */
+            missingShow?: {
+                title?: string;
+            };
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+            smartCollection: {
+                uuid: string;
+                name: string;
+                filter?: SearchFilter;
+                filterString?: string;
+                keywords: string;
+            } | null;
+            isMissing: boolean;
+        }>;
+    };
+};
+
+export type GetScheduleByIdResponse = GetScheduleByIdResponses[keyof GetScheduleByIdResponses];
+
+export type UpdateScheduleByIdData = {
+    body?: {
+        name?: string;
+        padToMultiple?: number;
+        flexPreference?: 'distribute' | 'end';
+        timeZoneOffset?: number;
+        bufferDays?: number;
+        bufferThresholdDays?: number;
+        enabled?: boolean;
+        slotPlaybackOrder?: 'ordered' | 'shuffle';
+        slots?: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}';
+};
+
+export type UpdateScheduleByIdErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type UpdateScheduleByIdError = UpdateScheduleByIdErrors[keyof UpdateScheduleByIdErrors];
+
+export type UpdateScheduleByIdResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    };
+};
+
+export type UpdateScheduleByIdResponse = UpdateScheduleByIdResponses[keyof UpdateScheduleByIdResponses];
+
+export type AssignScheduleToChannelsData = {
+    body: {
+        channelsToAssign: Array<string>;
+        channelsToRemove: Array<string>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}/channels';
+};
+
+export type AssignScheduleToChannelsResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
+
+export type AddSlotToScheduleData = {
+    body?: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}/slots';
+};
+
+export type AddSlotToScheduleResponses = {
+    /**
+     * Default Response
+     */
+    201: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    };
+};
+
+export type AddSlotToScheduleResponse = AddSlotToScheduleResponses[keyof AddSlotToScheduleResponses];
+
+export type UpdateScheduleSlotData = {
+    body?: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight?: number;
+        cooldownMs?: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode?: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode?: 'fill' | 'count' | 'duration';
+        fillValue?: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    };
+    path: {
+        id: string;
+        slotId: string;
+    };
+    query?: never;
+    url: '/api/schedules/{id}/slots/{slotId}';
+};
+
+export type UpdateScheduleSlotErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    404: {
+        message: string;
+    };
+};
+
+export type UpdateScheduleSlotError = UpdateScheduleSlotErrors[keyof UpdateScheduleSlotErrors];
+
+export type UpdateScheduleSlotResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'show';
+        showId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'custom-show';
+        customShowId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'filler';
+        fillerListId: string;
+        order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'redirect';
+        redirectChannelId: string;
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'flex';
+    } | {
+        uuid?: string;
+        slotIndex: number;
+        anchorMode?: ('hard' | 'soft' | 'padded') | null;
+        anchorTime?: number | null;
+        anchorDays?: Array<number> | null;
+        weight: number;
+        cooldownMs: number;
+        padMs?: number | null;
+        padToMultiple?: number | null;
+        fillerConfig?: {
+            fillers?: Array<{
+                type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                fillerListId: string;
+                fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                playbackMode: {
+                    type: 'relaxed';
+                } | {
+                    type: 'count';
+                    count: number;
+                } | {
+                    type: 'duration';
+                    durationMs: number;
+                } | {
+                    type: 'random_count';
+                    min?: number;
+                    max?: number;
+                };
+            }>;
+        } | null;
+        fillMode: 'fill' | 'count' | 'duration';
+        fillValue: number;
+        type: 'smart-collection';
+        smartCollectionId: string;
+        slotConfig?: {
+            order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+            direction?: ('asc' | 'desc') | null;
+            seasonFilter?: Array<number> | null;
+            flexPreference?: ('distribute' | 'end') | null;
+        };
+        iterationGroup?: string;
+        linkMode?: 'continue' | 'rerun';
+    };
+};
+
+export type UpdateScheduleSlotResponse = UpdateScheduleSlotResponses[keyof UpdateScheduleSlotResponses];
+
+export type PreviewScheduleData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        startTimeMs?: number;
+        endTimeMs?: number;
+    };
+    url: '/api/schedules/{id}/preview';
+};
+
+export type PreviewScheduleErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type PreviewScheduleError = PreviewScheduleErrors[keyof PreviewScheduleErrors];
+
+export type PreviewScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        items: Array<{
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+            programUuid?: string | null;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
+        }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+        contentPrograms: {
+            [key: string]: {
+                type: 'content';
+                duration: number;
+                icon?: string;
+                id: string;
+                startOffsetMs?: number;
+                program: TerminalProgram;
+            };
+        };
+    };
+};
+
+export type PreviewScheduleResponse = PreviewScheduleResponses[keyof PreviewScheduleResponses];
+
+export type DeleteInfiniteScheduleData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule';
+};
+
+export type DeleteInfiniteScheduleErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type DeleteInfiniteScheduleError = DeleteInfiniteScheduleErrors[keyof DeleteInfiniteScheduleErrors];
+
+export type DeleteInfiniteScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        success: boolean;
+    };
+};
+
+export type DeleteInfiniteScheduleResponse = DeleteInfiniteScheduleResponses[keyof DeleteInfiniteScheduleResponses];
+
+export type GetChannelScheduleData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule';
+};
+
+export type GetChannelScheduleErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type GetChannelScheduleError = GetChannelScheduleErrors[keyof GetChannelScheduleErrors];
+
+export type GetChannelScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    };
+};
+
+export type GetChannelScheduleResponse = GetChannelScheduleResponses[keyof GetChannelScheduleResponses];
+
+export type UpdateInfiniteScheduleData = {
+    body?: {
+        name?: string;
+        padToMultiple?: number;
+        flexPreference?: 'distribute' | 'end';
+        timeZoneOffset?: number;
+        bufferDays?: number;
+        bufferThresholdDays?: number;
+        enabled?: boolean;
+        slotPlaybackOrder?: 'ordered' | 'shuffle';
+        slots?: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule';
+};
+
+export type UpdateInfiniteScheduleErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type UpdateInfiniteScheduleError = UpdateInfiniteScheduleErrors[keyof UpdateInfiniteScheduleErrors];
+
+export type UpdateInfiniteScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        uuid: string;
+        name: string;
+        padToMultiple: number;
+        flexPreference: 'distribute' | 'end';
+        timeZoneOffset: number;
+        bufferDays: number;
+        bufferThresholdDays: number;
+        enabled: boolean;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight: number;
+            cooldownMs: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode: 'fill' | 'count' | 'duration';
+            fillValue: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        createdAt?: number | null;
+        updatedAt?: number | null;
+    };
+};
+
+export type UpdateInfiniteScheduleResponse = UpdateInfiniteScheduleResponses[keyof UpdateInfiniteScheduleResponses];
+
+export type PreviewInfiniteScheduleData = {
+    body: {
+        padToMultiple?: number;
+        flexPreference?: 'distribute' | 'end';
+        timeZoneOffset?: number;
+        slotPlaybackOrder: 'ordered' | 'shuffle';
+        slots?: Array<{
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'show';
+            showId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'custom-show';
+            customShowId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'filler';
+            fillerListId: string;
+            order?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'redirect';
+            redirectChannelId: string;
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'flex';
+        } | {
+            uuid?: string;
+            slotIndex: number;
+            anchorMode?: ('hard' | 'soft' | 'padded') | null;
+            anchorTime?: number | null;
+            anchorDays?: Array<number> | null;
+            weight?: number;
+            cooldownMs?: number;
+            padMs?: number | null;
+            padToMultiple?: number | null;
+            fillerConfig?: {
+                fillers?: Array<{
+                    type: 'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid';
+                    fillerListId: string;
+                    fillerOrder?: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
+                    playbackMode?: {
+                        type: 'relaxed';
+                    } | {
+                        type: 'count';
+                        count: number;
+                    } | {
+                        type: 'duration';
+                        durationMs: number;
+                    } | {
+                        type: 'random_count';
+                        min?: number;
+                        max?: number;
+                    };
+                }>;
+            } | null;
+            fillMode?: 'fill' | 'count' | 'duration';
+            fillValue?: number;
+            type: 'smart-collection';
+            smartCollectionId: string;
+            slotConfig?: {
+                order?: ('next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological') | null;
+                direction?: ('asc' | 'desc') | null;
+                seasonFilter?: Array<number> | null;
+                flexPreference?: ('distribute' | 'end') | null;
+            };
+            iterationGroup?: string;
+            linkMode?: 'continue' | 'rerun';
+        }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule/preview';
+};
+
+export type PreviewInfiniteScheduleErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type PreviewInfiniteScheduleError = PreviewInfiniteScheduleErrors[keyof PreviewInfiniteScheduleErrors];
+
+export type PreviewInfiniteScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        items: Array<{
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+            programUuid?: string | null;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
+        }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+    };
+};
+
+export type PreviewInfiniteScheduleResponse = PreviewInfiniteScheduleResponses[keyof PreviewInfiniteScheduleResponses];
+
+export type RegenerateInfiniteScheduleData = {
+    body?: {
+        fromTimeMs?: number;
+        resetMode?: 'full' | 'buffer' | 'none';
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule/regenerate';
+};
+
+export type RegenerateInfiniteScheduleErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type RegenerateInfiniteScheduleError = RegenerateInfiniteScheduleErrors[keyof RegenerateInfiniteScheduleErrors];
+
+export type RegenerateInfiniteScheduleResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        itemsGenerated: number;
+        fromTimeMs: number;
+        toTimeMs: number;
+    };
+};
+
+export type RegenerateInfiniteScheduleResponse = RegenerateInfiniteScheduleResponses[keyof RegenerateInfiniteScheduleResponses];
+
+export type ResetInfiniteScheduleSeedsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule/reset-seeds';
+};
+
+export type ResetInfiniteScheduleSeedsErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type ResetInfiniteScheduleSeedsError = ResetInfiniteScheduleSeedsErrors[keyof ResetInfiniteScheduleSeedsErrors];
+
+export type ResetInfiniteScheduleSeedsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        slotsReset: number;
+    };
+};
+
+export type ResetInfiniteScheduleSeedsResponse = ResetInfiniteScheduleSeedsResponses[keyof ResetInfiniteScheduleSeedsResponses];
+
+export type GetInfiniteScheduleStateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule/state';
+};
+
+export type GetInfiniteScheduleStateErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type GetInfiniteScheduleStateError = GetInfiniteScheduleStateErrors[keyof GetInfiniteScheduleStateErrors];
+
+export type GetInfiniteScheduleStateResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        scheduleUuid: string;
+        slotStates: Array<{
+            slotUuid: string;
+            slotIndex: number;
+            slotType: string;
+            state: {
+                uuid: string;
+                slotUuid: string;
+                rngSeed: unknown | null;
+                rngUseCount: number;
+                iteratorPosition: number;
+                shuffleOrder: Array<string> | null;
+                lastScheduledAt: number | null;
+                createdAt: number | null;
+                updatedAt: number | null;
+            } | null;
+        }>;
+        bufferEndTimeMs: number | null;
+        itemCount: number;
+    };
+};
+
+export type GetInfiniteScheduleStateResponse = GetInfiniteScheduleStateResponses[keyof GetInfiniteScheduleStateResponses];
+
+export type GetInfiniteScheduleItemsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        fromTimeMs: number;
+        toTimeMs: number;
+    };
+    url: '/api/channels/{id}/infinite-schedule/items';
+};
+
+export type GetInfiniteScheduleItemsErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type GetInfiniteScheduleItemsError = GetInfiniteScheduleItemsErrors[keyof GetInfiniteScheduleItemsErrors];
+
+export type GetInfiniteScheduleItemsResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        items: Array<{
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            programUuid: string;
+            itemType: 'content';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'flex' | 'offline';
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'filler';
+            fillerListId: string;
+            programUuid?: string | null;
+        } | {
+            uuid: string;
+            startTimeMs: number;
+            durationMs: number;
+            sequenceIndex: number;
+            createdAt?: number | null;
+            itemType: 'redirect';
+            redirectChannelId: string;
+        }>;
+        fromTimeMs: number;
+        toTimeMs: number;
+        contentPrograms: {
+            [key: string]: {
+                type: 'content';
+                duration: number;
+                icon?: string;
+                id: string;
+                startOffsetMs?: number;
+                program: TerminalProgram;
+            };
+        };
+    };
+};
+
+export type GetInfiniteScheduleItemsResponse = GetInfiniteScheduleItemsResponses[keyof GetInfiniteScheduleItemsResponses];
+
+export type DeleteInfiniteScheduleSlotData = {
+    body?: never;
+    path: {
+        id: string;
+        slotId: string;
+    };
+    query?: never;
+    url: '/api/channels/{id}/infinite-schedule/slots/{slotId}';
+};
+
+export type DeleteInfiniteScheduleSlotErrors = {
+    /**
+     * Default Response
+     */
+    404: {
+        error: string;
+    };
+    /**
+     * Default Response
+     */
+    501: {
+        error: string;
+    };
+};
+
+export type DeleteInfiniteScheduleSlotError = DeleteInfiniteScheduleSlotErrors[keyof DeleteInfiniteScheduleSlotErrors];
+
+export type DeleteInfiniteScheduleSlotResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        success: boolean;
+    };
+};
+
+export type DeleteInfiniteScheduleSlotResponse = DeleteInfiniteScheduleSlotResponses[keyof DeleteInfiniteScheduleSlotResponses];
 
 export type GetApiSmartCollectionsData = {
     body?: never;

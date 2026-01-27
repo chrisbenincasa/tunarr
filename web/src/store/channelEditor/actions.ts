@@ -1,4 +1,5 @@
-import { unwrapNil } from '@/helpers/util.ts';
+import { addIndexesAndCalculateOffsets, unwrapNil } from '@/helpers/util.ts';
+import { ApiProgramMinter } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
   type Channel,
@@ -17,14 +18,13 @@ import {
   isNil,
   isUndefined,
   last,
-  map,
   mapValues,
   omitBy,
   sumBy,
   tail,
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
-import { Imported } from '../../helpers/constants.ts';
+import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
 import {
   type AddedMedia,
   type UIChannelProgram,
@@ -50,24 +50,6 @@ export const resetChannelEditorState = () =>
 
     return newState;
   });
-
-function addIndexesAndCalculateOffsets<T extends { duration: number }>(
-  items: T[],
-  firstOffset: number = 0,
-  firstIndex: number = 0,
-): (T & UIIndex & { startTimeOffset: number })[] {
-  let runningOffset = firstOffset;
-  return map(items, (item, index) => {
-    const newItem = {
-      ...item,
-      originalIndex: firstIndex + index,
-      uiIndex: firstIndex + index,
-      startTimeOffset: runningOffset,
-    };
-    runningOffset += item.duration;
-    return newItem;
-  });
-}
 
 function updateProgramList(
   state: Draft<State>,

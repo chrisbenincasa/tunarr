@@ -61,6 +61,7 @@ export const dbChannelToApiChannel = ({
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,
+    scheduleId: channel.infiniteScheduleUuid ?? undefined,
   };
 };
 

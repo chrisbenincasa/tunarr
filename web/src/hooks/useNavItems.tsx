@@ -1,6 +1,7 @@
 import type { router } from '@/router.ts';
 import { t } from '@lingui/core/macro';
 import {
+  CalendarMonth,
   Computer,
   Delete,
   Home,
@@ -91,6 +92,11 @@ export const useNavItems = () => {
             icon: <Delete />,
           },
         ],
+      },
+      {
+        name: 'Scheduling',
+        path: '/schedules',
+        icon: <CalendarMonth />,
       },
       {
         name: t`Sources`,

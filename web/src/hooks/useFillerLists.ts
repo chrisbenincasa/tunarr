@@ -13,8 +13,6 @@ import useStore from '../store/index.ts';
 export const fillerListsQuery = () =>
   queryOptions({
     ...getApiFillerListsOptions(),
-    // queryKey: ['fillers'],
-    // queryFn: () => apiClient.getFillerLists(),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -26,9 +24,6 @@ export const useFillerLists = (
 
 export const fillerListQuery = (id: string) =>
   getApiFillerListsByIdOptions({ path: { id } });
-// makeQueryOptions(['fillers', id], () =>
-//   apiClient.getFillerList({ params: { id } }),
-// );
 
 export const useCurrentFillerList = () =>
   useStore((s) => s.fillerListEditor.currentEntity);

@@ -8,6 +8,7 @@ import { ContainerModule } from 'inversify';
 import type { Kysely } from 'kysely';
 import { DBAccess } from './DBAccess.ts';
 import { FillerDB } from './FillerListDB.ts';
+import { InfiniteScheduleDB } from './InfiniteScheduleDB.ts';
 import { ProgramPlayHistoryDB } from './ProgramPlayHistoryDB.ts';
 import { BasicChannelRepository } from './channel/BasicChannelRepository.ts';
 import { ChannelConfigRepository } from './channel/ChannelConfigRepository.ts';
@@ -83,6 +84,7 @@ const DBModule = new ContainerModule(({ bind }) => {
     (ctx) => () => ctx.get<DrizzleDBAccess>(KEYS.DrizzleDB),
   );
   bind(KEYS.FillerListDB).to(FillerDB).inSingletonScope();
+  bind(KEYS.InfiniteScheduleDB).to(InfiniteScheduleDB).inSingletonScope();
   bind(ProgramPlayHistoryDB).toSelf().inSingletonScope();
 
   bind(ProgramGroupingMinter).toSelf().inSingletonScope();

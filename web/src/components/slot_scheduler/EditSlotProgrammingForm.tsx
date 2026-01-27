@@ -33,9 +33,7 @@ type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
   onUnlinkFromGroup?: (groupId: string) => void;
 };
 
-export const EditSlotProgrammingForm = <
-  SlotT extends { type: ProgramOptionType },
->({
+export const EditSlotProgrammingForm = ({
   newSlotForType,
   allSlots,
   onLinkSourceSlot,
@@ -69,6 +67,27 @@ export const EditSlotProgrammingForm = <
     reset((prev) => ({ ...prev, ...slot }));
   };
 
+  const showIdController = useController({ control: control, name: 'showId' });
+
+  const onShowChange = useCallback(
+    (show: Show) => {
+      showIdController.field.onChange(show.uuid);
+      setValue('show', show);
+      setValue('seasonFilter', []);
+    },
+    [setValue, showIdController.field],
+  );
+
+  const onSeasonFilterChange = useCallback(
+    (seasonFilter: Season[]) => {
+      setValue(
+        'seasonFilter',
+        seasonFilter.map((s) => s.index),
+      );
+    },
+    [setValue],
+  );
+
   return (
     <>
       <FormControl fullWidth>
@@ -98,7 +117,17 @@ export const EditSlotProgrammingForm = <
         <SmartCollectionSlotProgrammingForm />
       )}
       {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
-      {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
+      {typeSelectValue === 'show' && (
+        <>
+          <ShowSearchSlotProgrammingForm
+            show={show}
+            seasonFilter={seasonFilter}
+            onSeasonFilterChange={onSeasonFilterChange}
+            onShowChange={onShowChange}
+          />
+          <SlotOrderFormControl />
+        </>
+      )}
       {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
       {typeSelectValue === 'movie' && <SlotOrderFormControl />}
 

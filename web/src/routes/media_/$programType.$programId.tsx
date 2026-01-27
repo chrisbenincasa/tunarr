@@ -2,7 +2,7 @@ import { ProgramPage } from '@/pages/media/ProgramPage';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { isGroupingItemType, isTerminalItemType } from '@tunarr/types';
 
-export const Route = createFileRoute('/media_/$programType/$programId')({
+export const Route = createFileRoute('/media/$programType/$programId')({
   // eslint-disable-next-line @typescript-eslint/require-await
   beforeLoad: async ({ params }) => {
     const { programType, programId } = params;

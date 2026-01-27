@@ -34,6 +34,7 @@
     "vite.config.ts",
     "vitest.config.ts",
     "./src/router.d.ts",
+    "./src/components/slot_scheduler/LegacySlotFillerEditor.tsx",
   ],
   "include": [
     "./src/**/*.ts",

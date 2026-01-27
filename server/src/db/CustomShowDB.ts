@@ -16,7 +16,7 @@ import { v4 } from 'uuid';
 import { InjectLogger } from '../util/inject.ts';
 import { Logger } from '../util/logging/LoggerFactory.ts';
 import { BasicProgramRepository } from './program/BasicProgramRepository.ts';
-import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
+import { CustomShow, NewCustomShow } from './schema/CustomShow.ts';
 import {
   CustomShowContent,
   type NewCustomShowContent,
@@ -25,6 +25,8 @@ import { DB } from './schema/db.ts';
 import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { Program } from './schema/Program.ts';
+
+export type CustomShowWithContentCount = CustomShow & { contentCount: number };
 
 @injectable()
 export class CustomShowDB {
@@ -55,7 +57,7 @@ export class CustomShowDB {
     });
   }
 
-  async getShows(ids: string[]) {
+  async getShows(ids: string[]): Promise<Array<CustomShowWithContentCount>> {
     if (ids.length === 0) {
       return [];
     }
