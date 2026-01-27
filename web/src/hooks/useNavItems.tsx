@@ -1,5 +1,6 @@
 import type { router } from '@/router.ts';
 import {
+  CalendarMonth,
   Computer,
   Delete,
   Home,
@@ -90,6 +91,11 @@ export const useNavItems = () => {
             icon: <Delete />,
           },
         ],
+      },
+      {
+        name: 'Scheduling',
+        path: '/schedules',
+        icon: <CalendarMonth />,
       },
       {
         name: 'Sources',

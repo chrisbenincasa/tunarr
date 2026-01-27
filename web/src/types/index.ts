@@ -17,6 +17,8 @@ export type UIIndex = { uiIndex: number; originalIndex: number };
 
 export type MaybeHasStartTimeOffset = { startTimeOffset?: number };
 
+export type MaybeHasStartTime = { startTime?: number };
+
 export type UICondensedChannelProgram<
   T extends CondensedChannelProgram = CondensedChannelProgram,
 > = T & UIIndex & Required<MaybeHasStartTimeOffset>;
@@ -56,7 +58,7 @@ export const isUICondensedContentBackedProgram = (
 // fields. We generalize here so we can effectively downcast UIChannelProgram
 // to more specific program types when doing list operations.
 export type UIChannelProgram<T extends ChannelProgram = ChannelProgram> =
-  Prettify<T & UIIndex & MaybeHasStartTimeOffset>;
+  Prettify<T & UIIndex & MaybeHasStartTimeOffset & MaybeHasStartTime>;
 
 export type UIChannelProgramWithOffset<
   T extends ChannelProgram = ChannelProgram,

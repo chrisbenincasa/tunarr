@@ -24,7 +24,7 @@ function defaultNewChannel(num: number, transcodeConfigId: string): Channel {
 // TODO: Share this schema between new and edit routes
 const editChannelParamsSchema = z.object({
   tab: z
-    .union([z.literal('flex'), z.literal('epg'), z.literal('ffmpeg')])
+    .enum(['flex', 'epg', 'ffmpeg', 'programming'])
     .optional()
     .catch(undefined),
 });

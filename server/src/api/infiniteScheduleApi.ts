@@ -1,0 +1,843 @@
+import type {
+  InfiniteScheduleDB,
+  InfiniteScheduleWithSlotsAndState,
+} from '@/db/InfiniteScheduleDB.js';
+import { KEYS } from '@/types/inject.js';
+import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
+import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import {
+  BaseErrorSchema,
+  BasicIdParamSchema,
+  CreateInfiniteScheduleRequestSchema,
+  GeneratedScheduleItemSchema,
+  InfiniteScheduleGenerationResponseSchema,
+  InfiniteSchedulePreviewRequestSchema,
+  MaterializedScheduleSchema,
+  ScheduleAssignChannelsResultSchema,
+  ScheduleSchema,
+  ScheduleSlotSchema,
+  UpdateInfiniteScheduleRequestSchema,
+} from '@tunarr/types/api';
+import { SlotStateSchema } from '@tunarr/types/schemas';
+import dayjs from 'dayjs';
+import { isNil, uniq } from 'lodash-es';
+import { v4 } from 'uuid';
+import { z } from 'zod/v4';
+import { MaterializeScheduleCommand } from '../commands/MaterializeScheduleCommand.ts';
+import { MaterializeScheduleGeneratedItems } from '../commands/scheduling/MaterializeScheduleGeneratedItems.ts';
+import { MaterializeScheduleGenerationResult } from '../commands/scheduling/MaterializeScheduleGenerationResult.ts';
+import { container } from '../container.ts';
+import { InfiniteScheduleGenerator } from '../services/scheduling/InfiniteScheduleGenerator.ts';
+import { groupByUniq } from '../util/index.ts';
+import {
+  generatedScheduleItemToDto,
+  scheduleDaoToDto,
+  slotDaoToDto,
+} from './converters/scheduleConverters.ts';
+
+const ChannelIdParamSchema = z.object({
+  id: z.string(),
+});
+
+const SlotIdParamSchema = z.object({
+  id: z.string(),
+  slotId: z.string(),
+});
+
+export const infiniteScheduleApi: RouterPluginAsyncCallback = async (
+  fastify,
+  // eslint-disable-next-line @typescript-eslint/require-await
+) => {
+  const logger = LoggerFactory.child({
+    caller: import.meta,
+    className: 'InfiniteScheduleApi',
+  });
+
+  fastify.addHook('onError', (req, _, error, done) => {
+    logger.error({
+      error,
+      method: req.routeOptions.method,
+      url: req.routeOptions.url,
+    });
+    done();
+  });
+
+  const getInfiniteScheduleDB = () =>
+    container.get<InfiniteScheduleDB>(KEYS.InfiniteScheduleDB);
+
+  const getGenerator = () =>
+    container.get<InfiniteScheduleGenerator>(InfiniteScheduleGenerator);
+
+  fastify.get(
+    '/schedules',
+    {
+      schema: {
+        operationId: 'getSchedules',
+        tags: ['Schedules'],
+        response: {
+          200: ScheduleSchema.array(),
+        },
+      },
+    },
+    async (req, res) => {
+      const schedules = await req.serverCtx.infiniteScheduleDB.getSchedules();
+      return res.send(schedules.map(scheduleDaoToDto));
+    },
+  );
+
+  fastify.get(
+    '/schedules/:id',
+    {
+      schema: {
+        operationId: 'getScheduleById',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        response: {
+          200: MaterializedScheduleSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const schedule = await container
+        .get<MaterializeScheduleCommand>(MaterializeScheduleCommand)
+        .execute({ scheduleId: req.params.id });
+      if (!schedule) {
+        return res.status(404).send();
+      }
+      return res.send(schedule);
+    },
+  );
+
+  fastify.post(
+    '/schedules',
+    {
+      schema: {
+        body: CreateInfiniteScheduleRequestSchema,
+        response: {
+          201: ScheduleSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await req.serverCtx.infiniteScheduleDB.createSchedule(
+        req.body,
+      );
+      return res.status(201).send(scheduleDaoToDto(result));
+    },
+  );
+
+  fastify.put(
+    '/schedules/:id',
+    {
+      schema: {
+        operationId: 'updateScheduleById',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        body: UpdateInfiniteScheduleRequestSchema,
+        response: {
+          200: ScheduleSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      const result = await req.serverCtx.infiniteScheduleDB.updateSchedule(
+        req.params.id,
+        req.body,
+      );
+      if (!result) {
+        return res.status(404).send();
+      }
+      return res.status(200).send(scheduleDaoToDto(result));
+    },
+  );
+
+  fastify.put(
+    '/schedules/:id/channels',
+    {
+      schema: {
+        operationId: 'assignScheduleToChannels',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        body: z.object({
+          channelsToAssign: z.uuid().array(),
+          channelsToRemove: z.uuid().array(),
+        }),
+        repsonse: {
+          200: ScheduleAssignChannelsResultSchema,
+          400: BaseErrorSchema,
+          404: BaseErrorSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const uniqAdds = uniq(req.body.channelsToAssign);
+      const uniqRemoves = uniq(req.body.channelsToRemove);
+      const inBoth = uniqAdds.some((add) => uniqRemoves.includes(add));
+      if (inBoth) {
+        return res.status(400).send({
+          message: 'Cannot specify add and remove for the same channel ID',
+        });
+      }
+
+      const schedule = await req.serverCtx.infiniteScheduleDB.getSchedule(
+        req.params.id,
+      );
+      if (!schedule) {
+        return res.status(404).send({
+          message: `Schedule ID ${req.params.id} does not exist`,
+        });
+      }
+
+      const result = await req.serverCtx.infiniteScheduleDB.assignChannels(
+        req.params.id,
+        uniqAdds,
+        uniqRemoves,
+      );
+
+      return res.send(result);
+    },
+  );
+
+  fastify.post(
+    '/schedules/:id/slots',
+    {
+      schema: {
+        operationId: 'addSlotToSchedule',
+        description: 'Add a new slot to the given schedule',
+        tags: ['Scnedules'],
+        params: BasicIdParamSchema,
+        body: ScheduleSlotSchema,
+        response: {
+          201: ScheduleSlotSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const slot = await req.serverCtx.infiniteScheduleDB.addSlot(
+        req.params.id,
+        req.body,
+      );
+      return res.status(201).send(slotDaoToDto(slot));
+    },
+  );
+
+  fastify.put(
+    '/schedules/:id/slots/:slotId',
+    {
+      schema: {
+        operationId: 'updateScheduleSlot',
+        tags: ['Schedules'],
+        params: z.object({
+          ...BasicIdParamSchema.shape,
+          slotId: z.uuid(),
+        }),
+        body: ScheduleSlotSchema,
+        response: {
+          200: ScheduleSlotSchema,
+          400: BaseErrorSchema,
+          404: BaseErrorSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const slot = await req.serverCtx.infiniteScheduleDB.getSlot(
+        req.params.slotId,
+      );
+      if (!slot) {
+        return res
+          .status(404)
+          .send({ message: `Slot ID ${req.params.slotId} not found` });
+      }
+
+      if (slot.scheduleUuid !== req.params.id) {
+        return res
+          .status(400)
+          .send({ message: 'Cannot update schedule ID for slot' });
+      }
+
+      const updatedSlot = await req.serverCtx.infiniteScheduleDB.updateSlot(
+        req.params.slotId,
+        req.body,
+      );
+      return res.send(slotDaoToDto(updatedSlot));
+    },
+  );
+
+  fastify.post(
+    '/schedules/:id/preview',
+    {
+      schema: {
+        operationId: 'previewSchedule',
+        description: 'Preview the given schedule',
+        tags: ['Schedules'],
+        params: BasicIdParamSchema,
+        querystring: z.object({
+          startTimeMs: z.coerce
+            .number()
+            .int()
+            .positive()
+            .default(() => +dayjs().startOf('day')),
+          endTimeMs: z.coerce
+            .number()
+            .int()
+            .positive()
+            .default(() => +dayjs().add(1, 'day').startOf('day')),
+        }),
+        response: {
+          200: InfiniteScheduleGenerationResponseSchema,
+          400: BaseErrorSchema,
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      if (req.query.endTimeMs < req.query.startTimeMs) {
+        return res
+          .status(400)
+          .send({ message: 'End time cannot be less than start time' });
+      }
+
+      const schedule = await req.serverCtx.infiniteScheduleDB.getSchedule(
+        req.params.id,
+      );
+      if (!schedule) {
+        return res.status(404).send();
+      }
+      const result = await getGenerator().preview(
+        {
+          ...schedule,
+          state: null,
+          slots: schedule.slots.map((s) => ({ ...s, state: null })),
+        },
+        req.query.startTimeMs,
+        req.query.endTimeMs,
+      );
+
+      const programs = await container
+        .get<MaterializeScheduleGenerationResult>(
+          MaterializeScheduleGenerationResult,
+        )
+        .run({ result });
+
+      return res.send({
+        items: result.items.map(generatedScheduleItemToDto),
+        contentPrograms: groupByUniq(programs, (p) => p.id!),
+        fromTimeMs: req.query.startTimeMs,
+        toTimeMs: req.query.endTimeMs,
+      });
+    },
+  );
+
+  /**
+   * Get infinite schedule for a channel
+   */
+  fastify.get(
+    '/channels/:id/infinite-schedule',
+    {
+      schema: {
+        operationId: 'getChannelSchedule',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        response: {
+          200: ScheduleSchema,
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannel(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      return res.send(scheduleDaoToDto(schedule));
+    },
+  );
+
+  /**
+   * Create infinite schedule for a channel
+   */
+  fastify.post(
+    '/channels/:id/schedule',
+    {
+      schema: {
+        operationId: 'createScheduleForChannel',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        body: CreateInfiniteScheduleRequestSchema,
+        response: {
+          201: ScheduleSchema,
+          400: z.object({ error: z.string() }),
+          404: z.object({ error: z.string() }),
+          409: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+
+      // Check if schedule already exists
+      const existingSchedule = await db.getScheduleByChannel(channel.uuid);
+      if (existingSchedule) {
+        return res
+          .status(409)
+          .send({ error: 'Infinite schedule already exists for this channel' });
+      }
+
+      const newSchedule = await db.createSchedule({
+        ...req.body,
+      });
+
+      // Link channel → schedule in both mechanisms
+      await db.assignScheduleToChannel(channel.uuid, newSchedule.uuid);
+
+      return res.status(201).send(scheduleDaoToDto(newSchedule));
+    },
+  );
+
+  /**
+   * Update infinite schedule for a channel
+   */
+  fastify.put(
+    '/channels/:id/infinite-schedule',
+    {
+      schema: {
+        operationId: 'updateInfiniteSchedule',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        body: UpdateInfiniteScheduleRequestSchema,
+        response: {
+          200: ScheduleSchema,
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannel(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const updatedSchedule = await db.updateSchedule(schedule.uuid, req.body);
+      if (!updatedSchedule) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+      return res.send(scheduleDaoToDto(updatedSchedule));
+    },
+  );
+
+  /**
+   * Delete infinite schedule for a channel
+   */
+  fastify.delete(
+    '/channels/:id/infinite-schedule',
+    {
+      schema: {
+        operationId: 'deleteInfiniteSchedule',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        response: {
+          200: z.object({ success: z.boolean() }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannel(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const success = await db.deleteSchedule(schedule.uuid);
+      return res.send({ success });
+    },
+  );
+
+  /**
+   * Preview schedule generation without persisting
+   */
+  fastify.post(
+    '/channels/:id/infinite-schedule/preview',
+    {
+      schema: {
+        operationId: 'previewInfiniteSchedule',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        body: InfiniteSchedulePreviewRequestSchema,
+        response: {
+          200: z.object({
+            items: z.array(GeneratedScheduleItemSchema),
+            fromTimeMs: z.number(),
+            toTimeMs: z.number(),
+          }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const generator = getGenerator();
+
+      // Create a temporary schedule structure for preview
+      const scheduleForPreview = {
+        uuid: v4(),
+        name: 'Preview Schedule',
+        padToMultiple: req.body.padToMultiple ?? 0,
+        flexPreference: req.body.flexPreference ?? ('end' as const),
+        timeZoneOffset: req.body.timeZoneOffset ?? 0,
+        bufferDays: 7,
+        bufferThresholdDays: 2,
+        enabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        slotPlaybackOrder: req.body.slotPlaybackOrder,
+        state: null,
+        slots: (req.body.slots ?? []).map((slot, index) => ({
+          uuid: slot.uuid ?? `preview-slot-${index}`,
+          scheduleUuid: 'preview',
+          slotIndex: slot.slotIndex ?? index,
+          slotType: slot.type,
+          showId: 'showId' in slot ? slot.showId : null,
+          customShowId: 'customShowId' in slot ? slot.customShowId : null,
+          fillerListId: 'fillerListId' in slot ? slot.fillerListId : null,
+          redirectChannelId:
+            'redirectChannelId' in slot ? slot.redirectChannelId : null,
+          smartCollectionId:
+            'smartCollectionId' in slot ? slot.smartCollectionId : null,
+          slotConfig:
+            'slotConfig' in slot && slot.slotConfig !== undefined
+              ? slot.slotConfig
+              : null,
+          anchorTime: slot.anchorTime ?? null,
+          anchorMode: slot.anchorMode ?? null,
+          anchorDays: slot.anchorDays ?? null,
+          weight: slot.weight ?? 1,
+          cooldownMs: slot.cooldownMs ?? 0,
+          padMs: slot.padMs ?? null,
+          padToMultiple: slot.padToMultiple ?? null,
+          fillerConfig: slot.fillerConfig ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          state: null,
+          fillMode: slot.fillMode,
+          fillValue: slot.fillValue ?? null,
+        })),
+      } satisfies InfiniteScheduleWithSlotsAndState;
+
+      const result = await generator.preview(
+        scheduleForPreview,
+        req.body.fromTimeMs,
+        req.body.toTimeMs,
+      );
+
+      return res.send({
+        items: result.items.map(generatedScheduleItemToDto),
+        fromTimeMs: result.fromTimeMs,
+        toTimeMs: result.toTimeMs,
+      });
+    },
+  );
+
+  /**
+   * Force regenerate the schedule buffer
+   */
+  fastify.post(
+    '/channels/:id/infinite-schedule/regenerate',
+    {
+      schema: {
+        operationId: 'regenerateInfiniteSchedule',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        body: z.object({
+          fromTimeMs: z.number().optional(),
+          /**
+           * 'full'   – delete generated items + all slot/schedule state, then
+           *            regenerate from now.  Resets playback position entirely.
+           * 'buffer' – delete generated items only, keep slot states, then
+           *            regenerate from now.  Preserves iterator position.
+           * 'none'   – keep existing items, just generate more (default).
+           */
+          resetMode: z.enum(['full', 'buffer', 'none']).default('none'),
+        }),
+        response: {
+          200: z.object({
+            itemsGenerated: z.number(),
+            fromTimeMs: z.number(),
+            toTimeMs: z.number(),
+          }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+
+      // Verify the channel has a schedule
+      const hasSchedule = await db.getScheduleByChannel(channel.uuid);
+      if (isNil(hasSchedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const { resetMode } = req.body;
+      if (resetMode === 'full') {
+        await db.fullResetSchedule(channel.uuid);
+      } else if (resetMode === 'buffer') {
+        await db.clearGeneratedItems(channel.uuid);
+      }
+
+      // For full/buffer resets, always start from now (state was cleared or
+      // is being discarded).  For 'none', respect the caller-supplied fromTimeMs.
+      const fromTimeMs = resetMode !== 'none' ? undefined : req.body.fromTimeMs;
+
+      const generator = getGenerator();
+      const result = await generator.generate(channel.uuid, fromTimeMs);
+
+      // Flush the guide cache for this channel so the freshly-generated items
+      // are visible immediately without waiting for the next scheduled refresh.
+      try {
+        await req.serverCtx.guideService.updateCachedChannel(
+          channel.uuid,
+          true,
+        );
+      } catch (err) {
+        logger.error(
+          err,
+          'Failed to refresh guide cache after regenerate for channel %s',
+          channel.uuid,
+        );
+      }
+
+      return res.send({
+        itemsGenerated: result.items.length,
+        fromTimeMs: result.fromTimeMs,
+        toTimeMs: result.toTimeMs,
+      });
+    },
+  );
+
+  /**
+   * Reset all RNG seeds for a schedule
+   */
+  fastify.post(
+    '/channels/:id/infinite-schedule/reset-seeds',
+    {
+      schema: {
+        operationId: 'resetInfiniteScheduleSeeds',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        response: {
+          200: z.object({ slotsReset: z.number() }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+
+      // Verify the channel has a schedule
+      const hasSchedule = await db.getScheduleByChannel(channel.uuid);
+      if (isNil(hasSchedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const slotsReset = await db.resetSlotSeeds(channel.uuid);
+      return res.send({ slotsReset });
+    },
+  );
+
+  /**
+   * Get slot states for debugging
+   */
+  fastify.get(
+    '/channels/:id/infinite-schedule/state',
+    {
+      schema: {
+        operationId: 'getInfiniteScheduleState',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        response: {
+          200: z.object({
+            scheduleUuid: z.string(),
+            slotStates: z.array(SlotStateSchema),
+            bufferEndTimeMs: z.number().nullable(),
+            itemCount: z.number(),
+          }),
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannelWithState(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const bufferEndTimeMs = await db.getBufferEndTime(channel.uuid);
+      const itemCount = await db.countGeneratedItems(channel.uuid);
+
+      return res.send({
+        scheduleUuid: schedule.uuid,
+        slotStates: schedule.slots.map((slot) => ({
+          slotUuid: slot.uuid,
+          slotIndex: slot.slotIndex,
+          slotType: slot.slotType,
+          state: slot.state
+            ? {
+                uuid: slot.state.uuid,
+                slotUuid: slot.state.slotUuid,
+                rngSeed: slot.state.rngSeed,
+                rngUseCount: slot.state.rngUseCount,
+                iteratorPosition: slot.state.iteratorPosition,
+                shuffleOrder: slot.state.shuffleOrder,
+                lastScheduledAt: slot.state.lastScheduledAt?.valueOf() ?? null,
+                createdAt: slot.state.createdAt?.valueOf() ?? null,
+                updatedAt: slot.state.updatedAt?.valueOf() ?? null,
+              }
+            : null,
+        })),
+        bufferEndTimeMs,
+        itemCount,
+      });
+    },
+  );
+
+  /**
+   * Get generated items for a time range
+   */
+  fastify.get(
+    '/channels/:id/infinite-schedule/items',
+    {
+      schema: {
+        operationId: 'getInfiniteScheduleItems',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: ChannelIdParamSchema,
+        querystring: z.object({
+          fromTimeMs: z.coerce.number(),
+          toTimeMs: z.coerce.number(),
+        }),
+        response: {
+          200: InfiniteScheduleGenerationResponseSchema,
+          404: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannel(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      const items = await db.getGeneratedItems(
+        channel.uuid,
+        req.query.fromTimeMs,
+        req.query.toTimeMs,
+      );
+
+      const materialized = await container
+        .get(MaterializeScheduleGeneratedItems)
+        .run({ items });
+
+      return res.send({
+        contentPrograms: groupByUniq(materialized, (m) => m.id!),
+        fromTimeMs: req.query.fromTimeMs,
+        toTimeMs: req.query.toTimeMs,
+        items: items.map(generatedScheduleItemToDto),
+      });
+    },
+  );
+
+  /**
+   * Delete a specific slot from the schedule
+   */
+  fastify.delete(
+    '/channels/:id/infinite-schedule/slots/:slotId',
+    {
+      schema: {
+        operationId: 'deleteInfiniteScheduleSlot',
+        tags: ['Channels', 'Infinite Schedule'],
+        params: SlotIdParamSchema,
+        response: {
+          200: z.object({ success: z.boolean() }),
+          404: z.object({ error: z.string() }),
+          501: z.object({ error: z.string() }),
+        },
+      },
+    },
+    async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(req.params.id);
+      if (isNil(channel)) {
+        return res.status(404).send({ error: 'Channel not found' });
+      }
+
+      const db = getInfiniteScheduleDB();
+      const schedule = await db.getScheduleByChannel(channel.uuid);
+
+      if (isNil(schedule)) {
+        return res.status(404).send({ error: 'Infinite schedule not found' });
+      }
+
+      // For now, slots must be deleted by updating the schedule with new slots array
+      // This is because slot deletion requires re-indexing and state management
+      return res.status(501).send({
+        error:
+          'Individual slot deletion not implemented. Update the schedule with the new slots array instead.',
+      });
+    },
+  );
+};

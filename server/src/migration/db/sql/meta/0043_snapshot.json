@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "11c0c7ae-4449-4d42-8243-1d68565688fc",
-  "prevId": "1231ad02-0d3a-4c84-be1e-64b9067f084b",
+  "prevId": "63234c90-1be6-4af9-985c-db1eb9bb694c",
   "tables": {
     "artwork": {
       "name": "artwork",

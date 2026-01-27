@@ -148,4 +148,34 @@ export class WeightedFillerProgramIterator
       program.currentWeight = program.originalWeight;
     }
   }
+
+  serializeState(): {
+    weightsById: Record<string, number>;
+    lastSeenAtById: Record<string, number>;
+  } {
+    const weightsById: Record<string, number> = {};
+    for (const wp of this.weightedPrograms) {
+      weightsById[wp.program.uuid] = wp.currentWeight;
+    }
+    const lastSeenAtById: Record<string, number> = {};
+    for (const [uuid, ts] of this.lastSeenTimestampById) {
+      lastSeenAtById[uuid] = ts;
+    }
+    return { weightsById, lastSeenAtById };
+  }
+
+  restoreState(state: {
+    weightsById: Record<string, number>;
+    lastSeenAtById: Record<string, number>;
+  }): void {
+    for (const wp of this.weightedPrograms) {
+      const restored = state.weightsById[wp.program.uuid];
+      if (restored !== undefined) {
+        wp.currentWeight = restored;
+      }
+    }
+    for (const [uuid, ts] of Object.entries(state.lastSeenAtById)) {
+      this.lastSeenTimestampById.set(uuid, ts);
+    }
+  }
 }

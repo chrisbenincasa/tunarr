@@ -1,4 +1,4 @@
-import { unwrapNil } from '@/helpers/util.ts';
+import { addIndexesAndCalculateOffsets, unwrapNil } from '@/helpers/util.ts';
 import { ApiProgramMinter } from '@tunarr/shared';
 import { forProgramType, seq } from '@tunarr/shared/util';
 import {
@@ -18,7 +18,6 @@ import {
   isNil,
   isUndefined,
   last,
-  map,
   mapValues,
   omitBy,
   sumBy,
@@ -26,11 +25,7 @@ import {
 } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import { Emby, Imported, Jellyfin, Plex } from '../../helpers/constants.ts';
-import {
-  type AddedMedia,
-  type UIChannelProgram,
-  type UIIndex,
-} from '../../types/index.ts';
+import { type AddedMedia, type UIChannelProgram } from '../../types/index.ts';
 import type { State } from '../index.ts';
 import useStore from '../index.ts';
 import { initialChannelEditorState } from './store.ts';
@@ -51,24 +46,6 @@ export const resetChannelEditorState = () =>
 
     return newState;
   });
-
-function addIndexesAndCalculateOffsets<T extends { duration: number }>(
-  items: T[],
-  firstOffset: number = 0,
-  firstIndex: number = 0,
-): (T & UIIndex & { startTimeOffset: number })[] {
-  let runningOffset = firstOffset;
-  return map(items, (item, index) => {
-    const newItem = {
-      ...item,
-      originalIndex: firstIndex + index,
-      uiIndex: firstIndex + index,
-      startTimeOffset: runningOffset,
-    };
-    runningOffset += item.duration;
-    return newItem;
-  });
-}
 
 function updateProgramList(
   state: Draft<State>,

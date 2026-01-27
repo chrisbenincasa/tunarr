@@ -33,7 +33,27 @@ import {
   FillerShowContent,
   FillerShowContentRelations,
 } from './FillerShowContent.ts';
+import {
+  GeneratedScheduleItem,
+  GeneratedScheduleItemRelations,
+} from './GeneratedScheduleItem.ts';
 import { EntityGenre, Genre, GenreRelations } from './Genre.ts';
+import {
+  InfiniteSchedule,
+  InfiniteScheduleRelations,
+} from './InfiniteSchedule.ts';
+import {
+  InfiniteScheduleSlot,
+  InfiniteScheduleSlotRelations,
+} from './InfiniteScheduleSlot.ts';
+import {
+  InfiniteScheduleSlotState,
+  InfiniteScheduleSlotRelations as InfiniteScheduleSlotStateRelations,
+} from './InfiniteScheduleSlotState.ts';
+import {
+  InfiniteScheduleState,
+  InfiniteScheduleStateRelations,
+} from './InfiniteScheduleState.ts';
 import {
   LocalMediaFolder,
   LocalMediaFolderRelations,
@@ -111,6 +131,17 @@ export const schema = {
   fillerShowRelations: FillerShowRelations,
   fillerShowContent: FillerShowContent,
   fillerShowContentRelations: FillerShowContentRelations,
+  // Infinite schedule tables
+  infiniteSchedule: InfiniteSchedule,
+  infiniteScheduleRelations: InfiniteScheduleRelations,
+  infiniteScheduleSlot: InfiniteScheduleSlot,
+  infiniteScheduleSlotRelations: InfiniteScheduleSlotRelations,
+  infiniteScheduleSlotState: InfiniteScheduleSlotState,
+  infiniteScheduleSlotStateRelations: InfiniteScheduleSlotStateRelations,
+  infiniteScheduleState: InfiniteScheduleState,
+  infiniteScheduleStateRelations: InfiniteScheduleStateRelations,
+  generatedScheduleItem: GeneratedScheduleItem,
+  generatedScheduleItemRelations: GeneratedScheduleItemRelations,
   program: Program,
   programVersion: ProgramVersion,
   programRelations: ProgramRelations,

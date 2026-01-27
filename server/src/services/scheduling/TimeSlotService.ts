@@ -129,7 +129,6 @@ export async function scheduleTimeSlots(
   const startOfYear = t0.startOf('year'); // Used to detect DST shifts.
   const startedinDst = startTime.utcOffset() !== startOfYear.utcOffset();
   const startOfCurrentPeriod = t0.startOf(schedule.period);
-  console.log('starting at ', t0.format());
 
   if (schedule.startTomorrow) {
     t0 = t0.add(1, 'day');

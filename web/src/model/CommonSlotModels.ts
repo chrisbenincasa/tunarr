@@ -3,7 +3,7 @@ import type { RandomSlotForm } from './SlotModels.ts';
 
 import {
   BaseSlotOrdering,
-  SlotFiller,
+  LegacySlotFiller,
   SlotProgrammingFillerOrder,
 } from '@tunarr/types/api';
 import {
@@ -16,7 +16,7 @@ import z from 'zod';
 import type { TimeSlotForm } from './TimeSlotModels.ts';
 
 export const WithSlotFiller = z.object({
-  filler: z.array(SlotFiller).optional(),
+  filler: z.array(LegacySlotFiller).optional(),
 });
 
 export const CommonMovieSlotViewModel = z.object({

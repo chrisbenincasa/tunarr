@@ -1,4 +1,4 @@
-import type { Schedule } from '@tunarr/types/schemas';
+import type { RecurrenceSchedule } from '@tunarr/types/schemas';
 import {
   forEach,
   isError,
@@ -26,7 +26,7 @@ type Opts = {
   fileName: string;
   fileExt?: string;
   maxSizeBytes?: number;
-  rotateSchedule?: Schedule;
+  rotateSchedule?: RecurrenceSchedule;
   extension?: string;
   destinationOpts?: SonicBoomOpts;
   fileLimit?: {

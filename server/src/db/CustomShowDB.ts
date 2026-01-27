@@ -20,7 +20,7 @@ import { MarkRequired } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
 import { MediaSourceId, MediaSourceType } from './schema/base.ts';
-import { CustomShow, type NewCustomShow } from './schema/CustomShow.ts';
+import { CustomShow, NewCustomShow } from './schema/CustomShow.ts';
 import {
   CustomShowContent,
   type NewCustomShowContent,
@@ -29,6 +29,8 @@ import { DB } from './schema/db.ts';
 import { ProgramWithRelationsOrm } from './schema/derivedTypes.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 import { Program } from './schema/Program.ts';
+
+export type CustomShowWithContentCount = CustomShow & { contentCount: number };
 
 @injectable()
 export class CustomShowDB {
@@ -56,7 +58,7 @@ export class CustomShowDB {
     });
   }
 
-  async getShows(ids: string[]) {
+  async getShows(ids: string[]): Promise<Array<CustomShowWithContentCount>> {
     if (ids.length === 0) {
       return [];
     }

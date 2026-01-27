@@ -16,15 +16,7 @@ export interface IFillerListDB {
    * @param id
    */
   getFiller(id: string): Promise<Maybe<FillerShowWithContent>>;
-
-  /**
-   *
-   * @param ids
-   */
-  getFillerListsByIds(
-    ids: string[],
-  ): Promise<(FillerShow & { contentCount: number })[]>;
-
+  getFillerListsByIds(ids: string[]): Promise<FillerShowWithContentCount[]>;
   saveFiller(
     id: string,
     updateRequest: UpdateFillerListRequest,
@@ -46,6 +38,8 @@ export interface IFillerListDB {
     channelId: string,
   ): Promise<ChannelFillerShowWithContent[]>;
 }
+
+export type FillerShowWithContentCount = FillerShow & { contentCount: number };
 
 export type FillerShowWithContent = FillerShow & {
   fillerContent: Array<

@@ -17,7 +17,7 @@ ColorSpace.register(sRGB);
 
 dayjs.extend(localizedFormat);
 dayjs.extend(localeData);
-dayjs.locale('en-gb');
+dayjs.locale('en-us');
 
 // Initialize the languages database with English names
 // TODO: localize this and make it a context provider

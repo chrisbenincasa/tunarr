@@ -2,10 +2,13 @@ import Breadcrumbs from '@/components/Breadcrumbs.tsx';
 import { ChannelOptionsButton } from '@/components/channels/ChannelOptionsButton.tsx';
 import { useChannelAndProgramming } from '@/hooks/useChannelLineup.ts';
 import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
+import { Edit } from '@mui/icons-material';
 import { Alert, Box, Paper, Stack, Typography } from '@mui/material';
 import { useEffect } from 'react';
+import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import { ChannelProgrammingConfig } from '../../components/channel_config/ChannelProgrammingConfig.tsx';
+import { ChannelScheduleViewer } from '../../components/channel_config/ChannelScheduleViewer.tsx';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 import { resetLineup } from '../../store/channelEditor/actions.ts';
 import { useChannelEditor } from '../../store/selectors.ts';
@@ -31,14 +34,23 @@ export default function ChannelProgrammingPage() {
   return (
     <div>
       <Breadcrumbs />
-      <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+      <Stack direction="row" sx={{ mb: 2 }} alignItems="center" spacing={2}>
         <Typography variant="h4" sx={{ flex: 1 }}>
           {channel.name}
         </Typography>
+        <RouterButtonLink
+          to="/channels/$channelId/edit"
+          params={{ channelId: channel.id }}
+          variant="outlined"
+          startIcon={<Edit />}
+        >
+          Edit
+        </RouterButtonLink>
         <Box>
           <ChannelOptionsButton
+            iconButton
             channel={channel}
-            hideItems={['programming', 'duplicate', 'delete']}
+            hideItems={['edit', 'programming', 'duplicate', 'delete']}
           />
         </Box>
       </Stack>
@@ -60,14 +72,18 @@ export default function ChannelProgrammingPage() {
           channel stop adhering to that schedule.
         </Alert>
       )}
-      <Paper sx={{ p: 2 }}>
-        <ChannelProgrammingConfig />
-        <UnsavedNavigationAlert
-          isDirty={programsDirty}
-          exceptTargetPaths={['/channels/$channelId/programming/add']}
-          onProceed={() => resetLineup()}
-        />
-      </Paper>
+      {channel.scheduleId ? (
+        <ChannelScheduleViewer />
+      ) : (
+        <Paper sx={{ p: 2 }}>
+          <ChannelProgrammingConfig />
+          <UnsavedNavigationAlert
+            isDirty={programsDirty}
+            exceptTargetPaths={['/channels/$channelId/programming/add']}
+            onProceed={() => resetLineup()}
+          />
+        </Paper>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 import { BackupSettingsSchema } from './schemas/settingsSchemas.js';
-import { ScheduleSchema } from './schemas/utilSchemas.js';
+import { RecurrenceScheduleSchema } from './schemas/utilSchemas.js';
 import { type TupleToUnion } from './util.js';
 
 export const LogCategories = ['scheduling', 'streaming'] as const;
@@ -27,7 +27,7 @@ export const LogRollConfigSchema = z.object({
   enabled: z.boolean().default(false),
   maxFileSizeBytes: z.number().positive().optional(),
   rolledFileLimit: z.number().positive(),
-  schedule: ScheduleSchema.optional(),
+  schedule: RecurrenceScheduleSchema.optional(),
 });
 
 export const LoggingSettingsSchema = z.object({

@@ -10,6 +10,7 @@ import { bindFactoryFunc } from '../util/inject.ts';
 import type { Canonicalizer } from './Canonicalizer.ts';
 import { CustomShowSyncService } from './CustomShowSyncService.ts';
 import { EmbyItemCanonicalizer } from './EmbyItemCanonicalizer.ts';
+import { FeatureFlagService } from './FeatureFlagService.ts';
 import { JellyfinItemCanonicalizer } from './JellyfinItemCanonicalizer.ts';
 import type { FolderAndContents } from './LocalFolderCanonicalizer.ts';
 import { LocalFolderCanonicalizer } from './LocalFolderCanonicalizer.ts';
@@ -39,7 +40,6 @@ import type { GenericMediaSourceMovieLibraryScanner } from './scanner/MediaSourc
 import type { GenericMediaSourceMusicLibraryScanner } from './scanner/MediaSourceMusicArtistScanner.ts';
 import type { GenericMediaSourceMusicVideoLibraryScanner } from './scanner/MediaSourceMusicVideoScanner.ts';
 import type { GenericMediaSourceOtherVideoLibraryScanner } from './scanner/MediaSourceOtherVideoScanner.ts';
-import { FeatureFlagService } from './FeatureFlagService.ts';
 import { MediaSourceProgressService } from './scanner/MediaSourceProgressService.ts';
 import { MediaSourceScanCoordinator } from './scanner/MediaSourceScanCoordinator.ts';
 import type {
@@ -52,6 +52,7 @@ import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScann
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
 import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
 import { PlexMediaSourceTvShowScanner } from './scanner/PlexMediaSourceTvShowScanner.ts';
+import { InfiniteScheduleGenerator } from './scheduling/InfiniteScheduleGenerator.ts';
 
 export const ServicesModule = new ContainerModule((bind) => {
   bind<Canonicalizer<PlexMedia>>(KEYS.PlexCanonicalizer)
@@ -210,4 +211,5 @@ export const ServicesModule = new ContainerModule((bind) => {
   bind(MediaSourceProgressService).toSelf().inSingletonScope();
   bind(MediaSourceScanCoordinator).toSelf().inSingletonScope();
   bind(FeatureFlagService).toSelf().inSingletonScope();
+  bind(InfiniteScheduleGenerator).toSelf().inSingletonScope();
 });
