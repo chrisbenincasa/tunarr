@@ -1,54 +1,75 @@
 import { isNonEmptyString } from '@/util/index.js';
+import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import {
-  dropWhile,
   filter,
   first,
   indexOf,
   isEmpty,
   last,
+  merge,
   nth,
   reject,
   take,
   takeRight,
   trimEnd,
 } from 'lodash-es';
+import { basename } from 'node:path';
+import type { DeepRequired } from 'ts-essentials';
+import { match } from 'ts-pattern';
+import { defaultHlsOptions } from '../../ffmpeg/builder/constants.ts';
+import { SegmentNameRegex } from './BaseHlsSession.ts';
+
+type MutateOptions = {
+  maxSegmentsToKeep?: number;
+  endWithDiscontinuity?: boolean;
+  targetDuration?: number;
+};
+
+type FilterBeforeDate = {
+  type: 'before_date';
+  before: Dayjs;
+};
+
+type FilterBeforeSegmentNumber = {
+  type: 'before_segment_number';
+  segmentNumber: number;
+  segmentsToKeepBefore: number;
+};
+
+export type HlsPlaylistFilterOptions =
+  | FilterBeforeDate
+  | FilterBeforeSegmentNumber;
+
+const defaultMutateOptions: DeepRequired<MutateOptions> = {
+  maxSegmentsToKeep: 10,
+  endWithDiscontinuity: false,
+  targetDuration: defaultHlsOptions.hlsTime,
+};
 
 export class HlsPlaylistMutator {
-  trimPlaylistWithDiscontinuity(
-    start: Dayjs,
-    filterBefore: Dayjs,
-    playlistLines: string[],
-    maxSegments: number = 10,
-  ) {
-    return this.trimPlaylist(
-      start,
-      filterBefore,
-      playlistLines,
-      maxSegments,
-      true,
-    );
-  }
-
   trimPlaylist(
     start: Dayjs,
-    filterBefore: Dayjs,
+    filter: HlsPlaylistFilterOptions,
     playlistLines: string[],
-    maxSegments: number = 10,
-    endWithDiscontinuity: boolean = false,
+    opts: MutateOptions = defaultMutateOptions,
+    // maxSegments: number = 10,
+    // endWithDiscontinuity: boolean = false,
   ): TrimPlaylistResult {
+    const mergedOpts = merge({}, defaultMutateOptions, opts);
     const { items, discontinuitySeq } = this.parsePlaylist(
       start,
       playlistLines,
-      endWithDiscontinuity,
+      mergedOpts.endWithDiscontinuity,
     );
 
     const generateResult = this.generatePlaylist(
       items,
-      filterBefore,
+      filter,
       discontinuitySeq,
-      maxSegments,
+      mergedOpts.maxSegmentsToKeep,
+      mergedOpts.targetDuration,
     );
 
     return {
@@ -121,32 +142,61 @@ export class HlsPlaylistMutator {
 
   private generatePlaylist(
     items: PlaylistLine[],
-    filterBefore: Dayjs,
+    filterOptions: HlsPlaylistFilterOptions,
     discontinuitySequence: number,
-    maxSegments: number,
+    maxSegmentsToKeep: number,
+    targetDuration: number,
   ) {
-    if (first(items)?.type === 'discontinuity') {
-      discontinuitySequence++;
+    // Count and remove leading discontinuities
+    let leadingDiscontinuities = 0;
+    while (items[leadingDiscontinuities]?.type === 'discontinuity') {
+      leadingDiscontinuities++;
     }
-
-    items = dropWhile(items, (item) => item.type === 'discontinuity');
-    // while (first(items)?.type === 'discontinuity') {
-    //   items.shift();
-    // }
+    discontinuitySequence += leadingDiscontinuities;
+    items = items.slice(leadingDiscontinuities);
 
     let allSegments = filter(
       items,
       (item): item is PlaylistSegment => item.type === 'segment',
     );
 
-    if (allSegments.length > maxSegments) {
-      const afterTimeFilter = reject(allSegments, (segment) =>
-        segment.startTime.isBefore(filterBefore),
-      );
+    if (allSegments.length > maxSegmentsToKeep) {
+      const filtered = match(filterOptions)
+        .with({ type: 'before_date' }, ({ before }) =>
+          reject(allSegments, (segment) => segment.startTime.isBefore(before)),
+        )
+        .with(
+          {
+            type: 'before_segment_number',
+          },
+          (beforeSeg) => {
+            const minSeg = Math.max(
+              beforeSeg.segmentNumber - beforeSeg.segmentsToKeepBefore,
+              0,
+            );
+            return seq.collect(allSegments, (segment) => {
+              const fileName = basename(segment.line);
+              const matches = fileName.match(SegmentNameRegex);
+              if (!matches || matches.length < 2) {
+                return;
+              }
+              const int = parseInt(matches[1]!);
+              if (isNaN(int)) {
+                return;
+              }
+              if (int < minSeg) {
+                return;
+              }
+              return segment;
+            });
+          },
+        )
+        .exhaustive();
+
       allSegments =
-        afterTimeFilter.length >= maxSegments
-          ? take(afterTimeFilter, maxSegments)
-          : takeRight(allSegments, maxSegments);
+        filtered.length >= maxSegmentsToKeep
+          ? take(filtered, maxSegmentsToKeep)
+          : takeRight(allSegments, maxSegmentsToKeep);
     }
 
     const startSequence = first(allSegments)?.startSequence ?? 0;
@@ -161,7 +211,7 @@ export class HlsPlaylistMutator {
     const lines = [
       '#EXTM3U',
       '#EXT-X-VERSION:6',
-      '#EXT-X-TARGETDURATION:4',
+      `#EXT-X-TARGETDURATION:${targetDuration}`,
       `#EXT-X-MEDIA-SEQUENCE:${startSequence}`,
       `#EXT-X-DISCONTINUITY-SEQUENCE:${discontinuitySequence}`,
       '#EXT-X-INDEPENDENT-SEGMENTS',
@@ -213,7 +263,7 @@ class PlaylistSegment {
   ) {}
 
   get startSequence() {
-    const matches = this.line.match(/[A-z/]+(\d+)\.[ts|mp4]/);
+    const matches = this.line.match(/[A-z/]+(\d+)\.(ts|mp4)/);
     const match = nth(matches, 1);
     return match ? parseInt(match) : null;
   }

@@ -6,8 +6,9 @@ import type { Result } from '@/types/result.js';
 import { makeFfmpegPlaylistUrl } from '@/util/serverUtil.js';
 import dayjs from 'dayjs';
 import { basename } from 'node:path';
-import type { StrictOmit } from 'ts-essentials';
+import type { DeepRequired, StrictOmit } from 'ts-essentials';
 import type { FFmpegFactory } from '../../ffmpeg/FFmpegModule.ts';
+import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
 import {
   defaultHlsOptions,
   HlsOutputFormat,
@@ -127,6 +128,18 @@ export class HlsSlowerSession extends BaseHlsSession {
     });
   }
 
+  protected getHlsOptions(): DeepRequired<HlsOptions> {
+    return {
+      ...defaultHlsOptions,
+      segmentNameFormat: BaseHlsSession.SegmentNameFormat,
+      segmentBaseDirectory: this.baseDirectory,
+      streamBasePath: basename(this.workingDirectory),
+      streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
+      hlsTime: 4,
+      hlsListSize: 25,
+    };
+  }
+
   protected async startInternal() {
     this.logger.debug(`Creating stream directory: ${this._workingDirectory}`);
 
@@ -149,14 +162,7 @@ export class HlsSlowerSession extends BaseHlsSession {
 
     this.#concatSession = await ffmpeg.createConcatSession(streamUrl, {
       mode: 'hls_slower_concat',
-      outputFormat: HlsOutputFormat({
-        ...defaultHlsOptions,
-        segmentBaseDirectory: this.baseDirectory,
-        streamBasePath: basename(this.workingDirectory),
-        streamBaseUrl: `/stream/channels/${this.channel.uuid}/${this.sessionType}/`,
-        hlsTime: 4,
-        hlsListSize: 25,
-      }),
+      outputFormat: HlsOutputFormat(this.getHlsOptions()),
     });
 
     this.#concatSession.on('error', (e) => {
