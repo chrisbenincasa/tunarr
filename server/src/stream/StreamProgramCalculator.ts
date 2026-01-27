@@ -1,5 +1,6 @@
 import { Channel } from '@/db/schema/Channel.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
+import { InfiniteScheduleDB } from '@/db/InfiniteScheduleDB.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
 import { Maybe, Nullable } from '@/types/util.js';
@@ -84,6 +85,8 @@ export class StreamProgramCalculator {
     private fillerPicker: IFillerPicker,
     @inject(ProgramPlayHistoryDB)
     private programPlayHistoryDB: ProgramPlayHistoryDB,
+    @inject(KEYS.InfiniteScheduleDB)
+    private infiniteScheduleDB: InfiniteScheduleDB,
   ) {}
 
   async getCurrentLineupItem(
@@ -98,6 +101,23 @@ export class StreamProgramCalculator {
           'channel_not_found',
           `Channel ${req.channelId} doesn't exist`,
         ),
+      );
+    }
+
+    // Check if channel uses infinite scheduling
+    if (isNonEmptyString(channel.infiniteScheduleUuid)) {
+      const infiniteResult = await this.getCurrentFromInfiniteSchedule(
+        req,
+        channel,
+      );
+      if (infiniteResult.isSuccess()) {
+        return infiniteResult;
+      }
+      // Fall through to legacy logic if infinite schedule fails
+      this.logger.warn(
+        'Infinite schedule lookup failed for channel %s, falling back to legacy: %s',
+        channel.uuid,
+        infiniteResult.error?.message,
       );
     }
 
@@ -570,6 +590,159 @@ export class StreamProgramCalculator {
       startOffset: timeElapsed,
       streamDuration,
     };
+  }
+
+  /**
+   * Get the current lineup item from an infinite schedule.
+   */
+  private async getCurrentFromInfiniteSchedule(
+    req: GetCurrentLineupItemRequest,
+    channel: Channel,
+  ): Promise<Result<CurrentLineupItemResult>> {
+    if (!channel.infiniteScheduleUuid) {
+      return Result.forError(new Error('Channel does not have an infinite schedule'));
+    }
+
+    // Get the item playing at the current time
+    const currentItem = await this.infiniteScheduleDB.getItemAtTime(
+      channel.infiniteScheduleUuid,
+      req.startTime,
+    );
+
+    if (!currentItem) {
+      return Result.forError(
+        new Error('No generated item found for the current time'),
+      );
+    }
+
+    // Calculate time elapsed within this item
+    const timeElapsed = req.startTime - currentItem.startTimeMs;
+    const streamDuration = currentItem.durationMs - timeElapsed;
+
+    let lineupItem: StreamLineupItem;
+
+    switch (currentItem.itemType) {
+      case 'content': {
+        if (!currentItem.programUuid) {
+          return Result.forError(
+            new Error('Content item has no program UUID'),
+          );
+        }
+
+        const program = await this.programDB.getProgramById(
+          currentItem.programUuid,
+        );
+
+        if (!program || !isNonEmptyString(program.mediaSourceId)) {
+          // Program not found or invalid, return offline
+          lineupItem = {
+            type: 'offline',
+            streamDuration,
+            duration: currentItem.durationMs,
+            startOffset: 0,
+            programBeginMs: currentItem.startTimeMs,
+          };
+        } else {
+          lineupItem = {
+            type: 'program',
+            program: { ...program, mediaSourceId: program.mediaSourceId },
+            duration: currentItem.durationMs,
+            startOffset: Math.round(timeElapsed),
+            streamDuration,
+            programBeginMs: currentItem.startTimeMs,
+            infiniteLoop: false,
+          } satisfies ProgramStreamLineupItem;
+        }
+        break;
+      }
+
+      case 'redirect': {
+        if (!currentItem.redirectChannelUuid) {
+          return Result.forError(
+            new Error('Redirect item has no channel UUID'),
+          );
+        }
+
+        lineupItem = {
+          type: 'redirect',
+          channel: currentItem.redirectChannelUuid,
+          duration: currentItem.durationMs,
+          streamDuration,
+          programBeginMs: currentItem.startTimeMs,
+        };
+        break;
+      }
+
+      case 'filler': {
+        if (!currentItem.programUuid) {
+          // Filler with no program, treat as offline
+          lineupItem = createOfflineStreamLineupItem(
+            streamDuration,
+            req.startTime,
+          );
+        } else {
+          const program = await this.programDB.getProgramById(
+            currentItem.programUuid,
+          );
+
+          if (!program || !isNonEmptyString(program.mediaSourceId)) {
+            lineupItem = createOfflineStreamLineupItem(
+              streamDuration,
+              req.startTime,
+            );
+          } else {
+            lineupItem = {
+              type: 'commercial',
+              program: { ...program, mediaSourceId: program.mediaSourceId },
+              duration: currentItem.durationMs,
+              startOffset: Math.round(timeElapsed),
+              streamDuration,
+              programBeginMs: currentItem.startTimeMs,
+              fillerListId: currentItem.fillerListId ?? null,
+              infiniteLoop: program.duration < streamDuration,
+            } satisfies CommercialStreamLineupItem;
+          }
+        }
+        break;
+      }
+
+      case 'offline':
+      case 'flex':
+      default: {
+        lineupItem = createOfflineStreamLineupItem(streamDuration, req.startTime);
+        break;
+      }
+    }
+
+    // Handle redirects by recursing
+    if (lineupItem.type === 'redirect') {
+      const redirectResult = await this.getCurrentLineupItem({
+        ...req,
+        channelId: lineupItem.channel,
+      });
+
+      if (redirectResult.isSuccess()) {
+        return Result.success({
+          ...redirectResult.get(),
+          sourceChannel: channel,
+        });
+      }
+
+      // If redirect fails, return offline
+      lineupItem = createOfflineStreamLineupItem(streamDuration, req.startTime);
+    }
+
+    await this.channelCache.recordPlayback(
+      channel.uuid,
+      req.startTime,
+      lineupItem,
+    );
+
+    return Result.success({
+      lineupItem,
+      channelContext: channel,
+      sourceChannel: channel,
+    });
   }
 }
 

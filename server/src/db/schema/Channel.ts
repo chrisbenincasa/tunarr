@@ -3,6 +3,7 @@ import { inArray, relations } from 'drizzle-orm';
 import {
   check,
   getTableConfig,
+  index,
   integer,
   sqliteTable,
   text,
@@ -45,6 +46,8 @@ export const Channel = sqliteTable(
     transcodeConfigId: text().notNull(),
     watermark: text({ mode: 'json' }).$type<ChannelWatermark>(),
     subtitlesEnabled: integer({ mode: 'boolean' }).default(false),
+    // Infinite schedule reference - when set, channel uses infinite scheduling
+    infiniteScheduleUuid: text(),
   },
   (table) => [
     uniqueIndex('channel_number_unique').on(table.number),
@@ -52,6 +55,7 @@ export const Channel = sqliteTable(
       'channel_stream_mode_check',
       inArray(table.streamMode, table.streamMode.enumValues).inlineParams(),
     ),
+    index('channel_infinite_schedule_uuid_index').on(table.infiniteScheduleUuid),
   ],
 );
 

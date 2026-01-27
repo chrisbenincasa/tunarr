@@ -45,6 +45,7 @@ import { PlexMediaSourceMovieScanner } from './scanner/PlexMediaSourceMovieScann
 import { PlexMediaSourceMusicScanner } from './scanner/PlexMediaSourceMusicScanner.ts';
 import { PlexMediaSourceOtherVideoScanner } from './scanner/PlexMediaSourceOtherVideoScanner.ts';
 import { PlexMediaSourceTvShowScanner } from './scanner/PlexMediaSourceTvShowScanner.ts';
+import { InfiniteScheduleGenerator } from './scheduling/InfiniteScheduleGenerator.ts';
 
 export const ServicesModule = new ContainerModule((bind) => {
   bind<Canonicalizer<PlexMedia>>(KEYS.PlexCanonicalizer)
@@ -177,4 +178,5 @@ export const ServicesModule = new ContainerModule((bind) => {
 
   bind(MediaSourceProgressService).toSelf().inSingletonScope();
   bind(MediaSourceScanCoordinator).toSelf().inSingletonScope();
+  bind(InfiniteScheduleGenerator).toSelf().inSingletonScope();
 });
