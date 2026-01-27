@@ -1,6 +1,6 @@
 import z from 'zod/v4';
 import { type TupleToUnion } from '../util.js';
-import { ScheduleSchema } from './utilSchemas.js';
+import { RecurrenceScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
   programmingHours: z.number().default(12),
@@ -227,7 +227,7 @@ export const BackupOutputSchema = z.discriminatedUnion('type', [
 
 export const BackupConfigurationSchema = z.object({
   enabled: z.boolean().default(true),
-  schedule: ScheduleSchema.default({
+  schedule: RecurrenceScheduleSchema.default({
     type: 'every',
     increment: 1,
     unit: 'day',

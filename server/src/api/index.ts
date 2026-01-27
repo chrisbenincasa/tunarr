@@ -39,6 +39,7 @@ import { SmartCollectionsApiController } from './smartCollectionsApi.ts';
 import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { trashApi } from './trashApi.ts';
+import { infiniteScheduleApi } from './infiniteScheduleApi.ts';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
 export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
@@ -79,6 +80,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(embyApiRouter)
     .register(settingsApi)
     .register(trashApi)
+    .register(infiniteScheduleApi)
     .register(container.get(SmartCollectionsApiController).mount)
     .register(container.get(CreditsApiController).mount)
     .register(container.get(ProgramGroupingApiController).mount);

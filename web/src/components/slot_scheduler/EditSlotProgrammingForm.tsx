@@ -4,11 +4,12 @@ import type {
 } from '@/helpers/slotSchedulerUtil';
 import { ProgramOptionTypes } from '@/helpers/slotSchedulerUtil.ts';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import type { Season, Show } from '@tunarr/types';
 import { filter, map, uniqBy } from 'lodash-es';
-import { useMemo, useState } from 'react';
-import type { FieldPath } from 'react-hook-form';
-import { useFormContext } from 'react-hook-form';
+import { useCallback, useMemo, useState } from 'react';
+import { useController, useFormContext } from 'react-hook-form';
 import { useSlotProgramOptionsContext } from '../../hooks/programming_controls/useSlotProgramOptions.ts';
+import type { CommonShowSlotViewModel } from '../../model/CommonSlotModels.ts';
 import { CustomShowSlotProgrammingForm } from './CustomShowSlotProgrammingForm.tsx';
 import { FillerListSlotProgrammingForm } from './FillerListSlotProgrammingForm.tsx';
 import { RedirectProgrammingForm } from './RedirectProgrammingForm.tsx';
@@ -20,13 +21,12 @@ type EditSlotProgramProps<SlotT extends { type: ProgramOptionType }> = {
   newSlotForType: (type: ProgramOptionType) => SlotT;
 };
 
-export const EditSlotProgrammingForm = <
-  SlotT extends { type: ProgramOptionType },
->({
+export const EditSlotProgrammingForm = ({
   newSlotForType,
-}: EditSlotProgramProps<SlotT>) => {
-  const { watch, reset } = useFormContext<SlotT>();
-  const type = watch('type' as FieldPath<SlotT>);
+}: EditSlotProgramProps<CommonShowSlotViewModel>) => {
+  const { watch, reset, control, setValue } =
+    useFormContext<CommonShowSlotViewModel>();
+  const [type, show, seasonFilter] = watch(['type', 'show', 'seasonFilter']);
   const programOptions = useSlotProgramOptionsContext();
   const availableTypes = useMemo(() => {
     return map(
@@ -48,6 +48,27 @@ export const EditSlotProgrammingForm = <
     const slot = newSlotForType(value);
     reset((prev) => ({ ...prev, ...slot }));
   };
+
+  const showIdController = useController({ control: control, name: 'showId' });
+
+  const onShowChange = useCallback(
+    (show: Show) => {
+      showIdController.field.onChange(show.uuid);
+      setValue('show', show);
+      setValue('seasonFilter', []);
+    },
+    [setValue, showIdController.field],
+  );
+
+  const onSeasonFilterChange = useCallback(
+    (seasonFilter: Season[]) => {
+      setValue(
+        'seasonFilter',
+        seasonFilter.map((s) => s.index),
+      );
+    },
+    [setValue],
+  );
 
   return (
     <>
@@ -77,7 +98,17 @@ export const EditSlotProgrammingForm = <
         <SmartCollectionSlotProgrammingForm />
       )}
       {typeSelectValue === 'filler' && <FillerListSlotProgrammingForm />}
-      {typeSelectValue === 'show' && <ShowSearchSlotProgrammingForm />}
+      {typeSelectValue === 'show' && (
+        <>
+          <ShowSearchSlotProgrammingForm
+            show={show}
+            seasonFilter={seasonFilter}
+            onSeasonFilterChange={onSeasonFilterChange}
+            onShowChange={onShowChange}
+          />
+          <SlotOrderFormControl />
+        </>
+      )}
       {typeSelectValue === 'redirect' && <RedirectProgrammingForm />}
       {typeSelectValue === 'movie' && <SlotOrderFormControl />}
     </>

@@ -10,6 +10,7 @@ export * from './LanguagePreferences.js';
 export * from './MediaSourceSettings.js';
 export * from './misc.js';
 export * from './Program.js';
+export * from './Schedules.js';
 export * from './Subtitles.js';
 export * from './SystemSettings.js';
 export * from './Tasks.js';

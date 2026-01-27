@@ -84,16 +84,20 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
       }
       value={value}
       isOptionEqualToValue={optionEqualToValue}
-      noOptionsText="Search for shows"
+      noOptionsText={<span>Start typing to search for shows&hellip;</span>}
       renderOption={(optProps, opt) => {
         if (opt.type === 'sentinel') {
           return (
-            <ListItem id="sentinel" ref={ref}>
+            <ListItem key="sentinel" id="sentinel" ref={ref}>
               Loading&hellip;
             </ListItem>
           );
         }
-        return <ListItem {...optProps}>{opt.title}</ListItem>;
+        return (
+          <ListItem {...optProps} key={opt.uuid}>
+            {opt.title}
+          </ListItem>
+        );
       }}
       onChange={(_, value) => {
         if (value && value.type !== 'sentinel') {

@@ -88,23 +88,17 @@
       "indexes": {
         "artwork_program_idx": {
           "name": "artwork_program_idx",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         },
         "artwork_grouping_idx": {
           "name": "artwork_grouping_idx",
-          "columns": [
-            "grouping_id"
-          ],
+          "columns": ["grouping_id"],
           "isUnique": false
         },
         "artwork_credit_idx": {
           "name": "artwork_credit_idx",
-          "columns": [
-            "credit_id"
-          ],
+          "columns": ["credit_id"],
           "isUnique": false
         }
       },
@@ -113,12 +107,8 @@
           "name": "artwork_program_id_program_uuid_fk",
           "tableFrom": "artwork",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -126,12 +116,8 @@
           "name": "artwork_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "artwork",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "grouping_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["grouping_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -139,12 +125,8 @@
           "name": "artwork_credit_id_credit_uuid_fk",
           "tableFrom": "artwork",
           "tableTo": "credit",
-          "columnsFrom": [
-            "credit_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["credit_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -335,9 +317,7 @@
       "indexes": {
         "channel_number_unique": {
           "name": "channel_number_unique",
-          "columns": [
-            "number"
-          ],
+          "columns": ["number"],
           "isUnique": true
         }
       },
@@ -375,12 +355,8 @@
           "name": "channel_custom_show_channel_uuid_channel_uuid_fk",
           "tableFrom": "channel_custom_show",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["channel_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -388,22 +364,15 @@
           "name": "channel_custom_show_program_uuid_program_uuid_fk",
           "tableFrom": "channel_custom_show",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "channel_custom_show_channel_uuid_program_uuid_pk": {
-          "columns": [
-            "channel_uuid",
-            "program_uuid"
-          ],
+          "columns": ["channel_uuid", "program_uuid"],
           "name": "channel_custom_show_channel_uuid_program_uuid_pk"
         }
       },
@@ -448,12 +417,8 @@
           "name": "channel_filler_show_channel_uuid_channel_uuid_fk",
           "tableFrom": "channel_filler_show",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["channel_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -461,22 +426,15 @@
           "name": "channel_filler_show_filler_show_uuid_filler_show_uuid_fk",
           "tableFrom": "channel_filler_show",
           "tableTo": "filler_show",
-          "columnsFrom": [
-            "filler_show_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["filler_show_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "channel_filler_show_channel_uuid_filler_show_uuid_pk": {
-          "columns": [
-            "channel_uuid",
-            "filler_show_uuid"
-          ],
+          "columns": ["channel_uuid", "filler_show_uuid"],
           "name": "channel_filler_show_channel_uuid_filler_show_uuid_pk"
         }
       },
@@ -507,12 +465,8 @@
           "name": "channel_programs_channel_uuid_channel_uuid_fk",
           "tableFrom": "channel_programs",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["channel_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -520,22 +474,15 @@
           "name": "channel_programs_program_uuid_program_uuid_fk",
           "tableFrom": "channel_programs",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "channel_programs_channel_uuid_program_uuid_pk": {
-          "columns": [
-            "channel_uuid",
-            "program_uuid"
-          ],
+          "columns": ["channel_uuid", "program_uuid"],
           "name": "channel_programs_channel_uuid_program_uuid_pk"
         }
       },
@@ -612,16 +559,12 @@
       "indexes": {
         "credit_program_id_idx": {
           "name": "credit_program_id_idx",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         },
         "credit_grouping_id_idx": {
           "name": "credit_grouping_id_idx",
-          "columns": [
-            "grouping_id"
-          ],
+          "columns": ["grouping_id"],
           "isUnique": false
         }
       },
@@ -630,12 +573,8 @@
           "name": "credit_program_id_program_uuid_fk",
           "tableFrom": "credit",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -643,12 +582,8 @@
           "name": "credit_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "credit",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "grouping_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["grouping_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -726,12 +661,8 @@
           "name": "custom_show_content_content_uuid_program_uuid_fk",
           "tableFrom": "custom_show_content",
           "tableTo": "program",
-          "columnsFrom": [
-            "content_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["content_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -739,22 +670,15 @@
           "name": "custom_show_content_custom_show_uuid_custom_show_uuid_fk",
           "tableFrom": "custom_show_content",
           "tableTo": "custom_show",
-          "columnsFrom": [
-            "custom_show_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["custom_show_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "custom_show_content_content_uuid_custom_show_uuid_pk": {
-          "columns": [
-            "content_uuid",
-            "custom_show_uuid"
-          ],
+          "columns": ["content_uuid", "custom_show_uuid"],
           "name": "custom_show_content_content_uuid_custom_show_uuid_pk"
         }
       },
@@ -810,26 +734,17 @@
       "indexes": {
         "external_collection_media_source_id_external_key_idx": {
           "name": "external_collection_media_source_id_external_key_idx",
-          "columns": [
-            "media_source_id",
-            "external_key"
-          ],
+          "columns": ["media_source_id", "external_key"],
           "isUnique": false
         },
         "external_collection_library_id_external_key_idx": {
           "name": "external_collection_library_id_external_key_idx",
-          "columns": [
-            "library_id",
-            "external_key"
-          ],
+          "columns": ["library_id", "external_key"],
           "isUnique": false
         },
         "external_collections_mediaSourceId_externalKey_unique": {
           "name": "external_collections_mediaSourceId_externalKey_unique",
-          "columns": [
-            "media_source_id",
-            "external_key"
-          ],
+          "columns": ["media_source_id", "external_key"],
           "isUnique": true
         }
       },
@@ -838,12 +753,8 @@
           "name": "external_collections_media_source_id_media_source_uuid_fk",
           "tableFrom": "external_collections",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -851,12 +762,8 @@
           "name": "external_collections_library_id_media_source_library_uuid_fk",
           "tableFrom": "external_collections",
           "tableTo": "media_source_library",
-          "columnsFrom": [
-            "library_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["library_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -893,9 +800,7 @@
       "indexes": {
         "external_collection_program_idx": {
           "name": "external_collection_program_idx",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         }
       },
@@ -904,12 +809,8 @@
           "name": "external_collection_programs_collection_id_external_collections_uuid_fk",
           "tableFrom": "external_collection_programs",
           "tableTo": "external_collections",
-          "columnsFrom": [
-            "collection_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["collection_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -917,12 +818,8 @@
           "name": "external_collection_programs_program_id_program_uuid_fk",
           "tableFrom": "external_collection_programs",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -930,22 +827,15 @@
           "name": "external_collection_programs_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "external_collection_programs",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "grouping_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["grouping_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "external_collection_programs_collection_id_program_id_pk": {
-          "columns": [
-            "collection_id",
-            "program_id"
-          ],
+          "columns": ["collection_id", "program_id"],
           "name": "external_collection_programs_collection_id_program_id_pk"
         }
       },
@@ -1021,12 +911,8 @@
           "name": "filler_show_content_filler_show_uuid_filler_show_uuid_fk",
           "tableFrom": "filler_show_content",
           "tableTo": "filler_show",
-          "columnsFrom": [
-            "filler_show_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["filler_show_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1034,22 +920,15 @@
           "name": "filler_show_content_program_uuid_program_uuid_fk",
           "tableFrom": "filler_show_content",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "filler_show_content_filler_show_uuid_program_uuid_pk": {
-          "columns": [
-            "filler_show_uuid",
-            "program_uuid"
-          ],
+          "columns": ["filler_show_uuid", "program_uuid"],
           "name": "filler_show_content_filler_show_uuid_program_uuid_pk"
         }
       },
@@ -1084,39 +963,27 @@
       "indexes": {
         "genre_entity_id_index": {
           "name": "genre_entity_id_index",
-          "columns": [
-            "genre_id"
-          ],
+          "columns": ["genre_id"],
           "isUnique": false
         },
         "genre_entity_program_id_index": {
           "name": "genre_entity_program_id_index",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         },
         "genre_entity_group_id_index": {
           "name": "genre_entity_group_id_index",
-          "columns": [
-            "group_id"
-          ],
+          "columns": ["group_id"],
           "isUnique": false
         },
         "genre_program_unique_idx": {
           "name": "genre_program_unique_idx",
-          "columns": [
-            "genre_id",
-            "program_id"
-          ],
+          "columns": ["genre_id", "program_id"],
           "isUnique": true
         },
         "genre_grouping_unique_idx": {
           "name": "genre_grouping_unique_idx",
-          "columns": [
-            "genre_id",
-            "group_id"
-          ],
+          "columns": ["genre_id", "group_id"],
           "isUnique": true
         }
       },
@@ -1125,12 +992,8 @@
           "name": "genre_entity_genre_id_genre_uuid_fk",
           "tableFrom": "genre_entity",
           "tableTo": "genre",
-          "columnsFrom": [
-            "genre_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["genre_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1138,12 +1001,8 @@
           "name": "genre_entity_program_id_program_uuid_fk",
           "tableFrom": "genre_entity",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1151,12 +1010,8 @@
           "name": "genre_entity_group_id_program_grouping_uuid_fk",
           "tableFrom": "genre_entity",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1186,9 +1041,7 @@
       "indexes": {
         "genre_name_idx": {
           "name": "genre_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": false
         }
       },
@@ -1239,24 +1092,17 @@
       "indexes": {
         "local_media_folder_library_id_path_idx": {
           "name": "local_media_folder_library_id_path_idx",
-          "columns": [
-            "library_id",
-            "path"
-          ],
+          "columns": ["library_id", "path"],
           "isUnique": false
         },
         "local_media_folder_path_idx": {
           "name": "local_media_folder_path_idx",
-          "columns": [
-            "path"
-          ],
+          "columns": ["path"],
           "isUnique": false
         },
         "local_media_folder_canonical_id_id": {
           "name": "local_media_folder_canonical_id_id",
-          "columns": [
-            "canonical_id"
-          ],
+          "columns": ["canonical_id"],
           "isUnique": false
         }
       },
@@ -1265,12 +1111,8 @@
           "name": "local_media_folder_library_id_media_source_library_uuid_fk",
           "tableFrom": "local_media_folder",
           "tableTo": "media_source_library",
-          "columnsFrom": [
-            "library_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["library_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1317,12 +1159,8 @@
           "name": "local_media_source_path_media_source_id_media_source_uuid_fk",
           "tableFrom": "local_media_source_path",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1506,12 +1344,8 @@
           "name": "media_source_library_media_source_id_media_source_uuid_fk",
           "tableFrom": "media_source_library",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1563,12 +1397,8 @@
           "name": "media_source_library_replace_path_media_source_id_media_source_uuid_fk",
           "tableFrom": "media_source_library_replace_path",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1858,76 +1688,52 @@
       "indexes": {
         "program_season_uuid_index": {
           "name": "program_season_uuid_index",
-          "columns": [
-            "season_uuid"
-          ],
+          "columns": ["season_uuid"],
           "isUnique": false
         },
         "program_tv_show_uuid_index": {
           "name": "program_tv_show_uuid_index",
-          "columns": [
-            "tv_show_uuid"
-          ],
+          "columns": ["tv_show_uuid"],
           "isUnique": false
         },
         "program_album_uuid_index": {
           "name": "program_album_uuid_index",
-          "columns": [
-            "album_uuid"
-          ],
+          "columns": ["album_uuid"],
           "isUnique": false
         },
         "program_artist_uuid_index": {
           "name": "program_artist_uuid_index",
-          "columns": [
-            "artist_uuid"
-          ],
+          "columns": ["artist_uuid"],
           "isUnique": false
         },
         "program_media_source_id_index": {
           "name": "program_media_source_id_index",
-          "columns": [
-            "media_source_id"
-          ],
+          "columns": ["media_source_id"],
           "isUnique": false
         },
         "program_media_library_id_index": {
           "name": "program_media_library_id_index",
-          "columns": [
-            "library_id"
-          ],
+          "columns": ["library_id"],
           "isUnique": false
         },
         "program_source_type_external_source_id_external_key_unique": {
           "name": "program_source_type_external_source_id_external_key_unique",
-          "columns": [
-            "source_type",
-            "external_source_id",
-            "external_key"
-          ],
+          "columns": ["source_type", "external_source_id", "external_key"],
           "isUnique": true
         },
         "program_source_type_media_source_external_key_unique": {
           "name": "program_source_type_media_source_external_key_unique",
-          "columns": [
-            "source_type",
-            "media_source_id",
-            "external_key"
-          ],
+          "columns": ["source_type", "media_source_id", "external_key"],
           "isUnique": true
         },
         "program_canonical_id_index": {
           "name": "program_canonical_id_index",
-          "columns": [
-            "canonical_id"
-          ],
+          "columns": ["canonical_id"],
           "isUnique": false
         },
         "program_state_index": {
           "name": "program_state_index",
-          "columns": [
-            "state"
-          ],
+          "columns": ["state"],
           "isUnique": false
         }
       },
@@ -1936,12 +1742,8 @@
           "name": "program_album_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "album_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["album_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1949,12 +1751,8 @@
           "name": "program_artist_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "artist_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["artist_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1962,12 +1760,8 @@
           "name": "program_media_source_id_media_source_uuid_fk",
           "tableFrom": "program",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1975,12 +1769,8 @@
           "name": "program_library_id_media_source_library_uuid_fk",
           "tableFrom": "program",
           "tableTo": "media_source_library",
-          "columnsFrom": [
-            "library_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["library_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1988,12 +1778,8 @@
           "name": "program_local_media_folder_id_local_media_folder_uuid_fk",
           "tableFrom": "program",
           "tableTo": "local_media_folder",
-          "columnsFrom": [
-            "local_media_folder_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["local_media_folder_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2001,12 +1787,8 @@
           "name": "program_local_media_source_path_id_local_media_source_path_uuid_fk",
           "tableFrom": "program",
           "tableTo": "local_media_source_path",
-          "columnsFrom": [
-            "local_media_source_path_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["local_media_source_path_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2014,12 +1796,8 @@
           "name": "program_season_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "season_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["season_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2027,12 +1805,8 @@
           "name": "program_tv_show_uuid_program_grouping_uuid_fk",
           "tableFrom": "program",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "tv_show_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["tv_show_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2110,12 +1884,8 @@
           "name": "program_chapter_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_chapter",
           "tableTo": "program_version",
-          "columnsFrom": [
-            "program_version_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_version_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2201,46 +1971,30 @@
       "indexes": {
         "program_external_id_program_uuid_index": {
           "name": "program_external_id_program_uuid_index",
-          "columns": [
-            "program_uuid"
-          ],
+          "columns": ["program_uuid"],
           "isUnique": false
         },
         "unique_program_multiple_external_id": {
           "name": "unique_program_multiple_external_id",
-          "columns": [
-            "program_uuid",
-            "source_type",
-            "external_source_id"
-          ],
+          "columns": ["program_uuid", "source_type", "external_source_id"],
           "isUnique": true,
           "where": "`external_source_id` is not null"
         },
         "unique_program_single_external_id": {
           "name": "unique_program_single_external_id",
-          "columns": [
-            "program_uuid",
-            "source_type"
-          ],
+          "columns": ["program_uuid", "source_type"],
           "isUnique": true,
           "where": "`external_source_id` is null"
         },
         "unique_program_multiple_external_id_media_source": {
           "name": "unique_program_multiple_external_id_media_source",
-          "columns": [
-            "program_uuid",
-            "source_type",
-            "media_source_id"
-          ],
+          "columns": ["program_uuid", "source_type", "media_source_id"],
           "isUnique": true,
           "where": "`media_source_id` is not null"
         },
         "unique_program_single_external_id_media_source": {
           "name": "unique_program_single_external_id_media_source",
-          "columns": [
-            "program_uuid",
-            "source_type"
-          ],
+          "columns": ["program_uuid", "source_type"],
           "isUnique": true,
           "where": "`media_source_id` is null"
         }
@@ -2250,12 +2004,8 @@
           "name": "program_external_id_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_external_id",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2263,12 +2013,8 @@
           "name": "program_external_id_program_uuid_program_uuid_fk",
           "tableFrom": "program_external_id",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2437,16 +2183,12 @@
       "indexes": {
         "program_grouping_show_uuid_index": {
           "name": "program_grouping_show_uuid_index",
-          "columns": [
-            "show_uuid"
-          ],
+          "columns": ["show_uuid"],
           "isUnique": false
         },
         "program_grouping_artist_uuid_index": {
           "name": "program_grouping_artist_uuid_index",
-          "columns": [
-            "artist_uuid"
-          ],
+          "columns": ["artist_uuid"],
           "isUnique": false
         }
       },
@@ -2455,12 +2197,8 @@
           "name": "program_grouping_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_grouping",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2468,12 +2206,8 @@
           "name": "program_grouping_artist_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "artist_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["artist_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2481,12 +2215,8 @@
           "name": "program_grouping_show_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "show_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["show_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2494,12 +2224,8 @@
           "name": "program_grouping_library_id_media_source_library_uuid_fk",
           "tableFrom": "program_grouping",
           "tableTo": "media_source_library",
-          "columnsFrom": [
-            "library_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["library_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2590,28 +2316,18 @@
       "indexes": {
         "program_grouping_group_uuid_index": {
           "name": "program_grouping_group_uuid_index",
-          "columns": [
-            "group_uuid"
-          ],
+          "columns": ["group_uuid"],
           "isUnique": false
         },
         "unique_program_grouping_multiple_external_id_media_source": {
           "name": "unique_program_grouping_multiple_external_id_media_source",
-          "columns": [
-            "group_uuid",
-            "source_type",
-            "media_source_id"
-          ],
+          "columns": ["group_uuid", "source_type", "media_source_id"],
           "isUnique": true,
           "where": "`media_source_id is not null`"
         },
         "unique_program_grouping_single_external_id_media_source": {
           "name": "unique_program_grouping_single_external_id_media_source",
-          "columns": [
-            "group_uuid",
-            "source_type",
-            "media_source_id"
-          ],
+          "columns": ["group_uuid", "source_type", "media_source_id"],
           "isUnique": true,
           "where": "`media_source_id is null`"
         }
@@ -2621,12 +2337,8 @@
           "name": "program_grouping_external_id_media_source_id_media_source_uuid_fk",
           "tableFrom": "program_grouping_external_id",
           "tableTo": "media_source",
-          "columnsFrom": [
-            "media_source_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["media_source_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2634,12 +2346,8 @@
           "name": "program_grouping_external_id_group_uuid_program_grouping_uuid_fk",
           "tableFrom": "program_grouping_external_id",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "group_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["group_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "cascade"
         },
@@ -2647,12 +2355,8 @@
           "name": "program_grouping_external_id_library_id_media_source_library_uuid_fk",
           "tableFrom": "program_grouping_external_id",
           "tableTo": "media_source_library",
-          "columnsFrom": [
-            "library_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["library_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2701,16 +2405,12 @@
       "indexes": {
         "program_media_file_program_version_idx": {
           "name": "program_media_file_program_version_idx",
-          "columns": [
-            "program_version_id"
-          ],
+          "columns": ["program_version_id"],
           "isUnique": false
         },
         "program_media_file_folder_idx": {
           "name": "program_media_file_folder_idx",
-          "columns": [
-            "local_media_folder_id"
-          ],
+          "columns": ["local_media_folder_id"],
           "isUnique": false
         }
       },
@@ -2719,12 +2419,8 @@
           "name": "program_media_file_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_media_file",
           "tableTo": "program_version",
-          "columnsFrom": [
-            "program_version_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_version_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2732,12 +2428,8 @@
           "name": "program_media_file_local_media_folder_id_local_media_folder_uuid_fk",
           "tableFrom": "program_media_file",
           "tableTo": "local_media_folder",
-          "columnsFrom": [
-            "local_media_folder_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["local_media_folder_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2874,9 +2566,7 @@
       "indexes": {
         "index_program_version_id": {
           "name": "index_program_version_id",
-          "columns": [
-            "program_version_id"
-          ],
+          "columns": ["program_version_id"],
           "isUnique": false
         }
       },
@@ -2885,12 +2575,8 @@
           "name": "program_media_stream_program_version_id_program_version_uuid_fk",
           "tableFrom": "program_media_stream",
           "tableTo": "program_version",
-          "columnsFrom": [
-            "program_version_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_version_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2955,33 +2641,22 @@
       "indexes": {
         "program_play_history_program_uuid_index": {
           "name": "program_play_history_program_uuid_index",
-          "columns": [
-            "program_uuid"
-          ],
+          "columns": ["program_uuid"],
           "isUnique": false
         },
         "program_play_history_channel_uuid_index": {
           "name": "program_play_history_channel_uuid_index",
-          "columns": [
-            "channel_uuid",
-            "program_uuid",
-            "filler_list_id"
-          ],
+          "columns": ["channel_uuid", "program_uuid", "filler_list_id"],
           "isUnique": false
         },
         "program_play_history_played_at_index": {
           "name": "program_play_history_played_at_index",
-          "columns": [
-            "played_at"
-          ],
+          "columns": ["played_at"],
           "isUnique": false
         },
         "program_play_history_channel_played_at_index": {
           "name": "program_play_history_channel_played_at_index",
-          "columns": [
-            "channel_uuid",
-            "played_at"
-          ],
+          "columns": ["channel_uuid", "played_at"],
           "isUnique": false
         }
       },
@@ -2990,12 +2665,8 @@
           "name": "program_play_history_program_uuid_program_uuid_fk",
           "tableFrom": "program_play_history",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3003,12 +2674,8 @@
           "name": "program_play_history_channel_uuid_channel_uuid_fk",
           "tableFrom": "program_play_history",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_uuid"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["channel_uuid"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3016,12 +2683,8 @@
           "name": "program_play_history_filler_list_id_filler_show_uuid_fk",
           "tableFrom": "program_play_history",
           "tableTo": "filler_show",
-          "columnsFrom": [
-            "filler_list_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["filler_list_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3135,12 +2798,8 @@
           "name": "program_subtitles_program_id_program_uuid_fk",
           "tableFrom": "program_subtitles",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3233,9 +2892,7 @@
       "indexes": {
         "index_program_version_program_id": {
           "name": "index_program_version_program_id",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         }
       },
@@ -3244,12 +2901,8 @@
           "name": "program_version_program_id_program_uuid_fk",
           "tableFrom": "program_version",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3348,23 +3001,17 @@
       "indexes": {
         "studio_entity_id_index": {
           "name": "studio_entity_id_index",
-          "columns": [
-            "studio_id"
-          ],
+          "columns": ["studio_id"],
           "isUnique": false
         },
         "studio_entity_program_id_index": {
           "name": "studio_entity_program_id_index",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         },
         "studio_entity_group_id_index": {
           "name": "studio_entity_group_id_index",
-          "columns": [
-            "group_id"
-          ],
+          "columns": ["group_id"],
           "isUnique": false
         }
       },
@@ -3373,12 +3020,8 @@
           "name": "studio_entity_studio_id_studio_uuid_fk",
           "tableFrom": "studio_entity",
           "tableTo": "studio",
-          "columnsFrom": [
-            "studio_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["studio_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3386,12 +3029,8 @@
           "name": "studio_entity_program_id_program_uuid_fk",
           "tableFrom": "studio_entity",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3399,12 +3038,8 @@
           "name": "studio_entity_group_id_program_grouping_uuid_fk",
           "tableFrom": "studio_entity",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3472,10 +3107,7 @@
       "indexes": {
         "channel_priority_index": {
           "name": "channel_priority_index",
-          "columns": [
-            "channel_id",
-            "priority"
-          ],
+          "columns": ["channel_id", "priority"],
           "isUnique": false
         }
       },
@@ -3484,12 +3116,8 @@
           "name": "channel_subtitle_preferences_channel_id_channel_uuid_fk",
           "tableFrom": "channel_subtitle_preferences",
           "tableTo": "channel",
-          "columnsFrom": [
-            "channel_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["channel_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3557,10 +3185,7 @@
       "indexes": {
         "custom_show_priority_index": {
           "name": "custom_show_priority_index",
-          "columns": [
-            "custom_show_id",
-            "priority"
-          ],
+          "columns": ["custom_show_id", "priority"],
           "isUnique": false
         }
       },
@@ -3569,12 +3194,8 @@
           "name": "custom_show_subtitle_preferences_custom_show_id_custom_show_uuid_fk",
           "tableFrom": "custom_show_subtitle_preferences",
           "tableTo": "custom_show",
-          "columnsFrom": [
-            "custom_show_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["custom_show_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3604,9 +3225,7 @@
       "indexes": {
         "tags_unique_tag_idx": {
           "name": "tags_unique_tag_idx",
-          "columns": [
-            "tag"
-          ],
+          "columns": ["tag"],
           "isUnique": true
         }
       },
@@ -3643,32 +3262,22 @@
       "indexes": {
         "tag_relations_program_id_idx": {
           "name": "tag_relations_program_id_idx",
-          "columns": [
-            "program_id"
-          ],
+          "columns": ["program_id"],
           "isUnique": false
         },
         "tag_relations_grouping_id_idx": {
           "name": "tag_relations_grouping_id_idx",
-          "columns": [
-            "grouping_id"
-          ],
+          "columns": ["grouping_id"],
           "isUnique": false
         },
         "tag_program_id_unique_idx": {
           "name": "tag_program_id_unique_idx",
-          "columns": [
-            "tag_id",
-            "program_id"
-          ],
+          "columns": ["tag_id", "program_id"],
           "isUnique": true
         },
         "tag_grouping_id_unique_idx": {
           "name": "tag_grouping_id_unique_idx",
-          "columns": [
-            "tag_id",
-            "grouping_id"
-          ],
+          "columns": ["tag_id", "grouping_id"],
           "isUnique": true
         }
       },
@@ -3677,12 +3286,8 @@
           "name": "tag_relations_tag_id_tags_uuid_fk",
           "tableFrom": "tag_relations",
           "tableTo": "tags",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3690,12 +3295,8 @@
           "name": "tag_relations_program_id_program_uuid_fk",
           "tableFrom": "tag_relations",
           "tableTo": "program",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["program_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3703,12 +3304,8 @@
           "name": "tag_relations_grouping_id_program_grouping_uuid_fk",
           "tableFrom": "tag_relations",
           "tableTo": "program_grouping",
-          "columnsFrom": [
-            "grouping_id"
-          ],
-          "columnsTo": [
-            "uuid"
-          ],
+          "columnsFrom": ["grouping_id"],
+          "columnsTo": ["uuid"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
