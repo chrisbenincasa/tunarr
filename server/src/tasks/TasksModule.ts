@@ -11,16 +11,19 @@ import type { ReconcileProgramDurationsTaskRequest } from '@/tasks/ReconcileProg
 import { ReconcileProgramDurationsTask } from '@/tasks/ReconcileProgramDurationsTask.js';
 import { ScheduleDynamicChannelsTask } from '@/tasks/ScheduleDynamicChannelsTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
-import { autoFactoryKey, KEYS } from '@/types/inject.js';
+import { autoFactoryKey, factoryKey, KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../external/MediaSourceApiFactory.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import type { BackupTaskFactory } from './BackupTask.ts';
 import { BackupTask } from './BackupTask.ts';
 import { ClearM3uCacheTask } from './ClearM3uCacheTask.ts';
 import { SaveJellyfinProgramExternalIdsTask } from './jellyfin/SaveJellyfinProgramExternalIdsTask.ts';
+import { NoopTask } from './NoopTask.ts';
 import { SavePlexProgramExternalIdsTask } from './plex/SavePlexProgramExternalIdsTask.ts';
 import type {
   UpdatePlexPlayStatusScheduledTaskFactory,
@@ -90,7 +93,7 @@ const TasksModule = new ContainerModule((bind) => {
 
   bindFactoryFunc<BackupTaskFactory>(
     bind,
-    BackupTask.KEY,
+    factoryKey(BackupTask),
     (ctx) => (conf) => () =>
       new BackupTask(
         conf,
@@ -99,6 +102,27 @@ const TasksModule = new ContainerModule((bind) => {
         ),
       ),
   );
+
+  bind(autoFactoryKey(BackupTask)).toFactory((ctx) => {
+    return () => {
+      const backupConfs = ctx.container.get<ISettingsDB>(KEYS.SettingsDB).backup
+        .configurations;
+      const firstEnabledConf = backupConfs.find((conf) => conf.enabled);
+      if (!firstEnabledConf) {
+        LoggerFactory.root.info(
+          'There are no enabled backup configurations. Skipping task.',
+        );
+        return new NoopTask();
+      }
+
+      return new BackupTask(
+        firstEnabledConf,
+        ctx.container.get<ArchiveDatabaseBackupFactory>(
+          ArchiveDatabaseBackupKey,
+        ),
+      );
+    };
+  });
 
   bindFactoryFunc<UpdatePlexPlayStatusScheduledTaskFactory>(
     bind,

@@ -1160,7 +1160,7 @@ export class MeilisearchService implements ISearchService {
     if (isNonEmptyString(request.query)) {
       const sort = request.sort?.map(
         ({ field, direction }) => `${field}:${direction}`,
-      ) ?? ['title:asc'];
+      ) ?? ['sortTitle:asc'];
       const req = {
         filter,
         page: request.paging?.page,
@@ -1192,7 +1192,7 @@ export class MeilisearchService implements ISearchService {
         : undefined;
       const sort = request.sort?.map(
         ({ field, direction }) => `${field}:${direction}`,
-      ) ?? ['title:asc'];
+      ) ?? ['sortTitle:asc'];
 
       this.logger.debug(
         'Issuing get documents request: filter: "%s", sort: %O. offset: %d limit %d',

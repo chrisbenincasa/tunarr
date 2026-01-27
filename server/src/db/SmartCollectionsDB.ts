@@ -219,7 +219,7 @@ export class SmartCollectionsDB {
       }
     }
 
-    let page = isNonEmptyString(maybeCollection.keywords) ? 0 : 1;
+    let page = isNonEmptyString(maybeCollection.keywords) ? 1 : 0;
     const results: ProgramSearchDocument[] = [];
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
