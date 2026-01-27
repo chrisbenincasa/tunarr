@@ -20,7 +20,7 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   hlsDeleteThreshold: 3,
   segmentBaseDirectory: 'streams', // Relative to cwd
   streamBasePath: 'stream_%v',
-  segmentNameFormat: 'data%05d.ts',
+  segmentNameFormat: 'data%06d.ts',
   streamNameFormat: 'stream.m3u8',
   streamBaseUrl: 'hls/',
   deleteThreshold: 3,

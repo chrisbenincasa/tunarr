@@ -283,6 +283,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       session.recordHeartbeat(req.ip);
+      session.onSegmentRequested(req.ip, req.params.file);
 
       return res.sendFile(req.params.file, session.workingDirectory);
     },
@@ -343,9 +344,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
-                const playlistResult = await session.trimPlaylist(
-                  dayjs().subtract(1, 'minute'),
-                );
+                const playlistResult = await session.trimPlaylist();
 
                 if (playlistResult.isFailure()) {
                   logger.error(playlistResult.error);
