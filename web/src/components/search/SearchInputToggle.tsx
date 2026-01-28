@@ -1,12 +1,12 @@
 import { Keyboard, Mouse } from '@mui/icons-material';
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { search as tunarrSearch } from '@tunarr/shared/util';
-import { SearchFilter } from '@tunarr/types/schemas';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import type { Nullable } from '../../types/util.ts';
-import { QueryBuilderType, SearchForm } from './SearchInput.tsx';
+import type { QueryBuilderType, SearchForm } from './SearchInput.tsx';
 
 export const SearchInputToggle = () => {
   const { getValues, setValue, watch } = useFormContext<SearchForm>();

@@ -41,7 +41,6 @@ export const Route = createFileRoute('/library/smart_collections/$id')({
 function RouteComponent() {
   const { id } = Route.useParams();
   const { filter, query } = Route.useLoaderData();
-  console.log(filter, query);
   const { data: smartCollection } = useSuspenseQuery(
     getApiSmartCollectionsByIdOptions({ path: { id } }),
   );

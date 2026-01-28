@@ -8,10 +8,10 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { seq } from '@tunarr/shared/util';
+import { search, seq } from '@tunarr/shared/util';
 import type { SearchField, SearchFilterValueNode } from '@tunarr/types/schemas';
 import { OperatorsByType } from '@tunarr/types/schemas';
-import { find, flatten, isArray, isNumber, map } from 'lodash-es';
+import { find, flatten, head, isArray, isNumber, map } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
@@ -234,14 +234,17 @@ export function SearchValueNode(props: ValueNodeProps) {
     >
       <Controller
         control={control}
-        name={getFieldName('fieldSpec.key')}
+        name={getFieldName('fieldSpec')}
         render={({ field }) => (
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Field</InputLabel>
             <Select
               label="Field"
               MenuProps={{ sx: { maxHeight: 375 } }}
-              {...field}
+              value={
+                head(search.indexFieldToVirtualField[field.value.key]) ??
+                field.value.key
+              }
               onChange={(e) => handleFieldChange(e.target.value)}
             >
               {seq.collect(SearchFieldSpecs, (spec) => {

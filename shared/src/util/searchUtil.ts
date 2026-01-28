@@ -342,7 +342,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   audio_channels: 'audioChannels',
 };
 
-const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
+export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
