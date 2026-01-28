@@ -4,7 +4,7 @@ import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const SmartCollection = sqliteTable('smart_collection', {
   uuid: text().primaryKey(),
   name: text().notNull(),
-  query: text(),
+  filter: text('query'),
   keywords: text(),
 });
 

@@ -186,22 +186,25 @@ export function inConstArr<Arr extends readonly string[], S extends string>(
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: true,
 ): Record<V, Array<K>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: false,
 ): Record<V, K>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: boolean,
 ): Record<V, Array<K>> | Record<V, K> {
   const out = {} as Record<V, Array<K>>;
   for (const [k, v] of Object.entries<V>(input)) {
-    out[k] ??= [];
-    out[k].push(v);
+    out[v] ??= [];
+    out[v].push(k as K);
   }
 
   if (!multi) {

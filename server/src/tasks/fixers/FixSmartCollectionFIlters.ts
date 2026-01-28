@@ -20,11 +20,11 @@ export class FixSmartCollectionFilters extends Fixer {
     const allCollections = await this.smartCollectionDB.getAllRaw();
 
     for (const collection of allCollections) {
-      if (!isNonEmptyString(collection.query)) {
+      if (!isNonEmptyString(collection.filter)) {
         continue;
       }
 
-      const tokenized = search.tokenizeSearchQuery(collection.query);
+      const tokenized = search.tokenizeSearchQuery(collection.filter);
       this.searchParser.reset();
       this.searchParser.input = tokenized.tokens;
       this.searchParser.searchExpression();
@@ -45,7 +45,7 @@ export class FixSmartCollectionFilters extends Fixer {
 
         const newColl: SmartCollection = {
           ...collection,
-          keywords: collection.query,
+          keywords: collection.filter,
           filter: undefined,
         };
 

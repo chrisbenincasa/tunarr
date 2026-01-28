@@ -4,7 +4,7 @@ import {
   createTypeSearchField,
 } from '@tunarr/shared/util';
 import type { ProgramLike, ProgramOrFolder } from '@tunarr/types';
-import { ProgramSearchResponse } from '@tunarr/types/api';
+import type { ProgramSearchResponse } from '@tunarr/types/api';
 import type { SearchFilter } from '@tunarr/types/schemas';
 import { postApiProgramsSearchOptions } from '../generated/@tanstack/react-query.gen.ts';
 import type { Nullable } from '../types/util.ts';

@@ -1,7 +1,8 @@
 import { Stack, Typography } from '@mui/material';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { SearchRequest } from '@tunarr/types/schemas';
+import { isNonEmptyString } from '@tunarr/shared/util';
+import type { SearchRequest } from '@tunarr/types/schemas';
 import { LibraryProgramGrid } from '../../../components/library/LibraryProgramGrid.tsx';
 import { SearchInput } from '../../../components/search/SearchInput.tsx';
 import { getApiSmartCollectionsByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
@@ -20,7 +21,9 @@ export const Route = createFileRoute('/library/smart_collections/$id')({
 
     const searchRequest: SearchRequest = {
       filter: smartCollection.filter,
-      query: smartCollection.keywords,
+      query: isNonEmptyString(smartCollection.keywords)
+        ? smartCollection.keywords
+        : undefined,
     };
     await queryClient.prefetchInfiniteQuery(
       programSearchQueryOpts(undefined, undefined, searchRequest),
@@ -37,7 +40,8 @@ export const Route = createFileRoute('/library/smart_collections/$id')({
 
 function RouteComponent() {
   const { id } = Route.useParams();
-  const { filter, keywords } = Route.useLoaderData();
+  const { filter, query } = Route.useLoaderData();
+  console.log(filter, query);
   const { data: smartCollection } = useSuspenseQuery(
     getApiSmartCollectionsByIdOptions({ path: { id } }),
   );
@@ -46,7 +50,10 @@ function RouteComponent() {
       <Typography variant="h4">
         Smart Collection: {smartCollection.name}
       </Typography>
-      <SearchInput initialSearchFilter={filter} initialKeywords={keywords} />
+      <SearchInput
+        initialSearchFilter={filter ?? undefined}
+        initialKeywords={query ?? undefined}
+      />
       <LibraryProgramGrid />
     </Stack>
   );
