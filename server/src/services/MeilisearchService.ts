@@ -569,6 +569,11 @@ export class MeilisearchService implements ISearchService {
           );
         }
 
+        this.logger.trace(
+          'Starting meilisearch with args: %s %s',
+          executablePath,
+          args.join(' '),
+        );
         this.proc = await this.childProcessHelper.spawn(executablePath, args, {
           maxAttempts: 3,
           additionalOpts: {
