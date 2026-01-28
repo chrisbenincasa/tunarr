@@ -1380,7 +1380,7 @@ export class MeilisearchService implements ISearchService {
       case 'value': {
         const maybeOpAndValue = match(query.fieldSpec)
           .with(
-            { type: P.union('facted_string', 'string'), value: P.array() },
+            { type: P.union('faceted_string', 'string'), value: P.array() },
             ({ value, op }) => {
               const filteredValue = seq.collect(value, (v) =>
                 isNonEmptyString(v) ? v : null,

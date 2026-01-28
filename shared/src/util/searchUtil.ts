@@ -1035,7 +1035,7 @@ export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
     .with(
       {
         type: 'value',
-        fieldSpec: { type: P.union('facted_string', 'string') },
+        fieldSpec: { type: P.union('faceted_string', 'string') },
       },
       ({ fieldSpec }) => {
         const key: string =

@@ -25,7 +25,7 @@ const StringSearchFieldSchema = z.object({
 
 const FactedStringSearchFieldSchema = z.object({
   ...StringSearchFieldSchema.shape,
-  type: z.literal('facted_string'),
+  type: z.literal('faceted_string'),
 });
 
 export type FactedStringSearchField = z.infer<
@@ -63,7 +63,7 @@ export const OperatorsByType = {
   string: StringOperators,
   numeric: NumericOperators,
   date: NumericOperators,
-  facted_string: StringOperators,
+  faceted_string: StringOperators,
 } satisfies Record<SearchField['type'], ReadonlyArray<string>>;
 
 export const SearchFilterValueNodeSchema = z.object({

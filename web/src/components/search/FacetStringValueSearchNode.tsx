@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceId } from '@tunarr/shared';
 import { search } from '@tunarr/shared/util';
 import type { FactedStringSearchField } from '@tunarr/types/schemas';
-import { useMemo } from 'react';
+import { isArray } from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';
 import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
@@ -22,11 +23,12 @@ export function FacetStringValueSearchNode({
   mediaSourceId?: MediaSourceId;
   libraryId?: string;
 }) {
-  const { control } = useFormContext<SearchForm>();
+  const { control, setValue, watch } = useFormContext<SearchForm>();
   const [facetSearchInputValue, setFacetSearchInputValue] = useDebounceValue(
     '',
     500,
   );
+  const [lastValue, op] = watch([`${formKey}.value`, `${formKey}.op`]);
 
   const facetQuery = useQuery({
     ...postApiProgramsFacetsByFacetNameOptions({
@@ -50,6 +52,24 @@ export function FacetStringValueSearchNode({
       : [];
   }, [facetQuery.data]);
 
+  const handleValueChange = useCallback(
+    (newValue: string[], originalOnChange: (...args: unknown[]) => void) => {
+      if (
+        (!isArray(lastValue) || lastValue.length < 2) &&
+        newValue.length > 1 &&
+        op !== 'in' &&
+        op !== 'not in'
+      ) {
+        setValue(`${formKey}.op`, 'in', {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
+      originalOnChange([...newValue]);
+    },
+    [formKey, lastValue, op, setValue],
+  );
+
   return (
     <Controller
       control={control}
@@ -64,7 +84,7 @@ export function FacetStringValueSearchNode({
             multiple
             filterOptions={(x) => x}
             onChange={(_, newValue) => {
-              field.onChange([...newValue.values()]);
+              handleValueChange(newValue, field.onChange);
             }}
             filterSelectedOptions
             autoComplete
