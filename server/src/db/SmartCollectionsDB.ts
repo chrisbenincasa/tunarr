@@ -63,20 +63,20 @@ export class SmartCollectionsDB {
     smartCollection: SmartCollection,
   ): Promise<SmartCollectionDto> {
     let searchFilter: Maybe<SearchFilter>;
-    if (isNonEmptyString(smartCollection.query)) {
+    if (isNonEmptyString(smartCollection.filter)) {
       searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
-        smartCollection.query,
+        smartCollection.filter,
       );
       if (!searchFilter) {
         const parseResult = await this.parseSearchQueryString(
-          smartCollection.query,
+          smartCollection.filter,
         );
         if (parseResult.isFailure()) {
           this.logger.warn(
             'Smart collection ID %s (%s) has unparseable filter ("%s"). Results will be wrong.',
             smartCollection.uuid,
             smartCollection.name,
-            smartCollection.query,
+            smartCollection.filter,
           );
         } else {
           searchFilter = parseResult.get();
@@ -116,30 +116,16 @@ export class SmartCollectionsDB {
   async insert(
     collection: StrictOmit<SmartCollectionDto, 'uuid'>,
   ): Promise<Result<SmartCollectionDto>> {
-    const parseResult = isNonEmptyString(collection.filter)
-      ? await this.parseSearchQueryString(collection.filter)
-      : Result.success(undefined);
-
-    // Going forward, only parseable filters can be saved.
-    // Free text queries should use the keywords field
-    if (parseResult.isFailure()) {
-      this.logger.error(
-        parseResult.error,
-        'Could not parse smart collection filter before saving: %s',
-        collection.filter,
-      );
-      return parseResult.recast();
-    }
-
     const insertResult = await Result.attemptAsync(() =>
       this.db
         .insert(SmartCollection)
         .values({
-          ...collection,
-          query: collection.filter
+          uuid: v4(),
+          keywords: collection.keywords,
+          name: collection.name,
+          filter: collection.filter
             ? search.searchFilterToString(collection.filter)
             : null,
-          uuid: v4(),
         })
         .returning(),
     ).then((_) => _.map((r) => head(r)!));
@@ -153,26 +139,13 @@ export class SmartCollectionsDB {
     id: string,
     collection: Partial<SmartCollectionDto>,
   ): Promise<Result<SmartCollectionDto>> {
-    if (isNonEmptyString(collection.filter)) {
-      const query = collection.filter;
-      const parseResult = await this.parseSearchQueryString(query);
-      if (parseResult.isFailure()) {
-        this.logger.error(
-          parseResult.error,
-          'Could not parse smart collection filter before saving: %s',
-          collection.filter,
-        );
-        return parseResult.recast();
-      }
-    }
-
     return (
       await Result.attemptAsync(() =>
         this.db
           .update(SmartCollection)
           .set({
             name: collection.name,
-            query: collection.filter
+            filter: collection.filter
               ? search.searchFilterToString(collection.filter)
               : null,
             keywords: collection.keywords,
@@ -200,20 +173,20 @@ export class SmartCollectionsDB {
     }
 
     let searchFilter: Maybe<SearchFilter>;
-    if (maybeCollection.query) {
+    if (maybeCollection.filter) {
       searchFilter = SmartCollectionsDB.cache.get<SearchFilter>(
-        maybeCollection.query,
+        maybeCollection.filter,
       );
       if (!searchFilter) {
         const parseResult = await this.parseSearchQueryString(
-          maybeCollection.query,
+          maybeCollection.filter,
         );
 
         if (parseResult.isSuccess()) {
           const filter = parseResult.get();
           if (filter) {
             searchFilter = filter;
-            SmartCollectionsDB.cache.set(maybeCollection.query, searchFilter);
+            SmartCollectionsDB.cache.set(maybeCollection.filter, searchFilter);
           }
         }
       }
@@ -224,7 +197,7 @@ export class SmartCollectionsDB {
     for (;;) {
       const pageResult = await this.searchService.search('programs', {
         paging: { page, limit: 100 },
-        query: searchFilter ? null : maybeCollection.query,
+        query: searchFilter ? null : maybeCollection.filter,
         filter: searchFilter ? searchFilter : null,
       });
       if (pageResult.results.length === 0) {

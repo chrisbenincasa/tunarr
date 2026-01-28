@@ -4,6 +4,7 @@ import type {
   UseInfiniteQueryOptions,
 } from '@tanstack/react-query';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/schemas';
 import { flatten, groupBy, isEmpty } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
@@ -68,7 +69,7 @@ export function programSearchQueryOpts(
       }
       return prevPage;
     },
-    initialPageParam: 1,
+    initialPageParam: isNonEmptyString(query.query) ? 1 : 0,
     staleTime: 0,
   };
   return opts;
