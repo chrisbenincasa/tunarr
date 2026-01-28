@@ -71,6 +71,7 @@ import {
   run,
   wait,
 } from '../util/index.ts';
+import { loggingDef } from '../util/logging/loggingDef.ts';
 import { EventService } from './EventService.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 import { XmlTvWriter } from './XmlTvWriter.ts';
@@ -119,6 +120,7 @@ type ChannelId = string;
 const PlaceholderChannelId = v4();
 
 @injectable()
+@loggingDef({ category: 'scheduling' })
 export class TVGuideService {
   private timer: Timer;
   private locks = new MutexMap();

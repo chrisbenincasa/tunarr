@@ -17,6 +17,7 @@ import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { MaterializedGuideItem } from '../types/guide.ts';
+import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
 
@@ -26,6 +27,7 @@ export type MaterializedChannelPrograms = {
 };
 
 @injectable()
+@loggingDef({ category: 'scheduling' })
 export class XmlTvWriter {
   private logger = LoggerFactory.child({
     caller: import.meta,

@@ -244,7 +244,7 @@ export default function MediaSourceSettingsPage() {
             sx={{ flexWrap: 'wrap' }}
           >
             <Typography
-              variant="h5"
+              variant="h3"
               sx={(theme) => ({
                 flexGrow: 1,
                 [theme.breakpoints.down('sm')]: {

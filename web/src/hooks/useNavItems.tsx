@@ -7,6 +7,7 @@ import {
   Psychology,
   Settings,
   SettingsRemote,
+  Storage as StorageIcon,
   Theaters,
   Tv,
   VideoLibrary,
@@ -89,6 +90,11 @@ export const useNavItems = () => {
             icon: <Delete />,
           },
         ],
+      },
+      {
+        name: 'Sources',
+        path: '/media_sources',
+        icon: <StorageIcon />,
       },
       {
         name: 'System',

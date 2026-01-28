@@ -1,6 +1,8 @@
 import { isNonEmptyString } from '@tunarr/shared/util';
+import type { LoggingSettings } from '@tunarr/types';
 import { isString, nth } from 'lodash-es';
 import path, { join } from 'path';
+import type pino from 'pino';
 import type { ChildLoggerOptions, MultiStreamRes } from 'pino';
 import { symbols } from 'pino';
 import { isProduction } from '../index.ts';
@@ -12,6 +14,12 @@ import type {
 } from './LoggerFactory.ts';
 import { getEnvironmentLogLevel, LogCategories } from './LoggerFactory.ts';
 
+export type SerializedLogger = {
+  name: string;
+  bindings: pino.Bindings;
+  level: LogLevels;
+};
+
 interface ILoggerWrapper {
   child(
     args: GetChildLoggerArgs,
@@ -19,6 +27,8 @@ interface ILoggerWrapper {
   ): ILoggerWrapper;
   updateStreams(streams: MultiStreamRes<LogLevels>): void;
   logger: Logger;
+  traverseHierarchy(): Generator<readonly [string, SerializedLogger]>;
+  serialize(): SerializedLogger;
 }
 
 abstract class BaseLoggerWrapper implements ILoggerWrapper {
@@ -55,15 +65,50 @@ abstract class BaseLoggerWrapper implements ILoggerWrapper {
     }
     return;
   }
+
+  *traverseHierarchy() {
+    for (const [loggerName, ref] of Object.entries(this.children)) {
+      const child = ref.deref();
+      if (!child) {
+        continue;
+      }
+      if (!loggerName.startsWith('category')) {
+        yield [loggerName, child.serialize()] as const;
+      }
+      yield* child.traverseHierarchy();
+    }
+  }
+
+  serialize(): SerializedLogger {
+    const lvlVal = this.wrappedLogger.levelVal;
+    let level = this.wrappedLogger.level as LogLevels;
+    for (const [key, value] of Object.entries({
+      ...this.wrappedLogger.levels,
+      ...this.wrappedLogger.customLevels,
+    })) {
+      if (value === lvlVal) {
+        level = key as LogLevels;
+      }
+    }
+
+    return {
+      name: this.className ?? 'unknown',
+      bindings: this.wrappedLogger.bindings(),
+      level,
+    };
+  }
 }
 
 export class RootLoggerWrapper extends BaseLoggerWrapper {
   private loggerByCategory = new Map<LogCategory, ILoggerWrapper>();
 
-  constructor(wrappedLogger: Logger) {
+  constructor(wrappedLogger: Logger, initialLogSettings?: LoggingSettings) {
     super(wrappedLogger);
     for (const category of LogCategories) {
-      const categoryLogger = this.wrappedLogger.child({ category });
+      const categoryLogger = this.wrappedLogger.child(
+        { category },
+        { level: initialLogSettings?.categoryLogLevel?.[category] },
+      );
       const wrapped = new LoggerWrapper(categoryLogger);
       this.children[`category:${category}`] = new WeakRef(wrapped);
       this.loggerByCategory.set(category, wrapped);
@@ -92,7 +137,6 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
           : undefined,
       caller: isProduction ? undefined : className, // Don't include this twice in production
     };
-    // console.log(this.loggerByCategory.get(category));
     if (category && this.loggerByCategory.has(category)) {
       const categoryLogger = this.loggerByCategory.get(category)!;
       delete args.category;
@@ -130,12 +174,11 @@ export class LoggerWrapper extends BaseLoggerWrapper {
     super(wrappedLogger);
     const className = this.className;
     if (isNonEmptyString(className)) {
-      const l = getEnvironmentLogLevel(
+      const customLogLevel = getEnvironmentLogLevel(
         `TUNARR_LOG_LEVEL_${className.toUpperCase()}`,
       );
-      if (l) {
-        console.log('CUSTOM LOG LEVEL: ', l, className);
-        this.wrappedLogger.level = l;
+      if (customLogLevel) {
+        this.wrappedLogger.level = customLogLevel;
       }
     }
   }

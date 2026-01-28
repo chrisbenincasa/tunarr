@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 import {
   CacheSettingsSchema,
+  LogCategoriesSchema,
   LoggingSettingsSchema,
   LogLevelsSchema,
   ServerSettingsSchema,
@@ -266,6 +267,11 @@ export const UpdateSystemSettingsRequestSchema = z.object({
     useEnvVarLevel: true,
     logRollConfig: true,
   })
+    .extend({
+      categoryLogLevel: z
+        .partialRecord(LogCategoriesSchema, LogLevelsSchema.nullish())
+        .optional(),
+    })
     .partial()
     .optional(),
   backup: BackupSettingsSchema.optional(),

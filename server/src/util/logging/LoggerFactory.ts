@@ -27,6 +27,7 @@ import pino, {
 import type { PrettyOptions } from 'pino-pretty';
 import pretty from 'pino-pretty';
 import { TUNARR_ENV_VARS } from '../env.ts';
+import type { SerializedLogger } from './LoggerWrapper.ts';
 import { RootLoggerWrapper } from './LoggerWrapper.ts';
 import { RollingLogDestination } from './RollingDestination.ts';
 
@@ -138,6 +139,7 @@ class LoggerFactoryImpl {
           this.settingsDB.systemSettings().logging.logRollConfig;
 
         const { level: newLevel } = this.logLevel;
+        const perCategoryLogLevel = this.perCategoryLogLevel;
 
         if (
           this.rootLogger.logger[symbols.getLevelSym] !== newLevel ||
@@ -148,6 +150,15 @@ class LoggerFactoryImpl {
           setTimeout(() => {
             this.rollLogsNow();
           });
+        }
+
+        for (const [category, level] of Object.entries(perCategoryLogLevel)) {
+          if (!inConstArr(LogCategories, category)) {
+            continue;
+          }
+          this.rootLogger.updateCategoryLevel(level, category, () =>
+            this.createLogStreams(level),
+          );
         }
       });
 
@@ -169,6 +180,10 @@ class LoggerFactoryImpl {
 
   get isInitialized() {
     return this.initialized;
+  }
+
+  traverseHierarchy(): Generator<readonly [string, SerializedLogger]> {
+    return this.rootLogger.traverseHierarchy();
   }
 
   rollLogsNow() {
@@ -212,7 +227,10 @@ class LoggerFactoryImpl {
       this.createLogStreams(),
     );
 
-    return new RootLoggerWrapper(root);
+    return new RootLoggerWrapper(
+      root,
+      this.settingsDB?.systemSettings().logging,
+    );
   }
 
   private get logLevel(): {
@@ -229,6 +247,14 @@ class LoggerFactoryImpl {
     return { level: this.systemSettingsLogLevel, source: 'settings' };
   }
 
+  private get perCategoryLogLevel(): Record<string, LogLevels> {
+    if (!this.settingsDB) {
+      return {};
+    }
+
+    return this.settingsDB.systemSettings().logging.categoryLogLevel ?? {};
+  }
+
   private get systemSettingsLogLevel() {
     if (!isUndefined(this.settingsDB)) {
       return this.settingsDB.systemSettings().logging
@@ -240,10 +266,8 @@ class LoggerFactoryImpl {
 
   private updateLevel(newLevel: LogLevels, category?: string) {
     if (category && inConstArr(LogCategories, category)) {
-      this.rootLogger.updateCategoryLevel(
-        newLevel,
-        category as LogCategory,
-        () => this.createLogStreams(newLevel),
+      this.rootLogger.updateCategoryLevel(newLevel, category, () =>
+        this.createLogStreams(newLevel),
       );
       return;
     }
