@@ -47,13 +47,13 @@ const SecondsField = {
 } satisfies SearchFieldSpec<'numeric'>;
 
 export const SearchFieldSpecs: NonEmptyArray<
-  | SearchFieldSpec<'string' | 'facted_string'>
+  | SearchFieldSpec<'string' | 'faceted_string'>
   | SearchFieldSpec<'numeric' | 'date'>
 > = [
   TitleSearchFieldSpec,
   {
     key: 'type',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Type',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -71,14 +71,14 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'genres.name',
     alias: 'genre',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Genre',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'rating',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Content Rating',
     uiVisible: true,
     visibleForLibraryTypes: ['movies', 'shows'],
@@ -86,7 +86,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'actors.name',
     alias: 'actor',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Actors',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -94,7 +94,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'writer.name',
     alias: 'writer',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Writers',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -102,7 +102,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'director.name',
     alias: 'director',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Directors',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -110,7 +110,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'studio.name',
     alias: 'studio',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Studios',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -134,7 +134,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'videoCodec',
     alias: 'video_codec',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Video Codec',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -166,7 +166,7 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'audioCodec',
     alias: 'audio_codec',
-    type: 'facted_string' as const,
+    type: 'faceted_string' as const,
     name: 'Audio Codec',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
@@ -181,6 +181,23 @@ export const SearchFieldSpecs: NonEmptyArray<
   },
   MinutesField,
   SecondsField,
+  {
+    key: 'tags',
+    type: 'faceted_string',
+    name: 'Tags',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
+  {
+    key: 'grandparent.tags',
+    alias: 'show_tags',
+    type: 'faceted_string' as const,
+    name: 'Show Tags',
+    uiVisible: true,
+    visibleForLibraryTypes: ['shows'] as NoInfer<
+      ReadonlyArray<MediaSourceLibrary['mediaType']>
+    >,
+  } satisfies SearchFieldSpec<'faceted_string'>,
 ];
 
 interface Bij<In, Out = In> {
@@ -243,7 +260,7 @@ const OperatorLabelByFieldType = {
     '>=': 'greater than or equal',
     to: 'between',
   },
-  facted_string: {
+  faceted_string: {
     '!=': '!=',
     '=': '=',
     'starts with': 'starts with',

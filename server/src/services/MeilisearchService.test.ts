@@ -195,7 +195,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
         fieldSpec: {
           key: 'genres.name',
           name: 'Genre',
-          type: 'facted_string',
+          type: 'faceted_string',
           op: 'in',
           value: ['comedy'],
         },
@@ -214,7 +214,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
         fieldSpec: {
           key: 'genres.name',
           name: 'Genre',
-          type: 'facted_string',
+          type: 'faceted_string',
           op: 'in',
           value: ['comedy', 'horror', 'action'],
         },
@@ -920,7 +920,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
                 fieldSpec: {
                   key: 'genres.name',
                   name: 'Genre',
-                  type: 'facted_string',
+                  type: 'faceted_string',
                   op: 'in',
                   value: ['comedy', 'horror'],
                 },
@@ -979,7 +979,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
             fieldSpec: {
               key: 'tags',
               name: 'Tags',
-              type: 'facted_string',
+              type: 'faceted_string',
               op: 'in',
               value: ['trending', 'award-winner'],
             },
@@ -1016,7 +1016,7 @@ describe('MeilisearchService.buildFilterExpression', () => {
             fieldSpec: {
               key: 'genres.name',
               name: 'Genre',
-              type: 'facted_string',
+              type: 'faceted_string',
               op: 'not in',
               value: ['horror', 'thriller'],
             },

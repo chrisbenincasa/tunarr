@@ -27,7 +27,7 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
           key: 'state',
           name: '',
           op: '=',
-          type: 'facted_string',
+          type: 'faceted_string',
           value: ['missing'],
         },
       } satisfies SearchFilter;
@@ -46,7 +46,7 @@ export const trashApi: RouterPluginAsyncCallback = async (fastify) => {
                 name: '',
                 op: 'in',
                 value: req.query.itemTypes,
-                type: 'facted_string',
+                type: 'faceted_string',
               },
             },
           ],
