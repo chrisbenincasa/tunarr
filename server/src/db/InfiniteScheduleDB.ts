@@ -2,13 +2,14 @@ import { KEYS } from '@/types/inject.js';
 import dayjs from '@/util/dayjs.js';
 import type {
   CreateInfiniteScheduleRequest,
-  InfiniteScheduleSlot as InfiniteScheduleSlotApi,
+  ScheduleSlot as InfiniteScheduleSlotApi,
   UpdateInfiniteScheduleRequest,
 } from '@tunarr/types/api';
 import { and, asc, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { chunk, isUndefined, omitBy } from 'lodash-es';
+import { chunk, head, isNil, omitBy } from 'lodash-es';
 import { v4 } from 'uuid';
+import { Maybe } from '../types/util.ts';
 import { Channel } from './schema/Channel.ts';
 import {
   GeneratedScheduleItem,
@@ -28,23 +29,32 @@ import {
 } from './schema/InfiniteScheduleSlotState.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
 
-type InfiniteScheduleWithSlots = InfiniteSchedule & {
+export type InfiniteScheduleWithSlots = InfiniteSchedule & {
   slots: InfiniteScheduleSlot[];
 };
 
-type InfiniteScheduleSlotWithState = InfiniteScheduleSlot & {
+export type InfiniteScheduleSlotWithState = InfiniteScheduleSlot & {
   state: InfiniteScheduleSlotState | null;
 };
 
-type InfiniteScheduleWithSlotsAndState = InfiniteSchedule & {
+export type InfiniteScheduleWithSlotsAndState = InfiniteSchedule & {
   slots: InfiniteScheduleSlotWithState[];
 };
 
 @injectable()
 export class InfiniteScheduleDB {
-  constructor(
-    @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
-  ) {}
+  constructor(@inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess) {}
+
+  async getSchedules(): Promise<InfiniteScheduleWithSlots[]> {
+    const result = await this.drizzle.query.infiniteSchedule.findMany({
+      with: {
+        slots: {
+          orderBy: asc(InfiniteScheduleSlot.slotIndex),
+        },
+      },
+    });
+    return result;
+  }
 
   /**
    * Get a schedule by its UUID
@@ -67,15 +77,19 @@ export class InfiniteScheduleDB {
   async getScheduleByChannel(
     channelUuid: string,
   ): Promise<InfiniteScheduleWithSlots | null> {
-    const result = await this.drizzle.query.infiniteSchedule.findFirst({
-      where: eq(InfiniteSchedule.channelUuid, channelUuid),
+    const result = await this.drizzle.query.channelSchedule.findFirst({
+      where: (fields, { eq }) => eq(fields.channelId, channelUuid),
       with: {
-        slots: {
-          orderBy: asc(InfiniteScheduleSlot.slotIndex),
+        infiniteSchedule: {
+          with: {
+            slots: {
+              orderBy: (fields, { asc }) => asc(fields.slotIndex),
+            },
+          },
         },
       },
     });
-    return result ?? null;
+    return result?.infiniteSchedule ?? null;
   }
 
   /**
@@ -104,18 +118,22 @@ export class InfiniteScheduleDB {
   async getScheduleByChannelWithState(
     channelUuid: string,
   ): Promise<InfiniteScheduleWithSlotsAndState | null> {
-    const result = await this.drizzle.query.infiniteSchedule.findFirst({
-      where: eq(InfiniteSchedule.channelUuid, channelUuid),
+    const result = await this.drizzle.query.channelSchedule.findFirst({
+      where: (fields, { eq }) => eq(fields.channelId, channelUuid),
       with: {
-        slots: {
-          orderBy: asc(InfiniteScheduleSlot.slotIndex),
+        infiniteSchedule: {
           with: {
-            state: true,
+            slots: {
+              orderBy: (fields, { asc }) => asc(fields.slotIndex),
+              with: {
+                state: true,
+              },
+            },
           },
         },
       },
     });
-    return result ?? null;
+    return result?.infiniteSchedule ?? null;
   }
 
   /**
@@ -123,37 +141,43 @@ export class InfiniteScheduleDB {
    */
   async createSchedule(
     request: CreateInfiniteScheduleRequest,
-  ): Promise<string> {
-    const now = +dayjs();
+  ): Promise<InfiniteScheduleWithSlots> {
+    const now = dayjs();
     const scheduleUuid = v4();
 
     const schedule: NewInfiniteSchedule = {
       uuid: scheduleUuid,
-      channelUuid: request.channelUuid,
-      padMs: request.padMs ?? 300000,
+      name: request.name,
+      padMs: Math.max(request.padMs, 1),
       flexPreference: request.flexPreference ?? 'end',
       timeZoneOffset: request.timeZoneOffset ?? 0,
       bufferDays: request.bufferDays ?? 7,
       bufferThresholdDays: request.bufferThresholdDays ?? 2,
       enabled: request.enabled ?? true,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now.toDate(),
+      updatedAt: now.toDate(),
     };
 
-    await this.drizzle.insert(InfiniteSchedule).values(schedule);
+    const inserted = head(
+      await this.drizzle.insert(InfiniteSchedule).values(schedule).returning(),
+    )!;
 
     // Create slots if provided
+    const slots: InfiniteScheduleSlot[] = [];
     if (request.slots && request.slots.length > 0) {
-      await this.createSlots(scheduleUuid, request.slots);
+      slots.push(...(await this.createSlots(scheduleUuid, request.slots)));
     }
 
     // Link the channel to this schedule
-    await this.drizzle
-      .update(Channel)
-      .set({ infiniteScheduleUuid: scheduleUuid })
-      .where(eq(Channel.uuid, request.channelUuid));
+    // await this.drizzle
+    //   .update(Channel)
+    //   .set({ infiniteScheduleUuid: scheduleUuid })
+    //   .where(eq(Channel.uuid, request.channelUuid));
 
-    return scheduleUuid;
+    return {
+      ...inserted,
+      slots,
+    };
   }
 
   /**
@@ -162,10 +186,10 @@ export class InfiniteScheduleDB {
   async updateSchedule(
     uuid: string,
     request: UpdateInfiniteScheduleRequest,
-  ): Promise<boolean> {
+  ): Promise<Maybe<InfiniteScheduleWithSlots>> {
     const existing = await this.getSchedule(uuid);
     if (!existing) {
-      return false;
+      return;
     }
 
     const now = +dayjs();
@@ -179,23 +203,31 @@ export class InfiniteScheduleDB {
         enabled: request.enabled,
         updatedAt: now,
       },
-      isUndefined,
+      isNil,
     );
 
+    let schedule: InfiniteSchedule = existing;
     if (Object.keys(updateData).length > 1) {
       // > 1 because updatedAt is always set
-      await this.drizzle
-        .update(InfiniteSchedule)
-        .set(updateData)
-        .where(eq(InfiniteSchedule.uuid, uuid));
+      schedule = head(
+        await this.drizzle
+          .update(InfiniteSchedule)
+          .set(updateData)
+          .where(eq(InfiniteSchedule.uuid, uuid))
+          .returning(),
+      )!;
     }
 
     // Update slots if provided
-    if (request.slots !== undefined) {
-      await this.replaceSlots(uuid, request.slots);
+    let slots = existing.slots;
+    if (request.slots) {
+      slots = await this.replaceSlots(uuid, request.slots);
     }
 
-    return true;
+    return {
+      ...schedule,
+      slots,
+    };
   }
 
   /**
@@ -227,15 +259,19 @@ export class InfiniteScheduleDB {
   private async createSlots(
     scheduleUuid: string,
     slots: InfiniteScheduleSlotApi[],
-  ): Promise<void> {
-    const now = +dayjs();
+  ): Promise<InfiniteScheduleSlot[]> {
+    if (slots.length === 0) {
+      return [];
+    }
+
+    const now = dayjs();
 
     const slotRecords: NewInfiniteScheduleSlot[] = slots.map((slot, index) => ({
       uuid: slot.uuid ?? v4(),
       scheduleUuid,
       slotIndex: slot.slotIndex ?? index,
       slotType: slot.type,
-      showId: 'showId' in slot ? slot.showId : null,
+      showId: slot.type === 'show' ? slot.showId : null,
       customShowId: 'customShowId' in slot ? slot.customShowId : null,
       fillerListId: 'fillerListId' in slot ? slot.fillerListId : null,
       redirectChannelId:
@@ -251,33 +287,99 @@ export class InfiniteScheduleDB {
       padMs: slot.padMs ?? null,
       padToMultiple: slot.padToMultiple ?? null,
       fillerConfig: slot.fillerConfig ?? null,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now.toDate(),
+      updatedAt: now.toDate(),
     }));
 
     // Insert slots in chunks
+    const insertedSlots: InfiniteScheduleSlot[] = [];
     for (const batch of chunk(slotRecords, 100)) {
-      await this.drizzle.insert(InfiniteScheduleSlot).values(batch);
+      insertedSlots.push(
+        ...(await this.drizzle
+          .insert(InfiniteScheduleSlot)
+          .values(batch)
+          .returning()),
+      );
     }
 
     // Create initial state for each slot
     const stateRecords: NewInfiniteScheduleSlotState[] = slotRecords.map(
       (slot) => ({
         uuid: v4(),
-        slotUuid: slot.uuid!,
+        slotUuid: slot.uuid,
         rngSeed: null,
         rngUseCount: 0,
         iteratorPosition: 0,
         shuffleOrder: null,
         lastScheduledAt: null,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
       }),
     );
 
     for (const batch of chunk(stateRecords, 100)) {
       await this.drizzle.insert(InfiniteScheduleSlotState).values(batch);
     }
+
+    return insertedSlots;
+  }
+
+  async addSlot(scheduleUuid: string, slot: InfiniteScheduleSlotApi) {
+    return await this.drizzle.transaction(async (tx) => {
+      const now = dayjs();
+
+      const slotRecord = {
+        uuid: slot.uuid ?? v4(),
+        scheduleUuid,
+        slotIndex: slot.slotIndex, // ?? index,
+        slotType: slot.type,
+        showId: slot.type === 'show' ? slot.showId : null,
+        customShowId: slot.type === 'custom-show' ? slot.customShowId : null,
+        fillerListId: slot.type === 'filler' ? slot.fillerListId : null,
+        redirectChannelId:
+          slot.type === 'redirect' ? slot.redirectChannelId : null,
+        smartCollectionId:
+          slot.type === 'smart-collection' ? slot.smartCollectionId : null,
+        slotConfig: 'slotConfig' in slot ? slot.slotConfig : null,
+        anchorTime: slot.anchorTime ?? null,
+        anchorMode: slot.anchorMode ?? null,
+        anchorDays: slot.anchorDays ?? null,
+        weight: slot.weight ?? 1,
+        cooldownMs: slot.cooldownMs ?? 0,
+        padMs: slot.padMs ?? null,
+        padToMultiple: slot.padToMultiple ?? null,
+        fillerConfig: slot.fillerConfig ?? null,
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      } satisfies NewInfiniteScheduleSlot;
+
+      const newSlot = head(
+        await tx.insert(InfiniteScheduleSlot).values(slotRecord).returning(),
+      )!;
+
+      // Create initial state for each slot
+      const stateRecord = {
+        uuid: v4(),
+        slotUuid: slotRecord.uuid,
+        rngSeed: null,
+        rngUseCount: 0,
+        iteratorPosition: 0,
+        shuffleOrder: null,
+        lastScheduledAt: null,
+        createdAt: now.toDate(),
+        updatedAt: now.toDate(),
+      } satisfies NewInfiniteScheduleSlotState;
+
+      await tx.insert(InfiniteScheduleSlotState).values(stateRecord);
+
+      return newSlot;
+    });
+  }
+
+  async getSlot(slotId: string): Promise<Maybe<InfiniteScheduleSlot>> {
+    return await this.drizzle.query.infiniteScheduleSlot.findFirst({
+      where: (fields, { eq }) => eq(field.uuid, slotId),
+    });
   }
 
   /**
@@ -286,7 +388,7 @@ export class InfiniteScheduleDB {
   async replaceSlots(
     scheduleUuid: string,
     slots: InfiniteScheduleSlotApi[],
-  ): Promise<void> {
+  ): Promise<InfiniteScheduleSlot[]> {
     // Delete existing slots (cascades to states)
     await this.drizzle
       .delete(InfiniteScheduleSlot)
@@ -294,8 +396,10 @@ export class InfiniteScheduleDB {
 
     // Create new slots
     if (slots.length > 0) {
-      await this.createSlots(scheduleUuid, slots);
+      return await this.createSlots(scheduleUuid, slots);
     }
+
+    return [];
   }
 
   /**
@@ -328,12 +432,12 @@ export class InfiniteScheduleDB {
       >
     >,
   ): Promise<void> {
-    const now = +dayjs();
+    const now = dayjs();
     await this.drizzle
       .update(InfiniteScheduleSlotState)
       .set({
         ...update,
-        updatedAt: now,
+        updatedAt: now.toDate(),
       })
       .where(eq(InfiniteScheduleSlotState.slotUuid, slotUuid));
   }
@@ -342,7 +446,7 @@ export class InfiniteScheduleDB {
    * Reset all slot seeds in a schedule
    */
   async resetSlotSeeds(scheduleUuid: string): Promise<number> {
-    const now = +dayjs();
+    const now = dayjs();
     const result = await this.drizzle
       .update(InfiniteScheduleSlotState)
       .set({
@@ -350,7 +454,7 @@ export class InfiniteScheduleDB {
         rngUseCount: 0,
         iteratorPosition: 0,
         shuffleOrder: null,
-        updatedAt: now,
+        updatedAt: now.toDate(),
       })
       .where(
         eq(
@@ -422,9 +526,7 @@ export class InfiniteScheduleDB {
   /**
    * Insert generated items
    */
-  async insertGeneratedItems(
-    items: NewGeneratedScheduleItem[],
-  ): Promise<void> {
+  async insertGeneratedItems(items: NewGeneratedScheduleItem[]): Promise<void> {
     if (items.length === 0) return;
 
     for (const batch of chunk(items, 100)) {

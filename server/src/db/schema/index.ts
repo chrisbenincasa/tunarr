@@ -13,6 +13,10 @@ import {
   ChannelPrograms,
   ChannelProgramsRelations,
 } from './ChannelPrograms.ts';
+import {
+  ChannelSchedule,
+  ChannelScheduleRelations,
+} from './ChannelSchedule.ts';
 import { Credit, CreditRelations } from './Credit.ts';
 import { CustomShow, CustomShowRelations } from './CustomShow.ts';
 import {
@@ -43,7 +47,14 @@ import {
   InfiniteScheduleSlot,
   InfiniteScheduleSlotRelations,
 } from './InfiniteScheduleSlot.ts';
-import { InfiniteScheduleSlotState } from './InfiniteScheduleSlotState.ts';
+import {
+  InfiniteScheduleSlotState,
+  InfiniteScheduleSlotRelations as InfiniteScheduleSlotStateRelations,
+} from './InfiniteScheduleSlotState.ts';
+import {
+  InfiniteScheduleState,
+  InfiniteScheduleStateRelations,
+} from './InfiniteScheduleState.ts';
 import {
   LocalMediaFolder,
   LocalMediaFolderRelations,
@@ -68,10 +79,6 @@ import {
   ProgramExternalIdRelations,
 } from './ProgramExternalId.ts';
 import {
-  ProgramPlayHistory,
-  ProgramPlayHistoryRelations,
-} from './ProgramPlayHistory.ts';
-import {
   ProgramGrouping,
   ProgramGroupingRelations,
 } from './ProgramGrouping.ts';
@@ -87,6 +94,10 @@ import {
   ProgramMediaStream,
   ProgramMediaStreamRelations,
 } from './ProgramMediaStream.ts';
+import {
+  ProgramPlayHistory,
+  ProgramPlayHistoryRelations,
+} from './ProgramPlayHistory.ts';
 import {
   ProgramSubtitles,
   ProgramSubtitlesRelations,
@@ -112,6 +123,8 @@ export const schema = {
   channelFillerShow: ChannelFillerShow,
   channelFillerShowRelations: ChannelFillerShowRelations,
   channelProgramRelations: ChannelProgramsRelations,
+  channelSchedule: ChannelSchedule,
+  channelScheduleRelations: ChannelScheduleRelations,
   customShow: CustomShow,
   customShowRelations: CustomShowRelations,
   customShowContent: CustomShowContent,
@@ -126,6 +139,9 @@ export const schema = {
   infiniteScheduleSlot: InfiniteScheduleSlot,
   infiniteScheduleSlotRelations: InfiniteScheduleSlotRelations,
   infiniteScheduleSlotState: InfiniteScheduleSlotState,
+  infiniteScheduleSlotStateRelations: InfiniteScheduleSlotStateRelations,
+  infiniteScheduleState: InfiniteScheduleState,
+  infiniteScheduleStateRelations: InfiniteScheduleStateRelations,
   generatedScheduleItem: GeneratedScheduleItem,
   generatedScheduleItemRelations: GeneratedScheduleItemRelations,
   program: Program,

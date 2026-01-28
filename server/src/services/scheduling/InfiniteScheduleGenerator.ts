@@ -11,7 +11,7 @@ import type {
   InfiniteSlotConfig,
 } from '@/db/schema/InfiniteScheduleSlot.js';
 import type { InfiniteScheduleSlotState } from '@/db/schema/InfiniteScheduleSlotState.js';
-import { KEYS, type LoggerFactory } from '@/types/inject.js';
+import { KEYS } from '@/types/inject.js';
 import dayjs from '@/util/dayjs.js';
 import { inject, injectable } from 'inversify';
 import { isNil, sortBy, sumBy } from 'lodash-es';
@@ -31,7 +31,7 @@ export interface GenerationResult {
 export interface SlotStateUpdate {
   iteratorPosition: number;
   rngUseCount: number;
-  lastScheduledAt: number;
+  lastScheduledAt: Date;
   shuffleOrder?: string[] | null;
 }
 
@@ -63,18 +63,14 @@ interface SlotIterator {
 
 @injectable()
 export class InfiniteScheduleGenerator {
-  private logger: Logger;
-
   constructor(
-    @inject(KEYS.LoggerFactory) loggerFactory: LoggerFactory,
+    @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.InfiniteScheduleDB)
     private infiniteScheduleDB: InfiniteScheduleDB,
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
     @inject(FillerDB) private fillerDB: FillerDB,
-  ) {
-    this.logger = loggerFactory({ className: this.constructor.name });
-  }
+  ) {}
 
   /**
    * Generate schedule items for a given schedule.
@@ -93,8 +89,7 @@ export class InfiniteScheduleGenerator {
 
     const now = +dayjs();
     const from = fromTimeMs ?? now;
-    const to =
-      toTimeMs ?? from + schedule.bufferDays * 24 * 60 * 60 * 1000;
+    const to = toTimeMs ?? from + schedule.bufferDays * 24 * 60 * 60 * 1000;
 
     this.logger.debug(
       'Generating schedule from %d to %d (%d days)',
@@ -227,7 +222,7 @@ export class InfiniteScheduleGenerator {
     slot: SlotWithState,
     programs: ProgramWithRelationsOrm[],
   ): SlotIterator {
-    const config = slot.slotConfig as InfiniteSlotConfig | null;
+    const config = slot.slotConfig;
     const order = config?.order ?? 'next';
     const state = slot.state;
 
@@ -243,7 +238,10 @@ export class InfiniteScheduleGenerator {
     // Handle shuffle order from state
     let shuffleOrder: string[] | null = null;
     if (order === 'shuffle' || order === 'ordered_shuffle') {
-      if (state?.shuffleOrder && state.shuffleOrder.length === programs.length) {
+      if (
+        state?.shuffleOrder &&
+        state.shuffleOrder.length === programs.length
+      ) {
         // Use existing shuffle order
         shuffleOrder = state.shuffleOrder;
         sortedPrograms = this.applyShuffleOrder(sortedPrograms, shuffleOrder);
@@ -279,7 +277,7 @@ export class InfiniteScheduleGenerator {
         return {
           iteratorPosition: this.position,
           rngUseCount: this.useCount,
-          lastScheduledAt: +dayjs(),
+          lastScheduledAt: dayjs().toDate(),
           shuffleOrder: this.shuffleOrder,
         };
       },
@@ -363,8 +361,8 @@ export class InfiniteScheduleGenerator {
     const slotStates = new Map<string, SlotStateUpdate>();
 
     // Filter to only floating slots (non-anchored) for Phase 1
-    const floatingSlots = slotPrograms.filter(
-      (sp) => isNil(sp.slot.anchorTime),
+    const floatingSlots = slotPrograms.filter((sp) =>
+      isNil(sp.slot.anchorTime),
     );
 
     if (floatingSlots.length === 0) {
@@ -387,11 +385,15 @@ export class InfiniteScheduleGenerator {
 
       if (!selectedSlotPrograms) {
         // No slots available, add flex
-        const flexDuration = Math.min(
-          schedule.padMs,
-          toTimeMs - currentTimeMs,
+        const flexDuration = Math.min(schedule.padMs, toTimeMs - currentTimeMs);
+        items.push(
+          this.createFlexItem(
+            schedule.uuid,
+            currentTimeMs,
+            flexDuration,
+            sequenceIndex++,
+          ),
         );
-        items.push(this.createFlexItem(schedule.uuid, currentTimeMs, flexDuration, sequenceIndex++));
         currentTimeMs += flexDuration;
         continue;
       }
@@ -416,7 +418,14 @@ export class InfiniteScheduleGenerator {
 
       if (slot.slotType === 'flex') {
         const flexDuration = schedule.padMs;
-        items.push(this.createFlexItem(schedule.uuid, currentTimeMs, flexDuration, sequenceIndex++));
+        items.push(
+          this.createFlexItem(
+            schedule.uuid,
+            currentTimeMs,
+            flexDuration,
+            sequenceIndex++,
+          ),
+        );
         currentTimeMs += flexDuration;
         continue;
       }
@@ -426,7 +435,14 @@ export class InfiniteScheduleGenerator {
       if (!program) {
         // No programs in slot, add flex
         const flexDuration = schedule.padMs;
-        items.push(this.createFlexItem(schedule.uuid, currentTimeMs, flexDuration, sequenceIndex++));
+        items.push(
+          this.createFlexItem(
+            schedule.uuid,
+            currentTimeMs,
+            flexDuration,
+            sequenceIndex++,
+          ),
+        );
         currentTimeMs += flexDuration;
         continue;
       }

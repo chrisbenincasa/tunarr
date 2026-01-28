@@ -52,7 +52,6 @@ import Migration1763749592_AddProgramState from './db/Migration1763749592_AddPro
 import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266_AddCreditGroupingIndex.ts';
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
 import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
-import Migration1769479528_AddInfiniteSchedule from './db/Migration1769479528_AddInfiniteSchedule.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -197,8 +196,15 @@ export class DirectMigrationProvider implements MigrationProvider {
             './sql/0040_daffy_bishop.sql',
             true,
           ),
-          migration1769479528_AddInfiniteSchedule:
-            Migration1769479528_AddInfiniteSchedule,
+          migration1769713897: makeKyselyMigrationFromSqlFile(
+            './sql/0041_friendly_brother_voodoo.sql',
+          ),
+          migration1769722992: makeKyselyMigrationFromSqlFile(
+            './sql/0042_grey_nick_fury.sql',
+          ),
+          migration1769898593: makeKyselyMigrationFromSqlFile(
+            './sql/0043_foamy_titanium_man.sql',
+          ),
         },
         wrapWithTransaction,
       ),

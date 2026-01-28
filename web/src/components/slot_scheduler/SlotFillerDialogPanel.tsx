@@ -52,7 +52,6 @@ export const SlotFillerDialogPanel = () => {
           value.filler,
           (filler) => filler?.fillerListId,
         );
-        console.log(fillerListIds);
         setChosenFillerLists(fillerListIds);
       }
     });
@@ -114,7 +113,7 @@ export const SlotFillerDialogPanel = () => {
                 render={({ field }) => (
                   <Autocomplete
                     fullWidth
-                    disableClearable={true}
+                    disableClearable
                     options={fillerListOptions}
                     getOptionKey={(list) => list.id}
                     getOptionLabel={(list) => list.name}

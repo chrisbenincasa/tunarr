@@ -128,7 +128,7 @@ export const EveryScheduleSchema = z.object({
 
 export type EverySchedule = z.infer<typeof EveryScheduleSchema>;
 
-export const ScheduleSchema = z.discriminatedUnion('type', [
+export const RecurrenceScheduleSchema = z.discriminatedUnion('type', [
   CronScheduleSchema,
   EveryScheduleSchema,
 ]);
@@ -140,4 +140,4 @@ export const ContentProgramTypeSchema = z.enum([
   'other_video',
 ]);
 
-export type Schedule = z.infer<typeof ScheduleSchema>;
+export type RecurrenceSchedule = z.infer<typeof RecurrenceScheduleSchema>;

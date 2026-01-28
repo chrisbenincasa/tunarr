@@ -117,7 +117,10 @@ export class StreamProgramCalculator {
       this.logger.warn(
         'Infinite schedule lookup failed for channel %s, falling back to legacy: %s',
         channel.uuid,
-        infiniteResult.error?.message,
+        infiniteResult.either(
+          () => 'unknown error',
+          (err) => err.message,
+        ),
       );
     }
 
@@ -691,16 +694,27 @@ export class StreamProgramCalculator {
               req.startTime,
             );
           } else {
-            lineupItem = {
-              type: 'commercial',
+            const baseFillerItem = {
               program: { ...program, mediaSourceId: program.mediaSourceId },
               duration: currentItem.durationMs,
               startOffset: Math.round(timeElapsed),
               streamDuration,
               programBeginMs: currentItem.startTimeMs,
-              fillerListId: currentItem.fillerListId ?? null,
               infiniteLoop: program.duration < streamDuration,
-            } satisfies CommercialStreamLineupItem;
+            };
+
+            if (isNonEmptyString(currentItem.fillerListId)) {
+              lineupItem = {
+                ...baseFillerItem,
+                type: 'commercial',
+                fillerListId: currentItem.fillerListId,
+              } satisfies CommercialStreamLineupItem;
+            } else {
+              lineupItem = {
+                ...baseFillerItem,
+                type: 'fallback',
+              } satisfies FallbackStreamLineupItem;
+            }
           }
         }
         break;

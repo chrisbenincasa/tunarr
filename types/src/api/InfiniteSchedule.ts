@@ -1,4 +1,10 @@
 import { z } from 'zod/v4';
+import { ChannelSchema } from '../schemas/channelSchema.js';
+import { SmartCollection } from '../schemas/collectionsSchema.js';
+import { CustomShowSchema } from '../schemas/customShowsSchema.js';
+import { FillerListSchema } from '../schemas/fillerSchema.js';
+import { Show } from '../schemas/programmingSchema.js';
+import type { TupleToUnion } from '../util.js';
 import {
   BaseSlotOrdering,
   SlotFiller,
@@ -37,14 +43,20 @@ export const GeneratedItemTypeSchema = z.enum([
 ]);
 export type GeneratedItemType = z.infer<typeof GeneratedItemTypeSchema>;
 
+export const SlotPlaybackOrder = ['ordered', 'shuffle'] as const;
+export type SlotPlaybackOrder = TupleToUnion<typeof SlotPlaybackOrder>;
+
+export const FillModes = ['fill', 'count', 'duration'] as const;
+export type FillMode = TupleToUnion<typeof FillModes>;
+
 //
 // Slot Configuration Schemas
 //
 
 export const InfiniteSlotConfigSchema = z.object({
-  order: BaseSlotOrdering.shape.order.optional(),
-  direction: BaseSlotOrdering.shape.direction.optional(),
-  seasonFilter: z.array(z.number()).optional(),
+  order: BaseSlotOrdering.shape.order.nullish(),
+  direction: BaseSlotOrdering.shape.direction.nullish(),
+  seasonFilter: z.array(z.number()).nullish(),
 });
 
 export type InfiniteSlotConfig = z.infer<typeof InfiniteSlotConfigSchema>;
@@ -53,7 +65,9 @@ export const InfiniteSlotFillerConfigSchema = z.object({
   fillers: z.array(SlotFiller).optional(),
 });
 
-export type InfiniteSlotFillerConfig = z.infer<typeof InfiniteSlotFillerConfigSchema>;
+export type InfiniteSlotFillerConfig = z.infer<
+  typeof InfiniteSlotFillerConfigSchema
+>;
 
 //
 // Slot State Schema
@@ -71,18 +85,20 @@ export const InfiniteScheduleSlotStateSchema = z.object({
   updatedAt: z.number().nullable(),
 });
 
-export type InfiniteScheduleSlotState = z.infer<typeof InfiniteScheduleSlotStateSchema>;
+export type InfiniteScheduleSlotState = z.infer<
+  typeof InfiniteScheduleSlotStateSchema
+>;
 
 //
 // Slot Schema
 //
 
-const BaseInfiniteSlotSchema = z.object({
+export const BaseInfiniteSlotSchema = z.object({
   uuid: z.uuid().optional(), // Optional for creation
   slotIndex: z.number().int().nonnegative(),
   // Time-anchoring (null = floating slot)
-  anchorTime: z.number().int().nonnegative().nullable().optional(),
   anchorMode: AnchorModeSchema.nullable().optional(),
+  anchorTime: z.number().int().nonnegative().nullable().optional(),
   anchorDays: z.array(z.number().int().min(0).max(6)).nullable().optional(),
   // For floating slots
   weight: z.number().int().positive().default(1),
@@ -92,80 +108,169 @@ const BaseInfiniteSlotSchema = z.object({
   padToMultiple: z.number().int().positive().nullable().optional(),
   // Filler presets
   fillerConfig: InfiniteSlotFillerConfigSchema.nullable().optional(),
+  fillMode: z.enum(FillModes).default('fill'),
+  fillValue: z.number().int().positive().default(1),
 });
 
-export const MovieInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export type BaseScheduleSlot = z.infer<typeof BaseInfiniteSlotSchema>;
+
+export const MovieScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('movie'),
   slotConfig: InfiniteSlotConfigSchema.optional(),
 });
 
-export const ShowInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const ShowScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('show'),
   showId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
 });
 
-export const CustomShowInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const CustomShowScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('custom-show'),
   customShowId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
 });
 
-export const FillerInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const FillerScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('filler'),
   fillerListId: z.uuid(),
   order: SlotProgrammingFillerOrder.optional(),
 });
 
-export const RedirectInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const RedirectScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('redirect'),
   redirectChannelId: z.uuid(),
 });
 
-export const FlexInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const FlexScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('flex'),
 });
 
-export const SmartCollectionInfiniteSlotSchema = BaseInfiniteSlotSchema.extend({
+export const SmartCollectionScheduleSlotSchema = BaseInfiniteSlotSchema.extend({
   type: z.literal('smart-collection'),
   smartCollectionId: z.uuid(),
   slotConfig: InfiniteSlotConfigSchema.optional(),
 });
 
-export const InfiniteScheduleSlotSchema = z.discriminatedUnion('type', [
-  MovieInfiniteSlotSchema,
-  ShowInfiniteSlotSchema,
-  CustomShowInfiniteSlotSchema,
-  FillerInfiniteSlotSchema,
-  RedirectInfiniteSlotSchema,
-  FlexInfiniteSlotSchema,
-  SmartCollectionInfiniteSlotSchema,
+export const ScheduleSlotSchema = z.discriminatedUnion('type', [
+  MovieScheduleSlotSchema,
+  ShowScheduleSlotSchema,
+  CustomShowScheduleSlotSchema,
+  FillerScheduleSlotSchema,
+  RedirectScheduleSlotSchema,
+  FlexScheduleSlotSchema,
+  SmartCollectionScheduleSlotSchema,
 ]);
 
-export type InfiniteScheduleSlot = z.infer<typeof InfiniteScheduleSlotSchema>;
+export type ScheduleSlot = z.infer<typeof ScheduleSlotSchema>;
+
+export const MaterializedRedirectScheduleSlotSchema = z.object({
+  ...RedirectScheduleSlotSchema.shape,
+  channel: ChannelSchema.nullable(),
+  isMissing: z.boolean().optional().default(false),
+});
+
+export type MaterializedRedirectScheduleSlot = z.infer<
+  typeof MaterializedRedirectScheduleSlotSchema
+>;
+
+export const MaterializedShowScheduleSlotSchema = z.object({
+  ...ShowScheduleSlotSchema.shape,
+  show: Show.nullable(),
+  missingShow: z
+    .object({
+      title: z.string().optional(),
+    })
+    .optional()
+    .describe(
+      'A show that existed in the DB at schedule time, but no longer exists.',
+    ),
+});
+
+export type MaterializedShowScheduleSlot = z.infer<
+  typeof MaterializedShowScheduleSlotSchema
+>;
+
+export const MaterializedCustomShowScheduleSlotSchema = z.object({
+  ...CustomShowScheduleSlotSchema.shape,
+  customShow: CustomShowSchema.omit({
+    programs: true,
+    totalDuration: true,
+  }).nullable(),
+  isMissing: z.boolean().optional().default(false),
+});
+
+export type MaterializedCustomShowScheduleSlot = z.infer<
+  typeof MaterializedCustomShowScheduleSlotSchema
+>;
+
+export const MaterializedFillerShowScheduleSlotSchema =
+  FillerScheduleSlotSchema.extend(BaseInfiniteSlotSchema.shape);
+
+export const MaterializedFillerScheduleSlot = z.object({
+  ...MaterializedFillerShowScheduleSlotSchema.shape,
+  fillerList: FillerListSchema.omit({ programs: true }).nullable(),
+  isMissing: z.boolean().optional().default(false),
+});
+
+export type MaterializedFillerScheduleSlot = z.infer<
+  typeof MaterializedFillerScheduleSlot
+>;
+
+export const MaterializedSmartCollectioScheduleSlotSchema = z.object({
+  ...SmartCollectionScheduleSlotSchema.shape,
+  smartCollection: SmartCollection.nullable(),
+  isMissing: z.boolean().optional().default(false),
+});
+
+export type MaterializedSmartCollectioScheduleSlot = z.infer<
+  typeof MaterializedSmartCollectioScheduleSlotSchema
+>;
+
+export const MaterializedScheduleSlotSchema = z.discriminatedUnion('type', [
+  FlexScheduleSlotSchema,
+  MaterializedRedirectScheduleSlotSchema,
+  MaterializedCustomShowScheduleSlotSchema,
+  MaterializedFillerShowScheduleSlotSchema,
+  MaterializedShowScheduleSlotSchema,
+  MaterializedSmartCollectioScheduleSlotSchema,
+]);
+
+export type MaterializedScheduleSlot = z.infer<
+  typeof MaterializedScheduleSlotSchema
+>;
 
 //
 // Schedule Schema
 //
 
-export const InfiniteScheduleSchema = z.object({
-  uuid: z.uuid().optional(), // Optional for creation
-  channelUuid: z.uuid(),
+export const ScheduleSchema = z.object({
+  uuid: z.uuid(), // Optional for creation
+  name: z.string(),
   // Schedule-level settings
-  padMs: z.number().int().nonnegative().default(300000), // Default 5 min
+  padMs: z.number().int().nonnegative().default(1),
   flexPreference: FlexPreferenceSchema.default('end'),
-  timeZoneOffset: z.number().int().default(0), // Offset in minutes
+  timeZoneOffset: z.number().int().default(0),
   // Buffer management
   bufferDays: z.number().int().positive().default(7),
   bufferThresholdDays: z.number().int().positive().default(2),
   enabled: z.boolean().default(true),
+  slotPlaybackOrder: z.enum(SlotPlaybackOrder),
   // Slots
-  slots: z.array(InfiniteScheduleSlotSchema).default([]),
+  slots: z.array(ScheduleSlotSchema).default([]),
   createdAt: z.number().nullable().optional(),
   updatedAt: z.number().nullable().optional(),
 });
 
-export type InfiniteSchedule = z.infer<typeof InfiniteScheduleSchema>;
+export type Schedule = z.infer<typeof ScheduleSchema>;
+
+export const MaterializedScheduleSchema = ScheduleSchema.omit({
+  slots: true,
+}).extend({
+  slots: MaterializedScheduleSlotSchema.array(),
+});
+
+export type MaterializedSchedule2 = z.infer<typeof MaterializedScheduleSchema>;
 
 //
 // Generated Schedule Item Schema
@@ -192,7 +297,7 @@ export type GeneratedScheduleItem = z.infer<typeof GeneratedScheduleItemSchema>;
 // API Request/Response Schemas
 //
 
-export const CreateInfiniteScheduleRequestSchema = InfiniteScheduleSchema.omit({
+export const CreateInfiniteScheduleRequestSchema = ScheduleSchema.omit({
   uuid: true,
   createdAt: true,
   updatedAt: true,
@@ -209,11 +314,13 @@ export type UpdateInfiniteScheduleRequest = z.infer<
   typeof UpdateInfiniteScheduleRequestSchema
 >;
 
-export const InfiniteScheduleResponseSchema = InfiniteScheduleSchema.extend({
+export const InfiniteScheduleResponseSchema = ScheduleSchema.extend({
   uuid: z.uuid(),
 });
 
-export type InfiniteScheduleResponse = z.infer<typeof InfiniteScheduleResponseSchema>;
+export type InfiniteScheduleResponse = z.infer<
+  typeof InfiniteScheduleResponseSchema
+>;
 
 export const InfiniteScheduleWithStateResponseSchema =
   InfiniteScheduleResponseSchema.extend({
@@ -233,7 +340,9 @@ export const RegenerateScheduleRequestSchema = z.object({
   fromTimeMs: z.number().int().positive().optional(),
 });
 
-export type RegenerateScheduleRequest = z.infer<typeof RegenerateScheduleRequestSchema>;
+export type RegenerateScheduleRequest = z.infer<
+  typeof RegenerateScheduleRequestSchema
+>;
 
 export const RegenerateScheduleResponseSchema = z.object({
   itemCount: z.number().int().nonnegative(),
@@ -241,7 +350,9 @@ export const RegenerateScheduleResponseSchema = z.object({
   toTimeMs: z.number().int().nonnegative(),
 });
 
-export type RegenerateScheduleResponse = z.infer<typeof RegenerateScheduleResponseSchema>;
+export type RegenerateScheduleResponse = z.infer<
+  typeof RegenerateScheduleResponseSchema
+>;
 
 export const ResetSeedsResponseSchema = z.object({
   slotsReset: z.number().int().nonnegative(),
@@ -250,9 +361,14 @@ export const ResetSeedsResponseSchema = z.object({
 export type ResetSeedsResponse = z.infer<typeof ResetSeedsResponseSchema>;
 
 export const InfiniteSchedulePreviewRequestSchema = z.object({
-  schedule: CreateInfiniteScheduleRequestSchema,
-  days: z.number().int().positive().default(1),
-  fromTimeMs: z.number().int().positive().optional(),
+  // Schedule settings (optional, allows partial override)
+  padMs: z.number().int().nonnegative().default(300000),
+  flexPreference: FlexPreferenceSchema.default('end'),
+  timeZoneOffset: z.number().int().default(0),
+  slots: z.array(ScheduleSlotSchema).default([]),
+  // Time range for preview
+  fromTimeMs: z.number().int().nonnegative(),
+  toTimeMs: z.number().int().nonnegative(),
 });
 
 export type InfiniteSchedulePreviewRequest = z.infer<
@@ -269,9 +385,11 @@ export type InfiniteSchedulePreviewResponse = z.infer<
 >;
 
 // Add/Update slot request
-export const AddInfiniteSlotRequestSchema = InfiniteScheduleSlotSchema;
+export const AddInfiniteSlotRequestSchema = ScheduleSlotSchema;
 
-export type AddInfiniteSlotRequest = z.infer<typeof AddInfiniteSlotRequestSchema>;
+export type AddInfiniteSlotRequest = z.infer<
+  typeof AddInfiniteSlotRequestSchema
+>;
 
 // For updates, we need the type and uuid, rest is optional
 export const UpdateInfiniteSlotRequestSchema = z.object({
@@ -295,11 +413,15 @@ export const UpdateInfiniteSlotRequestSchema = z.object({
   order: SlotProgrammingFillerOrder.optional(), // For filler slots
 });
 
-export type UpdateInfiniteSlotRequest = z.infer<typeof UpdateInfiniteSlotRequestSchema>;
+export type UpdateInfiniteSlotRequest = z.infer<
+  typeof UpdateInfiniteSlotRequestSchema
+>;
 
 // Bulk slots update
 export const UpdateInfiniteSlotsRequestSchema = z.object({
-  slots: z.array(InfiniteScheduleSlotSchema),
+  slots: z.array(ScheduleSlotSchema),
 });
 
-export type UpdateInfiniteSlotsRequest = z.infer<typeof UpdateInfiniteSlotsRequestSchema>;
+export type UpdateInfiniteSlotsRequest = z.infer<
+  typeof UpdateInfiniteSlotsRequestSchema
+>;

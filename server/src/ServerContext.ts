@@ -10,6 +10,7 @@ import { isUndefined } from 'lodash-es';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { CustomShowDB } from './db/CustomShowDB.ts';
 import { FillerDB } from './db/FillerListDB.ts';
+import { InfiniteScheduleDB } from './db/InfiniteScheduleDB.ts';
 import { SmartCollectionsDB } from './db/SmartCollectionsDB.ts';
 import { TranscodeConfigDB } from './db/TranscodeConfigDB.ts';
 import { ProgramConverter } from './db/converters/ProgramConverter.ts';
@@ -30,6 +31,7 @@ import { OnDemandChannelService } from './services/OnDemandChannelService.js';
 import { TVGuideService } from './services/TvGuideService.ts';
 import { CacheImageService } from './services/cacheImageService.js';
 import { MediaSourceScanCoordinator } from './services/scanner/MediaSourceScanCoordinator.ts';
+import { InfiniteScheduleGenerator } from './services/scheduling/InfiniteScheduleGenerator.ts';
 import { ChannelCache } from './stream/ChannelCache.js';
 import { SessionManager } from './stream/SessionManager.js';
 import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
@@ -93,6 +95,12 @@ export class ServerContext {
 
   @inject(SmartCollectionsDB)
   public readonly smartCollectionsDB!: SmartCollectionsDB;
+
+  @inject(InfiniteScheduleDB)
+  public readonly infiniteScheduleDB!: InfiniteScheduleDB;
+
+  @inject(InfiniteScheduleGenerator)
+  public readonly infiniteScheduleGenerator!: InfiniteScheduleGenerator;
 }
 
 export class ServerRequestContext {

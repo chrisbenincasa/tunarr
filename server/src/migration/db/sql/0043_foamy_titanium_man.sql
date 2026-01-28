@@ -1,0 +1,1 @@
+ALTER TABLE `infinite_schedule` ADD `slot_playback_order` text DEFAULT 'ordered' NOT NULL;

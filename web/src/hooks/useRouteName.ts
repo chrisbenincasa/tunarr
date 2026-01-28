@@ -154,6 +154,15 @@ const useNamedRoutes = () => {
         matcher: entityPageMatcher('media_sources', ''),
         name: '<replace me>',
       },
+      {
+        matcher: /^\/schedules$/g,
+        name: 'Schedules',
+        to: '/schedules',
+      },
+      {
+        matcher: entityPageMatcher('schedules', ''),
+        name: '<replace me>',
+      },
     ],
     [],
   );

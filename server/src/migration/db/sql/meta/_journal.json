@@ -288,6 +288,27 @@
       "when": 1769361500423,
       "tag": "0040_daffy_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1769636447169,
+      "tag": "0041_friendly_brother_voodoo",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1769722962162,
+      "tag": "0042_grey_nick_fury",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1769898558748,
+      "tag": "0043_foamy_titanium_man",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,12 @@ import { setCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
 import { setCurrentFillerList } from '@/store/fillerListEditor/action.ts';
 import { type RouterContext } from '@/types/RouterContext';
 import { notFound } from '@tanstack/react-router';
+import type {
+  MaterializedSchedule2,
+  MaterializedScheduleSlot,
+} from '@tunarr/types/api';
+import { isAxiosError } from 'axios';
+import { getScheduleByIdOptions } from '../generated/@tanstack/react-query.gen.ts';
 
 export type ChannelArgs = {
   params: { channelId: string };
@@ -100,5 +106,38 @@ export async function preloadCustomShowAndProgramming({
   return {
     customShow,
     programming,
+  };
+}
+
+export function loadSchedule(context: RouterContext) {
+  return async function (id: string): Promise<MaterializedSchedule2> {
+    try {
+      return await context.queryClient.ensureQueryData({
+        ...getScheduleByIdOptions({ path: { id: id } }),
+      });
+    } catch (e) {
+      console.error(e);
+      if (isAxiosError(e) && e.status === 404) {
+        throw notFound();
+      }
+      throw e;
+    }
+  };
+}
+
+export function loadScheduleSlot(context: RouterContext) {
+  return async function (
+    scheduleId: string,
+    slotId: string,
+  ): Promise<{
+    schedule: MaterializedSchedule2;
+    slot: MaterializedScheduleSlot;
+  }> {
+    const schedule = await loadSchedule(context)(scheduleId);
+    const slot = schedule.slots.find((slot) => slot.uuid === slotId);
+    if (!slot) {
+      throw notFound();
+    }
+    return { schedule, slot };
   };
 }
