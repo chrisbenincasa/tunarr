@@ -1,7 +1,6 @@
 import { EmbyRequestRedacter } from '@/external/emby/EmbyRequestRedacter.js';
 import type { Maybe, Nilable, Nullable } from '@/types/util.js';
 import {
-  attemptSync,
   caughtErrorToError,
   isNonEmptyString,
   nullToUndefined,
@@ -89,7 +88,7 @@ import type {
   MediaStream,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { titleToSortTitle } from '../../util/programs.ts';
+import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -1001,9 +1000,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     }
 
     const people = getEmbyItemPersonMap(movie, this.options.mediaSource.uri);
-    const parsedReleaseDate = isNonEmptyString(movie.PremiereDate)
-      ? attemptSync(() => dayjs(movie.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(movie.PremiereDate);
     const mediaItem = this.embyApiMediaSourcesInjection(
       movie,
       movie.MediaSources ?? [],
@@ -1023,11 +1020,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       title: movie.Name!,
       sortTitle: titleToSortTitle(movie.Name ?? ''),
       originalTitle: movie.OriginalTitle ?? null,
-      year: movie.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: movie.PremiereDate ?? null,
+      year: movie.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],
@@ -1191,9 +1186,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
 
     const people = getEmbyItemPersonMap(series, this.options.mediaSource.uri);
 
-    const parsedReleaseDate = isNonEmptyString(series.PremiereDate)
-      ? attemptSync(() => dayjs(series.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(series.PremiereDate);
 
     return {
       uuid: v4(),
@@ -1201,12 +1194,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       canonicalId: this.canonicalizer.getCanonicalId(series),
       title: series.Name!,
       sortTitle: titleToSortTitle(series.Name ?? ''),
-      // originalTitle: series.OriginalTitle ?? null,
-      year: series.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: series.PremiereDate ?? null,
+      year: series.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       actors: people['actor'] ?? [],
@@ -1244,23 +1234,18 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   }
 
   private embyApiSeasonInjection(season: ApiEmbySeason): Nullable<EmbySeason> {
-    const parsedReleaseDate = isNonEmptyString(season.PremiereDate)
-      ? attemptSync(() => dayjs(season.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(season.PremiereDate);
     return {
       uuid: v4(),
       externalId: season.Id,
       canonicalId: this.canonicalizer.getCanonicalId(season),
       title: season.Name!,
       sortTitle: titleToSortTitle(season.Name ?? ''),
-      // originalTitle: season.OriginalTitle ?? null,
-      year: season.ProductionYear ?? null,
+      year: season.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: season.PremiereDate ?? null,
       // actors: people['actor'] ?? [],
       // Consider adding this
       // writers: people['writer'] ?? [],
@@ -1309,9 +1294,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     }
 
     const people = getEmbyItemPersonMap(episode, this.options.mediaSource.uri);
-    const parsedReleaseDate = isNonEmptyString(episode.PremiereDate)
-      ? attemptSync(() => dayjs(episode.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(episode.PremiereDate);
     const mediaItem = this.embyApiMediaSourcesInjection(
       episode,
       episode.MediaSources ?? [],
@@ -1367,11 +1350,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       title: episode.Name!,
       sortTitle: titleToSortTitle(episode.Name ?? ''),
       originalTitle: episode.OriginalTitle ?? null,
-      year: episode.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: episode.PremiereDate ?? null,
+      year: episode.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       actors: people['actor'] ?? [],
@@ -1477,6 +1458,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
   }
 
   private embyApiMusicAlbumInjection(album: ApiEmbyMusicAlbum): EmbyMusicAlbum {
+    const parsedReleaseDate = parseReleaseDate(album.PremiereDate);
     return {
       type: 'album',
       externalId: album.Id,
@@ -1497,11 +1479,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       tagline: null,
       tags: album.Tags ?? [],
       uuid: v4(),
-      year: null,
-      releaseDate: album.PremiereDate
-        ? dayjs(album.PremiereDate)?.valueOf()
-        : null,
-      releaseDateString: album.PremiereDate ?? null,
+      year: album.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       studios: seq.collect(album.Studios, (studio) => {
         if (isNonEmptyString(studio.Name)) {
           return { name: studio.Name };
@@ -1534,6 +1514,8 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       return null;
     }
 
+    const parsedReleaseDate = parseReleaseDate(track.PremiereDate);
+
     return {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(track),
@@ -1543,11 +1525,10 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       directors: [],
       genres: [],
       tags: track.Tags?.filter(isNonEmptyString) ?? [],
-      year: track.ProductionYear ?? null,
+      year: track.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       originalTitle: null,
-      releaseDate: isNonEmptyString(track.PremiereDate)
-        ? dayjs(track.PremiereDate).valueOf()
-        : null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       identifiers: collectEmbyItemIdentifiers(
@@ -1569,7 +1550,6 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             : null,
         ) ?? [],
       duration: track.RunTimeTicks / 10_000,
-      releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
       artwork: compact([
         this.embyArtworkProjection('poster', track, 'Primary'),
@@ -1589,9 +1569,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     }
 
     const people = getEmbyItemPersonMap(video, this.options.mediaSource.uri);
-    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
-      ? attemptSync(() => dayjs(video.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(video.PremiereDate);
     const mediaItem = this.embyApiMediaSourcesInjection(
       video,
       video.MediaSources ?? [],
@@ -1611,11 +1589,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       title: video.Name!,
       sortTitle: titleToSortTitle(video.Name ?? ''),
       originalTitle: video.OriginalTitle ?? null,
-      year: video.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: video.PremiereDate ?? null,
+      year: video.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],
@@ -1663,9 +1639,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
     }
 
     const people = getEmbyItemPersonMap(video, this.options.mediaSource.uri);
-    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
-      ? attemptSync(() => dayjs(video.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(video.PremiereDate);
     const mediaItem = this.embyApiMediaSourcesInjection(
       video,
       video.MediaSources ?? [],
@@ -1685,11 +1659,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       title: video.Name!,
       sortTitle: titleToSortTitle(video.Name ?? ''),
       originalTitle: video.OriginalTitle ?? null,
-      year: video.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: video.PremiereDate ?? null,
+      year: video.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],

@@ -1,7 +1,6 @@
 import { JellyfinRequestRedacter } from '@/external/jellyfin/JellyfinRequestRedacter.js';
 import type { Maybe, Nilable, Nullable } from '@/types/util.js';
 import {
-  attemptSync,
   caughtErrorToError,
   isDefined,
   isNonEmptyString,
@@ -47,7 +46,6 @@ import {
   groupBy,
   isBoolean,
   isEmpty,
-  isError,
   isNil,
   isNull,
   isNumber,
@@ -94,7 +92,7 @@ import type {
   MediaStream,
 } from '../../types/Media.ts';
 import { Result } from '../../types/result.ts';
-import { titleToSortTitle } from '../../util/programs.ts';
+import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 import {
   QueryError,
   type ApiClientOptions,
@@ -976,9 +974,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       movie,
       this.options.mediaSource.uri,
     );
-    const parsedReleaseDate = isNonEmptyString(movie.PremiereDate)
-      ? attemptSync(() => dayjs(movie.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(movie.PremiereDate);
     const mediaItem = this.jellyfinApiMediaSourcesInjection(
       movie,
       movie.MediaSources ?? [],
@@ -998,11 +994,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: movie.Name!,
       sortTitle: titleToSortTitle(movie.Name!),
       originalTitle: movie.OriginalTitle ?? null,
-      year: movie.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: movie.PremiereDate ?? null,
+      year: movie.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],
@@ -1205,9 +1199,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       this.options.mediaSource.uri,
     );
 
-    const parsedReleaseDate = isNonEmptyString(series.PremiereDate)
-      ? attemptSync(() => dayjs(series.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(series.PremiereDate);
 
     return {
       uuid: v4(),
@@ -1216,11 +1208,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: series.Name!,
       sortTitle: titleToSortTitle(series.Name!),
       // originalTitle: series.OriginalTitle ?? null,
-      year: series.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: series.PremiereDate ?? null,
+      year: series.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       actors: people['actor'] ?? [],
@@ -1260,9 +1250,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   private jellyfinApiSeasonInjection(
     season: ApiJellyfinSeason,
   ): Nullable<JellyfinSeason> {
-    const parsedReleaseDate = isNonEmptyString(season.PremiereDate)
-      ? attemptSync(() => dayjs(season.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(season.PremiereDate);
     return {
       uuid: v4(),
       externalId: season.Id,
@@ -1270,20 +1258,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: season.Name!,
       sortTitle: titleToSortTitle(season.Name!),
       // originalTitle: season.OriginalTitle ?? null,
-      year: season.ProductionYear ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: season.PremiereDate ?? null,
-      // actors: people['actor'] ?? [],
-      // Consider adding this
-      // writers: people['writer'] ?? [],
-      // genres:
-      //   season.Genres?.map((genre) => ({
-      //     name: genre,
-      //   })) ?? [],
+      year: season.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       studios: seq.collect(season.Studios, (studio) => {
         if (isNonEmptyString(studio.Name)) {
           return { name: studio.Name };
@@ -1328,9 +1307,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       episode,
       this.options.mediaSource.uri,
     );
-    const parsedReleaseDate = isNonEmptyString(episode.PremiereDate)
-      ? attemptSync(() => dayjs(episode.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(episode.PremiereDate);
     const mediaItem = this.jellyfinApiMediaSourcesInjection(
       episode,
       episode.MediaSources ?? [],
@@ -1386,11 +1363,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: episode.Name!,
       sortTitle: titleToSortTitle(episode.Name!),
       originalTitle: episode.OriginalTitle ?? null,
-      year: episode.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: episode.PremiereDate ?? null,
+      year: episode.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       actors: people['actor'] ?? [],
@@ -1498,6 +1473,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
   private jellyfinApiMusicAlbumInjection(
     album: ApiJellyfinMusicAlbum,
   ): JellyfinMusicAlbum {
+    const parsedReleaseDate = parseReleaseDate(album.PremiereDate);
     return {
       type: 'album',
       externalId: album.Id,
@@ -1518,11 +1494,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       tagline: null,
       tags: album.Tags ?? [],
       uuid: v4(),
-      year: null,
-      releaseDate: album.PremiereDate
-        ? dayjs(album.PremiereDate)?.valueOf()
-        : null,
-      releaseDateString: album.PremiereDate ?? null,
+      year: album.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       studios: seq.collect(album.Studios, (studio) => {
         if (isNonEmptyString(studio.Name)) {
           return { name: studio.Name };
@@ -1555,6 +1529,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       return null;
     }
 
+    const parsedReleaseDate = parseReleaseDate(track.PremiereDate);
+
     return {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(track),
@@ -1564,11 +1540,10 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       directors: [],
       genres: [],
       tags: track.Tags?.filter(isNonEmptyString) ?? [],
-      year: track.ProductionYear ?? null,
       originalTitle: null,
-      releaseDate: isNonEmptyString(track.PremiereDate)
-        ? dayjs(track.PremiereDate).valueOf()
-        : null,
+      year: track.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       mediaSourceId: this.options.mediaSource.uuid,
       libraryId: '', // We can't know this at this point...
       identifiers: collectJellyfinItemIdentifiers(
@@ -1590,7 +1565,6 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             : null,
         ) ?? [],
       duration: track.RunTimeTicks / 10_000,
-      releaseDateString: track.PremiereDate ?? null,
       externalId: track.Id,
       artwork: compact([
         this.jellyfinArtworkProjection('poster', track, 'Primary'),
@@ -1616,21 +1590,19 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       video,
       this.options.mediaSource.uri,
     );
-    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
-      ? attemptSync(() => dayjs(video.PremiereDate))
-      : null;
-    const mediaItem = this.jellyfinApiMediaSourcesInjection(
-      video,
-      video.MediaSources ?? [],
-    );
 
     if (!video.RunTimeTicks || video.RunTimeTicks <= 0) {
       return null;
     }
 
+    const mediaItem = this.jellyfinApiMediaSourcesInjection(
+      video,
+      video.MediaSources ?? [],
+    );
     if (!mediaItem) {
       return null;
     }
+    const parsedReleaseDate = parseReleaseDate(video.PremiereDate);
 
     return {
       uuid: v4(),
@@ -1638,11 +1610,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: video.Name!,
       sortTitle: titleToSortTitle(video.Name!),
       originalTitle: video.OriginalTitle ?? null,
-      year: video.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: video.PremiereDate ?? null,
+      year: video.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],
@@ -1696,9 +1666,7 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       video,
       this.options.mediaSource.uri,
     );
-    const parsedReleaseDate = isNonEmptyString(video.PremiereDate)
-      ? attemptSync(() => dayjs(video.PremiereDate))
-      : null;
+    const parsedReleaseDate = parseReleaseDate(video.PremiereDate);
     const mediaItem = this.jellyfinApiMediaSourcesInjection(
       video,
       video.MediaSources ?? [],
@@ -1718,11 +1686,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
       title: video.Name!,
       sortTitle: titleToSortTitle(video.Name!),
       originalTitle: video.OriginalTitle ?? null,
-      year: video.ProductionYear ?? null,
-      releaseDate: isError(parsedReleaseDate)
-        ? null
-        : (parsedReleaseDate?.valueOf() ?? null),
-      releaseDateString: video.PremiereDate ?? null,
+      year: video.ProductionYear ?? parsedReleaseDate?.year() ?? null,
+      releaseDate: parsedReleaseDate?.valueOf() ?? null,
+      releaseDateString: parsedReleaseDate?.format() ?? null,
       actors: people['actor'] ?? [],
       writers: people['writer'] ?? [],
       directors: people['director'] ?? [],
@@ -1736,12 +1702,8 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         }
         return;
       }),
-      // plot: video.Overview ?? null,
-      // rating: video.OfficialRating ?? null,
       sourceType: 'jellyfin',
-      // tagline: find(video.Taglines, isNonEmptyString) ?? null,
       tags: video.Tags?.filter(isNonEmptyString) ?? [],
-      // summary: null,
       type: 'other_video',
       mediaItem,
       identifiers: collectJellyfinItemIdentifiers(
