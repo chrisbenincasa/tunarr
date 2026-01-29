@@ -116,7 +116,7 @@ import type {
 import { Result } from '../../types/result.ts';
 import { parsePlexGuid } from '../../util/externalIds.ts';
 import iterators from '../../util/iterator.ts';
-import { titleToSortTitle } from '../../util/programs.ts';
+import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 import type { ApiClientOptions } from '../BaseApiClient.js';
 import { QueryError, type QueryResult } from '../BaseApiClient.js';
 import { MediaSourceApiClient } from '../MediaSourceApiClient.ts';
@@ -1170,6 +1170,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       this.plexArtworkInject(plexShow.art, 'banner'),
     ]);
 
+    const releaseDate = parseReleaseDate(plexShow.originallyAvailableAt);
+
     return Result.success({
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(plexShow),
@@ -1178,13 +1180,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       sourceType: MediaSourceType.Plex,
       title: plexShow.title,
       type: ProgramGroupingType.Show,
-      year: plexShow.year ?? null,
-      releaseDate: plexShow.originallyAvailableAt
-        ? Result.attempt(
-            () => +dayjs(plexShow.originallyAvailableAt, 'YYYY-MM-DD'),
-          ).orNull()
-        : null,
-      releaseDateString: plexShow.originallyAvailableAt ?? null,
+      year: plexShow.year ?? releaseDate?.year() ?? null,
+      releaseDate: releaseDate?.valueOf() ?? null,
+      releaseDateString: releaseDate?.format() ?? null,
       actors: plexActorInject(plexShow.Role),
       genres: plexJoinItemInject(plexShow.Genre),
       plot: plexShow.summary ?? null,
@@ -1244,7 +1242,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         : [],
       summary: null,
       tagline: null,
-      year: null,
+      year: plexSeason.parentYear ?? null,
       identifiers: [
         {
           type: 'plex',
@@ -1338,6 +1336,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
+    const releaseDate = parseReleaseDate(plexEpisode.originallyAvailableAt);
+
     const episode: PlexEpisode = {
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(plexEpisode),
@@ -1348,7 +1348,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       title: plexEpisode.title,
       sortTitle: titleToSortTitle(plexEpisode.title),
       originalTitle: null,
-      year: null,
+      year: releaseDate?.year() ?? null,
       summary: plexEpisode.summary ?? null,
       duration: plexEpisode.duration,
       actors: plexActorInject(plexEpisode.Role),
@@ -1360,10 +1360,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         plexEpisode,
       ).getOrElse(() => emptyMediaItem(plexEpisode)),
       genres: [],
-      releaseDate: plexEpisode.originallyAvailableAt
-        ? +dayjs(plexEpisode.originallyAvailableAt, 'YYYY-MM-DD')
-        : null,
-      releaseDateString: plexEpisode.originallyAvailableAt ?? null,
+      releaseDate: releaseDate?.valueOf() ?? null,
+      releaseDateString: releaseDate?.format() ?? null,
       studios: [],
       identifiers: [
         {
@@ -1513,6 +1511,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ? [{ name: plexMovie.studio }]
       : [];
 
+    const releaseDate = parseReleaseDate(plexMovie.originallyAvailableAt);
+
     return Result.success({
       uuid: v4(),
       type: ProgramType.Movie,
@@ -1524,11 +1524,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       title: plexMovie.title,
       sortTitle: titleToSortTitle(plexMovie.title),
       originalTitle: null,
-      year: plexMovie.year ?? null,
-      releaseDate: plexMovie.originallyAvailableAt
-        ? +dayjs(plexMovie.originallyAvailableAt, 'YYYY-MM-DD')
-        : null,
-      releaseDateString: plexMovie.originallyAvailableAt ?? null,
+      year: plexMovie.year ?? releaseDate?.year() ?? null,
+      releaseDate: releaseDate?.valueOf() ?? null,
+      releaseDateString: releaseDate?.format() ?? null,
       mediaItem: plexMediaStreamsInject(
         plexMovie.ratingKey,
         plexMovie,
@@ -1594,6 +1592,8 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ? [{ name: plexClip.studio }]
       : [];
 
+    const releaseDate = parseReleaseDate(plexClip.originallyAvailableAt);
+
     return Result.success({
       uuid: v4(),
       type: ProgramType.OtherVideo,
@@ -1606,11 +1606,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       title: plexClip.title,
       sortTitle: titleToSortTitle(plexClip.title),
       originalTitle: null,
-      year: plexClip.year ?? null,
-      releaseDate: plexClip.originallyAvailableAt
-        ? +dayjs(plexClip.originallyAvailableAt, 'YYYY-MM-DD')
-        : null,
-      releaseDateString: plexClip.originallyAvailableAt ?? null,
+      year: plexClip.year ?? releaseDate?.year() ?? null,
+      releaseDate: releaseDate?.valueOf() ?? null,
+      releaseDateString: releaseDate?.format() ?? null,
       mediaItem: plexMediaStreamsInject(plexClip.ratingKey, plexClip).getOrElse(
         () => emptyMediaItem(plexClip),
       ),
@@ -1702,6 +1700,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     plexAlbum: ApiPlexMusicAlbum,
     mediaLibrary: MediaSourceLibraryOrm,
   ): Result<PlexAlbum> {
+    const releaseDate = parseReleaseDate(plexAlbum.originallyAvailableAt);
     return Result.success({
       uuid: v4(),
       canonicalId: this.canonicalizer.getCanonicalId(plexAlbum),
@@ -1720,7 +1719,6 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
         : [],
       summary: null,
       tagline: null,
-      year: null,
       identifiers: [
         {
           type: 'plex',
@@ -1742,10 +1740,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       ],
       tags: plexAlbum.Label?.map((label) => label.tag) ?? [],
       externalId: plexAlbum.ratingKey,
-      releaseDate: plexAlbum.originallyAvailableAt
-        ? +dayjs(plexAlbum.originallyAvailableAt)
-        : null,
-      releaseDateString: plexAlbum.originallyAvailableAt ?? null,
+      year: plexAlbum.year ?? releaseDate?.year() ?? null,
+      releaseDate: releaseDate?.valueOf() ?? null,
+      releaseDateString: releaseDate?.format() ?? null,
       artwork: compact([
         this.plexArtworkInject(plexAlbum.thumb, 'poster'),
         this.plexArtworkInject(plexAlbum.art, 'banner'),
