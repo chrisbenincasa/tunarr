@@ -147,7 +147,7 @@ export class SmartCollectionsDB {
             name: collection.name,
             filter: collection.filter
               ? search.searchFilterToString(collection.filter)
-              : null,
+              : undefined,
             keywords: collection.keywords,
           })
           .where(eq(SmartCollection.uuid, id))
