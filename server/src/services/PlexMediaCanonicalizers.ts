@@ -86,7 +86,7 @@ export class PlexMediaCanonicalizer implements Canonicalizer<PlexMedia> {
     hash.update(plexCollection.key);
     hash.update(plexCollection.addedAt?.toString() ?? '');
     hash.update(plexCollection.updatedAt?.toString() ?? '');
-    hash.update(plexCollection.childCount.toFixed());
+    hash.update(plexCollection.childCount?.toFixed() ?? '');
     hash.update(plexCollection.smart ? '1' : '0');
     return hash.digest('base64');
   }

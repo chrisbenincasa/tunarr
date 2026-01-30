@@ -519,19 +519,16 @@ export abstract class FileSystemScanner {
         }
         return path.join(baseFolder, `${name}.${ext}`);
       });
-      // artworkNames.map((name) => `${name}.${ext}`)
     });
-    // .map((filename) => path.join(baseFolder, filename));
+
     for (const name of allNames) {
       if (glob.isDynamicPattern(name)) {
         const expanded = await glob.async(name);
         if (expanded.length > 0) {
           return expanded[0];
         }
-      } else {
-        if (await fileExists(name)) {
-          return name;
-        }
+      } else if (await fileExists(name)) {
+        return name;
       }
     }
     return;

@@ -143,7 +143,7 @@ export const PlexLibraryCollectionSchema = z
     thumb: z.string().optional(),
     addedAt: z.number().optional(),
     updatedAt: z.number().optional(),
-    childCount: z.number(),
+    childCount: z.number().optional(),
     collectionSort: z.string().optional(),
     smart: z.coerce
       .boolean()
@@ -438,7 +438,7 @@ export const PlexTvShowSchema = BasePlexMediaSchema.extend({
   art: z.string().optional(),
   audienceRating: z.number().optional(),
   audienceRatingImage: z.string().optional(),
-  childCount: z.number(),
+  childCount: z.number().optional(),
   Collection: z.array(PlexJoinItemSchema).optional(),
   contentRating: z.string().optional(),
   Country: z.array(PlexJoinItemSchema).optional(),
