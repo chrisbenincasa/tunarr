@@ -707,7 +707,7 @@ export class ProgramDB implements IProgramDB {
           'artwork',
         ),
       }),
-    ).orderBy(asc(Program.episode));
+    ).orderBy(asc(Program.seasonNumber), asc(Program.episode));
 
     const baseCountQuery = builder(
       this.drizzleDB.select({
@@ -2586,6 +2586,10 @@ export class ProgramDB implements IProgramDB {
             : undefined,
         externalIds: true,
       },
+      orderBy: (fields, { asc }) => [
+        asc(fields.seasonNumber),
+        asc(fields.episode),
+      ],
     });
   }
 
