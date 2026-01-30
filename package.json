@@ -50,6 +50,7 @@
     "tsx": "^4.20.5",
     "turbo": "^2.5.3",
     "typescript": "catalog:",
+    "typescript-eslint": "^8.46.1",
     "vitest": "^3.2.4"
   },
   "engines": {

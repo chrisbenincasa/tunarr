@@ -1,6 +1,5 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import { BaseSlot } from '@tunarr/types/api';
-import DataLoader from 'dataloader';
 import { inject, injectable } from 'inversify';
 import {
   flatten,
@@ -16,7 +15,6 @@ import { FillerDB } from '../../db/FillerListDB.ts';
 import { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
 import { ProgramDB } from '../../db/ProgramDB.ts';
 import { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
 import { SmartCollectionsDB } from '../../db/SmartCollectionsDB.ts';
 import { KEYS } from '../../types/inject.ts';
 import { zipWithIndex } from '../../util/index.ts';
@@ -35,12 +33,6 @@ import { TimeSlotScheduleServiceRequest } from './TimeSlotSchedulerService.ts';
 
 @injectable()
 export class SlotSchedulerHelper {
-  private programLoader!: DataLoader<string, ProgramWithRelationsOrm>;
-  private descendantsLoader!: DataLoader<
-    [string, ProgramGroupingType],
-    readonly [string, ProgramWithRelationsOrm[]]
-  >;
-
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(CustomShowDB) private customShowDB: CustomShowDB,
@@ -48,27 +40,7 @@ export class SlotSchedulerHelper {
     @inject(KEYS.ProgramDB) private programDB: ProgramDB,
     @inject(SmartCollectionsDB) private smartCollectionsDB: SmartCollectionsDB,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-  ) {
-    this.programLoader = new DataLoader<string, ProgramWithRelationsOrm>(
-      (keys) => this.programDB.getProgramsByIds(keys),
-      { cache: false, maxBatchSize: 100 },
-    );
-    this.descendantsLoader = new DataLoader(
-      (keys) => {
-        return Promise.all(
-          keys.map(([groupId, type]) =>
-            this.programDB
-              .getProgramGroupingDescendants(groupId, type)
-              .then((result) => [groupId, result] as const),
-          ),
-        );
-      },
-      {
-        maxBatchSize: 100,
-        cache: false,
-      },
-    );
-  }
+  ) {}
 
   async collectSlotProgramming(
     request: TimeSlotScheduleServiceRequest | SlotScheduleServiceRequest,
@@ -221,8 +193,15 @@ export class SlotSchedulerHelper {
     );
 
     const allDescendants: ProgramWithRelationsOrm[] = [];
-    const batchResult = await this.descendantsLoader.loadMany(
-      showIds.map((id) => [id, 'show'] as const),
+
+    const batchResult = await Promise.all(
+      showIds
+        .map((id) => [id, 'show'] as const)
+        .map(([groupId, type]) =>
+          this.programDB
+            .getProgramGroupingDescendants(groupId, type)
+            .then((result) => [groupId, result] as const),
+        ),
     );
     for (const result of batchResult) {
       if (isError(result)) {
@@ -299,7 +278,7 @@ export class SlotSchedulerHelper {
     );
 
     const dbPrograms = seq.collect(
-      await this.programLoader.loadMany(
+      await this.programDB.getProgramsByIds(
         needsMaterialization.map((program) => program.id),
       ),
       (programOrError) => {
