@@ -12,22 +12,26 @@ export function intersperse<T>(arr: T[], v: T, makeLast: boolean = false): T[] {
   return flatMap(arr, (x, i) => (i === 0 && !makeLast ? [x] : [x, v]));
 }
 
-type MapperFunc<In, Out> = (t: In, index: number, arr: In[]) => Out;
-type TypePredicateFunc<In, Out extends In> = (
-  t: In,
-  index: number,
-  arr: In[],
-) => t is Out;
+type MapperFunc<
+  In,
+  Out,
+  ArrType extends In[] | ReadonlyArray<In> = In[] | ReadonlyArray<In>,
+> = (t: In, index: number, arr: ArrType) => Out;
+type TypePredicateFunc<
+  In,
+  Out extends In,
+  ArrType extends In[] | ReadonlyArray<In> = In[] | ReadonlyArray<In>,
+> = (t: In, index: number, arr: ArrType) => t is Out;
 
 /**
  * Equivalent of compact(map()) but in a single pass on the array
  */
 export function collect<T, U extends T>(
-  arr: T[] | null | undefined,
+  arr: T[] | ReadonlyArray<T> | null | undefined,
   f: TypePredicateFunc<T, U>,
 ): U[];
 export function collect<T, U>(
-  arr: T[] | null | undefined,
+  arr: T[] | ReadonlyArray<T> | null | undefined,
   f: MapperFunc<T, U | null | undefined>,
 ): U[];
 export function collect<
@@ -36,7 +40,7 @@ export function collect<
   Func extends
     | MapperFunc<T, U | null | undefined>
     | (U extends T ? TypePredicateFunc<T, U> : never),
->(arr: T[] | null | undefined, f: Func): U[] {
+>(arr: T[] | ReadonlyArray<T> | null | undefined, f: Func): U[] {
   if (isNil(arr)) {
     return [];
   }
@@ -186,22 +190,25 @@ export function inConstArr<Arr extends readonly string[], S extends string>(
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: true,
 ): Record<V, Array<K>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: false,
 ): Record<V, K>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function invert<K extends keyof any, V extends keyof any>(
   input: Record<K, V>,
   multi: boolean,
 ): Record<V, Array<K>> | Record<V, K> {
   const out = {} as Record<V, Array<K>>;
   for (const [k, v] of Object.entries<V>(input)) {
-    out[k] ??= [];
-    out[k].push(v);
+    out[v] ??= [];
+    out[v].push(k as K);
   }
 
   if (!multi) {

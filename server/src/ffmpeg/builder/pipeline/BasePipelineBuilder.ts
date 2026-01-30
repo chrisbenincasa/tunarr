@@ -328,21 +328,27 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     desiredState: FrameState,
     pipelineOptions: PipelineOptions,
   ): Pipeline {
-    this.context = new PipelineBuilderContext({
-      videoStream: first(this.nullableVideoInputSource?.streams),
-      audioStream: first(this.audioInputSource?.streams),
-      subtitleStream: first(this.subtitleInputSource?.streams),
-      ffmpegState,
-      desiredState,
-      desiredAudioState: this.audioInputSource?.desiredState,
-      pipelineSteps: [],
-      filterChain: new FilterChain(),
-      hasWatermark: !!this.watermarkInputSource,
-      is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
-      shouldDeinterlace: desiredState.deinterlace,
-      isIntelVaapiOrQsv: false,
-      pipelineOptions,
-    });
+    return this.fromContext(
+      new PipelineBuilderContext({
+        videoStream: first(this.nullableVideoInputSource?.streams),
+        audioStream: first(this.audioInputSource?.streams),
+        subtitleStream: first(this.subtitleInputSource?.streams),
+        ffmpegState,
+        desiredState,
+        desiredAudioState: this.audioInputSource?.desiredState,
+        pipelineSteps: [],
+        filterChain: new FilterChain(),
+        hasWatermark: !!this.watermarkInputSource,
+        is10BitOutput: (desiredState.pixelFormat?.bitDepth ?? 8) === 10,
+        shouldDeinterlace: desiredState.deinterlace,
+        isIntelVaapiOrQsv: false,
+        pipelineOptions,
+      }),
+    );
+  }
+
+  fromContext(builderContext: PipelineBuilderContext) {
+    this.context = builderContext;
 
     this.logger.debug(
       'Creating ffmpeg transcode pipeline with context: %O',
@@ -353,7 +359,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       new NoStdInOption(),
       new HideBannerOption(),
       new NoStatsOption(),
-      new LogLevelOption(ffmpegState.logLevel),
+      new LogLevelOption(this.context.ffmpegState.logLevel),
       new StandardFormatFlags(),
       NoDemuxDecodeDelayOutputOption(),
       ClosedGopOutputOption(),
@@ -431,7 +437,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     }
 
     this.context.pipelineSteps.unshift(
-      ...this.getThreadCountOption(ffmpegState),
+      ...this.getThreadCountOption(this.ffmpegState),
     );
 
     this.setSceneDetect();

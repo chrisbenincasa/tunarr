@@ -373,7 +373,7 @@ describe('parsedSearchToRequest', () => {
         key: 'studio.name',
         name: '',
         op: 'contains',
-        type: 'string',
+        type: 'faceted_string',
         value: ['Pixar'],
       },
     } satisfies SearchFilter);
@@ -395,7 +395,7 @@ describe('parsedSearchToRequest', () => {
         key: 'genres.name',
         name: '',
         op: 'not in',
-        type: 'string',
+        type: 'faceted_string',
         value: ['comedy', 'horror'],
       },
     } satisfies SearchFilter);
@@ -441,7 +441,7 @@ describe('parsedSearchToRequest', () => {
           key: 'grandparent.genres',
           name: '',
           op: '=',
-          type: 'string',
+          type: 'faceted_string',
           value: ['comedy'],
         },
       } satisfies SearchFilter);
@@ -464,7 +464,7 @@ describe('parsedSearchToRequest', () => {
         key: 'audioLanguages',
         name: '',
         op: '=',
-        type: 'string',
+        type: 'faceted_string',
         value: ['eng'],
       },
     } satisfies SearchFilter);
@@ -486,7 +486,7 @@ describe('parsedSearchToRequest', () => {
         key: 'subtitleLanguages',
         name: '',
         op: '=',
-        type: 'string',
+        type: 'faceted_string',
         value: ['fra'],
       },
     } satisfies SearchFilter);

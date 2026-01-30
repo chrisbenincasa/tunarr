@@ -849,7 +849,7 @@ export type SearchFilterInput = {
     } | {
         key: string;
         name: string;
-        type: 'facted_string';
+        type: 'faceted_string';
         op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
@@ -1722,7 +1722,7 @@ export type SearchFilter = {
     } | {
         key: string;
         name: string;
-        type: 'facted_string';
+        type: 'faceted_string';
         op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {

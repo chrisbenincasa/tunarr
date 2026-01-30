@@ -21,7 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import { invert } from './seq.js';
+import { inConstArr, invert } from './seq.js';
 
 dayjs.extend(customParseFormat);
 
@@ -42,28 +42,32 @@ const StringChars = createToken({
   pattern: /[^"\\{]+/,
 });
 
-const StringFields = [
-  'actor',
+const FactedStringFields = [
+  'type',
   'genre',
+  'rating',
+  'actor',
   'director',
   'writer',
   'studio',
-  'library_id',
-  'title',
   'video_codec',
-  'video_dynamic_range',
   'audio_codec',
   'tags',
-  'rating',
-  'type',
-  'show_title',
-  'show_genre',
   'show_tags',
   'show_studio',
+  'show_genre',
   'audio_language',
   'subtitle_language',
+  'video_dynamic_range',
   'media_source_name',
   'library_name',
+] as const;
+
+const StringFields = [
+  ...FactedStringFields,
+  'library_id',
+  'title',
+  'show_title',
 ] as const;
 
 const StringField = createToken({
@@ -344,7 +348,7 @@ export const virtualFieldToIndexField: Record<string, string> = {
   audio_channels: 'audioChannels',
 };
 
-const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
+export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
@@ -945,7 +949,9 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
           key,
           name: '',
           op,
-          type: 'string' as const,
+          type: inConstArr(FactedStringFields, input.field)
+            ? 'faceted_string'
+            : ('string' as const),
           value: isArray(input.value) ? input.value : [input.value],
         },
       } satisfies SearchFilterValueNode;
@@ -1037,7 +1043,7 @@ export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
     .with(
       {
         type: 'value',
-        fieldSpec: { type: P.union('facted_string', 'string') },
+        fieldSpec: { type: P.union('faceted_string', 'string') },
       },
       ({ fieldSpec }) => {
         const key: string =

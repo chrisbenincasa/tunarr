@@ -479,6 +479,9 @@ export abstract class MediaSourceMusicArtistScanner<
         }
 
         const fullMetadata = fullMetadataResult.get();
+        track.year ??= album.year;
+        track.releaseDate ??= album.releaseDate;
+        track.releaseDateString ??= album.releaseDateString;
 
         if (
           !force &&

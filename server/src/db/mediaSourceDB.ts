@@ -1,13 +1,12 @@
 import { KEYS } from '@/types/inject.js';
-import { Maybe, Nullable } from '@/types/util.js';
-import { groupByUniq, isNonEmptyString } from '@/util/index.js';
+import { Maybe } from '@/types/util.js';
+import { isNonEmptyString } from '@/util/index.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { tag } from '@tunarr/types';
 import type {
   InsertMediaSourceRequest,
   UpdateMediaSourceRequest,
 } from '@tunarr/types/api';
-import DataLoader from 'dataloader';
 import dayjs from 'dayjs';
 import { and, eq } from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
@@ -57,22 +56,6 @@ type MediaSourceUserInfo = {
 
 @injectable()
 export class MediaSourceDB {
-  private mediaSourceByIdLoader = new DataLoader<
-    MediaSourceId,
-    MediaSourceWithRelations | null
-  >(
-    async (batch) => {
-      const results = await this.getByIds([...batch]);
-      const byId = groupByUniq(results, (result) => result.uuid);
-      const resultList: Nullable<MediaSourceWithRelations>[] = [];
-      for (const id of batch) {
-        resultList.push(byId[id] ?? null);
-      }
-      return resultList;
-    },
-    { maxBatchSize: 100, cache: false },
-  );
-
   constructor(
     @inject(KEYS.MediaSourceApiFactory)
     private mediaSourceApiFactory: () => MediaSourceApiFactory,
@@ -93,14 +76,8 @@ export class MediaSourceDB {
     });
   }
 
-  async getById(
-    id: MediaSourceId,
-    useLoader: boolean = true,
-  ): Promise<Maybe<MediaSourceWithRelations>> {
-    if (!useLoader) {
-      return head(await this.getByIds([id]));
-    }
-    return (await this.mediaSourceByIdLoader.load(id)) ?? undefined;
+  async getById(id: MediaSourceId): Promise<Maybe<MediaSourceWithRelations>> {
+    return head(await this.getByIds([id]));
   }
 
   private async getByIds(
@@ -174,7 +151,7 @@ export class MediaSourceDB {
   }
 
   async deleteMediaSource(id: MediaSourceId) {
-    const deletedServer = await this.getById(id, false);
+    const deletedServer = await this.getById(id);
     if (isNil(deletedServer)) {
       throw new Error(`MediaSource not found: ${id}`);
     }

@@ -53,7 +53,6 @@
     "blurhash": "^2.0.5",
     "chalk": "^5.6.0",
     "cron-parser": "^4.9.0",
-    "dataloader": "^2.2.3",
     "dayjs": "^1.11.14",
     "drizzle-orm": "^0.39.3",
     "fast-xml-parser": "^4.5.3",

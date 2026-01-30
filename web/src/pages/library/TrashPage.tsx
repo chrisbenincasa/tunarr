@@ -58,7 +58,7 @@ export const TrashPage = () => {
         key: 'state',
         name: '',
         op: '=',
-        type: 'facted_string',
+        type: 'faceted_string',
         value: ['missing'],
       },
     } satisfies SearchFilter;
@@ -79,7 +79,7 @@ export const TrashPage = () => {
               name: '',
               op: 'in',
               value: itemTypes,
-              type: 'facted_string',
+              type: 'faceted_string',
             },
           },
         ],

@@ -68,10 +68,7 @@ export class PlexCollectionScanner extends ExternalCollectionScanner<PlexApiClie
   }
 
   async scan(req: ExternalCollectionScanRequest): Promise<void> {
-    const mediaSource = await this.mediaSourceDB.getById(
-      req.mediaSourceId,
-      false,
-    );
+    const mediaSource = await this.mediaSourceDB.getById(req.mediaSourceId);
     if (!mediaSource) {
       throw new Error(
         `Could not find media source with ID ${req.mediaSourceId}`,

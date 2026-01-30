@@ -32,6 +32,7 @@ export class SearchProgramsCommand {
     req: z.infer<typeof ProgramSearchRequest>,
   ): Promise<ProgramSearchResponse> {
     const limit = req.limit ?? 20;
+    console.log(req.query.query, req.page);
     const result = await this.searchService.search('programs', {
       query: req.query.query,
       filter: req.query.filter,

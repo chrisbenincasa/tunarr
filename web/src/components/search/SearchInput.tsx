@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
 import { isNonEmptyString, search as tunarrSearch } from '@tunarr/shared/util';
-import { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
+import type { SearchFilter, SearchRequest } from '@tunarr/types/schemas';
 import { useToggle } from '@uidotdev/usehooks';
 import { difference, isEmpty, isEqual } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
@@ -107,6 +107,7 @@ export const SearchInput = ({
     }
   }, [
     formMethods,
+    initialKeywords,
     initialSearchFilter,
     query,
     savedInitialSearch,

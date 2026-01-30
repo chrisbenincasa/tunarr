@@ -1,8 +1,10 @@
 import { Stack } from '@mui/material';
+import type { PickerValidDate } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
 import { type DateSearchField } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
+import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
 import type { SearchForm } from './SearchInput.tsx';
@@ -14,6 +16,18 @@ type Props = {
 
 export function DateSearchValueNode({ field, formKey }: Props) {
   const { control } = useFormContext<SearchForm>();
+
+  const handleDateValueChange = useCallback(
+    (
+      value: PickerValidDate | null,
+      originalOnChange: (...args: unknown[]) => void,
+    ) => {
+      if (!value) return;
+
+      originalOnChange(value.valueOf());
+    },
+    [],
+  );
 
   if (isNumber(field.value)) {
     return (
@@ -30,7 +44,7 @@ export function DateSearchValueNode({ field, formKey }: Props) {
               },
             }}
             value={dayjs(field.value as number)}
-            onChange={(e) => field.onChange(e?.valueOf())}
+            onChange={(e) => handleDateValueChange(e, field.onChange)}
           />
         )}
       />
@@ -45,9 +59,6 @@ export function DateSearchValueNode({ field, formKey }: Props) {
             <DatePicker
               sx={{ height: 40 }}
               label="Value"
-              // maxDate={dayjs(
-              //   (selfValue.fieldSpec.value as [number, number])[1] - 1,
-              // )}
               maxDate={dayjs()}
               slotProps={{
                 textField: {
@@ -55,7 +66,7 @@ export function DateSearchValueNode({ field, formKey }: Props) {
                 },
               }}
               value={dayjs(field.value)}
-              onChange={(e) => field.onChange(e?.valueOf())}
+              onChange={(e) => handleDateValueChange(e, field.onChange)}
             />
           )}
         />
@@ -66,15 +77,13 @@ export function DateSearchValueNode({ field, formKey }: Props) {
             <DatePicker
               sx={{ height: 40 }}
               label="Value"
-              // minDate={dayjs((field.value as [number, number])[0] + 1)}
-              // maxDate={dayjs()}
               slotProps={{
                 textField: {
                   size: 'small',
                 },
               }}
               value={dayjs(field.value as number)}
-              onChange={(e) => field.onChange(e?.valueOf())}
+              onChange={(e) => handleDateValueChange(e, field.onChange)}
             />
           )}
         />

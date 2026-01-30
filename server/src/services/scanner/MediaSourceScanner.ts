@@ -78,7 +78,6 @@ export abstract class MediaSourceScanner<
 
       const mediaSource = await this.mediaSourceDB.getById(
         library.mediaSourceId,
-        false,
       );
 
       if (!mediaSource) {

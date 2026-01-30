@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { SearchRequest } from '@tunarr/types/schemas';
 import { postApiProgramsSearchInfiniteOptions } from '../generated/@tanstack/react-query.gen.ts';
 
@@ -33,7 +34,7 @@ export const useProgramInfiniteSearch = (
       }
       return prevPage;
     },
-    initialPageParam: 1,
+    initialPageParam: isNonEmptyString(searchRequest.query) ? 1 : 0,
     staleTime: 0,
     enabled,
   });

@@ -159,17 +159,13 @@ export abstract class FileSystemScanner {
         for (const probeVideoStream of videoStreams) {
           const videoStream: MediaStream = {
             ...probeVideoStream,
-            // uuid: v4(),
             bitDepth: probeVideoStream.bitDepth,
             streamType: 'video',
             codec: probeVideoStream.codec ?? 'unknown',
             channels: null,
             index: probeVideoStream.streamIndex ?? 0,
             default: true,
-            // forced: true,
             title: 'Main',
-            // languageCodeISO6392: null,
-            // programVersionId: versionId,
             profile: probeVideoStream.profile ?? null,
             pixelFormat: probeVideoStream.pixelFormat ?? null,
             colorPrimaries: probeVideoStream.colorPrimaries ?? null,
@@ -523,19 +519,16 @@ export abstract class FileSystemScanner {
         }
         return path.join(baseFolder, `${name}.${ext}`);
       });
-      // artworkNames.map((name) => `${name}.${ext}`)
     });
-    // .map((filename) => path.join(baseFolder, filename));
+
     for (const name of allNames) {
       if (glob.isDynamicPattern(name)) {
         const expanded = await glob.async(name);
         if (expanded.length > 0) {
           return expanded[0];
         }
-      } else {
-        if (await fileExists(name)) {
-          return name;
-        }
+      } else if (await fileExists(name)) {
+        return name;
       }
     }
     return;

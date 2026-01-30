@@ -21,7 +21,6 @@ export type RootSearchQueryParams = z.infer<typeof searchQuerySchema>;
 export const Route = createRootRouteWithContext<RouterContext>()({
   validateSearch: zodValidator(searchQuerySchema),
   loader: async ({ context: { queryClient }, location: { search } }) => {
-    console.log(search);
     const parsed = search as RootSearchQueryParams;
     if (!isNonEmptyString(parsed.query)) {
       useStore.setState((s) => {

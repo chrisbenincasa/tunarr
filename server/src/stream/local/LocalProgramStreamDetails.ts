@@ -75,6 +75,7 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
             profile: nullToUndefined(videoStream.profile),
             scanType: nullToUndefined(firstVersion.scanKind),
             streamIndex: videoStream.index,
+            pixelFormat: videoStream.pixelFormat ?? undefined,
           }) satisfies VideoStreamDetails,
       ) ?? [];
 
