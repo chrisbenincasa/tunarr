@@ -216,6 +216,14 @@ describe('search parser', () => {
     const request2 = parsedSearchToRequest(query2);
     expect(searchFilterToString(request2)).toEqual(input2);
   });
+
+  test('parse and stringify range queries', () => {
+    const input = `type = "episode" AND minutes > 5 AND release_year between [1980, 1989] AND show_tags = "Primetime"`;
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(searchFilterToString(request)).toEqual(input);
+  });
 });
 
 describe('parsedSearchToRequest', () => {
