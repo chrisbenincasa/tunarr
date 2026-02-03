@@ -351,6 +351,7 @@ export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
+  to: 'between',
 };
 
 function normalizeReleaseDate(value: string) {
@@ -1150,7 +1151,12 @@ export function searchFilterToString(input: SearchFilter): string {
         const value = input.fieldSpec.value[0];
         const repr = `"${value}"`;
         return `${key} ${op} ${repr}`;
-      } else {
+      }
+      //  else if (isNumber2Tuple(input.fieldSpec.value)) {
+      //   const [lo, hi] = input.fieldSpec.value;
+      //   return `${key} ${denormalizer(lo)} to ${denormalizer(hi)}`;
+      // }
+      else {
         const components: string[] = [];
         for (const x of input.fieldSpec.value) {
           if (isNumber(x)) {

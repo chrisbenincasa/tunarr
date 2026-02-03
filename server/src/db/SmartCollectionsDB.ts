@@ -72,8 +72,9 @@ export class SmartCollectionsDB {
           smartCollection.filter,
         );
         if (parseResult.isFailure()) {
+          this.logger.debug(parseResult.error);
           this.logger.warn(
-            'Smart collection ID %s (%s) has unparseable filter ("%s"). Results will be wrong.',
+            'Smart collection ID %s (%s) has unparseable filter (%s). Results will be wrong.',
             smartCollection.uuid,
             smartCollection.name,
             smartCollection.filter,

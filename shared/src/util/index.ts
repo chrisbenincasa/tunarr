@@ -8,7 +8,7 @@ import type {
   SearchFilterValueNode,
   StringOperators,
 } from '@tunarr/types/schemas';
-import { capitalize, isNull, isString } from 'lodash-es';
+import { capitalize, isArray, isNull, isNumber, isString } from 'lodash-es';
 import isFunction from 'lodash-es/isFunction.js';
 import type { MarkRequired } from 'ts-essentials';
 import type { PerTypeCallback } from '../types/index.js';
@@ -217,4 +217,17 @@ export function prettifySnakeCaseString(str: string) {
     .split('_')
     .map((x) => capitalize(x))
     .join(' ');
+}
+
+export function is2Tuple<T>(
+  value: unknown,
+  pred: (v: unknown) => v is T,
+): value is [T, T] {
+  if (!isArray(value)) return false;
+  if (value.length !== 2) return false;
+  return pred(value[0]) && pred(value[1]);
+}
+
+export function isNumber2Tuple(value: unknown): value is [number, number] {
+  return is2Tuple(value, isNumber);
 }
