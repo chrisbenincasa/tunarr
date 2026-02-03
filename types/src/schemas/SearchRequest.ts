@@ -80,12 +80,15 @@ export type SearchFilterOperatorNode = {
   type: 'op';
   op: 'or' | 'and';
   children: SearchFilter[];
+  // When true, this node was explicitly parenthesized in the original query
+  grouped?: boolean;
 };
 // Hack to get recursive types working in zod
 
 export const SearchFilterOperatorNodeSchema = z.object({
   type: z.literal('op'),
   op: z.enum(['or', 'and']),
+  grouped: z.boolean().optional(),
   get children(): z.ZodArray<
     z.ZodDiscriminatedUnion<
       [
