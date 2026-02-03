@@ -176,6 +176,10 @@ export function isNonEmptyString(s: unknown): s is string {
   return isString(s) && s.length > 0;
 }
 
+export function emptyStringToNull(s: string): string | null {
+  return isNonEmptyString(s) ? s : null;
+}
+
 export function createTypeSearchField(
   type: ProgramLike['type'],
   op?: StringOperators,
