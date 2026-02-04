@@ -810,6 +810,7 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: show.tags,
+      studio: show.studios,
     };
 
     await this.client()

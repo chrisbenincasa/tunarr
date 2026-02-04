@@ -275,30 +275,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         url: '/System/Ping',
       });
 
-      // One of these should succeed. In the username/pw case
-      // we should be able to at least retrieve our own user.
-      // Access token based auth will not have a "me" but should be able
-      // to at least list all users.
-      const [meResult, allUsersResult] = await Promise.allSettled([
-        this.doGet({
-          url: '/Users/Me',
-        }),
-        this.doGet({
-          url: '/Users',
-        }),
-      ]);
+      await this.getUserLibraries();
 
-      if (
-        meResult.status === 'fulfilled' ||
-        allUsersResult.status === 'fulfilled'
-      ) {
-        return { healthy: true };
-      } else {
-        return {
-          healthy: false,
-          status: 'auth',
-        };
-      }
+      return { healthy: true };
     } catch (e) {
       return {
         healthy: false,

@@ -28,6 +28,7 @@ import { useSnackbar } from 'notistack';
 import React, { useCallback, useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
 import { deleteCustomShowMutation } from '../../generated/@tanstack/react-query.gen.ts';
+import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
 import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
@@ -46,8 +47,7 @@ export default function CustomShowsPage() {
     ...deleteCustomShowMutation(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['Custom Shows'],
-        exact: false,
+        predicate: invalidateTaggedQueries('Custom Shows'),
       });
     },
     onError: (e) => {

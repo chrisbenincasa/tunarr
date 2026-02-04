@@ -13,7 +13,7 @@ import type {
 import { createToken, EmbeddedActionsParser, Lexer } from 'chevrotain';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
-import { head, identity, isArray, isNumber } from 'lodash-es';
+import { has, head, identity, isArray, isNumber } from 'lodash-es';
 import type {
   Dictionary,
   NonEmptyArray,
@@ -21,6 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
+import { emptyStringToNull } from './index.js';
 import { inConstArr, invert } from './seq.js';
 
 dayjs.extend(customParseFormat);
@@ -352,6 +353,7 @@ export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
+  to: 'between',
 };
 
 function normalizeReleaseDate(value: string) {
@@ -369,6 +371,12 @@ type Converter<In, Out = In> = (input: In) => Out;
 const numericFieldNormalizersByField = {
   minutes: (mins: number) => mins * 60 * 1000,
   seconds: (secs: number) => secs * 1000,
+} satisfies Record<string, Converter<number>>;
+
+// Inverse converters for round-trip conversion back to original units
+const numericFieldDenormalizersByField = {
+  minutes: (ms: number) => ms / (60 * 1000),
+  seconds: (ms: number) => ms / 1000,
 } satisfies Record<string, Converter<number>>;
 
 const dateFieldNormalizersByField = {
@@ -751,6 +759,8 @@ export class SearchParser extends EmbeddedActionsParser {
 
   private searchClause = this.RULE('searchClause', () => {
     let clause: SearchClause;
+
+    // First, match either a parenGroup or a singleSearch
     this.OR([
       {
         ALT: () => {
@@ -759,38 +769,41 @@ export class SearchParser extends EmbeddedActionsParser {
       },
       {
         ALT: () => {
-          let isCombo = false;
           clause = this.SUBRULE(this.singleSearch);
-          let rhs: SearchClause;
-          let op: 'or' | 'and' = 'and';
-          this.OPTION(() => {
-            const opToken = this.OR2([
-              {
-                ALT: () => this.CONSUME(CombineOr),
-              },
-              {
-                ALT: () => this.CONSUME(CombineAnd),
-              },
-              {
-                ALT: () => this.CONSUME(WhiteSpace),
-              },
-            ]);
-            rhs = this.SUBRULE(this.searchClause);
-            op = opToken?.tokenType?.name === CombineOr.name ? 'or' : 'and';
-            isCombo = true;
-          });
-
-          if (isCombo) {
-            clause = {
-              type: 'binary_clause',
-              lhs: clause,
-              op,
-              rhs: rhs!,
-            } satisfies BinarySearchClause;
-          }
         },
       },
     ]);
+
+    // Then, optionally check for a binary operator (AND/OR)
+    let isCombo = false;
+    let rhs: SearchClause;
+    let op: 'or' | 'and' = 'and';
+
+    this.OPTION(() => {
+      const opToken = this.OR2([
+        {
+          ALT: () => this.CONSUME(CombineOr),
+        },
+        {
+          ALT: () => this.CONSUME(CombineAnd),
+        },
+        {
+          ALT: () => this.CONSUME(WhiteSpace),
+        },
+      ]);
+      rhs = this.SUBRULE(this.searchClause);
+      op = opToken?.tokenType?.name === CombineOr.name ? 'or' : 'and';
+      isCombo = true;
+    });
+
+    if (isCombo) {
+      clause = {
+        type: 'binary_clause',
+        lhs: clause!,
+        op,
+        rhs: rhs!,
+      } satisfies BinarySearchClause;
+    }
 
     return clause!;
   });
@@ -815,22 +828,55 @@ export function tokenizeSearchQuery(queryString: string) {
   return SearchExpressionLexer.tokenize(queryString);
 }
 
+// Helper to flatten chains of same-operator binary clauses
+// e.g., binary_clause(A, and, binary_clause(B, and, C)) -> [A, B, C]
+function collectBinaryClauseChildren(
+  clause: SearchClause,
+  op: 'and' | 'or',
+): SearchClause[] {
+  if (clause.type === 'binary_clause' && clause.op === op) {
+    return [
+      ...collectBinaryClauseChildren(clause.lhs, op),
+      ...collectBinaryClauseChildren(clause.rhs, op),
+    ];
+  }
+  return [clause];
+}
+
 // Parse a valid SearchClause into an actual Tunarr SearchFilter
 export function parsedSearchToRequest(input: SearchClause): SearchFilter {
   switch (input.type) {
     case 'search_group': {
       if (input.clauses.length === 1) {
-        return parsedSearchToRequest(input.clauses[0]);
+        const innerClause = input.clauses[0];
+        // If the inner clause is a binary clause, flatten it and mark as grouped
+        if (innerClause.type === 'binary_clause') {
+          const flatChildren = collectBinaryClauseChildren(
+            innerClause,
+            innerClause.op,
+          );
+          return {
+            op: innerClause.op,
+            type: 'op',
+            grouped: true,
+            children: flatChildren.map(parsedSearchToRequest),
+          } satisfies SearchFilterOperatorNode;
+        }
+        // Single non-binary clause doesn't need grouping
+        return parsedSearchToRequest(innerClause);
       }
 
       return {
         op: 'and',
         type: 'op',
+        grouped: true,
         children: input.clauses.map(parsedSearchToRequest),
       } satisfies SearchFilterOperatorNode;
     }
     case 'single_numeric_query': {
       const key: string = virtualFieldToIndexField[input.field] ?? input.field;
+      // Store original field name for round-trip conversion
+      const originalField = input.field;
       const valueConverter: Converter<number> =
         input.field in numericFieldNormalizersByField
           ? numericFieldNormalizersByField[
@@ -850,7 +896,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
                 type: 'value',
                 fieldSpec: {
                   key,
-                  name: '',
+                  name: originalField,
                   op: NumericOpToApiType[input.op],
                   type: 'numeric' as const,
                   value: [
@@ -865,7 +911,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
               type: 'value',
               fieldSpec: {
                 key,
-                name: '',
+                name: originalField,
                 op: inclLow ? '>=' : '>',
                 type: 'numeric',
                 value: valueConverter(input.value[0]),
@@ -876,7 +922,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
               type: 'value',
               fieldSpec: {
                 key,
-                name: '',
+                name: originalField,
                 op: inclHi ? '<=' : '<',
                 type: 'numeric',
                 value: valueConverter(input.value[1]),
@@ -895,7 +941,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
         type: 'value',
         fieldSpec: {
           key,
-          name: '',
+          name: originalField,
           op: NumericOpToApiType[input.op],
           type: 'numeric' as const,
           value: valueConverter(input.value),
@@ -957,13 +1003,12 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       } satisfies SearchFilterValueNode;
     }
     case 'binary_clause': {
+      // Flatten chains of same-operator binary clauses
+      const flatChildren = collectBinaryClauseChildren(input, input.op);
       return {
         op: input.op.toLowerCase() as Lowercase<SearchFilterOperatorNode['op']>,
         type: 'op',
-        children: [
-          parsedSearchToRequest(input.lhs),
-          parsedSearchToRequest(input.rhs),
-        ],
+        children: flatChildren.map(parsedSearchToRequest),
       } satisfies SearchFilterOperatorNode;
     }
   }
@@ -1061,61 +1106,70 @@ export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
     .exhaustive();
 }
 
-export function searchFilterToString(
-  input: SearchFilter,
-  depth: number = 0,
-): string {
+export function searchFilterToString(input: SearchFilter): string {
   switch (input.type) {
     case 'op': {
       const children = input.children.map((child) =>
-        searchFilterToString(child, depth + 1),
+        searchFilterToString(child),
       );
-      if (depth === 0) {
-        return children.join(` ${input.op.toUpperCase()} `);
-      }
       if (children.length === 0) {
         return '';
       }
       if (children.length === 1) {
         return children[0];
       }
-      // Wrap in parents for higher depth
-      return `(${children.join(` ${input.op.toUpperCase()} `)})`;
+      const joined = children.join(` ${input.op.toUpperCase()} `);
+      // Only wrap in parentheses if this was an explicit group in the original query
+      return input.grouped ? `(${joined})` : joined;
     }
     case 'value': {
+      // Use the original field name if stored, otherwise fall back to index field mapping
+      const key =
+        emptyStringToNull(input.fieldSpec.name) ??
+        head(indexFieldToVirtualField[input.fieldSpec.key]) ??
+        input.fieldSpec.key;
+      const op =
+        indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
+
+      // Get denormalizer for numeric fields (e.g., convert ms back to minutes)
+      has(numericFieldDenormalizersByField, input.fieldSpec.name);
+      const denormalizer: Converter<number> =
+        input.fieldSpec.type === 'numeric' &&
+        has(numericFieldDenormalizersByField, input.fieldSpec.name)
+          ? (numericFieldDenormalizersByField[
+              input.fieldSpec.name
+            ] as Converter<number>)
+          : identity;
+
       let valueString: string;
       if (isNumber(input.fieldSpec.value)) {
         valueString =
           input.fieldSpec.type === 'date'
             ? dayjs(input.fieldSpec.value).format('YYYY-MM-DD')
-            : input.fieldSpec.value.toString();
+            : denormalizer(input.fieldSpec.value).toString();
       } else if (input.fieldSpec.value.length === 0) {
         return '';
       } else if (input.fieldSpec.value.length === 1) {
         const value = input.fieldSpec.value[0];
         const repr = `"${value}"`;
-        const key =
-          head(indexFieldToVirtualField[input.fieldSpec.key]) ??
-          input.fieldSpec.key;
-        const op =
-          head(indexOperatorToSyntax[input.fieldSpec.op]) ?? input.fieldSpec.op;
         return `${key} ${op} ${repr}`;
-      } else {
+      }
+      //  else if (isNumber2Tuple(input.fieldSpec.value)) {
+      //   const [lo, hi] = input.fieldSpec.value;
+      //   return `${key} ${denormalizer(lo)} to ${denormalizer(hi)}`;
+      // }
+      else {
         const components: string[] = [];
         for (const x of input.fieldSpec.value) {
           if (isNumber(x)) {
-            components.push(x.toString());
+            components.push(denormalizer(x).toString());
           } else {
             components.push(`"${x}"`);
           }
         }
         valueString = `[${components.join(', ')}]`;
       }
-      const key =
-        head(indexFieldToVirtualField[input.fieldSpec.key]) ??
-        input.fieldSpec.key;
-      const op =
-        head(indexOperatorToSyntax[input.fieldSpec.op]) ?? input.fieldSpec.op;
+
       return `${key} ${op} ${valueString}`;
     }
   }

@@ -151,7 +151,9 @@ export const embyApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withEmbyMediaSource(req, res, async (mediaSource) => {
         const library = mediaSource.libraries.find(
-          (lib) => lib.uuid === req.params.libraryId,
+          (lib) =>
+            lib.externalKey === req.params.libraryId ||
+            lib.uuid === req.params.libraryId,
         );
         if (!library) {
           return res

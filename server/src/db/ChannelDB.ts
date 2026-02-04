@@ -627,13 +627,16 @@ export class ChannelDB implements IChannelDB {
         ),
       )
       .innerJoin(Program, eq(ChannelPrograms.programUuid, Program.uuid))
-      .orderBy(asc(ChannelPrograms.programUuid))
       .$dynamic();
 
     const countResult = head(await query.execute())?.count ?? 0;
 
     if (pageParams) {
-      query = query.offset(pageParams.offset).limit(pageParams.limit);
+      query = query
+        .groupBy(Program.uuid)
+        .orderBy(asc(Program.title))
+        .offset(pageParams.offset)
+        .limit(pageParams.limit);
     }
 
     const results = await query.execute();

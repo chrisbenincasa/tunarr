@@ -4,6 +4,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import {
   parsedSearchToRequest,
   SearchClause,
+  searchFilterToString,
   SearchParser,
   tokenizeSearchQuery,
 } from './searchUtil.js';
@@ -199,6 +200,30 @@ describe('search parser', () => {
       },
     } satisfies SearchClause);
   });
+
+  test('compound query with parens', () => {
+    const input = `(type = "episode" AND minutes > 5 AND year < 1990 AND show_genre = "Animation") AND (rating in ["G", "TV-G", "Y"] OR (rating = "Not Rated" AND show_studio = "Hanna-Barbera Cartoons"))`;
+
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(searchFilterToString(request)).toEqual(input);
+
+    const input2 = `type = "episode" AND minutes > 5 AND year < 1990 AND show_genre = "Animation" AND (rating in ["G", "TV-G", "Y"] OR (rating = "Not Rated" AND show_studio = "Hanna-Barbera Cartoons"))`;
+
+    const query2 = parseAndCheckExpression(input2);
+
+    const request2 = parsedSearchToRequest(query2);
+    expect(searchFilterToString(request2)).toEqual(input2);
+  });
+
+  test('parse and stringify range queries', () => {
+    const input = `type = "episode" AND minutes > 5 AND release_year between [1980, 1989] AND show_tags = "Primetime"`;
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(searchFilterToString(request)).toEqual(input);
+  });
 });
 
 describe('parsedSearchToRequest', () => {
@@ -218,7 +243,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'duration',
-        name: '',
+        name: 'duration',
         op: 'to',
         type: 'numeric',
         value: [100, 200],
@@ -242,7 +267,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'duration',
-        name: '',
+        name: 'duration',
         op: '>',
         type: 'numeric',
         value: 100,
@@ -253,7 +278,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'duration',
-        name: '',
+        name: 'duration',
         op: '<',
         type: 'numeric',
         value: 200,
@@ -349,7 +374,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'duration',
-        name: '',
+        name: 'minutes',
         op: '<=',
         type: 'numeric',
         value: 30 * 60 * 1000,

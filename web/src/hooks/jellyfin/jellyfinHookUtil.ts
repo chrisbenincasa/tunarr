@@ -76,6 +76,7 @@ export const enumerateJellyfinItem = (
             parentId: item.externalId,
             itemTypes: [...JellyfinTerminalTypes],
             recursive: true,
+            sortBy: ['PremiereDate'],
           },
           throwOnError: true,
         }) // TODO: Use p-queue here to parallelize a bit

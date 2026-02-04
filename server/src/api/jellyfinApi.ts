@@ -185,7 +185,9 @@ export const jellyfinApiRouter: RouterPluginCallback = (fastify, _, done) => {
     (req, res) =>
       withJellyfinMediaSource(req, res, async (mediaSource) => {
         const library = mediaSource.libraries.find(
-          (lib) => lib.uuid === req.params.libraryId,
+          (lib) =>
+            lib.uuid === req.params.libraryId ||
+            lib.externalKey === req.params.libraryId,
         );
         if (!library) {
           return res
