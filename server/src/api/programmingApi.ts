@@ -13,6 +13,7 @@ import {
   isHttpUrl,
   isNonEmptyString,
 } from '@/util/index.js';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { seq } from '@tunarr/shared/util';
 import type { Episode, MusicAlbum, MusicTrack, Season } from '@tunarr/types';
@@ -459,7 +460,37 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
           }
         }
 
-        return res.redirect(url.toString());
+        const fullUrl = url.toString();
+
+        if (getBooleanEnvVar(TUNARR_ENV_VARS.PROXY_ARTWORK_ENV_VAR, false)) {
+          try {
+            const proxyRes = await axios.request<stream.Readable>({
+              url: fullUrl,
+              responseType: 'stream',
+            });
+
+            let headers: Partial<Record<HttpHeader, string | string[]>>;
+            if (proxyRes.headers instanceof AxiosHeaders) {
+              headers = {
+                ...proxyRes.headers,
+             };
+            } else {
+              headers = { ...omitBy(proxyRes.headers, isNull) };
+            }
+
+            return res
+              .status(proxyRes.status)
+              .headers(headers)
+              .send(proxyRes.data);
+          } catch (e) {
+            if (isAxiosError(e) && e.response?.status === 404) {
+              return res.status(404).send();
+            }
+            throw e;
+          }
+        }
+
+        return res.redirect(fullUrl);
       } else {
         return res.sendFile(art.sourcePath);
       }
