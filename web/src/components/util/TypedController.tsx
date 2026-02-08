@@ -318,12 +318,17 @@ export const NumericFormControllerText = <
           },
         );
 
+        let formValue = displayValue ?? field.value;
+        if (props.float) {
+          formValue = parseFloat(field.value)?.toFixed(1);
+        }
+
         return (
           <TextField
             error={!isNil(fieldError)}
             {...field}
             {...fieldProps}
-            value={displayValue ?? field.value}
+            value={formValue}
             helperText={helperText}
           />
         );

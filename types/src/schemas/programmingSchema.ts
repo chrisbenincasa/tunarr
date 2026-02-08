@@ -493,16 +493,19 @@ export const Movie = z.object({
 });
 
 const MetadataOmitMask = {
-  mediaItem: true,
   mediaSourceId: true,
   libraryId: true,
-  externalLibraryId: true,
   canonicalId: true,
-  duration: true,
   externalId: true,
 } as const;
 
-export const MovieMetadata = Movie.omit(MetadataOmitMask);
+const TerminalProgramMetadataOmitMask = {
+  ...MetadataOmitMask,
+  mediaItem: true,
+  duration: true,
+} as const;
+
+export const MovieMetadata = Movie.omit(TerminalProgramMetadataOmitMask);
 
 const BaseProgramGrouping = z.object({
   ...BaseItem.shape,
@@ -579,7 +582,7 @@ export const Episode = z.object({
   show: Show.optional(),
 });
 
-export const EpisodeMetadata = Episode.omit(MetadataOmitMask);
+export const EpisodeMetadata = Episode.omit(TerminalProgramMetadataOmitMask);
 
 export const EpisodeWithHierarchy = z.object({
   ...Episode.shape,
@@ -628,7 +631,9 @@ export const MusicTrack = z.object({
   artist: MusicArtist.optional(),
 });
 
-export const MusicTrackMetadata = MusicTrack.omit(MetadataOmitMask);
+export const MusicTrackMetadata = MusicTrack.omit(
+  TerminalProgramMetadataOmitMask,
+);
 
 export const MusicAlbumWithArtist = MusicAlbum.required({ artist: true });
 
@@ -645,7 +650,9 @@ export const OtherVideo = BaseProgram.extend({
   type: z.literal('other_video'),
 });
 
-export const OtherVideoMetadata = OtherVideo.omit(MetadataOmitMask);
+export const OtherVideoMetadata = OtherVideo.omit(
+  TerminalProgramMetadataOmitMask,
+);
 
 export const HasMediaSourceInfo = z.object({
   sourceType: MediaSourceType,

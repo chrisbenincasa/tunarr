@@ -153,7 +153,6 @@ export const TranscodeConfigsTable = () => {
         visibleInShowHideMenu: false,
       },
     },
-    positionActionsColumn: 'last',
     renderTopToolbarCustomActions() {
       return (
         <Stack direction="row" alignItems="center" gap={2} useFlexGap>

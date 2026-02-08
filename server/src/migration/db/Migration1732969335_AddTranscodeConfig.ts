@@ -1,5 +1,5 @@
 import type { NewTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import { defaultTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { defaultTranscodeConfigLegacy } from '@/db/schema/TranscodeConfig.js';
 import type { DB } from '@/db/schema/db.js';
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import type { Resolution } from '@tunarr/types';
@@ -91,7 +91,7 @@ export default {
       )
       .execute();
 
-    const defaultConfig = defaultTranscodeConfig(true);
+    const defaultConfig = defaultTranscodeConfigLegacy(true);
     const transcodeConfigId = (
       await db
         .insertInto('transcodeConfig')

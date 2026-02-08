@@ -196,6 +196,9 @@ export class DirectMigrationProvider implements MigrationProvider {
             './sql/0040_daffy_bishop.sql',
             true,
           ),
+          migration1770236998: makeKyselyMigrationFromSqlFile(
+            './sql/0041_easy_firebird.sql',
+          ),
         },
         wrapWithTransaction,
       ),
