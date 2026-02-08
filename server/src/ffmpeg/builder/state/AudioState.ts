@@ -1,4 +1,5 @@
 import type { ExcludeByValueType, Nullable } from '@/types/util.js';
+import type { LoudnormConfig } from '@tunarr/types';
 import { isNil, omitBy } from 'lodash-es';
 import type { AnyFunction } from 'ts-essentials';
 import type { TranscodeAudioOutputFormat } from '../../../db/schema/TranscodeConfig.ts';
@@ -13,6 +14,8 @@ const DefaultAudioState: AudioState = {
   audioSampleRate: null,
   audioDuration: null,
   audioVolume: null,
+  normalizeLoudness: false,
+  loudnormConfig: null,
 };
 
 export class AudioState {
@@ -23,6 +26,8 @@ export class AudioState {
   audioSampleRate: Nullable<number>;
   audioDuration: Nullable<number>;
   audioVolume: Nullable<number>;
+  normalizeLoudness: boolean;
+  loudnormConfig: Nullable<LoudnormConfig>;
 
   private constructor(fields: Partial<AudioStateFields> = {}) {
     const merged: AudioStateFields = {
@@ -36,6 +41,8 @@ export class AudioState {
     this.audioSampleRate = merged.audioSampleRate;
     this.audioDuration = merged.audioDuration;
     this.audioVolume = merged.audioVolume;
+    this.normalizeLoudness = merged.normalizeLoudness ?? false;
+    this.loudnormConfig = merged.loudnormConfig;
   }
 
   static create(fields: Partial<AudioStateFields> = {}) {

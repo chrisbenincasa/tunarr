@@ -1,95 +1,89 @@
 import { booleanToNumber } from '@/util/sqliteUtil.js';
 import { Resolution, TranscodeConfig } from '@tunarr/types';
+import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { omit } from 'lodash-es';
+import { head, omit } from 'lodash-es';
+import { StrictOmit } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { TranscodeConfigNotFoundError, WrappedError } from '../types/errors.ts';
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import {
   NewTranscodeConfig,
+  NewTranscodeConfigOrm,
   TranscodeConfig as TranscodeConfigDAO,
-  TranscodeConfigUpdate,
+  TranscodeConfigOrm,
 } from './schema/TranscodeConfig.ts';
 import { DB } from './schema/db.ts';
+import { DrizzleDBAccess } from './schema/index.ts';
 
 @injectable()
 export class TranscodeConfigDB {
-  constructor(@inject(KEYS.Database) private db: Kysely<DB>) {}
+  constructor(
+    @inject(KEYS.Database) private db: Kysely<DB>,
+    @inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess,
+  ) {}
 
-  getAll() {
-    return this.db.selectFrom('transcodeConfig').selectAll().execute();
+  async getAll() {
+    return await this.drizzleDB.query.transcodeConfigs.findMany();
   }
 
-  getById(id: string) {
-    return this.db
-      .selectFrom('transcodeConfig')
-      .where('uuid', '=', id)
-      .selectAll()
-      .executeTakeFirst();
+  async getById(id: string) {
+    return await this.drizzleDB.query.transcodeConfigs.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+    });
   }
 
-  getDefaultConfig() {
-    return this.db
-      .selectFrom('transcodeConfig')
-      .where('isDefault', '=', 1)
-      .limit(1)
-      .selectAll()
-      .executeTakeFirst();
+  async getDefaultConfig() {
+    return await this.drizzleDB.query.transcodeConfigs.findFirst({
+      where: (fields, { eq }) => eq(fields.isDefault, true),
+    });
   }
 
   async getChannelConfig(channelId: string) {
-    const channelConfig = await this.db
-      .selectFrom('channel')
-      .where('channel.uuid', '=', channelId)
-      .innerJoin(
-        'transcodeConfig',
-        'channel.transcodeConfigId',
-        'transcodeConfig.uuid',
-      )
-      .selectAll('transcodeConfig')
-      .limit(1)
-      .executeTakeFirst();
+    const result = await this.drizzleDB.query.channels.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, channelId),
+      columns: {},
+      with: {
+        transcodeConfig: true,
+      },
+    });
 
+    const channelConfig = result?.transcodeConfig;
     if (channelConfig) {
       return channelConfig;
     }
 
-    return this.db
-      .selectFrom('transcodeConfig')
-      .where('isDefault', '=', 1)
-      .selectAll()
-      .limit(1)
-      .executeTakeFirstOrThrow();
+    const defaultConfig = await this.getDefaultConfig();
+    if (!defaultConfig) {
+      throw new Error(
+        `Channel ID ${channelId} has no transcode config and there is no default!`,
+      );
+    }
+
+    return defaultConfig;
   }
 
-  insertConfig(config: Omit<TranscodeConfig, 'id'>) {
+  async insertConfig(config: Omit<TranscodeConfig, 'id'>) {
     const id = v4();
-    const newConfig: NewTranscodeConfig = {
+    const newConfig: NewTranscodeConfigOrm = {
       ...omit(config, 'id'),
       uuid: id,
-      resolution: JSON.stringify(config.resolution),
-      normalizeFrameRate: booleanToNumber(config.normalizeFrameRate),
-      deinterlaceVideo: booleanToNumber(config.deinterlaceVideo),
-      disableChannelOverlay: booleanToNumber(config.disableChannelOverlay),
-      isDefault: booleanToNumber(config.isDefault),
-      disableHardwareDecoder: booleanToNumber(config.disableHardwareDecoder),
-      disableHardwareEncoding: booleanToNumber(config.disableHardwareEncoding),
-      disableHardwareFilters: booleanToNumber(config.disableHardwareFilters),
     };
 
-    return this.db
-      .insertInto('transcodeConfig')
-      .values(newConfig)
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    return head(
+      await this.drizzleDB
+        .insert(TranscodeConfigDAO)
+        .values(newConfig)
+        .returning(),
+    )!;
   }
 
   async duplicateConfig(
     id: string,
   ): Promise<
-    Result<TranscodeConfigDAO, TranscodeConfigNotFoundError | WrappedError>
+    Result<TranscodeConfigOrm, TranscodeConfigNotFoundError | WrappedError>
   > {
     const baseConfig = await this.getById(id);
     if (!baseConfig) {
@@ -98,46 +92,29 @@ export class TranscodeConfigDB {
 
     const newId = v4();
     baseConfig.uuid = newId;
-    baseConfig.isDefault = booleanToNumber(false);
+    baseConfig.isDefault = false;
     baseConfig.name = `${baseConfig.name} (copy)`;
 
-    return Result.attemptAsync(() => {
-      return this.db
-        .insertInto('transcodeConfig')
-        .values({
-          ...baseConfig,
-          resolution: JSON.stringify(baseConfig.resolution),
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+    return Result.attemptAsync(async () => {
+      return head(
+        await this.drizzleDB
+          .insert(TranscodeConfigDAO)
+          .values(baseConfig)
+          .returning(),
+      )!;
     });
   }
 
   updateConfig(id: string, updatedConfig: TranscodeConfig) {
-    const update: TranscodeConfigUpdate = {
+    const update: StrictOmit<NewTranscodeConfigOrm, 'uuid'> = {
       ...omit(updatedConfig, 'id'),
-      resolution: JSON.stringify(updatedConfig.resolution),
-      normalizeFrameRate: booleanToNumber(updatedConfig.normalizeFrameRate),
-      deinterlaceVideo: booleanToNumber(updatedConfig.deinterlaceVideo),
-      disableChannelOverlay: booleanToNumber(
-        updatedConfig.disableChannelOverlay,
-      ),
-      isDefault: booleanToNumber(updatedConfig.isDefault),
-      disableHardwareDecoder: booleanToNumber(
-        updatedConfig.disableHardwareDecoder,
-      ),
-      disableHardwareEncoding: booleanToNumber(
-        updatedConfig.disableHardwareEncoding,
-      ),
-      disableHardwareFilters: booleanToNumber(
-        updatedConfig.disableHardwareFilters,
-      ),
     };
 
-    return this.db
-      .updateTable('transcodeConfig')
-      .where('uuid', '=', id)
+    return this.drizzleDB
+      .update(TranscodeConfigDAO)
       .set(update)
+      .where(eq(TranscodeConfigDAO.uuid, id))
+      .limit(1)
       .execute();
   }
 

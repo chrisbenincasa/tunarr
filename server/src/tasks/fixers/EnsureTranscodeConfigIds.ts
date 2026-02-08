@@ -1,4 +1,4 @@
-import { defaultTranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import { defaultTranscodeConfigLegacy } from '@/db/schema/TranscodeConfig.js';
 import Fixer from '@/tasks/fixers/fixer.js';
 import { KEYS } from '@/types/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
@@ -71,7 +71,7 @@ export class EnsureTranscodeConfigIds extends Fixer {
     return (
       await this.db
         .insertInto('transcodeConfig')
-        .values(defaultTranscodeConfig(true))
+        .values(defaultTranscodeConfigLegacy(true))
         .returning('uuid')
         .executeTakeFirstOrThrow()
     ).uuid;

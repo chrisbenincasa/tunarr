@@ -21,6 +21,7 @@ import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
 import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
+import { TranscodeConfig } from './TranscodeConfig.ts';
 
 export const Channel = sqliteTable(
   'channel',
@@ -73,9 +74,13 @@ export type NewChannel = Insertable<ChannelTable>;
 export type ChannelUpdate = Updateable<ChannelTable>;
 export type ChannelOrm = InferSelectModel<typeof Channel>;
 
-export const ChannelRelations = relations(Channel, ({ many }) => ({
+export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   channelPrograms: many(ChannelPrograms),
   channelCustomShows: many(ChannelCustomShow),
   channelFillerShow: many(ChannelFillerShow),
   playHistory: many(ProgramPlayHistory),
+  transcodeConfig: one(TranscodeConfig, {
+    fields: [Channel.transcodeConfigId],
+    references: [TranscodeConfig.uuid],
+  }),
 }));

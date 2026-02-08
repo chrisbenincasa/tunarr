@@ -55,10 +55,6 @@ import {
   ProgramExternalIdRelations,
 } from './ProgramExternalId.ts';
 import {
-  ProgramPlayHistory,
-  ProgramPlayHistoryRelations,
-} from './ProgramPlayHistory.ts';
-import {
   ProgramGrouping,
   ProgramGroupingRelations,
 } from './ProgramGrouping.ts';
@@ -75,6 +71,10 @@ import {
   ProgramMediaStreamRelations,
 } from './ProgramMediaStream.ts';
 import {
+  ProgramPlayHistory,
+  ProgramPlayHistoryRelations,
+} from './ProgramPlayHistory.ts';
+import {
   ProgramSubtitles,
   ProgramSubtitlesRelations,
 } from './ProgramSubtitles.ts';
@@ -87,6 +87,7 @@ import {
   TagRelations,
   TagRelationSchema,
 } from './Tag.ts';
+import { TranscodeConfig } from './TranscodeConfig.ts';
 
 // export { Program } from './Program.ts';
 
@@ -157,6 +158,7 @@ export const schema = {
   tagRelations: TagJoinRelationSchema,
   tagJoin: TagRelations,
   tagJoinRelations: TagRelationSchema,
+  transcodeConfigs: TranscodeConfig,
 };
 
 export type DrizzleDBAccess = BetterSQLite3Database<typeof schema>;

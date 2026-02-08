@@ -46,3 +46,8 @@ export const setUiLocale = (locale: SupportedLocales) =>
     dayjs.locale(locale); // Changes the default dayjs locale globally
     settings.ui.i18n.locale = locale;
   });
+
+export const setShowAdvancedSettings = (value: boolean) =>
+  useStore.setState(({ settings }) => {
+    settings.ui.showAdvancedSettings = value;
+  });

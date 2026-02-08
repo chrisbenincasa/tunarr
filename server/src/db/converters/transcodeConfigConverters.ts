@@ -1,19 +1,18 @@
 import type { TranscodeConfig } from '@tunarr/types';
-import { numberToBoolean } from '../../util/sqliteUtil.ts';
-import type { TranscodeConfig as TrannscodeConfigDao } from '../schema/TranscodeConfig.ts';
+import type { TranscodeConfigOrm } from '../schema/TranscodeConfig.ts';
 
 export function dbTranscodeConfigToApiSchema(
-  config: TrannscodeConfigDao,
+  config: TranscodeConfigOrm,
 ): TranscodeConfig {
   return {
     ...config,
     id: config.uuid,
-    disableChannelOverlay: numberToBoolean(config.disableChannelOverlay),
-    normalizeFrameRate: numberToBoolean(config.normalizeFrameRate),
-    deinterlaceVideo: numberToBoolean(config.deinterlaceVideo),
-    isDefault: numberToBoolean(config.isDefault),
-    disableHardwareDecoder: numberToBoolean(config.disableHardwareDecoder),
-    disableHardwareEncoding: numberToBoolean(config.disableHardwareEncoding),
-    disableHardwareFilters: numberToBoolean(config.disableHardwareFilters),
+    normalizeFrameRate: config.normalizeFrameRate ?? false,
+    deinterlaceVideo: config.deinterlaceVideo ?? false,
+    disableChannelOverlay: config.disableChannelOverlay ?? false,
+    disableHardwareDecoder: config.disableHardwareDecoder ?? false,
+    disableHardwareEncoding: config.disableHardwareEncoding ?? false,
+    disableHardwareFilters: config.disableHardwareFilters ?? false,
+    audioLoudnormConfig: config.audioLoudnormConfig ?? undefined,
   } satisfies TranscodeConfig;
 }
