@@ -14,7 +14,7 @@ export function useAddBreaks() {
   };
 }
 
-function addBreaks(
+export function addBreaks(
   programs: ChannelProgram[],
   { afterDuration, minDuration, maxDuration }: AddBreaksConfig,
 ) {
