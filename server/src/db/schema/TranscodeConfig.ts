@@ -95,6 +95,7 @@ export const TranscodeConfigColumns: (keyof TranscodeConfigTable)[] = [
   'audioVolumePercent',
   'deinterlaceVideo',
   'disableChannelOverlay',
+  'enableTonemapping',
   'errorScreen',
   'errorScreenAudio',
   'hardwareAccelerationMode',
@@ -156,6 +157,8 @@ export const TranscodeConfig = sqliteTable(
       .notNull(),
 
     isDefault: integer({ mode: 'boolean' }).default(false).notNull(),
+
+    enableTonemapping: integer({ mode: 'boolean' }).default(false),
 
     disableHardwareDecoder: integer({ mode: 'boolean' }).default(false),
     disableHardwareEncoding: integer({ mode: 'boolean' }).default(false),

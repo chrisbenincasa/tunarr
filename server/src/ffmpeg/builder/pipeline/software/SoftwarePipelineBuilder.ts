@@ -4,6 +4,7 @@ import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js'
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
+import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
@@ -42,6 +43,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
 
     if (desiredState.videoFormat !== VideoFormats.Copy) {
       currentState = this.setDeinterlace(currentState);
+      currentState = this.setTonemap(currentState);
       currentState = this.setScale(currentState);
       currentState = this.setPad(currentState);
       currentState = this.addSubtitles(currentState);
@@ -72,6 +74,25 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
 
       if (filter.affectsFrameState) {
         return filter.nextState(currentState);
+      }
+    }
+
+    return currentState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (
+      this.ffmpegState.enableTonemapping &&
+      this.context.videoStream.isHdr10()
+    ) {
+      const tonemapFilter = new TonemapFilter();
+      this.videoInputSource.filterSteps.push(tonemapFilter);
+      if (tonemapFilter.affectsFrameState) {
+        return tonemapFilter.nextState(currentState);
       }
     }
 

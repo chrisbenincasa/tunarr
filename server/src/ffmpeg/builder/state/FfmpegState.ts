@@ -68,6 +68,7 @@ export class FfmpegState {
   decoderHwAccelMode: HardwareAccelerationMode = HardwareAccelerationMode.None;
   encoderHwAccelMode: HardwareAccelerationMode = HardwareAccelerationMode.None;
 
+  enableTonemapping: boolean = false;
   softwareScalingAlgorithm: string = 'fast_bilinear';
   softwareDeinterlaceFilter: string = 'yadif=1';
   vaapiDevice: Nullable<string> = null;

@@ -52,6 +52,7 @@ import Migration1763749592_AddProgramState from './db/Migration1763749592_AddPro
 import Migration1764022266_AddCreditGroupingIndex from './db/Migration1764022266_AddCreditGroupingIndex.ts';
 import Migration1764022464_AddArtworkIndexes from './db/Migration1764022464_AddArtworkIndexes.ts';
 import Migration1767300603_AddExternalCollections from './db/Migration1767300603_AddExternalCollections.ts';
+import Migration1770000000_AddTonemapping from './db/Migration1770000000_AddTonemapping.ts';
 import { makeKyselyMigrationFromSqlFile } from './db/util.ts';
 
 export const LegacyMigrationNameToNewMigrationName = [
@@ -196,6 +197,8 @@ export class DirectMigrationProvider implements MigrationProvider {
             './sql/0040_daffy_bishop.sql',
             true,
           ),
+          migration1770000000_AddTonemapping:
+            Migration1770000000_AddTonemapping,
         },
         wrapWithTransaction,
       ),

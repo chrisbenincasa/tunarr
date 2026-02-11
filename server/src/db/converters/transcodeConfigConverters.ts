@@ -9,6 +9,7 @@ export function dbTranscodeConfigToApiSchema(
     ...config,
     id: config.uuid,
     disableChannelOverlay: numberToBoolean(config.disableChannelOverlay),
+    enableTonemapping: numberToBoolean(config.enableTonemapping),
     normalizeFrameRate: numberToBoolean(config.normalizeFrameRate),
     deinterlaceVideo: numberToBoolean(config.deinterlaceVideo),
     isDefault: numberToBoolean(config.isDefault),

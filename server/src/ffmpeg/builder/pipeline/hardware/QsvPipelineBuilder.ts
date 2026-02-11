@@ -44,6 +44,7 @@ import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { ResetPtsFilter } from '../../filter/ResetPtsFilter.ts';
+import { TonemapFilter } from '../../filter/TonemapFilter.ts';
 import { SetFpsFilter } from '../../filter/SetFpsFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
@@ -190,6 +191,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     currentState = this.setDeinterlace(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
@@ -256,6 +258,30 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(filter);
     }
     return nextState;
+  }
+
+  protected override setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (
+      this.ffmpegState.enableTonemapping &&
+      this.context.videoStream.isHdr10()
+    ) {
+      if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+        // Download to software for tonemap
+        const hwDownload = new HardwareDownloadFilter(currentState);
+        currentState = hwDownload.nextState(currentState);
+        this.videoInputSource.filterSteps.push(hwDownload);
+      }
+
+      const tonemapFilter = new TonemapFilter();
+      this.videoInputSource.filterSteps.push(tonemapFilter);
+      return tonemapFilter.nextState(currentState);
+    }
+
+    return currentState;
   }
 
   protected setScale(currentState: FrameState): FrameState {

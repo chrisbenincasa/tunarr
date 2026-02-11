@@ -5,11 +5,13 @@ import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import type { Decoder } from '@/ffmpeg/builder/decoder/Decoder.js';
 import { VideoToolboxDecoder } from '@/ffmpeg/builder/decoder/videotoolbox/VideoToolboxDecoder.js';
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
+import { VideoToolboxTonemapFilter } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxTonemapFilter.js';
 import { VideoToolboxHardwareAccelerationOption } from '@/ffmpeg/builder/filter/videotoolbox/VideoToolboxHardwareAccelerationOption.js';
 import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.js';
 import type { WatermarkInputSource } from '@/ffmpeg/builder/input/WatermarkInputSource.js';
+import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBuilder.js';
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
@@ -83,6 +85,34 @@ export class VideoToolboxPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     return decoder;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (
+      this.ffmpegState.enableTonemapping &&
+      this.context.videoStream.isHdr10()
+    ) {
+      if (
+        this.ffmpegCapabilities.hasFilter(
+          KnownFfmpegFilters.TonemapVideotoolbox,
+        )
+      ) {
+        const tonemapFilter = new VideoToolboxTonemapFilter();
+        this.videoInputSource.filterSteps.push(tonemapFilter);
+        if (tonemapFilter.affectsFrameState) {
+          return tonemapFilter.nextState(currentState);
+        }
+      } else {
+        // Fall back to software tonemapping
+        return super.setTonemap(currentState);
+      }
+    }
+
+    return currentState;
   }
 
   protected setupEncoder(currentState: FrameState) {

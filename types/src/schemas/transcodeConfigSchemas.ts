@@ -60,6 +60,7 @@ export const TranscodeConfigSchema = z.object({
   normalizeFrameRate: z.boolean(),
   deinterlaceVideo: z.boolean(),
   disableChannelOverlay: z.boolean(),
+  enableTonemapping: z.boolean().default(false),
   errorScreen: z.enum(SupportedErrorScreens),
   errorScreenAudio: z.enum(SupportedErrorAudioTypes),
   isDefault: z.boolean(),
