@@ -60,6 +60,10 @@ export class VideoStream implements MediaStream {
   inputKind: VideoInputKind = 'video' as const;
   providedSampleAspectRatio: Nullable<string>;
   displayAspectRatio: string;
+  colorRange?: string;
+  colorSpace?: string;
+  colorTransfer?: string;
+  colorPrimaries?: string;
 
   protected constructor(fields: MarkOptional<VideoStreamFields, 'inputKind'>) {
     // Unfortunately TS is not 'smart' enough to let us
@@ -75,6 +79,12 @@ export class VideoStream implements MediaStream {
 
   bitDepth() {
     return this.pixelFormat?.bitDepth ?? 8;
+  }
+
+  isHdr10(): boolean {
+    return (
+      this.colorTransfer === 'smpte2084' && this.colorPrimaries === 'bt2020'
+    );
   }
 
   get sampleAspectRatio(): string {

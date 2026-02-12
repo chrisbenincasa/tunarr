@@ -243,6 +243,20 @@ export const TranscodeConfigVideoSettingsForm = () => {
             Output video at a constant frame rate.
           </FormHelperText>
         </FormControl>
+        <FormControl fullWidth>
+          <FormControlLabel
+            control={
+              <CheckboxFormController
+                control={control}
+                name="enableTonemapping"
+              />
+            }
+            label={'Enable Tonemapping'}
+          />
+          <FormHelperText>
+            Convert HDR10 content to SDR for broader device compatibility.
+          </FormHelperText>
+        </FormControl>
       </Stack>
     </Stack>
   );

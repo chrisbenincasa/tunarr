@@ -39,6 +39,7 @@ import {
   NvidiaHevcEncoder,
 } from '../../encoder/nvidia/NvidiaEncoders.ts';
 import { HardwareDownloadFilter } from '../../filter/HardwareDownloadFilter.ts';
+import { TonemapFilter } from '../../filter/TonemapFilter.ts';
 import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
@@ -179,6 +180,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource,
       currentState,
     );
+    currentState = this.setTonemap(currentState);
     currentState = NvidiaScaler.setScale(
       this.context,
       this.videoInputSource,
@@ -349,6 +351,33 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(filter);
       currentState = filter.nextState(currentState);
     }
+    return currentState;
+  }
+
+  protected override setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (
+      this.ffmpegState.enableTonemapping &&
+      this.context.videoStream.isHdr10()
+    ) {
+      if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+        // Download from CUDA to software for tonemap
+        const hwDownload = new HardwareDownloadCudaFilter(currentState, null);
+        currentState = hwDownload.nextState(currentState);
+        this.videoInputSource.filterSteps.push(hwDownload);
+        this.videoInputSource.frameDataLocation = currentState.frameDataLocation;
+      }
+
+      const tonemapFilter = new TonemapFilter();
+      this.videoInputSource.filterSteps.push(tonemapFilter);
+      currentState = tonemapFilter.nextState(currentState);
+      this.videoInputSource.frameDataLocation = currentState.frameDataLocation;
+      return currentState;
+    }
+
     return currentState;
   }
 

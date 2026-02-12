@@ -238,6 +238,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
         metadataServiceProvider: 'Tunarr',
         metadataServiceName: this.channel.name,
         ptsOffset: 0,
+        enableTonemapping:
+          numberToBoolean(this.transcodeConfig.enableTonemapping) ?? false,
         vaapiDevice: this.getVaapiDevice(),
         vaapiDriver: this.getVaapiDriver(),
         mapMetadata: true,
@@ -353,6 +355,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
           width: videoStreamDetails.width,
         }),
         frameRate: videoStreamDetails.framerate?.toString(),
+        colorRange: videoStreamDetails.colorRange,
+        colorSpace: videoStreamDetails.colorSpace,
+        colorTransfer: videoStreamDetails.colorTransfer,
+        colorPrimaries: videoStreamDetails.colorPrimaries,
       });
 
       videoInputSource = new VideoInputSource(streamSource, [videoStream]);
@@ -519,6 +525,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
         ptsOffset,
         threadCount: this.transcodeConfig.threadCount,
         outputFormat,
+        enableTonemapping:
+          numberToBoolean(this.transcodeConfig.enableTonemapping) ?? false,
         softwareDeinterlaceFilter: this.ffmpegSettings.deinterlaceFilter,
         softwareScalingAlgorithm: this.ffmpegSettings.scalingAlgorithm,
         vaapiDevice: this.getVaapiDevice(),

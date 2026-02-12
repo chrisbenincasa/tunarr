@@ -13,6 +13,7 @@ import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.js';
 import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.js';
 import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
+import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
 import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { WatermarkOpacityFilter } from '@/ffmpeg/builder/filter/watermark/WatermarkOpacityFilter.js';
@@ -52,6 +53,7 @@ import {
 } from '../../format/PixelFormat.ts';
 import type { SubtitlesInputSource } from '../../input/SubtitlesInputSource.ts';
 import { CopyTimestampInputOption } from '../../options/input/CopyTimestampInputOption.ts';
+import { KnownFfmpegFilters } from '../../options/KnownFfmpegOptions.ts';
 import {
   NoAutoScaleOutputOption,
   PixelFormatOutputOption,
@@ -164,6 +166,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
@@ -334,6 +337,37 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(filter);
     }
     return nextState;
+  }
+
+  protected override setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    if (
+      this.ffmpegState.enableTonemapping &&
+      this.context.videoStream.isHdr10()
+    ) {
+      if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
+        if (
+          this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)
+        ) {
+          const tonemapFilter = new TonemapVaapiFilter();
+          this.videoInputSource.filterSteps.push(tonemapFilter);
+          return tonemapFilter.nextState(currentState);
+        } else {
+          // Download to software and apply software tonemap
+          const hwDownload = new HardwareDownloadFilter(currentState);
+          currentState = hwDownload.nextState(currentState);
+          this.videoInputSource.filterSteps.push(hwDownload);
+          return super.setTonemap(currentState);
+        }
+      } else {
+        return super.setTonemap(currentState);
+      }
+    }
+
+    return currentState;
   }
 
   protected setScale(currentState: FrameState): FrameState {

@@ -122,6 +122,11 @@ export class LocalProgramStream extends ProgramStream {
             profile: nullToUndefined(videoStream.profile),
             scanType: nullToUndefined(firstVersion.scanKind),
             streamIndex: videoStream.index,
+            pixelFormat: videoStream.pixelFormat ?? undefined,
+            colorRange: videoStream.colorRange ?? undefined,
+            colorSpace: videoStream.colorSpace ?? undefined,
+            colorTransfer: videoStream.colorTransfer ?? undefined,
+            colorPrimaries: videoStream.colorPrimaries ?? undefined,
           }) satisfies VideoStreamDetails,
       ) ?? [];
 

@@ -1,0 +1,1 @@
+ALTER TABLE `transcode_config` ADD COLUMN `enable_tonemapping` integer DEFAULT false;
