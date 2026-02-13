@@ -195,7 +195,7 @@ export class CreditsApiController {
               }
 
               return res
-                .status(proxyRes.status)
+                .status(200)
                 .headers(headers)
                 .send(proxyRes.data);
             } catch (e) {
