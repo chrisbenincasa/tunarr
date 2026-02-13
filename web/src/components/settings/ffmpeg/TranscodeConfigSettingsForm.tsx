@@ -1,11 +1,9 @@
-import {
-  CheckboxFormController,
-  NumericFormControllerText,
-} from '@/components/util/TypedController';
-import { isNonEmptyString } from '@/helpers/util';
+import { useAppForm } from '@/hooks/form.ts';
+import { Check } from '@mui/icons-material';
 import {
   Box,
   Button,
+  Checkbox,
   Divider,
   FormControl,
   FormControlLabel,
@@ -14,83 +12,83 @@ import {
   Link as MuiLink,
   Stack,
   TextField,
+  ToggleButton,
   Typography,
 } from '@mui/material';
 import type { TranscodeConfig } from '@tunarr/types';
-import { useSnackbar } from 'notistack';
-import type { FieldErrors } from 'react-hook-form';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import type { TranscodeConfigSchema } from '@tunarr/types/schemas';
+import type z from 'zod';
+import useStore from '../../../store/index.ts';
+import { setShowAdvancedSettings } from '../../../store/settings/actions.ts';
 import Breadcrumbs from '../../Breadcrumbs.tsx';
 import { TranscodeConfigAdvancedOptions } from './TranscodeConfigAdvancedOptions.tsx';
 import { TranscodeConfigAudioSettingsForm } from './TranscodeConfigAudioSettingsForm.tsx';
 import { TranscodeConfigErrorOptions } from './TranscodeConfigErrorOptions.tsx';
 import { TranscodeConfigVideoSettingsForm } from './TranscodeConfigVideoSettingsForm.tsx';
+import { useTranscodeConfigFormOptions } from './useTranscodeConfigFormOptions.ts';
 
 type Props = {
-  onSave: (config: TranscodeConfig) => Promise<TranscodeConfig>;
-  initialConfig: TranscodeConfig;
+  initialConfig: z.input<typeof TranscodeConfigSchema>;
   isNew?: boolean;
 };
 
 export const TranscodeConfigSettingsForm = ({
-  onSave,
   initialConfig,
   isNew,
 }: Props) => {
-  const snackbar = useSnackbar();
+  const showAdvancedSettings = useStore(
+    (s) => s.settings.ui.showAdvancedSettings,
+  );
 
-  const transcodeConfigForm = useForm<TranscodeConfig>({
-    defaultValues: initialConfig,
-    mode: 'onChange',
+  const saveForm = (newConfig: TranscodeConfig) => {
+    transcodeConfigForm.reset(newConfig, { keepDefaultValues: true });
+  };
+
+  const formOpts = useTranscodeConfigFormOptions({
+    initialConfig,
+    isNew,
+    onSave: saveForm,
   });
-  const {
-    control,
-    reset,
-    formState: { isSubmitting, isValid, isDirty },
-    handleSubmit,
-    watch,
-  } = transcodeConfigForm;
-
-  const hardwareAccelerationMode = watch('hardwareAccelerationMode');
-
-  const saveForm = async (data: TranscodeConfig) => {
-    try {
-      const newConfig = await onSave(data);
-      reset(newConfig);
-      snackbar.enqueueSnackbar('Successfully saved config!', {
-        variant: 'success',
-      });
-    } catch (e) {
-      console.error(e);
-      snackbar.enqueueSnackbar(
-        'Error while saving transcode config. See console log for details.',
-        {
-          variant: 'error',
-        },
-      );
-    }
-  };
-
-  const handleSubmitError = (errors: FieldErrors<TranscodeConfig>) => {
-    console.error(errors);
-  };
+  const transcodeConfigForm = useAppForm({ ...formOpts });
 
   return (
-    <Box component="form" onSubmit={handleSubmit(saveForm, handleSubmitError)}>
+    <Box
+      component="form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        transcodeConfigForm.handleSubmit().catch(console.error);
+      }}
+    >
       <Breadcrumbs />
-      <FormProvider {...transcodeConfigForm}>
-        <Stack spacing={2}>
-          <Typography variant="h5">
-            Edit Config: "{initialConfig.name}"
-          </Typography>
-          <Divider />
+      <transcodeConfigForm.AppForm>
+        <Stack spacing={2} divider={<Divider />}>
+          <Stack direction={'row'}>
+            <Typography variant="h4">
+              Edit Transcode Config: "{initialConfig.name}"
+            </Typography>
+            <ToggleButton
+              value={showAdvancedSettings}
+              selected={showAdvancedSettings}
+              onChange={() => setShowAdvancedSettings(!showAdvancedSettings)}
+              sx={{ ml: 'auto' }}
+            >
+              <Check sx={{ mr: 0.5 }} /> Show Advanced
+            </ToggleButton>
+          </Stack>
           <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
               General
             </Typography>
             <Grid container columnSpacing={2}>
               <Grid size={{ sm: 12, md: 6 }}>
-                <Controller
+                <transcodeConfigForm.AppField
+                  name="name"
+                  children={(field) => (
+                    <field.BasicTextInput fullWidth label="Name" />
+                  )}
+                />
+                {/* <Controller
                   control={control}
                   name="name"
                   rules={{
@@ -114,10 +112,37 @@ export const TranscodeConfigSettingsForm = ({
                       {...field}
                     />
                   )}
-                />
+                /> */}
               </Grid>
               <Grid size={{ sm: 12, md: 6 }}>
-                <NumericFormControllerText
+                <transcodeConfigForm.Field
+                  name="threadCount"
+                  children={(field) => (
+                    <TextField
+                      label="Threads"
+                      fullWidth
+                      helperText={
+                        <>
+                          Sets the number of threads used to decode the input
+                          stream. Set to 0 to let ffmpeg automatically decide
+                          how many threads to use. Read more about this option{' '}
+                          <MuiLink
+                            target="_blank"
+                            href="https://ffmpeg.org/ffmpeg-codecs.html#:~:text=threads%20integer%20(decoding/encoding%2Cvideo)"
+                          >
+                            here
+                          </MuiLink>
+                          . <strong>Note: </strong> this option is overridden to
+                          1 when using hardware accelearation for stability
+                          reasons.
+                        </>
+                      }
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  )}
+                />
+                {/* <NumericFormControllerText
                   control={control}
                   name="threadCount"
                   prettyFieldName="Threads"
@@ -135,19 +160,35 @@ export const TranscodeConfigSettingsForm = ({
                         >
                           here
                         </MuiLink>
+                        . <strong>Note: </strong> this option is overridden to 1
+                        when using hardware accelearation for stability reasons.
                       </>
                     ),
                   }}
-                />
+                /> */}
               </Grid>
               <Grid size={12}>
                 <FormControl fullWidth>
                   <FormControlLabel
                     control={
-                      <CheckboxFormController
-                        control={control}
+                      <transcodeConfigForm.Field
                         name="disableChannelOverlay"
+                        children={(field) => (
+                          <Checkbox
+                            // {...field}
+                            value={field.state.value}
+                            checked={field.state.value}
+                            onChange={(_, checked) =>
+                              field.handleChange(checked)
+                            }
+                          />
+                        )}
                       />
+
+                      // <CheckboxFormController
+                      //   control={control}
+                      //   name="disableChannelOverlay"
+                      // />
                     }
                     label={'Disable Watermarks'}
                   />
@@ -159,72 +200,78 @@ export const TranscodeConfigSettingsForm = ({
               </Grid>
             </Grid>
           </Box>
-          <Divider />
 
-          <Grid container spacing={2}>
-            <Grid size={{ sm: 12, md: 6 }}>
-              <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
-                Video Options
-              </Typography>
-              <TranscodeConfigVideoSettingsForm />
-            </Grid>
-            <Grid size={{ sm: 12, md: 6 }}>
-              <Typography component="h6" variant="h6" sx={{ mb: 2 }}>
-                Audio Options
-              </Typography>
-              <TranscodeConfigAudioSettingsForm />
-            </Grid>
-            <Grid size={12} sx={{ mt: 2 }}>
-              <Divider />
-            </Grid>
-            {hardwareAccelerationMode !== 'none' && (
-              <>
-                <Grid size={{ sm: 12 }}>
-                  <Typography component="h6" variant="h6" mb={1}>
-                    Advanced Options
-                  </Typography>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    Advanced options relating to transcoding. In general, do not
-                    change these unless you know what you are doing! These
-                    settings exist in order to leave some parity with the old
-                    dizqueTV transcode pipeline as well as to provide mechanisms
-                    to aid in debugging streaming issues.
-                  </Typography>
-                  <TranscodeConfigAdvancedOptions />
-                </Grid>
-                <Grid size={12} sx={{ mt: 2 }}>
-                  <Divider />
-                </Grid>
-              </>
-            )}
-            <Grid size={12}>
-              <Typography component="h6" variant="h6" sx={{ pt: 2, pb: 1 }}>
-                Error Options
-              </Typography>
-              <TranscodeConfigErrorOptions />
-            </Grid>
-          </Grid>
+          <Box>
+            <Typography component="h5" variant="h5" sx={{ mb: 2 }}>
+              Video Options
+            </Typography>
+            <TranscodeConfigVideoSettingsForm initialConfig={initialConfig} />
+            <transcodeConfigForm.Subscribe
+              selector={(s) => s.values.hardwareAccelerationMode}
+              children={(hardwareAccelerationMode) =>
+                showAdvancedSettings &&
+                hardwareAccelerationMode !== 'none' && (
+                  <Box>
+                    <Typography component="h6" variant="h6" mb={1}>
+                      Advanced Video Options
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      Advanced options relating to transcoding. In general, do
+                      not change these unless you know what you are doing! These
+                      settings exist in order to leave some parity with the old
+                      dizqueTV transcode pipeline as well as to provide
+                      mechanisms to aid in debugging streaming issues.
+                    </Typography>
+                    <TranscodeConfigAdvancedOptions />
+                  </Box>
+                )
+              }
+            />
+          </Box>
+          <Box>
+            <Typography component="h5" variant="h5" sx={{ mb: 2 }}>
+              Audio Options
+            </Typography>
+            <TranscodeConfigAudioSettingsForm
+              initialConfig={initialConfig}
+              showAdvancedSettings={showAdvancedSettings}
+            />
+          </Box>
+          <Box>
+            <Typography component="h6" variant="h6" sx={{ pb: 1 }}>
+              Error Options
+            </Typography>
+            <TranscodeConfigErrorOptions initialConfig={initialConfig} />
+          </Box>
+
           <Stack spacing={2} direction="row" justifyContent="right">
-            {(isDirty || (isDirty && !isSubmitting)) && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  reset();
-                }}
-              >
-                Reset Changes
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              disabled={!isValid || isSubmitting || (!isDirty && !isNew)}
-              type="submit"
-            >
-              Save
-            </Button>
+            <transcodeConfigForm.Subscribe
+              selector={(state) => state}
+              children={({ isPristine, canSubmit, isSubmitting }) => (
+                <>
+                  {!isPristine ? (
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        transcodeConfigForm.reset();
+                      }}
+                    >
+                      Reset Changes
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="contained"
+                    disabled={!canSubmit}
+                    type="submit"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                  </Button>
+                </>
+              )}
+            />
           </Stack>
         </Stack>
-      </FormProvider>
+      </transcodeConfigForm.AppForm>
     </Box>
   );
 };

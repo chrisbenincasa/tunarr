@@ -114,11 +114,11 @@ export const getChannelsOptions = (options?: Options<GetChannelsData>) => {
     });
 };
 
-export const createChannelV2QueryKey = (options: Options<CreateChannelV2Data>) => createQueryKey('createChannelV2', options, false, [
+export const createChannelV2QueryKey = (options?: Options<CreateChannelV2Data>) => createQueryKey('createChannelV2', options, false, [
     'Channels'
 ]);
 
-export const createChannelV2Options = (options: Options<CreateChannelV2Data>) => {
+export const createChannelV2Options = (options?: Options<CreateChannelV2Data>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {
             const { data } = await createChannelV2({
@@ -1822,11 +1822,11 @@ export const getApiMediaSourcesOptions = (options?: Options<GetApiMediaSourcesDa
     });
 };
 
-export const postApiMediaSourcesQueryKey = (options: Options<PostApiMediaSourcesData>) => createQueryKey('postApiMediaSources', options, false, [
+export const postApiMediaSourcesQueryKey = (options?: Options<PostApiMediaSourcesData>) => createQueryKey('postApiMediaSources', options, false, [
     'Media Source'
 ]);
 
-export const postApiMediaSourcesOptions = (options: Options<PostApiMediaSourcesData>) => {
+export const postApiMediaSourcesOptions = (options?: Options<PostApiMediaSourcesData>) => {
     return queryOptions({
         queryFn: async ({ queryKey, signal }) => {
             const { data } = await postApiMediaSources({
@@ -2208,7 +2208,8 @@ export const putApiFfmpegSettingsMutation = (options?: Partial<Options<PutApiFfm
 };
 
 export const getApiTranscodeConfigsQueryKey = (options?: Options<GetApiTranscodeConfigsData>) => createQueryKey('getApiTranscodeConfigs', options, false, [
-    'Settings'
+    'Settings',
+    'Transcode Configs'
 ]);
 
 export const getApiTranscodeConfigsOptions = (options?: Options<GetApiTranscodeConfigsData>) => {
@@ -2227,7 +2228,8 @@ export const getApiTranscodeConfigsOptions = (options?: Options<GetApiTranscodeC
 };
 
 export const postApiTranscodeConfigsQueryKey = (options: Options<PostApiTranscodeConfigsData>) => createQueryKey('postApiTranscodeConfigs', options, false, [
-    'Settings'
+    'Settings',
+    'Transcode Configs'
 ]);
 
 export const postApiTranscodeConfigsOptions = (options: Options<PostApiTranscodeConfigsData>) => {
@@ -2274,7 +2276,8 @@ export const deleteApiTranscodeConfigsByIdMutation = (options?: Partial<Options<
 };
 
 export const getApiTranscodeConfigsByIdQueryKey = (options: Options<GetApiTranscodeConfigsByIdData>) => createQueryKey('getApiTranscodeConfigsById', options, false, [
-    'Settings'
+    'Settings',
+    'Transcode Configs'
 ]);
 
 export const getApiTranscodeConfigsByIdOptions = (options: Options<GetApiTranscodeConfigsByIdData>) => {
@@ -2306,7 +2309,10 @@ export const putApiTranscodeConfigsByIdMutation = (options?: Partial<Options<Put
     return mutationOptions;
 };
 
-export const postApiTranscodeConfigsByIdCopyQueryKey = (options: Options<PostApiTranscodeConfigsByIdCopyData>) => createQueryKey('postApiTranscodeConfigsByIdCopy', options);
+export const postApiTranscodeConfigsByIdCopyQueryKey = (options: Options<PostApiTranscodeConfigsByIdCopyData>) => createQueryKey('postApiTranscodeConfigsByIdCopy', options, false, [
+    'Settings',
+    'Transcode Configs'
+]);
 
 export const postApiTranscodeConfigsByIdCopyOptions = (options: Options<PostApiTranscodeConfigsByIdCopyData>) => {
     return queryOptions({

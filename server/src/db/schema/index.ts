@@ -55,10 +55,6 @@ import {
   ProgramExternalIdRelations,
 } from './ProgramExternalId.ts';
 import {
-  ProgramPlayHistory,
-  ProgramPlayHistoryRelations,
-} from './ProgramPlayHistory.ts';
-import {
   ProgramGrouping,
   ProgramGroupingRelations,
 } from './ProgramGrouping.ts';
@@ -74,6 +70,10 @@ import {
   ProgramMediaStream,
   ProgramMediaStreamRelations,
 } from './ProgramMediaStream.ts';
+import {
+  ProgramPlayHistory,
+  ProgramPlayHistoryRelations,
+} from './ProgramPlayHistory.ts';
 import {
   ProgramSubtitles,
   ProgramSubtitlesRelations,
