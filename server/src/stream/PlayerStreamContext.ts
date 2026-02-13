@@ -1,6 +1,6 @@
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import type { Channel } from '@/db/schema/Channel.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { GetCurrentLineupItemRequest } from './StreamProgramCalculator.ts';
@@ -20,21 +20,21 @@ export class PlayerContext {
    */
   constructor(
     public lineupItem: StreamLineupItem,
-    public targetChannel: Channel,
-    public sourceChannel: Channel,
+    public targetChannel: ChannelOrm,
+    public sourceChannel: ChannelOrm,
     public audioOnly: boolean,
     public realtime: boolean,
-    public transcodeConfig: TranscodeConfig,
+    public transcodeConfig: TranscodeConfigOrm,
     public streamMode: ChannelStreamMode,
   ) {}
 
   static error(
     duration: number,
     error: string | boolean | Error,
-    targetChannel: Channel,
-    sourceChannel: Channel,
+    targetChannel: ChannelOrm,
+    sourceChannel: ChannelOrm,
     realtime: boolean,
-    transcodeConfig: TranscodeConfig,
+    transcodeConfig: TranscodeConfigOrm,
     streamMode: ChannelStreamMode,
   ): PlayerContext {
     return new PlayerContext(

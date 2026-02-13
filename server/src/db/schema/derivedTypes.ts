@@ -1,4 +1,7 @@
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type {
+  TranscodeConfig,
+  TranscodeConfigOrm,
+} from '@/db/schema/TranscodeConfig.js';
 import type { MarkNonNullable, Nullable } from '@/types/util.js';
 import type { Insertable } from 'kysely';
 import type { DeepNullable, MarkRequired, StrictOmit } from 'ts-essentials';
@@ -182,7 +185,7 @@ export type ChannelOrmWithRelations = ChannelOrm & {
   programs?: ProgramWithRelationsOrm[];
   fillerContent?: ProgramWithRelationsOrm[];
   fillerShows?: ChannelFillerShow[];
-  transcodeConfig?: TranscodeConfig;
+  transcodeConfig?: TranscodeConfigOrm;
   subtitlePreferences?: ChannelSubtitlePreferences[];
 };
 
@@ -202,6 +205,11 @@ export type ChannelWithPrograms = MarkRequired<
 export type ChannelOrmWithPrograms = MarkRequired<
   ChannelOrmWithRelations,
   'programs'
+>;
+
+export type ChannelOrmWithTranscodeConfig = MarkRequired<
+  ChannelOrmWithRelations,
+  'transcodeConfig'
 >;
 
 export type ChannelFillerShowWithRelations = ChannelFillerShow & {

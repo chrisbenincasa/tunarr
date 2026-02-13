@@ -2,7 +2,7 @@ import type {
   ISettingsDB,
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import { HardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/HardwareCapabilitiesFactory.js';
 import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
@@ -24,7 +24,7 @@ import { NvidiaPipelineBuilder } from './nvidia/NvidiaPipelineBuilder.ts';
 import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 
 export type PipelineBuilderFactory = (
-  transcodeConfig: TranscodeConfig,
+  transcodeConfig: TranscodeConfigOrm,
 ) => PipelineBuilderFactory$Builder;
 
 export const FfmpegPipelineBuilderModule = new ContainerModule((bind) => {
@@ -56,7 +56,7 @@ class PipelineBuilderFactory$Builder {
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
     private ffmpegInfo: FfmpegInfo,
-    private transcodeConfig: TranscodeConfig,
+    private transcodeConfig: TranscodeConfigOrm,
   ) {}
 
   setVideoInputSource(

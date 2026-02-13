@@ -2,8 +2,8 @@ import type {
   ISettingsDB,
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.js';
-import type { Channel } from '@/db/schema/Channel.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { InfiniteLoopInputOption } from '@/ffmpeg/builder/options/input/InfiniteLoopInputOption.js';
 import type { AudioStreamDetails } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
@@ -18,7 +18,6 @@ import { isUndefined } from 'lodash-es';
 import type { DeepReadonly, NonEmptyArray } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
-import { numberToBoolean } from '../util/sqliteUtil.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
 import { FfmpegTranscodeSession } from './FfmpegTrancodeSession.ts';
@@ -72,8 +71,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
 
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
-    private transcodeConfig: TranscodeConfig,
-    private channel: Channel,
+    private transcodeConfig: TranscodeConfigOrm,
+    private channel: ChannelOrm,
     private ffmpegInfo: FfmpegInfo,
     private settingsDB: ISettingsDB,
     private pipelineBuilderFactory: PipelineBuilderFactory,
@@ -504,11 +503,11 @@ export class FfmpegStreamFactory extends IFFMPEG {
       vaapiDevice: this.getVaapiDevice(),
       vaapiDriver: this.getVaapiDriver(),
       disableHardwareDecoding:
-        numberToBoolean(this.transcodeConfig.disableHardwareDecoder) ?? false,
+        this.transcodeConfig.disableHardwareDecoder ?? false,
       disableHardwareEncoding:
-        numberToBoolean(this.transcodeConfig.disableHardwareEncoding) ?? false,
+        this.transcodeConfig.disableHardwareEncoding ?? false,
       disableHardwareFilters:
-        numberToBoolean(this.transcodeConfig.disableHardwareFilters) ?? false,
+        this.transcodeConfig.disableHardwareFilters ?? false,
     };
 
     const pipeline = builder.build(

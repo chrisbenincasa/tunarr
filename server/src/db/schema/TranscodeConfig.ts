@@ -1,4 +1,5 @@
 import type { Resolution, TupleToUnion } from '@tunarr/types';
+import type { InferSelectModel } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
@@ -199,6 +200,8 @@ export type TranscodeConfigTable = KyselifyBetter<typeof TranscodeConfig>;
 export type TranscodeConfig = Selectable<TranscodeConfigTable>;
 export type NewTranscodeConfig = Insertable<TranscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TranscodeConfigTable>;
+
+export type TranscodeConfigOrm = InferSelectModel<typeof TranscodeConfig>;
 
 export const defaultTranscodeConfig = (
   isDefault?: boolean,

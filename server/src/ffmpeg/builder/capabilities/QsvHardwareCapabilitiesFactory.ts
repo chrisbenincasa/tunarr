@@ -1,7 +1,7 @@
 import { seq } from '@tunarr/shared/util';
 import { drop, isEmpty, map, reject, split, trim } from 'lodash-es';
 import type { ReadableFfmpegSettings } from '../../../db/interfaces/ISettingsDB.ts';
-import type { TranscodeConfig } from '../../../db/schema/TranscodeConfig.ts';
+import type { TranscodeConfigOrm } from '../../../db/schema/TranscodeConfig.ts';
 import { ChildProcessHelper } from '../../../util/ChildProcessHelper.ts';
 import { LoggerFactory } from '../../../util/logging/LoggerFactory.ts';
 import { FFmpegOptionsExtractionPattern } from '../../ffmpegInfo.ts';
@@ -21,7 +21,7 @@ export class QsvHardwareCapabilitiesFactory
   });
 
   constructor(
-    private transcodeConfig: TranscodeConfig,
+    private transcodeConfig: TranscodeConfigOrm,
     private ffmpegSettings: ReadableFfmpegSettings,
   ) {}
 

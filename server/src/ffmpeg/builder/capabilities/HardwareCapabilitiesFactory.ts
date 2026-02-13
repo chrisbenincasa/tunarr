@@ -1,5 +1,5 @@
 import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import type {
   BaseFfmpegHardwareCapabilities,
@@ -16,7 +16,7 @@ export class HardwareCapabilitiesFactory
 {
   constructor(
     private ffmpegSettings: ReadableFfmpegSettings,
-    private transcodeConfig: TranscodeConfig,
+    private transcodeConfig: TranscodeConfigOrm,
   ) {}
 
   async getCapabilities(): Promise<BaseFfmpegHardwareCapabilities> {
