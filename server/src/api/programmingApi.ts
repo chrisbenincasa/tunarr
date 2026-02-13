@@ -479,7 +479,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             }
 
             return res
-              .status(proxyRes.status)
+              .status(200)
               .headers(headers)
               .send(proxyRes.data);
           } catch (e) {
@@ -729,7 +729,7 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
             }
 
             return res
-              .status(proxyRes.status)
+              .status(200)
               .headers(headers)
               .send(proxyRes.data);
           } catch (e) {
