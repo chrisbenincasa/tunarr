@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { tag } from '@tunarr/types';
 import { MultiExternalIdType } from '@tunarr/types/schemas';
-import type { Channel } from '../../db/schema/Channel.ts';
+import type { Channel, ChannelOrm } from '../../db/schema/Channel.ts';
 import type { ProgramDao } from '../../db/schema/Program.ts';
 import { ProgramTypes } from '../../db/schema/Program.ts';
 import type { MinimalProgramExternalId } from '../../db/schema/ProgramExternalId.ts';
@@ -22,6 +22,18 @@ export function createChannel(overrides?: Partial<Channel>): Channel {
     name: faker.music.artist(),
     ...(overrides ?? {}),
   } satisfies Channel;
+}
+
+export function createChannelOrm(overrides?: Partial<ChannelOrm>): ChannelOrm {
+  return {
+    uuid: faker.string.uuid(),
+    duration: faker.number.int({ min: 0 }),
+    startTime: faker.date.past().getTime(),
+    createdAt: null,
+    disableFillerOverlay: faker.datatype.boolean(),
+    name: faker.music.artist(),
+    ...(overrides ?? {}),
+  } satisfies ChannelOrm;
 }
 
 export function createFakeMultiExternalId(): MinimalProgramExternalId {

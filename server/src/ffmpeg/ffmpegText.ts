@@ -3,14 +3,14 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import events from 'node:events';
 import type { ReadableFfmpegSettings } from '../db/interfaces/ISettingsDB.ts';
-import type { TranscodeConfig } from '../db/schema/TranscodeConfig.ts';
+import type { TranscodeConfigOrm } from '../db/schema/TranscodeConfig.ts';
 
 export class FfmpegText extends events.EventEmitter {
   private args: string[];
   private ffmpeg: ChildProcessWithoutNullStreams;
 
   constructor(
-    transcodeConfig: TranscodeConfig,
+    transcodeConfig: TranscodeConfigOrm,
     opts: ReadableFfmpegSettings,
     title: string,
     subtitle: string,

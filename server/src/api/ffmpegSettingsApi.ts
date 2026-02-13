@@ -11,7 +11,7 @@ import {
 import { isError, map } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod/v4';
-import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
+import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import { GlobalScheduler } from '../services/Scheduler.ts';
 import { SubtitleExtractorTask } from '../tasks/SubtitleExtractorTask.ts';
 import { TranscodeConfigNotFoundError } from '../types/errors.ts';
@@ -176,7 +176,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     },
     async (req, res) => {
       const configs = await req.serverCtx.transcodeConfigDB.getAll();
-      const apiConfigs = map(configs, dbTranscodeConfigToApiSchema);
+      const apiConfigs = map(configs, transcodeConfigOrmToDto);
       return res.send(apiConfigs);
     },
   );
@@ -203,7 +203,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
         return res.status(404).send();
       }
 
-      return res.send(dbTranscodeConfigToApiSchema(config));
+      return res.send(transcodeConfigOrmToDto(config));
     },
   );
 
@@ -236,7 +236,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
           .exhaustive();
       }
 
-      return res.send(dbTranscodeConfigToApiSchema(copyResult.get()));
+      return res.send(transcodeConfigOrmToDto(copyResult.get()));
     },
   );
 
@@ -257,7 +257,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
       const newConfig = await req.serverCtx.transcodeConfigDB.insertConfig(
         req.body,
       );
-      return res.status(201).send(dbTranscodeConfigToApiSchema(newConfig));
+      return res.status(201).send(transcodeConfigOrmToDto(newConfig));
     },
   );
 
