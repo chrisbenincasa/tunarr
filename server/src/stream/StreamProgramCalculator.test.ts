@@ -15,7 +15,7 @@ import { MediaSourceId } from '../db/schema/base.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import {
-  createChannel,
+  createChannelOrm,
   createFakeProgram,
 } from '../testing/fakes/entityCreators.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
@@ -70,14 +70,14 @@ describe('StreamProgramCalculator', () => {
       ),
     );
 
-    const channel = createChannel({
+    const channel = createChannelOrm({
       uuid: channelId,
       number: 1,
       startTime: +startTime.subtract(1, 'hour'),
       duration: sumBy(lineup, ({ durationMs }) => durationMs),
     });
 
-    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+    when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
 
     when(channelDB.loadLineup(channelId)).thenReturn(
       Promise.resolve({
@@ -167,14 +167,14 @@ describe('StreamProgramCalculator', () => {
       ),
     );
 
-    const channel = createChannel({
+    const channel = createChannelOrm({
       uuid: channelId,
       number: 1,
       startTime: +startTime.subtract(1, 'hour'),
       duration: sumBy(lineup, ({ durationMs }) => durationMs),
     });
 
-    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+    when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
 
     when(channelDB.loadLineup(channelId)).thenReturn(
       Promise.resolve({
@@ -266,14 +266,14 @@ describe('StreamProgramCalculator', () => {
       ),
     );
 
-    const channel = createChannel({
+    const channel = createChannelOrm({
       uuid: channelId,
       number: 1,
       startTime: +startTime.subtract(1, 'hour'),
       duration: sumBy(lineup, ({ durationMs }) => durationMs),
     });
 
-    when(channelDB.getChannel(1)).thenReturn(Promise.resolve(channel));
+    when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
 
     when(channelDB.loadLineup(channelId)).thenReturn(
       Promise.resolve({
