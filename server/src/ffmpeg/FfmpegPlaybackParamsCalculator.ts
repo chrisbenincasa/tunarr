@@ -1,4 +1,4 @@
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import {
   HardwareAccelerationMode,
   TranscodeAudioOutputFormat,
@@ -6,7 +6,6 @@ import {
 import type { ChannelStreamMode } from '@/db/schema/base.js';
 import type { StreamDetails, VideoStreamDetails } from '@/stream/types.js';
 import { gcd } from '@/util/index.js';
-import { numberToBoolean } from '@/util/sqliteUtil.js';
 import type { Resolution } from '@tunarr/types';
 import { ChannelStreamModes } from '@tunarr/types';
 import type { OutputFormat, VideoFormat } from './builder/constants.ts';
@@ -16,7 +15,7 @@ import { FrameSize } from './builder/types.ts';
 
 export class FfmpegPlaybackParamsCalculator {
   constructor(
-    private transcodeConfig: TranscodeConfig,
+    private transcodeConfig: TranscodeConfigOrm,
     private streamMode: ChannelStreamMode,
   ) {}
 
@@ -95,7 +94,7 @@ export class FfmpegPlaybackParamsCalculator {
       params.pixelFormat = new PixelFormatYuv420P();
 
       params.deinterlace =
-        numberToBoolean(this.transcodeConfig.deinterlaceVideo) &&
+        !!this.transcodeConfig.deinterlaceVideo &&
         videoStream.scanType === 'interlaced';
     }
 
@@ -165,7 +164,7 @@ export type FfmpegPlaybackParams = {
 };
 
 function needsToScale(
-  transcodeConfig: TranscodeConfig,
+  transcodeConfig: TranscodeConfigOrm,
   videoStreamDetails: VideoStreamDetails,
 ) {
   return (
@@ -213,7 +212,7 @@ function isAnamorphic(videoStreamDetails: VideoStreamDetails) {
 }
 
 function calculateScaledSize(
-  config: TranscodeConfig,
+  config: TranscodeConfigOrm,
   videoStream: VideoStreamDetails,
 ) {
   const { widthPx: targetW, heightPx: targetH } = config.resolution;

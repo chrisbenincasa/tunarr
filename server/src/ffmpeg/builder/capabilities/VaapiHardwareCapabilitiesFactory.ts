@@ -1,4 +1,4 @@
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import type { FfmpegHardwareCapabilitiesFactory } from '@/ffmpeg/builder/capabilities/BaseFfmpegHardwareCapabilities.js';
 import { DefaultHardwareCapabilities } from '@/ffmpeg/builder/capabilities/DefaultHardwareCapabilities.js';
 import { NoHardwareCapabilities } from '@/ffmpeg/builder/capabilities/NoHardwareCapabilities.js';
@@ -26,7 +26,7 @@ export class VaapiHardwareCapabilitiesFactory
     return `vainfo_${driver}_${device}`;
   }
 
-  constructor(private transcodeConfig: TranscodeConfig) {}
+  constructor(private transcodeConfig: TranscodeConfigOrm) {}
 
   async getCapabilities() {
     // windows check bail!

@@ -55,7 +55,7 @@ import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.t
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import { container } from '../container.ts';
-import { dbTranscodeConfigToApiSchema } from '../db/converters/transcodeConfigConverters.ts';
+import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { LegacyChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { SessionType } from '../stream/Session.ts';
 import { Result } from '../types/result.ts';
@@ -680,7 +680,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       const config = await req.serverCtx.transcodeConfigDB.getChannelConfig(
         req.params.id,
       );
-      return res.send(dbTranscodeConfigToApiSchema(config));
+      return res.send(transcodeConfigOrmToDto(config));
     },
   );
 

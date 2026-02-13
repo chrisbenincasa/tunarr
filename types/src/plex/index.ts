@@ -232,7 +232,7 @@ export const PlexPlaylistSchema = z.object({
   titleSort: z.string().optional(),
   summary: z.string().optional(),
   smart: z.boolean().optional(),
-  playlistType: z.union([z.literal('video'), z.literal('audio')]).optional(), // Add new known types here
+  playlistType: z.enum(['video', 'audio', 'photo']).optional(), // Add new known types here
   composite: z.string().optional(), // Thumb path
   icon: z.string().optional(),
   viewCount: z.number().optional(),

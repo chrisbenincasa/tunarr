@@ -9,6 +9,7 @@ import type { ProgramDao } from '@/db/schema/Program.js';
 import type { ProgramExternalId } from '@/db/schema/ProgramExternalId.js';
 import type {
   ChannelOrmWithRelations,
+  ChannelOrmWithTranscodeConfig,
   ChannelWithRelations,
   MusicArtistOrm,
   ProgramWithRelationsOrm,
@@ -42,7 +43,9 @@ export type ChannelAndRawLineup = { channel: ChannelOrm; lineup: Json };
 export interface IChannelDB {
   channelExists(channelId: string): Promise<boolean>;
 
-  getChannelOrm(id: string | number): Promise<Maybe<ChannelOrm>>;
+  getChannelOrm(
+    id: string | number,
+  ): Promise<Maybe<ChannelOrmWithTranscodeConfig>>;
 
   getChannel(id: string | number): Promise<Maybe<ChannelWithRelations>>;
   getChannel(
@@ -146,6 +149,10 @@ export interface IChannelDB {
   loadChannelAndLineup(
     channelId: string,
   ): Promise<ChannelAndLineup<Channel> | null>;
+
+  loadChannelAndLineupOrm(
+    channelId: string,
+  ): Promise<ChannelAndLineup<ChannelOrm> | null>;
 
   addPendingPrograms(
     channelId: string,

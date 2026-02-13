@@ -646,19 +646,21 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     );
 
     return result.mapPure((data) => {
-      const playlists = (data.MediaContainer.Metadata ?? []).map(
-        (playlist) =>
-          ({
-            externalId: playlist.ratingKey,
-            libraryId: '',
-            mediaSourceId: this.options.mediaSource.uuid,
-            sourceType: this.options.mediaSource.type,
-            title: playlist.title,
-            type: 'playlist',
-            uuid: v4(),
-            childCount: playlist.leafCount,
-          }) satisfies Playlist,
-      );
+      const playlists = (data.MediaContainer.Metadata ?? [])
+        .filter((playlist) => playlist.playlistType !== 'photo')
+        .map(
+          (playlist) =>
+            ({
+              externalId: playlist.ratingKey,
+              libraryId: '',
+              mediaSourceId: this.options.mediaSource.uuid,
+              sourceType: this.options.mediaSource.type,
+              title: playlist.title,
+              type: 'playlist',
+              uuid: v4(),
+              childCount: playlist.leafCount,
+            }) satisfies Playlist,
+        );
 
       return {
         result: playlists,

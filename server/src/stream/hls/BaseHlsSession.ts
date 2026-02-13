@@ -1,4 +1,4 @@
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { SessionOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
@@ -41,7 +41,10 @@ export abstract class BaseHlsSession<
     return minBy([...this._minByIp.entries()], ([_, seg]) => seg)?.[1] ?? 0;
   }
 
-  constructor(channel: ChannelWithTranscodeConfig, options: HlsSessionOptsT) {
+  constructor(
+    channel: ChannelOrmWithTranscodeConfig,
+    options: HlsSessionOptsT,
+  ) {
     super(channel, options);
 
     this._workingDirectory = path.join(

@@ -76,10 +76,7 @@ export class VideoStream {
     // const serverCtx = getServerContext();
     const outStream = new PassThrough();
 
-    const channel = await this.channelDB
-      .getChannelBuilder(channelIdOrNumber)
-      .withTranscodeConfig()
-      .executeTakeFirst();
+    const channel = await this.channelDB.getChannelOrm(channelIdOrNumber);
 
     if (isNil(channel)) {
       return {

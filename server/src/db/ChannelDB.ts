@@ -140,6 +140,7 @@ import { DB } from './schema/db.ts';
 import {
   ChannelOrmWithPrograms,
   ChannelOrmWithRelations,
+  ChannelOrmWithTranscodeConfig,
   ChannelWithPrograms,
   ChannelWithRelations,
   MusicAlbumOrm,
@@ -264,10 +265,15 @@ export class ChannelDB implements IChannelDB {
     return !isNil(channel);
   }
 
-  getChannelOrm(id: string | number): Promise<Maybe<ChannelOrm>> {
+  getChannelOrm(
+    id: string | number,
+  ): Promise<Maybe<ChannelOrmWithTranscodeConfig>> {
     return this.drizzleDB.query.channels.findFirst({
       where: (channel, { eq }) => {
         return isString(id) ? eq(channel.uuid, id) : eq(channel.number, id);
+      },
+      with: {
+        transcodeConfig: true,
       },
     });
   }
@@ -1557,6 +1563,20 @@ export class ChannelDB implements IChannelDB {
     channelId: string,
   ): Promise<ChannelAndLineup<Channel> | null> {
     const channel = await this.getChannel(channelId);
+    if (isNil(channel)) {
+      return null;
+    }
+
+    return {
+      channel,
+      lineup: await this.loadLineup(channelId),
+    };
+  }
+
+  async loadChannelAndLineupOrm(
+    channelId: string,
+  ): Promise<ChannelAndLineup<ChannelOrm> | null> {
+    const channel = await this.getChannelOrm(channelId);
     if (isNil(channel)) {
       return null;
     }

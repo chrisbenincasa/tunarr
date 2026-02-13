@@ -1,4 +1,5 @@
 import type { Resolution, TupleToUnion } from '@tunarr/types';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
@@ -200,7 +201,37 @@ export type TranscodeConfig = Selectable<TranscodeConfigTable>;
 export type NewTranscodeConfig = Insertable<TranscodeConfigTable>;
 export type TranscodeConfigUpdate = Updateable<TranscodeConfigTable>;
 
+export type TranscodeConfigOrm = InferSelectModel<typeof TranscodeConfig>;
+export type NewTranscodeConfigOrm = InferInsertModel<typeof TranscodeConfig>;
+
 export const defaultTranscodeConfig = (
+  isDefault?: boolean,
+): NewTranscodeConfigOrm => {
+  return {
+    threadCount: 0,
+    audioBitRate: 192,
+    audioBufferSize: 192 * 2,
+    audioChannels: 2,
+    audioFormat: 'aac',
+    audioSampleRate: 48,
+    hardwareAccelerationMode: 'none',
+    name: isDefault ? 'Default' : `h264 @ 1920x1080`,
+    resolution: {
+      widthPx: 1920,
+      heightPx: 1080,
+    } satisfies Resolution,
+    uuid: v4(),
+    videoBitRate: 2000,
+    videoBufferSize: 4000,
+    videoFormat: 'h264',
+    disableChannelOverlay: false,
+    normalizeFrameRate: false,
+    videoBitDepth: 8,
+    isDefault: !!isDefault,
+  };
+};
+
+export const defaultTranscodeConfigLegacy = (
   isDefault?: boolean,
 ): NewTranscodeConfig => {
   return {

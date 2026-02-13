@@ -1,4 +1,4 @@
-import type { Channel } from '../../db/schema/Channel.ts';
+import type { ChannelOrm } from '../../db/schema/Channel.ts';
 import type {
   ChannelFillerShowWithContent,
   ProgramWithRelations,
@@ -19,7 +19,7 @@ export const EmptyFillerPickResult: FillerPickResult = {
 
 export interface IFillerPicker {
   pickFiller(
-    channel: Channel,
+    channel: ChannelOrm,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
     now?: number,

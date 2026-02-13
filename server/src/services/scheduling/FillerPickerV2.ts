@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { groupBy, isEmpty, maxBy, sumBy } from 'lodash-es';
 import { ProgramPlayHistoryDB } from '../../db/ProgramPlayHistoryDB.ts';
-import { Channel } from '../../db/schema/Channel.ts';
+import { ChannelOrm } from '../../db/schema/Channel.ts';
 import { ChannelFillerShowWithContent } from '../../db/schema/derivedTypes.ts';
 import {
   FiveMinutesMillis,
@@ -34,7 +34,7 @@ export class FillerPickerV2 implements IFillerPicker {
   ) {}
 
   async pickFiller(
-    channel: Channel,
+    channel: ChannelOrm,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
     now = +dayjs(),

@@ -1,4 +1,4 @@
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FFmpegFactory } from '@/ffmpeg/FFmpegModule.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
@@ -7,12 +7,12 @@ import { makeFfmpegPlaylistUrl, makeLocalUrl } from '@/util/serverUtil.js';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 
 export type ConcatStreamFactory = (
-  channel: ChannelWithTranscodeConfig,
+  channel: ChannelOrmWithTranscodeConfig,
   streamMode: ChannelConcatStreamMode,
 ) => ConcatStream;
 export class ConcatStream {
   constructor(
-    private channel: ChannelWithTranscodeConfig,
+    private channel: ChannelOrmWithTranscodeConfig,
     private streamMode: ChannelConcatStreamMode,
     private ffmpegFactory: FFmpegFactory,
   ) {}

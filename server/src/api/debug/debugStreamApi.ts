@@ -1,24 +1,26 @@
 import { container } from '@/container.js';
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
 import { createOfflineStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import type { Channel } from '@/db/schema/Channel.js';
-import { AllChannelTableKeys } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { ProgramType } from '@/db/schema/Program.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
-import { AllTranscodeConfigColumns } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { MpegTsOutputFormat } from '@/ffmpeg/builder/constants.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { OfflineStreamFactoryType } from '@/stream/StreamModule.js';
 import { KEYS } from '@/types/inject.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import dayjs from '@/util/dayjs.js';
-import { jsonObjectFrom } from 'kysely/helpers/sqlite';
-import { isNumber, isUndefined, nth, random } from 'lodash-es';
+import { isNumber, isUndefined, random } from 'lodash-es';
 import { PassThrough } from 'node:stream';
 import type { MarkRequired } from 'ts-essentials';
 import { z } from 'zod/v4';
-import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
+import type {
+  ChannelOrmWithTranscodeConfig,
+  ProgramWithRelationsOrm,
+} from '../../db/schema/derivedTypes.ts';
 import type { ProgramStreamFactory } from '../../stream/ProgramStreamFactory.ts';
+import { ChannelNotFoundError } from '../../types/errors.ts';
+import type { Maybe } from '../../types/util.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 
 export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
@@ -37,23 +39,15 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const channel = await req.serverCtx
-        .databaseFactory()
-        .selectFrom('channel')
-        .selectAll()
-        .select((eb) =>
-          jsonObjectFrom(
-            eb
-              .selectFrom('transcodeConfig')
-              .whereRef(
-                'transcodeConfig.uuid',
-                '=',
-                'channel.transcodeConfigId',
-              )
-              .select(AllTranscodeConfigColumns),
-          ).as('transcodeConfig'),
-        )
-        .$narrowType<{ transcodeConfig: TranscodeConfig }>()
-        .executeTakeFirstOrThrow();
+        .drizzleFactory()
+        .query.channels.findFirst({
+          with: {
+            transcodeConfig: true,
+          },
+        });
+
+      if (!channel)
+        throw new Error('This debug endpoint requires at least one channel');
 
       const stream = container.getNamed<OfflineStreamFactoryType>(
         KEYS.ProgramStreamFactory,
@@ -93,29 +87,23 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     },
     async (req, res) => {
       const channel = await req.serverCtx
-        .databaseFactory()
-        .selectFrom('channel')
-        .selectAll()
-        .$if(isNonEmptyString(req.query.channelId), (eb) =>
-          eb.where('channel.uuid', '=', req.query.channelId as string),
-        )
-        .$if(isNumber(req.query.channelId), (eb) =>
-          eb.where('channel.number', '=', req.query.channelId as number),
-        )
-        .select((eb) =>
-          jsonObjectFrom(
-            eb
-              .selectFrom('transcodeConfig')
-              .whereRef(
-                'transcodeConfig.uuid',
-                '=',
-                'channel.transcodeConfigId',
-              )
-              .select(AllTranscodeConfigColumns),
-          ).as('transcodeConfig'),
-        )
-        .$narrowType<{ transcodeConfig: TranscodeConfig }>()
-        .executeTakeFirstOrThrow();
+        .drizzleFactory()
+        .query.channels.findFirst({
+          where: (fields, { eq }) => {
+            if (isNonEmptyString(req.query.channelId)) {
+              return eq(fields.uuid, req.query.channelId);
+            } else if (isNumber(req.query.channelId)) {
+              return eq(fields.number, req.query.channelId);
+            }
+            return;
+          },
+          with: {
+            transcodeConfig: true,
+          },
+        });
+
+      if (!channel)
+        throw new ChannelNotFoundError(req.query.channelId ?? 'unknown');
 
       const stream = container.getNamed<OfflineStreamFactoryType>(
         KEYS.ProgramStreamFactory,
@@ -155,30 +143,18 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     }
 
     const channels = await req.serverCtx
-      .databaseFactory()
-      .selectFrom('channelPrograms')
-      .where('programUuid', '=', program.uuid)
-      .select((eb) =>
-        jsonObjectFrom(
-          eb
-            .selectFrom('channel')
-            .whereRef('channel.uuid', '=', 'channelPrograms.channelUuid')
-            .select((eb) =>
-              jsonObjectFrom(
-                eb
-                  .selectFrom('transcodeConfig')
-                  .whereRef(
-                    'transcodeConfig.uuid',
-                    '=',
-                    'channel.transcodeConfigId',
-                  )
-                  .select(AllTranscodeConfigColumns),
-              ).as('transcodeConfig'),
-            )
-            .select(AllChannelTableKeys),
-        ).as('channel'),
-      )
-      .execute();
+      .drizzleFactory()
+      .query.channelPrograms.findMany({
+        where: (fields, { eq }) => eq(fields.programUuid, program.uuid),
+        columns: {},
+        with: {
+          channel: {
+            with: {
+              transcodeConfig: true,
+            },
+          },
+        },
+      });
 
     const firstChannel = channels?.[0]!.channel;
 
@@ -189,7 +165,7 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
     const out = await initStream(
       program,
       firstChannel,
-      firstChannel.transcodeConfig!,
+      firstChannel.transcodeConfig,
     );
     return res.header('Content-Type', 'video/mp2t').send(out);
   });
@@ -224,58 +200,42 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
             : req.query.start;
 
       const channels = await req.serverCtx
-        .databaseFactory()
-        .selectFrom('channelPrograms')
-        .where('programUuid', '=', program.uuid)
-        .select((eb) =>
-          jsonObjectFrom(
-            eb
-              .selectFrom('channel')
-              .whereRef('channel.uuid', '=', 'channelPrograms.channelUuid')
-              .select((eb) =>
-                jsonObjectFrom(
-                  eb
-                    .selectFrom('transcodeConfig')
-                    .whereRef(
-                      'transcodeConfig.uuid',
-                      '=',
-                      'channel.transcodeConfigId',
-                    )
-                    .select(AllTranscodeConfigColumns),
-                ).as('transcodeConfig'),
-              )
-              .select(AllChannelTableKeys),
-          ).as('channel'),
-        )
-        .execute();
+        .drizzleFactory()
+        .query.channelPrograms.findMany({
+          where: (fields, { eq }) => eq(fields.programUuid, program.uuid),
+          columns: {},
+          with: {
+            channel: {
+              with: {
+                transcodeConfig: true,
+              },
+            },
+          },
+        });
 
-      let firstChannel = nth(channels, 0)?.channel;
+      let firstChannel = channels[0]
+        ?.channel as Maybe<ChannelOrmWithTranscodeConfig>;
 
       if (!firstChannel) {
         firstChannel = await req.serverCtx
-          .databaseFactory()
-          .selectFrom('channel')
-          .selectAll()
-          .select((eb) =>
-            jsonObjectFrom(
-              eb
-                .selectFrom('transcodeConfig')
-                .whereRef(
-                  'transcodeConfig.uuid',
-                  '=',
-                  'channel.transcodeConfigId',
-                )
-                .select(AllTranscodeConfigColumns),
-            ).as('transcodeConfig'),
-          )
-          .$narrowType<{ transcodeConfig: TranscodeConfig }>()
-          .executeTakeFirstOrThrow();
+          .drizzleFactory()
+          .query.channels.findFirst({
+            with: {
+              transcodeConfig: true,
+            },
+          });
+      }
+
+      if (!firstChannel) {
+        throw new Error(
+          'Cannot find a channel with a transcode config to use!',
+        );
       }
 
       const outStream = await initStream(
         program,
         firstChannel,
-        firstChannel.transcodeConfig!,
+        firstChannel.transcodeConfig,
         startTime * 1000,
       );
       return res.header('Content-Type', 'video/mp2t').send(outStream);
@@ -284,8 +244,8 @@ export const debugStreamApiRouter: RouterPluginAsyncCallback = async (
 
   async function initStream(
     program: MarkRequired<ProgramWithRelationsOrm, 'externalIds'>,
-    channel: Channel,
-    transcodeConfig: TranscodeConfig,
+    channel: ChannelOrm,
+    transcodeConfig: TranscodeConfigOrm,
     startTime: number = 0,
   ) {
     if (!program.mediaSourceId) {

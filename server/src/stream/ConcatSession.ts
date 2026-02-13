@@ -1,4 +1,4 @@
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import { isEmpty } from 'lodash-es';
@@ -12,7 +12,7 @@ export type ConcatSessionOptions = SessionOptions & {
 };
 
 export type ConcatSessionFactory = (
-  channel: ChannelWithTranscodeConfig,
+  channel: ChannelOrmWithTranscodeConfig,
   options: ConcatSessionOptions,
 ) => ConcatSession;
 
@@ -20,7 +20,7 @@ export class ConcatSession extends DirectStreamSession<ConcatSessionOptions> {
   #transcodeSession: FfmpegTranscodeSession;
 
   constructor(
-    channel: ChannelWithTranscodeConfig,
+    channel: ChannelOrmWithTranscodeConfig,
     options: ConcatSessionOptions,
     private concatStreamFactory: ConcatStreamFactory,
   ) {
