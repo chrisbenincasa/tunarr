@@ -1,4 +1,4 @@
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
@@ -32,7 +32,7 @@ export class HlsSlowerSession extends BaseHlsSession {
   #concatSession: FfmpegTranscodeSession;
 
   constructor(
-    channel: ChannelWithTranscodeConfig,
+    channel: ChannelOrmWithTranscodeConfig,
     options: BaseHlsSessionOptions,
     programCalculator: StreamProgramCalculator,
     private programStreamFactory: ProgramStreamFactory,

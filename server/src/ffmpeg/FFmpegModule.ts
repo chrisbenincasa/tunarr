@@ -1,19 +1,19 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { Channel } from '@/db/schema/Channel.js';
-import type { TranscodeConfig } from '@/db/schema/TranscodeConfig.js';
+import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { FfmpegStreamFactory } from '@/ffmpeg/FfmpegStreamFactory.js';
 import type { IFFMPEG } from '@/ffmpeg/ffmpegBase.js';
 import { KEYS } from '@/types/inject.js';
 import type { ChannelStreamMode } from '@tunarr/types';
 import { ContainerModule } from 'inversify';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { bindFactoryFunc } from '../util/inject.ts';
 import type { PipelineBuilderFactory } from './builder/pipeline/PipelineBuilderFactory.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 export type FFmpegFactory = (
-  transcodeConfig: TranscodeConfig,
-  channel: Channel,
+  transcodeConfig: TranscodeConfigOrm,
+  channel: ChannelOrm,
   streamMode: ChannelStreamMode,
 ) => IFFMPEG;
 

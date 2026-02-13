@@ -1,5 +1,5 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
@@ -25,12 +25,12 @@ import { BaseHlsSession } from './BaseHlsSession.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
 
 export type HlsSessionProvider = (
-  channel: ChannelWithTranscodeConfig,
+  channel: ChannelOrmWithTranscodeConfig,
   options: BaseHlsSessionOptions,
 ) => HlsSession;
 
 export type HlsSlowerSessionProvider = (
-  channel: ChannelWithTranscodeConfig,
+  channel: ChannelOrmWithTranscodeConfig,
   options: BaseHlsSessionOptions,
 ) => HlsSlowerSession;
 
@@ -47,7 +47,7 @@ export class HlsSession extends BaseHlsSession {
   #isFirstTranscode = true;
 
   constructor(
-    channel: ChannelWithTranscodeConfig,
+    channel: ChannelOrmWithTranscodeConfig,
     options: BaseHlsSessionOptions,
     private programCalculator: StreamProgramCalculator,
     private settingsDB: ISettingsDB,

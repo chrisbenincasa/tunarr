@@ -1,4 +1,4 @@
-import { Channel } from '@/db/schema/Channel.js';
+import { ChannelOrm } from '@/db/schema/Channel.js';
 import type { ProgramWithRelations as RawProgramEntity } from '@/db/schema/derivedTypes.js';
 import { KEYS } from '@/types/inject.js';
 import { Result } from '@/types/result.js';
@@ -62,8 +62,8 @@ export type CurrentLineupItemResult = {
   lineupItem: StreamLineupItem;
   // Either the source channel or the target channel
   // if the current program is a redirect
-  channelContext: Channel;
-  sourceChannel: Channel;
+  channelContext: ChannelOrm;
+  sourceChannel: ChannelOrm;
 };
 
 @injectable()
@@ -81,7 +81,7 @@ export class StreamProgramCalculator {
     req: GetCurrentLineupItemRequest,
   ): Promise<Result<CurrentLineupItemResult>> {
     const startTime = req.startTime;
-    const channel = await this.channelDB.getChannel(req.channelId);
+    const channel = await this.channelDB.getChannelOrm(req.channelId);
 
     if (isNil(channel)) {
       return Result.failure(
@@ -102,7 +102,7 @@ export class StreamProgramCalculator {
     }
 
     let lineupItem: Maybe<StreamLineupItem>;
-    let channelContext: Channel = channel;
+    let channelContext: ChannelOrm = channel;
     const redirectChannels: string[] = [];
     const upperBounds: number[] = [];
 
@@ -138,7 +138,7 @@ export class StreamProgramCalculator {
 
       const nextChannelId = currentProgram.program.channel;
       const newChannelAndLineup =
-        await this.channelDB.loadChannelAndLineup(nextChannelId);
+        await this.channelDB.loadChannelAndLineupOrm(nextChannelId);
 
       if (isNil(newChannelAndLineup)) {
         const msg = "Invalid redirect to a channel that doesn't exist";
@@ -362,7 +362,7 @@ export class StreamProgramCalculator {
   async createLineupItem(
     { program, timeElapsed }: ProgramAndTimeElapsed,
     streamDuration: number,
-    channel: Channel,
+    channel: ChannelOrm,
   ): Promise<StreamLineupItem> {
     if (program.type === 'redirect') {
       throw new Error(

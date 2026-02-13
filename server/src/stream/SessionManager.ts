@@ -32,7 +32,7 @@ import {
 import { HlsSlowerSession } from './hls/HlsSlowerSession.js';
 
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
-import type { ChannelWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { KEYS } from '@/types/inject.js';
 import { ifDefined } from '@/util/index.js';
@@ -250,7 +250,7 @@ export class SessionManager {
     token: string,
     connection: StreamConnectionDetails,
     sessionType: SessionType,
-    sessionFactory: (channel: ChannelWithTranscodeConfig) => TSession,
+    sessionFactory: (channel: ChannelOrmWithTranscodeConfig) => TSession,
   ): Promise<Result<TSession, TypedError>> {
     const lock = await this.#sessionLocker.getOrCreateLock(channelId);
     try {
@@ -261,12 +261,9 @@ export class SessionManager {
         ) as Maybe<TSession>;
 
         if (isNil(session)) {
-          const channel = await this.channelDB
-            .getChannelBuilder(channelId)
-            .withTranscodeConfig()
-            .executeTakeFirst();
+          const channel = await this.channelDB.getChannelOrm(channelId);
 
-          if (isNil(channel)) {
+          if (!channel?.transcodeConfig) {
             throw new ChannelNotFoundError(channelId);
           }
 

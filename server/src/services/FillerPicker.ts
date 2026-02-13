@@ -1,4 +1,4 @@
-import type { Channel } from '@/db/schema/Channel.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { ChannelCache } from '@/stream/ChannelCache.js';
 import type { Maybe } from '@/types/util.js';
 import { random } from '@/util/random.js';
@@ -25,7 +25,7 @@ export class FillerPicker implements IFillerPicker {
   }
 
   pickFiller(
-    channel: Channel,
+    channel: ChannelOrm,
     fillers: ChannelFillerShowWithContent[],
     maxDuration: number,
   ) {
