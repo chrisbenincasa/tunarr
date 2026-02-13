@@ -1,4 +1,4 @@
-import type { Resolution, TupleToUnion } from '@tunarr/types';
+import { type Resolution, type TupleToUnion } from '@tunarr/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -146,6 +146,7 @@ export const TranscodeConfig = sqliteTable(
     audioBufferSize: integer().notNull(),
     audioSampleRate: integer().notNull(),
     audioVolumePercent: integer().notNull().default(100), // Default 100
+    // audioLoudnormConfig: text({ mode: 'json' }).$type<LoudnormConfig>(),
 
     normalizeFrameRate: integer({ mode: 'boolean' }).default(false),
     deinterlaceVideo: integer({ mode: 'boolean' }).default(true),

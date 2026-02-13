@@ -1,10 +1,5 @@
 import { TranscodeConfigSettingsForm } from '@/components/settings/ffmpeg/TranscodeConfigSettingsForm';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TranscodeConfig } from '@tunarr/types';
-import {
-  getApiTranscodeConfigsQueryKey,
-  postApiTranscodeConfigsMutation,
-} from '../../generated/@tanstack/react-query.gen.ts';
 
 const defaultNewTranscodeConfig: TranscodeConfig = {
   id: '',
@@ -41,22 +36,9 @@ const defaultNewTranscodeConfig: TranscodeConfig = {
 };
 
 export const NewTranscodeConfigSettingsPage = () => {
-  const queryClient = useQueryClient();
-
-  const updateConfigMutation = useMutation({
-    ...postApiTranscodeConfigsMutation(),
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: getApiTranscodeConfigsQueryKey(),
-        exact: false,
-      });
-    },
-  });
-
   return (
     <TranscodeConfigSettingsForm
       initialConfig={defaultNewTranscodeConfig}
-      onSave={(conf) => updateConfigMutation.mutateAsync({ body: conf })}
       isNew
     />
   );

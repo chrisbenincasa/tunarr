@@ -1945,7 +1945,7 @@ export type GetChannelsResponses = {
 export type GetChannelsResponse = GetChannelsResponses[keyof GetChannelsResponses];
 
 export type CreateChannelV2Data = {
-    body: {
+    body?: {
         type: 'new';
         channel: {
             disableFillerOverlay: boolean;
@@ -3495,7 +3495,7 @@ export type GetApiChannelsByIdProgrammingResponses = {
 export type GetApiChannelsByIdProgrammingResponse = GetApiChannelsByIdProgrammingResponses[keyof GetApiChannelsByIdProgrammingResponses];
 
 export type PostApiChannelsByIdProgrammingData = {
-    body: {
+    body?: {
         type: 'manual';
         programs: Array<{
             type: 'content';
@@ -7098,6 +7098,24 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -14747,7 +14765,7 @@ export type GetApiMediaSourcesResponses = {
 export type GetApiMediaSourcesResponse = GetApiMediaSourcesResponses[keyof GetApiMediaSourcesResponses];
 
 export type PostApiMediaSourcesData = {
-    body: {
+    body?: {
         name: string;
         uri: string;
         accessToken: string;
@@ -15651,7 +15669,7 @@ export type DeleteApiMediaSourcesByIdResponses = {
 };
 
 export type PutApiMediaSourcesByIdData = {
-    body: {
+    body?: {
         id: string;
         name: string;
         uri: string;
@@ -15883,6 +15901,24 @@ export type GetApiTranscodeConfigsResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -15920,6 +15956,24 @@ export type PostApiTranscodeConfigsData = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent?: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i?: number;
+            /**
+             * loudness range target
+             */
+            lra?: number;
+            /**
+             * maximum true peak
+             */
+            tp?: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -15962,6 +16016,24 @@ export type PostApiTranscodeConfigsResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -16042,6 +16114,24 @@ export type GetApiTranscodeConfigsByIdResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -16080,6 +16170,24 @@ export type PutApiTranscodeConfigsByIdData = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent?: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i?: number;
+            /**
+             * loudness range target
+             */
+            lra?: number;
+            /**
+             * maximum true peak
+             */
+            tp?: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -16124,6 +16232,24 @@ export type PutApiTranscodeConfigsByIdResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -16185,6 +16311,24 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         audioBufferSize: number;
         audioSampleRate: number;
         audioVolumePercent: number;
+        audioLoudnormConfig?: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        };
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;

@@ -1,5 +1,5 @@
 import type { PaginationState } from '@tanstack/react-table';
-import { DeepPartial } from 'ts-essentials';
+import type { DeepPartial } from 'ts-essentials';
 import type { StateCreator } from 'zustand';
 
 // Only these 2 are supported currently
@@ -19,6 +19,7 @@ export interface SettingsStateInternal {
       locale: SupportedLocales;
     };
     tableSettings: Record<string, TableSettings>;
+    showAdvancedSettings: boolean;
   };
 }
 
@@ -51,6 +52,7 @@ export const createSettingsSlice: StateCreator<SettingsState> = () => ({
         locale: 'en',
       },
       tableSettings: {},
+      showAdvancedSettings: false,
     },
   },
 });

@@ -82,6 +82,7 @@ import { Mpeg2VideoEncoder } from '../encoder/Mpeg2VideoEncoder.ts';
 import { RawVideoEncoder } from '../encoder/RawVideoEncoder.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import type { FilterOption } from '../filter/FilterOption.ts';
+import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
 import { StreamSeekFilter } from '../filter/StreamSeekFilter.ts';
 import type { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import {
@@ -633,7 +634,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (
       !isNull(this.desiredAudioState?.audioVolume) &&
       this.desiredAudioState.audioVolume !== 100 &&
-      encoder.name != 'copy' &&
+      encoder.name != TranscodeAudioOutputFormat.Copy &&
       this.desiredAudioState.audioVolume > 0
     ) {
       this.audioInputSource?.filterSteps?.push(
@@ -641,7 +642,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
     }
 
-    if (encoder.name !== 'copy') {
+    if (encoder.name !== TranscodeAudioOutputFormat.Copy) {
       // This seems to help with audio sync issues in QSV
       const asyncSamples =
         this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv
@@ -653,6 +654,32 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
 
       if (!isNull(this.context.desiredAudioState.audioDuration)) {
         this.audioInputSource?.filterSteps.push(new AudioPadFilter());
+      }
+    }
+
+    if (
+      !isNull(this.desiredAudioState.loudnormConfig) &&
+      encoder.name !== TranscodeAudioOutputFormat.Copy
+    ) {
+      if (
+        this.desiredAudioState.loudnormConfig.i < -70.0 ||
+        this.desiredAudioState.loudnormConfig.i > -5.0 ||
+        this.desiredAudioState.loudnormConfig.lra < 1.0 ||
+        this.desiredAudioState.loudnormConfig.lra > 50.0 ||
+        this.desiredAudioState.loudnormConfig.tp < -9.0 ||
+        this.desiredAudioState.loudnormConfig.tp > 0
+      ) {
+        this.logger.warn(
+          'Loudnorm config is not valid: %O',
+          this.desiredAudioState.loudnormConfig,
+        );
+      } else {
+        this.audioInputSource?.filterSteps.push(
+          new LoudnormFilter(
+            this.desiredAudioState.loudnormConfig,
+            this.desiredAudioState.audioSampleRate ?? 48_000,
+          ),
+        );
       }
     }
   }

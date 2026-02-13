@@ -46,14 +46,14 @@ export const getChannels = <ThrowOnError extends boolean = false>(options?: Opti
     });
 };
 
-export const createChannelV2 = <ThrowOnError extends boolean = false>(options: Options<CreateChannelV2Data, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreateChannelV2Responses, CreateChannelV2Errors, ThrowOnError>({
+export const createChannelV2 = <ThrowOnError extends boolean = false>(options?: Options<CreateChannelV2Data, ThrowOnError>) => {
+    return (options?.client ?? _heyApiClient).post<CreateChannelV2Responses, CreateChannelV2Errors, ThrowOnError>({
         responseType: 'json',
         url: '/api/channels',
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options.headers
+            ...options?.headers
         }
     });
 };
@@ -650,14 +650,14 @@ export const getApiMediaSources = <ThrowOnError extends boolean = false>(options
     });
 };
 
-export const postApiMediaSources = <ThrowOnError extends boolean = false>(options: Options<PostApiMediaSourcesData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<PostApiMediaSourcesResponses, PostApiMediaSourcesErrors, ThrowOnError>({
+export const postApiMediaSources = <ThrowOnError extends boolean = false>(options?: Options<PostApiMediaSourcesData, ThrowOnError>) => {
+    return (options?.client ?? _heyApiClient).post<PostApiMediaSourcesResponses, PostApiMediaSourcesErrors, ThrowOnError>({
         responseType: 'json',
         url: '/api/media-sources',
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...options.headers
+            ...options?.headers
         }
     });
 };

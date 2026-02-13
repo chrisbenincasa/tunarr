@@ -288,6 +288,13 @@
       "when": 1769361500423,
       "tag": "0040_daffy_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1770236977185,
+      "tag": "0041_easy_firebird",
+      "breakpoints": true
     }
   ]
 }

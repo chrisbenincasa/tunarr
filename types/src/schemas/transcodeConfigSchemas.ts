@@ -1,6 +1,6 @@
 import z from 'zod/v4';
 import type { TupleToUnion } from '../util.js';
-import { ResolutionSchema } from './miscSchemas.js';
+import { LoudnormConfigSchema, ResolutionSchema } from './miscSchemas.js';
 import {
   SupportedErrorAudioTypes,
   SupportedErrorScreens,
@@ -39,8 +39,13 @@ export type SupportedTranscodeAudioOutputFormats = TupleToUnion<
 
 export const TranscodeConfigSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  threadCount: z.number(),
+  name: z
+    .string({
+      error: (iss) =>
+        iss.input === undefined ? 'Name is required' : 'Invalid input',
+    })
+    .min(1, { error: 'Name cannot be empty' }),
+  threadCount: z.coerce.number(),
   hardwareAccelerationMode: z.enum(SupportedHardwareAccels),
   vaapiDriver: z.enum(SupportedVaapiDrivers),
   vaapiDevice: z.string().nullable(),
@@ -49,14 +54,15 @@ export const TranscodeConfigSchema = z.object({
   videoProfile: z.string().nullable(),
   videoPreset: z.string().nullable(),
   videoBitDepth: z.union([z.literal(8), z.literal(10)]).nullable(),
-  videoBitRate: z.number(),
-  videoBufferSize: z.number(),
-  audioChannels: z.number(),
+  videoBitRate: z.coerce.number(),
+  videoBufferSize: z.coerce.number(),
+  audioChannels: z.coerce.number(),
   audioFormat: z.enum(SupportedTranscodeAudioOutputFormats),
-  audioBitRate: z.number(),
-  audioBufferSize: z.number(),
-  audioSampleRate: z.number(),
-  audioVolumePercent: z.number().default(100),
+  audioBitRate: z.coerce.number(),
+  audioBufferSize: z.coerce.number(),
+  audioSampleRate: z.coerce.number(),
+  audioVolumePercent: z.coerce.number().default(100),
+  audioLoudnormConfig: LoudnormConfigSchema.optional(),
   normalizeFrameRate: z.boolean(),
   deinterlaceVideo: z.boolean(),
   disableChannelOverlay: z.boolean(),

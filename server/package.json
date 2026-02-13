@@ -27,7 +27,7 @@
     "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
-    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit --diagnostics"
   },
   "dependencies": {
     "@cospired/i18n-iso-languages": "^4.2.0",
@@ -79,7 +79,7 @@
     "pino": "^9.9.1",
     "pino-pretty": "^11.3.0",
     "pino-roll": "^1.3.0",
-    "random-js": "2.1.0",
+    "random-js": "catalog:",
     "reflect-metadata": "^0.2.2",
     "retry": "^0.13.1",
     "sonic-boom": "4.2.0",
@@ -88,7 +88,7 @@
     "tslib": "^2.8.1",
     "uuid": "^9.0.1",
     "yargs": "^17.7.2",
-    "zod": "^4.1.5"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
@@ -131,7 +131,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.5",
     "typed-emitter": "^2.1.0",
-    "typescript": "5.7.3",
+    "typescript": "catalog:",
     "typescript-eslint": "^8.41.0",
     "vitest": "^3.2.4"
   },

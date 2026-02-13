@@ -1,0 +1,1 @@
+ALTER TABLE `transcode_config` ADD `audio_loudnorm_config` text;

@@ -27,8 +27,8 @@
     "@semantic-release/changelog": "^6.0.3",
     "@types/node": "22.10.7",
     "@types/semver": "^7.7.1",
-    "@typescript-eslint/eslint-plugin": "^8.21.0",
-    "@typescript-eslint/parser": "^8.21.0",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "^3.2.4",
     "esbuild": "^0.21.5",
     "eslint": "catalog:",
@@ -62,9 +62,8 @@
       "kysely": "patches/kysely.patch"
     },
     "overrides": {
-      "eslint": "9.39.2",
-      "@types/node": "22.10.7",
-      "typescript": "5.9.3"
+      "eslint": "catalog:",
+      "@types/node": "22.10.7"
     },
     "onlyBuiltDependencies": [
       "@swc/core",
