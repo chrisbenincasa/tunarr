@@ -9,7 +9,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    includeSource: ['src/**/*.test.ts'],
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    includeSource: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
   define: {
     'import.meta.vitest': false,
