@@ -5,6 +5,7 @@ packages:
   - shared
 
 catalog:
+  '@typescript/native-preview': 7.0.0-dev.20260213.1
   dayjs: ^1.11.14
   eslint: 9.17.0
   lodash-es: ^4.17.21
