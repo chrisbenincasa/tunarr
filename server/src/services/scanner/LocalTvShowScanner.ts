@@ -367,7 +367,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
         continue;
       }
 
-      const seasonMetadata = this.seasonForNumber(show, seasonNumber);
+      const seasonMetadata = this.seasonForNumber(seasonNumber);
 
       const season: SeasonWithShow = {
         ...seasonMetadata,
@@ -460,7 +460,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
       );
 
       const seasonMetadata = this.seasonForNumber(
-        show,
         seasonNumber,
         episodeFiles.length,
       );
@@ -997,7 +996,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
   }
 
   private seasonForNumber(
-    show: Show,
     seasonNumber: number,
     episodeFileCount?: number,
   ): SeasonMetadata {
@@ -1024,7 +1022,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
       sortTitle: `season ${seasonNumber.toString().padStart(4)}`,
       // mediaSourceId: '',
       childCount: episodeFileCount,
-      show,
       artwork: [], // Added later
     };
   }
