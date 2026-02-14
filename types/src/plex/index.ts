@@ -1107,6 +1107,30 @@ export const PlexMediaNoCollectionPlaylistResponse =
 export const PlexMovieMediaContainerResponseSchema =
   MakePlexMediaContainerResponseSchema(PlexMovieSchema);
 
+export const PlexTvShowMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexTvShowSchema);
+
+export const PlexTvSeasonMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexTvSeasonSchema);
+
+export const PlexEpisodeMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexEpisodeSchema);
+
+export const PlexMusicArtistMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexMusicArtistSchema);
+
+export const PlexMusicAlbumMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexMusicAlbumSchema);
+
+export const PlexMusicTrackMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexMusicTrackSchema);
+
+export const PlexLibraryCollectionMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexLibraryCollectionSchema);
+
+export const PlexPlaylistMediaContainerResponseSchema =
+  MakePlexMediaContainerResponseSchema(PlexPlaylistSchema);
+
 export const PlexGenericMediaContainerResponseSchema = z.object({
   MediaContainer: z.record(z.string(), z.any()),
 });

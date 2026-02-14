@@ -27,7 +27,7 @@
     "test:watch": "vitest --typecheck.tsconfig tsconfig.test.json --watch",
     "test": "vitest --typecheck.tsconfig tsconfig.test.json --run",
     "tunarr": "dotenv -e .env.development -- tsx src/index.ts",
-    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit --diagnostics"
   },
   "dependencies": {
     "@cospired/i18n-iso-languages": "^4.2.0",

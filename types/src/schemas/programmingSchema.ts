@@ -318,9 +318,17 @@ export const Director = z.object({
 export const Genre = NamedEntity;
 export const Studio = NamedEntity;
 
-const HasMediaSourceAndLibraryId = z.object({
+const WithMediaSourceDetails = z.object({
   mediaSourceId: z.string(),
   libraryId: z.string(),
+});
+
+const WithTunarrMetadata = z.object({
+  ...WithMediaSourceDetails.shape,
+  canonicalId: z.string(),
+  externalId: z
+    .string()
+    .describe('Unique identifier for this item in the external media source'),
 });
 
 const WithSummaryMetadata = z.object({
@@ -337,12 +345,11 @@ export const IdentifierSchema = z.object({
 
 const BaseItem = z.object({
   uuid: z.uuid(),
-  canonicalId: z.string(),
   sourceType: SourceTypeSchema,
   // externalLibraryId: z.string(),
-  externalId: z
-    .string()
-    .describe('Unique identifier for this item in the external media source'),
+  // externalId: z
+  //   .string()
+  //   .describe('Unique identifier for this item in the external media source'),
   // TODO: break out gropuing types to separate schema
   type: z.enum([
     ...ContentProgramTypeSchema.options,
@@ -355,7 +362,7 @@ const BaseItem = z.object({
   title: z.string(),
   sortTitle: z.string(),
   tags: z.array(z.string()),
-  ...HasMediaSourceAndLibraryId.shape,
+  // ...HasMediaSourceAndLibraryId.shape,
 });
 
 const BaseMediaLocation = z.object({
@@ -465,6 +472,11 @@ export const MediaItem = z.object({
   scanKind: z.enum(['unknown', 'progressive', 'interlaced']).nullish(),
 });
 
+const WithMediaItemMetadata = z.object({
+  mediaItem: MediaItem.optional(),
+  duration: z.number(),
+});
+
 const BaseProgram = z.object({
   ...BaseItem.shape,
   type: ContentProgramTypeSchema,
@@ -473,36 +485,30 @@ const BaseProgram = z.object({
   year: z.number().positive().nullable(),
   releaseDate: z.number().nullable().describe('Epoch timestamp'),
   releaseDateString: z.string().nullable(),
-  mediaItem: MediaItem.optional(),
   actors: z.array(Actor).optional(),
   writers: z.array(Writer).optional(),
   directors: z.array(Director).optional(),
   genres: z.array(Genre).optional(),
   studios: z.array(Studio).optional(),
-  duration: z.number(),
   externalSubtitles: z.array(MediaSubtitles).nullish(),
   artwork: MediaArtwork.array(),
   state: z.enum(['ok', 'missing']),
+  // mediaItem: MediaItem.optional(),
+  // duration: z.number(),
 });
 
-export const Movie = z.object({
+export const MovieMetadata = z.object({
   ...BaseProgram.shape,
   ...WithSummaryMetadata.shape,
   type: z.literal('movie'),
   rating: z.string().nullable(),
 });
 
-const MetadataOmitMask = {
-  mediaItem: true,
-  mediaSourceId: true,
-  libraryId: true,
-  externalLibraryId: true,
-  canonicalId: true,
-  duration: true,
-  externalId: true,
-} as const;
-
-export const MovieMetadata = Movie.omit(MetadataOmitMask);
+export const Movie = z.object({
+  ...MovieMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 const BaseProgramGrouping = z.object({
   ...BaseItem.shape,
@@ -515,7 +521,7 @@ const BaseProgramGrouping = z.object({
   artwork: MediaArtwork.array(),
 });
 
-export const Show = z.object({
+export const ShowMetadata = z.object({
   ...BaseProgramGrouping.shape,
   type: z.literal('show'),
   genres: z.array(Genre),
@@ -525,19 +531,14 @@ export const Show = z.object({
   releaseDate: z.number().nullable(),
   releaseDateString: z.string().nullable(),
   year: z.number().positive().nullable(),
-  get seasons(): z.ZodOptional<z.ZodArray<typeof BaseSeason>> {
+  get seasons(): z.ZodOptional<z.ZodArray<typeof _SeasonWithTunarrMetadata>> {
     return z.array(Season).optional();
   },
 });
 
-const BaseSeason = z.object({
-  ...BaseProgramGrouping.shape,
-  type: z.literal('season'),
-  studios: z.array(Studio),
-  index: z.number().nonnegative(),
-  year: z.number().positive().nullable(),
-  releaseDate: z.number().nullable(),
-  releaseDateString: z.string().nullable(),
+export const Show = z.object({
+  ...ShowMetadata.shape,
+  ...WithTunarrMetadata.shape,
 });
 
 const BaseEpisode = z.object({
@@ -549,19 +550,38 @@ const BaseEpisode = z.object({
   summary: z.string().nullable(),
 });
 
-export const Season = z.object({
+const BaseEpisodeWithoutJoins = z.object({
+  ...BaseEpisode.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
+
+export const SeasonMetadata = z.object({
   ...BaseProgramGrouping.shape,
-  ...BaseSeason.shape,
+  type: z.literal('season'),
+  studios: z.array(Studio),
+  index: z.number().nonnegative(),
+  year: z.number().positive().nullable(),
+  releaseDate: z.number().nullable(),
+  releaseDateString: z.string().nullable(),
+});
+
+const _SeasonWithTunarrMetadata = z.object({
+  ...SeasonMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
+
+export const Season = z.object({
+  ...SeasonMetadata.shape,
+  ...WithTunarrMetadata.shape,
   get show(): z.ZodOptional<typeof Show> {
     return z.optional(Show);
   },
-  get episodes(): z.ZodOptional<z.ZodArray<typeof BaseEpisode>> {
-    return z.optional(z.array(BaseEpisode));
+  get episodes(): z.ZodOptional<z.ZodArray<typeof BaseEpisodeWithoutJoins>> {
+    return z.optional(z.array(BaseEpisodeWithoutJoins));
   },
 });
 
-export const ShowMetadata = Show.omit(MetadataOmitMask);
-export const SeasonMetadata = Season.omit(MetadataOmitMask);
 export const SeasonWithShow = z.object({
   ...Season.shape,
   // We have to override this way because of the
@@ -572,28 +592,36 @@ export const SeasonWithShow = z.object({
   },
 });
 
-export const Episode = z.object({
+export const EpisodeMetadata = z.object({
   ...BaseProgram.shape,
   ...BaseEpisode.shape,
   season: Season.optional(),
   show: Show.optional(),
 });
 
-export const EpisodeMetadata = Episode.omit(MetadataOmitMask);
+export const Episode = z.object({
+  ...EpisodeMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const EpisodeWithHierarchy = z.object({
   ...Episode.shape,
   season: SeasonWithShow,
 });
 
-export const MusicArtist = z.object({
+export const MusicArtistMetadata = z.object({
   ...BaseProgramGrouping.shape,
   type: z.literal('artist'),
-  get albums(): z.ZodOptional<z.ZodArray<typeof BaseMusicAlbum>> {
-    return z.optional(z.array(BaseMusicAlbum));
+  get albums(): z.ZodOptional<z.ZodArray<typeof BaseMusicAlbumWithoutJoins>> {
+    return z.optional(z.array(BaseMusicAlbumWithoutJoins));
   },
 });
-export const MusicArtistMetadata = MusicArtist.omit(MetadataOmitMask);
+
+export const MusicArtist = z.object({
+  ...MusicArtistMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
 
 const BaseMusicAlbum = z.object({
   ...BaseProgramGrouping.shape,
@@ -605,30 +633,48 @@ const BaseMusicAlbum = z.object({
   studios: z.array(Studio).optional(),
 });
 
+const BaseMusicAlbumWithoutJoins = z.object({
+  ...BaseMusicAlbum.shape,
+  ...WithTunarrMetadata.shape,
+});
+
+export const MusicAlbumMetadata = z.object({
+  ...BaseProgramGrouping.shape,
+  ...BaseMusicAlbum.shape,
+  artist: MusicArtist.optional(),
+  get tracks(): z.ZodOptional<z.ZodArray<typeof BaseMusicTrackWithoutJoins>> {
+    return z.optional(z.array(BaseMusicTrackWithoutJoins));
+  },
+});
+
+export const MusicAlbum = z.object({
+  ...MusicAlbumMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
+
 const BaseMusicTrack = z.object({
   ...BaseProgram.shape,
   type: z.literal('track'),
   trackNumber: z.number().nonnegative(),
 });
 
-export const MusicAlbum = z.object({
-  ...BaseProgramGrouping.shape,
-  ...BaseMusicAlbum.shape,
-  artist: MusicArtist.optional(),
-  get tracks(): z.ZodOptional<z.ZodArray<typeof BaseMusicTrack>> {
-    return z.optional(z.array(BaseMusicTrack));
-  },
+const BaseMusicTrackWithoutJoins = z.object({
+  ...BaseMusicTrack.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
 });
 
-export const MusicAlbumMetadata = MusicAlbum.omit(MetadataOmitMask);
-
-export const MusicTrack = z.object({
+export const MusicTrackMetadata = z.object({
   ...BaseMusicTrack.shape,
   album: MusicAlbum.optional(),
   artist: MusicArtist.optional(),
 });
 
-export const MusicTrackMetadata = MusicTrack.omit(MetadataOmitMask);
+export const MusicTrack = z.object({
+  ...MusicTrackMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const MusicAlbumWithArtist = MusicAlbum.required({ artist: true });
 
@@ -637,15 +683,23 @@ export const MusicTrackWithHierarchy = z.object({
   album: MusicAlbumWithArtist,
 });
 
-export const MusicVideo = BaseProgram.extend({
+export const MusicVideo = z.object({
+  ...BaseProgram.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
   type: z.literal('music_video'),
 });
 
-export const OtherVideo = BaseProgram.extend({
+export const OtherVideoMetadata = z.object({
+  ...BaseProgram.shape,
   type: z.literal('other_video'),
 });
 
-export const OtherVideoMetadata = OtherVideo.omit(MetadataOmitMask);
+export const OtherVideo = z.object({
+  ...OtherVideoMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const HasMediaSourceInfo = z.object({
   sourceType: MediaSourceType,
@@ -679,19 +733,19 @@ export const BaseStructuralGrouping = z.object({
 
 export const Folder = z.object({
   ...BaseStructuralGrouping.shape,
-  ...HasMediaSourceAndLibraryId.shape,
+  ...WithMediaSourceDetails.shape,
   type: z.literal('folder'),
 });
 
 export const Collection = z.object({
   ...BaseStructuralGrouping.shape,
-  ...HasMediaSourceAndLibraryId.shape,
+  ...WithMediaSourceDetails.shape,
   type: z.literal('collection'),
 });
 
 export const Playlist = z.object({
   ...BaseStructuralGrouping.shape,
-  ...HasMediaSourceAndLibraryId.shape,
+  ...WithMediaSourceDetails.shape,
   type: z.literal('playlist'),
 });
 
