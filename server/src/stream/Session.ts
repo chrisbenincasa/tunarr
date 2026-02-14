@@ -1,5 +1,4 @@
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
-import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -10,7 +9,7 @@ import type { ChannelConcatStreamMode } from '@tunarr/types/schemas';
 import { Mutex } from 'async-mutex';
 import dayjs from 'dayjs';
 import { forEach, isEmpty, isNull, keys, partition } from 'lodash-es';
-import events from 'node:events';
+import { EventEmitter } from 'node:events';
 import type { StrictExtract } from 'ts-essentials';
 import { v4 } from 'uuid';
 import { getNumericEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
@@ -37,23 +36,20 @@ export type SessionType = ChannelStreamMode | ChannelConcatStreamMode;
 
 // TODO: sort these all out.... and write docs
 type StreamSessionEvents = {
-  state: (newState: SessionState, oldState: SessionState) => void;
-  start: () => void;
-  stop: () => void;
-  cleanup: () => void;
-  cleanupScheduled: (delayMs: number) => void;
-  error: (e: unknown) => void;
-  addConnection: (token: string, connection: StreamConnectionDetails) => void;
-  removeConnection: (
-    token: string,
-    connection: StreamConnectionDetails,
-  ) => void;
-  end: () => void;
+  state: [SessionState, SessionState];
+  start: [];
+  stop: [];
+  cleanup: [];
+  cleanupScheduled: [number];
+  error: [unknown];
+  addConnection: [string, StreamConnectionDetails];
+  removeConnection: [string, StreamConnectionDetails];
+  end: [];
 };
 
 export abstract class Session<
   TOpts extends SessionOptions = SessionOptions,
-> extends (events.EventEmitter as new () => TypedEventEmitter<StreamSessionEvents>) {
+> extends EventEmitter<StreamSessionEvents> {
   public abstract readonly sessionType: SessionType;
   protected lock = new Mutex();
   protected logger: Logger;

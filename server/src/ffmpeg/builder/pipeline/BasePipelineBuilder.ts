@@ -150,17 +150,17 @@ export class PipelineBuilderContext {
   videoStream?: VideoStream;
   audioStream?: AudioStream;
   subtitleStream?: SubtitleStream;
-  ffmpegState: FfmpegState;
-  desiredState: FrameState;
+  ffmpegState!: FfmpegState;
+  desiredState!: FrameState;
   desiredAudioState?: AudioState;
-  pipelineOptions: DeepReadonly<PipelineOptions>;
+  pipelineOptions!: DeepReadonly<PipelineOptions>;
 
-  pipelineSteps: PipelineStep[];
-  filterChain: FilterChain;
-  hasWatermark: boolean;
-  shouldDeinterlace: boolean;
-  is10BitOutput: boolean;
-  isIntelVaapiOrQsv: boolean;
+  pipelineSteps!: PipelineStep[];
+  filterChain!: FilterChain;
+  hasWatermark!: boolean;
+  shouldDeinterlace!: boolean;
+  is10BitOutput!: boolean;
+  isIntelVaapiOrQsv!: boolean;
 
   constructor(props: PipelineBuilderContextProps) {
     merge(this, props);

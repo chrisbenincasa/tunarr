@@ -36,28 +36,28 @@ import { StreamProgramCalculator } from './stream/StreamProgramCalculator.js';
 
 @injectable()
 export class ServerContext {
-  @inject(ProgramConverter) public readonly programConverter: ProgramConverter;
+  @inject(ProgramConverter) public readonly programConverter!: ProgramConverter;
   @inject(OnDemandChannelService)
-  public readonly onDemandChannelService: OnDemandChannelService;
-  @inject(KEYS.ChannelDB) public channelDB: IChannelDB;
-  @inject(M3uService) public m3uService: M3uService;
-  @inject(KEYS.SettingsDB) public settings: ISettingsDB;
+  public readonly onDemandChannelService!: OnDemandChannelService;
+  @inject(KEYS.ChannelDB) public channelDB!: IChannelDB;
+  @inject(M3uService) public m3uService!: M3uService;
+  @inject(KEYS.SettingsDB) public settings!: ISettingsDB;
 
   @inject(FillerDB) public fillerDB!: FillerDB;
   public fileCache: FileCacheService = new FileCacheService();
-  public cacheImageService: CacheImageService;
-  @inject(EventService) public eventService: EventService;
-  @inject(TVGuideService) public guideService: TVGuideService;
-  @inject(HdhrService) public hdhrService: HdhrService;
-  @inject(CustomShowDB) public customShowDB: CustomShowDB;
-  @inject(ChannelCache) public channelCache: ChannelCache;
-  @inject(MediaSourceDB) public mediaSourceDB: MediaSourceDB;
-  @inject(KEYS.ProgramDB) public programDB: IProgramDB;
-  @inject(TranscodeConfigDB) public transcodeConfigDB: TranscodeConfigDB;
+  public cacheImageService!: CacheImageService;
+  @inject(EventService) public eventService!: EventService;
+  @inject(TVGuideService) public guideService!: TVGuideService;
+  @inject(HdhrService) public hdhrService!: HdhrService;
+  @inject(CustomShowDB) public customShowDB!: CustomShowDB;
+  @inject(ChannelCache) public channelCache!: ChannelCache;
+  @inject(MediaSourceDB) public mediaSourceDB!: MediaSourceDB;
+  @inject(KEYS.ProgramDB) public programDB!: IProgramDB;
+  @inject(TranscodeConfigDB) public transcodeConfigDB!: TranscodeConfigDB;
 
-  @inject(SessionManager) public readonly sessionManager: SessionManager;
+  @inject(SessionManager) public readonly sessionManager!: SessionManager;
   @inject(HealthCheckService)
-  public readonly healthCheckService: HealthCheckService;
+  public readonly healthCheckService!: HealthCheckService;
 
   @inject(ChannelLineupMigrator)
   public readonly channelLineupMigrator!: ChannelLineupMigrator;
@@ -77,7 +77,7 @@ export class ServerContext {
   public readonly drizzleFactory!: interfaces.AutoFactory<DrizzleDBAccess>;
 
   @inject(KEYS.WorkerPool)
-  public readonly workerPool: IWorkerPool;
+  public readonly workerPool!: IWorkerPool;
 
   @inject(MeilisearchService)
   public readonly searchService!: MeilisearchService;
@@ -102,7 +102,11 @@ export class ServerRequestContext {
     return this.storage.getStore();
   }
 
-  static create<T>(context: ServerContext, next: (...args: unknown[]) => T) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static create<T, TArgs extends any[]>(
+    context: ServerContext,
+    next: (...args: TArgs) => T,
+  ) {
     this.storage.run(context, next);
   }
 }

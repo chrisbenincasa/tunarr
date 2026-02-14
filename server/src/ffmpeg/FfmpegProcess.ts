@@ -1,5 +1,4 @@
 import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
-import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -17,24 +16,20 @@ import { LastNBytesStream } from '../util/LastNBytesStream.ts';
 export type FfmpegEvents = {
   // Emitted when the process ended with a code === 0, i.e. it exited
   // normally and cleanly and finished work.
-  end: (obj?: { code: number; cmd: string }) => void;
+  end: [Maybe<{ code: number; cmd: string }>];
   // Emitted when the process exited in an error state
-  error: (obj?: { code: Nullable<number>; cmd: string }) => void;
+  error: [{ code: Nullable<number>; cmd: string }];
   // Fired when the process exited, for any reason.
   // expected = true when Tunarr itself issued the end of the process
-  exit: (
-    code: Nullable<number>,
-    signal: Nullable<NodeJS.Signals>,
-    expected: boolean,
-  ) => void;
+  exit: [Nullable<number>, Nullable<NodeJS.Signals>, boolean];
 };
 
 /**
  * Wrapper for an ffmpeg process with the given arguments
  */
-export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventEmitter<FfmpegEvents>) {
+export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
   #logger = LoggerFactory.child({ className: FfmpegProcess.name });
-  #processHandle: ChildProcessByStdio<null, stream.Readable, stream.Readable>;
+  #processHandle?: ChildProcessByStdio<null, stream.Readable, stream.Readable>;
   #processKilled = false;
   #running = false;
   #sentData = false;
@@ -57,7 +52,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
     if (!this.initialized) {
       return;
     }
-    return this.#processHandle.stdout;
+    return this.#processHandle!.stdout;
   }
 
   start(): Maybe<stream.Readable> {
@@ -65,7 +60,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.#logger.debug(
         'Tried to initialize ffmpeg process twice! Returning original stream.',
       );
-      return this.#processHandle.stdout;
+      return this.#processHandle!.stdout;
     }
 
     const argsWithTokenRedacted = this.ffmpegArgs
@@ -149,7 +144,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
       this.emit('exit', code, signal, expected);
 
       if (expected) {
-        this.emit('end');
+        this.emit('end', undefined);
       } else {
         const normalizedName = this.ffmpegName
           .toLowerCase()
@@ -215,7 +210,7 @@ export class FfmpegProcess extends (events.EventEmitter as new () => TypedEventE
   kill() {
     this.#processKilled = true;
 
-    if (this.#processHandle.killed || !this.#running) {
+    if (this.#processHandle?.killed || !this.#running) {
       this.#logger.debug(
         `${this.ffmpegName} received kill command but process already ended.`,
       );

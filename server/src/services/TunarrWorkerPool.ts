@@ -36,8 +36,8 @@ interface PooledWorker {
 
 export class Future<T> implements Promise<T> {
   #promise: Promise<T>;
-  #resolve: (v: T | PromiseLike<T>) => void;
-  #reject: (reason?: unknown) => void;
+  #resolve!: (v: T | PromiseLike<T>) => void;
+  #reject!: (reason?: unknown) => void;
   #state: 'pending' | 'fulfilled' | 'rejected' = 'pending';
   #value: T | undefined;
   #err: unknown;
@@ -60,7 +60,7 @@ export class Future<T> implements Promise<T> {
     );
   }
 
-  [Symbol.toStringTag]: string;
+  [Symbol.toStringTag]!: string;
 
   resolve(value: T | PromiseLike<T>) {
     if (this.#state === 'pending') {
@@ -198,7 +198,7 @@ export class TunarrWorkerPool implements IWorkerPool {
             idx,
             requestId,
           );
-          this.#listeners.set(reqWithId.requestId, fut);
+          this.#listeners.set(reqWithId.requestId, fut as Future<unknown>);
           this.#outstandingByIndex.set(
             idx,
             this.#outstandingByIndex.get(idx)?.concat([requestId]) ?? [

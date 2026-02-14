@@ -51,7 +51,7 @@ const currentDirectory = dirname(filename(import.meta.url));
 
 @injectable()
 export class Server {
-  private app: ServerType;
+  private app?: ServerType;
 
   constructor(
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
@@ -200,7 +200,7 @@ export class Server {
         },
       },
       async (_, res) => {
-        const doc = this.app.swagger();
+        const doc = this.app!.swagger();
         return res.send(doc);
       },
     );
@@ -213,7 +213,7 @@ export class Server {
         },
       },
       async (_, res) => {
-        return res.send(this.app.swagger({ yaml: true }));
+        return res.send(this.app!.swagger({ yaml: true }));
       },
     );
 
@@ -401,7 +401,7 @@ export class Server {
       .register(fastifyGracefulShutdown);
 
     this.app.after(() => {
-      this.app.gracefulShutdown(async (signal) => {
+      this.app!.gracefulShutdown(async (signal) => {
         this.logger.info(
           'Received exit signal %s, attempting graceful shutdown',
           signal,
@@ -418,7 +418,7 @@ export class Server {
 
     const host = process.env[TUNARR_ENV_VARS.BIND_ADDR_ENV_VAR] ?? '0.0.0.0';
 
-    await this.app.listen({
+    await this.app!.listen({
       host,
       port: this.serverOptions.port,
     });
@@ -556,7 +556,7 @@ export class Server {
   }
 
   getOpenApiDocument() {
-    return this.app.swagger();
+    return this.app?.swagger();
   }
 
   close() {

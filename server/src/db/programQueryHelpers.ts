@@ -1,24 +1,13 @@
 import { seq } from '@tunarr/shared/util';
 import { type TupleToUnion } from '@tunarr/types';
 import type {
-  CaseWhenBuilder,
   ExpressionBuilder,
   Kysely,
   Selection,
   SelectQueryBuilder,
-  UpdateQueryBuilder,
-  UpdateResult,
 } from 'kysely';
 import { jsonArrayFrom, jsonObjectFrom } from 'kysely/helpers/sqlite';
-import {
-  identity,
-  isBoolean,
-  isEmpty,
-  isUndefined,
-  keys,
-  merge,
-  reduce,
-} from 'lodash-es';
+import { identity, isBoolean, isUndefined, merge } from 'lodash-es';
 import type { DeepPartial, DeepRequired, StrictExclude } from 'ts-essentials';
 import type { Replace } from '../types/util.ts';
 import type { FillerShowTable as RawFillerShow } from './schema/FillerShow.js';
@@ -629,32 +618,4 @@ export function withCustomShowPrograms(
           .onRef('customShow.uuid', '=', 'customShowContent.customShowUuid'),
       ),
   ).as('customShowContent');
-}
-
-type ProgramRelationCaseBuilder = CaseWhenBuilder<
-  DB,
-  'program',
-  unknown,
-  string | null
->;
-
-export function updateProgramTvShowIds(
-  builder: UpdateQueryBuilder<DB, 'program', 'program', UpdateResult>,
-  mappings: Record<string, string>,
-) {
-  const programIds = keys(mappings);
-  if (isEmpty(programIds)) {
-    return builder;
-  }
-  return builder.$if(!isEmpty(programIds), (_) =>
-    _.set((eb) => ({
-      tvShowUuid: reduce(
-        [...programIds],
-        (acc, curr) => acc.when('program.uuid', '=', curr).then(mappings[curr]),
-        eb.case() as unknown as ProgramRelationCaseBuilder,
-      )
-        .else(eb.ref('program.tvShowUuid'))
-        .end(),
-    })),
-  );
 }

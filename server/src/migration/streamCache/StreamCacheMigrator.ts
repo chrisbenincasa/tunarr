@@ -1,6 +1,6 @@
 import { jsonSchema } from '@/types/schemas.js';
 import { inject, interfaces } from 'inversify';
-import { findIndex, isArray } from 'lodash-es';
+import { findIndex, isArray, isString } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { CurrentLineupSchemaVersion } from '../../db/derived_types/Lineup.ts';
@@ -54,7 +54,9 @@ export class StreamCacheMigrator extends JsonFileMigrator<MigrationStep> {
       return;
     }
 
-    const version = getFirstValue('$.version@number()', parsed, parseIntOrNull);
+    const version = getFirstValue('$.version@number()', parsed, (x) =>
+      isString(x) ? parseIntOrNull(x) : null,
+    );
     let currVersion = version ?? 0;
 
     if (currVersion === CurrentVersion) {

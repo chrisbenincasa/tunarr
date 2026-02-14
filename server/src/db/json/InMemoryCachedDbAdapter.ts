@@ -9,7 +9,7 @@ import type { Adapter } from 'lowdb';
  */
 export class InMemoryCachedDbAdapter<T> implements Adapter<T> {
   #underlying: Adapter<T>;
-  #cached: T | null;
+  #cached?: T | null;
   #lastFlushTime: number = -1;
 
   constructor(underlying: Adapter<T>) {

@@ -512,7 +512,7 @@ export function nullToUndefined<T>(x: T | null | undefined): T | undefined {
 }
 
 export function removeErrors<T>(coll: Try<T>[] | null | undefined): T[] {
-  return reject(coll, isError) satisfies T[] as T[];
+  return reject(coll, isError) as T[];
 }
 
 export function parseIntOrNull(s: string): number | null {

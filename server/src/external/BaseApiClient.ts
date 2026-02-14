@@ -54,7 +54,7 @@ const QueryErrorCodes = [
 type QueryErrorCode = TupleToUnion<typeof QueryErrorCodes>;
 
 export abstract class QueryError extends WrappedError {
-  readonly type: QueryErrorCode;
+  abstract readonly type: QueryErrorCode;
 
   static isQueryError(e: unknown): e is QueryError {
     return (

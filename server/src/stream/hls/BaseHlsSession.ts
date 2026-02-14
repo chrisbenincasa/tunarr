@@ -29,7 +29,7 @@ export abstract class BaseHlsSession<
   // The path to request streaming assets from the server
   protected _serverPath: string;
 
-  protected transcodedUntil: Dayjs;
+  protected transcodedUntil?: Dayjs;
 
   protected _minByIp = new Map<string, number>();
 

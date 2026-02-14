@@ -388,8 +388,8 @@ export class MeilisearchService implements ISearchService {
   private mutex = new Mutex();
   private started = false;
   private proc?: ChildProcessWrapper;
-  private port: number;
-  #client: MeiliSearch;
+  private port?: number;
+  #client?: MeiliSearch;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -677,9 +677,9 @@ export class MeilisearchService implements ISearchService {
 
   async getProgram(id: string) {
     try {
-      return await this.#client
-        .index<ProgramSearchDocument>(ProgramsIndex.name)
-        .getDocument(id);
+      return await this.#client!.index<ProgramSearchDocument>(
+        ProgramsIndex.name,
+      ).getDocument(id);
     } catch (e) {
       if (e instanceof MeiliSearchApiError && e.response.status === 404) {
         return Promise.resolve(undefined);
@@ -698,14 +698,14 @@ export class MeilisearchService implements ISearchService {
       let res: ResourceResults<ProgramSearchDocument[]>;
       let offset = 0;
       do {
-        res = await this.#client
-          .index<ProgramSearchDocument>(ProgramsIndex.name)
-          .getDocuments({
-            ids,
-            offset,
-            limit: 100,
-            filter: '',
-          });
+        res = await this.#client!.index<ProgramSearchDocument>(
+          ProgramsIndex.name,
+        ).getDocuments({
+          ids,
+          offset,
+          limit: 100,
+          filter: '',
+        });
         results.push(...res.results);
         offset += res.results.length;
       } while (results.length < res.total || res.results.length > 0);
@@ -745,22 +745,22 @@ export class MeilisearchService implements ISearchService {
     }
 
     return await Promise.all(
-      this.#client
-        .index<ProgramSearchDocument>(ProgramsIndex.name)
-        .updateDocumentsInBatches(
-          movies.map((movie) =>
-            this.convertPartialProgramToSearchDocument(movie),
-          ),
-          100,
+      this.#client!.index<ProgramSearchDocument>(
+        ProgramsIndex.name,
+      ).updateDocumentsInBatches(
+        movies.map((movie) =>
+          this.convertPartialProgramToSearchDocument(movie),
         ),
+        100,
+      ),
     );
   }
 
   async updatePrograms(programs: ProgramIndexPartialUpdate[]) {
     return await Promise.all(
-      this.#client
-        .index<ProgramSearchDocument>(ProgramsIndex.name)
-        .updateDocumentsInBatches(programs, 20),
+      this.#client!.index<ProgramSearchDocument>(
+        ProgramsIndex.name,
+      ).updateDocumentsInBatches(programs, 20),
     );
   }
 
@@ -1282,7 +1282,7 @@ export class MeilisearchService implements ISearchService {
 
   // AHHH!!!!
   async deleteAll() {
-    return await this.#client.index(ProgramsIndex.name).deleteAllDocuments();
+    return await this.#client!.index(ProgramsIndex.name).deleteAllDocuments();
   }
 
   async deleteByIds(ids: string[]) {
@@ -1290,12 +1290,12 @@ export class MeilisearchService implements ISearchService {
       return;
     }
 
-    return await this.#client.index(ProgramsIndex.name).deleteDocuments(ids);
+    return await this.#client!.index(ProgramsIndex.name).deleteDocuments(ids);
   }
 
   async deleteMissing() {
     const filter = `state = "missing"`;
-    return await this.#client.index(ProgramsIndex.name).deleteDocuments({
+    return await this.#client!.index(ProgramsIndex.name).deleteDocuments({
       filter,
     });
   }
@@ -1308,18 +1308,18 @@ export class MeilisearchService implements ISearchService {
     const encodedIds = ids.map((id) => encodeCaseSensitiveId(id));
     const filter = `mediaSourceId NOT IN [${encodedIds.join(', ')}]`;
 
-    return await this.#client.index(ProgramsIndex.name).deleteDocuments({
+    return await this.#client!.index(ProgramsIndex.name).deleteDocuments({
       filter,
     });
   }
 
   async createSnapshot() {
-    const taskResult = await this.#client.createSnapshot();
+    const taskResult = await this.#client!.createSnapshot();
     return taskResult.taskUid;
   }
 
   async monitorTask(id: number) {
-    let task = await this.#client.tasks.getTask(id);
+    let task = await this.#client!.tasks.getTask(id);
     if (!task) {
       this.logger.info(
         'Attempted to monitor search task %d but it was not found',
@@ -1340,7 +1340,7 @@ export class MeilisearchService implements ISearchService {
 
       await wait(3_000);
 
-      task = await this.#client.tasks.getTask(id);
+      task = await this.#client!.tasks.getTask(id);
       if (!task) {
         return;
       }

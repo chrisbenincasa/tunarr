@@ -37,25 +37,25 @@ export const DefaultFrameState: Omit<
 };
 
 export class FrameState {
-  scaledSize: FrameSize;
-  paddedSize: FrameSize;
+  scaledSize!: FrameSize;
+  paddedSize!: FrameSize;
   croppedSize?: FrameSize;
-  isAnamorphic: boolean;
-  realtime: boolean;
-  videoFormat: VideoFormat;
-  videoPreset: Nullable<string>;
-  videoProfile: Nullable<string>;
-  frameRate: Nullable<number>;
-  videoTrackTimescale: Nullable<number>;
-  videoBitrate: Nullable<number>;
-  videoBufferSize: Nullable<number>;
-  frameDataLocation: FrameDataLocation;
-  deinterlace: boolean;
-  pixelFormat: Nullable<PixelFormat>;
-  colorRange: Nullable<string>;
-  colorSpace: Nullable<string>;
-  colorTransfer: Nullable<string>;
-  colorPrimaries: Nullable<string>;
+  isAnamorphic!: boolean;
+  realtime!: boolean;
+  videoFormat!: VideoFormat;
+  videoPreset!: Nullable<string>;
+  videoProfile!: Nullable<string>;
+  frameRate!: Nullable<number>;
+  videoTrackTimescale!: Nullable<number>;
+  videoBitrate!: Nullable<number>;
+  videoBufferSize!: Nullable<number>;
+  frameDataLocation!: FrameDataLocation;
+  deinterlace!: boolean;
+  pixelFormat!: Nullable<PixelFormat>;
+  colorRange!: Nullable<string>;
+  colorSpace!: Nullable<string>;
+  colorTransfer!: Nullable<string>;
+  colorPrimaries!: Nullable<string>;
   infiniteLoop: boolean = false;
 
   forceSoftwareOverlay = false;

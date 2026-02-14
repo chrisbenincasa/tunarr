@@ -59,7 +59,7 @@ export abstract class Task2<
   abstract readonly schema: RequestSchema;
   private _logLevel: LogLevels = 'trace';
 
-  #logger: Logger;
+  #logger!: Logger;
 
   constructor(logger: Logger = LoggerFactory.child({ className: this.name })) {
     this.logger = logger;

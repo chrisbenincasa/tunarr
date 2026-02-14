@@ -21,8 +21,8 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
     className: PlexContentSourceUpdater.name,
   });
   #timer = new Timer(this.#logger);
-  #plex: PlexApiClient;
-  #mediaSource: MediaSourceWithRelations;
+  #plex?: PlexApiClient;
+  #mediaSource?: MediaSourceWithRelations;
 
   constructor(
     private channelDB: IChannelDB,
@@ -61,7 +61,7 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
 
     // TODO page through the results
     const plexResult = await this.#timer.timeAsync('plex search', () =>
-      this.#plex.search(
+      this.#plex!.search(
         this.config.plexLibraryKey,
         undefined,
         filter.join('&'),
@@ -69,11 +69,11 @@ export class PlexContentSourceUpdater extends ContentSourceUpdater<DynamicConten
       ),
     );
 
-    const enumerator = new PlexItemEnumerator(this.#plex);
+    const enumerator = new PlexItemEnumerator(this.#plex!);
 
     const enumeratedItems = await this.#timer.timeAsync('enumerate items', () =>
       enumerator.enumerateItems(
-        this.#mediaSource,
+        this.#mediaSource!,
         plexResult.getOrThrow().result,
       ),
     );
