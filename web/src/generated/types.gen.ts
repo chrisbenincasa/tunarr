@@ -2,12 +2,7 @@
 
 export type ShowInput = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'show';
     identifiers: Array<{
         id: string;
@@ -17,8 +12,6 @@ export type ShowInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -61,16 +54,18 @@ export type ShowInput = {
     releaseDateString: string | null;
     year: number | null;
     seasons?: Array<SeasonInput>;
-};
-
-export type SeasonInput = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type SeasonInput = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'season';
     identifiers: Array<{
         id: string;
@@ -80,8 +75,6 @@ export type SeasonInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -112,15 +105,17 @@ export type SeasonInput = {
     year: number | null;
     releaseDate: number | null;
     releaseDateString: string | null;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     show?: ShowInput;
     episodes?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'episode';
         identifiers: Array<{
             id: string;
@@ -130,12 +125,81 @@ export type SeasonInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        episodeNumber: number;
+        summary: string | null;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -186,82 +250,13 @@ export type SeasonInput = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
-        episodeNumber: number;
-        summary: string | null;
     }>;
 };
 
 export type EpisodeInput = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'episode';
     identifiers: Array<{
         id: string;
@@ -271,12 +266,83 @@ export type EpisodeInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     originalTitle: string | null;
     year: number | null;
     releaseDate: number | null;
     releaseDateString: string | null;
+    actors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        order?: number | null;
+        role?: string | null;
+        thumb?: string | null;
+    }>;
+    writers?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    directors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    genres?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    studios?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    externalSubtitles?: Array<{
+        subtitleType: 'embedded' | 'sidecar';
+        title?: string | null;
+        streamIndex?: number | null;
+        codec: string;
+        default?: boolean | null;
+        forced?: boolean | null;
+        sdh?: boolean | null;
+        language: string;
+        path?: string | null;
+    }> | null;
+    artwork: Array<{
+        id?: string;
+        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+        path?: string | null;
+    }>;
+    state: 'ok' | 'missing';
+    episodeNumber: number;
+    summary: string | null;
+    season?: SeasonInput;
+    show?: ShowInput;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     mediaItem?: {
         streams: Array<{
             index: number;
@@ -327,83 +393,12 @@ export type EpisodeInput = {
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
     };
-    actors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        order?: number | null;
-        role?: string | null;
-        thumb?: string | null;
-    }>;
-    writers?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    directors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    genres?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
-    studios?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
     duration: number;
-    externalSubtitles?: Array<{
-        subtitleType: 'embedded' | 'sidecar';
-        title?: string | null;
-        streamIndex?: number | null;
-        codec: string;
-        default?: boolean | null;
-        forced?: boolean | null;
-        sdh?: boolean | null;
-        language: string;
-        path?: string | null;
-    }> | null;
-    artwork: Array<{
-        id?: string;
-        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-        path?: string | null;
-    }>;
-    state: 'ok' | 'missing';
-    episodeNumber: number;
-    summary: string | null;
-    season?: SeasonInput;
-    show?: ShowInput;
 };
 
 export type MusicArtistInput = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'artist';
     identifiers: Array<{
         id: string;
@@ -413,8 +408,6 @@ export type MusicArtistInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -435,12 +428,7 @@ export type MusicArtistInput = {
     }>;
     albums?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'album';
         identifiers: Array<{
             id: string;
@@ -450,8 +438,6 @@ export type MusicArtistInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -482,17 +468,26 @@ export type MusicArtistInput = {
                 id: string;
             } | null;
         }>;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
     }>;
-};
-
-export type MusicAlbumInput = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type MusicAlbumInput = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'album';
     identifiers: Array<{
         id: string;
@@ -502,8 +497,6 @@ export type MusicAlbumInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -537,12 +530,7 @@ export type MusicAlbumInput = {
     artist?: MusicArtistInput;
     tracks?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'track';
         identifiers: Array<{
             id: string;
@@ -552,8 +540,6 @@ export type MusicAlbumInput = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -561,6 +547,76 @@ export type MusicAlbumInput = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        trackNumber: number;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -611,81 +667,20 @@ export type MusicAlbumInput = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
-        trackNumber: number;
     }>;
-};
-
-export type MusicTrackInput = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type MusicTrackInput = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'track';
     identifiers: Array<{
         id: string;
@@ -695,8 +690,6 @@ export type MusicTrackInput = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -704,6 +697,78 @@ export type MusicTrackInput = {
      */
     releaseDate: number | null;
     releaseDateString: string | null;
+    actors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        order?: number | null;
+        role?: string | null;
+        thumb?: string | null;
+    }>;
+    writers?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    directors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    genres?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    studios?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    externalSubtitles?: Array<{
+        subtitleType: 'embedded' | 'sidecar';
+        title?: string | null;
+        streamIndex?: number | null;
+        codec: string;
+        default?: boolean | null;
+        forced?: boolean | null;
+        sdh?: boolean | null;
+        language: string;
+        path?: string | null;
+    }> | null;
+    artwork: Array<{
+        id?: string;
+        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+        path?: string | null;
+    }>;
+    state: 'ok' | 'missing';
+    trackNumber: number;
+    album?: MusicAlbumInput;
+    artist?: MusicArtistInput;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     mediaItem?: {
         streams: Array<{
             index: number;
@@ -754,72 +819,7 @@ export type MusicTrackInput = {
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
     };
-    actors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        order?: number | null;
-        role?: string | null;
-        thumb?: string | null;
-    }>;
-    writers?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    directors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    genres?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
-    studios?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
     duration: number;
-    externalSubtitles?: Array<{
-        subtitleType: 'embedded' | 'sidecar';
-        title?: string | null;
-        streamIndex?: number | null;
-        codec: string;
-        default?: boolean | null;
-        forced?: boolean | null;
-        sdh?: boolean | null;
-        language: string;
-        path?: string | null;
-    }> | null;
-    artwork: Array<{
-        id?: string;
-        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-        path?: string | null;
-    }>;
-    state: 'ok' | 'missing';
-    trackNumber: number;
-    album?: MusicAlbumInput;
-    artist?: MusicArtistInput;
 };
 
 export type PlexFilterInput = {
@@ -837,6 +837,7 @@ export type PlexFilterInput = {
 export type SearchFilterInput = {
     type: 'op';
     op: 'or' | 'and';
+    grouped?: boolean;
     children: Array<SearchFilterInput>;
 } | {
     type: 'value';
@@ -875,12 +876,7 @@ export type SearchFilterInput = {
 
 export type Show = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'show';
     identifiers: Array<{
         id: string;
@@ -890,8 +886,6 @@ export type Show = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -934,16 +928,18 @@ export type Show = {
     releaseDateString: string | null;
     year: number | null;
     seasons?: Array<Season>;
-};
-
-export type Season = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type Season = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'season';
     identifiers: Array<{
         id: string;
@@ -953,8 +949,6 @@ export type Season = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -985,15 +979,17 @@ export type Season = {
     year: number | null;
     releaseDate: number | null;
     releaseDateString: string | null;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     show?: Show;
     episodes?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'episode';
         identifiers: Array<{
             id: string;
@@ -1003,12 +999,81 @@ export type Season = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        episodeNumber: number;
+        summary: string | null;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -1059,82 +1124,13 @@ export type Season = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
-        episodeNumber: number;
-        summary: string | null;
     }>;
 };
 
 export type Episode = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'episode';
     identifiers: Array<{
         id: string;
@@ -1144,12 +1140,83 @@ export type Episode = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     originalTitle: string | null;
     year: number | null;
     releaseDate: number | null;
     releaseDateString: string | null;
+    actors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        order?: number | null;
+        role?: string | null;
+        thumb?: string | null;
+    }>;
+    writers?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    directors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    genres?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    studios?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    externalSubtitles?: Array<{
+        subtitleType: 'embedded' | 'sidecar';
+        title?: string | null;
+        streamIndex?: number | null;
+        codec: string;
+        default?: boolean | null;
+        forced?: boolean | null;
+        sdh?: boolean | null;
+        language: string;
+        path?: string | null;
+    }> | null;
+    artwork: Array<{
+        id?: string;
+        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+        path?: string | null;
+    }>;
+    state: 'ok' | 'missing';
+    episodeNumber: number;
+    summary: string | null;
+    season?: Season;
+    show?: Show;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     mediaItem?: {
         streams: Array<{
             index: number;
@@ -1200,83 +1267,12 @@ export type Episode = {
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
     };
-    actors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        order?: number | null;
-        role?: string | null;
-        thumb?: string | null;
-    }>;
-    writers?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    directors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    genres?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
-    studios?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
     duration: number;
-    externalSubtitles?: Array<{
-        subtitleType: 'embedded' | 'sidecar';
-        title?: string | null;
-        streamIndex?: number | null;
-        codec: string;
-        default?: boolean | null;
-        forced?: boolean | null;
-        sdh?: boolean | null;
-        language: string;
-        path?: string | null;
-    }> | null;
-    artwork: Array<{
-        id?: string;
-        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-        path?: string | null;
-    }>;
-    state: 'ok' | 'missing';
-    episodeNumber: number;
-    summary: string | null;
-    season?: Season;
-    show?: Show;
 };
 
 export type MusicArtist = {
     uuid: string;
-    canonicalId: string;
     sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-    /**
-     * Unique identifier for this item in the external media source
-     */
-    externalId: string;
     type: 'artist';
     identifiers: Array<{
         id: string;
@@ -1286,8 +1282,6 @@ export type MusicArtist = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -1308,12 +1302,7 @@ export type MusicArtist = {
     }>;
     albums?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'album';
         identifiers: Array<{
             id: string;
@@ -1323,8 +1312,6 @@ export type MusicArtist = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         summary: string | null;
         plot: string | null;
         tagline: string | null;
@@ -1355,17 +1342,26 @@ export type MusicArtist = {
                 id: string;
             } | null;
         }>;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
     }>;
-};
-
-export type MusicAlbum = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type MusicAlbum = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'album';
     identifiers: Array<{
         id: string;
@@ -1375,8 +1371,6 @@ export type MusicAlbum = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     summary: string | null;
     plot: string | null;
     tagline: string | null;
@@ -1410,12 +1404,7 @@ export type MusicAlbum = {
     artist?: MusicArtist;
     tracks?: Array<{
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'track';
         identifiers: Array<{
             id: string;
@@ -1425,8 +1414,6 @@ export type MusicAlbum = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -1434,6 +1421,76 @@ export type MusicAlbum = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        trackNumber: number;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -1484,81 +1541,20 @@ export type MusicAlbum = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
-        trackNumber: number;
     }>;
-};
-
-export type MusicTrack = {
-    uuid: string;
+    mediaSourceId: string;
+    libraryId: string;
     canonicalId: string;
-    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     /**
      * Unique identifier for this item in the external media source
      */
     externalId: string;
+};
+
+export type MusicTrack = {
+    uuid: string;
+    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
     type: 'track';
     identifiers: Array<{
         id: string;
@@ -1568,8 +1564,6 @@ export type MusicTrack = {
     title: string;
     sortTitle: string;
     tags: Array<string>;
-    mediaSourceId: string;
-    libraryId: string;
     originalTitle: string | null;
     year: number | null;
     /**
@@ -1577,6 +1571,78 @@ export type MusicTrack = {
      */
     releaseDate: number | null;
     releaseDateString: string | null;
+    actors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        order?: number | null;
+        role?: string | null;
+        thumb?: string | null;
+    }>;
+    writers?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    directors?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+        thumb?: string | null;
+    }>;
+    genres?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    studios?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    externalSubtitles?: Array<{
+        subtitleType: 'embedded' | 'sidecar';
+        title?: string | null;
+        streamIndex?: number | null;
+        codec: string;
+        default?: boolean | null;
+        forced?: boolean | null;
+        sdh?: boolean | null;
+        language: string;
+        path?: string | null;
+    }> | null;
+    artwork: Array<{
+        id?: string;
+        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+        path?: string | null;
+    }>;
+    state: 'ok' | 'missing';
+    trackNumber: number;
+    album?: MusicAlbum;
+    artist?: MusicArtist;
+    mediaSourceId: string;
+    libraryId: string;
+    canonicalId: string;
+    /**
+     * Unique identifier for this item in the external media source
+     */
+    externalId: string;
     mediaItem?: {
         streams: Array<{
             index: number;
@@ -1627,72 +1693,7 @@ export type MusicTrack = {
         }> | null;
         scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
     };
-    actors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        order?: number | null;
-        role?: string | null;
-        thumb?: string | null;
-    }>;
-    writers?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    directors?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-        thumb?: string | null;
-    }>;
-    genres?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
-    studios?: Array<{
-        uuid?: string;
-        name: string;
-        externalInfo?: {
-            source: 'plex' | 'jellyfin' | 'emby' | 'local';
-            id: string;
-        } | null;
-    }>;
     duration: number;
-    externalSubtitles?: Array<{
-        subtitleType: 'embedded' | 'sidecar';
-        title?: string | null;
-        streamIndex?: number | null;
-        codec: string;
-        default?: boolean | null;
-        forced?: boolean | null;
-        sdh?: boolean | null;
-        language: string;
-        path?: string | null;
-    }> | null;
-    artwork: Array<{
-        id?: string;
-        type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-        path?: string | null;
-    }>;
-    state: 'ok' | 'missing';
-    trackNumber: number;
-    album?: MusicAlbum;
-    artist?: MusicArtist;
 };
 
 export type PlexFilter = {
@@ -1710,6 +1711,7 @@ export type PlexFilter = {
 export type SearchFilter = {
     type: 'op';
     op: 'or' | 'and';
+    grouped?: boolean;
     children: Array<SearchFilter>;
 } | {
     type: 'value';
@@ -2522,12 +2524,7 @@ export type GetApiChannelsByIdProgramsResponses = {
         total: number;
         result: Array<{
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -2537,8 +2534,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -2546,56 +2541,6 @@ export type GetApiChannelsByIdProgramsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -2641,7 +2586,6 @@ export type GetApiChannelsByIdProgramsResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -2663,14 +2607,67 @@ export type GetApiChannelsByIdProgramsResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -2680,8 +2677,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -2689,6 +2684,75 @@ export type GetApiChannelsByIdProgramsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -2739,77 +2803,10 @@ export type GetApiChannelsByIdProgramsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -2819,8 +2816,6 @@ export type GetApiChannelsByIdProgramsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -2828,6 +2823,75 @@ export type GetApiChannelsByIdProgramsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -2878,69 +2942,7 @@ export type GetApiChannelsByIdProgramsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }>;
         size: number;
         offset?: number;
@@ -11819,12 +11821,7 @@ export type PostApiProgramsSearchResponses = {
     200: {
         results: Array<(({
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -11834,8 +11831,6 @@ export type PostApiProgramsSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -11843,56 +11838,6 @@ export type PostApiProgramsSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -11938,7 +11883,6 @@ export type PostApiProgramsSearchResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -11960,14 +11904,67 @@ export type PostApiProgramsSearchResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -11977,8 +11974,6 @@ export type PostApiProgramsSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -11986,6 +11981,75 @@ export type PostApiProgramsSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -12036,77 +12100,10 @@ export type PostApiProgramsSearchResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -12116,8 +12113,6 @@ export type PostApiProgramsSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -12125,6 +12120,75 @@ export type PostApiProgramsSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -12175,69 +12239,7 @@ export type PostApiProgramsSearchResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -12541,12 +12543,7 @@ export type GetApiProgramsByIdResponses = {
      */
     200: {
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'movie';
         identifiers: Array<{
             id: string;
@@ -12556,8 +12553,6 @@ export type GetApiProgramsByIdResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -12565,56 +12560,6 @@ export type GetApiProgramsByIdResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
-        mediaItem?: {
-            streams: Array<{
-                index: number;
-                codec: string;
-                profile?: string | null;
-                streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                title?: string | null;
-                hasAttachedPicture?: boolean | null;
-                fileName?: string | null;
-                mimeType?: string | null;
-                frameRate?: (string | number) | null;
-                pixelFormat?: string | null;
-                bitDepth?: number | null;
-                colorRange?: string | null;
-                colorSpace?: string | null;
-                colorTransfer?: string | null;
-                colorPrimaries?: string | null;
-                channels?: number | null;
-                sdh?: boolean | null;
-                languageCodeISO6392?: string | null;
-                selected?: boolean | null;
-                default?: boolean | null;
-                forced?: boolean | null;
-            }>;
-            duration: number;
-            sampleAspectRatio?: string | null;
-            displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
-            resolution?: {
-                widthPx: number;
-                heightPx: number;
-            } | null;
-            locations: Array<{
-                path: string;
-                type: 'local';
-            } | {
-                path: string;
-                type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalKey: string;
-            }>;
-            chapters?: Array<{
-                index: number;
-                startTime: number;
-                endTime: number;
-                title?: string | null;
-                chapterType: 'chapter' | 'intro' | 'outro';
-            }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-        };
         actors?: Array<{
             uuid?: string;
             name: string;
@@ -12660,7 +12605,6 @@ export type GetApiProgramsByIdResponses = {
                 id: string;
             } | null;
         }>;
-        duration: number;
         externalSubtitles?: Array<{
             subtitleType: 'embedded' | 'sidecar';
             title?: string | null;
@@ -12682,14 +12626,67 @@ export type GetApiProgramsByIdResponses = {
         plot: string | null;
         tagline: string | null;
         rating: string | null;
-    } | Episode | MusicTrack | {
-        uuid: string;
+        mediaSourceId: string;
+        libraryId: string;
         canonicalId: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         /**
          * Unique identifier for this item in the external media source
          */
         externalId: string;
+        mediaItem?: {
+            streams: Array<{
+                index: number;
+                codec: string;
+                profile?: string | null;
+                streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                title?: string | null;
+                hasAttachedPicture?: boolean | null;
+                fileName?: string | null;
+                mimeType?: string | null;
+                frameRate?: (string | number) | null;
+                pixelFormat?: string | null;
+                bitDepth?: number | null;
+                colorRange?: string | null;
+                colorSpace?: string | null;
+                colorTransfer?: string | null;
+                colorPrimaries?: string | null;
+                channels?: number | null;
+                sdh?: boolean | null;
+                languageCodeISO6392?: string | null;
+                selected?: boolean | null;
+                default?: boolean | null;
+                forced?: boolean | null;
+            }>;
+            duration: number;
+            sampleAspectRatio?: string | null;
+            displayAspectRatio?: string | null;
+            frameRate?: (number | string) | null;
+            resolution?: {
+                widthPx: number;
+                heightPx: number;
+            } | null;
+            locations: Array<{
+                path: string;
+                type: 'local';
+            } | {
+                path: string;
+                type: 'remote';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                externalKey: string;
+            }>;
+            chapters?: Array<{
+                index: number;
+                startTime: number;
+                endTime: number;
+                title?: string | null;
+                chapterType: 'chapter' | 'intro' | 'outro';
+            }> | null;
+            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        };
+        duration: number;
+    } | Episode | MusicTrack | {
+        uuid: string;
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         type: 'other_video';
         identifiers: Array<{
             id: string;
@@ -12699,8 +12696,6 @@ export type GetApiProgramsByIdResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -12708,6 +12703,75 @@ export type GetApiProgramsByIdResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -12758,77 +12822,10 @@ export type GetApiProgramsByIdResponses = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
     } | {
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'music_video';
         identifiers: Array<{
             id: string;
@@ -12838,8 +12835,6 @@ export type GetApiProgramsByIdResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -12847,6 +12842,75 @@ export type GetApiProgramsByIdResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -12897,69 +12961,7 @@ export type GetApiProgramsByIdResponses = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
     };
 };
 
@@ -13347,12 +13349,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
     200: {
         [key: string]: {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -13362,8 +13359,6 @@ export type BatchGetProgramsByExternalIdsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | unknown;
             year: number | unknown;
             /**
@@ -13371,56 +13366,6 @@ export type BatchGetProgramsByExternalIdsResponses = {
              */
             releaseDate: number | unknown;
             releaseDateString: string | unknown;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | unknown;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | unknown;
-                    hasAttachedPicture?: boolean | unknown;
-                    fileName?: string | unknown;
-                    mimeType?: string | unknown;
-                    frameRate?: (string | number) | unknown;
-                    pixelFormat?: string | unknown;
-                    bitDepth?: number | unknown;
-                    colorRange?: string | unknown;
-                    colorSpace?: string | unknown;
-                    colorTransfer?: string | unknown;
-                    colorPrimaries?: string | unknown;
-                    channels?: number | unknown;
-                    sdh?: boolean | unknown;
-                    languageCodeISO6392?: string | unknown;
-                    selected?: boolean | unknown;
-                    default?: boolean | unknown;
-                    forced?: boolean | unknown;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | unknown;
-                displayAspectRatio?: string | unknown;
-                frameRate?: (number | string) | unknown;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | unknown;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | unknown;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | unknown;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -13466,7 +13411,6 @@ export type BatchGetProgramsByExternalIdsResponses = {
                     id: string;
                 } | unknown;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | unknown;
@@ -13488,14 +13432,67 @@ export type BatchGetProgramsByExternalIdsResponses = {
             plot: string | unknown;
             tagline: string | unknown;
             rating: string | unknown;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | unknown;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | unknown;
+                    hasAttachedPicture?: boolean | unknown;
+                    fileName?: string | unknown;
+                    mimeType?: string | unknown;
+                    frameRate?: (string | number) | unknown;
+                    pixelFormat?: string | unknown;
+                    bitDepth?: number | unknown;
+                    colorRange?: string | unknown;
+                    colorSpace?: string | unknown;
+                    colorTransfer?: string | unknown;
+                    colorPrimaries?: string | unknown;
+                    channels?: number | unknown;
+                    sdh?: boolean | unknown;
+                    languageCodeISO6392?: string | unknown;
+                    selected?: boolean | unknown;
+                    default?: boolean | unknown;
+                    forced?: boolean | unknown;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | unknown;
+                displayAspectRatio?: string | unknown;
+                frameRate?: (number | string) | unknown;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | unknown;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | unknown;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | unknown;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -13505,8 +13502,6 @@ export type BatchGetProgramsByExternalIdsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | unknown;
             year: number | unknown;
             /**
@@ -13514,6 +13509,75 @@ export type BatchGetProgramsByExternalIdsResponses = {
              */
             releaseDate: number | unknown;
             releaseDateString: string | unknown;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                order?: number | unknown;
+                role?: string | unknown;
+                thumb?: string | unknown;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                thumb?: string | unknown;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                thumb?: string | unknown;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | unknown;
+                streamIndex?: number | unknown;
+                codec: string;
+                default?: boolean | unknown;
+                forced?: boolean | unknown;
+                sdh?: boolean | unknown;
+                language: string;
+                path?: string | unknown;
+            }> | unknown;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | unknown;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -13564,77 +13628,10 @@ export type BatchGetProgramsByExternalIdsResponses = {
                 }> | unknown;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                order?: number | unknown;
-                role?: string | unknown;
-                thumb?: string | unknown;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                thumb?: string | unknown;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                thumb?: string | unknown;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | unknown;
-                streamIndex?: number | unknown;
-                codec: string;
-                default?: boolean | unknown;
-                forced?: boolean | unknown;
-                sdh?: boolean | unknown;
-                language: string;
-                path?: string | unknown;
-            }> | unknown;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | unknown;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -13644,8 +13641,6 @@ export type BatchGetProgramsByExternalIdsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | unknown;
             year: number | unknown;
             /**
@@ -13653,6 +13648,75 @@ export type BatchGetProgramsByExternalIdsResponses = {
              */
             releaseDate: number | unknown;
             releaseDateString: string | unknown;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                order?: number | unknown;
+                role?: string | unknown;
+                thumb?: string | unknown;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                thumb?: string | unknown;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+                thumb?: string | unknown;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | unknown;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | unknown;
+                streamIndex?: number | unknown;
+                codec: string;
+                default?: boolean | unknown;
+                forced?: boolean | unknown;
+                sdh?: boolean | unknown;
+                language: string;
+                path?: string | unknown;
+            }> | unknown;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | unknown;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -13703,69 +13767,7 @@ export type BatchGetProgramsByExternalIdsResponses = {
                 }> | unknown;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | unknown;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                order?: number | unknown;
-                role?: string | unknown;
-                thumb?: string | unknown;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                thumb?: string | unknown;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-                thumb?: string | unknown;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | unknown;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | unknown;
-                streamIndex?: number | unknown;
-                codec: string;
-                default?: boolean | unknown;
-                forced?: boolean | unknown;
-                sdh?: boolean | unknown;
-                language: string;
-                path?: string | unknown;
-            }> | unknown;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | unknown;
-            }>;
-            state: 'ok' | 'missing';
         };
     };
 };
@@ -16545,6 +16547,9 @@ export type GetApiSystemSettingsResponses = {
         };
         logging: {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
+            categoryLogLevel?: {
+                [key: string]: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
+            };
             logsDirectory: string;
             useEnvVarLevel: boolean;
             logRollConfig: {
@@ -16598,6 +16603,9 @@ export type PutApiSystemSettingsData = {
                     unit: 'second' | 'minute' | 'hour' | 'day' | 'week';
                     offsetMs?: number;
                 };
+            };
+            categoryLogLevel?: {
+                [key: string]: ('silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace') | unknown;
             };
         };
         backup?: {
@@ -16667,6 +16675,9 @@ export type PutApiSystemSettingsResponses = {
         };
         logging: {
             logLevel: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
+            categoryLogLevel?: {
+                [key: string]: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'http' | 'debug' | 'http_out' | 'trace';
+            };
             logsDirectory: string;
             useEnvVarLevel: boolean;
             logRollConfig: {
@@ -16902,6 +16913,20 @@ export type GetApiSystemDebugEnvResponses = {
 };
 
 export type GetApiSystemDebugEnvResponse = GetApiSystemDebugEnvResponses[keyof GetApiSystemDebugEnvResponses];
+
+export type GetApiSystemDebugLoggersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/debug/loggers';
+};
+
+export type GetApiSystemDebugLoggersResponses = {
+    /**
+     * Default Response
+     */
+    200: unknown;
+};
 
 export type GetApiGuideStatusData = {
     body?: never;
@@ -17370,12 +17395,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
         total: number;
         result: Array<{
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -17385,8 +17405,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -17394,56 +17412,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -17489,7 +17457,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -17511,14 +17478,67 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | Season | Show | MusicTrack | MusicAlbum | MusicArtist | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | Season | Show | MusicTrack | MusicAlbum | MusicArtist | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -17528,8 +17548,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -17537,6 +17555,75 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -17587,77 +17674,10 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -17667,8 +17687,6 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -17676,6 +17694,75 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -17726,69 +17813,7 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }>;
         size: number;
         offset?: number;
@@ -18049,12 +18074,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
      */
     200: Array<(({
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'movie';
         identifiers: Array<{
             id: string;
@@ -18064,8 +18084,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -18073,56 +18091,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
-        mediaItem?: {
-            streams: Array<{
-                index: number;
-                codec: string;
-                profile?: string | null;
-                streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                title?: string | null;
-                hasAttachedPicture?: boolean | null;
-                fileName?: string | null;
-                mimeType?: string | null;
-                frameRate?: (string | number) | null;
-                pixelFormat?: string | null;
-                bitDepth?: number | null;
-                colorRange?: string | null;
-                colorSpace?: string | null;
-                colorTransfer?: string | null;
-                colorPrimaries?: string | null;
-                channels?: number | null;
-                sdh?: boolean | null;
-                languageCodeISO6392?: string | null;
-                selected?: boolean | null;
-                default?: boolean | null;
-                forced?: boolean | null;
-            }>;
-            duration: number;
-            sampleAspectRatio?: string | null;
-            displayAspectRatio?: string | null;
-            frameRate?: (number | string) | null;
-            resolution?: {
-                widthPx: number;
-                heightPx: number;
-            } | null;
-            locations: Array<{
-                path: string;
-                type: 'local';
-            } | {
-                path: string;
-                type: 'remote';
-                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalKey: string;
-            }>;
-            chapters?: Array<{
-                index: number;
-                startTime: number;
-                endTime: number;
-                title?: string | null;
-                chapterType: 'chapter' | 'intro' | 'outro';
-            }> | null;
-            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-        };
         actors?: Array<{
             uuid?: string;
             name: string;
@@ -18168,7 +18136,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
                 id: string;
             } | null;
         }>;
-        duration: number;
         externalSubtitles?: Array<{
             subtitleType: 'embedded' | 'sidecar';
             title?: string | null;
@@ -18190,14 +18157,67 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         plot: string | null;
         tagline: string | null;
         rating: string | null;
-    } | Episode | MusicTrack | {
-        uuid: string;
+        mediaSourceId: string;
+        libraryId: string;
         canonicalId: string;
-        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         /**
          * Unique identifier for this item in the external media source
          */
         externalId: string;
+        mediaItem?: {
+            streams: Array<{
+                index: number;
+                codec: string;
+                profile?: string | null;
+                streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                title?: string | null;
+                hasAttachedPicture?: boolean | null;
+                fileName?: string | null;
+                mimeType?: string | null;
+                frameRate?: (string | number) | null;
+                pixelFormat?: string | null;
+                bitDepth?: number | null;
+                colorRange?: string | null;
+                colorSpace?: string | null;
+                colorTransfer?: string | null;
+                colorPrimaries?: string | null;
+                channels?: number | null;
+                sdh?: boolean | null;
+                languageCodeISO6392?: string | null;
+                selected?: boolean | null;
+                default?: boolean | null;
+                forced?: boolean | null;
+            }>;
+            duration: number;
+            sampleAspectRatio?: string | null;
+            displayAspectRatio?: string | null;
+            frameRate?: (number | string) | null;
+            resolution?: {
+                widthPx: number;
+                heightPx: number;
+            } | null;
+            locations: Array<{
+                path: string;
+                type: 'local';
+            } | {
+                path: string;
+                type: 'remote';
+                sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                externalKey: string;
+            }>;
+            chapters?: Array<{
+                index: number;
+                startTime: number;
+                endTime: number;
+                title?: string | null;
+                chapterType: 'chapter' | 'intro' | 'outro';
+            }> | null;
+            scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+        };
+        duration: number;
+    } | Episode | MusicTrack | {
+        uuid: string;
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         type: 'other_video';
         identifiers: Array<{
             id: string;
@@ -18207,8 +18227,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -18216,6 +18234,75 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -18266,77 +18353,10 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
     } | {
         uuid: string;
-        canonicalId: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-        /**
-         * Unique identifier for this item in the external media source
-         */
-        externalId: string;
         type: 'music_video';
         identifiers: Array<{
             id: string;
@@ -18346,8 +18366,6 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
         title: string;
         sortTitle: string;
         tags: Array<string>;
-        mediaSourceId: string;
-        libraryId: string;
         originalTitle: string | null;
         year: number | null;
         /**
@@ -18355,6 +18373,75 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
          */
         releaseDate: number | null;
         releaseDateString: string | null;
+        actors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            order?: number | null;
+            role?: string | null;
+            thumb?: string | null;
+        }>;
+        writers?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        directors?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+            thumb?: string | null;
+        }>;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        studios?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        externalSubtitles?: Array<{
+            subtitleType: 'embedded' | 'sidecar';
+            title?: string | null;
+            streamIndex?: number | null;
+            codec: string;
+            default?: boolean | null;
+            forced?: boolean | null;
+            sdh?: boolean | null;
+            language: string;
+            path?: string | null;
+        }> | null;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        state: 'ok' | 'missing';
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
         mediaItem?: {
             streams: Array<{
                 index: number;
@@ -18405,69 +18492,7 @@ export type GetApiPlexByMediaSourceIdItemsByItemIdChildrenResponses = {
             }> | null;
             scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
         };
-        actors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            order?: number | null;
-            role?: string | null;
-            thumb?: string | null;
-        }>;
-        writers?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        directors?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-            thumb?: string | null;
-        }>;
-        genres?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
-        studios?: Array<{
-            uuid?: string;
-            name: string;
-            externalInfo?: {
-                source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                id: string;
-            } | null;
-        }>;
         duration: number;
-        externalSubtitles?: Array<{
-            subtitleType: 'embedded' | 'sidecar';
-            title?: string | null;
-            streamIndex?: number | null;
-            codec: string;
-            default?: boolean | null;
-            forced?: boolean | null;
-            sdh?: boolean | null;
-            language: string;
-            path?: string | null;
-        }> | null;
-        artwork: Array<{
-            id?: string;
-            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-            path?: string | null;
-        }>;
-        state: 'ok' | 'missing';
     }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
         uuid: string;
@@ -19027,12 +19052,7 @@ export type GetJellyfinLibraryItemsResponses = {
         total: number;
         result: Array<(({
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -19042,8 +19062,6 @@ export type GetJellyfinLibraryItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19051,56 +19069,6 @@ export type GetJellyfinLibraryItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -19146,7 +19114,6 @@ export type GetJellyfinLibraryItemsResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -19168,14 +19135,67 @@ export type GetJellyfinLibraryItemsResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -19185,8 +19205,6 @@ export type GetJellyfinLibraryItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19194,6 +19212,75 @@ export type GetJellyfinLibraryItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -19244,77 +19331,10 @@ export type GetJellyfinLibraryItemsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -19324,8 +19344,6 @@ export type GetJellyfinLibraryItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19333,6 +19351,75 @@ export type GetJellyfinLibraryItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -19383,69 +19470,7 @@ export type GetJellyfinLibraryItemsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -19686,12 +19711,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
         total: number;
         result: Array<(({
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -19701,8 +19721,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19710,56 +19728,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -19805,7 +19773,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -19827,14 +19794,67 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -19844,8 +19864,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19853,6 +19871,75 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -19903,77 +19990,10 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -19983,8 +20003,6 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -19992,6 +20010,75 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -20042,69 +20129,7 @@ export type GetApiEmbyByMediaSourceIdLibrariesByLibraryIdItemsResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
@@ -20211,12 +20236,7 @@ export type GetApiTrashResponses = {
     200: {
         results: Array<(({
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'movie';
             identifiers: Array<{
                 id: string;
@@ -20226,8 +20246,6 @@ export type GetApiTrashResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -20235,56 +20253,6 @@ export type GetApiTrashResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
-            mediaItem?: {
-                streams: Array<{
-                    index: number;
-                    codec: string;
-                    profile?: string | null;
-                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
-                    title?: string | null;
-                    hasAttachedPicture?: boolean | null;
-                    fileName?: string | null;
-                    mimeType?: string | null;
-                    frameRate?: (string | number) | null;
-                    pixelFormat?: string | null;
-                    bitDepth?: number | null;
-                    colorRange?: string | null;
-                    colorSpace?: string | null;
-                    colorTransfer?: string | null;
-                    colorPrimaries?: string | null;
-                    channels?: number | null;
-                    sdh?: boolean | null;
-                    languageCodeISO6392?: string | null;
-                    selected?: boolean | null;
-                    default?: boolean | null;
-                    forced?: boolean | null;
-                }>;
-                duration: number;
-                sampleAspectRatio?: string | null;
-                displayAspectRatio?: string | null;
-                frameRate?: (number | string) | null;
-                resolution?: {
-                    widthPx: number;
-                    heightPx: number;
-                } | null;
-                locations: Array<{
-                    path: string;
-                    type: 'local';
-                } | {
-                    path: string;
-                    type: 'remote';
-                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    externalKey: string;
-                }>;
-                chapters?: Array<{
-                    index: number;
-                    startTime: number;
-                    endTime: number;
-                    title?: string | null;
-                    chapterType: 'chapter' | 'intro' | 'outro';
-                }> | null;
-                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
-            };
             actors?: Array<{
                 uuid?: string;
                 name: string;
@@ -20330,7 +20298,6 @@ export type GetApiTrashResponses = {
                     id: string;
                 } | null;
             }>;
-            duration: number;
             externalSubtitles?: Array<{
                 subtitleType: 'embedded' | 'sidecar';
                 title?: string | null;
@@ -20352,14 +20319,67 @@ export type GetApiTrashResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
-        } | Episode | MusicTrack | {
-            uuid: string;
+            mediaSourceId: string;
+            libraryId: string;
             canonicalId: string;
-            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             /**
              * Unique identifier for this item in the external media source
              */
             externalId: string;
+            mediaItem?: {
+                streams: Array<{
+                    index: number;
+                    codec: string;
+                    profile?: string | null;
+                    streamType: 'video' | 'audio' | 'subtitles' | 'attachment' | 'external_subtitles';
+                    title?: string | null;
+                    hasAttachedPicture?: boolean | null;
+                    fileName?: string | null;
+                    mimeType?: string | null;
+                    frameRate?: (string | number) | null;
+                    pixelFormat?: string | null;
+                    bitDepth?: number | null;
+                    colorRange?: string | null;
+                    colorSpace?: string | null;
+                    colorTransfer?: string | null;
+                    colorPrimaries?: string | null;
+                    channels?: number | null;
+                    sdh?: boolean | null;
+                    languageCodeISO6392?: string | null;
+                    selected?: boolean | null;
+                    default?: boolean | null;
+                    forced?: boolean | null;
+                }>;
+                duration: number;
+                sampleAspectRatio?: string | null;
+                displayAspectRatio?: string | null;
+                frameRate?: (number | string) | null;
+                resolution?: {
+                    widthPx: number;
+                    heightPx: number;
+                } | null;
+                locations: Array<{
+                    path: string;
+                    type: 'local';
+                } | {
+                    path: string;
+                    type: 'remote';
+                    sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    externalKey: string;
+                }>;
+                chapters?: Array<{
+                    index: number;
+                    startTime: number;
+                    endTime: number;
+                    title?: string | null;
+                    chapterType: 'chapter' | 'intro' | 'outro';
+                }> | null;
+                scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
+            };
+            duration: number;
+        } | Episode | MusicTrack | {
+            uuid: string;
+            sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             type: 'other_video';
             identifiers: Array<{
                 id: string;
@@ -20369,8 +20389,6 @@ export type GetApiTrashResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -20378,6 +20396,75 @@ export type GetApiTrashResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -20428,77 +20515,10 @@ export type GetApiTrashResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         } | {
             uuid: string;
-            canonicalId: string;
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            /**
-             * Unique identifier for this item in the external media source
-             */
-            externalId: string;
             type: 'music_video';
             identifiers: Array<{
                 id: string;
@@ -20508,8 +20528,6 @@ export type GetApiTrashResponses = {
             title: string;
             sortTitle: string;
             tags: Array<string>;
-            mediaSourceId: string;
-            libraryId: string;
             originalTitle: string | null;
             year: number | null;
             /**
@@ -20517,6 +20535,75 @@ export type GetApiTrashResponses = {
              */
             releaseDate: number | null;
             releaseDateString: string | null;
+            actors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                order?: number | null;
+                role?: string | null;
+                thumb?: string | null;
+            }>;
+            writers?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            directors?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+                thumb?: string | null;
+            }>;
+            genres?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            studios?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            externalSubtitles?: Array<{
+                subtitleType: 'embedded' | 'sidecar';
+                title?: string | null;
+                streamIndex?: number | null;
+                codec: string;
+                default?: boolean | null;
+                forced?: boolean | null;
+                sdh?: boolean | null;
+                language: string;
+                path?: string | null;
+            }> | null;
+            artwork: Array<{
+                id?: string;
+                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+                path?: string | null;
+            }>;
+            state: 'ok' | 'missing';
+            mediaSourceId: string;
+            libraryId: string;
+            canonicalId: string;
+            /**
+             * Unique identifier for this item in the external media source
+             */
+            externalId: string;
             mediaItem?: {
                 streams: Array<{
                     index: number;
@@ -20567,69 +20654,7 @@ export type GetApiTrashResponses = {
                 }> | null;
                 scanKind?: ('unknown' | 'progressive' | 'interlaced') | null;
             };
-            actors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                order?: number | null;
-                role?: string | null;
-                thumb?: string | null;
-            }>;
-            writers?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            directors?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-                thumb?: string | null;
-            }>;
-            genres?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
-            studios?: Array<{
-                uuid?: string;
-                name: string;
-                externalInfo?: {
-                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
-                    id: string;
-                } | null;
-            }>;
             duration: number;
-            externalSubtitles?: Array<{
-                subtitleType: 'embedded' | 'sidecar';
-                title?: string | null;
-                streamIndex?: number | null;
-                codec: string;
-                default?: boolean | null;
-                forced?: boolean | null;
-                sdh?: boolean | null;
-                language: string;
-                path?: string | null;
-            }> | null;
-            artwork: Array<{
-                id?: string;
-                type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
-                path?: string | null;
-            }>;
-            state: 'ok' | 'missing';
         }) | (Show | Season | MusicArtist | MusicAlbum)) | ({
             sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
             uuid: string;
