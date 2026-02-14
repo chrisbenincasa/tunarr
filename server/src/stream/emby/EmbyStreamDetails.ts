@@ -62,7 +62,7 @@ import {
 // TODO: this is basically an exact copy of the Jellyfin one, can we consolidate?
 @injectable()
 export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
-  private emby: EmbyApiClient;
+  private emby?: EmbyApiClient;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
@@ -342,7 +342,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
               item,
               details,
               ({ extension: ext }) =>
-                this.emby.getSubtitles(
+                this.emby!.getSubtitles(
                   item.externalKey,
                   firstMediaSource.Id!,
                   index,
@@ -401,10 +401,10 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
       // We have to check that we can hit this URL or the stream will not work
       if (isNonEmptyString(placeholderThumbPath)) {
         const path = `/Items/${placeholderThumbPath}/Images/Primary`;
-        const result = await attempt(() => this.emby.doHead({ url: path }));
+        const result = await attempt(() => this.emby!.doHead({ url: path }));
         if (!isError(result)) {
           streamDetails.placeholderImage = new HttpStreamSource(
-            this.emby.getFullUrl(path),
+            this.emby!.getFullUrl(path),
           );
         }
       }
