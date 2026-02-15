@@ -2,6 +2,7 @@ import { SearchFilter } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import {
+  BinarySearchClause,
   parsedSearchToRequest,
   SearchClause,
   searchFilterToString,
@@ -104,20 +105,35 @@ describe('search parser', () => {
 
   test('parse numeric fields', () => {
     const input = 'duration >= 10';
-    const lexerResult = tokenizeSearchQuery(input);
-    const parser = new SearchParser();
-    parser.input = lexerResult.tokens;
-    console.log(lexerResult.tokens, parser.errors);
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_numeric_query',
+      field: 'duration',
+      op: '>=',
+      value: 10,
+    } satisfies SearchClause);
   });
 
   test('can parse uuids', () => {
     const input =
       'library_id = ddd327c3-aea2-4b27-a2c0-a8ce190d25d0 AND title <= A';
-    const lexerResult = tokenizeSearchQuery(input);
-    const parser = new SearchParser();
-    parser.input = lexerResult.tokens;
-    const query = parser.searchExpression();
-    console.log(query);
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'binary_clause',
+      lhs: {
+        type: 'single_query',
+        field: 'library_id',
+        op: '=',
+        value: 'ddd327c3-aea2-4b27-a2c0-a8ce190d25d0',
+      },
+      rhs: {
+        type: 'single_query',
+        field: 'title',
+        op: '<=',
+        value: 'A',
+      },
+      op: 'and',
+    } satisfies BinarySearchClause);
   });
 
   test('supports numeric between inclusive', () => {

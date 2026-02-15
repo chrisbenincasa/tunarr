@@ -40,6 +40,9 @@
       "inputs": ["./src/**"],
       "dependsOn": ["^build"]
     },
-    "generate-env": {}
+    "generate-env": {},
+    "test": {
+      "dependsOn": ["^build"]
+    }
   }
 }
