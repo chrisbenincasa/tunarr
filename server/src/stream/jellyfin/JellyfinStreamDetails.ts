@@ -276,6 +276,10 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         codec: videoStream.Codec ?? undefined,
         profile: videoStream.Profile?.toLowerCase(),
         pixelFormat: videoStream.PixelFormat ?? undefined,
+        colorRange: videoStream.ColorRange ?? undefined,
+        colorSpace: videoStream.ColorSpace ?? undefined,
+        colorTransfer: videoStream.ColorTransfer ?? undefined,
+        colorPrimaries: videoStream.ColorPrimaries ?? undefined,
       };
     }
 
