@@ -22,6 +22,8 @@ export default defineConfig({
     typecheck: {
       tsconfig: 'tsconfig.test.json',
     },
+    silent: true,
+    reporters: ['dot'],
   },
   define: {
     'import.meta.vitest': false,
