@@ -46,28 +46,27 @@ import type {
 } from '@tunarr/types/plex';
 import {
   isPlexItemOrGrouping,
-  MakePlexMediaContainerResponseSchema,
   PlexContainerStatsSchema,
   type PlexDvr,
   type PlexDvrsResponse,
-  PlexEpisodeSchema,
+  PlexEpisodeMediaContainerResponseSchema,
   PlexFilterMediaContainerResponseSchema,
   PlexGenericMediaContainerResponseSchema,
   PlexLibrariesResponseSchema,
-  PlexLibraryCollectionSchema,
+  PlexLibraryCollectionMediaContainerResponseSchema,
   type PlexMedia,
   PlexMediaContainerResponseSchema,
   PlexMediaNoCollectionPlaylistResponse,
   type PlexMetadataResponse,
   PlexMovieMediaContainerResponseSchema,
-  PlexMusicAlbumSchema,
-  PlexMusicArtistSchema,
-  PlexMusicTrackSchema,
-  PlexPlaylistSchema,
+  PlexMusicAlbumMediaContainerResponseSchema,
+  PlexMusicArtistMediaContainerResponseSchema,
+  PlexMusicTrackMediaContainerResponseSchema,
+  PlexPlaylistMediaContainerResponseSchema,
   type PlexResource,
   PlexTagResultSchema,
-  PlexTvSeasonSchema,
-  PlexTvShowSchema,
+  PlexTvSeasonMediaContainerResponseSchema,
+  PlexTvShowMediaContainerResponseSchema,
   PlexUserSchema,
 } from '@tunarr/types/plex';
 import {
@@ -283,7 +282,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   ): AsyncGenerator<PlexShow> {
     return this.iterateChildItems(
       libraryId,
-      MakePlexMediaContainerResponseSchema(PlexTvShowSchema),
+      PlexTvShowMediaContainerResponseSchema,
       (show, library) => this.plexShowInjection(show, library),
       pageSize,
     );
@@ -292,7 +291,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   getShowSeasons(tvShowKey: string, pageSize: number = 50) {
     return this.iterateChildItems(
       tvShowKey,
-      MakePlexMediaContainerResponseSchema(PlexTvSeasonSchema),
+      PlexTvSeasonMediaContainerResponseSchema,
       (season, library) => this.plexSeasonInjection(season, library),
       pageSize,
       `/library/metadata/${tvShowKey}/children`,
@@ -307,7 +306,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   ): AsyncIterable<PlexEpisode> {
     return this.iterateChildItems(
       tvSeasonKey,
-      MakePlexMediaContainerResponseSchema(PlexEpisodeSchema),
+      PlexEpisodeMediaContainerResponseSchema,
       (ep, library) => this.plexEpisodeInjection(ep, library),
       pageSize,
       `/library/metadata/${tvSeasonKey}/children`,
@@ -321,7 +320,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   ): AsyncIterable<PlexArtist> {
     return this.iterateChildItems(
       libraryId,
-      MakePlexMediaContainerResponseSchema(PlexMusicArtistSchema),
+      PlexMusicArtistMediaContainerResponseSchema,
       (artist, library) => this.plexMusicArtistInjection(artist, library),
       pageSize,
     );
@@ -333,7 +332,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   ): AsyncIterable<PlexAlbum> {
     return this.iterateChildItems(
       artistKey,
-      MakePlexMediaContainerResponseSchema(PlexMusicAlbumSchema),
+      PlexMusicAlbumMediaContainerResponseSchema,
       (album, library) => this.plexAlbumInjection(album, library),
       pageSize,
       `/library/metadata/${artistKey}/children`,
@@ -346,7 +345,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   ): AsyncIterable<PlexTrack> {
     return this.iterateChildItems(
       albumKey,
-      MakePlexMediaContainerResponseSchema(PlexMusicTrackSchema),
+      PlexMusicTrackMediaContainerResponseSchema,
       (track, library) => this.plexTrackInjection(track, library),
       pageSize,
       `/library/metadata/${albumKey}/children`,
@@ -356,7 +355,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getMusicArtist(key: string): Promise<QueryResult<PlexArtist>> {
     const queryResult = await this.getItemMetadataInternal(
       key,
-      MakePlexMediaContainerResponseSchema(PlexMusicArtistSchema),
+      PlexMusicArtistMediaContainerResponseSchema,
     );
 
     return queryResult.flatMap((artist) =>
@@ -369,7 +368,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getMusicAlbum(key: string): Promise<QueryResult<PlexAlbum>> {
     const queryResult = await this.getItemMetadataInternal(
       key,
-      MakePlexMediaContainerResponseSchema(PlexMusicAlbumSchema),
+      PlexMusicAlbumMediaContainerResponseSchema,
     );
 
     return queryResult.flatMap((album) =>
@@ -382,7 +381,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getMusicTrack(key: string): Promise<QueryResult<PlexTrack>> {
     const queryResult = await this.getItemMetadataInternal(
       key,
-      MakePlexMediaContainerResponseSchema(PlexMusicTrackSchema),
+      PlexMusicTrackMediaContainerResponseSchema,
     );
 
     return queryResult.flatMap((track) =>
@@ -514,7 +513,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       : {};
     const result = await this.doTypeCheckedGet(
       `/library/sections/${libraryId}/collections`,
-      MakePlexMediaContainerResponseSchema(PlexLibraryCollectionSchema),
+      PlexLibraryCollectionMediaContainerResponseSchema,
       {
         params: {
           ...pageParams,
@@ -577,7 +576,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
     return this.iterateChildItems(
       libraryId,
-      MakePlexMediaContainerResponseSchema(PlexLibraryCollectionSchema),
+      PlexLibraryCollectionMediaContainerResponseSchema,
       (item, library) =>
         Result.success(this.plexCollectionInject(library, item)),
       50,
@@ -639,7 +638,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
     const result = await this.doTypeCheckedGet(
       '/playlists',
-      MakePlexMediaContainerResponseSchema(PlexPlaylistSchema),
+      PlexPlaylistMediaContainerResponseSchema,
       {
         params,
       },
@@ -752,7 +751,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getShow(externalKey: string): Promise<QueryResult<PlexShow>> {
     return this.getMediaOfType(
       externalKey,
-      MakePlexMediaContainerResponseSchema(PlexTvShowSchema),
+      PlexTvShowMediaContainerResponseSchema,
       (show, library) => this.plexShowInjection(show, library),
     );
   }
@@ -810,7 +809,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getSeason(key: string): Promise<QueryResult<PlexSeason>> {
     return this.getMediaOfType(
       key,
-      MakePlexMediaContainerResponseSchema(PlexTvSeasonSchema),
+      PlexTvSeasonMediaContainerResponseSchema,
       (season, library) => this.plexSeasonInjection(season, library),
     );
   }
@@ -818,7 +817,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getEpisode(key: string): Promise<QueryResult<PlexEpisode>> {
     return this.getMediaOfType(
       key,
-      MakePlexMediaContainerResponseSchema(PlexEpisodeSchema),
+      PlexEpisodeMediaContainerResponseSchema,
       (episode, library) => this.plexEpisodeInjection(episode, library),
     );
   }

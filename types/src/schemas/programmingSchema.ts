@@ -504,12 +504,11 @@ export const MovieMetadata = z.object({
   rating: z.string().nullable(),
 });
 
-const WithFullDetails = z.object({
+export const Movie = z.object({
+  ...MovieMetadata.shape,
   ...WithTunarrMetadata.shape,
   ...WithMediaItemMetadata.shape,
 });
-
-export const Movie = MovieMetadata.extend(WithFullDetails.shape);
 
 const BaseProgramGrouping = z.object({
   ...BaseItem.shape,
@@ -537,7 +536,10 @@ export const ShowMetadata = z.object({
   },
 });
 
-export const Show = ShowMetadata.extend(WithTunarrMetadata.shape);
+export const Show = z.object({
+  ...ShowMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
 
 const BaseEpisode = z.object({
   ...BaseProgram.shape,
@@ -548,9 +550,11 @@ const BaseEpisode = z.object({
   summary: z.string().nullable(),
 });
 
-const BaseEpisodeWithoutJoins = BaseEpisode.extend(
-  WithTunarrMetadata.shape,
-).extend(WithMediaItemMetadata.shape);
+const BaseEpisodeWithoutJoins = z.object({
+  ...BaseEpisode.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const SeasonMetadata = z.object({
   ...BaseProgramGrouping.shape,
@@ -562,11 +566,14 @@ export const SeasonMetadata = z.object({
   releaseDateString: z.string().nullable(),
 });
 
-const _SeasonWithTunarrMetadata = SeasonMetadata.extend(
-  WithTunarrMetadata.shape,
-);
+const _SeasonWithTunarrMetadata = z.object({
+  ...SeasonMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
 
-export const Season = SeasonMetadata.extend(WithTunarrMetadata.shape).extend({
+export const Season = z.object({
+  ...SeasonMetadata.shape,
+  ...WithTunarrMetadata.shape,
   get show(): z.ZodOptional<typeof Show> {
     return z.optional(Show);
   },
@@ -592,7 +599,11 @@ export const EpisodeMetadata = z.object({
   show: Show.optional(),
 });
 
-export const Episode = EpisodeMetadata.extend(WithFullDetails.shape);
+export const Episode = z.object({
+  ...EpisodeMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const EpisodeWithHierarchy = z.object({
   ...Episode.shape,
@@ -607,7 +618,10 @@ export const MusicArtistMetadata = z.object({
   },
 });
 
-export const MusicArtist = MusicArtistMetadata.extend(WithTunarrMetadata.shape);
+export const MusicArtist = z.object({
+  ...MusicArtistMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
 
 const BaseMusicAlbum = z.object({
   ...BaseProgramGrouping.shape,
@@ -619,9 +633,10 @@ const BaseMusicAlbum = z.object({
   studios: z.array(Studio).optional(),
 });
 
-const BaseMusicAlbumWithoutJoins = BaseMusicAlbum.extend(
-  WithTunarrMetadata.shape,
-);
+const BaseMusicAlbumWithoutJoins = z.object({
+  ...BaseMusicAlbum.shape,
+  ...WithTunarrMetadata.shape,
+});
 
 export const MusicAlbumMetadata = z.object({
   ...BaseProgramGrouping.shape,
@@ -632,7 +647,10 @@ export const MusicAlbumMetadata = z.object({
   },
 });
 
-export const MusicAlbum = MusicAlbumMetadata.extend(WithTunarrMetadata.shape);
+export const MusicAlbum = z.object({
+  ...MusicAlbumMetadata.shape,
+  ...WithTunarrMetadata.shape,
+});
 
 const BaseMusicTrack = z.object({
   ...BaseProgram.shape,
@@ -640,7 +658,11 @@ const BaseMusicTrack = z.object({
   trackNumber: z.number().nonnegative(),
 });
 
-const BaseMusicTrackWithoutJoins = BaseMusicTrack.extend(WithFullDetails.shape);
+const BaseMusicTrackWithoutJoins = z.object({
+  ...BaseMusicTrack.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const MusicTrackMetadata = z.object({
   ...BaseMusicTrack.shape,
@@ -648,7 +670,11 @@ export const MusicTrackMetadata = z.object({
   artist: MusicArtist.optional(),
 });
 
-export const MusicTrack = MusicTrackMetadata.extend(WithFullDetails.shape);
+export const MusicTrack = z.object({
+  ...MusicTrackMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const MusicAlbumWithArtist = MusicAlbum.required({ artist: true });
 
@@ -669,9 +695,11 @@ export const OtherVideoMetadata = z.object({
   type: z.literal('other_video'),
 });
 
-export const OtherVideo = OtherVideoMetadata.extend(
-  WithTunarrMetadata.shape,
-).extend(WithMediaItemMetadata.shape);
+export const OtherVideo = z.object({
+  ...OtherVideoMetadata.shape,
+  ...WithTunarrMetadata.shape,
+  ...WithMediaItemMetadata.shape,
+});
 
 export const HasMediaSourceInfo = z.object({
   sourceType: MediaSourceType,
