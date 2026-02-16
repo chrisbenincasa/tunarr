@@ -53,7 +53,56 @@ export type ShowInput = {
     releaseDate: number | null;
     releaseDateString: string | null;
     year: number | null;
-    seasons?: Array<SeasonInput>;
+    seasons?: Array<{
+        uuid: string;
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        type: 'season';
+        identifiers: Array<{
+            id: string;
+            sourceId?: string;
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        }>;
+        title: string;
+        sortTitle: string;
+        tags: Array<string>;
+        summary: string | null;
+        plot: string | null;
+        tagline: string | null;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        childCount?: number;
+        grandchildCount?: number;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        studios: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        index: number;
+        year: number | null;
+        releaseDate: number | null;
+        releaseDateString: string | null;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
+    }>;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -845,13 +894,13 @@ export type SearchFilterInput = {
         key: string;
         name: string;
         type: 'string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
+        op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
         name: string;
         type: 'faceted_string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
+        op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
@@ -927,7 +976,56 @@ export type Show = {
     releaseDate: number | null;
     releaseDateString: string | null;
     year: number | null;
-    seasons?: Array<Season>;
+    seasons?: Array<{
+        uuid: string;
+        sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
+        type: 'season';
+        identifiers: Array<{
+            id: string;
+            sourceId?: string;
+            type: 'plex' | 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb' | 'jellyfin' | 'emby';
+        }>;
+        title: string;
+        sortTitle: string;
+        tags: Array<string>;
+        summary: string | null;
+        plot: string | null;
+        tagline: string | null;
+        genres?: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        childCount?: number;
+        grandchildCount?: number;
+        artwork: Array<{
+            id?: string;
+            type: 'poster' | 'thumbnail' | 'logo' | 'fanart' | 'watermark' | 'banner' | 'landscape';
+            path?: string | null;
+        }>;
+        studios: Array<{
+            uuid?: string;
+            name: string;
+            externalInfo?: {
+                source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                id: string;
+            } | null;
+        }>;
+        index: number;
+        year: number | null;
+        releaseDate: number | null;
+        releaseDateString: string | null;
+        mediaSourceId: string;
+        libraryId: string;
+        canonicalId: string;
+        /**
+         * Unique identifier for this item in the external media source
+         */
+        externalId: string;
+    }>;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -1719,13 +1817,13 @@ export type SearchFilter = {
         key: string;
         name: string;
         type: 'string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
+        op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
         name: string;
         type: 'faceted_string';
-        op: '=' | '!=' | 'contains' | 'starts with' | 'in' | 'not in';
+        op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
         key: string;
