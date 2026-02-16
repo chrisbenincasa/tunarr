@@ -3,7 +3,6 @@ import type { SearchFilterValueNode } from '@tunarr/types/schemas';
 import type { Dictionary } from 'ts-essentials';
 import type { MediaSourceLibraryOrm } from '../../db/schema/MediaSourceLibrary.ts';
 import { groupByUniq } from '../../util/index.ts';
-import { encodeCaseSensitiveId } from '../MeilisearchService.ts';
 import type { SearchFilterValueMutator } from './SearchFilterValueMutator.ts';
 
 export class LibraryNameSearchMutator implements SearchFilterValueMutator {
@@ -15,12 +14,16 @@ export class LibraryNameSearchMutator implements SearchFilterValueMutator {
 
   appliesTo(op: SearchFilterValueNode): boolean {
     return (
-      op.fieldSpec.key === 'library_name' && op.fieldSpec.type === 'string'
+      op.fieldSpec.key === 'library_name' &&
+      (op.fieldSpec.type === 'string' || op.fieldSpec.type === 'faceted_string')
     );
   }
 
   mutate(op: SearchFilterValueNode): SearchFilterValueNode {
-    if (op.fieldSpec.type !== 'string') {
+    if (
+      op.fieldSpec.type !== 'string' &&
+      op.fieldSpec.type !== 'faceted_string'
+    ) {
       return op;
     }
     const value = op.fieldSpec.value;
@@ -36,7 +39,7 @@ export class LibraryNameSearchMutator implements SearchFilterValueMutator {
     newOp.fieldSpec.value = seq.collect(value, (libraryName) => {
       const match = this.byName[libraryName];
       if (!match) return;
-      return encodeCaseSensitiveId(match.uuid);
+      return match.uuid;
     });
 
     return newOp;

@@ -21,8 +21,7 @@ export class SearchParser {
       ),
     ];
 
-    const r = this.preprocessSearchFilterInner(filter, mutators);
-    return r;
+    return this.preprocessSearchFilterInner(filter, mutators);
   }
 
   private preprocessSearchFilterInner(

@@ -1,7 +1,6 @@
 import { SearchFilterValueNode } from '@tunarr/types/schemas';
 import { describe, expect, test } from 'vitest';
 import { MediaSourceOrm } from '../../db/schema/MediaSource.ts';
-import { encodeCaseSensitiveId } from '../MeilisearchService.ts';
 import { MediaSourceNameSearchMutator } from './MediaSourceNameSearchMutator.ts';
 
 const createMediaSource = (
@@ -88,7 +87,7 @@ describe('MediaSourceNameSearchMutator', () => {
       expect(result.fieldSpec.key).toBe('mediaSourceId');
       expect(result.fieldSpec.type).toBe('string');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('uuid-1'),
+        'uuid-1',
       ]);
     });
 
@@ -108,8 +107,8 @@ describe('MediaSourceNameSearchMutator', () => {
 
       expect(result.fieldSpec.key).toBe('mediaSourceId');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('uuid-1'),
-        encodeCaseSensitiveId('uuid-2'),
+        'uuid-1',
+        'uuid-2',
       ]);
     });
 
@@ -129,8 +128,8 @@ describe('MediaSourceNameSearchMutator', () => {
 
       expect(result.fieldSpec.key).toBe('mediaSourceId');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('uuid-1'),
-        encodeCaseSensitiveId('uuid-2'),
+        'uuid-1',
+        'uuid-2',
       ]);
     });
 

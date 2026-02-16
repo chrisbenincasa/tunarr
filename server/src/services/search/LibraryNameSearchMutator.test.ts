@@ -1,7 +1,6 @@
 import { SearchFilterValueNode } from '@tunarr/types/schemas';
 import { describe, expect, test } from 'vitest';
 import { MediaSourceLibraryOrm } from '../../db/schema/MediaSourceLibrary.ts';
-import { encodeCaseSensitiveId } from '../MeilisearchService.ts';
 import { LibraryNameSearchMutator } from './LibraryNameSearchMutator.ts';
 
 const createLibrary = (
@@ -88,7 +87,7 @@ describe('LibraryNameSearchMutator', () => {
       expect(result.fieldSpec.key).toBe('libraryId');
       expect(result.fieldSpec.type).toBe('string');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('lib-uuid-1'),
+        'lib-uuid-1',
       ]);
     });
 
@@ -108,8 +107,8 @@ describe('LibraryNameSearchMutator', () => {
 
       expect(result.fieldSpec.key).toBe('libraryId');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('lib-uuid-1'),
-        encodeCaseSensitiveId('lib-uuid-2'),
+        'lib-uuid-1',
+        'lib-uuid-2',
       ]);
     });
 
@@ -129,8 +128,8 @@ describe('LibraryNameSearchMutator', () => {
 
       expect(result.fieldSpec.key).toBe('libraryId');
       expect((result.fieldSpec as { value: string[] }).value).toEqual([
-        encodeCaseSensitiveId('lib-uuid-1'),
-        encodeCaseSensitiveId('lib-uuid-2'),
+        'lib-uuid-1',
+        'lib-uuid-2',
       ]);
     });
 

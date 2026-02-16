@@ -240,6 +240,15 @@ describe('search parser', () => {
 
     expect(searchFilterToString(request)).toEqual(input);
   });
+
+  test('parse library_name', () => {
+    const input = `library_name = "library"`;
+
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(searchFilterToString(request)).toEqual(input);
+  });
 });
 
 describe('parsedSearchToRequest', () => {

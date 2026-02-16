@@ -347,6 +347,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   subtitle_language: 'subtitleLanguages',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
+  // library_name: 'libraryName',
+  // media_source_name: 'mediaSourceName'
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);

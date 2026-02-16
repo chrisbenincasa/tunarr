@@ -67,7 +67,7 @@ export class MediaSourceDB {
   ) {}
 
   async getAll(): Promise<MediaSourceWithRelations[]> {
-    return this.drizzleDB.query.mediaSource.findMany({
+    return await this.drizzleDB.query.mediaSource.findMany({
       with: {
         libraries: true,
         paths: true,
