@@ -58,6 +58,31 @@ describe('search parser', () => {
     });
   });
 
+  test('parse not contains (!~)', () => {
+    const input = 'title !~ "XYZ"';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_query',
+      field: 'title',
+      op: 'not contains',
+      value: 'XYZ',
+    } satisfies SearchClause);
+  });
+
+  test('not contains round-trip', () => {
+    const input = 'title !~ "XYZ"';
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        op: 'not contains',
+        value: ['XYZ'],
+      },
+    });
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
   test('parse NOT IN', () => {
     const input = 'genre NOT IN [comedy, horror]';
     const query = parseAndCheckExpression(input);
