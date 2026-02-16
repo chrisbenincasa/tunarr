@@ -207,12 +207,20 @@ export class XmlTvWriter {
         }
       }
 
+      partial.category = [];
+      for (const { genre } of program.genres ?? []) {
+        partial.category.push({
+          _value: genre.name,
+        });
+      }
+
       const [seasonNumber, episodeNumber] = match(program)
         .with({ type: 'episode' }, (ep) => {
           return [ep.season?.index ?? ep.seasonNumber, ep.episode];
         })
         .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
         .otherwise(() => [null, null]);
+
       if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
         partial.episodeNum = [
           {

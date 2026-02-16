@@ -1,3 +1,4 @@
+import { v4 } from 'uuid';
 import {
   createChannel,
   createFakeProgram,
@@ -23,9 +24,25 @@ describe('XmlTvWriter', () => {
           {
             programming: {
               type: 'program',
-              program: createFakeProgram({
-                summary: `The family's trip to Itchy & Scratchy Land takes an unexpected turn when high-tech robots malfunction and become violent.`,
-              }),
+              program: {
+                ...createFakeProgram({
+                  summary: `The family's trip to Itchy & Scratchy Land takes an unexpected turn when high-tech robots malfunction and become violent.`,
+                }),
+                genres: [
+                  {
+                    genre: { uuid: v4(), name: 'Comedy' },
+                    genreId: '',
+                    groupId: '',
+                    programId: '',
+                  },
+                  {
+                    genre: { uuid: v4(), name: 'Animated' },
+                    genreId: '',
+                    groupId: '',
+                    programId: '',
+                  },
+                ],
+              },
             },
           },
         ],
@@ -35,7 +52,16 @@ describe('XmlTvWriter', () => {
     test('escapes summaries', () => {
       const writer = new XmlTvWriter(inMemorySettingsDB());
       const output = writer.generateXmltv(channels);
-      expect(output.programmes[0].desc?.[0]._value).includes('&amp;');
+      expect(output.programmes[0]?.desc?.[0]?._value).includes('&amp;');
+    });
+
+    test('adds genres', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const output = writer.generateXmltv(channels);
+      expect(output.programmes[0]?.category?.map((c) => c._value)).toEqual([
+        'Comedy',
+        'Animated',
+      ]);
     });
   });
 });
