@@ -7318,6 +7318,15 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
     url: '/api/channels/{channelId}/schedule-time-slots';
 };
 
+export type PostApiChannelsByChannelIdScheduleTimeSlotsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type PostApiChannelsByChannelIdScheduleTimeSlotsError = PostApiChannelsByChannelIdScheduleTimeSlotsErrors[keyof PostApiChannelsByChannelIdScheduleTimeSlotsErrors];
+
 export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
     /**
      * Default Response
@@ -7689,6 +7698,15 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
     query?: never;
     url: '/api/channels/{channelId}/schedule-slots';
 };
+
+export type PostApiChannelsByChannelIdScheduleSlotsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type PostApiChannelsByChannelIdScheduleSlotsError = PostApiChannelsByChannelIdScheduleSlotsErrors[keyof PostApiChannelsByChannelIdScheduleSlotsErrors];
 
 export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
     /**

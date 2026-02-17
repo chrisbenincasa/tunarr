@@ -1165,16 +1165,12 @@ export class ChannelDB implements IChannelDB {
       return null;
     }
 
-    const updateChannel = async (
-      lineup: readonly LineupItem[],
-      startTime?: number,
-    ) => {
+    const updateChannel = async (lineup: readonly LineupItem[]) => {
       return await this.db.transaction().execute(async (tx) => {
         await tx
           .updateTable('channel')
           .where('channel.uuid', '=', id)
           .set({
-            startTime,
             duration: sumBy(lineup, typedProperty('durationMs')),
           })
           .limit(1)
@@ -1332,7 +1328,6 @@ export class ChannelDB implements IChannelDB {
       };
     } else if (req.type === 'time' || req.type === 'random') {
       let programs: ChannelProgram[];
-      let startTime: number;
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
@@ -1351,10 +1346,10 @@ export class ChannelDB implements IChannelDB {
             }),
             schedule: req.schedule,
             seed: req.seed,
+            startTime: channel.startTime,
           },
         });
 
-        startTime = result.startTime;
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
           await this.materializeLineupCommand.execute({
@@ -1377,11 +1372,11 @@ export class ChannelDB implements IChannelDB {
                   return;
               }
             }),
+            startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
           },
         });
-        startTime = result.startTime;
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
           await this.materializeLineupCommand.execute({
@@ -1392,7 +1387,7 @@ export class ChannelDB implements IChannelDB {
 
       const newLineup = await createNewLineup(programs);
 
-      const updatedChannel = await updateChannel(newLineup, startTime);
+      const updatedChannel = await updateChannel(newLineup);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,
