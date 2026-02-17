@@ -352,6 +352,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
           width: videoStreamDetails.width,
         }),
         frameRate: videoStreamDetails.framerate?.toString(),
+        colorRange: videoStreamDetails.colorRange,
+        colorSpace: videoStreamDetails.colorSpace,
+        colorTransfer: videoStreamDetails.colorTransfer,
+        colorPrimaries: videoStreamDetails.colorPrimaries,
       });
 
       videoInputSource = new VideoInputSource(streamSource, [videoStream]);
