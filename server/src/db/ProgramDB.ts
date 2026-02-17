@@ -2249,15 +2249,10 @@ export class ProgramDB implements IProgramDB {
         const insertedExternalIds: ProgramGroupingExternalIdOrm[] = [];
         if (externalIds.length > 0) {
           insertedExternalIds.push(
-            ...(await tx
-              .insert(ProgramGroupingExternalId)
-              .values(
-                externalIds.map((eid) =>
-                  this.singleOrMultiProgramGroupingExternalIdToDao(eid),
-                ),
-              )
-              .returning()
-              .execute()),
+            ...(await this.upsertProgramGroupingExternalIdsChunkOrm(
+              externalIds,
+              tx,
+            )),
           );
         }
 
@@ -2311,37 +2306,6 @@ export class ProgramDB implements IProgramDB {
       wasInserted,
       wasUpdated,
     };
-  }
-
-  private singleOrMultiProgramGroupingExternalIdToDao(
-    externalId: NewSingleOrMultiProgramGroupingExternalId,
-  ): NewProgramGroupingExternalId {
-    switch (externalId.type) {
-      case 'single':
-        return {
-          externalKey: externalId.externalKey,
-          groupUuid: externalId.groupUuid,
-          sourceType: externalId.sourceType,
-          uuid: externalId.uuid,
-          createdAt: externalId.createdAt,
-          externalFilePath: externalId.externalFilePath,
-          libraryId: externalId.libraryId,
-          updatedAt: externalId.updatedAt,
-        };
-      case 'multi':
-        return {
-          externalKey: externalId.externalKey,
-          groupUuid: externalId.groupUuid,
-          sourceType: externalId.sourceType,
-          uuid: externalId.uuid,
-          createdAt: externalId.createdAt,
-          externalFilePath: externalId.externalFilePath,
-          externalSourceId: externalId.externalSourceId,
-          libraryId: externalId.libraryId,
-          mediaSourceId: externalId.mediaSourceId,
-          updatedAt: externalId.updatedAt,
-        };
-    }
   }
 
   private async updateProgramGrouping(
