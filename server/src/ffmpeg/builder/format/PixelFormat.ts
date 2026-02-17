@@ -47,6 +47,8 @@ export interface PixelFormat extends Equatable<PixelFormat> {
   unwrap(): PixelFormat;
 
   prettyPrint(): string;
+
+  isUnknown(): boolean;
 }
 
 export abstract class BasePixelFormat implements PixelFormat {
@@ -66,6 +68,10 @@ export abstract class BasePixelFormat implements PixelFormat {
 
   prettyPrint() {
     return `${this.constructor.name}(name=${this.name}, bitDepth=${this.bitDepth})`;
+  }
+
+  isUnknown(): boolean {
+    return this.name === 'unknown';
   }
 }
 
@@ -187,7 +193,7 @@ export class PixelFormatP010 extends HardwarePixelFormat {
 }
 
 export class KnownPixelFormats {
-  static forPixelFormat(name: KnownPixelFormats) {
+  static forPixelFormat(name: string) {
     switch (name) {
       case PixelFormats.YUV420P:
         return new PixelFormatYuv420P();

@@ -267,6 +267,11 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         codec: videoStream.Codec ?? undefined,
         profile: videoStream.Profile?.toLowerCase(),
         pixelFormat: videoStream.PixelFormat ?? undefined,
+        colorPrimaries: undefined,
+        colorRange: undefined,
+        colorSpace: undefined,
+        colorTransfer: undefined,
+        isAttachedPic: false,
       };
     }
 

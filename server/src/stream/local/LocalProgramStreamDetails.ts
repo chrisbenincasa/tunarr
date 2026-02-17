@@ -44,7 +44,7 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
     if (!firstVersion) {
       // TODO: Backfill these on the spot
       return Result.forError(
-        new Error(`Program with ID ${program.uuid} Has no media versions.`),
+        new Error(`Program with ID ${lineupItem.uuid} Has no media versions.`),
       );
     }
 
@@ -75,7 +75,13 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
             profile: nullToUndefined(videoStream.profile),
             scanType: nullToUndefined(firstVersion.scanKind),
             streamIndex: videoStream.index,
-            pixelFormat: videoStream.pixelFormat ?? undefined,
+            pixelFormat: nullToUndefined(videoStream.pixelFormat),
+            bitrate: undefined,
+            colorPrimaries: undefined,
+            colorRange: undefined,
+            colorSpace: undefined,
+            colorTransfer: undefined,
+            isAttachedPic: false,
           }) satisfies VideoStreamDetails,
       ) ?? [];
 
@@ -94,18 +100,19 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
           }) satisfies AudioStreamDetails,
       ) ?? [];
 
-    const subtitleStreamDetails =
+    const subtitleStreamDetails: SubtitleStreamDetails[] =
       streamsByType['subtitles']?.map(
-        (subtitle): SubtitleStreamDetails => ({
-          codec: subtitle.codec,
-          default: subtitle.default,
-          forced: subtitle.forced,
-          sdh: false, // TODO:
-          type: 'embedded',
-          index: subtitle.index,
-          languageCodeISO6392: nullToUndefined(subtitle.language),
-        }),
-      ) ?? ([] as SubtitleStreamDetails[]);
+        (subtitle) =>
+          ({
+            codec: subtitle.codec,
+            default: subtitle.default,
+            forced: subtitle.forced,
+            sdh: false, // TODO:
+            type: 'embedded',
+            index: subtitle.index,
+            languageCodeISO6392: nullToUndefined(subtitle.language),
+          }) satisfies SubtitleStreamDetails,
+      ) ?? [];
 
     subtitleStreamDetails.push(
       ...(program.subtitles

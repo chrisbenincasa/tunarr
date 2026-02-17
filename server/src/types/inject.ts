@@ -41,6 +41,7 @@ const KEYS = {
   PlexStreamDetailsFactory: Symbol.for('PlexStreamDetailsFactory'),
   EmbyStreamDetails: Symbol.for('EmbyStreamDetails'),
   EmbyStreamDetailsFactory: Symbol.for('EmbyStreamDetailsFactory'),
+  LocalStreamDetailsFactory: Symbol.for('LocalStreamDetailsFactory'),
   FFmpegFactory: Symbol.for('FFmpegFactory'),
   ConcatStreamFactory: Symbol.for('ConcatStreamFactory'),
   PipelineBuilderFactory: Symbol.for('PipelineBuilderFactory'),

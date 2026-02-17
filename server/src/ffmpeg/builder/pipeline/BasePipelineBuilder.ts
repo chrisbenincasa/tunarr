@@ -342,7 +342,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.context = builderContext;
 
     this.logger.debug(
-      'Creating ffmpeg transcode pipeline with context: %O',
+      'Creating ffmpeg transcode pipeline (%s) with context: %O',
+      this.constructor.name,
       this.context,
     );
 
@@ -510,7 +511,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.setHardwareAccelState();
 
     this.logger.debug(
-      'Input = %O, Output = %O. Using decode mode = %s and encode mode = %s',
+      'PIPELINE: Input = %O, Output = %O. Using decode mode = %s and encode mode = %s',
       {
         codec: this.context.videoStream?.codec,
         bitDepth: this.context.videoStream?.bitDepth(),

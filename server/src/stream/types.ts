@@ -1,6 +1,7 @@
 import type { MediaChapter } from '@tunarr/types';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import type { Dictionary, NonEmptyArray } from 'ts-essentials';
+import type { Maybe } from '../types/util.ts';
 
 export type StreamDetails = {
   duration: Duration;
@@ -20,24 +21,24 @@ export type StreamDetails = {
 };
 
 export type VideoStreamDetails = {
-  codec?: string;
-  profile?: string;
+  codec: Maybe<string>;
+  profile: Maybe<string>;
   width: number;
   height: number;
-  framerate?: number | string;
+  framerate: Maybe<number | string>;
   scanType?: 'interlaced' | 'progressive' | 'unknown';
-  pixelFormat?: string;
-  bitDepth?: number;
-  streamIndex?: number;
+  pixelFormat: Maybe<string>;
+  bitDepth: Maybe<number>;
+  streamIndex: Maybe<number>;
   sampleAspectRatio?: string;
   displayAspectRatio: string;
-  anamorphic?: boolean;
-  bitrate?: number;
-  isAttachedPic?: boolean;
-  colorRange?: string;
-  colorSpace?: string;
-  colorTransfer?: string;
-  colorPrimaries?: string;
+  anamorphic: Maybe<boolean>;
+  bitrate: Maybe<number>;
+  isAttachedPic: Maybe<boolean>;
+  colorRange: Maybe<string>;
+  colorSpace: Maybe<string>;
+  colorTransfer: Maybe<string>;
+  colorPrimaries: Maybe<string>;
 };
 
 export type AudioStreamDetails = {

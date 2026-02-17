@@ -384,6 +384,12 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         codec: videoStream.codec,
         profile: videoStream.profile?.toLowerCase(),
         streamIndex: videoStream.index,
+        colorPrimaries: undefined,
+        colorRange: undefined,
+        colorSpace: undefined,
+        colorTransfer: undefined,
+        isAttachedPic: false,
+        pixelFormat: undefined,
       } satisfies VideoStreamDetails;
     }
 

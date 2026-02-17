@@ -40,6 +40,7 @@ import { DB } from './schema/db.ts';
 import {
   EmbyMediaSource,
   JellyfinMediaSource,
+  LocalMediaSource,
   MediaSourceWithRelations,
   PlexMediaSource,
 } from './schema/derivedTypes.js';
@@ -124,6 +125,10 @@ export class MediaSourceDB {
     type: typeof MediaSourceType.Emby,
     nameOrId: MediaSourceId,
   ): Promise<EmbyMediaSource | undefined>;
+  async findByType(
+    type: typeof MediaSourceType.Local,
+    nameOrId: MediaSourceId,
+  ): Promise<LocalMediaSource | undefined>;
   async findByType(
     type: MediaSourceType,
     nameOrId: MediaSourceId,

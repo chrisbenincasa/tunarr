@@ -91,6 +91,7 @@ export class FfprobeStreamDetails
         colorRange: videoStream.color_range,
         colorSpace: videoStream.color_space,
         colorTransfer: videoStream.color_transfer,
+        isAttachedPic: false,
       } satisfies VideoStreamDetails;
     }
 

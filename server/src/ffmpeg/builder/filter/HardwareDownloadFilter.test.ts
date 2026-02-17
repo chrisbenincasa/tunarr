@@ -1,7 +1,9 @@
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
 import {
+  PixelFormatCuda,
   PixelFormatNv12,
   PixelFormatP010,
+  PixelFormatUnknown,
   PixelFormatVaapi,
   PixelFormatYuv420P,
   PixelFormatYuv420P10Le,
@@ -110,5 +112,93 @@ describe('HardwareDownloadFilter', () => {
     expect(filter.nextState(currentState).frameDataLocation).to.eq(
       FrameDataLocation.Software,
     );
+  });
+
+  describe('never outputs format=unknown', () => {
+    test('unknown 8-bit pixel format falls back to yuv420p', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: PixelFormatUnknown(8),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+      expect(filter.filter).to.eq('hwdownload,format=yuv420p');
+    });
+
+    test('unknown 10-bit pixel format falls back to yuv420p10le', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: PixelFormatUnknown(10),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+      expect(filter.filter).to.eq('hwdownload,format=yuv420p10le');
+    });
+
+    test('vaapi wrapping unknown 8-bit format', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatVaapi(PixelFormatUnknown(8)),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+    });
+
+    test('vaapi wrapping unknown 10-bit format', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatVaapi(PixelFormatUnknown(10)),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+    });
+
+    test('cuda wrapping unknown 8-bit format', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatCuda(PixelFormatUnknown(8)),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+    });
+
+    test('cuda wrapping unknown 10-bit format', () => {
+      const currentState = new FrameState({
+        isAnamorphic: false,
+        scaledSize: FrameSize.FHD,
+        paddedSize: FrameSize.FHD,
+        pixelFormat: new PixelFormatCuda(PixelFormatUnknown(10)),
+        frameDataLocation: FrameDataLocation.Hardware,
+      });
+
+      const filter = new HardwareDownloadFilter(currentState);
+
+      expect(filter.filter).not.to.contain('unknown');
+    });
   });
 });

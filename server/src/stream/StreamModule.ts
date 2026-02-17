@@ -21,7 +21,7 @@ import { JellyfinProgramStream } from '@/stream/jellyfin/JellyfinProgramStream.j
 import { JellyfinStreamDetails } from '@/stream/jellyfin/JellyfinStreamDetails.js';
 import { PlexProgramStream } from '@/stream/plex/PlexProgramStream.js';
 import { PlexStreamDetails } from '@/stream/plex/PlexStreamDetails.js';
-import { KEYS } from '@/types/inject.js';
+import { autoFactoryKey, KEYS } from '@/types/inject.js';
 import type { interfaces } from 'inversify';
 import { ContainerModule } from 'inversify';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
@@ -37,6 +37,7 @@ import { ExternalStreamDetailsFetcherFactory } from './StreamDetailsFetcher.ts';
 import { EmbyProgramStream } from './emby/EmbyProgramStream.ts';
 import { EmbyStreamDetails } from './emby/EmbyStreamDetails.ts';
 import { LocalProgramStream } from './local/LocalProgramStream.ts';
+import { LocalProgramStreamDetails } from './local/LocalProgramStreamDetails.ts';
 
 export type OfflineStreamFactoryType = interfaces.MultiFactory<
   ProgramStream,
@@ -119,7 +120,11 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
           ctx.container.get<ISettingsDB>(KEYS.SettingsDB),
           ctx.container.get(CacheImageService),
           ctx.container.get<FFmpegFactory>(KEYS.FFmpegFactory),
+          ctx.container.get(MediaSourceDB),
           ctx.container.get<IProgramDB>(KEYS.ProgramDB),
+          ctx.container.get<interfaces.AutoFactory<LocalProgramStreamDetails>>(
+            autoFactoryKey(LocalProgramStreamDetails),
+          ),
           playerContext,
           outputFormat,
         );
@@ -228,6 +233,11 @@ const configure: interfaces.ContainerModuleCallBack = (bind) => {
   bind<interfaces.Factory<EmbyStreamDetails>>(
     KEYS.EmbyStreamDetailsFactory,
   ).toAutoFactory(EmbyStreamDetails);
+
+  bind(LocalProgramStreamDetails).toSelf();
+  bind<interfaces.Factory<LocalProgramStreamDetails>>(
+    autoFactoryKey(LocalProgramStreamDetails),
+  ).toAutoFactory(LocalProgramStreamDetails);
 
   bind<interfaces.Factory<ConcatStream>>(KEYS.ConcatStreamFactory).toFactory<
     ConcatStream,
