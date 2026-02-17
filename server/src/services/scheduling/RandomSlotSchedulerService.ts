@@ -2,6 +2,7 @@ import {
   RandomSlotScheduleSchema,
   SlotScheduleResult,
 } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { z } from 'zod/v4';
 import { RandomSlotScheduler } from './RandomSlotsService.ts';
@@ -13,6 +14,7 @@ export const ChannelSlotScheduleRequest = z.object({
   schedule: RandomSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
+  startTime: z.number().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -25,6 +27,7 @@ export const ProgramsSlotScheduleRequest = z.object({
   schedule: RandomSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
+  startTime: z.number().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -57,6 +60,7 @@ export class SlotSchedulerService {
       slotPrograms,
       request.seed,
       request.discardCount,
+      request.startTime ? dayjs(request.startTime) : undefined,
     );
   }
 }

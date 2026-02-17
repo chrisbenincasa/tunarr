@@ -87,10 +87,10 @@ function pushOrExtendFlex(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
-  // channelProgramming: ChannelProgram[],
   programs: SlotSchedulerProgram[],
   seed: number[] = createEntropy(),
   discardCount: number = 0,
+  startTime: dayjs.Dayjs = dayjs.tz(),
 ): Promise<TimeSlotScheduleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
@@ -121,12 +121,17 @@ export async function scheduleTimeSlots(
       ),
   );
 
+  const channelPrograms: CondensedChannelProgram[] = [];
+
+  const pushFlex = (flexDurationMs: number) => {
+    const inc = pushOrExtendFlex(channelPrograms, flexDurationMs);
+    timeCursor = timeCursor.add(inc);
+  };
+
   const now = dayjs.tz();
   const startOfCurrentPeriod = now.startOf(schedule.period);
-  let t0 = startOfCurrentPeriod.add(
-    first(sortedSlots)!.startTime,
-    'millisecond',
-  );
+  let t0 = startTime;
+  console.log('starting at ', t0.format());
 
   if (schedule.startTomorrow) {
     t0 = t0.add(1, 'day');
@@ -135,12 +140,6 @@ export async function scheduleTimeSlots(
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  const channelPrograms: CondensedChannelProgram[] = [];
-
-  const pushFlex = (flexDurationMs: number) => {
-    const inc = pushOrExtendFlex(channelPrograms, flexDurationMs);
-    timeCursor = timeCursor.add(inc);
-  };
 
   const pushProgram = (program: Nilable<CondensedChannelProgram>) => {
     if (!program) {

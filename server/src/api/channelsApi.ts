@@ -697,15 +697,27 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: TimeSlotScheduleWithPrograms,
+          404: z.string(),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.params.channelId,
+      );
+
+      if (!channel) {
+        return res
+          .status(404)
+          .send(`Channel ID ${req.params.channelId} not found`);
+      }
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
           schedule: req.body.schedule,
+          startTime: channel.startTime,
         },
         type: 'time-slots',
       });
@@ -736,15 +748,27 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: SlotScheduleWithPrograms,
+          404: z.string(),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.params.channelId,
+      );
+
+      if (!channel) {
+        return res
+          .status(404)
+          .send(`Channel ID ${req.params.channelId} not found`);
+      }
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
           schedule: req.body.schedule,
+          startTime: channel.startTime,
         },
         type: 'schedule-slots',
       });

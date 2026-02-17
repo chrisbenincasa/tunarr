@@ -1,5 +1,6 @@
 import constants from '@tunarr/shared/constants';
 import type { TimeSlotSchedule } from '@tunarr/types/api';
+import dayjs from 'dayjs';
 import { maxBy, minBy } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import { createFakeProgramOrm } from '../../testing/fakes/entityCreators.ts';
@@ -619,7 +620,13 @@ describe('TimeSlotService', () => {
           timeZoneOffset: 0,
         };
 
-        const result = await scheduleTimeSlots(schedule, programs);
+        const result = await scheduleTimeSlots(
+          schedule,
+          programs,
+          undefined,
+          undefined,
+          dayjs().startOf('day'),
+        );
 
         expect(result.lineup).toBeDefined();
         const totalDuration = result.lineup.reduce(
@@ -854,8 +861,21 @@ describe('TimeSlotService', () => {
         };
 
         const seed = [42, 123, 456, 789];
-        const result1 = await scheduleTimeSlots(schedule, programs, seed);
-        const result2 = await scheduleTimeSlots(schedule, programs, seed);
+        const start = dayjs().startOf('day');
+        const result1 = await scheduleTimeSlots(
+          schedule,
+          programs,
+          seed,
+          undefined,
+          start,
+        );
+        const result2 = await scheduleTimeSlots(
+          schedule,
+          programs,
+          seed,
+          undefined,
+          start,
+        );
 
         expect(result1).toEqual(result2);
       });
