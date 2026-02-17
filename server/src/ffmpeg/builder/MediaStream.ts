@@ -58,6 +58,10 @@ export class VideoStream implements MediaStream {
   frameSize: FrameSize;
   frameRate?: string;
   inputKind: VideoInputKind = 'video' as const;
+  colorRange?: string;
+  colorSpace?: string;
+  colorTransfer?: string;
+  colorPrimaries?: string;
   providedSampleAspectRatio: Nullable<string>;
   displayAspectRatio: string;
 
