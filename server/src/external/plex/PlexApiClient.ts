@@ -2129,7 +2129,7 @@ function plexMediaStreamsInject(
   ).map(
     ([marker, index]) =>
       ({
-        chapterType: 'intro',
+        chapterType: 'outro',
         endTime: marker.endTimeOffset,
         startTime: marker.startTimeOffset,
         index,
