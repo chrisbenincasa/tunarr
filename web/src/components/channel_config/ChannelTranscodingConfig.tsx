@@ -188,6 +188,33 @@ export default function ChannelTranscodingConfig() {
             </FormControl>
           </Stack>
         </Box>
+        <Box>
+          <Typography sx={{ mb: 1 }} variant="h5">
+            Playback
+          </Typography>
+          <Typography variant="subtitle1">
+            Control playback behavior for programs on this channel.
+          </Typography>
+          <FormControlLabel
+            label="Skip End Credits"
+            sx={{ mt: 1 }}
+            control={
+              <Controller
+                control={control}
+                name="skipCredits"
+                render={({ field }) => (
+                  <Switch {...field} checked={field.value} />
+                )}
+              />
+            }
+          />
+          <FormHelperText>
+            When enabled, programs with detected end credits will stop playback
+            before credits begin. The remaining time is filled with configured
+            filler content. Requires credit markers from Plex (via library
+            scan).
+          </FormHelperText>
+        </Box>
         <Stack gap={1}>
           <Stack>
             <Typography sx={{ mb: 1 }} variant="h5">

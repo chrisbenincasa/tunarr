@@ -107,6 +107,7 @@ const EditChannelTabsProps: EditChannelTabProps[] = [
       'streamMode',
       'subtitlesEnabled',
       'subtitlePreferences',
+      'skipCredits',
     ],
   },
 ];
