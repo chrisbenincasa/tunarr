@@ -117,6 +117,7 @@ function createSaveableChannel(
     streamMode: 'hls' as const,
     transcodeConfigId,
     subtitlesEnabled: false,
+    skipCredits: false,
     ...overrides,
   };
 }

@@ -64,6 +64,7 @@ export const dbChannelToApiChannel = ({
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,
+    skipCredits: numberToBoolean(channel.skipCredits),
   };
 };
 
@@ -117,5 +118,6 @@ export const ormChannelToApiChannel = ({
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,
+    skipCredits: channel.skipCredits ?? false,
   };
 };
