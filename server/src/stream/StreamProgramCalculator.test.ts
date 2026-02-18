@@ -480,6 +480,110 @@ describe('StreamProgramCalculator', () => {
         programDuration - +dayjs.duration({ minutes: 10 }),
       );
     });
+
+    baseTest('does not affect commercial/filler lineup items', async () => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const channelCache = mock<IStreamLineupCache>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const channelId = faker.string.uuid();
+      const programId = faker.string.uuid();
+      const versionId = faker.string.uuid();
+      const fillerListId = faker.string.uuid();
+      const programDuration = +dayjs.duration({ minutes: 22 });
+      const outroStart = +dayjs.duration({ minutes: 18 });
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: programDuration,
+          id: programId,
+          fillerListId: fillerListId,
+        },
+      ];
+
+      when(programDB.getProgramById(programId)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId,
+            duration: programDuration,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+            versions: [
+              {
+                uuid: versionId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                duration: programDuration,
+                sampleAspectRatio: '1:1',
+                displayAspectRatio: '1.78',
+                frameRate: '23.98',
+                scanKind: 'progressive',
+                width: 1920,
+                height: 1080,
+                programId: programId,
+                chapters: [
+                  {
+                    uuid: faker.string.uuid(),
+                    index: 0,
+                    startTime: outroStart,
+                    endTime: programDuration,
+                    title: null,
+                    chapterType: 'outro' as const,
+                    programVersionId: versionId,
+                  },
+                ],
+              },
+            ],
+          }),
+        ),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: +startTime.subtract(10, 'minutes'),
+        duration: programDuration,
+        skipCredits: true,
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+
+      const calc = new StreamProgramCalculator(
+        LoggerFactory.root,
+        instance(fillerDB),
+        instance(channelDB),
+        instance(channelCache),
+        instance(programDB),
+        instance(fillerPicker),
+      );
+
+      // 10 min into a 22-min filler item with outro at 18 min
+      // skipCredits is true but item is commercial — should NOT cap
+      // streamDuration = 22 - 10 = 12 min (full remaining)
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem.type).toBe('commercial');
+      expect(out.lineupItem.streamDuration).toBe(
+        programDuration - +dayjs.duration({ minutes: 10 }),
+      );
+    });
   });
 
   baseTest('getCurrentLineupItem loop filler lineup item', async () => {
