@@ -249,14 +249,14 @@ export class StreamProgramCalculator {
           const creditsRemaining =
             outroChapter.startTime - currentProgram.timeElapsed;
           if (creditsRemaining <= 0) {
-            // Tuned in during credits — show filler for remaining slot time
-            currentProgram = {
-              ...currentProgram,
-              program: {
-                ...createOfflineStreamLineupItem(streamDuration, req.startTime),
-                programBeginMs: currentProgram.program.programBeginMs,
-              },
-            };
+            // Credits are already playing — advance past this program's
+            // remaining slot time so the next program starts immediately.
+            const remainingSlotTime =
+              currentProgram.program.duration - currentProgram.timeElapsed;
+            return await this.getCurrentLineupItem({
+              ...req,
+              startTime: req.startTime + remainingSlotTime + 1,
+            });
           } else {
             // Cap stream duration to end when credits begin
             streamDuration = Math.min(streamDuration, creditsRemaining);
