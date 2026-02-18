@@ -14,7 +14,10 @@ import { calculateStartTimeOffsets } from '../db/lineupUtil.ts';
 import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
 import { MediaSourceId } from '../db/schema/base.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
-import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
+import {
+  EmptyFillerPickResult,
+  IFillerPicker,
+} from '../services/interfaces/IFillerPicker.ts';
 import {
   createChannelOrm,
   createFakeProgram,
@@ -246,6 +249,237 @@ describe('StreamProgramCalculator', () => {
     verify(
       channelCache.recordPlayback(channel.uuid, +startTime, out.lineupItem),
     ).once();
+  });
+
+  describe('skipCredits', () => {
+    const setupSkipCreditsTest = (opts: {
+      skipCredits: boolean;
+      outroStartTimeMs: number | null;
+      programDurationMs: number;
+      channelStartOffset: dayjs.Dayjs;
+    }) => {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const channelCache = mock<IStreamLineupCache>();
+
+      const startTime = dayjs(new Date(2025, 8, 17, 8));
+      const channelId = faker.string.uuid();
+      const programId = faker.string.uuid();
+      const versionId = faker.string.uuid();
+
+      const lineup: LineupItem[] = [
+        {
+          type: 'content',
+          durationMs: opts.programDurationMs,
+          id: programId,
+        },
+      ];
+
+      const chapters =
+        opts.outroStartTimeMs !== null
+          ? [
+              {
+                uuid: faker.string.uuid(),
+                index: 0,
+                startTime: opts.outroStartTimeMs,
+                endTime: opts.programDurationMs,
+                title: null,
+                chapterType: 'outro' as const,
+                programVersionId: versionId,
+              },
+            ]
+          : [];
+
+      when(programDB.getProgramById(programId)).thenReturn(
+        Promise.resolve(
+          createFakeProgram({
+            uuid: programId,
+            duration: opts.programDurationMs,
+            mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+            versions: [
+              {
+                uuid: versionId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                duration: opts.programDurationMs,
+                sampleAspectRatio: '1:1',
+                displayAspectRatio: '1.78',
+                frameRate: '23.98',
+                scanKind: 'progressive',
+                width: 1920,
+                height: 1080,
+                programId: programId,
+                chapters,
+              },
+            ],
+          }),
+        ),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: +opts.channelStartOffset,
+        duration: opts.programDurationMs,
+        skipCredits: opts.skipCredits,
+      });
+
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+
+      // Mock filler-related calls for offline item handling
+      when(fillerDB.getFillersFromChannel(channelId)).thenReturn(
+        Promise.resolve([]),
+      );
+      when(channelDB.getChannelFallbackPrograms(channelId)).thenReturn(
+        Promise.resolve([]),
+      );
+      when(
+        fillerPicker.pickFiller(anything(), anything(), anything()),
+      ).thenReturn(EmptyFillerPickResult);
+
+      const calc = new StreamProgramCalculator(
+        LoggerFactory.root,
+        instance(fillerDB),
+        instance(channelDB),
+        instance(channelCache),
+        instance(programDB),
+        instance(fillerPicker),
+      );
+
+      return { calc, startTime, channelCache, channel };
+    };
+
+    baseTest('caps streamDuration at outro start time', async () => {
+      const programDuration = +dayjs.duration({ minutes: 30 });
+      const outroStart = +dayjs.duration({ minutes: 25 });
+      const channelStartTime = dayjs(new Date(2025, 8, 17, 8)).subtract(
+        10,
+        'minutes',
+      );
+
+      const { calc, startTime } = setupSkipCreditsTest({
+        skipCredits: true,
+        outroStartTimeMs: outroStart,
+        programDurationMs: programDuration,
+        channelStartOffset: channelStartTime,
+      });
+
+      // 10 minutes into a 30-minute program, credits at 25 min
+      // Without skip: streamDuration = 30 - 10 = 20 min
+      // With skip: streamDuration = min(20, 25 - 10) = 15 min
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem.streamDuration).toBe(
+        outroStart - +dayjs.duration({ minutes: 10 }),
+      );
+    });
+
+    baseTest('mid-credits tune-in returns offline item', async () => {
+      const programDuration = +dayjs.duration({ minutes: 30 });
+      const outroStart = +dayjs.duration({ minutes: 5 });
+      const channelStartTime = dayjs(new Date(2025, 8, 17, 8)).subtract(
+        10,
+        'minutes',
+      );
+
+      const { calc, startTime } = setupSkipCreditsTest({
+        skipCredits: true,
+        outroStartTimeMs: outroStart,
+        programDurationMs: programDuration,
+        channelStartOffset: channelStartTime,
+      });
+
+      // 10 minutes into a 30-minute program, credits at 5 min
+      // timeElapsed (10 min) > outroStart (5 min) => during credits
+      // Should return offline item, capped at 10 min max by createLineupItem
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem.type).toBe('offline');
+      // Offline screen caps at 10 minutes (see createLineupItem)
+      expect(out.lineupItem.streamDuration).toBe(
+        +dayjs.duration({ minutes: 10 }),
+      );
+    });
+
+    baseTest('no outro chapter has no effect on streamDuration', async () => {
+      const programDuration = +dayjs.duration({ minutes: 30 });
+      const channelStartTime = dayjs(new Date(2025, 8, 17, 8)).subtract(
+        10,
+        'minutes',
+      );
+
+      const { calc, startTime } = setupSkipCreditsTest({
+        skipCredits: true,
+        outroStartTimeMs: null,
+        programDurationMs: programDuration,
+        channelStartOffset: channelStartTime,
+      });
+
+      // No outro chapter — full remaining duration should apply
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem.streamDuration).toBe(
+        programDuration - +dayjs.duration({ minutes: 10 }),
+      );
+    });
+
+    baseTest('skipCredits disabled ignores outro chapters', async () => {
+      const programDuration = +dayjs.duration({ minutes: 30 });
+      const outroStart = +dayjs.duration({ minutes: 25 });
+      const channelStartTime = dayjs(new Date(2025, 8, 17, 8)).subtract(
+        10,
+        'minutes',
+      );
+
+      const { calc, startTime } = setupSkipCreditsTest({
+        skipCredits: false,
+        outroStartTimeMs: outroStart,
+        programDurationMs: programDuration,
+        channelStartOffset: channelStartTime,
+      });
+
+      // skipCredits is false — outro chapter should be ignored
+      // streamDuration = 30 - 10 = 20 min (full remaining)
+      const out = (
+        await calc.getCurrentLineupItem({
+          allowSkip: false,
+          channelId: 1,
+          startTime: +startTime,
+        })
+      ).get();
+
+      expect(out.lineupItem.streamDuration).toBe(
+        programDuration - +dayjs.duration({ minutes: 10 }),
+      );
+    });
   });
 
   baseTest('getCurrentLineupItem loop filler lineup item', async () => {
