@@ -133,7 +133,17 @@ export default function RandomSlotEditorPage() {
       body: {
         type: 'random',
         schedule,
-        programs: filteredLineup,
+        programs: seq.collect(filteredLineup, (l) => {
+          switch (l.type) {
+            case 'custom':
+            case 'content':
+              return l.id;
+            case 'redirect':
+            case 'flex':
+            case 'filler':
+              return null;
+          }
+        }),
         seed: randomState?.seed,
         discardCount: randomState?.discardCount,
       },
