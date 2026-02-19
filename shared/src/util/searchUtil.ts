@@ -21,7 +21,7 @@ import type {
   StrictOmit,
 } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
-import { emptyStringToNull } from './index.js';
+import { emptyStringToNull, isNonEmptyString } from './index.js';
 import { inConstArr, invert } from './seq.js';
 
 dayjs.extend(customParseFormat);
@@ -842,7 +842,10 @@ function collectBinaryClauseChildren(
 }
 
 // Parse a valid SearchClause into an actual Tunarr SearchFilter
-export function parsedSearchToRequest(input: SearchClause): SearchFilter {
+export function parsedSearchToRequest(
+  input: SearchClause,
+  normalizeValues: boolean = true,
+): SearchFilter {
   switch (input.type) {
     case 'search_group': {
       if (input.clauses.length === 1) {
@@ -857,7 +860,9 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
             op: innerClause.op,
             type: 'op',
             grouped: true,
-            children: flatChildren.map(parsedSearchToRequest),
+            children: flatChildren.map((child) =>
+              parsedSearchToRequest(child, normalizeValues),
+            ),
           } satisfies SearchFilterOperatorNode;
         }
         // Single non-binary clause doesn't need grouping
@@ -868,7 +873,9 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
         op: 'and',
         type: 'op',
         grouped: true,
-        children: input.clauses.map(parsedSearchToRequest),
+        children: input.clauses.map((child) =>
+          parsedSearchToRequest(child, normalizeValues),
+        ),
       } satisfies SearchFilterOperatorNode;
     }
     case 'single_numeric_query': {
@@ -947,6 +954,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       } satisfies SearchFilterValueNode;
     }
     case 'single_date_query': {
+      const originalField = input.field;
       const key: string = virtualFieldToIndexField[input.field] ?? input.field;
       const converter =
         input.field in dateFieldNormalizersByField
@@ -960,7 +968,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
           type: 'value',
           fieldSpec: {
             key,
-            name: '',
+            name: originalField,
             op: NumericOpToApiType[input.op],
             type: 'date' as const,
             value: [converter(input.value[0]), converter(input.value[1])],
@@ -971,7 +979,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
           type: 'value',
           fieldSpec: {
             key,
-            name: '',
+            name: originalField,
             op: NumericOpToApiType[input.op],
             type: 'date' as const,
             value: converter(input.value),
@@ -991,7 +999,7 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
         type: 'value',
         fieldSpec: {
           key,
-          name: '',
+          name: input.field,
           op,
           type: inConstArr(FactedStringFields, input.field)
             ? 'faceted_string'
@@ -1006,12 +1014,67 @@ export function parsedSearchToRequest(input: SearchClause): SearchFilter {
       return {
         op: input.op.toLowerCase() as Lowercase<SearchFilterOperatorNode['op']>,
         type: 'op',
-        children: flatChildren.map(parsedSearchToRequest),
+        children: flatChildren.map((child) =>
+          parsedSearchToRequest(child, normalizeValues),
+        ),
       } satisfies SearchFilterOperatorNode;
     }
   }
 }
 
+// Applies denormalizers to relevant fields. Useful for UI
+export function denormalizeSearchFilter(input: SearchFilter): SearchFilter {
+  return match(input)
+    .returnType<SearchFilter>()
+    .with({ type: 'op', children: [P.select()] }, (child) =>
+      denormalizeSearchFilter(child),
+    )
+    .with({ type: 'op' }, (op) => ({
+      ...op,
+      children: op.children.map(denormalizeSearchFilter),
+    }))
+    .with(
+      {
+        type: 'value',
+        fieldSpec: { type: 'numeric', name: P.when(isNonEmptyString) },
+      },
+      (numeric) => {
+        const denorm = has(
+          numericFieldDenormalizersByField,
+          numeric.fieldSpec.name,
+        )
+          ? (numericFieldDenormalizersByField[
+              numeric.fieldSpec.name
+            ] as Converter<number>)
+          : identity<number>;
+        if (isArray(numeric.fieldSpec.value)) {
+          return {
+            type: 'value',
+            fieldSpec: {
+              ...numeric.fieldSpec,
+              value: numeric.fieldSpec.value.map(denorm) as [number, number],
+            },
+          };
+        } else {
+          return {
+            type: 'value',
+            fieldSpec: {
+              ...numeric.fieldSpec,
+              value: denorm(numeric.fieldSpec.value),
+            },
+          };
+        }
+      },
+    )
+    .with({ type: 'value' }, (field) => field)
+    .exhaustive();
+}
+
+/**
+ * Takes a search filter which may have virtual fields and / or need value
+ * conversions and normalizes it to prepare it for search against the Tunarr
+ * API
+ */
 export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
   return match(input)
     .returnType<SearchFilter>()
@@ -1023,16 +1086,19 @@ export function normalizeSearchFilter(input: SearchFilter): SearchFilter {
       children: op.children.map(normalizeSearchFilter),
     }))
     .with({ type: 'value', fieldSpec: { type: 'numeric' } }, (numeric) => {
+      const aliasOrKey = numeric.fieldSpec.name ?? numeric.fieldSpec.key;
       const key: string =
-        virtualFieldToIndexField[numeric.fieldSpec.key] ??
-        numeric.fieldSpec.key;
-      const valueConverter: Converter<number> =
-        numeric.fieldSpec.key in numericFieldNormalizersByField
-          ? numericFieldNormalizersByField[
-              numeric.fieldSpec
-                .key as keyof typeof numericFieldNormalizersByField
-            ]
-          : identity;
+        (isNonEmptyString(numeric.fieldSpec.name)
+          ? virtualFieldToIndexField[numeric.fieldSpec.name]
+          : null) ?? numeric.fieldSpec.key;
+
+      const valueConverter: Converter<number> = has(
+        numericFieldNormalizersByField,
+        aliasOrKey,
+      )
+        ? (numericFieldNormalizersByField[aliasOrKey] as Converter<number>)
+        : identity;
+
       if (isArray(numeric.fieldSpec.value)) {
         return {
           type: 'value',
@@ -1130,9 +1196,9 @@ export function searchFilterToString(input: SearchFilter): string {
         indexOperatorToSyntax[input.fieldSpec.op] ?? input.fieldSpec.op;
 
       // Get denormalizer for numeric fields (e.g., convert ms back to minutes)
-      has(numericFieldDenormalizersByField, input.fieldSpec.name);
       const denormalizer: Converter<number> =
         input.fieldSpec.type === 'numeric' &&
+        isNonEmptyString(input.fieldSpec.name) &&
         has(numericFieldDenormalizersByField, input.fieldSpec.name)
           ? (numericFieldDenormalizersByField[
               input.fieldSpec.name
@@ -1151,12 +1217,7 @@ export function searchFilterToString(input: SearchFilter): string {
         const value = input.fieldSpec.value[0];
         const repr = `"${value}"`;
         return `${key} ${op} ${repr}`;
-      }
-      //  else if (isNumber2Tuple(input.fieldSpec.value)) {
-      //   const [lo, hi] = input.fieldSpec.value;
-      //   return `${key} ${denormalizer(lo)} to ${denormalizer(hi)}`;
-      // }
-      else {
+      } else {
         const components: string[] = [];
         for (const x of input.fieldSpec.value) {
           if (isNumber(x)) {

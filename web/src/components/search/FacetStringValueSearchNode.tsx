@@ -2,27 +2,29 @@ import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { MediaSourceId } from '@tunarr/shared';
 import { search } from '@tunarr/shared/util';
-import type { FactedStringSearchField } from '@tunarr/types/schemas';
 import { isArray } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useDebounceValue } from 'usehooks-ts';
 import { postApiProgramsFacetsByFacetNameOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
 import type { SearchForm } from './SearchInput.tsx';
+
+type Props = {
+  field: SearchFieldSpec<'faceted_string'>;
+  formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
+  mediaSourceId?: MediaSourceId;
+  libraryId?: string;
+};
 
 export function FacetStringValueSearchNode({
   formKey,
   mediaSourceId,
   libraryId,
   field,
-}: {
-  field: FactedStringSearchField;
-  formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
-  mediaSourceId?: MediaSourceId;
-  libraryId?: string;
-}) {
+}: Props) {
   const { control, setValue, watch } = useFormContext<SearchForm>();
   const [facetSearchInputValue, setFacetSearchInputValue] = useDebounceValue(
     '',

@@ -412,7 +412,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'studio.name',
-        name: '',
+        name: 'studio',
         op: 'contains',
         type: 'faceted_string',
         value: ['Pixar'],
@@ -434,7 +434,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'genres.name',
-        name: '',
+        name: 'genre',
         op: 'not in',
         type: 'faceted_string',
         value: ['comedy', 'horror'],
@@ -458,7 +458,7 @@ describe('parsedSearchToRequest', () => {
         type: 'value',
         fieldSpec: {
           key: 'grandparent.title',
-          name: '',
+          name: 'show_title',
           op: '=',
           type: 'string',
           value: ['The Twilight Zone'],
@@ -480,7 +480,7 @@ describe('parsedSearchToRequest', () => {
         type: 'value',
         fieldSpec: {
           key: 'grandparent.genres',
-          name: '',
+          name: 'show_genre',
           op: '=',
           type: 'faceted_string',
           value: ['comedy'],
@@ -503,7 +503,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'audioLanguages',
-        name: '',
+        name: 'audio_language',
         op: '=',
         type: 'faceted_string',
         value: ['eng'],
@@ -525,7 +525,7 @@ describe('parsedSearchToRequest', () => {
       type: 'value',
       fieldSpec: {
         key: 'subtitleLanguages',
-        name: '',
+        name: 'subtitle_language',
         op: '=',
         type: 'faceted_string',
         value: ['fra'],
