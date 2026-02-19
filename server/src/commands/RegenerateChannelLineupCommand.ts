@@ -54,9 +54,34 @@ export class RegenerateChannelLineupCommand {
             .otherwise(() => null);
         });
 
+        // Regenerate schedule at the new start time.
         await this.channelDB.replaceChannelPrograms(channelId, programIds);
         await this.channelDB.saveLineup(channelId, { items: lineupItems });
+      } else if (channelAndLineup.lineup.schedule.type === 'random') {
+        const { result } = await this.workerPoolProvider().queueTask({
+          type: 'schedule-slots',
+          request: {
+            type: 'channel',
+            channelId,
+            schedule: channelAndLineup.lineup.schedule,
+            startTime: channelAndLineup.channel.startTime,
+          },
+        });
+
+        const lineupItems = seq.collect(
+          result.lineup,
+          channelProgramToLineupItem,
+        );
+
+        const programIds = seq.collect(lineupItems, (item) => {
+          return match(item)
+            .with({ type: 'content' }, (i) => i.id)
+            .otherwise(() => null);
+        });
+
         // Regenerate schedule at the new start time.
+        await this.channelDB.replaceChannelPrograms(channelId, programIds);
+        await this.channelDB.saveLineup(channelId, { items: lineupItems });
       }
     }
 
