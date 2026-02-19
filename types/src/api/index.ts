@@ -159,7 +159,7 @@ export const TimeBasedProgramLineupSchema = z.object({
   // We do this so that we can potentially create longer schedules
   // on the server-side. However, we can filter this list down to only
   // programs included in at least one time slot...
-  programs: z.array(ChannelProgramSchema),
+  programs: z.array(z.string()),
   schedule: TimeSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),
@@ -167,7 +167,7 @@ export const TimeBasedProgramLineupSchema = z.object({
 
 export const RandomSlotProgramLineupSchema = z.object({
   type: z.literal('random'),
-  programs: z.array(ChannelProgramSchema),
+  programs: z.array(z.string()),
   schedule: RandomSlotScheduleSchema,
   seed: z.number().array().optional(),
   discardCount: z.number().optional(),

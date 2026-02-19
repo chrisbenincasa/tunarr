@@ -36,6 +36,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQueryClient } from '@tanstack/react-query';
 import { dayjsMod } from '@tunarr/shared';
+import { seq } from '@tunarr/shared/util';
 import type {
   MaterializedTimeSlotSchedule,
   TimeSlotSchedule,
@@ -199,7 +200,17 @@ export default function TimeSlotEditorPage() {
       body: {
         type: 'time',
         schedule,
-        programs: filteredLineup,
+        programs: seq.collect(filteredLineup, (l) => {
+          switch (l.type) {
+            case 'custom':
+            case 'content':
+              return l.id;
+            case 'redirect':
+            case 'flex':
+            case 'filler':
+              return null;
+          }
+        }),
         seed: randomState?.seed,
         discardCount: randomState?.discardCount,
       },
