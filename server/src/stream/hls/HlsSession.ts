@@ -48,7 +48,7 @@ export interface HlsSessionOptions extends BaseHlsSessionOptions {
  * endpoint and outputs an HLS format + segments
  */
 export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
-  #playlistStart: Dayjs;
+  #playlistStart?: Dayjs;
   #hlsPlaylistMutator: HlsPlaylistMutator = new HlsPlaylistMutator();
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
@@ -87,7 +87,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         const playlistLines = await this.readPlaylist();
         if (playlistLines) {
           const trimResult = this.#hlsPlaylistMutator.trimPlaylist(
-            this.#playlistStart,
+            this.#playlistStart!,
             filterOpts,
             playlistLines,
             {

@@ -1,16 +1,13 @@
 import dayjs from 'dayjs';
-import events from 'events';
+import { EventEmitter } from 'events';
 import { injectable } from 'inversify';
-import { TypedEventEmitter } from '../../types/eventEmitter.ts';
 
 type Events = {
-  scanStart: (libraryId: string) => void;
-  scanEnd: (libraryId: string) => void;
-  scanProgress: (libraryId: string, percentComplete: number) => void;
-  scanQueued: (libraryId: string) => void;
+  scanStart: [string];
+  scanEnd: [string];
+  scanProgress: [string, number];
+  scanQueued: [string];
 };
-
-abstract class Emitter extends (events.EventEmitter as new () => TypedEventEmitter<Events>) {}
 
 type NotScanningState = {
   state: 'not_scanning';
@@ -33,7 +30,7 @@ const notScanningState: NotScanningState = { state: 'not_scanning' };
 type InProgressState = QueuedState | ScanningState;
 
 @injectable()
-export class MediaSourceProgressService extends Emitter {
+export class MediaSourceProgressService extends EventEmitter<Events> {
   #scanDetails: Map<string, InProgressState> = new Map();
 
   constructor() {

@@ -6,7 +6,7 @@ export class StreamSeekFilter implements FilterOptionPipelineStep {
   readonly type = 'filter';
 
   constructor(private start: Duration) {}
-  affectsFrameState: boolean;
+  affectsFrameState: boolean = false;
 
   nextState(currentState: FrameState): FrameState {
     return currentState;

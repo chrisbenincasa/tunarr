@@ -8,7 +8,7 @@ import { SimpleTask } from './Task.ts';
 @injectable()
 export class DynamicChannelUpdaterFactory {
   @inject(KEYS.ContentSourceUpdateFactory)
-  private contentSourceUpdaterFactory: ContentSourceUpdaterFactory;
+  private contentSourceUpdaterFactory!: ContentSourceUpdaterFactory;
 
   getTask(
     channel: ChannelOrm,

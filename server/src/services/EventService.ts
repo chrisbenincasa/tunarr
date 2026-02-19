@@ -1,23 +1,21 @@
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { TunarrEvent } from '@tunarr/types';
 import { FastifyInstance } from 'fastify';
 import { injectable } from 'inversify';
 import { isString } from 'lodash-es';
-import EventEmitter from 'node:events';
+import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { setInterval } from 'node:timers';
 import { v4 } from 'uuid';
 
 type Events = {
-  close: () => void;
-  push: (event: TunarrEvent) => void;
+  close: [];
+  push: [TunarrEvent];
 };
 
 @injectable()
 export class EventService {
-  private static stream: TypedEventEmitter<Events> =
-    new EventEmitter() as TypedEventEmitter<Events>;
+  private static stream: EventEmitter<Events> = new EventEmitter<Events>();
   // Everything we need to close if the underlying EventService
   // closes.
   private static rawConnections: Record<string, NodeJS.WritableStream> = {};

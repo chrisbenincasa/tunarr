@@ -62,9 +62,9 @@ export const ValidLogLevels = [
 
 export type ExtraLogLevels = TupleToUnion<typeof ExtraLogLevels>;
 
-export type Logger = PinoLogger<ExtraLogLevels>;
-
 export type LogLevels = LevelWithSilent | ExtraLogLevels;
+
+export type Logger = PinoLogger<LogLevels>;
 
 export type GetChildLoggerArgs = {
   caller?: ImportMeta | string;
@@ -74,7 +74,6 @@ export type GetChildLoggerArgs = {
 
 export function getPrettyStreamOpts(): PrettyOptions {
   return {
-    // minimumLevel: logLevel === 'silent' ? undefined : logLevel,
     translateTime: "SYS:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
     singleLine: true,
     ignore: 'pid,hostname',
@@ -108,12 +107,12 @@ export const LogCategories = ['streaming', 'scheduling'] as const;
 export type LogCategory = TupleToUnion<typeof LogCategories>;
 
 class LoggerFactoryImpl {
-  private settingsDB: SettingsDB;
+  private settingsDB?: SettingsDB;
   // private rootLogger: PinoLogger<ExtraLogLevels>;
   private rootLogger!: RootLoggerWrapper;
   private initialized = false;
   private children: Record<string, WeakRef<Logger>> = {};
-  private currentStreams: MultiStreamRes<LogLevels>;
+  private currentStreams?: MultiStreamRes<LogLevels>;
   private roller?: RollingLogDestination;
 
   constructor() {
@@ -136,7 +135,7 @@ class LoggerFactoryImpl {
         }
 
         const currentSettings =
-          this.settingsDB.systemSettings().logging.logRollConfig;
+          this.settingsDB?.systemSettings().logging.logRollConfig;
 
         const { level: newLevel } = this.logLevel;
         const perCategoryLogLevel = this.perCategoryLogLevel;
@@ -220,6 +219,13 @@ class LoggerFactoryImpl {
       {
         level,
         customLevels: {
+          silent: Number.MAX_SAFE_INTEGER,
+          trace: 10,
+          debug: 20,
+          info: 30,
+          warn: 40,
+          error: 50,
+          fatal: 60,
           http: 25, // Finer than info but not as fine as debug
           http_out: 15, // Finder than debug but not as fine as trace
         },

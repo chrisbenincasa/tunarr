@@ -2,7 +2,6 @@ import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
 import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { CacheImageService } from '@/services/cacheImageService.js';
-import type { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { Result } from '@/types/result.js';
 import type { Maybe } from '@/types/util.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
@@ -25,18 +24,18 @@ import type { PlayerContext } from './PlayerStreamContext.js';
 type ProgramStreamEvents = {
   // Emitted when the stream has reached a fatal error point
   // This means that both the program and error stream have failed to play.
-  error: () => void;
+  error: [];
 };
 
 /**
  * Base class implementing the functionality of managing an output stream
  * for a given program. This class is essentially a lineup item + transcode session
  */
-export abstract class ProgramStream extends (events.EventEmitter as new () => TypedEventEmitter<ProgramStreamEvents>) {
+export abstract class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
   protected logger = LoggerFactory.child({ className: this.constructor.name });
-  private outStream: PassThrough;
+  private outStream?: PassThrough;
   private hadError: boolean = false;
-  private _transcodeSession: FfmpegTranscodeSession;
+  private _transcodeSession?: FfmpegTranscodeSession;
 
   constructor(
     public context: PlayerContext,
@@ -52,7 +51,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>> {
     if (this.isInitialized()) {
-      return Result.success(this._transcodeSession);
+      return Result.success(this._transcodeSession!);
     }
 
     const result = await this.setupInternal(opts);
@@ -73,12 +72,12 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
       await this.setup();
     }
 
-    return (this.outStream = this._transcodeSession.start(sink));
+    return (this.outStream = this._transcodeSession!.start(sink));
   }
 
   shutdown(): void {
     if (this.isInitialized()) {
-      this.transcodeSession.kill();
+      this.transcodeSession!.kill();
     }
     this.shutdownInternal();
   }
@@ -89,7 +88,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     opts?: Partial<StreamOptions>,
   ): Promise<Result<FfmpegTranscodeSession>>;
 
-  get transcodeSession() {
+  get transcodeSession(): Maybe<FfmpegTranscodeSession> {
     return this._transcodeSession;
   }
 
@@ -105,7 +104,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
       } else {
         this.hadError = true;
         const failedStream = this._transcodeSession;
-        failedStream.kill();
+        failedStream?.kill();
         this.tryReplaceWithErrorStream(this.outStream).catch((e) => {
           this.logger.error(e, 'Error while setting up ');
         });
@@ -143,7 +142,7 @@ export abstract class ProgramStream extends (events.EventEmitter as new () => Ty
     );
 
     const duration = dayjs.duration(
-      dayjs(this.transcodeSession.streamEndTime).diff(),
+      dayjs(this.transcodeSession!.streamEndTime).diff(),
     );
 
     return ffmpeg.createErrorSession(

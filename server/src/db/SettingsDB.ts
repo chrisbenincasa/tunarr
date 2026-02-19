@@ -3,7 +3,6 @@ import {
   ReadableFfmpegSettings,
   SettingsChangeEvents,
 } from '@/db/interfaces/ISettingsDB.js';
-import { TypedEventEmitter } from '@/types/eventEmitter.js';
 import { deepCopy, isProduction } from '@/util/index.js';
 import { type Logger, LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import {
@@ -126,11 +125,12 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
   },
 });
 
-abstract class ITypedEventEmitter extends (events.EventEmitter as new () => TypedEventEmitter<SettingsChangeEvents>) {}
-
 @injectable()
-export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
-  private logger: Logger;
+export class SettingsDB
+  extends events.EventEmitter<SettingsChangeEvents>
+  implements ISettingsDB
+{
+  private logger?: Logger;
   private db: Low<SettingsFile>;
 
   constructor(db: Low<SettingsFile>) {

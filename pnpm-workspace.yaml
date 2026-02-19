@@ -5,8 +5,9 @@ packages:
   - shared
 
 catalog:
-  '@typescript-eslint/eslint-plugin': ^8.55.0
-  '@typescript-eslint/parser': ^8.55.0
+  "@typescript/native-preview": 7.0.0-dev.20260213.1
+  "@typescript-eslint/eslint-plugin": ^8.55.0
+  "@typescript-eslint/parser": ^8.55.0
   dayjs: ^1.11.14
   eslint: 9.39.2
   lodash-es: ^4.17.21

@@ -139,7 +139,7 @@ export class TVGuideService {
   // usage for no benefit. They are not used outside of guide
   // generation.
   private accumulateTable: Record<string, number[]> = {};
-  private channelsById: Record<string, ChannelWithLineup>;
+  private channelsById?: Record<string, ChannelWithLineup>;
 
   constructor(
     @inject(KEYS.Logger) private logger: Logger,

@@ -37,7 +37,7 @@ export type ArchiveDatabaseBackupFactory = () => ArchiveDatabaseBackup;
 @injectable()
 export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
   logger = LoggerFactory.child({ className: ArchiveDatabaseBackup.name });
-  #normalizedOutputPath: string;
+  #normalizedOutputPath?: string;
 
   constructor(
     @inject(KEYS.SettingsDB) settings: ISettingsDB,
@@ -171,7 +171,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
       return;
     }
 
-    const listings = await fs.readdir(this.#normalizedOutputPath);
+    const listings = await fs.readdir(this.#normalizedOutputPath!);
     const relevantListings = sortBy(
       compact(
         map(listings, (file) => {
@@ -211,7 +211,7 @@ export class ArchiveDatabaseBackup extends DatabaseBackup<string> {
 
       for await (const result of asyncPool(
         listingsToDelete,
-        async ([file]) => fs.rm(path.join(this.#normalizedOutputPath, file)),
+        async ([file]) => fs.rm(path.join(this.#normalizedOutputPath!, file)),
         { concurrency: 3 },
       )) {
         if (result.isFailure()) {
