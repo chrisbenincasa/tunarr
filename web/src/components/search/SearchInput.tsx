@@ -145,6 +145,7 @@ export const SearchInput = ({
       }
 
       if (filter) {
+        console.log(filter);
         filter = normalizeSearchFilter(filter);
       }
 

@@ -1,21 +1,22 @@
 import { Stack } from '@mui/material';
 import type { PickerValidDate } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
-import { type DateSearchField } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import { isNumber } from 'lodash-es';
 import { useCallback } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import type { FieldKey, FieldPrefix } from '../../types/SearchBuilder.ts';
 import type { SearchForm } from './SearchInput.tsx';
 
 type Props = {
-  field: DateSearchField;
+  field: SearchFieldSpec<'date'>;
   formKey: FieldKey<FieldPrefix, 'fieldSpec'>;
 };
 
-export function DateSearchValueNode({ field, formKey }: Props) {
-  const { control } = useFormContext<SearchForm>();
+export function DateSearchValueNode({ formKey }: Props) {
+  const { control, watch } = useFormContext<SearchForm>();
+  const currentSpec = watch(formKey);
 
   const handleDateValueChange = useCallback(
     (
@@ -29,7 +30,7 @@ export function DateSearchValueNode({ field, formKey }: Props) {
     [],
   );
 
-  if (isNumber(field.value)) {
+  if (isNumber(currentSpec.value)) {
     return (
       <Controller
         control={control}

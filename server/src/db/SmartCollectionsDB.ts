@@ -88,6 +88,9 @@ export class SmartCollectionsDB {
     return {
       ...smartCollection,
       filter: searchFilter,
+      filterString: isNonEmptyString(smartCollection.filter)
+        ? smartCollection.filter
+        : undefined,
       keywords: isNonEmptyString(smartCollection.keywords)
         ? smartCollection.keywords
         : '',
@@ -237,11 +240,10 @@ export class SmartCollectionsDB {
       );
     }
 
-    SmartCollectionsDB.cache.set(
-      queryString,
-      search.parsedSearchToRequest(clause),
-    );
+    const request = search.parsedSearchToRequest(clause);
 
-    return Result.success(search.parsedSearchToRequest(clause));
+    SmartCollectionsDB.cache.set(queryString, request);
+
+    return Result.success(request);
   }
 }
