@@ -580,7 +580,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (!isNull(this.context.desiredAudioState.audioChannels)) {
       this.pipelineSteps.push(
         AudioChannelsOutputOption(
-          this.context.audioStream.codec,
+          this.context.desiredAudioState.audioEncoder,
           this.context.audioStream.channels,
           this.context.desiredAudioState.audioChannels,
         ),
