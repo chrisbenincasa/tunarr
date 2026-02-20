@@ -60,6 +60,7 @@ import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
 import type { DeepReadonly, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
+  AudioFormats,
   OutputFormatTypes,
   OutputLocation,
   VideoFormats,
@@ -577,6 +578,10 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
     this.pipelineSteps.push(encoder);
 
+    if (this.context.desiredAudioState.audioEncoder === AudioFormats.Copy) {
+      return;
+    }
+
     if (!isNull(this.context.desiredAudioState.audioChannels)) {
       this.pipelineSteps.push(
         AudioChannelsOutputOption(
@@ -607,7 +612,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (
       !isNull(this.desiredAudioState?.audioVolume) &&
       this.desiredAudioState.audioVolume !== 100 &&
-      encoder.name != 'copy' &&
+      encoder.name != AudioFormats.Copy &&
       this.desiredAudioState.audioVolume > 0
     ) {
       this.audioInputSource?.filterSteps?.push(
@@ -615,7 +620,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
     }
 
-    if (encoder.name !== 'copy') {
+    if (encoder.name !== AudioFormats.Copy) {
       // This seems to help with audio sync issues in QSV
       const asyncSamples =
         this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv
