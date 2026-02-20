@@ -30,6 +30,10 @@ import { isVideoPipelineContext } from '@/ffmpeg/builder/pipeline/BasePipelineBu
 import { SoftwarePipelineBuilder } from '@/ffmpeg/builder/pipeline/software/SoftwarePipelineBuilder.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
+import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
+import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
+import { KnownFfmpegFilters } from '@/ffmpeg/builder/options/KnownFfmpegOptions.js';
+import { getBooleanEnvVar, TONEMAP_ENABLED } from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isUndefined } from 'lodash-es';
 import { P, match } from 'ts-pattern';
@@ -159,11 +163,16 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
       pixelFormat: videoStream.pixelFormat,
+      colorRange: videoStream.colorRange ?? null,
+      colorSpace: videoStream.colorSpace ?? null,
+      colorTransfer: videoStream.colorTransfer ?? null,
+      colorPrimaries: videoStream.colorPrimaries ?? null,
     });
 
     currentState = this.decoder?.nextState(currentState) ?? currentState;
 
     currentState = this.setDeinterlace(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setScale(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
@@ -333,6 +342,28 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       nextState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
     }
+    return nextState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+
+    const { videoStream, pipelineOptions } = this.context;
+
+    if (
+      !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
+      !isHdrContent(videoStream) ||
+      !this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi) ||
+      pipelineOptions.disableHardwareFilters
+    ) {
+      return currentState;
+    }
+
+    const filter = new TonemapVaapiFilter(currentState);
+    const nextState = filter.nextState(currentState);
+    this.videoInputSource.filterSteps.push(filter);
     return nextState;
   }
 
