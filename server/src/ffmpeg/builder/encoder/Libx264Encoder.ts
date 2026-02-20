@@ -15,6 +15,10 @@ export class Libx264Encoder extends VideoEncoder {
 
   options(): string[] {
     const opts = [...super.options()];
+    // Force 8-bit output (yuv420p) to ensure compatibility with most players/devices.
+    // Without this, libx264 may output 10-bit H.264 (High 10 profile) which many
+    // hardware decoders cannot handle.
+    opts.push('-pix_fmt', 'yuv420p');
     if (isNonEmptyString(this.videoPreset)) {
       opts.push('-profile:v', this.videoPreset);
     }
