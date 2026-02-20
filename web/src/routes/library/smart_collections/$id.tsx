@@ -33,7 +33,7 @@ export const Route = createFileRoute('/library/smart_collections/$id')({
       s.currentSearchRequest = searchRequest;
     });
 
-    return searchRequest;
+    return searchRequest satisfies SearchRequest;
   },
   component: RouteComponent,
 });

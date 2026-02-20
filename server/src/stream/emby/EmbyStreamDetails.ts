@@ -271,6 +271,7 @@ export class EmbyStreamDetails extends ExternalStreamDetailsFetcher<EmbyT> {
         colorSpace: videoStream.ColorSpace ?? undefined,
         colorTransfer: videoStream.ColorTransfer ?? undefined,
         colorPrimaries: videoStream.ColorPrimaries ?? undefined,
+        isAttachedPic: false,
       };
     }
 

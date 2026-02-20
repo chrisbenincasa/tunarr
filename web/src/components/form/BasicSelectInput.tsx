@@ -41,28 +41,6 @@ function identityConverter<T>(): Converter<T, T> {
 export function BasicSelectInput<ValueTypeT extends string | number>(
   props: StrictOmit<Props<ValueTypeT, ValueTypeT>, 'converter'>,
 ) {
-  // const field = useFieldContext<ValueTypeT>();
-  // return (
-  //   <FormControl {...formControlProps}>
-  //     {isNonEmptyString(selectProps?.label) ? (
-  //       <InputLabel>{selectProps?.label}</InputLabel>
-  //     ) : null}
-  //     <Select
-  //       {...selectProps}
-  //       value={field.state.value}
-  //       onChange={(e) => field.handleChange(e.target.value as ValueTypeT)}
-  //     >
-  //       {options.map((opt) => (
-  //         <MenuItem key={opt.value} value={opt.value}>
-  //           {opt.description}
-  //         </MenuItem>
-  //       ))}
-  //     </Select>
-  //     {isNonEmptyString(helperText) ? (
-  //       <FormHelperText {...formHelperTextProps}>{helperText}</FormHelperText>
-  //     ) : null}
-  //   </FormControl>
-  // );
   const converter = useMemo(() => identityConverter<ValueTypeT>(), []);
   return <SelectInput {...props} converter={converter} />;
 }

@@ -280,6 +280,7 @@ export class JellyfinStreamDetails extends ExternalStreamDetailsFetcher<Jellyfin
         colorSpace: videoStream.ColorSpace ?? undefined,
         colorTransfer: videoStream.ColorTransfer ?? undefined,
         colorPrimaries: videoStream.ColorPrimaries ?? undefined,
+        isAttachedPic: false,
       };
     }
 

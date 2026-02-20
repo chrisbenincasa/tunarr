@@ -1,7 +1,12 @@
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Maybe } from '../../../types/util.ts';
 import type { PixelFormat } from '../format/PixelFormat.ts';
-import { PixelFormatCuda, PixelFormatVaapi } from '../format/PixelFormat.ts';
+import {
+  PixelFormatCuda,
+  PixelFormatVaapi,
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '../format/PixelFormat.ts';
 import { FrameDataLocation } from '../types.ts';
 import { FilterOption } from './FilterOption.ts';
 
@@ -42,7 +47,25 @@ export class HardwareDownloadFilter extends FilterOption {
           this.currentState.pixelFormat.unwrap();
         this.outputPixelFormat = hardwareFmt;
         if (hardwareFmt) {
-          return `hwdownload,format=${hardwareFmt.name}`;
+          let format = hardwareFmt;
+          if (format.isUnknown()) {
+            switch (format.bitDepth) {
+              case 8: {
+                format = new PixelFormatYuv420P();
+                break;
+              }
+              case 10: {
+                format = new PixelFormatYuv420P10Le();
+                break;
+              }
+              default:
+                break;
+            }
+          }
+
+          if (!format.isUnknown()) {
+            return `hwdownload,format=${format.name}`;
+          }
         }
       }
     }

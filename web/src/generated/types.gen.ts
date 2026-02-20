@@ -891,20 +891,38 @@ export type SearchFilterInput = {
 } | {
     type: 'value';
     fieldSpec: {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'string';
         op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'faceted_string';
         op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'numeric';
         op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
         value: number | [
@@ -912,8 +930,14 @@ export type SearchFilterInput = {
             number
         ];
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'date';
         op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
         value: number | [
@@ -1814,20 +1838,38 @@ export type SearchFilter = {
 } | {
     type: 'value';
     fieldSpec: {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'string';
         op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'faceted_string';
         op: '=' | '!=' | 'contains' | 'not contains' | 'starts with' | 'in' | 'not in';
         value: Array<string>;
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'numeric';
         op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
         value: number | [
@@ -1835,8 +1877,14 @@ export type SearchFilter = {
             number
         ];
     } | {
+        /**
+         * The actual field path in the search index
+         */
         key: string;
-        name: string;
+        /**
+         * The field name. This could be an alias.
+         */
+        name?: string;
         type: 'date';
         op: '=' | '!=' | '<' | '>' | '<=' | '>=' | 'to';
         value: number | [
@@ -4102,500 +4150,7 @@ export type PostApiChannelsByIdProgrammingData = {
         append?: boolean;
     } | {
         type: 'time';
-        programs: Array<{
-            type: 'content';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id?: string;
-            subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-            summary?: string;
-            date?: string;
-            year?: number;
-            rating?: string;
-            serverFileKey?: string;
-            serverFilePath?: string;
-            title: string;
-            showId?: string;
-            seasonId?: string;
-            seasonNumber?: number;
-            episodeNumber?: number;
-            albumId?: string;
-            artistId?: string;
-            index?: number;
-            parent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'season';
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'album';
-            };
-            grandparent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'show';
-                seasons?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'artist';
-                albums?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            };
-            externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalSourceName: string;
-            externalSourceId: string;
-            libraryId?: string;
-            externalKey: string;
-            uniqueId: string;
-            externalIds: Array<{
-                type: 'single';
-                source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                id: string;
-            } | {
-                type: 'multi';
-                source: 'plex' | 'jellyfin' | 'emby';
-                sourceId: string;
-                id: string;
-            }>;
-            canonicalId?: string;
-        } | {
-            type: 'custom';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
-        } | {
-            type: 'redirect';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            channel: string;
-            channelNumber: number;
-            channelName: string;
-        } | {
-            type: 'flex';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-        } | {
-            type: 'filler';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            fillerListId: string;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
-            fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback';
-        }>;
+        programs: Array<string>;
         schedule: {
             type: 'time';
             flexPreference: 'distribute' | 'end';
@@ -4678,500 +4233,7 @@ export type PostApiChannelsByIdProgrammingData = {
         discardCount?: number;
     } | {
         type: 'random';
-        programs: Array<{
-            type: 'content';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id?: string;
-            subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-            summary?: string;
-            date?: string;
-            year?: number;
-            rating?: string;
-            serverFileKey?: string;
-            serverFilePath?: string;
-            title: string;
-            showId?: string;
-            seasonId?: string;
-            seasonNumber?: number;
-            episodeNumber?: number;
-            albumId?: string;
-            artistId?: string;
-            index?: number;
-            parent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'season';
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'album';
-            };
-            grandparent?: {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'show';
-                seasons?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            } | {
-                id?: string;
-                title?: string;
-                index?: number;
-                guids?: Array<string>;
-                year?: number;
-                externalKey?: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                summary?: string;
-                type: 'artist';
-                albums?: Array<{
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                }>;
-            };
-            externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-            externalSourceName: string;
-            externalSourceId: string;
-            libraryId?: string;
-            externalKey: string;
-            uniqueId: string;
-            externalIds: Array<{
-                type: 'single';
-                source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                id: string;
-            } | {
-                type: 'multi';
-                source: 'plex' | 'jellyfin' | 'emby';
-                sourceId: string;
-                id: string;
-            }>;
-            canonicalId?: string;
-        } | {
-            type: 'custom';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
-        } | {
-            type: 'redirect';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            channel: string;
-            channelNumber: number;
-            channelName: string;
-        } | {
-            type: 'flex';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-        } | {
-            type: 'filler';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            fillerListId: string;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
-            fillerType?: 'pre' | 'post' | 'head' | 'tail' | 'fallback';
-        }>;
+        programs: Array<string>;
         schedule: {
             type: 'random';
             flexPreference: 'distribute' | 'end';
@@ -7316,6 +6378,15 @@ export type PostApiChannelsByChannelIdScheduleTimeSlotsData = {
     url: '/api/channels/{channelId}/schedule-time-slots';
 };
 
+export type PostApiChannelsByChannelIdScheduleTimeSlotsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type PostApiChannelsByChannelIdScheduleTimeSlotsError = PostApiChannelsByChannelIdScheduleTimeSlotsErrors[keyof PostApiChannelsByChannelIdScheduleTimeSlotsErrors];
+
 export type PostApiChannelsByChannelIdScheduleTimeSlotsResponses = {
     /**
      * Default Response
@@ -7687,6 +6758,15 @@ export type PostApiChannelsByChannelIdScheduleSlotsData = {
     query?: never;
     url: '/api/channels/{channelId}/schedule-slots';
 };
+
+export type PostApiChannelsByChannelIdScheduleSlotsErrors = {
+    /**
+     * Default Response
+     */
+    404: string;
+};
+
+export type PostApiChannelsByChannelIdScheduleSlotsError = PostApiChannelsByChannelIdScheduleSlotsErrors[keyof PostApiChannelsByChannelIdScheduleSlotsErrors];
 
 export type PostApiChannelsByChannelIdScheduleSlotsResponses = {
     /**
@@ -8127,6 +7207,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                     uuid: string;
                     name: string;
                     filter?: SearchFilter;
+                    filterString?: string;
                     keywords: string;
                 } | null;
                 isMissing: boolean;
@@ -8749,169 +7830,6 @@ export type CreateCustomShowData = {
                 id: string;
             }>;
             canonicalId?: string;
-        } | {
-            type: 'custom';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
         }>;
     };
     path?: never;
@@ -9308,169 +8226,6 @@ export type PutApiCustomShowsByIdData = {
                 id: string;
             }>;
             canonicalId?: string;
-        } | {
-            type: 'custom';
-            persisted: boolean;
-            duration: number;
-            icon?: string;
-            id: string;
-            customShowId: string;
-            index: number;
-            program?: {
-                type: 'content';
-                persisted: boolean;
-                duration: number;
-                icon?: string;
-                id?: string;
-                subtype: 'movie' | 'episode' | 'track' | 'music_video' | 'other_video';
-                summary?: string;
-                date?: string;
-                year?: number;
-                rating?: string;
-                serverFileKey?: string;
-                serverFilePath?: string;
-                title: string;
-                showId?: string;
-                seasonId?: string;
-                seasonNumber?: number;
-                episodeNumber?: number;
-                albumId?: string;
-                artistId?: string;
-                index?: number;
-                parent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'season';
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'album';
-                };
-                grandparent?: {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'show';
-                    seasons?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                } | {
-                    id?: string;
-                    title?: string;
-                    index?: number;
-                    guids?: Array<string>;
-                    year?: number;
-                    externalKey?: string;
-                    externalIds: Array<{
-                        type: 'single';
-                        source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                        id: string;
-                    } | {
-                        type: 'multi';
-                        source: 'plex' | 'jellyfin' | 'emby';
-                        sourceId: string;
-                        id: string;
-                    }>;
-                    summary?: string;
-                    type: 'artist';
-                    albums?: Array<{
-                        id?: string;
-                        title?: string;
-                        index?: number;
-                        guids?: Array<string>;
-                        year?: number;
-                        externalKey?: string;
-                        externalIds: Array<{
-                            type: 'single';
-                            source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                            id: string;
-                        } | {
-                            type: 'multi';
-                            source: 'plex' | 'jellyfin' | 'emby';
-                            sourceId: string;
-                            id: string;
-                        }>;
-                        summary?: string;
-                    }>;
-                };
-                externalSourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
-                externalSourceName: string;
-                externalSourceId: string;
-                libraryId?: string;
-                externalKey: string;
-                uniqueId: string;
-                externalIds: Array<{
-                    type: 'single';
-                    source: 'plex-guid' | 'imdb' | 'tmdb' | 'tvdb';
-                    id: string;
-                } | {
-                    type: 'multi';
-                    source: 'plex' | 'jellyfin' | 'emby';
-                    sourceId: string;
-                    id: string;
-                }>;
-                canonicalId?: string;
-            };
         }>;
     };
     path: {
@@ -20956,6 +19711,7 @@ export type GetApiSmartCollectionsResponses = {
         uuid: string;
         name: string;
         filter?: SearchFilter;
+        filterString?: string;
         keywords: string;
     }>;
 };
@@ -20966,6 +19722,7 @@ export type PostApiSmartCollectionsData = {
     body: {
         name: string;
         filter?: SearchFilterInput;
+        filterString?: string;
         keywords: string;
     };
     path?: never;
@@ -20990,6 +19747,7 @@ export type PostApiSmartCollectionsResponses = {
         uuid: string;
         name: string;
         filter?: SearchFilter;
+        filterString?: string;
         keywords: string;
     };
 };
@@ -21043,6 +19801,7 @@ export type GetApiSmartCollectionsByIdResponses = {
         uuid: string;
         name: string;
         filter?: SearchFilter;
+        filterString?: string;
         keywords: string;
     };
 };
@@ -21053,6 +19812,7 @@ export type PutApiSmartCollectionsByIdData = {
     body?: {
         name?: string;
         filter?: SearchFilterInput;
+        filterString?: string;
         keywords?: string;
     };
     path: {
@@ -21077,6 +19837,7 @@ export type PutApiSmartCollectionsByIdResponses = {
         uuid: string;
         name: string;
         filter?: SearchFilter;
+        filterString?: string;
         keywords: string;
     };
 };

@@ -54,6 +54,7 @@ import { GetMaterializedChannelScheduleCommand } from '../commands/GetMaterializ
 import { MaterializeLineupCommand } from '../commands/MaterializeLineupCommand.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
+import { RegenerateChannelLineupCommand } from '../commands/RegenerateChannelLineupCommand.ts';
 import { container } from '../container.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { LegacyChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
@@ -288,12 +289,19 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           const needsGuideRegen =
             channel.guideMinimumDuration !==
               updatedChannel.channel.guideMinimumDuration ||
+            channel.startTime !== updatedChannel.channel.startTime ||
             isDefined(req.body.onDemand);
 
-          await req.serverCtx.guideService.updateCachedChannel(
-            channel.uuid,
-            needsGuideRegen,
-          );
+          if (needsGuideRegen) {
+            await container
+              .get<RegenerateChannelLineupCommand>(
+                RegenerateChannelLineupCommand,
+              )
+              .execute({ channelId: channel.uuid });
+          } else {
+            await req.serverCtx.guideService.updateCachedChannel(channel.uuid);
+          }
+
           await req.serverCtx.m3uService.regenerateCache();
 
           const apiChannel = omit(
@@ -697,15 +705,27 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: TimeSlotScheduleWithPrograms,
+          404: z.string(),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.params.channelId,
+      );
+
+      if (!channel) {
+        return res
+          .status(404)
+          .send(`Channel ID ${req.params.channelId} not found`);
+      }
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
           schedule: req.body.schedule,
+          startTime: channel.startTime,
         },
         type: 'time-slots',
       });
@@ -736,15 +756,27 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }),
         response: {
           200: SlotScheduleWithPrograms,
+          404: z.string(),
         },
       },
     },
     async (req, res) => {
+      const channel = await req.serverCtx.channelDB.getChannel(
+        req.params.channelId,
+      );
+
+      if (!channel) {
+        return res
+          .status(404)
+          .send(`Channel ID ${req.params.channelId} not found`);
+      }
+
       const { result } = await req.serverCtx.workerPool.queueTask({
         request: {
           type: 'channel',
           channelId: req.params.channelId,
           schedule: req.body.schedule,
+          startTime: channel.startTime,
         },
         type: 'schedule-slots',
       });

@@ -35,7 +35,7 @@ const AudioFormats: DropdownOption<SupportedTranscodeAudioOutputFormats>[] = [
     value: 'mp3',
   },
   {
-    description: 'Copy',
+    description: 'Copy / Passthrough',
     value: 'copy',
   },
 ] as const;
@@ -74,8 +74,16 @@ export const TranscodeConfigAudioSettingsForm = ({
             children={(field) => (
               <field.BasicSelectInput
                 formControlProps={{ fullWidth: true }}
-                selectProps={{ label: 'Audio Format' }}
+                selectProps={{
+                  label: 'Audio Format',
+                  disabled: field.form.state.values.audioFormat === 'copy',
+                }}
                 options={AudioFormats}
+                helperText={
+                  field.form.state.values.audioFormat === 'copy'
+                    ? 'Passthrough audio unchanged. Other settings will not apply.'
+                    : ''
+                }
               />
             )}
           />
@@ -138,26 +146,6 @@ export const TranscodeConfigAudioSettingsForm = ({
               />
             )}
           />
-          {/* <NumericFormControllerText
-            control={control}
-            name="audioBufferSize"
-            prettyFieldName="Audio Buffer Size"
-            TextFieldProps={{
-              id: 'audio-buffer-size',
-              label: 'Audio Buffer Size',
-              fullWidth: true,
-              disabled: encoder === 'copy',
-              helperText:
-                encoder === 'copy'
-                  ? 'Buffer size cannot be changed when copying input audio'
-                  : null,
-              InputProps: {
-                endAdornment: (
-                  <InputAdornment position="end">kb</InputAdornment>
-                ),
-              },
-            }}
-          /> */}
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
@@ -188,38 +176,8 @@ export const TranscodeConfigAudioSettingsForm = ({
               />
             )}
           />
-          {/* <NumericFormControllerText
-            control={control}
-            name="audioSampleRate"
-            prettyFieldName="Audio Sample Rate"
-            TextFieldProps={{
-              id: 'audio-sample-rate',
-              label: 'Audio Sample Rate',
-              fullWidth: true,
-              disabled: encoder === 'copy',
-              helperText:
-                encoder === 'copy'
-                  ? 'Sample rate cannot be changed when copying input audio'
-                  : null,
-              InputProps: {
-                endAdornment: (
-                  <InputAdornment position="end">kHz</InputAdornment>
-                ),
-              },
-            }}
-          /> */}
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          {/* <NumericFormControllerText
-            control={control}
-            name="audioChannels"
-            prettyFieldName="Audio Channels"
-            TextFieldProps={{
-              id: 'audio-bitrate',
-              label: 'Audio Channels',
-              fullWidth: true,
-            }}
-          /> */}
           <form.AppField
             name="audioChannels"
             children={(field) => (
@@ -228,21 +186,6 @@ export const TranscodeConfigAudioSettingsForm = ({
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          {/* <NumericFormControllerText
-            control={control}
-            name="audioVolumePercent"
-            prettyFieldName="Audio Volume Percent"
-            TextFieldProps={{
-              id: 'audio-volume',
-              label: 'Audio Volume',
-              fullWidth: true,
-              helperText:
-                'Adjust the output volume (not recommended). Values higher than 100 will boost the audio.',
-              InputProps: {
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-              },
-            }}
-          /> */}
           <form.AppField
             name="audioVolumePercent"
             children={(field) => (

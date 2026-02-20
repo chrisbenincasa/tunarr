@@ -14,7 +14,7 @@ import { KEYS } from '@/types/inject.js';
 import { typedProperty } from '@/types/path.js';
 import { Result } from '@/types/result.js';
 import { jsonSchema } from '@/types/schemas.js';
-import { Maybe, PagedResult } from '@/types/util.js';
+import { Maybe, Nullable, PagedResult } from '@/types/util.js';
 import { Timer } from '@/util/Timer.js';
 import { asyncPool } from '@/util/asyncPool.js';
 import dayjs from '@/util/dayjs.js';
@@ -34,7 +34,15 @@ import {
 } from '@tunarr/types';
 import { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import { ContentProgramType } from '@tunarr/types/schemas';
-import { and, asc, count, countDistinct, eq, isNotNull } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  sum as dbSum,
+  eq,
+  isNotNull,
+} from 'drizzle-orm';
 import { inject, injectable, interfaces } from 'inversify';
 import { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -191,7 +199,7 @@ function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
     guideMinimumDuration: updateReq.guideMinimumDuration,
     groupTitle: updateReq.groupTitle,
     disableFillerOverlay: booleanToNumber(updateReq.disableFillerOverlay),
-    startTime: updateReq.startTime,
+    startTime: +dayjs(updateReq.startTime).second(0).millisecond(0),
     offline: JSON.stringify(updateReq.offline),
     name: updateReq.name,
     duration: updateReq.duration,
@@ -1143,21 +1151,49 @@ export class ChannelDB implements IChannelDB {
     //   .execute();
   }
 
-  async updateLineup(id: string, req: UpdateChannelProgrammingRequest) {
-    const channel = await this.db
-      .selectFrom('channel')
-      .selectAll()
-      .where('channel.uuid', '=', id)
-      .select((eb) =>
-        jsonArrayFrom(
-          eb
-            .selectFrom('channelPrograms')
-            .whereRef('channelPrograms.channelUuid', '=', 'channel.uuid')
-            .select(['channelPrograms.programUuid as uuid']),
-        ).as('programs'),
-      )
-      .groupBy('channel.uuid')
-      .executeTakeFirst();
+  async replaceChannelPrograms(
+    channelId: string,
+    programIds: string[],
+  ): Promise<void> {
+    const uniqueIds = uniq(programIds);
+    await this.drizzleDB.transaction(async (tx) => {
+      await tx
+        .delete(ChannelPrograms)
+        .where(eq(ChannelPrograms.channelUuid, channelId));
+      for (const c of chunk(uniqueIds, 250)) {
+        await tx
+          .insert(ChannelPrograms)
+          .values(c.map((id) => ({ channelUuid: channelId, programUuid: id })));
+      }
+      // This can probably be done in a single query.
+      const sumResult = await tx
+        .select({ duration: dbSum(Program.duration).mapWith(Number) })
+        .from(ChannelPrograms)
+        .where(eq(ChannelPrograms.channelUuid, channelId))
+        .innerJoin(Program, eq(Program.uuid, ChannelPrograms.programUuid));
+      await tx
+        .update(Channel)
+        .set({
+          duration: sum(sumResult.map((r) => r.duration)),
+        })
+        .where(eq(Channel.uuid, channelId));
+    });
+  }
+
+  async updateLineup(
+    id: string,
+    req: UpdateChannelProgrammingRequest,
+  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>> {
+    const channel = await this.drizzleDB.query.channels.findFirst({
+      where: (fields, { eq }) => eq(fields.uuid, id),
+      with: {
+        channelPrograms: {
+          columns: {
+            programUuid: true,
+          },
+        },
+      },
+    });
 
     const lineup = await this.loadLineup(id);
 
@@ -1165,16 +1201,12 @@ export class ChannelDB implements IChannelDB {
       return null;
     }
 
-    const updateChannel = async (
-      lineup: readonly LineupItem[],
-      startTime?: number,
-    ) => {
+    const updateChannel = async (lineup: readonly LineupItem[]) => {
       return await this.db.transaction().execute(async (tx) => {
         await tx
           .updateTable('channel')
           .where('channel.uuid', '=', id)
           .set({
-            startTime,
             duration: sumBy(lineup, typedProperty('durationMs')),
           })
           .limit(1)
@@ -1185,7 +1217,7 @@ export class ChannelDB implements IChannelDB {
         ]);
 
         const existingIds = new Set([
-          ...channel.programs.map((program) => program.uuid),
+          ...channel.channelPrograms.map((cp) => cp.programUuid),
         ]);
 
         // Create our remove operations
@@ -1332,29 +1364,18 @@ export class ChannelDB implements IChannelDB {
       };
     } else if (req.type === 'time' || req.type === 'random') {
       let programs: ChannelProgram[];
-      let startTime: number;
       if (req.type === 'time') {
         const { result } = await this.workerPoolProvider().queueTask({
           type: 'time-slots',
           request: {
             type: 'programs',
-            programIds: seq.collect(req.programs, (p) => {
-              switch (p.type) {
-                case 'custom':
-                case 'content':
-                case 'filler':
-                  return p.id;
-                case 'redirect':
-                case 'flex':
-                  return;
-              }
-            }),
+            programIds: req.programs,
             schedule: req.schedule,
             seed: req.seed,
+            startTime: channel.startTime,
           },
         });
 
-        startTime = result.startTime;
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
           await this.materializeLineupCommand.execute({
@@ -1366,22 +1387,12 @@ export class ChannelDB implements IChannelDB {
           type: 'schedule-slots',
           request: {
             type: 'programs',
-            programIds: seq.collect(req.programs, (p) => {
-              switch (p.type) {
-                case 'custom':
-                case 'content':
-                case 'filler':
-                  return p.id;
-                case 'redirect':
-                case 'flex':
-                  return;
-              }
-            }),
+            programIds: req.programs,
+            startTime: channel.startTime,
             schedule: req.schedule,
             seed: req.seed,
           },
         });
-        startTime = result.startTime;
         programs = MaterializeLineupCommand.expandLineup(
           result.lineup,
           await this.materializeLineupCommand.execute({
@@ -1392,7 +1403,7 @@ export class ChannelDB implements IChannelDB {
 
       const newLineup = await createNewLineup(programs);
 
-      const updatedChannel = await updateChannel(newLineup, startTime);
+      const updatedChannel = await updateChannel(newLineup);
       await this.saveLineup(id, {
         items: newLineup,
         schedule: req.schedule,

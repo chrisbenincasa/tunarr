@@ -112,10 +112,15 @@ export interface IChannelDB {
     limit?: number,
   ): Promise<CondensedChannelProgramming | null>;
 
+  replaceChannelPrograms(
+    channelId: string,
+    programIds: string[],
+  ): Promise<void>;
+
   updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
-  ): Promise<Nullable<{ channel: Channel; newLineup: LineupItem[] }>>;
+  ): Promise<Nullable<{ channel: ChannelOrm; newLineup: LineupItem[] }>>;
 
   saveLineup(
     channelId: string,

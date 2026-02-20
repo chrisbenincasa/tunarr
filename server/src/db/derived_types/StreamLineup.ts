@@ -3,7 +3,7 @@
 // active streaming session
 
 import type { MarkRequired, StrictOmit } from 'ts-essentials';
-import type { EmbyT, JellyfinT } from '../../types/internal.ts';
+import type { EmbyT, JellyfinT, LocalT } from '../../types/internal.ts';
 import type { MarkNotNilable } from '../../types/util.ts';
 import { MediaSourceType } from '../schema/base.js';
 import type {
@@ -76,6 +76,15 @@ export function isEmnyBackedLineupItem(
   return (
     isContentBackedLineupItem(item) &&
     item.program.sourceType === MediaSourceType.Emby
+  );
+}
+
+export function isLocalBackedLineupItem(
+  item: StreamLineupItem,
+): item is SpecificSourceContentBackedStreamLineupItem<LocalT> {
+  return (
+    isContentBackedLineupItem(item) &&
+    item.program.sourceType === MediaSourceType.Local
   );
 }
 

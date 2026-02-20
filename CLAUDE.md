@@ -27,6 +27,11 @@ This is a monorepo with four main packages:
 - Use **Turbo** for running tasks across the monorepo
 - Node.js version: 22 (specified in package.json engines)
 
+### Version Control
+
+- The `main` branch creates "stable" releases. It should receive mainly receive `fix` commits.
+- The `dev` branch is for feature development. It receives `feat` commits and other large changes
+
 ### Common Commands
 
 ```bash
@@ -109,6 +114,9 @@ The server uses Inversify for DI. Service registration happens in module files:
 - `ServicesModule.ts` - Business services
 - `StreamModule.ts` - Streaming services
 - `FFmpegModule.ts` - FFmpeg services
+- `TasksModule.ts` - Bindings for tasks
+
+Other modules are files ending with `Module.ts`
 
 To inject dependencies, use the `@injectable()` decorator and constructor injection with `@inject(KEYS.ServiceName)`. Keys are defined in `types/inject.ts`.
 
@@ -180,6 +188,7 @@ The web app uses a generated API client (`generated/`) created from the server's
 - Both ORMs access the same SQLite database via `DBAccess`
 - Database interfaces are in `db/interfaces/` - implement these for new DB access classes
 - Use dependency injection to get database instances
+- All database schema changes should have migrations generated via `pnpm drizzle-kit generate`
 
 ### When Working with Streaming:
 

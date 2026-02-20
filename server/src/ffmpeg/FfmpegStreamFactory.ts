@@ -306,8 +306,6 @@ export class FfmpegStreamFactory extends IFFMPEG {
     );
     const playbackParams = calculator.calculateForStream(streamDetails);
 
-    // Get inputs
-    // Assume we always have a video stream!!!
     let videoStream: VideoStream;
     let videoInputSource: VideoInputSource;
     if (streamDetails.videoDetails) {

@@ -50,6 +50,8 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(tz);
 
+const OneHourMillis = 1000 * 60 * 60;
+
 // Adds flex time to the end of a programs array.
 // If the final program is flex itself, just extends it
 // Returns amount to increment the cursor
@@ -87,10 +89,10 @@ function pushOrExtendFlex(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function scheduleTimeSlots(
   schedule: TimeSlotSchedule,
-  // channelProgramming: ChannelProgram[],
   programs: SlotSchedulerProgram[],
   seed: number[] = createEntropy(),
   discardCount: number = 0,
+  startTime: dayjs.Dayjs = dayjs.tz(),
 ): Promise<TimeSlotScheduleResult> {
   const mt = MersenneTwister19937.seedWithArray(seed).discard(discardCount);
   const random = new Random(mt);
@@ -121,12 +123,13 @@ export async function scheduleTimeSlots(
       ),
   );
 
-  const now = dayjs.tz();
-  const startOfCurrentPeriod = now.startOf(schedule.period);
-  let t0 = startOfCurrentPeriod.add(
-    first(sortedSlots)!.startTime,
-    'millisecond',
-  );
+  const channelPrograms: CondensedChannelProgram[] = [];
+
+  let t0 = startTime;
+  const startOfYear = t0.startOf('year'); // Used to detect DST shifts.
+  const startedinDst = startTime.utcOffset() !== startOfYear.utcOffset();
+  const startOfCurrentPeriod = t0.startOf(schedule.period);
+  console.log('starting at ', t0.format());
 
   if (schedule.startTomorrow) {
     t0 = t0.add(1, 'day');
@@ -135,7 +138,6 @@ export async function scheduleTimeSlots(
   const upperLimit = t0.add(schedule.maxDays + 1, 'day');
 
   let timeCursor = t0;
-  const channelPrograms: CondensedChannelProgram[] = [];
 
   const pushFlex = (flexDurationMs: number) => {
     const inc = pushOrExtendFlex(channelPrograms, flexDurationMs);
@@ -151,8 +153,24 @@ export async function scheduleTimeSlots(
     timeCursor = timeCursor.add(program.duration);
   };
 
+  let dstActive = timeCursor.utcOffset() !== startOfYear.utcOffset();
   while (timeCursor.isBefore(upperLimit)) {
-    let currOffset = timeCursor.diff(startOfCurrentPeriod) % periodMs;
+    const inDst = timeCursor.utcOffset() !== startOfYear.utcOffset();
+    if (!dstActive && inDst) {
+      // We just entered
+      dstActive = true;
+    } else if (dstActive && !inDst) {
+      dstActive = false;
+    }
+
+    let dstOffset = 0;
+    if (!startedinDst && dstActive) {
+      dstOffset = OneHourMillis;
+    } else if (startedinDst && !dstActive) {
+      dstOffset = -OneHourMillis;
+    }
+    let currOffset =
+      (timeCursor.diff(startOfCurrentPeriod) + dstOffset) % periodMs;
 
     let currSlot: TimeSlotImpl<CondensedChannelProgram> | null = null;
     let lateMillis: number | null = null;

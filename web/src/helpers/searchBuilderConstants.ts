@@ -3,23 +3,49 @@ import type { SearchField } from '@tunarr/types/schemas';
 import type { NonEmptyArray } from 'ts-essentials';
 import type { OperatorLabelMap, Operators } from '../types/SearchBuilder.ts';
 
-export type SearchFieldSpec<Typ extends SearchField['type']> = {
+export type SearchFieldSpec<
+  Typ extends SearchField['type'] = SearchField['type'],
+> = {
   key: string;
+  name?: string;
   type: Typ;
-  name: string;
+  displayName: string;
   uiVisible: boolean;
-  alias?: string;
   visibleForLibraryTypes:
     | 'all'
     | ReadonlyArray<MediaSourceLibrary['mediaType']>;
-  normalizer?: (input: string) => ExpectedOutType<Typ>;
-  uiFormatter?: (input: ExpectedOutType<Typ>) => string;
+  bijection?: Bij<ExpectedOutType<Typ>>;
+  uiBijection?: Bij<ExpectedOutType<Typ>, string>;
+};
+
+export function isNumericSearchFieldSpec(
+  spec: SearchFieldSpec<SearchField['type']>,
+): spec is SearchFieldSpec<'numeric' | 'date'> {
+  return spec.type === 'numeric' || spec.type === 'date';
+}
+
+export function isUiSearchFieldSpecOfType<Typ extends SearchField['type']>(
+  spec: SearchFieldSpec<SearchField['type']>,
+  typ: Typ,
+): spec is SearchFieldSpec<Typ> {
+  return spec.type === typ;
+}
+
+export function isFactedStringSearchFieldSpec(
+  spec: SearchFieldSpec<SearchField['type']>,
+): spec is SearchFieldSpec<'faceted_string'> {
+  return spec.type === 'faceted_string';
+}
+
+export const numericBij: Bij<number, string> = {
+  to: (n) => n.toString(),
+  from: (str) => parseInt(str),
 };
 
 export const TitleSearchFieldSpec = {
   key: 'title',
   type: 'string' as const,
-  name: 'Title',
+  displayName: 'Title',
   uiVisible: true,
   visibleForLibraryTypes: 'all',
 } satisfies SearchFieldSpec<'string'>;
@@ -27,23 +53,29 @@ export const TitleSearchFieldSpec = {
 const MinutesField = {
   key: 'duration',
   type: 'numeric' as const,
-  name: 'Minutes',
-  alias: 'minutes',
+  displayName: 'Minutes',
+  name: 'minutes',
   uiVisible: true,
   visibleForLibraryTypes: 'all',
-  normalizer: (input) => parseInt(input) * 60 * 1000,
-  uiFormatter: (input) => (input / 60 / 1000).toString(),
+  bijection: {
+    to: (mins) => mins * 60 * 1000,
+    from: (ms) => ms / 60 / 1000,
+  },
+  uiBijection: numericBij,
 } satisfies SearchFieldSpec<'numeric'>;
 
 const SecondsField = {
   key: 'duration',
   type: 'numeric' as const,
-  name: 'Seconds',
-  alias: 'seconds',
+  displayName: 'Seconds',
+  name: 'seconds',
   uiVisible: true,
   visibleForLibraryTypes: 'all',
-  normalizer: (input) => parseInt(input) * 1000,
-  uiFormatter: (input) => (input / 1000).toString(),
+  bijection: {
+    to: (sec) => sec * 1000,
+    from: (ms) => ms / 1000,
+  },
+  uiBijection: numericBij,
 } satisfies SearchFieldSpec<'numeric'>;
 
 export const SearchFieldSpecs: NonEmptyArray<
@@ -54,15 +86,15 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'type',
     type: 'faceted_string' as const,
-    name: 'Type',
+    displayName: 'Type',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'grandparent.title',
-    alias: 'show_title',
+    name: 'show_title',
     type: 'string' as const,
-    name: 'Show Title',
+    displayName: 'Show Title',
     uiVisible: true,
     visibleForLibraryTypes: ['shows'] as NoInfer<
       ReadonlyArray<MediaSourceLibrary['mediaType']>
@@ -70,112 +102,112 @@ export const SearchFieldSpecs: NonEmptyArray<
   } satisfies SearchFieldSpec<'string'>,
   {
     key: 'genres.name',
-    alias: 'genre',
+    name: 'genre',
     type: 'faceted_string' as const,
-    name: 'Genre',
+    displayName: 'Genre',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'rating',
     type: 'faceted_string' as const,
-    name: 'Content Rating',
+    displayName: 'Content Rating',
     uiVisible: true,
     visibleForLibraryTypes: ['movies', 'shows'],
   },
   {
     key: 'actors.name',
-    alias: 'actor',
+    name: 'actor',
     type: 'faceted_string' as const,
-    name: 'Actors',
+    displayName: 'Actors',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'writer.name',
-    alias: 'writer',
+    name: 'writer',
     type: 'faceted_string' as const,
-    name: 'Writers',
+    displayName: 'Writers',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'director.name',
-    alias: 'director',
+    name: 'director',
     type: 'faceted_string' as const,
-    name: 'Directors',
+    displayName: 'Directors',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'studio.name',
-    alias: 'studio',
+    name: 'studio',
     type: 'faceted_string' as const,
-    name: 'Studios',
+    displayName: 'Studios',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'originalReleaseDate',
-    alias: 'release_date',
+    name: 'release_date',
     type: 'date' as const,
-    name: 'Release Date',
+    displayName: 'Release Date',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'originalReleaseYear',
-    alias: 'year',
+    name: 'year',
     type: 'numeric' as const,
-    name: 'Release Year',
+    displayName: 'Release Year',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'videoCodec',
-    alias: 'video_codec',
+    name: 'video_codec',
     type: 'faceted_string' as const,
-    name: 'Video Codec',
+    displayName: 'Video Codec',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'videoHeight',
-    alias: 'video_height',
+    name: 'video_height',
     type: 'numeric' as const,
-    name: 'Video Height',
+    displayName: 'Video Height',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'videoWidth',
-    alias: 'video_width',
+    name: 'video_width',
     type: 'numeric' as const,
-    name: 'Video Width',
+    displayName: 'Video Width',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'videoBitDepth',
-    alias: 'video_bit_depth',
+    name: 'video_bit_depth',
     type: 'numeric' as const,
-    name: 'Video Bit Depth',
+    displayName: 'Video Bit Depth',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'audioCodec',
-    alias: 'audio_codec',
+    name: 'audio_codec',
     type: 'faceted_string' as const,
-    name: 'Audio Codec',
+    displayName: 'Audio Codec',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'audioChannels',
-    alias: 'audio_channels',
+    name: 'audio_channels',
     type: 'numeric' as const,
-    name: 'Audio Channels',
+    displayName: 'Audio Channels',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
@@ -184,15 +216,15 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'tags',
     type: 'faceted_string',
-    name: 'Tags',
+    displayName: 'Tags',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'grandparent.tags',
-    alias: 'show_tags',
+    name: 'show_tags',
     type: 'faceted_string' as const,
-    name: 'Show Tags',
+    displayName: 'Show Tags',
     uiVisible: true,
     visibleForLibraryTypes: ['shows'] as NoInfer<
       ReadonlyArray<MediaSourceLibrary['mediaType']>
@@ -220,7 +252,7 @@ interface Bij<In, Out = In> {
 }
 
 type NormalizersMap = {
-  [K in keyof (typeof SearchFieldSpecs)[number]['alias']]: Bij<
+  [K in keyof (typeof SearchFieldSpecs)[number]['name']]: Bij<
     string,
     ExpectedOutType<(typeof SearchFieldSpecs)[K]['type']>
   >;

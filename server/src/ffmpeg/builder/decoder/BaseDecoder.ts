@@ -33,4 +33,8 @@ export abstract class BaseDecoder extends Decoder {
     }
     return depth;
   }
+
+  override toString() {
+    return `${this.constructor.name}(name=${this.name}, outputFrameDataLocation=${this._outputFrameDataLocation})`;
+  }
 }

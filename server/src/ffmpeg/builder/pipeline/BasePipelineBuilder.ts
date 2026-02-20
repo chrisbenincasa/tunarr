@@ -64,6 +64,7 @@ import { filter, first, isNil, isNull, isUndefined, merge } from 'lodash-es';
 import type { DeepReadonly, MarkRequired } from 'ts-essentials';
 import { P, match } from 'ts-pattern';
 import {
+  AudioFormats,
   OutputFormatTypes,
   OutputLocation,
   VideoFormats,
@@ -352,7 +353,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.context = builderContext;
 
     this.logger.debug(
-      'Creating ffmpeg transcode pipeline with context: %O',
+      'Creating ffmpeg transcode pipeline (%s) with context: %O',
+      this.constructor.name,
       this.context,
     );
 
@@ -531,7 +533,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     this.setHardwareAccelState();
 
     this.logger.debug(
-      'Input = %O, Output = %O. Using decode mode = %s and encode mode = %s',
+      'PIPELINE: Input = %O, Output = %O. Using decode mode = %s and encode mode = %s',
       {
         codec: this.context.videoStream?.codec,
         bitDepth: this.context.videoStream?.bitDepth(),
@@ -597,17 +599,14 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     );
     this.pipelineSteps.push(encoder);
 
-    if (
-      this.context.desiredAudioState.audioEncoder ===
-      TranscodeAudioOutputFormat.Copy
-    ) {
+    if (this.context.desiredAudioState.audioEncoder === AudioFormats.Copy) {
       return;
     }
 
     if (!isNull(this.context.desiredAudioState.audioChannels)) {
       this.pipelineSteps.push(
         AudioChannelsOutputOption(
-          this.context.audioStream.codec,
+          this.context.desiredAudioState.audioEncoder,
           this.context.audioStream.channels,
           this.context.desiredAudioState.audioChannels,
         ),
@@ -634,7 +633,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     if (
       !isNull(this.desiredAudioState?.audioVolume) &&
       this.desiredAudioState.audioVolume !== 100 &&
-      encoder.name != TranscodeAudioOutputFormat.Copy &&
+      encoder.name != AudioFormats.Copy &&
       this.desiredAudioState.audioVolume > 0
     ) {
       this.audioInputSource?.filterSteps?.push(
@@ -642,7 +641,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       );
     }
 
-    if (encoder.name !== TranscodeAudioOutputFormat.Copy) {
+    if (encoder.name !== AudioFormats.Copy) {
       // This seems to help with audio sync issues in QSV
       const asyncSamples =
         this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Qsv

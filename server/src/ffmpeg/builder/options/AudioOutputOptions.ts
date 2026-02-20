@@ -1,3 +1,4 @@
+import { AudioFormats } from '../constants.ts';
 import { makeConstantOutputOption } from './OutputOption.ts';
 
 export const AudioChannelsOutputOption = (
@@ -8,7 +9,7 @@ export const AudioChannelsOutputOption = (
   const opts: string[] = [];
   if (
     sourceChannels !== desiredChannels ||
-    (audioFormat === 'aac' && desiredChannels > 2)
+    (audioFormat === AudioFormats.Aac && desiredChannels > 2)
   ) {
     opts.push('-ac', desiredChannels.toString());
   }

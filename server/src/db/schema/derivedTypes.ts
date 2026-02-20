@@ -409,3 +409,6 @@ export type JellyfinMediaSource = SpecificMediaSourceType<
 export type EmbyMediaSource = SpecificMediaSourceType<
   typeof MediaSourceType.Emby
 >;
+export type LocalMediaSource = SpecificMediaSourceType<
+  typeof MediaSourceType.Local
+>;

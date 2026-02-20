@@ -388,6 +388,8 @@ export class PlexStreamDetails extends ExternalStreamDetailsFetcher<PlexT> {
         colorSpace: videoStream.colorSpace,
         colorTransfer: videoStream.colorTrc,
         colorPrimaries: videoStream.colorPrimaries,
+        isAttachedPic: false,
+        pixelFormat: undefined,
       } satisfies VideoStreamDetails;
     }
 

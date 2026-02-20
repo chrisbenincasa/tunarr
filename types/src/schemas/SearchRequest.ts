@@ -16,13 +16,22 @@ const NumericOperators = ['=', '!=', '<', '>', '<=', '>=', 'to'] as const;
 
 export type NumericOperators = TupleToUnion<typeof NumericOperators>;
 
+const BaseSearchFieldSchema = z.object({
+  key: z.string().describe('The actual field path in the search index'),
+  name: z
+    .string()
+    .optional()
+    .describe('The field name. This could be an alias.'),
+});
+
 const StringSearchFieldSchema = z.object({
-  key: z.string(),
-  name: z.string(),
+  ...BaseSearchFieldSchema.shape,
   type: z.literal('string'),
   op: z.enum(StringOperators),
   value: z.string().array(),
 });
+
+export type StringSearchField = z.infer<typeof StringSearchFieldSchema>;
 
 const FactedStringSearchFieldSchema = z.object({
   ...StringSearchFieldSchema.shape,
@@ -34,13 +43,14 @@ export type FactedStringSearchField = z.infer<
 >;
 
 const NumericSearchFieldSchema = z.object({
-  key: z.string(),
-  name: z.string(),
+  ...BaseSearchFieldSchema.shape,
   type: z.literal('numeric'),
   op: z.enum(NumericOperators),
   // Is this weird
   value: z.number().or(z.tuple([z.number(), z.number()])),
 });
+
+export type NumericSearchField = z.infer<typeof NumericSearchFieldSchema>;
 
 const DateSearchFieldSchema = z.object({
   ...NumericSearchFieldSchema.shape,
@@ -137,3 +147,10 @@ export const SearchRequestSchema = z.object({
 });
 
 export type SearchRequest = z.infer<typeof SearchRequestSchema>;
+
+export function isSearchFieldSpecOfType<Typ extends SearchField['type']>(
+  spec: SearchField,
+  type: Typ,
+): spec is Extract<SearchField, { type: Typ }> {
+  return spec.type === type;
+}

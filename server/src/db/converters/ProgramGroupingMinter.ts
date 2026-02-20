@@ -448,8 +448,15 @@ export class ProgramGroupingMinter {
     identifiers: Nilable<Identifier[]>,
     now: number = +dayjs(),
   ) {
+    const seen = new Set<string>();
     return seq.collect(identifiers, (id) => {
       if (isNonEmptyString(id.id) && isValidSingleExternalIdType(id.type)) {
+        // Deduplicate single-type external IDs by sourceType to avoid
+        // unique constraint violations on (group_uuid, source_type).
+        if (seen.has(id.type)) {
+          return;
+        }
+        seen.add(id.type);
         return {
           type: 'single',
           externalKey: id.id,
@@ -460,6 +467,12 @@ export class ProgramGroupingMinter {
           updatedAt: now,
         } satisfies NewSingleOrMultiProgramGroupingExternalId;
       } else if (isValidMultiExternalIdType(id.type)) {
+        // Deduplicate multi-type external IDs by sourceType|mediaSourceId.
+        const key = `${id.type}|${mediaSource.uuid}`;
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
         return {
           type: 'multi',
           externalKey: id.id,

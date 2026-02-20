@@ -6,27 +6,33 @@ import {
   MenuItem,
   Select,
   Stack,
-  TextField,
 } from '@mui/material';
-import { search, seq } from '@tunarr/shared/util';
-import type { SearchField, SearchFilterValueNode } from '@tunarr/types/schemas';
+import { seq } from '@tunarr/shared/util';
+import type {
+  NumericOperators,
+  SearchField,
+  SearchFilterValueNode,
+  StringOperators,
+} from '@tunarr/types/schemas';
 import { OperatorsByType } from '@tunarr/types/schemas';
-import { find, head, isArray, isNumber } from 'lodash-es';
-import { useCallback } from 'react';
+import { find, isArray, isNumber } from 'lodash-es';
+import { useCallback, useMemo } from 'react';
 import type { ControllerRenderProps } from 'react-hook-form';
 import { Controller, useFormContext } from 'react-hook-form';
-import type { SearchFieldSpec } from '../../helpers/searchBuilderConstants.ts';
 import {
   SearchFieldSpecs,
   getOperatorLabel,
+  isUiSearchFieldSpecOfType,
 } from '../../helpers/searchBuilderConstants.ts';
 import { useGetFieldName } from '../../hooks/searchBuilderHooks.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import type { FieldPrefix } from '../../types/SearchBuilder.ts';
 import { DateSearchValueNode } from './DateSearchValueNode.tsx';
 import { FacetStringValueSearchNode } from './FacetStringValueSearchNode.tsx';
+import { NumericValueSearchNode } from './NumericValueSearchNode.tsx';
 import type { GroupNodeProps } from './SearchGroupNode.tsx';
 import type { SearchForm } from './SearchInput.tsx';
+import { StringValueSearchNode } from './StringValueSearchNode.tsx';
 
 type ValueNodeProps = GroupNodeProps & {
   formKey: FieldPrefix;
@@ -45,7 +51,15 @@ export function SearchValueNode(props: ValueNodeProps) {
     remove,
   } = props;
   const { control, watch, setValue } = useFormContext<SearchForm>();
-  const selfValue = watch(formKey) as SearchFilterValueNode;
+  const [selfValue, searchField] = watch([formKey, `${formKey}.fieldSpec`]) as [
+    SearchFilterValueNode,
+    SearchField,
+  ];
+  const matchingSpec = useMemo(() => {
+    return Object.values(SearchFieldSpecs).find((spec) =>
+      spec.name ? searchField.name === spec.name : spec.key === searchField.key,
+    );
+  }, [searchField]);
   const getFieldName = useGetFieldName(formKey);
   const dayjs = useDayjs();
 
@@ -53,7 +67,7 @@ export function SearchValueNode(props: ValueNodeProps) {
     (newField: string) => {
       const spec = find(
         SearchFieldSpecs,
-        (spec) => (spec.alias ?? spec.key) === newField,
+        (spec) => (spec.name ?? spec.key) === newField,
       );
 
       if (!spec) {
@@ -64,36 +78,36 @@ export function SearchValueNode(props: ValueNodeProps) {
       switch (spec.type) {
         case 'string':
           fieldSpec = {
-            key: spec.alias ?? spec.key,
-            type: spec.type,
             name: spec.name,
+            key: spec.key,
+            type: spec.type,
             op: '=',
             value: [],
           };
           break;
         case 'faceted_string':
           fieldSpec = {
-            key: spec.alias ?? spec.key,
-            type: spec.type,
             name: spec.name,
+            key: spec.key,
+            type: spec.type,
             op: '=',
             value: [],
           };
           break;
         case 'date':
           fieldSpec = {
-            key: spec.alias ?? spec.key,
-            type: spec.type,
             name: spec.name,
+            key: spec.key,
+            type: spec.type,
             op: '=',
             value: +dayjs(),
           };
           break;
         case 'numeric':
           fieldSpec = {
-            key: spec.alias ?? spec.key,
-            type: spec.type,
             name: spec.name,
+            key: spec.key,
+            type: spec.type,
             op: '=',
             value: 0,
           };
@@ -108,7 +122,7 @@ export function SearchValueNode(props: ValueNodeProps) {
   );
 
   const handleOpChange = useCallback(
-    (newOp: string, originalOnChange: (...args: unknown[]) => void) => {
+    (newOp: string) => {
       if (
         selfValue.fieldSpec.type === 'numeric' ||
         selfValue.fieldSpec.type === 'date'
@@ -125,7 +139,10 @@ export function SearchValueNode(props: ValueNodeProps) {
           );
         }
       }
-      originalOnChange(newOp);
+      setValue(
+        getFieldName('fieldSpec.op'),
+        newOp as StringOperators | NumericOperators,
+      );
     },
     [
       getFieldName,
@@ -135,82 +152,48 @@ export function SearchValueNode(props: ValueNodeProps) {
     ],
   );
 
-  const handleValueChange = useCallback(
-    (
-      spec: SearchFieldSpec<SearchField['type']>,
-      value: string,
-      originalOnChange: (...args: unknown[]) => void,
-    ) => {
-      if (selfValue.fieldSpec.type === 'numeric') {
-        if (spec.normalizer) {
-          originalOnChange(spec.normalizer(value));
-        } else {
-          const parsed = parseInt(value);
-          if (isNaN(parsed)) {
-            return;
-          }
-          originalOnChange(parsed);
-        }
-      } else {
-        if (spec.normalizer) {
-          originalOnChange([spec.normalizer(value)]);
-        } else {
-          originalOnChange([value]);
-        }
-      }
-    },
-    [selfValue.fieldSpec.type],
-  );
-
-  const renderValueInput = () => {
-    const fieldSpec = selfValue.fieldSpec;
-    const matchingSpec = Object.values(SearchFieldSpecs).find(
-      (spec) => spec.alias ?? spec.key,
-    );
+  const renderValueInput = useMemo(() => {
     if (!matchingSpec) {
       return;
     }
 
-    if (fieldSpec.type === 'faceted_string') {
+    if (isUiSearchFieldSpecOfType(matchingSpec, 'faceted_string')) {
       return (
         <FacetStringValueSearchNode
           formKey={getFieldName('fieldSpec')}
           libraryId={libraryId}
           mediaSourceId={mediaSourceId}
-          field={fieldSpec}
+          field={matchingSpec}
         />
       );
-    } else if (fieldSpec.type === 'date') {
+    } else if (isUiSearchFieldSpecOfType(matchingSpec, 'date')) {
       return (
         <DateSearchValueNode
           formKey={getFieldName('fieldSpec')}
-          field={fieldSpec}
+          field={matchingSpec}
         />
       );
-    } else {
+    } else if (isUiSearchFieldSpecOfType(matchingSpec, 'numeric')) {
       return (
-        <Controller
-          control={control}
-          name={getFieldName('fieldSpec.value')}
-          render={({ field }) => (
-            <TextField
-              label="Value"
-              size="small"
-              {...field}
-              onChange={(e) =>
-                handleValueChange(matchingSpec, e.target.value, field.onChange)
-              }
-            />
-          )}
+        <NumericValueSearchNode
+          formKey={getFieldName('fieldSpec')}
+          uiSpec={matchingSpec}
+        />
+      );
+    } else if (isUiSearchFieldSpecOfType(matchingSpec, 'string')) {
+      return (
+        <StringValueSearchNode
+          field={matchingSpec}
+          formKey={getFieldName('fieldSpec')}
         />
       );
     }
-  };
+
+    return;
+  }, [getFieldName, libraryId, matchingSpec, mediaSourceId]);
 
   const renderOperatorInput = useCallback(
-    (
-      field: ControllerRenderProps<SearchForm, `${FieldPrefix}.fieldSpec.op`>,
-    ) => {
+    (field: ControllerRenderProps<SearchForm, `${FieldPrefix}.fieldSpec`>) => {
       const multiple =
         isArray(selfValue.fieldSpec.value) &&
         selfValue.fieldSpec.value.length > 1;
@@ -232,8 +215,8 @@ export function SearchValueNode(props: ValueNodeProps) {
         <Select
           label="Operator"
           {...field}
-          value={field.value}
-          onChange={(ev) => handleOpChange(ev.target.value, field.onChange)}
+          value={field.value.op}
+          onChange={(ev) => handleOpChange(ev.target.value)}
         >
           {operators}
         </Select>
@@ -257,10 +240,7 @@ export function SearchValueNode(props: ValueNodeProps) {
             <Select
               label="Field"
               MenuProps={{ sx: { maxHeight: 375 } }}
-              value={
-                head(search.indexFieldToVirtualField[field.value.key]) ??
-                field.value.key
-              }
+              value={field.value.name ?? field.value.key}
               onChange={(e) => handleFieldChange(e.target.value)}
             >
               {seq.collect(SearchFieldSpecs, (spec) => {
@@ -273,10 +253,10 @@ export function SearchValueNode(props: ValueNodeProps) {
                 }
                 return (
                   <MenuItem
-                    key={spec.alias ?? spec.key}
-                    value={spec.alias ?? spec.key}
+                    key={spec.name ?? spec.key}
+                    value={spec.name ?? spec.key}
                   >
-                    {spec.name}
+                    {spec.displayName}
                   </MenuItem>
                 );
               })}
@@ -284,16 +264,16 @@ export function SearchValueNode(props: ValueNodeProps) {
           </FormControl>
         )}
       />
-
       <FormControl size="small" sx={{ minWidth: 200 }}>
         <InputLabel>Operator</InputLabel>
         <Controller
           control={control}
-          name={getFieldName('fieldSpec.op')}
+          name={getFieldName('fieldSpec')}
           render={({ field }) => renderOperatorInput(field)}
         />
       </FormControl>
-      {renderValueInput()}
+
+      {renderValueInput}
       {!only && (
         <span>
           <IconButton onClick={() => remove(index)}>

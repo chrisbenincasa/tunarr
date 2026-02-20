@@ -176,7 +176,7 @@ export function isNonEmptyString(s: unknown): s is string {
   return isString(s) && s.length > 0;
 }
 
-export function emptyStringToNull(s: string): string | null {
+export function emptyStringToNull(s: string | undefined): string | null {
   return isNonEmptyString(s) ? s : null;
 }
 
