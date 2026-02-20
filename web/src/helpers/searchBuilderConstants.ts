@@ -233,14 +233,14 @@ export const SearchFieldSpecs: NonEmptyArray<
   {
     key: 'media_source_name',
     type: 'string' as const,
-    name: 'Media Source Name',
+    displayName: 'Media Source Name',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
   {
     key: 'library_name',
     type: 'string' as const,
-    name: 'Library Name',
+    displayName: 'Library Name',
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },

@@ -84,7 +84,7 @@ export const isUIRedirectProgram = (
 ): p is UIRedirectProgram => p.type === 'redirect';
 
 export type UIFillerListProgram = (ContentProgram | CustomProgram) & UIIndex;
-export type UICustomShowProgram = (ContentProgram | CustomProgram) & UIIndex;
+export type UICustomShowProgram = ContentProgram & UIIndex;
 export type NonUndefinedGuard<T> = T extends undefined ? never : T;
 
 export type ProgramSelectorViewType = 'list' | 'grid';
