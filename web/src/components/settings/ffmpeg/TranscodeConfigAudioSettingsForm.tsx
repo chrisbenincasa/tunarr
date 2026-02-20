@@ -1,5 +1,6 @@
 import {
   FormControl,
+  FormHelperText,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -55,6 +56,11 @@ export const TranscodeConfigAudioSettingsForm = () => {
             </Select>
           )}
         />
+        <FormHelperText>
+          {encoder === 'copy'
+            ? 'Passthrough audio unchanged. Other settings will not apply.'
+            : ''}
+        </FormHelperText>
       </FormControl>
 
       <Stack direction={{ sm: 'column', md: 'row' }} gap={2} useFlexGap>
@@ -107,6 +113,7 @@ export const TranscodeConfigAudioSettingsForm = () => {
             label: 'Audio Volume',
             fullWidth: true,
             sx: { my: 1 },
+            disabled: encoder === 'copy',
             helperText: 'Values higher than 100 will boost the audio.',
             InputProps: {
               endAdornment: <InputAdornment position="end">%</InputAdornment>,
@@ -121,6 +128,7 @@ export const TranscodeConfigAudioSettingsForm = () => {
             id: 'audio-bitrate',
             label: 'Audio Channels',
             fullWidth: true,
+            disabled: encoder === 'copy',
             sx: { my: 1 },
           }}
         />
