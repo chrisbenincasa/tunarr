@@ -87,6 +87,8 @@ export const OutputFormatTypes = {
 export const ColorTransferFormats = {
   Smpte2084: 'smpte2084',
   AribStdB67: 'arib-std-b67',
+  Bt709: 'bt709',
+  Tv: 'tv',
 } as const;
 
 export type ColorTransferFormat =

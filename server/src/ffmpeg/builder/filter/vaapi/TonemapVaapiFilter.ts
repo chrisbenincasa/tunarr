@@ -2,6 +2,7 @@ import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { PixelFormatNv12 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { ColorTransferFormats } from '@/ffmpeg/builder/constants.js';
 
 export class TonemapVaapiFilter extends FilterOption {
   constructor(private currentState: FrameState) {
@@ -20,10 +21,10 @@ export class TonemapVaapiFilter extends FilterOption {
   nextState(currentState: FrameState): FrameState {
     const currentPixelFormat = currentState.pixelFormat;
     return currentState.update({
-      colorSpace: 'bt709',
-      colorTransfer: 'bt709',
-      colorPrimaries: 'bt709',
-      colorRange: 'tv',
+      colorSpace: ColorTransferFormats.Bt709,
+      colorTransfer: ColorTransferFormats.Bt709,
+      colorPrimaries: ColorTransferFormats.Bt709,
+      colorRange: ColorTransferFormats.Tv,
       frameDataLocation: FrameDataLocation.Hardware,
       pixelFormat: currentPixelFormat
         ? new PixelFormatNv12(currentPixelFormat)
