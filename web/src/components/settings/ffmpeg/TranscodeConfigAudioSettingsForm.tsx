@@ -27,7 +27,7 @@ const AudioFormats: DropdownOption<SupportedTranscodeAudioOutputFormats>[] = [
     value: 'mp3',
   },
   {
-    description: 'Copy',
+    description: 'Copy / Passthrough',
     value: 'copy',
   },
 ] as const;
