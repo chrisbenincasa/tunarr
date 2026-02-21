@@ -29,6 +29,7 @@ import {
 } from 'lodash-es';
 import schedule from 'node-schedule';
 import fs from 'node:fs/promises';
+import { networkInterfaces } from 'node:os';
 import path, { dirname } from 'node:path';
 import 'reflect-metadata';
 import { z } from 'zod/v4';
@@ -334,7 +335,7 @@ export class Server {
               await req.serverCtx.cacheImageService.clearCache();
               return res.status(200).send({ msg: 'Cache Image are Cleared' });
             } catch (error) {
-              this.logger.error('Error deleting cached images', error);
+              this.logger.error(error, 'Error deleting cached images');
               return res.status(500).send('error');
             }
           },
@@ -419,6 +420,28 @@ export class Server {
         host === '0.0.0.0' ? '*' : host
       }:${this.serverOptions.port}`,
     );
+
+    if (host === '0.0.0.0') {
+      const interfaces = networkInterfaces();
+      const ipv4Interfaces = Object.values(interfaces)
+        .flatMap((interfaceList) => {
+          if (!interfaceList) return [];
+          return interfaceList.filter((iface) => iface.family === 'IPv4');
+        })
+        .map((iface) => {
+          return `➜  ${iface.internal ? 'Local' : 'Network'}:\thttp://${iface.address}:${this.serverOptions.port}/web`;
+        });
+
+      this.logger.info(
+        'Tunarr is ready! Access in your web browser at:\n%s',
+        ipv4Interfaces.join('\n'),
+      );
+    } else {
+      this.logger.info(
+        'Tunarr is ready! Access in your web browser at:\n%s',
+        `http://${host}:${this.serverOptions.port}/web`,
+      );
+    }
 
     const hdhrSettings = this.serverContext.settings.hdhrSettings();
     if (hdhrSettings.autoDiscoveryEnabled) {
