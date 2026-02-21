@@ -201,6 +201,9 @@ export class DirectMigrationProvider implements MigrationProvider {
             './sql/0041_easy_firebird.sql',
           ),
           migration1771271020: Migration1771271020_FixCustomShowContentKey,
+          migration1771459200_AddSkipCredits: makeKyselyMigrationFromSqlFile(
+            './sql/0042_add_skip_credits.sql',
+          ),
         },
         wrapWithTransaction,
       ),

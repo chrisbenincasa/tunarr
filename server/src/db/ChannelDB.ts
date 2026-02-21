@@ -209,6 +209,7 @@ function updateRequestToChannel(updateReq: SaveableChannel): ChannelUpdate {
     transcodeConfigId: updateReq.transcodeConfigId,
     streamMode: updateReq.streamMode,
     subtitlesEnabled: booleanToNumber(updateReq.subtitlesEnabled),
+    skipCredits: booleanToNumber(updateReq.skipCredits),
   } satisfies ChannelUpdate;
 }
 
@@ -235,6 +236,7 @@ function createRequestToChannel(saveReq: SaveableChannel): NewChannel {
     streamMode: saveReq.streamMode,
     transcodeConfigId: saveReq.transcodeConfigId,
     subtitlesEnabled: booleanToNumber(saveReq.subtitlesEnabled),
+    skipCredits: booleanToNumber(saveReq.skipCredits),
   } satisfies NewChannel;
 }
 

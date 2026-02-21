@@ -17,6 +17,7 @@ import {
   isContentBackedLineupItem,
   ProgramStreamLineupItem,
   StreamLineupItem,
+  isProgramLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
@@ -229,6 +230,38 @@ export class StreamProgramCalculator {
           "No video to play, this means there's a serious unexpected bug or the channel db is corrupted.";
         this.logger.error(msg);
         return Result.forError(new Error(msg));
+      }
+
+      // Skip end credits if enabled on the channel. When an outro chapter
+      // exists, cap the stream duration so FFmpeg stops before credits start.
+      // If the viewer tuned in during credits, replace with an offline item
+      // so the filler system fills the remaining slot time.
+      if (
+        channelContext.skipCredits &&
+        isProgramLineupItem(currentProgram.program)
+      ) {
+        const outroChapter =
+          currentProgram.program.program.versions?.[0]?.chapters?.find(
+            (c) => c.chapterType === 'outro',
+          );
+
+        if (outroChapter) {
+          const creditsRemaining =
+            outroChapter.startTime - currentProgram.timeElapsed;
+          if (creditsRemaining <= 0) {
+            // Credits are already playing — advance past this program's
+            // remaining slot time so the next program starts immediately.
+            const remainingSlotTime =
+              currentProgram.program.duration - currentProgram.timeElapsed;
+            return await this.getCurrentLineupItem({
+              ...req,
+              startTime: req.startTime + remainingSlotTime + 1,
+            });
+          } else {
+            // Cap stream duration to end when credits begin
+            streamDuration = Math.min(streamDuration, creditsRemaining);
+          }
+        }
       }
 
       lineupItem = await this.createLineupItem(
