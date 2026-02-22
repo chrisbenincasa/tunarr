@@ -2,12 +2,13 @@ import {
   PixelFormatUnknown,
   type PixelFormat,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
-import type { DataProps, FrameSize } from '@/ffmpeg/builder/types.js';
+import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
-import type { Nullable } from '@/types/util.js';
+import type { DataProps, Nullable } from '@/types/util.js';
 import { isEqual, merge } from 'lodash-es';
 import type { MarkOptional } from 'ts-essentials';
 import type { VideoFormat } from '../constants.ts';
+import { ColorFormat } from '../format/ColorFormat.ts';
 
 type FrameStateFields = DataProps<FrameState>;
 
@@ -28,10 +29,7 @@ export const DefaultFrameState: Omit<
   deinterlace: false,
   pixelFormat: null,
   bitDepth: 8,
-  colorRange: null,
-  colorSpace: null,
-  colorTransfer: null,
-  colorPrimaries: null,
+  colorFormat: ColorFormat.unknown,
   forceSoftwareOverlay: false,
   infiniteLoop: false,
 };
@@ -52,10 +50,7 @@ export class FrameState {
   frameDataLocation: FrameDataLocation;
   deinterlace: boolean;
   pixelFormat: Nullable<PixelFormat>;
-  colorRange: Nullable<string>;
-  colorSpace: Nullable<string>;
-  colorTransfer: Nullable<string>;
-  colorPrimaries: Nullable<string>;
+  colorFormat: Nullable<ColorFormat>;
   infiniteLoop: boolean = false;
 
   forceSoftwareOverlay = false;

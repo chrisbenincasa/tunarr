@@ -275,11 +275,12 @@ export class FfmpegInfo {
   }
 
   async getCapabilities() {
-    const [optionsResult, encodersResult, filtersResult] =
+    const [optionsResult, encodersResult, filtersResult, hwAccelResult] =
       await Promise.allSettled([
         this.getOptions(),
         this.getAvailableVideoEncoders(),
         this.getFilters(),
+        this.getHwAccels(),
       ]);
 
     return new FfmpegCapabilities(
@@ -303,6 +304,9 @@ export class FfmpegInfo {
         : filtersResult.value
             .map((arr) => new Set(arr))
             .getOrElse(() => new Set()),
+      hwAccelResult.status === 'rejected'
+        ? new Set()
+        : new Set(hwAccelResult.value),
     );
   }
 

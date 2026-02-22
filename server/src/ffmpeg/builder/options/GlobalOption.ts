@@ -1,6 +1,7 @@
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { GlobalOptionPipelineStep } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { isString } from 'lodash-es';
+import type { NonEmptyArray } from 'ts-essentials';
 
 export abstract class GlobalOption implements GlobalOptionPipelineStep {
   readonly type = 'global';
@@ -15,11 +16,11 @@ export abstract class GlobalOption implements GlobalOptionPipelineStep {
 }
 
 export abstract class ConstantGlobalOption extends GlobalOption {
-  private _options: [string, ...string[]];
+  private _options: NonEmptyArray<string>;
 
   constructor(options: string);
-  constructor(options: [string, ...string[]]);
-  constructor(options: string | [string, ...string[]]) {
+  constructor(options: NonEmptyArray<string>);
+  constructor(options: string | NonEmptyArray<string>) {
     super();
     this._options = isString(options) ? [options] : options;
   }

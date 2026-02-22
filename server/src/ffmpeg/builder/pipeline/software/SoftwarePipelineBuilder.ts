@@ -38,10 +38,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
-      colorRange: videoStream.colorRange ?? null,
-      colorSpace: videoStream.colorSpace ?? null,
-      colorTransfer: videoStream.colorTransfer ?? null,
-      colorPrimaries: videoStream.colorPrimaries ?? null,
+      colorFormat: videoStream.colorFormat,
     });
 
     if (desiredState.videoFormat !== VideoFormats.Copy) {
@@ -270,6 +267,11 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       }
     }
 
+    return currentState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    // TODO: Implement software tonemap
     return currentState;
   }
 }

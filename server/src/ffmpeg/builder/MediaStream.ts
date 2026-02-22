@@ -1,10 +1,11 @@
-import type { ExcludeByValueType, Nullable } from '@/types/util.js';
+import type { DataProps, ExcludeByValueType, Nullable } from '@/types/util.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import { isEmpty, isNull, merge, nth } from 'lodash-es';
 import type { AnyFunction, MarkOptional, StrictOmit } from 'ts-essentials';
 import { VideoFormats } from './constants.ts';
+import { ColorFormat } from './format/ColorFormat.js';
 import { PixelFormatUnknown, type PixelFormat } from './format/PixelFormat.ts';
-import type { DataProps, StreamKind } from './types.ts';
+import type { StreamKind } from './types.ts';
 import { FrameSize } from './types.ts';
 
 export type MediaStream = {
@@ -58,10 +59,7 @@ export class VideoStream implements MediaStream {
   frameSize: FrameSize;
   frameRate?: string;
   inputKind: VideoInputKind = 'video' as const;
-  colorRange?: string;
-  colorSpace?: string;
-  colorTransfer?: string;
-  colorPrimaries?: string;
+  colorFormat: Nullable<ColorFormat>;
   providedSampleAspectRatio: Nullable<string>;
   displayAspectRatio: string;
 
@@ -79,6 +77,10 @@ export class VideoStream implements MediaStream {
 
   bitDepth() {
     return this.pixelFormat?.bitDepth ?? 8;
+  }
+
+  isHdr() {
+    return this.colorFormat?.isHdr ?? false;
   }
 
   get sampleAspectRatio(): string {
@@ -199,6 +201,7 @@ type StillImageStreamFields = MarkOptional<
     | 'sampleAspectRatio'
     | 'displayAspectRatio'
     | 'inputKind'
+    | 'colorFormat'
   >,
   'pixelFormat'
 >;
@@ -213,6 +216,7 @@ export class StillImageStream extends VideoStream {
       displayAspectRatio: '1:1',
       ...fields,
       pixelFormat: fields.pixelFormat ?? PixelFormatUnknown(),
+      colorFormat: ColorFormat.unknown, // TODO: Is this necessary
     });
   }
 

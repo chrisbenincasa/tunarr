@@ -1,5 +1,6 @@
 import { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
+import { ColorFormat } from '../format/ColorFormat.ts';
 import type {
   InputSourceContinuity,
   InputSourceType,
@@ -29,6 +30,7 @@ export class ConcatInputSource extends InputSource<VideoStream> {
         providedSampleAspectRatio: null,
         displayAspectRatio: '1:1',
         inputKind: 'video',
+        colorFormat: ColorFormat.unknown,
       }),
     ];
   }

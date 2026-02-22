@@ -1,7 +1,6 @@
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
-import type { DataProps } from '@/ffmpeg/builder/types.js';
 import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
-import type { Maybe, Nullable } from '@/types/util.js';
+import type { DataProps, Maybe, Nullable } from '@/types/util.js';
 import type { FfmpegLogLevel } from '@tunarr/types/schemas';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { merge } from 'lodash-es';
@@ -75,6 +74,7 @@ export class FfmpegState {
   outputFormat: OutputFormat = MpegTsOutputFormat; // TODO: No
   outputLocation: OutputLocation = OutputLocation.Stdout;
   ptsOffset?: number;
+  tonemapHdr: boolean = false;
 
   // HLS
   get hlsPlaylistPath(): Maybe<string> {
