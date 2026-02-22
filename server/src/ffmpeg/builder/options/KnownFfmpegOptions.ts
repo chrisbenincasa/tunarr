@@ -6,4 +6,5 @@ export const KnownFfmpegOptions = {
 export const KnownFfmpegFilters = {
   ScaleNpp: 'scale_npp',
   ScaleCuda: 'scale_cuda',
+  TonemapVaapi: 'tonemap_vaapi',
 };

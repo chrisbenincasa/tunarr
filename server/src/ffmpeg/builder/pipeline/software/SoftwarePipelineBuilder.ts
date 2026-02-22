@@ -38,6 +38,10 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       isAnamorphic: videoStream.isAnamorphic,
       scaledSize: videoStream.frameSize,
       paddedSize: videoStream.frameSize,
+      colorRange: videoStream.colorRange ?? null,
+      colorSpace: videoStream.colorSpace ?? null,
+      colorTransfer: videoStream.colorTransfer ?? null,
+      colorPrimaries: videoStream.colorPrimaries ?? null,
     });
 
     if (desiredState.videoFormat !== VideoFormats.Copy) {

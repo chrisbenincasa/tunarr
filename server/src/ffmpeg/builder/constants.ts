@@ -84,6 +84,16 @@ export const OutputFormatTypes = {
   Dash: 'dash',
 } as const;
 
+export const ColorTransferFormats = {
+  Smpte2084: 'smpte2084',
+  AribStdB67: 'arib-std-b67',
+  Bt709: 'bt709',
+  Tv: 'tv',
+} as const;
+
+export type ColorTransferFormat =
+  (typeof ColorTransferFormats)[keyof typeof ColorTransferFormats];
+
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
 export type HlsOutputFormat = {
