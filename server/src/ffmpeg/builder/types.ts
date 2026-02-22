@@ -1,8 +1,5 @@
-import type { ExcludeByValueType, TupleToUnion } from '@/types/util.js';
+import type { DataProps, TupleToUnion } from '@/types/util.js';
 import type { Resolution } from '@tunarr/types';
-import type { AnyFunction } from 'ts-essentials';
-
-export type DataProps<T> = ExcludeByValueType<T, AnyFunction>;
 
 export const StreamKinds = [
   'audio',

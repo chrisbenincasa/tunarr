@@ -6,6 +6,7 @@ export class FfmpegCapabilities {
     // FFmpeg name to encoder details
     private videoEncoders: ReadonlyMap<string, FfmpegEncoder>,
     private filters: ReadonlySet<string>,
+    private hwAccels: ReadonlySet<string>,
   ) {}
 
   allOptions(): Set<string> {
@@ -31,11 +32,16 @@ export class FfmpegCapabilities {
   hasFilter(filter: string) {
     return this.filters.has(filter);
   }
+
+  hasHardwareAccel(hwAccel: string) {
+    return this.hwAccels.has(hwAccel);
+  }
 }
 
 // Used for testing
 export const EmptyFfmpegCapabilities = new FfmpegCapabilities(
   new Set(),
   new Map(),
+  new Set(),
   new Set(),
 );

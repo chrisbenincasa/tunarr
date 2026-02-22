@@ -6,6 +6,7 @@ import { LavfiInputOption } from '@/ffmpeg/builder/options/input/LavfiInputOptio
 import { FrameSize } from '@/ffmpeg/builder/types.js';
 import type { HasFilterOption } from '@/ffmpeg/builder/types/PipelineStep.js';
 import { FilterStreamSource } from '@/stream/types.js';
+import { ColorFormat } from '../format/ColorFormat.ts';
 import { VideoInputSource } from './VideoInputSource.ts';
 
 export class LavfiVideoInputSource extends VideoInputSource {
@@ -23,6 +24,7 @@ export class LavfiVideoInputSource extends VideoInputSource {
         providedSampleAspectRatio: null,
         displayAspectRatio: '1:1',
         frameSize: size,
+        colorFormat: ColorFormat.unknown,
       }),
     ]);
     this.addOption(new LavfiInputOption());

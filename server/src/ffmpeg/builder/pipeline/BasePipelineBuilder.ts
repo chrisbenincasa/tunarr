@@ -49,13 +49,12 @@ import type {
   PipelineOptions,
 } from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import type { DataProps } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type {
   IPipelineStep,
   PipelineStep,
 } from '@/ffmpeg/builder/types/PipelineStep.js';
-import type { Nilable, Nullable } from '@/types/util.js';
+import type { DataProps, Nilable, Nullable } from '@/types/util.js';
 import { ifDefined, isNonEmptyString } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
