@@ -84,11 +84,40 @@ export const OutputFormatTypes = {
   Dash: 'dash',
 } as const;
 
+export const ColorRanges = {
+  Tv: 'tv',
+};
+
+// https://trac.ffmpeg.org/wiki/colorspace#color_primaries
+export const ColorSpaces = {
+  Rgb: 'rgb',
+  Bt709: 'bt709',
+  Bt709bg: 'bt709bg',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
+  Bt2020nc: 'bt2020nc',
+  Bt2020c: 'bt2020c',
+  Smpte2085: 'smpte2085',
+};
+
+export const ColorPrimaries = {
+  Bt709: 'bt709',
+  Bt709m: 'bt709m',
+  Bt709bg: 'bt709bg',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
+  Bt2020: 'bt2020',
+};
+
 export const ColorTransferFormats = {
+  Bt709: 'bt709',
+  Unknown: 'unknown',
+  Gamma22: 'gamma22',
+  Gamma28: 'gamma28',
+  Smpte170m: 'smpte170m',
+  Smpte240m: 'smpte240m',
   Smpte2084: 'smpte2084',
   AribStdB67: 'arib-std-b67',
-  Bt709: 'bt709',
-  Tv: 'tv',
 } as const;
 
 export type ColorTransferFormat =
@@ -174,5 +203,6 @@ export type OutputFormat =
   | MpegDashOutputFormat
   | Mp4OutputFormat
   | MpegTsOutputFormat;
+
 export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
 export const FiveMinutesMillis = 5 * 60 * 60 * 1000;
