@@ -8,13 +8,13 @@ import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js'
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { HardwareDownloadFilter } from '@/ffmpeg/builder/filter/HardwareDownloadFilter.js';
 import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
+import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { PixelFormatFilter } from '@/ffmpeg/builder/filter/PixelFormatFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.js';
 import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.js';
 import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
-import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
 import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
