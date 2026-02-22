@@ -41,9 +41,9 @@ import {
   createProgramMap,
   deduplicatePrograms,
   distributeFlex,
+  getFillerIteratorsForSlot,
   maybeAddPrePostFiller,
   pushOrExtendFlex,
-  slotFillerIterators,
 } from './slotSchedulerUtil.js';
 
 export const random = new Random(MersenneTwister19937.autoSeed());
@@ -90,7 +90,7 @@ class ScheduleContext {
           slot,
           this.#programmingIteratorsById[slotIteratorKey(slot)]!,
           this.#random,
-          slotFillerIterators(slot, this.programmingIteratorsById),
+          getFillerIteratorsForSlot(slot, this.programmingIteratorsById),
         ),
     );
   }
