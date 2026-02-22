@@ -13,7 +13,7 @@ export class TonemapVaapiFilter extends FilterOption {
     const tonemap = 'tonemap_vaapi=format=nv12:t=bt709:m=bt709:p=bt709';
     return this.currentState.frameDataLocation === FrameDataLocation.Hardware
       ? tonemap
-      : `format=nv12|p010le|vaapi,hwupload,${tonemap}`;
+      : `format=vaapi|nv12|p010le,${tonemap}`;
   }
 
   public readonly affectsFrameState: boolean = true;
