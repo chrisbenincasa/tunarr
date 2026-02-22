@@ -8,6 +8,15 @@ import { VideoFormats } from '../../ffmpeg/builder/constants.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
+export const AllKnownHardwareAcceerationModes = [
+  'none',
+  'cuda',
+  'vaapi',
+  'qsv',
+  'videotoolbox',
+  'vulkan',
+] as const;
+
 export const HardwareAccelerationModes = [
   'none',
   'cuda',
@@ -17,7 +26,7 @@ export const HardwareAccelerationModes = [
 ] as const;
 
 export type HardwareAccelerationMode = TupleToUnion<
-  typeof HardwareAccelerationModes
+  typeof AllKnownHardwareAcceerationModes
 >;
 
 export const HardwareAccelerationMode: Record<
@@ -29,6 +38,7 @@ export const HardwareAccelerationMode: Record<
   Qsv: 'qsv' as const,
   Videotoolbox: 'videotoolbox' as const,
   Vaapi: 'vaapi' as const,
+  Vulkan: 'vulkan' as const,
 } as const;
 
 export const VaapiDrivers = [
