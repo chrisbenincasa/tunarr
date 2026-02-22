@@ -168,7 +168,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
-        tags: ['Settings'],
+        tags: ['Settings', 'Transcode Configs'],
         response: {
           200: z.array(TranscodeConfigSchema),
         },
@@ -185,7 +185,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
-        tags: ['Settings'],
+        tags: ['Settings', 'Transcode Configs'],
         params: z.object({
           id: z.string().uuid(),
         }),
@@ -211,6 +211,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id/copy',
     {
       schema: {
+        tags: ['Settings', 'Transcode Configs'],
         params: z.object({
           id: z.uuid(),
         }),
@@ -244,7 +245,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs',
     {
       schema: {
-        tags: ['Settings'],
+        tags: ['Settings', 'Transcode Configs'],
         body: TranscodeConfigSchema.omit({
           id: true,
         }),
@@ -265,7 +266,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
-        tags: ['Settings'],
+        tags: ['Settings', 'Transcode Configs'],
         body: TranscodeConfigSchema,
         params: IdPathParamSchema,
         response: {
@@ -286,7 +287,7 @@ export const ffmpegSettingsRouter: RouterPluginCallback = (
     '/transcode_configs/:id',
     {
       schema: {
-        tags: ['Settings'],
+        tags: ['Settings', 'Transcode Configs'],
         params: IdPathParamSchema,
         response: {
           200: z.void(),

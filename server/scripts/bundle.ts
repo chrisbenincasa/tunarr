@@ -1,4 +1,5 @@
-import '@dotenvx/dotenvx/config';
+import dotenv from '@dotenvx/dotenvx';
+dotenv.config({ debug: false, quiet: true, ignore: ['MISSING_ENV_FILE'] });
 
 import esbuild from 'esbuild';
 import fg from 'fast-glob';

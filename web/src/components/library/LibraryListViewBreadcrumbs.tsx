@@ -38,7 +38,7 @@ export const LibraryListViewBreadcrumbs = ({
     );
   });
   return (
-    <Breadcrumbs maxItems={4} sx={{ mt: 1 }}>
+    <Breadcrumbs maxItems={4} sx={{ my: 1 }}>
       <Link
         underline="hover"
         sx={{

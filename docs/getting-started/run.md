@@ -67,8 +67,13 @@ Tunarr has various command line / environment variables for configuration. These
 
 | Environment Variable | Command Line Flag | Default | Description |
 | -------------------- | ----------------- | ------- | ----------- |
-| `LOG_LEVEL` | N/A | `info` | Sets the log level. Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. Overrides the UI setting. |
+| `TUNARR_LOG_LEVEL` | N/A | `info` | Sets the log level. Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. Overrides the UI setting. |
 | `LOG_DIRECTORY` | N/A | (data dir) | Sets a custom directory for log files. |
+
+### Streaming
+| Environment Variable | Command Line Flag | Default | Description |
+| -------------------- | ----------------- | ------- | ----------- |
+| `TUNARR_SESSION_CLEANUP_DELAY_SECONDS` | N/A | `15` | How long to wait before cleaning up a transcode session after the last disconnect |
 
 ### Search (Meilisearch)
 

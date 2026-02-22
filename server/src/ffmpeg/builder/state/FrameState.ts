@@ -28,6 +28,10 @@ export const DefaultFrameState: Omit<
   deinterlace: false,
   pixelFormat: null,
   bitDepth: 8,
+  colorRange: null,
+  colorSpace: null,
+  colorTransfer: null,
+  colorPrimaries: null,
   forceSoftwareOverlay: false,
   infiniteLoop: false,
 };
@@ -48,6 +52,10 @@ export class FrameState {
   frameDataLocation: FrameDataLocation;
   deinterlace: boolean;
   pixelFormat: Nullable<PixelFormat>;
+  colorRange: Nullable<string>;
+  colorSpace: Nullable<string>;
+  colorTransfer: Nullable<string>;
+  colorPrimaries: Nullable<string>;
   infiniteLoop: boolean = false;
 
   forceSoftwareOverlay = false;

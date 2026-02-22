@@ -29,6 +29,7 @@ import {
   type GridItemProps,
 } from '../channel_config/MediaItemGrid.tsx';
 import { MediaItemList } from '../channel_config/MediaItemList.tsx';
+import { LibraryListViewBreadcrumbs } from './LibraryListViewBreadcrumbs.tsx';
 import { ProgramGridItem } from './ProgramGridItem.tsx';
 import { ProgramListItem } from './ProgramListItem.tsx';
 
@@ -80,11 +81,12 @@ export const LibraryProgramGrid = ({
   searchRequest: staticSearchRequest,
 }: Props) => {
   const searchRequest = useStore((s) => s.currentSearchRequest);
-  const currentParentContext = last(parentContext);
   const viewType = useStore((state) => state.theme.programmingSelectorView);
   const programHierarchy = useProgramHierarchy(
     useCallback((p: ProgramOrFolder) => p.uuid, []),
   );
+  const currentParentContext =
+    last(parentContext) ?? last(programHierarchy.parentContext);
 
   const query = useMemo<SearchRequest>(() => {
     if (currentParentContext) {
@@ -247,24 +249,27 @@ export const LibraryProgramGrid = ({
           })}
         />
       ) : (
-        <MediaItemList
-          infiniteQuery={search}
-          extractItems={(page: ProgramSearchResponse) => page.results}
-          getPageDataSize={(page: ProgramSearchResponse) => ({
-            size: page.results.length,
-            total: page.totalHits,
-          })}
-          renderListItem={({ item, index, style }) => (
-            <ProgramListItem
-              key={item.uuid}
-              item={item}
-              index={index}
-              style={style}
-              onPushParent={programHierarchy.pushParentContext}
-              disableSelection={disableProgramSelection}
-            />
-          )}
-        />
+        <>
+          <LibraryListViewBreadcrumbs {...programHierarchy} />
+          <MediaItemList
+            infiniteQuery={search}
+            extractItems={(page: ProgramSearchResponse) => page.results}
+            getPageDataSize={(page: ProgramSearchResponse) => ({
+              size: page.results.length,
+              total: page.totalHits,
+            })}
+            renderListItem={({ item, index, style }) => (
+              <ProgramListItem
+                key={item.uuid}
+                item={item}
+                index={index}
+                style={style}
+                onPushParent={programHierarchy.pushParentContext}
+                disableSelection={disableProgramSelection}
+              />
+            )}
+          />
+        </>
       )}
     </Box>
   );

@@ -60,6 +60,8 @@ const FactedStringFields = [
   'audio_language',
   'subtitle_language',
   'video_dynamic_range',
+  'media_source_name',
+  'library_name',
 ] as const;
 
 const StringFields = [
@@ -160,6 +162,11 @@ const EqOperator = createToken({ name: 'EqOperator', pattern: /:|=/ });
 
 const NeqOperator = createToken({ name: 'NeqOperator', pattern: /!=/ });
 
+const NotContainsOperator = createToken({
+  name: 'NotContainsOperator',
+  pattern: /!~/,
+});
+
 const ContainsOperator = createToken({
   name: 'ContainsOperator',
   pattern: /~/,
@@ -205,6 +212,7 @@ const allTokens = [
   NotOperator,
   InOperator,
   BetweenOperator,
+  NotContainsOperator,
   ContainsOperator,
   // Order matters here. float is more specific
   // than int.
@@ -226,7 +234,7 @@ const SearchExpressionLexer = new Lexer({
   defaultMode: 'normalMode',
 });
 
-const StringOps = ['=', '!=', '<', '<=', 'in', 'not in', 'contains'] as const;
+const StringOps = ['=', '!=', '<', '<=', 'in', 'not in', 'contains', 'not contains'] as const;
 type StringOps = TupleToUnion<typeof StringOps>;
 const NumericOps = ['=', '!=', '<', '<=', '>', '>=', 'between'] as const;
 type NumericOps = TupleToUnion<typeof NumericOps>;
@@ -239,6 +247,7 @@ const StringOpToApiType = {
   '!=': '!=',
   '=': '=',
   contains: 'contains',
+  'not contains': 'not contains',
   in: 'in',
   'not in': 'not in',
 } satisfies Record<StringOps, StringOperators>;
@@ -345,12 +354,15 @@ export const virtualFieldToIndexField: Record<string, string> = {
   subtitle_language: 'subtitleLanguages',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
+  // library_name: 'libraryName',
+  // media_source_name: 'mediaSourceName'
 };
 
 export const indexFieldToVirtualField = invert(virtualFieldToIndexField, true);
 
 const indexOperatorToSyntax: Dictionary<string> = {
   contains: '~',
+  'not contains': '!~',
   to: 'between',
 };
 
@@ -459,6 +471,12 @@ export class SearchParser extends EmbeddedActionsParser {
             },
             {
               ALT: () => this.CONSUME(LessThanOperator).image as StringOps,
+            },
+            {
+              ALT: () => {
+                this.CONSUME(NotContainsOperator);
+                return 'not contains' as StringOps;
+              },
             },
             {
               ALT: () => {

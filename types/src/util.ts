@@ -48,6 +48,48 @@ export function retag<
 
 export type TupleToUnion<T extends ReadonlyArray<unknown>> = T[number];
 
+export type SnakeToCamelCase<
+  X extends string,
+  Pascal extends boolean = true,
+> = X extends `${infer Head}_${infer Tail}`
+  ? SnakeToCamelCase<`${Head}${Capitalize<Tail>}`>
+  : Pascal extends true
+    ? Capitalize<X>
+    : X;
+
+export function snakeToCamelCase<Str extends string>(
+  x: Str,
+  pascal: true,
+): SnakeToCamelCase<typeof x, true>;
+export function snakeToCamelCase<Str extends string>(
+  x: Str,
+  pascal: false,
+): SnakeToCamelCase<typeof x, false>;
+export function snakeToCamelCase<Str extends string>(
+  x: Str,
+  pascal: boolean = true,
+): SnakeToCamelCase<typeof x, typeof pascal> {
+  if (x.length === 0) {
+    return x as SnakeToCamelCase<typeof x, typeof pascal>;
+  }
+
+  let out = '';
+  const parts = x.split('_');
+  let i = 0;
+  for (const part of parts) {
+    if (part.length === 0) {
+      continue;
+    }
+
+    if ((i === 0 && pascal) || i > 0) {
+      out += part[0].toLocaleUpperCase() + part.slice(1);
+    }
+
+    i++;
+  }
+  return out as SnakeToCamelCase<typeof x, typeof pascal>;
+}
+
 /**
  * Given a type of an array of 2-tuples representing "parent" and "child",
  * finds the matching "child" given the type of the "parent".

@@ -52,24 +52,29 @@ type Props = {
   panelVisibility?: PanelVisibility;
 };
 
+type ContentProps = Props & {
+  programData?: ProgramLike;
+  isLoading: boolean;
+};
+
 const DefaultPanelVisibility: DeepRequired<PanelVisibility> = {
   metadata: true,
   stream_details: true,
   program_details: true,
 };
 
-export default function ProgramDetailsDialog({
+function ProgramDetailsDialogContent({
   onClose,
-  open,
   start,
   stop,
   programId,
   programType,
+  programData,
+  isLoading,
   panelVisibility = DefaultPanelVisibility,
-}: Props) {
+}: ContentProps) {
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
-  const darkMode = useIsDarkMode();
   const [moreMenuAnchorEl, setMoreMenuAnchorEl] =
     useState<Nullable<HTMLElement>>(null);
 
@@ -78,47 +83,11 @@ export default function ProgramDetailsDialog({
     [panelVisibility],
   );
 
-  const defaultPanel = (find(Object.entries(visibility), (v) => !!v)?.[0] ??
-    'metadata') as Panels;
+  const defaultPanel = (find(
+    Object.entries(visibility),
+    ([, visible]) => visible,
+  )?.[0] ?? 'metadata') as Panels;
   const [tab, setTab] = useState<Panels>(defaultPanel);
-
-  const query = useQuery({
-    ...getApiProgramsByIdOptions({
-      path: {
-        id: programId,
-      },
-    }),
-    enabled: open && isTerminalItemType(programType),
-  });
-
-  const parentQuery = useQuery({
-    ...getApiProgramGroupingsByIdOptions({
-      path: {
-        id: programId,
-      },
-    }),
-    enabled:
-      open &&
-      !isTerminalItemType(programType) &&
-      !isStructuralItemType(programType),
-  });
-
-  const programData = query?.data || parentQuery?.data;
-  const isLoading = parentQuery.isLoading || query.isLoading;
-  const settings = useSettings();
-  const backgroundImageUrl = useMemo(() => {
-    if (!programData?.uuid) return;
-
-    let artworkId;
-
-    if (programData.type === 'episode' || programData.type === 'season') {
-      artworkId = programData?.show?.uuid;
-    } else {
-      artworkId = programData.uuid;
-    }
-
-    return `${settings.backendUri}/api/programs/${artworkId}/artwork/banner`;
-  }, [settings.backendUri, programData]);
 
   const title = useMemo(() => {
     if (!programData?.uuid) return;
@@ -131,27 +100,7 @@ export default function ProgramDetailsDialog({
   }, [programData]);
 
   return (
-    <Dialog
-      open={open}
-      fullScreen={smallViewport}
-      maxWidth="md"
-      fullWidth
-      onClose={() => onClose()}
-      slotProps={{
-        paper: {
-          sx: {
-            boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.25)',
-            backgroundImage: darkMode
-              ? `linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("${backgroundImageUrl}")`
-              : `linear-gradient(rgba(250, 250, 250, 1), rgba(250, 250, 250, 0.6)), url("${backgroundImageUrl}")`,
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            minHeight: programType === 'episode' ? 450 : 575,
-          },
-        },
-      }}
-    >
+    <>
       {isLoading ? (
         <Skeleton width={'50%'} sx={{ py: 2, px: 4, ml: 3 }}>
           <DialogTitle
@@ -177,6 +126,7 @@ export default function ProgramDetailsDialog({
             anchorEl={moreMenuAnchorEl}
             onClose={() => setMoreMenuAnchorEl(null)}
             open={!!moreMenuAnchorEl}
+            programType={programType}
           />
           <IconButton
             edge="start"
@@ -204,8 +154,9 @@ export default function ProgramDetailsDialog({
             {visibility.metadata && <Tab value={'metadata'} label="Overview" />}
 
             {visibility.stream_details &&
-              query?.data?.uuid &&
-              isNonEmptyString(query?.data?.uuid) && (
+              programId &&
+              isNonEmptyString(programId) &&
+              isTerminalItemType(programType) && (
                 <Tab value="stream_details" label="Stream Info" />
               )}
 
@@ -286,8 +237,9 @@ export default function ProgramDetailsDialog({
 
         <TabPanel index={'stream_details'} value={tab}>
           {visibility.stream_details &&
-          query?.data?.uuid &&
-          isNonEmptyString(query?.data?.uuid) ? (
+          programData &&
+          isTerminalItemType(programData) &&
+          isNonEmptyString(programData?.uuid) ? (
             <>
               <ErrorBoundary
                 fallback={
@@ -295,7 +247,7 @@ export default function ProgramDetailsDialog({
                 }
               >
                 <Suspense fallback={<LinearProgress />}>
-                  <ProgramStreamDetails programId={query?.data?.uuid} />
+                  <ProgramStreamDetails programId={programId} />
                 </Suspense>
               </ErrorBoundary>
             </>
@@ -316,6 +268,80 @@ export default function ProgramDetailsDialog({
           ) : null}
         </TabPanel>
       </DialogContent>
+    </>
+  );
+}
+
+export default function ProgramDetailsDialog(props: Props) {
+  const { onClose, open, programId, programType } = props;
+  const theme = useTheme();
+  const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const darkMode = useIsDarkMode();
+  const settings = useSettings();
+  const query = useQuery({
+    ...getApiProgramsByIdOptions({
+      path: {
+        id: programId,
+      },
+    }),
+    enabled: open && isTerminalItemType(programType),
+  });
+
+  const parentQuery = useQuery({
+    ...getApiProgramGroupingsByIdOptions({
+      path: {
+        id: programId,
+      },
+    }),
+    enabled:
+      open &&
+      !isTerminalItemType(programType) &&
+      !isStructuralItemType(programType),
+  });
+
+  const programData = query?.data ?? parentQuery?.data;
+
+  const backgroundImageUrl = useMemo(() => {
+    if (!programData?.uuid) return;
+
+    let artworkId;
+
+    if (programData.type === 'episode' || programData.type === 'season') {
+      artworkId = programData?.show?.uuid;
+    } else {
+      artworkId = programData.uuid;
+    }
+
+    return `${settings.backendUri}/api/programs/${artworkId}/artwork/banner`;
+  }, [settings.backendUri, programData]);
+
+  return (
+    <Dialog
+      open={open}
+      fullScreen={smallViewport}
+      maxWidth="md"
+      fullWidth
+      onClose={() => onClose()}
+      slotProps={{
+        paper: {
+          sx: {
+            boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.25)',
+            backgroundImage: darkMode
+              ? `linear-gradient(rgba(0, 0, 0, 0.90), rgba(0, 0, 0, 0.85)), url("${backgroundImageUrl}")`
+              : `linear-gradient(rgba(250, 250, 250, 0.8), rgba(250, 250, 250, 0.95)), url("${backgroundImageUrl}")`,
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            minHeight: programType === 'episode' ? 450 : 575,
+          },
+        },
+      }}
+    >
+      <ProgramDetailsDialogContent
+        {...props}
+        programData={programData}
+        isLoading={query.isLoading || parentQuery.isLoading}
+      />
     </Dialog>
   );
 }

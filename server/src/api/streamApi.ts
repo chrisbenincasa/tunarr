@@ -77,6 +77,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         case 'hls':
         case 'hls_slower':
         case 'hls_direct':
+        case 'hls_direct_v2':
           return res.redirect(
             `/stream/channels/${channel.uuid}.m3u8?${params.toString()}`,
           );
@@ -246,19 +247,23 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           sessionType: ChannelStreamModeSchema.refine(
             (typ) => typ !== 'mpegts',
           ),
-          id: z.string().uuid(),
+          id: z.uuid(),
           file: z.string(),
         }),
       },
       config: {
-        disableRequestLogging: true,
+        disableRequestLogging: 'only-errors',
       },
     },
     async (req, res) => {
       let session: Maybe<BaseHlsSession>;
       switch (req.params.sessionType) {
         case 'hls':
-          session = req.serverCtx.sessionManager.getHlsSession(req.params.id);
+        case 'hls_direct_v2':
+          session = req.serverCtx.sessionManager.getHlsSession(
+            req.params.id,
+            req.params.sessionType,
+          );
           break;
         case 'hls_slower':
           session = req.serverCtx.sessionManager.getHlsSlowerSession(
@@ -278,6 +283,7 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       session.recordHeartbeat(req.ip);
+      session.onSegmentRequested(req.ip, req.params.file);
 
       return res.sendFile(req.params.file, session.workingDirectory);
     },
@@ -286,6 +292,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
   fastify.route({
     url: '/stream/channels/:id.m3u8',
     method: ['HEAD', 'GET'],
+    config: {
+      disableRequestLogging: 'only-errors',
+    },
     schema: {
       tags: ['Streaming'],
       description:
@@ -327,14 +336,15 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       let sessionResult: Result<FastifyReply>;
       switch (mode) {
         case 'hls':
+        case 'hls_direct_v2':
           sessionResult = await req.serverCtx.sessionManager
-            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {})
+            .getOrCreateHlsSession(channelId, req.ip, connectionDetails, {
+              streamMode: mode,
+            })
             .then((result) =>
               result.mapAsync(async (session) => {
                 session.recordHeartbeat(req.ip);
-                const playlistResult = await session.trimPlaylist(
-                  dayjs().subtract(30, 'seconds'),
-                );
+                const playlistResult = await session.trimPlaylist();
 
                 if (playlistResult.isFailure()) {
                   logger.error(playlistResult.error);

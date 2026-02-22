@@ -111,7 +111,6 @@ export class ScaleCudaFilter extends FilterOption {
     const filters = [scale];
     if (this.currentState.frameDataLocation === FrameDataLocation.Software) {
       this.uploadFilter = new HardwareUploadCudaFilter(this.currentState);
-      console.log('apply upload filter');
       filters.unshift(this.uploadFilter.filter);
     }
 

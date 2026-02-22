@@ -58,6 +58,31 @@ describe('search parser', () => {
     });
   });
 
+  test('parse not contains (!~)', () => {
+    const input = 'title !~ "XYZ"';
+    const query = parseAndCheckExpression(input);
+    expect(query).toMatchObject({
+      type: 'single_query',
+      field: 'title',
+      op: 'not contains',
+      value: 'XYZ',
+    } satisfies SearchClause);
+  });
+
+  test('not contains round-trip', () => {
+    const input = 'title !~ "XYZ"';
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        op: 'not contains',
+        value: ['XYZ'],
+      },
+    });
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
   test('parse NOT IN', () => {
     const input = 'genre NOT IN [comedy, horror]';
     const query = parseAndCheckExpression(input);
@@ -235,6 +260,15 @@ describe('search parser', () => {
 
   test('parse and stringify range queries', () => {
     const input = `type = "episode" AND minutes > 5 AND release_year between [1980, 1989] AND show_tags = "Primetime"`;
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
+  test('parse library_name', () => {
+    const input = `library_name = "library"`;
+
     const query = parseAndCheckExpression(input);
     const request = parsedSearchToRequest(query);
 

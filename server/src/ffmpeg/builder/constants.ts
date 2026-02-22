@@ -20,7 +20,7 @@ export const defaultHlsOptions: DeepRequired<HlsOptions> = {
   hlsDeleteThreshold: 3,
   segmentBaseDirectory: 'streams', // Relative to cwd
   streamBasePath: 'stream_%v',
-  segmentNameFormat: 'data%05d.ts',
+  segmentNameFormat: 'data%06d.ts',
   streamNameFormat: 'stream.m3u8',
   streamBaseUrl: 'hls/',
   deleteThreshold: 3,
@@ -78,14 +78,31 @@ export const OutputFormatTypes = {
   MpegTs: 'mpegts',
   Mp4: 'mp4',
   Hls: 'hls',
+  HlsDirect: 'hls_direct',
+  HlsDirectV2: 'hls_direct_v2',
   Nut: 'nut',
   Dash: 'dash',
 } as const;
+
+export const ColorTransferFormats = {
+  Smpte2084: 'smpte2084',
+  AribStdB67: 'arib-std-b67',
+  Bt709: 'bt709',
+  Tv: 'tv',
+} as const;
+
+export type ColorTransferFormat =
+  (typeof ColorTransferFormats)[keyof typeof ColorTransferFormats];
 
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
 export type HlsOutputFormat = {
   type: typeof OutputFormatTypes.Hls;
+  hlsOptions: HlsOptions;
+};
+
+export type HlsDirectOutputFormat = {
+  type: typeof OutputFormatTypes.HlsDirectV2;
   hlsOptions: HlsOptions;
 };
 
@@ -133,6 +150,13 @@ export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormat {
   };
 }
 
+export function HlsDirectOutputFormat(opts: HlsOptions): HlsDirectOutputFormat {
+  return {
+    type: OutputFormatTypes.HlsDirectV2,
+    hlsOptions: opts,
+  };
+}
+
 export function MpegDashOutputFormat(
   opts?: Partial<MpegDashOptions>,
 ): MpegDashOutputFormat {
@@ -144,8 +168,11 @@ export function MpegDashOutputFormat(
 
 export type OutputFormat =
   | HlsOutputFormat
+  | HlsDirectOutputFormat
   | NutOutputFormat
   | MkvOutputFormat
   | MpegDashOutputFormat
   | Mp4OutputFormat
   | MpegTsOutputFormat;
+export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
+export const FiveMinutesMillis = 5 * 60 * 60 * 1000;

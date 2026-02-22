@@ -1,10 +1,12 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import { relations } from 'drizzle-orm';
+import { inArray, relations } from 'drizzle-orm';
 import {
+  check,
   getTableConfig,
   integer,
   sqliteTable,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 import {
@@ -18,30 +20,41 @@ import { ChannelCustomShow } from './ChannelCustomShow.ts';
 import { ChannelFillerShow } from './ChannelFillerShow.ts';
 import { ChannelPrograms } from './ChannelPrograms.ts';
 import type { KyselifyBetter } from './KyselifyBetter.ts';
+import { ProgramPlayHistory } from './ProgramPlayHistory.ts';
 import { TranscodeConfig } from './TranscodeConfig.ts';
 
-export const Channel = sqliteTable('channel', {
-  uuid: text().primaryKey(),
-  createdAt: integer(),
-  updatedAt: integer(),
-  disableFillerOverlay: integer({ mode: 'boolean' }).default(false),
-  duration: integer().notNull(),
-  fillerRepeatCooldown: integer(),
-  groupTitle: text(),
-  guideFlexTitle: text(),
-  guideMinimumDuration: integer().notNull(),
-  icon: text({ mode: 'json' }).$type<ChannelIcon>().notNull(),
-  name: text().notNull(),
-  number: integer().notNull().unique(),
-  offline: text({ mode: 'json' }).$type<ChannelOfflineSettings>().notNull(),
-  startTime: integer().notNull(),
-  stealth: integer({ mode: 'boolean' }).default(false),
-  streamMode: text({ enum: ChannelStreamModes }).default('hls').notNull(),
-  transcoding: text({ mode: 'json' }).$type<ChannelTranscodingSettings>(),
-  transcodeConfigId: text().notNull(),
-  watermark: text({ mode: 'json' }).$type<ChannelWatermark>(),
-  subtitlesEnabled: integer({ mode: 'boolean' }).default(false),
-});
+export const Channel = sqliteTable(
+  'channel',
+  {
+    uuid: text().primaryKey(),
+    createdAt: integer(),
+    updatedAt: integer(),
+    disableFillerOverlay: integer({ mode: 'boolean' }).default(false),
+    duration: integer().notNull(),
+    fillerRepeatCooldown: integer(),
+    groupTitle: text(),
+    guideFlexTitle: text(),
+    guideMinimumDuration: integer().notNull(),
+    icon: text({ mode: 'json' }).$type<ChannelIcon>().notNull(),
+    name: text().notNull(),
+    number: integer().notNull().unique(),
+    offline: text({ mode: 'json' }).$type<ChannelOfflineSettings>().notNull(),
+    startTime: integer().notNull(),
+    stealth: integer({ mode: 'boolean' }).default(false),
+    streamMode: text({ enum: ChannelStreamModes }).default('hls').notNull(),
+    transcoding: text({ mode: 'json' }).$type<ChannelTranscodingSettings>(),
+    transcodeConfigId: text().notNull(),
+    watermark: text({ mode: 'json' }).$type<ChannelWatermark>(),
+    subtitlesEnabled: integer({ mode: 'boolean' }).default(false),
+  },
+  (table) => [
+    uniqueIndex('channel_number_unique').on(table.number),
+    check(
+      'channel_stream_mode_check',
+      inArray(table.streamMode, table.streamMode.enumValues).inlineParams(),
+    ),
+  ],
+);
 
 export type ChannelTable = KyselifyBetter<typeof Channel>;
 
@@ -65,6 +78,7 @@ export const ChannelRelations = relations(Channel, ({ many, one }) => ({
   channelPrograms: many(ChannelPrograms),
   channelCustomShows: many(ChannelCustomShow),
   channelFillerShow: many(ChannelFillerShow),
+  playHistory: many(ProgramPlayHistory),
   transcodeConfig: one(TranscodeConfig, {
     fields: [Channel.transcodeConfigId],
     references: [TranscodeConfig.uuid],

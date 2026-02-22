@@ -17,6 +17,7 @@ import { compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { MaterializedGuideItem } from '../types/guide.ts';
+import { loggingDef } from '../util/logging/loggingDef.ts';
 
 const lock = new Mutex();
 
@@ -26,6 +27,7 @@ export type MaterializedChannelPrograms = {
 };
 
 @injectable()
+@loggingDef({ category: 'scheduling' })
 export class XmlTvWriter {
   private logger = LoggerFactory.child({
     caller: import.meta,
@@ -205,12 +207,20 @@ export class XmlTvWriter {
         }
       }
 
+      partial.category = [];
+      for (const { genre } of program.genres ?? []) {
+        partial.category.push({
+          _value: genre.name,
+        });
+      }
+
       const [seasonNumber, episodeNumber] = match(program)
         .with({ type: 'episode' }, (ep) => {
           return [ep.season?.index ?? ep.seasonNumber, ep.episode];
         })
         .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
         .otherwise(() => [null, null]);
+
       if (!isNil(seasonNumber) && !isNil(episodeNumber)) {
         partial.episodeNum = [
           {

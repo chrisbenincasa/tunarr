@@ -20,7 +20,10 @@ export class FfmpegPlaybackParamsCalculator {
   ) {}
 
   calculateForStream(streamDetails: StreamDetails): FfmpegPlaybackParams {
-    if (this.streamMode === ChannelStreamModes.HlsDirect) {
+    if (
+      this.streamMode === ChannelStreamModes.HlsDirect ||
+      this.streamMode === ChannelStreamModes.HlsDirectV2
+    ) {
       return {
         hwAccel: HardwareAccelerationMode.None,
         audioFormat: TranscodeAudioOutputFormat.Copy,

@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 import {
   CacheSettingsSchema,
+  LogCategoriesSchema,
   LoggingSettingsSchema,
   LogLevelsSchema,
   ServerSettingsSchema,
@@ -82,9 +83,7 @@ export const BatchLookupExternalProgrammingSchema = z.object({
 
 export const CreateCustomShowRequestSchema = z.object({
   name: z.string(),
-  programs: z.array(
-    z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
-  ),
+  programs: z.array(ContentProgramSchema),
 });
 
 export type CreateCustomShowRequest = z.infer<
@@ -266,6 +265,11 @@ export const UpdateSystemSettingsRequestSchema = z.object({
     useEnvVarLevel: true,
     logRollConfig: true,
   })
+    .extend({
+      categoryLogLevel: z
+        .partialRecord(LogCategoriesSchema, LogLevelsSchema.nullish())
+        .optional(),
+    })
     .partial()
     .optional(),
   backup: BackupSettingsSchema.optional(),

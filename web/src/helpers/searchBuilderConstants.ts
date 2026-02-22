@@ -230,6 +230,20 @@ export const SearchFieldSpecs: NonEmptyArray<
       ReadonlyArray<MediaSourceLibrary['mediaType']>
     >,
   } satisfies SearchFieldSpec<'faceted_string'>,
+  {
+    key: 'media_source_name',
+    type: 'string' as const,
+    displayName: 'Media Source Name',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
+  {
+    key: 'library_name',
+    type: 'string' as const,
+    displayName: 'Library Name',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
 ];
 
 interface Bij<In, Out = In> {
@@ -297,6 +311,7 @@ const OperatorLabelByFieldType = {
     '=': '=',
     'starts with': 'starts with',
     contains: 'contains',
+    'not contains': 'not contains',
     in: 'in',
     'not in': 'not in',
   },
@@ -305,6 +320,7 @@ const OperatorLabelByFieldType = {
     '=': '=',
     'starts with': 'starts with',
     contains: 'contains',
+    'not contains': 'not contains',
     in: 'in',
     'not in': 'not in',
   },

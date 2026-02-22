@@ -30,6 +30,7 @@ import { useTimeSlotFormContext } from '../../hooks/useTimeSlotFormContext.ts';
 import { TabPanel } from '../TabPanel.tsx';
 import { EditSlotProgrammingForm } from './EditSlotProgrammingForm.tsx';
 import { SlotFillerDialogPanel } from './SlotFillerDialogPanel.tsx';
+import { TimeSlotConfigDialogPanel } from './TimeSlotConfigDialogPanel.tsx';
 
 const DaysOfWeekMenuItems = [
   { value: 0, name: 'Sunday' },
@@ -212,6 +213,7 @@ export const EditTimeSlotDialogContent = ({
               label="Filler"
               disabled={slotType === 'flex' || fillerLists.length === 0}
             />
+            <Tab label="Config" />
           </Tabs>
           <TabPanel value={tab} index={0}>
             <Stack gap={2} useFlexGap>
@@ -274,11 +276,14 @@ export const EditTimeSlotDialogContent = ({
               </FormProvider>
             </Stack>
           </TabPanel>
-          <TabPanel value={tab} index={1}>
-            <FormProvider {...formMethods}>
+          <FormProvider {...formMethods}>
+            <TabPanel value={tab} index={1}>
               <SlotFillerDialogPanel />
-            </FormProvider>
-          </TabPanel>
+            </TabPanel>
+            <TabPanel value={tab} index={2}>
+              <TimeSlotConfigDialogPanel />
+            </TabPanel>
+          </FormProvider>
         </Box>
       </DialogContent>
       <DialogActions>

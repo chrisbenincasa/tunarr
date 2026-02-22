@@ -7,20 +7,25 @@ import { binarySearchRange } from '@/util/binarySearch.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import constants from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
-import { inject, injectable } from 'inversify';
-import { first, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
-import { Lineup } from '../db/derived_types/Lineup.ts';
+import { inject, injectable, named } from 'inversify';
+import { first, inRange, isEmpty, isNil, isNull, sumBy } from 'lodash-es';
+import { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import {
   CommercialStreamLineupItem,
+  createOfflineStreamLineupItem,
+  FallbackStreamLineupItem,
+  isContentBackedLineupItem,
   ProgramStreamLineupItem,
   StreamLineupItem,
-  createOfflineStreamLineupItem,
 } from '../db/derived_types/StreamLineup.ts';
 import { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import { IProgramDB } from '../db/interfaces/IProgramDB.ts';
+import { ProgramPlayHistoryDB } from '../db/ProgramPlayHistoryDB.ts';
+import { OneDayMillis } from '../ffmpeg/builder/constants.ts';
 import { IStreamLineupCache } from '../interfaces/IStreamLineupCache.ts';
 import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
+import { FillerPickerV2 } from '../services/scheduling/FillerPickerV2.ts';
 import { WrappedError } from '../types/errors.ts';
 import { devAssert } from '../util/debug.ts';
 import { isNonEmptyString } from '../util/index.js';
@@ -74,7 +79,11 @@ export class StreamProgramCalculator {
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(KEYS.ChannelCache) private channelCache: IStreamLineupCache,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
-    @inject(KEYS.FillerPicker) private fillerPicker: IFillerPicker,
+    @inject(KEYS.FillerPicker)
+    @named(FillerPickerV2.name)
+    private fillerPicker: IFillerPicker,
+    @inject(ProgramPlayHistoryDB)
+    private programPlayHistoryDB: ProgramPlayHistoryDB,
   ) {}
 
   async getCurrentLineupItem(
@@ -117,6 +126,7 @@ export class StreamProgramCalculator {
       currentProgram.program.duration - currentProgram.timeElapsed;
     const endTimeMs = req.startTime + maxDuration;
     let streamDuration = maxDuration;
+    console.log(maxDuration);
 
     while (currentProgram.program.type === 'redirect') {
       redirectChannels.push(channelContext.uuid);
@@ -234,6 +244,44 @@ export class StreamProgramCalculator {
       lineupItem,
     );
 
+    // Record play history for content-backed items (programs and commercials/fillers)
+    // Only record if this is a new playback (not a duplicate request for an already-playing program)
+    if (
+      isContentBackedLineupItem(lineupItem) &&
+      lineupItem.type !== 'fallback'
+    ) {
+      const programUuid = lineupItem.program.uuid;
+      const fillerListId =
+        lineupItem.type === 'commercial' ? lineupItem.fillerListId : undefined;
+      const streamDuration = lineupItem.streamDuration;
+      const channelUuid = channel.uuid;
+      const playedAt = new Date(req.startTime);
+
+      this.programPlayHistoryDB
+        .isProgramCurrentlyPlaying(channelUuid, programUuid, req.startTime)
+        .then((isCurrentlyPlaying) => {
+          if (!isCurrentlyPlaying) {
+            return this.programPlayHistoryDB.create({
+              programUuid,
+              channelUuid,
+              playedAt,
+              playedDuration: streamDuration,
+              fillerListId,
+            });
+          }
+          return;
+        })
+        .catch((err) => {
+          this.logger.error(
+            err,
+            'Failed to record play history for program %s on channel %s (filler list id = %s)',
+            programUuid,
+            channelUuid,
+            fillerListId ?? 'null',
+          );
+        });
+    }
+
     if (
       req.sessionToken &&
       wereThereTooManyAttempts(req.sessionToken, lineupItem)
@@ -283,7 +331,15 @@ export class StreamProgramCalculator {
         channelLineup,
       );
 
-    const lineupItem = channelLineup.items[currentProgramIndex]!;
+    let lineupItem: LineupItem;
+    if (inRange(currentProgramIndex, 0, channelLineup.items.length)) {
+      lineupItem = channelLineup.items[currentProgramIndex]!;
+    } else {
+      lineupItem = {
+        type: 'offline',
+        durationMs: OneDayMillis,
+      };
+    }
     let program: StreamLineupItem;
     switch (lineupItem.type) {
       case 'content': {
@@ -309,7 +365,7 @@ export class StreamProgramCalculator {
             program = {
               ...baseItem,
               type: 'commercial',
-              fillerId: lineupItem.fillerListId,
+              fillerListId: lineupItem.fillerListId,
               infiniteLoop: backingItem.duration < streamDuration,
             } satisfies CommercialStreamLineupItem;
           } else {
@@ -392,7 +448,8 @@ export class StreamProgramCalculator {
         channel.uuid,
       );
 
-      let filler: Nullable<RawProgramEntity>;
+      let filler: Nullable<RawProgramEntity> = null;
+      let fillerListId: Nullable<string> = null;
       let fallbackProgram: Nullable<RawProgramEntity> = null;
 
       // See if we have any fallback programs set
@@ -404,12 +461,13 @@ export class StreamProgramCalculator {
       }
 
       // Pick a random filler, too
-      const randomResult = this.fillerPicker.pickFiller(
+      const randomResult = await this.fillerPicker.pickFiller(
         channel,
         fillerPrograms,
         streamDuration,
       );
       filler = randomResult.filler;
+      fillerListId = randomResult.fillerListId;
 
       // Cap the filler at remaining time
       if (isNil(filler) && streamDuration > randomResult.minimumWait) {
@@ -421,6 +479,7 @@ export class StreamProgramCalculator {
       let isSpecial = false;
       if (isNil(filler)) {
         filler = fallbackProgram;
+        fillerListId = null;
         isSpecial = true;
       }
 
@@ -452,9 +511,7 @@ export class StreamProgramCalculator {
         );
         const startOffset = Math.round(fillerstart);
 
-        return {
-          // just add the video, starting at 0, playing the entire duration
-          type: 'commercial',
+        const base = {
           program: {
             ...fillerProgram,
             mediaSourceId,
@@ -463,7 +520,22 @@ export class StreamProgramCalculator {
           streamDuration,
           duration: program.duration,
           programBeginMs: program.programBeginMs,
-          fillerId: filler.uuid,
+          fillerListId: fillerListId,
+          infiniteLoop: filler.duration < streamDuration,
+        };
+
+        if (isSpecial || !fillerListId) {
+          return {
+            ...base,
+            type: 'fallback',
+          } satisfies FallbackStreamLineupItem;
+        }
+
+        return {
+          ...base,
+          // just add the video, starting at 0, playing the entire duration
+          type: 'commercial',
+          fillerListId,
           infiniteLoop: filler.duration < streamDuration,
         } satisfies CommercialStreamLineupItem;
       }
@@ -473,6 +545,7 @@ export class StreamProgramCalculator {
       //don't display the offline screen for longer than 10 minutes. Maybe the
       //channel's admin might change the schedule during that time and then
       //it would be better to start playing the content.
+      console.log('hitting this case ', streamDuration);
       return {
         type: 'offline',
         streamDuration,
@@ -508,6 +581,13 @@ export function calculateStreamDuration(
   slackAmount: number = SLACK,
 ) {
   devAssert(now >= channelStartTime);
+  if (lineup.items.length === 0) {
+    return {
+      streamDuration: OneDayMillis,
+      timeElapsed: 0,
+      currentProgramIndex: -1,
+    };
+  }
   let timeElapsed: number;
   let currentProgramIndex: number = -1;
 

@@ -78,7 +78,10 @@ export class FfmpegState {
 
   // HLS
   get hlsPlaylistPath(): Maybe<string> {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
+    if (
+      this.outputFormat.type === OutputFormatTypes.Hls ||
+      this.outputFormat.type === OutputFormatTypes.HlsDirectV2
+    ) {
       return path.join(
         this.outputFormat.hlsOptions.segmentBaseDirectory,
         this.outputFormat.hlsOptions.streamBasePath,
@@ -89,7 +92,10 @@ export class FfmpegState {
   }
 
   get hlsSegmentTemplate(): Maybe<string> {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
+    if (
+      this.outputFormat.type === OutputFormatTypes.Hls ||
+      this.outputFormat.type === OutputFormatTypes.HlsDirectV2
+    ) {
       return path.join(
         this.outputFormat.hlsOptions.segmentBaseDirectory,
         this.outputFormat.hlsOptions.streamBasePath,
@@ -100,7 +106,10 @@ export class FfmpegState {
   }
 
   get hlsBaseStreamUrl() {
-    if (this.outputFormat.type === OutputFormatTypes.Hls) {
+    if (
+      this.outputFormat.type === OutputFormatTypes.Hls ||
+      this.outputFormat.type === OutputFormatTypes.HlsDirectV2
+    ) {
       return this.outputFormat.hlsOptions.streamBaseUrl;
     }
     return;

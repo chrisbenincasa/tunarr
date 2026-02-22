@@ -11,16 +11,17 @@ import {
 import { KEYS } from '../types/inject.ts';
 import { Result } from '../types/result.ts';
 import { Maybe } from '../types/util.ts';
+import { Command } from './Command.ts';
 
 @injectable()
-export class ForceScanCommand {
+export class ForceScanCommand implements Command<string, Result<void>> {
   constructor(
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(MediaSourceScanCoordinator)
     private mediaSourceScanCoordinator: MediaSourceScanCoordinator,
   ) {}
 
-  async run(id: string) {
+  async run(id: string): Promise<Result<void>> {
     let program: Maybe<ProgramGroupingOrm | ProgramOrm> =
       await this.programDB.getProgramById(id);
     if (!program) {

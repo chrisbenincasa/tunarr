@@ -350,6 +350,10 @@ export class FfmpegStreamFactory extends IFFMPEG {
           width: videoStreamDetails.width,
         }),
         frameRate: videoStreamDetails.framerate?.toString(),
+        colorRange: videoStreamDetails.colorRange,
+        colorSpace: videoStreamDetails.colorSpace,
+        colorTransfer: videoStreamDetails.colorTransfer,
+        colorPrimaries: videoStreamDetails.colorPrimaries,
       });
 
       videoInputSource = new VideoInputSource(streamSource, [videoStream]);
@@ -383,6 +387,8 @@ export class FfmpegStreamFactory extends IFFMPEG {
       // Check if audio and video are coming from same location
       audioDuration:
         streamMode === 'hls_direct' ? null : duration.asMilliseconds(),
+      normalizeLoudness: false, // !!this.transcodeConfig.audioLoudnormConfig,
+      // loudnormConfig: this.transcodeConfig.audioLoudnormConfig,
     });
 
     let audioInput: AudioInputSource;
@@ -409,7 +415,11 @@ export class FfmpegStreamFactory extends IFFMPEG {
     }
 
     let watermarkSource: Nullable<WatermarkInputSource> = null;
-    if (streamMode !== ChannelStreamModes.HlsDirect && watermark?.enabled) {
+    if (
+      streamMode !== ChannelStreamModes.HlsDirect &&
+      streamMode !== ChannelStreamModes.HlsDirectV2 &&
+      watermark?.enabled
+    ) {
       const watermarkUrl = watermark.url ?? makeLocalUrl('/images/tunarr.png');
       watermarkSource = new WatermarkInputSource(
         new HttpStreamSource(watermarkUrl),

@@ -193,28 +193,35 @@ export default function TimeSlotEditorPage() {
       lineupItemAppearsInSchedule(getValues('slots'), item),
     );
 
-    updateLineupMutation.mutate({
-      path: {
-        id: channel!.id,
+    updateLineupMutation.mutate(
+      {
+        path: {
+          id: channel!.id,
+        },
+        body: {
+          type: 'time',
+          schedule,
+          programs: seq.collect(filteredLineup, (l) => {
+            switch (l.type) {
+              case 'custom':
+              case 'content':
+                return l.id;
+              case 'redirect':
+              case 'flex':
+              case 'filler':
+                return null;
+            }
+          }),
+          seed: randomState?.seed,
+          discardCount: randomState?.discardCount,
+        },
       },
-      body: {
-        type: 'time',
-        schedule,
-        programs: seq.collect(filteredLineup, (l) => {
-          switch (l.type) {
-            case 'custom':
-            case 'content':
-              return l.id;
-            case 'redirect':
-            case 'flex':
-            case 'filler':
-              return null;
-          }
-        }),
-        seed: randomState?.seed,
-        discardCount: randomState?.discardCount,
+      {
+        onSuccess: () => {
+          reset();
+        },
       },
-    });
+    );
   };
 
   const handlePeriodChange = useCallback(

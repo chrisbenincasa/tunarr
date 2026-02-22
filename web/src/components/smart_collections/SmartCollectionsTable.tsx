@@ -18,6 +18,7 @@ import {
   useDeleteSmartCollection,
   useSmartCollections,
 } from '../../hooks/smartCollectionHooks.ts';
+import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
 import type { RootSearchQueryParams } from '../../routes/__root.tsx';
 import { Route } from '../../routes/__root.tsx';
 import type { Maybe } from '../../types/util.ts';
@@ -29,6 +30,7 @@ import { EditSmartCollectionDialog } from './EditSmartCollectionDialog.tsx';
 export const SmartCollectionsTable = () => {
   const navigate = Route.useNavigate();
   const smartColletionsQuery = useSmartCollections();
+  const tableSettings = useStoreBackedTableSettings('SmartCollections');
 
   const [editingSmartCollection, setEditingSmartCollection] =
     useState<Maybe<string>>();
@@ -127,6 +129,7 @@ export const SmartCollectionsTable = () => {
         </Box>
       );
     },
+    ...tableSettings,
   });
 
   return (

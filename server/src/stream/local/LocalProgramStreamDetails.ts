@@ -77,11 +77,11 @@ export class LocalProgramStreamDetails extends ExternalStreamDetailsFetcher<'loc
             streamIndex: videoStream.index,
             pixelFormat: nullToUndefined(videoStream.pixelFormat),
             bitrate: undefined,
-            colorPrimaries: undefined,
-            colorRange: undefined,
-            colorSpace: undefined,
-            colorTransfer: undefined,
             isAttachedPic: false,
+            colorRange: videoStream.colorRange ?? undefined,
+            colorSpace: videoStream.colorSpace ?? undefined,
+            colorTransfer: videoStream.colorTransfer ?? undefined,
+            colorPrimaries: videoStream.colorPrimaries ?? undefined,
           }) satisfies VideoStreamDetails,
       ) ?? [];
 

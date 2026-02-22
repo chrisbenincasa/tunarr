@@ -267,6 +267,34 @@
       "when": 1768792601901,
       "tag": "0037_orange_bromley",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1768876233969,
+      "tag": "0038_boring_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1769031772309,
+      "tag": "0039_famous_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1769361500423,
+      "tag": "0040_daffy_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1770236977185,
+      "tag": "0041_easy_firebird",
+      "breakpoints": true
     }
   ]
 }
