@@ -120,6 +120,7 @@ describe('NvidiaScaler', () => {
     expect(nextState).toStrictEqual(
       currentState.update({
         scaledSize: FrameSize.FHD,
+        frameDataLocation: FrameDataLocation.Software,
       }),
     );
   });

@@ -1,6 +1,6 @@
 import type { FfmpegState } from '@/ffmpeg/builder/state/FfmpegState.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
-import type { FrameSize } from '@/ffmpeg/builder/types.js';
+import { FrameDataLocation, type FrameSize } from '@/ffmpeg/builder/types.js';
 import { FilterOption } from './FilterOption.ts';
 
 export class ScaleFilter extends FilterOption {
@@ -48,7 +48,9 @@ export class ScaleFilter extends FilterOption {
       scaleFilter = `scale=${this.desiredPaddedSize.width}:${this.desiredPaddedSize.height}:flags=${this.ffmpegState.softwareScalingAlgorithm}${aspectRatio},setsar=1`;
     }
 
-    // TODO: hwdownload if needed
+    if (this.currentState.frameDataLocation === FrameDataLocation.Hardware) {
+      scaleFilter = `hwdownload,${scaleFilter}`;
+    }
 
     return scaleFilter;
   }
@@ -58,6 +60,7 @@ export class ScaleFilter extends FilterOption {
       scaledSize: this.desiredScaledSize,
       paddedSize: this.desiredScaledSize,
       isAnamorphic: false,
+      frameDataLocation: FrameDataLocation.Software,
     });
   }
 }
