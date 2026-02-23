@@ -20,9 +20,9 @@ import { WatermarkScaleFilter } from '@/ffmpeg/builder/filter/watermark/Watermar
 import {
   PixelFormatNv12,
   PixelFormatP010,
+  PixelFormats,
   PixelFormatYuv420P10Le,
   PixelFormatYuva420P,
-  PixelFormats,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { AudioInputSource } from '@/ffmpeg/builder/input/AudioInputSource.js';
 import type { ConcatInputSource } from '@/ffmpeg/builder/input/ConcatInputSource.js';
@@ -39,6 +39,7 @@ import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
 import type { Nullable } from '@/types/util.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
 import { every, head, inRange, isNull, some } from 'lodash-es';
+import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { H264QsvEncoder } from '../../encoder/qsv/H264QsvEncoder.ts';
 import { HevcQsvEncoder } from '../../encoder/qsv/HevcQsvEncoder.ts';
 import { Mpeg2QsvEncoder } from '../../encoder/qsv/Mpeg2QsvEncoder.ts';
@@ -191,6 +192,7 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.setDeinterlace(currentState);
     currentState = this.setScale(currentState);
+    currentState = this.setTonemap(currentState);
     currentState = this.setPad(currentState);
     this.setStillImageLoop();
 
@@ -248,10 +250,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
   protected setDeinterlace(currentState: FrameState): FrameState {
     let nextState = currentState;
     if (this.context.shouldDeinterlace) {
-      const filter =
-        currentState.frameDataLocation === FrameDataLocation.Software
-          ? new DeinterlaceFilter(this.ffmpegState, currentState)
-          : new DeinterlaceQsvFilter(currentState);
+      let filter: FilterOption;
+      if (this.context.pipelineOptions.disableHardwareFilters) {
+        filter = new DeinterlaceFilter(this.ffmpegState, currentState);
+      } else {
+        filter = new DeinterlaceQsvFilter(currentState);
+      }
       nextState = filter.nextState(nextState);
       this.videoInputSource.filterSteps.push(filter);
     }
@@ -536,6 +540,12 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     return currentState;
+  }
+
+  protected setTonemap(currentState: FrameState): FrameState {
+    if (!getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false)) {
+      return currentState;
+    }
   }
 
   protected getIsIntelQsvOrVaapi(): boolean {
