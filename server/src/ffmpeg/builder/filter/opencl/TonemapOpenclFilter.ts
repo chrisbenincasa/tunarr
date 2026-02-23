@@ -1,7 +1,7 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import {
   PixelFormatNv12,
-  ValidHardwarePixelFormats,
+  PixelFormatUnknown,
 } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
@@ -23,19 +23,15 @@ export class TonemapOpenclFilter extends FilterOption {
   public readonly affectsFrameState: boolean = true;
 
   nextState(currentState: FrameState): FrameState {
-    let currentPixelFormat = currentState.pixelFormat;
-
-    if (
-      currentPixelFormat !== null &&
-      ValidHardwarePixelFormats.NV12 !== currentPixelFormat.name
-    ) {
-      currentPixelFormat = new PixelFormatNv12(currentPixelFormat);
-    }
+    const currentPixelFormat =
+      currentState.pixelFormat?.toSoftwareFormat() ?? currentState.pixelFormat;
 
     return currentState.update({
       colorFormat: ColorFormat.bt709,
       frameDataLocation: FrameDataLocation.Hardware,
-      pixelFormat: currentPixelFormat,
+      pixelFormat: new PixelFormatNv12(
+        currentPixelFormat ?? PixelFormatUnknown(currentState.bitDepth),
+      ),
     });
   }
 }
