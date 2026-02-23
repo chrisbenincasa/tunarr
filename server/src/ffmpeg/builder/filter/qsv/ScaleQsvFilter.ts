@@ -51,12 +51,10 @@ export class ScaleQsvFilter extends FilterOption {
 
     if (!this.currentState.scaledSize.equals(this.scaledSize)) {
       const targetSize = `w=${this.scaledSize.width}:h=${this.scaledSize.height}`;
-      const sarValue =
-        this.videoStream.sampleAspectRatio?.replace(':', '/') ?? '1/1';
       let squareScale = '';
       let format = '';
       if (this.currentState.isAnamorphic) {
-        squareScale = `vpp_qsv=w=iw*${sarValue}:h=ih,setsar=1,`;
+        squareScale = `vpp_qsv=w=iw*sar:h=ih,setsar=1,`;
       } else {
         format = `,setsar=1`;
       }
