@@ -8,7 +8,7 @@ import { VideoFormats } from '../../ffmpeg/builder/constants.ts';
 import { booleanToNumber } from '../../util/sqliteUtil.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 
-export const AllKnownHardwareAcceerationModes = [
+export const AllKnownHardwareAccelerationModes = [
   'none',
   'cuda',
   'vaapi',
@@ -26,7 +26,7 @@ export const HardwareAccelerationModes = [
 ] as const;
 
 export type HardwareAccelerationMode = TupleToUnion<
-  typeof AllKnownHardwareAcceerationModes
+  typeof AllKnownHardwareAccelerationModes
 >;
 
 export const HardwareAccelerationMode: Record<
