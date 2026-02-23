@@ -192,7 +192,10 @@ export abstract class BaseHlsSession<
         },
         {
           retries: 15,
-          factor: 1.25,
+          factor: 1,
+          minTimeout: 1000,
+          maxTimeout: 1000,
+          randomize: false,
         },
       );
 
