@@ -97,6 +97,7 @@ import {
   StandardFormatFlags,
   ThreadCountOption,
 } from '../options/GlobalOption.ts';
+import { NullOutputFormat } from '../options/NullOutputFormat.ts';
 import {
   ClosedGopOutputOption,
   DoNotMapMetadataOutputOption,
@@ -868,6 +869,8 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       }
       case OutputFormatTypes.Dash:
         throw new Error('MPEG-DASH streaming is not yet implemented');
+      case OutputFormatTypes.Null:
+        this.pipelineSteps.push(new NullOutputFormat());
     }
 
     if (

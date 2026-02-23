@@ -117,6 +117,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     const needsTonemapWithVulkan =
       getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false) &&
       canDecode &&
+      !!desiredState.pixelFormat &&
       this.ffmpegCapabilities.hasHardwareAccel(
         HardwareAccelerationMode.Vulkan,
       ) &&
@@ -487,39 +488,37 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     // TODO color params -- wow there's a lot of stuff to account for!!!
 
     if (
-      this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None &&
-      this.watermarkInputSource &&
-      currentState.frameDataLocation === FrameDataLocation.Hardware
-    ) {
-      const hwDownloadFilter = new HardwareDownloadCudaFilter(
-        currentState,
-        null,
-      );
-      currentState = hwDownloadFilter.nextState(currentState);
-      steps.push(hwDownloadFilter);
-    }
-
-    if (
       currentState.frameDataLocation === FrameDataLocation.Hardware &&
       this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
     ) {
-      if (!currentState.pixelFormat?.equals(desiredFormat)) {
-        this.logger.trace(
-          "Pixel format %s doesn't equal format %s",
-          currentState.pixelFormat?.prettyPrint(),
-          desiredFormat.prettyPrint(),
+      if (this.watermarkInputSource) {
+        // Watermark overlay will handle format; download to native CUDA format
+        const hwDownloadFilter = new HardwareDownloadCudaFilter(
+          currentState,
+          null,
         );
-        const formatFilter = new FormatCudaFilter(desiredFormat);
-        currentState = formatFilter.nextState(currentState);
-        steps.push(formatFilter);
-      }
+        currentState = hwDownloadFilter.nextState(currentState);
+        steps.push(hwDownloadFilter);
+      } else {
+        // No watermark: reformat if needed, then download to desired format
+        if (!currentState.pixelFormat?.equals(desiredFormat)) {
+          this.logger.trace(
+            "Pixel format %s doesn't equal format %s",
+            currentState.pixelFormat?.prettyPrint(),
+            desiredFormat.prettyPrint(),
+          );
+          const formatFilter = new FormatCudaFilter(desiredFormat);
+          currentState = formatFilter.nextState(currentState);
+          steps.push(formatFilter);
+        }
 
-      const hwDownloadFilter = new HardwareDownloadCudaFilter(
-        currentState,
-        desiredFormat,
-      );
-      currentState = hwDownloadFilter.nextState(currentState);
-      steps.push(hwDownloadFilter);
+        const hwDownloadFilter = new HardwareDownloadCudaFilter(
+          currentState,
+          desiredFormat,
+        );
+        currentState = hwDownloadFilter.nextState(currentState);
+        steps.push(hwDownloadFilter);
+      }
     }
 
     if (!currentState.pixelFormat?.equals(desiredFormat)) {

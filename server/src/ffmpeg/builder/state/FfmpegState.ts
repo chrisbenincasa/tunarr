@@ -71,7 +71,7 @@ export class FfmpegState {
   softwareDeinterlaceFilter: string = 'yadif=1';
   vaapiDevice: Nullable<string> = null;
   vaapiDriver: Nullable<string> = null;
-  outputFormat: OutputFormat = MpegTsOutputFormat; // TODO: No
+  outputFormat: OutputFormat = MpegTsOutputFormat;
   outputLocation: OutputLocation = OutputLocation.Stdout;
   ptsOffset?: number;
   tonemapHdr: boolean = false;
