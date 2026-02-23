@@ -5,7 +5,7 @@ import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
-import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.ts';
+import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
