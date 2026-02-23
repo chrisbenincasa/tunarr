@@ -2,7 +2,6 @@ import { VideoFormats } from '@/ffmpeg/builder/constants.js';
 import { Encoder } from '@/ffmpeg/builder/encoder/Encoder.js';
 import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js';
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
-import { isHdrContent } from '@/ffmpeg/builder/filter/HdrDetection.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
@@ -279,10 +278,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       return currentState;
     }
     const { videoStream } = this.context;
-    if (
-      !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
-      !isHdrContent(videoStream)
-    ) {
+    if (!getBooleanEnvVar(TONEMAP_ENABLED, false) || !videoStream.isHdr()) {
       return currentState;
     }
     const filter = new TonemapFilter(currentState);
