@@ -4,10 +4,12 @@ import { DeinterlaceFilter } from '@/ffmpeg/builder/filter/DeinterlaceFilter.js'
 import type { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PadFilter } from '@/ffmpeg/builder/filter/PadFilter.js';
 import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
+import { TonemapFilter } from '@/ffmpeg/builder/filter/TonemapFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
 import { PixelFormatOutputOption } from '@/ffmpeg/builder/options/OutputOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
+import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
 import dayjs from '@/util/dayjs.js';
 import type { Watermark } from '@tunarr/types';
 import { filter, first, isEmpty, isNull, some } from 'lodash-es';
@@ -43,6 +45,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
 
     if (desiredState.videoFormat !== VideoFormats.Copy) {
       currentState = this.setDeinterlace(currentState);
+      currentState = this.setTonemap(currentState);
       currentState = this.setScale(currentState);
       currentState = this.setPad(currentState);
       currentState = this.addSubtitles(currentState);
@@ -271,7 +274,15 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
   }
 
   protected setTonemap(currentState: FrameState): FrameState {
-    // TODO: Implement software tonemap
-    return currentState;
+    if (!isVideoPipelineContext(this.context)) {
+      return currentState;
+    }
+    const { videoStream } = this.context;
+    if (!getBooleanEnvVar(TONEMAP_ENABLED, false) || !videoStream.isHdr()) {
+      return currentState;
+    }
+    const filter = new TonemapFilter(currentState);
+    this.videoInputSource.filterSteps.push(filter);
+    return filter.nextState(currentState);
   }
 }

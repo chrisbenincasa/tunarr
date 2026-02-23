@@ -357,17 +357,15 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return currentState;
     }
 
-    if (pipelineOptions.disableHardwareFilters) {
-      return currentState;
-    }
-
     let filter: FilterOption | undefined;
-    if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)) {
-      filter = new TonemapVaapiFilter(currentState);
-    } else if (
-      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
-    ) {
-      filter = new TonemapOpenclFilter(currentState);
+    if (!pipelineOptions.disableHardwareFilters) {
+      if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)) {
+        filter = new TonemapVaapiFilter(currentState);
+      } else if (
+        this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
+      ) {
+        filter = new TonemapOpenclFilter(currentState);
+      }
     }
 
     if (filter) {
@@ -376,7 +374,8 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       return nextState;
     }
 
-    return currentState;
+    // Fall back to software tonemap
+    return super.setTonemap(currentState);
   }
 
   protected setScale(currentState: FrameState): FrameState {

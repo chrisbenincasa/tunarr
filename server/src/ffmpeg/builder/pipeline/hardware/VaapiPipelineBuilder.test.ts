@@ -561,6 +561,13 @@ describe('VaapiPipelineBuilder tonemap', () => {
     return args.includes('tonemap_opencl');
   }
 
+  function hasSoftwareTonemapFilter(
+    pipeline: ReturnType<typeof buildWithTonemap>,
+  ) {
+    const args = pipeline.getCommandArgs().join(' ');
+    return args.includes('zscale') && args.includes('tonemap=tonemap=hable');
+  }
+
   test('applies tonemap filter for HDR10 (smpte2084) content', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
@@ -632,7 +639,7 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(hasTonemapFilter(pipeline)).to.eq(false);
   });
 
-  test('skips tonemap when ffmpeg lacks both tonemap_vaapi and tonemap_opencl filters', () => {
+  test('falls back to software tonemap when neither tonemap_vaapi nor tonemap_opencl is available', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
@@ -647,9 +654,10 @@ describe('VaapiPipelineBuilder tonemap', () => {
 
     expect(hasTonemapFilter(pipeline)).to.eq(false);
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
   });
 
-  test('skips tonemap when hardware filters are disabled', () => {
+  test('skips hardware tonemap but applies software tonemap when hardware filters are disabled', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
@@ -658,6 +666,8 @@ describe('VaapiPipelineBuilder tonemap', () => {
     });
 
     expect(hasTonemapFilter(pipeline)).to.eq(false);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
   });
 
   test('tonemap filter appears before scale in the filter chain', () => {
@@ -739,7 +749,7 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(tonemapIndex).toBeLessThan(scaleIndex);
   });
 
-  test('skips opencl tonemap when hardware filters are disabled', () => {
+  test('skips opencl tonemap when hardware filters are disabled but applies software tonemap', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
@@ -754,5 +764,6 @@ describe('VaapiPipelineBuilder tonemap', () => {
     });
 
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+    expect(hasSoftwareTonemapFilter(pipeline)).to.eq(true);
   });
 });
