@@ -82,6 +82,7 @@ export const OutputFormatTypes = {
   HlsDirectV2: 'hls_direct_v2',
   Nut: 'nut',
   Dash: 'dash',
+  Null: 'null',
 } as const;
 
 export const ColorRanges = {
@@ -195,6 +196,14 @@ export function MpegDashOutputFormat(
   };
 }
 
+export const NullOutputFormat = {
+  type: OutputFormatTypes.Null,
+} as const satisfies NullOutputFormat;
+
+export type NullOutputFormat = {
+  type: typeof OutputFormatTypes.Null;
+};
+
 export type OutputFormat =
   | HlsOutputFormat
   | HlsDirectOutputFormat
@@ -202,7 +211,8 @@ export type OutputFormat =
   | MkvOutputFormat
   | MpegDashOutputFormat
   | Mp4OutputFormat
-  | MpegTsOutputFormat;
+  | MpegTsOutputFormat
+  | NullOutputFormat;
 
 export const OneDayMillis = 7 * 24 * 60 * 60 * 1000;
 export const FiveMinutesMillis = 5 * 60 * 60 * 1000;

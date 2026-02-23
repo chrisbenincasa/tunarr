@@ -11,6 +11,7 @@ import {
   ColorRanges,
   ColorSpaces,
   ColorTransferFormats,
+  NullOutputFormat,
 } from '../../constants.ts';
 import { DeinterlaceFilter } from '../../filter/DeinterlaceFilter.ts';
 import { LibplaceboTonemapFilter } from '../../filter/LibplaceboTonemapFilter.ts';
@@ -348,14 +349,10 @@ describe('NvidiaPipelineBuilder', () => {
 
     const state = FfmpegState.create({ version: ffmpegVersion });
 
-    const out = builder.build(
-      state,
-      makeDesiredFrameState(video),
-      {
-        ...DefaultPipelineOptions,
-        disableHardwareFilters: true,
-      },
-    );
+    const out = builder.build(state, makeDesiredFrameState(video), {
+      ...DefaultPipelineOptions,
+      disableHardwareFilters: true,
+    });
 
     expect(out.getCommandArgs()).toMatchInlineSnapshot(`
       [
@@ -425,7 +422,10 @@ describe('NvidiaPipelineBuilder', () => {
       makePgsSubtitles(videoSource),
     );
 
-    const state = FfmpegState.create({ version: ffmpegVersion });
+    const state = FfmpegState.create({
+      version: ffmpegVersion,
+      outputFormat: NullOutputFormat,
+    });
 
     const out = builder.build(
       state,
@@ -483,7 +483,7 @@ describe('NvidiaPipelineBuilder', () => {
         "-c:a",
         "copy",
         "-f",
-        "mpegts",
+        "null",
         "pipe:1",
       ]
     `);
@@ -1004,6 +1004,89 @@ describe('NvidiaPipelineBuilder', () => {
         ]
       `);
     });
+
+    test('Bug 4: does not initialize Vulkan decoder when desiredState.pixelFormat is null', () => {
+      vi.stubEnv(TUNARR_ENV_VARS.TONEMAP_ENABLED, 'true');
+      vi.stubEnv(TUNARR_ENV_VARS.DISABLE_VULKAN, 'false');
+
+      const binaryCapabilities = new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set(['libplacebo']),
+        new Set(['vulkan']),
+      );
+      const video = makeHdrVideoInput();
+
+      const builder = new NvidiaPipelineBuilder(
+        makeNvidiaCapabilities(),
+        binaryCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+
+      const state = FfmpegState.create({ version: ffmpegVersion });
+
+      // desiredState with null pixelFormat — the bug trigger:
+      // needsTonemapWithVulkan becomes true → VulkanDecoder used,
+      // but setTonemap() early-returns (line 808) leaving Vulkan init without any tonemap filter
+      const desiredState = makeDesiredFrameState(video, { pixelFormat: null });
+
+      const out = builder.build(state, desiredState, DefaultPipelineOptions);
+
+      // After fix: no vulkan init args, ImplicitNvidiaDecoder (CUDA) used instead
+      const args = out.getCommandArgs();
+      expect(args.join(' ')).not.toContain('vulkan'); // fixed: no vulkan when pixelFormat is null
+      expect(args.join(' ')).not.toContain('libplacebo'); // no tonemap filter (pixelFormat is null)
+      expect(out.getCommandArgs()).toMatchInlineSnapshot(`
+        [
+          "-threads",
+          "1",
+          "-nostdin",
+          "-hide_banner",
+          "-nostats",
+          "-loglevel",
+          "error",
+          "-fflags",
+          "+genpts+discardcorrupt+igndts",
+          "-init_hw_device",
+          "cuda",
+          "-hwaccel",
+          "cuda",
+          "-hwaccel_output_format",
+          "cuda",
+          "-readrate",
+          "1",
+          "-i",
+          "/path/to/hdr-video.mkv",
+          "-filter_complex",
+          "[0:0]scale_cuda=format=p010le:passthrough=1,scale_cuda=1920:1080:force_original_aspect_ratio=decrease,setsar=1,hwdownload,format=p010le,format=yuv420p10le,pad=1920:1080:-1:-1:color=black,hwupload_cuda[v]",
+          "-map",
+          "[v]",
+          "-map",
+          "0:a",
+          "-muxdelay",
+          "0",
+          "-muxpreload",
+          "0",
+          "-flags",
+          "cgop",
+          "-movflags",
+          "+faststart",
+          "-c:v",
+          "h264_nvenc",
+          "-rc-lookahead",
+          "20",
+          "-c:a",
+          "copy",
+          "-f",
+          "mpegts",
+          "pipe:1",
+        ]
+      `);
+    });
   });
 
   test('intermittent watermark, set format on hardware scale, do not set format on hwdownload', async () => {
@@ -1116,13 +1199,12 @@ describe('NvidiaPipelineBuilder', () => {
 
       const state = FfmpegState.create({ version: ffmpegVersion });
 
-      const out = builder.build(
-        state,
-        makeDesiredFrameState(video),
-        { ...DefaultPipelineOptions, disableHardwareEncoding: true },
-      );
+      const out = builder.build(state, makeDesiredFrameState(video), {
+        ...DefaultPipelineOptions,
+        disableHardwareEncoding: true,
+      });
 
-      // Document current behavior - snapshot captures whether double-download occurs
+      // Document behavior: snapshot captures that double-download does NOT occur
       expect(out.getCommandArgs()).toMatchInlineSnapshot(`
         [
           "-threads",
@@ -1169,6 +1251,13 @@ describe('NvidiaPipelineBuilder', () => {
           "pipe:1",
         ]
       `);
+
+      // Explicit guard: verify exactly one hwdownload (not two)
+      const filterComplex = out
+        .getCommandArgs()
+        .find((arg) => arg.startsWith('['));
+      expect(filterComplex).not.toMatch(/hwdownload.*hwdownload/);
+      expect(filterComplex?.match(/hwdownload/g)?.length).toBe(1);
     });
   });
 });

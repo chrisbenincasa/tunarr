@@ -1892,4 +1892,95 @@ describe('VaapiPipelineBuilder tonemap', () => {
       ]
     `);
   });
+
+  describe('tonemapHdr state flag', () => {
+    test('Bug 6: ffmpegState.tonemapHdr should be true after VAAPI tonemapping activates', () => {
+      process.env[TONEMAP_ENABLED] = 'true';
+
+      const capabilities = new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(VaapiProfiles.HevcMain, VaapiEntrypoint.Encode),
+      ]);
+      const binaryCapabilities = new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapVaapi]),
+      );
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        createHdrVideoStream(),
+      );
+      const builder = new VaapiPipelineBuilder(
+        capabilities,
+        binaryCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+      const state = FfmpegState.create({ version: fakeVersion });
+      builder.build(
+        state,
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+          videoFormat: 'hevc',
+        }),
+        { ...DefaultPipelineOptions, vaapiDevice: '/dev/dri/renderD128' },
+      );
+
+      // Bug 6 (before fix): state.tonemapHdr === false even though tonemap_vaapi filter is active
+      // After fix: state.tonemapHdr === true
+      expect(state.tonemapHdr).toBe(true);
+    });
+
+    test('ffmpegState.tonemapHdr remains false when TONEMAP_ENABLED is not set', () => {
+      // No process.env[TONEMAP_ENABLED] — default is false, no tonemapping
+      const capabilities = new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.HevcMain10,
+          VaapiEntrypoint.Decode,
+        ),
+        new VaapiProfileEntrypoint(VaapiProfiles.HevcMain, VaapiEntrypoint.Encode),
+      ]);
+      const binaryCapabilities = new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapVaapi]),
+      );
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        createHdrVideoStream(),
+      );
+      const builder = new VaapiPipelineBuilder(
+        capabilities,
+        binaryCapabilities,
+        video,
+        null,
+        null,
+        null,
+        null,
+      );
+      const state = FfmpegState.create({ version: fakeVersion });
+      builder.build(
+        state,
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.FHD,
+          paddedSize: FrameSize.FHD,
+          pixelFormat: new PixelFormatYuv420P(),
+          videoFormat: 'hevc',
+        }),
+        { ...DefaultPipelineOptions, vaapiDevice: '/dev/dri/renderD128' },
+      );
+
+      expect(state.tonemapHdr).toBe(false);
+    });
+  });
 });

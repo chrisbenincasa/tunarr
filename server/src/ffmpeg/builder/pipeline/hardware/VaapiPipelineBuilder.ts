@@ -36,7 +36,7 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { Nullable } from '@/types/util.js';
 import { TONEMAP_ENABLED, getBooleanEnvVar } from '@/util/env.js';
 import { isDefined, isNonEmptyString } from '@/util/index.js';
-import { every, head, inRange, isUndefined } from 'lodash-es';
+import { every, head, isUndefined } from 'lodash-es';
 import { P, match } from 'ts-pattern';
 import {
   H264VaapiEncoder,
@@ -182,7 +182,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       (this.context.hasWatermark && this.context.hasSubtitleOverlay()) ||
       ffmpegState.vaapiDriver === 'radeonsi';
 
-    currentState.forceSoftwareOverlay = forceSoftwareOverlay;
+    currentState = currentState.update({ forceSoftwareOverlay });
 
     if (
       currentState.frameDataLocation === FrameDataLocation.Software &&
@@ -373,6 +373,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
     if (filter) {
       const nextState = filter.nextState(currentState);
       this.videoInputSource.filterSteps.push(filter);
+      this.context.ffmpegState.tonemapHdr = true;
       return nextState;
     }
 
@@ -382,7 +383,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
   protected setScale(currentState: FrameState): FrameState {
     let nextState = currentState;
     const { desiredState, ffmpegState, shouldDeinterlace } = this.context;
-    let scaleOption: FilterOption;
+    let scaleOption: FilterOption | undefined;
     if (
       !currentState.scaledSize.equals(desiredState.scaledSize) &&
       ((ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.None &&
@@ -397,7 +398,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         desiredState.paddedSize,
         // desiredState.croppedSize
       );
-    } else {
+    } else if (!currentState.scaledSize.equals(desiredState.scaledSize)) {
       scaleOption = new ScaleVaapiFilter(
         currentState.update({
           pixelFormat:
@@ -413,7 +414,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       );
     }
 
-    if (isNonEmptyString(scaleOption.filter)) {
+    if (scaleOption && isNonEmptyString(scaleOption.filter)) {
       nextState = scaleOption.nextState(currentState);
       this.videoInputSource.filterSteps.push(scaleOption);
     }
@@ -528,7 +529,7 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
       );
     }
 
-    if (inRange(watermarkInput.watermark.opacity, 0, 100)) {
+    if (watermarkInput.watermark.opacity !== 100) {
       // opacity
       watermarkInput.filterSteps.push(
         new WatermarkOpacityFilter(watermarkInput.watermark.opacity),
