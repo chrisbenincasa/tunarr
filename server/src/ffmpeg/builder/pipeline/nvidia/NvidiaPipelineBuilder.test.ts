@@ -1,4 +1,5 @@
 import { FileStreamSource } from '../../../../stream/types.ts';
+import { TUNARR_ENV_VARS } from '../../../../util/env.ts';
 import { LoggerFactory } from '../../../../util/logging/LoggerFactory.ts';
 import {
   EmptyFfmpegCapabilities,
@@ -363,7 +364,8 @@ describe('NvidiaPipelineBuilder', () => {
     });
 
     test('uses LibplaceboTonemapFilter for HDR content with Vulkan and libplacebo capabilities', () => {
-      vi.stubEnv('TUNARR_DISABLE_VULKAN', 'true');
+      vi.stubEnv(TUNARR_ENV_VARS.TONEMAP_ENABLED, 'true');
+      vi.stubEnv(TUNARR_ENV_VARS.DISABLE_VULKAN, 'false');
 
       const binaryCapabilities = new FfmpegCapabilities(
         new Set(),
