@@ -115,6 +115,7 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
     }
 
     const needsTonemapWithVulkan =
+      !this.context.pipelineOptions.disableHardwareDecoding &&
       getBooleanEnvVar(TUNARR_ENV_VARS.TONEMAP_ENABLED, false) &&
       canDecode &&
       this.ffmpegCapabilities.hasHardwareAccel(
