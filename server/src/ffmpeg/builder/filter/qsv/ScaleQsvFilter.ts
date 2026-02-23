@@ -1,6 +1,5 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import { PixelFormats } from '@/ffmpeg/builder/format/PixelFormat.js';
-import type { VideoStream } from '@/ffmpeg/builder/MediaStream.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import type { FrameSize } from '@/ffmpeg/builder/types.js';
 import { FrameDataLocation } from '@/ffmpeg/builder/types.js';
@@ -11,7 +10,6 @@ export class ScaleQsvFilter extends FilterOption {
   readonly affectsFrameState: boolean = true;
 
   constructor(
-    private videoStream: VideoStream,
     private currentState: FrameState,
     private scaledSize: FrameSize,
   ) {
