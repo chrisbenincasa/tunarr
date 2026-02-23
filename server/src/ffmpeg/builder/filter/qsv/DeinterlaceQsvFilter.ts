@@ -1,5 +1,7 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
+import { FrameDataLocation } from '../../types.ts';
+import { HardwareUploadQsvFilter } from './HardwareUploadQsvFilter.ts';
 
 export class DeinterlaceQsvFilter extends FilterOption {
   readonly filter: string;
@@ -14,14 +16,14 @@ export class DeinterlaceQsvFilter extends FilterOption {
   nextState(currentState: FrameState): FrameState {
     return currentState.update({
       deinterlace: false,
-      frameDataLocation: 'hardware',
+      frameDataLocation: FrameDataLocation.Hardware,
     });
   }
 
   private generateFilter(currentState: FrameState): string {
     const prelude =
-      currentState.frameDataLocation === 'hardware'
-        ? 'hwupload=extra_hw_frames=64,'
+      currentState.frameDataLocation !== FrameDataLocation.Hardware
+        ? `${new HardwareUploadQsvFilter(64).filter},`
         : '';
     return `${prelude}deinterlace_qsv`;
   }
