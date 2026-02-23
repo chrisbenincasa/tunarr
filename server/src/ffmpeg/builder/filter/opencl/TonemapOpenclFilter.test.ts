@@ -1,4 +1,4 @@
-import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
+import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import {
   ColorRanges,
   ColorTransferFormats,
@@ -11,7 +11,7 @@ import {
 import { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { FrameDataLocation, FrameSize } from '@/ffmpeg/builder/types.js';
 
-describe('TonemapVaapiFilter', () => {
+describe('TonemapOpenclFilter', () => {
   test('filter string when frame data is on hardware', () => {
     const currentState = new FrameState({
       scaledSize: FrameSize.FHD,
@@ -21,10 +21,10 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Hardware,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'tonemap_vaapi=format=nv12:t=bt709:m=bt709:p=bt709',
+      'hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
     );
   });
 
@@ -37,10 +37,10 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Software,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.filter).to.eq(
-      'format=vaapi|nv12|p010le,tonemap_vaapi=format=nv12:t=bt709:m=bt709:p=bt709',
+      'format=vaapi|nv12|p010le,hwmap=derive_device=opencl,tonemap_opencl=tonemap=hable:desat=0:t=bt709:m=bt709:p=bt709:format=nv12,hwmap=derive_device=vaapi:reverse=1',
     );
   });
 
@@ -52,7 +52,7 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Hardware,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
 
     expect(filter.affectsFrameState).toBe(true);
   });
@@ -66,17 +66,17 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Hardware,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
     const nextState = filter.nextState(currentState);
 
-    expect(nextState.colorFormat?.colorSpace).to.eq(ColorTransferFormats.Bt709);
-    expect(nextState.colorFormat?.colorTransfer).to.eq(
+    expect(nextState.colorFormat.colorSpace).to.eq(ColorTransferFormats.Bt709);
+    expect(nextState.colorFormat.colorTransfer).to.eq(
       ColorTransferFormats.Bt709,
     );
-    expect(nextState.colorFormat?.colorPrimaries).to.eq(
+    expect(nextState.colorFormat.colorPrimaries).to.eq(
       ColorTransferFormats.Bt709,
     );
-    expect(nextState.colorFormat?.colorRange).to.eq(ColorRanges.Tv);
+    expect(nextState.colorFormat.colorRange).to.eq(ColorRanges.Tv);
   });
 
   test('nextState sets frame data location to hardware', () => {
@@ -88,7 +88,7 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Software,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
     const nextState = filter.nextState(currentState);
 
     expect(nextState.frameDataLocation).to.eq(FrameDataLocation.Hardware);
@@ -103,7 +103,7 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Hardware,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
     const nextState = filter.nextState(currentState);
 
     expect(nextState.pixelFormat).toMatchPixelFormat(
@@ -119,7 +119,7 @@ describe('TonemapVaapiFilter', () => {
       frameDataLocation: FrameDataLocation.Hardware,
     });
 
-    const filter = new TonemapVaapiFilter(currentState);
+    const filter = new TonemapOpenclFilter(currentState);
     const nextState = filter.nextState(currentState);
 
     expect(nextState.pixelFormat).toBeNull();
