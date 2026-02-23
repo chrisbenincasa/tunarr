@@ -7,7 +7,12 @@ import {
   VaapiProfileEntrypoint,
   VaapiProfiles,
 } from '../../capabilities/VaapiHardwareCapabilities.ts';
-import { ColorTransferFormats } from '../../constants.ts';
+import {
+  ColorPrimaries,
+  ColorRanges,
+  ColorSpaces,
+  ColorTransferFormats,
+} from '../../constants.ts';
 import {
   PixelFormatRgba,
   PixelFormatYuv420P,
@@ -33,6 +38,7 @@ import {
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
 import { VaapiPipelineBuilder } from './VaapiPipelineBuilder.ts';
+import { ColorFormat } from '@/ffmpeg/builder/format/ColorFormat.js';
 
 describe('VaapiPipelineBuilder', () => {
   test('should work', () => {
@@ -464,7 +470,12 @@ describe('VaapiPipelineBuilder tonemap', () => {
   });
 
   function createHdrVideoStream(
-    colorTransfer: string = ColorTransferFormats.Smpte2084,
+    colorFormat: ColorFormat = new ColorFormat({
+      colorRange: ColorRanges.Tv,
+      colorSpace: ColorSpaces.Bt2020nc,
+      colorPrimaries: ColorPrimaries.Bt2020,
+      colorTransfer: ColorTransferFormats.Smpte2084,
+    }),
   ): VideoStream {
     return VideoStream.create({
       index: 0,
@@ -474,10 +485,7 @@ describe('VaapiPipelineBuilder tonemap', () => {
       frameSize: FrameSize.FourK,
       displayAspectRatio: '16:9',
       providedSampleAspectRatio: '1:1',
-      colorTransfer,
-      colorSpace: 'bt2020nc',
-      colorPrimaries: 'bt2020',
-      colorRange: 'tv',
+      colorFormat: colorFormat,
     });
   }
 
@@ -546,11 +554,25 @@ describe('VaapiPipelineBuilder tonemap', () => {
     return args.includes('tonemap_vaapi');
   }
 
+  function hasOpenclTonemapFilter(
+    pipeline: ReturnType<typeof buildWithTonemap>,
+  ) {
+    const args = pipeline.getCommandArgs().join(' ');
+    return args.includes('tonemap_opencl');
+  }
+
   test('applies tonemap filter for HDR10 (smpte2084) content', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
-      videoStream: createHdrVideoStream(ColorTransferFormats.Smpte2084),
+      videoStream: createHdrVideoStream(
+        new ColorFormat({
+          colorRange: ColorRanges.Tv,
+          colorSpace: ColorSpaces.Bt2020nc,
+          colorPrimaries: ColorPrimaries.Bt2020,
+          colorTransfer: ColorTransferFormats.Smpte2084,
+        }),
+      ),
     });
 
     expect(hasTonemapFilter(pipeline)).to.eq(true);
@@ -563,7 +585,14 @@ describe('VaapiPipelineBuilder tonemap', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
-      videoStream: createHdrVideoStream(ColorTransferFormats.AribStdB67),
+      videoStream: createHdrVideoStream(
+        new ColorFormat({
+          colorRange: ColorRanges.Tv,
+          colorSpace: ColorSpaces.Bt2020nc,
+          colorPrimaries: ColorPrimaries.Bt2020,
+          colorTransfer: ColorTransferFormats.AribStdB67,
+        }),
+      ),
     });
 
     expect(hasTonemapFilter(pipeline)).to.eq(true);
@@ -590,10 +619,12 @@ describe('VaapiPipelineBuilder tonemap', () => {
       frameSize: FrameSize.FHD,
       displayAspectRatio: '16:9',
       providedSampleAspectRatio: '1:1',
-      colorTransfer: ColorTransferFormats.Bt709,
-      colorSpace: 'bt709',
-      colorPrimaries: 'bt709',
-      colorRange: 'tv',
+      colorFormat: new ColorFormat({
+        colorRange: ColorRanges.Tv,
+        colorSpace: ColorSpaces.Bt709,
+        colorPrimaries: ColorPrimaries.Bt709,
+        colorTransfer: ColorTransferFormats.Bt709,
+      }),
     });
 
     const pipeline = buildWithTonemap({ videoStream: sdrStream });
@@ -601,7 +632,7 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(hasTonemapFilter(pipeline)).to.eq(false);
   });
 
-  test('skips tonemap when ffmpeg lacks tonemap_vaapi filter', () => {
+  test('skips tonemap when ffmpeg lacks both tonemap_vaapi and tonemap_opencl filters', () => {
     process.env[TONEMAP_ENABLED] = 'true';
 
     const pipeline = buildWithTonemap({
@@ -610,10 +641,12 @@ describe('VaapiPipelineBuilder tonemap', () => {
         new Set(),
         new Map(),
         new Set(),
+        new Set(),
       ),
     });
 
     expect(hasTonemapFilter(pipeline)).to.eq(false);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
   });
 
   test('skips tonemap when hardware filters are disabled', () => {
@@ -641,5 +674,85 @@ describe('VaapiPipelineBuilder tonemap', () => {
     expect(tonemapIndex).toBeGreaterThan(-1);
     expect(scaleIndex).toBeGreaterThan(-1);
     expect(tonemapIndex).toBeLessThan(scaleIndex);
+  });
+
+  test('falls back to tonemap_opencl when tonemap_vaapi is unavailable', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    expect(hasTonemapFilter(pipeline)).to.eq(false);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
+    expect(args).toContain('tonemap_opencl=tonemap=hable');
+    expect(args).toContain('hwmap=derive_device=opencl');
+    expect(args).toContain('hwmap=derive_device=vaapi:reverse=1');
+  });
+
+  test('prefers tonemap_vaapi over tonemap_opencl when both are available', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([
+          KnownFfmpegFilters.TonemapVaapi,
+          KnownFfmpegFilters.TonemapOpencl,
+        ]),
+        new Set(),
+      ),
+    });
+
+    expect(hasTonemapFilter(pipeline)).to.eq(true);
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
+  });
+
+  test('opencl tonemap filter appears before scale in the filter chain', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+    });
+
+    const args = pipeline.getCommandArgs().join(' ');
+    const tonemapIndex = args.indexOf('tonemap_opencl');
+    const scaleIndex = args.indexOf('scale_vaapi');
+
+    expect(tonemapIndex).toBeGreaterThan(-1);
+    expect(scaleIndex).toBeGreaterThan(-1);
+    expect(tonemapIndex).toBeLessThan(scaleIndex);
+  });
+
+  test('skips opencl tonemap when hardware filters are disabled', () => {
+    process.env[TONEMAP_ENABLED] = 'true';
+
+    const pipeline = buildWithTonemap({
+      videoStream: createHdrVideoStream(),
+      binaryCapabilities: new FfmpegCapabilities(
+        new Set(),
+        new Map(),
+        new Set([KnownFfmpegFilters.TonemapOpencl]),
+        new Set(),
+      ),
+      disableHardwareFilters: true,
+    });
+
+    expect(hasOpenclTonemapFilter(pipeline)).to.eq(false);
   });
 });

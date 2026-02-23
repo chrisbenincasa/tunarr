@@ -8,5 +8,6 @@ export const KnownFfmpegFilters = {
   ScaleCuda: 'scale_cuda',
   ScaleVulkan: 'scale_vulkan',
   TonemapVaapi: 'tonemap_vaapi',
+  TonemapOpencl: 'tonemap_opencl',
   Libplacebo: 'libplacebo',
 };

@@ -14,6 +14,7 @@ import { ScaleFilter } from '@/ffmpeg/builder/filter/ScaleFilter.js';
 import { DeinterlaceVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/DeinterlaceVaapiFilter.js';
 import { HardwareUploadVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/HardwareUploadVaapiFilter.js';
 import { ScaleVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/ScaleVaapiFilter.js';
+import { TonemapOpenclFilter } from '@/ffmpeg/builder/filter/opencl/TonemapOpenclFilter.js';
 import { TonemapVaapiFilter } from '@/ffmpeg/builder/filter/vaapi/TonemapVaapiFilter.js';
 import { VaapiFormatFilter } from '@/ffmpeg/builder/filter/vaapi/VaapiFormatFilter.js';
 import { OverlayWatermarkFilter } from '@/ffmpeg/builder/filter/watermark/OverlayWatermarkFilter.js';
@@ -351,17 +352,31 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     if (
       !getBooleanEnvVar(TONEMAP_ENABLED, false) ||
-      !isHdrContent(videoStream) ||
-      !this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi) ||
-      pipelineOptions.disableHardwareFilters
+      !isHdrContent(videoStream)
     ) {
       return currentState;
     }
 
-    const filter = new TonemapVaapiFilter(currentState);
-    const nextState = filter.nextState(currentState);
-    this.videoInputSource.filterSteps.push(filter);
-    return nextState;
+    if (pipelineOptions.disableHardwareFilters) {
+      return currentState;
+    }
+
+    let filter: FilterOption | undefined;
+    if (this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapVaapi)) {
+      filter = new TonemapVaapiFilter(currentState);
+    } else if (
+      this.ffmpegCapabilities.hasFilter(KnownFfmpegFilters.TonemapOpencl)
+    ) {
+      filter = new TonemapOpenclFilter(currentState);
+    }
+
+    if (filter) {
+      const nextState = filter.nextState(currentState);
+      this.videoInputSource.filterSteps.push(filter);
+      return nextState;
+    }
+
+    return currentState;
   }
 
   protected setScale(currentState: FrameState): FrameState {
