@@ -751,6 +751,10 @@ export class MeilisearchService implements ISearchService {
   }
 
   async updatePrograms(programs: ProgramIndexPartialUpdate[]) {
+    if (programs.length === 0) {
+      return;
+    }
+
     return await Promise.all(
       this.#client
         .index<ProgramSearchDocument>(ProgramsIndex.name)
