@@ -17,7 +17,6 @@ export const PointAndClickSearchBuilder = ({
 }: Props) => {
   const form = useFormContext<SearchForm>();
   const filter = form.watch('filter');
-  console.log(filter);
 
   return (
     <FormProvider {...form}>
@@ -29,9 +28,7 @@ export const PointAndClickSearchBuilder = ({
           fullWidth
           value={
             filter.type === 'structured'
-              ? search.searchFilterToString(
-                  search.normalizeSearchFilter(filter.filter),
-                )
+              ? search.searchFilterToString(filter.filter)
               : ''
           }
         />
