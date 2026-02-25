@@ -16,7 +16,6 @@ import { difference, isEmpty, isEqual } from 'lodash-es';
 import { useCallback, useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
-import { normalizeSearchFilter } from '../../../../shared/dist/src/util/searchUtil';
 import { useSearchQueryParser } from '../../hooks/useSearchQueryParser.ts';
 import { setSearchRequest } from '../../store/programmingSelector/actions.ts';
 import type { Maybe, Nullable } from '../../types/util.ts';
@@ -117,10 +116,6 @@ export const SearchInput = ({
   const { getSearchExpression, parseToSearchFilterOrNull } =
     useSearchQueryParser();
 
-  const handleSearchChange = useCallback((searchRequest: SearchRequest) => {
-    setSearchRequest(searchRequest);
-  }, []);
-
   const [keywordSearch, setKeywordSearch] = useState('');
 
   const [searchRestrictEl, setSearchRestrictEl] =
@@ -142,11 +137,6 @@ export const SearchInput = ({
             : undefined;
       } else {
         filter = formData.filter.filter;
-      }
-
-      if (filter) {
-        console.log(filter);
-        filter = normalizeSearchFilter(filter);
       }
 
       const search: SearchRequest = {
@@ -249,7 +239,6 @@ export const SearchInput = ({
           <SearchFilterBuilder
             libraryId={libraryId}
             mediaSourceId={mediaSourceId}
-            onSearch={handleSearchChange}
           />
           <Box sx={{ width: '100%' }}>
             <Stack direction={'row'} justifyContent={'flex-end'}>
