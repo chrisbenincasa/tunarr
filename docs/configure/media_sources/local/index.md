@@ -22,7 +22,7 @@ Tunarr traverses folders to discover metadata and media files which can then be 
 
     ---
 
-    Add unstructured video files without specific metadata requirements.
+    Add unstructured video files without specific metadata requirements. Each file will be tagged with it's local file path (available as "tags").  Building a meaningful folder structure will allow you to use tags to choose categories of files.
 
 -   **[Music](music.md)**
 
@@ -55,6 +55,19 @@ For best results, organize your media following standard conventions:
     Season 01/
       Show Name - S01E01 - Episode Title.mkv
       Show Name - S01E01 - Episode Title.nfo
+```
+
+**Other Files:**
+```
+/other/
+  Trailers/
+    Movie Name - Trailer - (2026).mkv
+  Filler/
+    Category/
+      Bumper 1.mkv
+  Commercials/
+    1980s/
+      Commercial 1.mkv
 ```
 
 **Music:**
