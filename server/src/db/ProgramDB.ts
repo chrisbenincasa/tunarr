@@ -2549,6 +2549,11 @@ export class ProgramDB implements IProgramDB {
             ? true
             : undefined,
         externalIds: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
       orderBy: (fields, { asc }) => [
         asc(fields.seasonNumber),

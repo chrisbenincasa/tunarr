@@ -355,6 +355,11 @@ export class ChannelDB implements IChannelDB {
                 artist: true,
                 album: true,
                 externalIds: true,
+                tags: {
+                  with: {
+                    tag: true,
+                  },
+                },
               },
             },
           },
