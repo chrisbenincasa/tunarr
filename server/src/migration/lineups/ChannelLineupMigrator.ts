@@ -32,8 +32,6 @@ const MigrationSteps: interfaces.ServiceIdentifier<
 export class ChannelLineupMigrator extends JsonFileMigrator<
   ChannelLineupMigration<number, number>
 > {
-  #migrationPipeline: ChannelLineupMigration<number, number>[];
-
   constructor(
     @inject(KEYS.Logger) private logger: Logger,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
@@ -75,7 +73,7 @@ export class ChannelLineupMigrator extends JsonFileMigrator<
     }
 
     let migrationIndex = findIndex(
-      this.#migrationPipeline,
+      this.pipeline,
       ({ from }) => from === currVersion,
     );
 
@@ -89,7 +87,7 @@ export class ChannelLineupMigrator extends JsonFileMigrator<
 
     try {
       do {
-        const migration = this.#migrationPipeline?.[migrationIndex];
+        const migration = this.pipeline[migrationIndex];
         if (!migration) {
           break;
         }
