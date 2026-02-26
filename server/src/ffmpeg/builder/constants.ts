@@ -127,14 +127,23 @@ export type ColorTransferFormat =
 
 export type OutputLocation = Lowercase<keyof typeof OutputLocation>;
 
+export type HlsSubtitleOutputOptions = {
+  subtitlePlaylistPath: string;
+  subtitleSegmentTemplate: string;
+  subtitleBaseUrl: string;
+  segmentStartNumber: number;
+};
+
 export type HlsOutputFormat = {
   type: typeof OutputFormatTypes.Hls;
   hlsOptions: HlsOptions;
+  subtitleOptions?: HlsSubtitleOutputOptions;
 };
 
 export type HlsDirectOutputFormat = {
   type: typeof OutputFormatTypes.HlsDirectV2;
   hlsOptions: HlsOptions;
+  subtitleOptions?: HlsSubtitleOutputOptions;
 };
 
 export type MpegDashOutputFormat = {
@@ -174,17 +183,25 @@ export const NutOutputFormat = {
   type: OutputFormatTypes.Nut,
 } as const satisfies NutOutputFormat;
 
-export function HlsOutputFormat(opts: HlsOptions): HlsOutputFormat {
+export function HlsOutputFormat(
+  opts: HlsOptions,
+  subtitleOptions?: HlsSubtitleOutputOptions,
+): HlsOutputFormat {
   return {
     type: OutputFormatTypes.Hls,
     hlsOptions: opts,
+    subtitleOptions,
   };
 }
 
-export function HlsDirectOutputFormat(opts: HlsOptions): HlsDirectOutputFormat {
+export function HlsDirectOutputFormat(
+  opts: HlsOptions,
+  subtitleOptions?: HlsSubtitleOutputOptions,
+): HlsDirectOutputFormat {
   return {
     type: OutputFormatTypes.HlsDirectV2,
     hlsOptions: opts,
+    subtitleOptions,
   };
 }
 

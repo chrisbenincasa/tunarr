@@ -501,6 +501,7 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
       audioInput: this.audioInputSource,
       watermarkInput: this.watermarkInputSource,
       concatInput: this.concatInputSource,
+      subtitleInput: this.subtitleInputSource,
     });
   }
 
