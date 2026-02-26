@@ -376,6 +376,13 @@ export class TVGuideService {
         return calculateStartTimeOffsets(channel.lineup.items);
       });
 
+      // Prune stale cache entries for channels that have been deleted
+      for (const channelId of Object.keys(this.cachedGuide)) {
+        if (!this.channelsById[channelId]) {
+          delete this.cachedGuide[channelId];
+        }
+      }
+
       return await builder();
     } finally {
       this.accumulateTable = {};
