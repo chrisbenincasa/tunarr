@@ -7,6 +7,7 @@ import {
   HlsDirectOutputFormat,
   HlsOutputFormat,
 } from '@/ffmpeg/builder/constants.js';
+import { TUNARR_ENV_VARS, getBooleanEnvVar } from '../../util/env.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { ProgramStream } from '@/stream/ProgramStream.js';
@@ -53,6 +54,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #isFirstTranscode = true;
+  #subtitleSegmentStartNumber = 0;
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -256,7 +258,15 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         // await this.trimPlaylistAndDeleteSegments();
       }
       await programStream.start();
-      return programStream.transcodeSession.wait();
+      const waitResult = await programStream.transcodeSession.wait();
+      if (
+        getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR, false) &&
+        this.channel.subtitlesEnabled
+      ) {
+        this.#subtitleSegmentStartNumber =
+          await this.getNextSubtitleSegmentNumber();
+      }
+      return waitResult;
     });
 
     if (transcodeResult.isFailure()) {
@@ -287,10 +297,24 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   private getProgramStream(context: PlayerContext) {
     const hlsOptions = this.getHlsOptions();
 
+    const subtitleOptions =
+      getBooleanEnvVar(TUNARR_ENV_VARS.WEBVTT_SIDECAR, false) &&
+      this.channel.subtitlesEnabled
+        ? {
+            subtitlePlaylistPath: this._subtitlePlaylistPath,
+            subtitleSegmentTemplate: path.join(
+              this._workingDirectory,
+              'sub%06d.vtt',
+            ),
+            subtitleBaseUrl: hlsOptions.streamBaseUrl,
+            segmentStartNumber: this.#subtitleSegmentStartNumber,
+          }
+        : undefined;
+
     const outputFormat =
       this.sessionType === 'hls_direct_v2'
-        ? HlsDirectOutputFormat(hlsOptions)
-        : HlsOutputFormat(hlsOptions);
+        ? HlsDirectOutputFormat(hlsOptions, subtitleOptions)
+        : HlsOutputFormat(hlsOptions, subtitleOptions);
 
     return this.programStreamFactory(context, outputFormat);
   }
@@ -368,7 +392,8 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
   private async deleteOldSegments(sequenceNum: number) {
     const workingDirectoryFiles = await fs.readdir(this._workingDirectory);
-    const segments = filter(
+
+    const videoSegments = filter(
       seq.collect(
         filter(workingDirectoryFiles, (f) => {
           const ext = extname(f);
@@ -388,21 +413,78 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       ({ seq }) => seq < sequenceNum,
     );
 
-    if (segments.length > 0) {
+    if (videoSegments.length > 0) {
       this.logger.trace(
         'Deleting %d segments. Max segment number: %d',
-        segments.length,
-        maxBy(segments, (seg) => seg.seq)?.seq ?? 0,
+        videoSegments.length,
+        maxBy(videoSegments, (seg) => seg.seq)?.seq ?? 0,
       );
     }
 
-    for (const { file } of segments) {
+    for (const { file } of videoSegments) {
       try {
         await fs.unlink(path.join(this._workingDirectory, file));
       } catch (e) {
         this.logger.error(e);
       }
     }
+
+    // Also delete stale WebVTT subtitle segments
+    const subtitleSegments = filter(
+      seq.collect(
+        filter(workingDirectoryFiles, (f) => extname(f) === '.vtt'),
+        (file) => {
+          const matches = file.match(/sub(\d+)\.vtt/);
+          if (matches && matches.length > 0) {
+            return {
+              file,
+              seq: parseInt(matches[1]!),
+            };
+          }
+          return;
+        },
+      ),
+      ({ seq }) => seq < sequenceNum,
+    );
+
+    for (const { file } of subtitleSegments) {
+      try {
+        await fs.unlink(path.join(this._workingDirectory, file));
+      } catch (e) {
+        this.logger.error(e);
+      }
+    }
+  }
+
+  /**
+   * Returns the next subtitle segment start number by scanning the working
+   * directory for the highest-numbered .vtt file and adding 1.
+   */
+  private async getNextSubtitleSegmentNumber(): Promise<number> {
+    const workingDirectoryFiles = await Result.attemptAsync(() =>
+      fs.readdir(this._workingDirectory),
+    );
+
+    if (workingDirectoryFiles.isFailure()) {
+      return this.#subtitleSegmentStartNumber;
+    }
+
+    const numbers = seq.collect(
+      filter(workingDirectoryFiles.get(), (f) => extname(f) === '.vtt'),
+      (file) => {
+        const matches = file.match(/sub(\d+)\.vtt/);
+        if (matches && matches.length > 0) {
+          return parseInt(matches[1]!);
+        }
+        return;
+      },
+    );
+
+    if (numbers.length === 0) {
+      return this.#subtitleSegmentStartNumber;
+    }
+
+    return (maxBy(numbers) ?? 0) + 1;
   }
 
   protected async stopStream(): Promise<void> {

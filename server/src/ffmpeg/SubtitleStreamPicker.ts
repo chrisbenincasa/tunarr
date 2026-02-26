@@ -33,12 +33,13 @@ export class SubtitleStreamPicker {
     subtitlePreferences: ChannelSubtitlePreferences[],
     lineupItem: ContentBackedStreamLineupItem,
     subtitleStreams: NonEmptyArray<SubtitleStreamDetails>,
+    sidecarMode: boolean = false,
   ): Promise<Maybe<SubtitleStreamDetails>> {
     if (subtitlePreferences.length === 0) {
       this.logger.debug(
         'No subtitle preferences for channel. Attempting to use default stream.',
       );
-      let foundStream = subtitleStreams.find((stream) => stream.default);
+      const foundStream = subtitleStreams.find((stream) => stream.default);
       if (!foundStream) {
         this.logger.debug('Could not find default subtitle stream');
         return;
@@ -48,10 +49,16 @@ export class SubtitleStreamPicker {
         !isImageBasedSubtitle(foundStream.codec) &&
         foundStream.type === 'embedded'
       ) {
-        foundStream = await this.getSubtitleDetailsWithExtractedPath(
+        const withPath = await this.getSubtitleDetailsWithExtractedPath(
           lineupItem,
           foundStream,
         );
+        if (withPath) {
+          return withPath;
+        }
+        // In sidecar mode, fall back to the embedded stream directly (no
+        // pre-extraction required – FFmpeg converts in real-time)
+        return sidecarMode ? foundStream : undefined;
       }
 
       return foundStream;
@@ -114,13 +121,16 @@ export class SubtitleStreamPicker {
           continue;
         }
 
-        // TODO: check if embedded text based are extracted and continue searching
-        // for a fallback if they are not.
         if (!isImageBasedSubtitle(stream.codec) && stream.type === 'embedded') {
           const streamWithUpdatedPath =
             await this.getSubtitleDetailsWithExtractedPath(lineupItem, stream);
           if (streamWithUpdatedPath) {
             return streamWithUpdatedPath;
+          }
+
+          // In sidecar mode, fall back to embedded stream directly
+          if (sidecarMode) {
+            return stream;
           }
 
           continue;
