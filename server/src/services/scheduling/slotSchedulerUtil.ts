@@ -586,15 +586,25 @@ export function groupProgramsByTag(
     }
   }
 
-  // Flatten groups into final program list
+  // Flatten groups into final program list, deduplicating programs
+  // that appear in multiple groups (when multiTagBehavior === 'all')
   const result: SlotSchedulerProgram[] = [];
+  const seen = new Set<string>();
   for (const key of orderedGroupKeys) {
-    result.push(...groups.get(key)!);
+    for (const program of groups.get(key)!) {
+      if (!seen.has(program.uuid)) {
+        seen.add(program.uuid);
+        result.push(program);
+      }
+    }
   }
 
   // Append ungrouped programs as individual entries
   for (const program of ungrouped) {
-    result.push(program);
+    if (!seen.has(program.uuid)) {
+      seen.add(program.uuid);
+      result.push(program);
+    }
   }
 
   return result;
