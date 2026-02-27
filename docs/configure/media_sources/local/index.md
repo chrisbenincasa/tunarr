@@ -57,6 +57,24 @@ For best results, organize your media following standard conventions:
       Show Name - S01E01 - Episode Title.nfo
 ```
 
+**Other Videos**
+```
+commercials/
+|
+├ 1999/
+| ├ Coke.mkv
+| └ Coke.nfo
+|
+├ 2000/
+| └ Food/ 
+|   ├ Burger King.mkv
+|   └ Burger King.nfo
+|
+├ Random.mkv
+├ Random.nfo
+|
+```
+
 **Music:**
 ```
 /music/

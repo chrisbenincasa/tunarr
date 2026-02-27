@@ -1,4 +1,4 @@
-# Movies
+# Other Video
 
 ## Library Structure
 
@@ -31,4 +31,4 @@ Tunarr will attempt to scan various artwork files for each movie, including thum
 
 ## Fallback
 
-Without NFO files, Tunarr can still scan a directory. Tunarr will simply create an entry with the video name and no additional metadata.
+Without NFO files, Tunarr can still scan a directory. Tunarr will simply create an entry with the video name and no additional metadata.  The local file path will be available as a tag (i.e. tags = "commercials/1999/")
