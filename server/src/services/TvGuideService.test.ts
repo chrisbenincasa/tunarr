@@ -135,4 +135,56 @@ describe('TVGuideService', () => {
       expect(secondWriteChannelIds).not.toContain(channelB.channel.uuid);
     });
   });
+
+  describe('removeCachedChannel', () => {
+    it('immediately removes the channel from XMLTV output', async () => {
+      const channelA = makeChannelWithLineup({ number: 1, name: 'Channel A' });
+      const channelB = makeChannelWithLineup({ number: 2, name: 'Channel B' });
+
+      const mockLoadAllLineups = vi.fn().mockResolvedValue({
+        [channelA.channel.uuid]: channelA,
+        [channelB.channel.uuid]: channelB,
+      });
+
+      const mockGetProgramsByIds = vi.fn().mockResolvedValue([]);
+      const mockWrite = vi.fn().mockResolvedValue(undefined);
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        makeMockLogger() as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: mockWrite } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { loadAllLineups: mockLoadAllLineups } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { getProgramsByIds: mockGetProgramsByIds } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+      );
+
+      const guideDuration = dayjs.duration({ hours: 4 });
+
+      // Populate the cache with both channels
+      await service.buildAllChannels(guideDuration, true);
+      expect(mockWrite).toHaveBeenCalledTimes(1);
+
+      // Simulate the delete endpoint: channel B is gone from DB, remove from cache
+      await service.removeCachedChannel(channelB.channel.uuid);
+
+      expect(mockWrite).toHaveBeenCalledTimes(2);
+      const writeChannelIds = (
+        mockWrite.mock.calls[1][0] as MaterializedChannelPrograms[]
+      ).map((entry) => entry.channel.uuid);
+      expect(writeChannelIds).toContain(channelA.channel.uuid);
+      expect(writeChannelIds).not.toContain(channelB.channel.uuid);
+    });
+  });
 });

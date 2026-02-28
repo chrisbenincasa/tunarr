@@ -334,6 +334,20 @@ export class TVGuideService {
   }
 
   /**
+   * Removes a deleted channel from the cached guide and rewrites the XMLTV
+   * file immediately. This mirrors updateCachedChannel but for deletion.
+   */
+  async removeCachedChannel(channelId: string) {
+    delete this.cachedGuide[channelId];
+    delete this.lastUpdateTime[channelId];
+    delete this.lastEndTime[channelId];
+    delete this.currentUpdateTime[channelId];
+    delete this.currentEndTime[channelId];
+
+    return await this.writeXmlTv();
+  }
+
+  /**
    * Materialize a guide for a specific channel
    * @returns Materialized guide for a channel within the date range
    */
