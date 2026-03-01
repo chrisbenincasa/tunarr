@@ -14,13 +14,14 @@ import {
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { Kysely } from 'kysely';
-import { chunk, isNil, orderBy } from 'lodash-es';
+import { chunk, isNil, orderBy, partition } from 'lodash-es';
 import { v4 } from 'uuid';
-import { ProgramDB } from './ProgramDB.ts';
+import { IProgramDB } from './interfaces/IProgramDB.ts';
 import {
   AllProgramJoins,
   withCustomShowPrograms,
 } from './programQueryHelpers.ts';
+import { MediaSourceId, MediaSourceType } from './schema/base.ts';
 import type { NewCustomShow } from './schema/CustomShow.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
 import { DB } from './schema/db.ts';
@@ -33,7 +34,7 @@ import { DrizzleDBAccess } from './schema/index.ts';
 @injectable()
 export class CustomShowDB {
   constructor(
-    @inject(KEYS.ProgramDB) private programDB: ProgramDB,
+    @inject(KEYS.ProgramDB) private programDB: IProgramDB,
     @inject(KEYS.Database) private db: Kysely<DB>,
     @inject(KEYS.DrizzleDB) private drizzle: DrizzleDBAccess,
   ) {}
@@ -210,7 +211,7 @@ export class CustomShowDB {
     if (programs.length === 0) {
       return;
     }
-    const newProgramIndexesById: Record<string, number[]> = {};
+    const newProgramIndexesById = new Map<string, number[]>();
     for (let i = 0; i < programs.length; i++) {
       const program = programs[i]!;
       if (
@@ -219,8 +220,9 @@ export class CustomShowDB {
           program.externalSourceType === 'local') &&
         isNonEmptyString(program.id)
       ) {
-        newProgramIndexesById[program.id] ??= [];
-        newProgramIndexesById[program.id]!.push(i);
+        const existing = newProgramIndexesById.get(program.id) ?? [];
+        existing.push(i);
+        newProgramIndexesById.set(program.id, existing);
       } else if (
         isContentProgram(program) &&
         program.externalSourceType !== 'local'
@@ -230,24 +232,42 @@ export class CustomShowDB {
           tag(program.externalSourceId),
           program.externalKey,
         );
-        newProgramIndexesById[key] ??= [];
-        newProgramIndexesById[key].push(i);
+        const existing = newProgramIndexesById.get(key) ?? [];
+        existing.push(i);
+        newProgramIndexesById.set(key, existing);
       }
     }
 
+    const [persisted, needsPersist] = partition(
+      programs,
+      (p) => p.persisted && isNonEmptyString(p.id),
+    );
     const upsertedPrograms =
-      await this.programDB.upsertContentPrograms(programs);
+      await this.programDB.upsertContentPrograms(needsPersist);
+    const allPrograms: {
+      uuid: string;
+      sourceType: MediaSourceType;
+      mediaSourceId: MediaSourceId;
+      externalKey: string;
+    }[] = persisted
+      .map((p) => ({
+        uuid: p.id!,
+        sourceType: p.externalSourceType,
+        mediaSourceId: tag<MediaSourceId>(p.externalSourceId),
+        externalKey: p.externalKey,
+      }))
+      .concat(upsertedPrograms);
 
     const allNewCustomContent = orderBy(
-      upsertedPrograms.flatMap((program) => {
-        let indexes = newProgramIndexesById[program.uuid];
+      allPrograms.flatMap((program) => {
+        let indexes = newProgramIndexesById.get(program.uuid);
         if (!indexes && program.sourceType !== 'local') {
           const externalId = createExternalId(
             program.sourceType,
             program.mediaSourceId,
             program.externalKey,
           );
-          indexes = newProgramIndexesById[externalId];
+          indexes = newProgramIndexesById.get(externalId);
         }
         if (!indexes) {
           return [];

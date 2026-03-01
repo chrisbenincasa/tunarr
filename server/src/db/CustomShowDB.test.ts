@@ -1,24 +1,46 @@
 import { faker } from '@faker-js/faker';
+import type { ContentProgram } from '@tunarr/types';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
 import tmp from 'tmp-promise';
 import { v4 } from 'uuid';
-import { test as baseTest, describe, expect } from 'vitest';
+import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../bootstrap.ts';
 import { setGlobalOptionsUnchecked } from '../globals.ts';
 import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 import { CustomShowDB } from './CustomShowDB.ts';
 import { DBAccess } from './DBAccess.ts';
 import { ProgramDB } from './ProgramDB.ts';
+import type { MediaSourceId, MediaSourceName } from './schema/base.ts';
 import { CustomShow } from './schema/CustomShow.ts';
-import { CustomShowContent } from './schema/CustomShowContent.ts';
 import type { NewCustomShowContent } from './schema/CustomShowContent.ts';
+import { CustomShowContent } from './schema/CustomShowContent.ts';
 import { DrizzleDBAccess } from './schema/index.ts';
-import { Program } from './schema/Program.ts';
+import { MediaSource } from './schema/MediaSource.ts';
 import type { NewProgramDao } from './schema/Program.ts';
+import { Program } from './schema/Program.ts';
+
+// Suppress background task scheduling that fires in setImmediate after upsertContentPrograms.
+// These callbacks try to resolve Inversify bindings that aren't set up in tests.
+vi.mock('@/services/Scheduler.js', () => ({
+  GlobalScheduler: { scheduleOneOffTask: vi.fn(), removeTask: vi.fn() },
+}));
+vi.mock('@/tasks/TaskQueue.js', () => ({
+  PlexTaskQueue: {
+    pause: vi.fn(),
+    resume: vi.fn(),
+    add: vi.fn().mockResolvedValue(undefined),
+  },
+  JellyfinTaskQueue: {
+    pause: vi.fn(),
+    resume: vi.fn(),
+    add: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 type Fixture = {
   db: string;
+  mediaSourceId: MediaSourceId;
   customShowDb: CustomShowDB;
   drizzle: DrizzleDBAccess;
 };
@@ -31,11 +53,27 @@ const test = baseTest.extend<Fixture>({
       log_level: 'debug',
       verbose: 0,
     });
-    await bootstrapTunarr(opts);
+    await bootstrapTunarr(opts, ':memory:');
     await use(dbResult.path);
-    const dbPath = `${dbResult.path}/db.db`;
-    await DBAccess.instance.closeConnection(dbPath);
+    // const dbPath = `${dbResult.path}/db.db`;
+    // await DBAccess.instance.closeConnection(dbPath);
     await dbResult.cleanup();
+  },
+  mediaSourceId: async ({ db: _ }, use) => {
+    const drizzle = DBAccess.instance.getConnection(':memory:')!.drizzle!;
+    const uuid = v4() as MediaSourceId;
+    const now = +dayjs();
+    await drizzle.insert(MediaSource).values({
+      uuid,
+      name: tag<MediaSourceName>('Test Plex Server'),
+      accessToken: 'test-token',
+      index: 0,
+      type: 'plex',
+      uri: 'http://localhost:32400',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await use(uuid);
   },
   customShowDb: async ({ db: _ }, use) => {
     const dbAccess = DBAccess.instance;
@@ -43,29 +81,73 @@ const test = baseTest.extend<Fixture>({
 
     const mockTaskFactory = () => ({ enqueue: async () => {} }) as any;
 
+    // Minimal stub of ProgramDaoMinter — only implements what upsertContentPrograms
+    // needs when converting non-persisted ContentPrograms to DB rows.
+    const mockMinterFactory = () => ({
+      contentProgramDtoToDao(
+        program: ContentProgram,
+      ): NewProgramDao | undefined {
+        if (!program.canonicalId) return undefined;
+        const now = +dayjs();
+        return {
+          uuid: v4(),
+          sourceType: program.externalSourceType,
+          externalSourceId: tag<MediaSourceName>(program.externalSourceName),
+          mediaSourceId: tag<MediaSourceId>(program.externalSourceId),
+          externalKey: program.externalKey,
+          canonicalId: program.canonicalId,
+          libraryId: null,
+          duration: program.duration,
+          title: program.title,
+          type: program.subtype,
+          state: 'ok',
+          createdAt: now,
+          updatedAt: now,
+          rating: program.rating ?? null,
+          summary: program.summary ?? null,
+          originalAirDate: program.date ?? null,
+          year: program.year ?? null,
+          episode: null,
+          plexRatingKey: null,
+          plexFilePath: null,
+          filePath: null,
+          parentExternalKey: null,
+          grandparentExternalKey: null,
+          showTitle: null,
+          seasonNumber: null,
+        };
+      },
+      mintExternalIds() {
+        return [];
+      },
+    });
+
     const programDb = new ProgramDB(
       logger,
       mockTaskFactory,
       mockTaskFactory,
-      dbAccess.db!,
-      () => ({}) as any,
-      dbAccess.drizzle!,
+      dbAccess.getKyselyDatabase(':memory:')!,
+      mockMinterFactory as any,
+      dbAccess.getConnection(':memory:')?.drizzle!,
     );
 
     const customShowDb = new CustomShowDB(
       programDb,
-      dbAccess.db!,
-      dbAccess.drizzle!,
+      dbAccess.getKyselyDatabase(':memory:')!,
+      dbAccess.getConnection(':memory:')!.drizzle!,
     );
 
     await use(customShowDb);
   },
   drizzle: async ({ db: _ }, use) => {
-    await use(DBAccess.instance.drizzle!);
+    await use(DBAccess.instance.getConnection(':memory:')!.drizzle!);
   },
 });
 
-function createProgram(overrides?: Partial<NewProgramDao>): NewProgramDao {
+function createProgram(
+  mediaSourceId: MediaSourceId,
+  overrides?: Partial<NewProgramDao>,
+): NewProgramDao {
   const now = +dayjs();
   return {
     uuid: v4(),
@@ -80,8 +162,8 @@ function createProgram(overrides?: Partial<NewProgramDao>): NewProgramDao {
     episode: null,
     episodeIcon: null,
     externalKey: faker.string.alphanumeric(10),
-    externalSourceId: tag(faker.string.alphanumeric(8)),
-    mediaSourceId: undefined,
+    externalSourceId: tag<MediaSourceName>(faker.string.alphanumeric(8)),
+    mediaSourceId,
     libraryId: null,
     localMediaFolderId: null,
     localMediaSourcePathId: null,
@@ -116,6 +198,45 @@ async function insertProgram(drizzle: DrizzleDBAccess, program: NewProgramDao) {
   return program;
 }
 
+function makePersistedContentProgram(program: NewProgramDao): ContentProgram {
+  return {
+    type: 'content',
+    subtype: 'movie',
+    id: program.uuid,
+    persisted: true,
+    duration: program.duration,
+    title: program.title!,
+    externalSourceType: program.sourceType as 'plex',
+    externalSourceName: String(program.externalSourceId),
+    externalSourceId: String(program.mediaSourceId),
+    externalKey: program.externalKey,
+    uniqueId: program.uuid,
+    externalIds: [],
+  };
+}
+
+function makeNewContentProgram(
+  mediaSourceId: MediaSourceId,
+  overrides?: Partial<ContentProgram>,
+): ContentProgram {
+  const externalKey = faker.string.alphanumeric(10);
+  return {
+    type: 'content',
+    subtype: 'movie',
+    persisted: false,
+    duration: faker.number.int({ min: 60000, max: 7200000 }),
+    title: faker.word.words(3),
+    externalSourceType: 'plex',
+    externalSourceName: 'Test Plex Server',
+    externalSourceId: mediaSourceId,
+    externalKey,
+    uniqueId: `plex|${mediaSourceId}|${externalKey}`,
+    externalIds: [],
+    canonicalId: v4(),
+    ...overrides,
+  };
+}
+
 async function createCustomShow(
   drizzle: DrizzleDBAccess,
   name?: string,
@@ -144,8 +265,12 @@ describe('CustomShowDB', () => {
   describe('duplicate programs in custom shows', () => {
     test('should allow the same program to appear multiple times with different indexes', async ({
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       const rows: NewCustomShowContent[] = [
@@ -171,8 +296,12 @@ describe('CustomShowDB', () => {
 
     test('should still enforce uniqueness on (contentUuid, customShowUuid, index) triple', async ({
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       await insertCustomShowContent(drizzle, [
@@ -189,8 +318,12 @@ describe('CustomShowDB', () => {
 
     test('should allow different programs at the same index in different custom shows', async ({
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show1 = await createCustomShow(drizzle, 'Show 1');
       const show2 = await createCustomShow(drizzle, 'Show 2');
 
@@ -207,10 +340,20 @@ describe('CustomShowDB', () => {
     test('should return programs in index order', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const programA = await insertProgram(drizzle, createProgram({ title: 'Program A' }));
-      const programB = await insertProgram(drizzle, createProgram({ title: 'Program B' }));
-      const programC = await insertProgram(drizzle, createProgram({ title: 'Program C' }));
+      const programA = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Program A' }),
+      );
+      const programB = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Program B' }),
+      );
+      const programC = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Program C' }),
+      );
 
       const show = await createCustomShow(drizzle);
 
@@ -232,9 +375,16 @@ describe('CustomShowDB', () => {
     test('should return duplicate programs preserving order', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const programA = await insertProgram(drizzle, createProgram({ title: 'Repeat Me' }));
-      const programB = await insertProgram(drizzle, createProgram({ title: 'Other' }));
+      const programA = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Repeat Me' }),
+      );
+      const programB = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Other' }),
+      );
 
       const show = await createCustomShow(drizzle);
 
@@ -264,8 +414,12 @@ describe('CustomShowDB', () => {
     test('should return show with program data', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       await insertCustomShowContent(drizzle, [
@@ -292,8 +446,12 @@ describe('CustomShowDB', () => {
     test('should delete a show and its content', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       await insertCustomShowContent(drizzle, [
@@ -327,8 +485,12 @@ describe('CustomShowDB', () => {
     test('should return correct content count with duplicate programs', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle, 'Duplicates Show');
 
       // Same program at 3 different indexes
@@ -349,9 +511,16 @@ describe('CustomShowDB', () => {
     test('should return multiple shows with correct counts', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const programA = await insertProgram(drizzle, createProgram());
-      const programB = await insertProgram(drizzle, createProgram());
+      const programA = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
+      const programB = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
 
       const show1 = await createCustomShow(drizzle, 'Show One');
       const show2 = await createCustomShow(drizzle, 'Show Two');
@@ -379,11 +548,12 @@ describe('CustomShowDB', () => {
     test('should calculate total duration across duplicate entries', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
       const duration = 120000; // 2 minutes
       const program = await insertProgram(
         drizzle,
-        createProgram({ duration }),
+        createProgram(mediaSourceId, { duration }),
       );
       const show = await createCustomShow(drizzle, 'Duration Test');
 
@@ -407,8 +577,12 @@ describe('CustomShowDB', () => {
     test('should return shows with correct content counts via Drizzle path', async ({
       customShowDb,
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle, 'Drizzle Show');
 
       await insertCustomShowContent(drizzle, [
@@ -434,8 +608,12 @@ describe('CustomShowDB', () => {
   describe('cascade deletes', () => {
     test('should delete custom show content when a program is deleted', async ({
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       await insertCustomShowContent(drizzle, [
@@ -458,8 +636,12 @@ describe('CustomShowDB', () => {
 
     test('should delete custom show content when a custom show is deleted', async ({
       drizzle,
+      mediaSourceId,
     }) => {
-      const program = await insertProgram(drizzle, createProgram());
+      const program = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId),
+      );
       const show = await createCustomShow(drizzle);
 
       await insertCustomShowContent(drizzle, [
@@ -474,6 +656,110 @@ describe('CustomShowDB', () => {
       });
 
       expect(content).toHaveLength(0);
+    });
+  });
+
+  describe('upsertCustomShowContent (via createShow)', () => {
+    test('should save persisted programs to a new custom show', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const program1 = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Persisted 1' }),
+      );
+      const program2 = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Persisted 2' }),
+      );
+
+      const showId = await customShowDb.createShow({
+        name: 'Persisted Only Show',
+        programs: [
+          makePersistedContentProgram(program1),
+          makePersistedContentProgram(program2),
+        ],
+      });
+
+      const content = await drizzle.query.customShowContent.findMany({
+        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
+        orderBy: (fields, { asc }) => asc(fields.index),
+      });
+
+      expect(content).toHaveLength(2);
+      expect(content[0]!.contentUuid).toBe(program1.uuid);
+      expect(content[1]!.contentUuid).toBe(program2.uuid);
+    });
+
+    test('should upsert and save new (non-persisted) programs to a new custom show', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const programs = [
+        makeNewContentProgram(mediaSourceId, { externalKey: 'key-aaa' }),
+        makeNewContentProgram(mediaSourceId, { externalKey: 'key-bbb' }),
+      ];
+
+      const showId = await customShowDb.createShow({
+        name: 'New Programs Show',
+        programs,
+      });
+
+      const content = await drizzle.query.customShowContent.findMany({
+        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
+        orderBy: (fields, { asc }) => asc(fields.index),
+      });
+
+      expect(content).toHaveLength(2);
+
+      // Both programs should now exist in the program table
+      const savedPrograms = await drizzle.query.program.findMany({
+        where: (fields, { inArray }) =>
+          inArray(
+            fields.uuid,
+            content.map((c) => c.contentUuid),
+          ),
+      });
+      expect(savedPrograms).toHaveLength(2);
+    });
+
+    test('should save both persisted and new programs to a new custom show', async ({
+      customShowDb,
+      drizzle,
+      mediaSourceId,
+    }) => {
+      const existingProgram = await insertProgram(
+        drizzle,
+        createProgram(mediaSourceId, { title: 'Already In DB' }),
+      );
+      const newProgram = makeNewContentProgram(mediaSourceId, {
+        title: 'Needs Inserting',
+        externalKey: 'brand-new-key',
+      });
+
+      const showId = await customShowDb.createShow({
+        name: 'Mixed Show',
+        programs: [makePersistedContentProgram(existingProgram), newProgram],
+      });
+
+      const content = await drizzle.query.customShowContent.findMany({
+        where: (fields, { eq }) => eq(fields.customShowUuid, showId),
+        orderBy: (fields, { asc }) => asc(fields.index),
+      });
+
+      expect(content).toHaveLength(2);
+
+      // First entry is the pre-existing program
+      expect(content[0]!.contentUuid).toBe(existingProgram.uuid);
+
+      // Second entry was newly inserted
+      const insertedProgram = await drizzle.query.program.findFirst({
+        where: (fields, { eq }) => eq(fields.uuid, content[1]!.contentUuid),
+      });
+      expect(insertedProgram).toBeDefined();
+      expect(insertedProgram!.title).toBe('Needs Inserting');
     });
   });
 });
